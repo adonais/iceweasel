@@ -375,12 +375,22 @@
   <string name="preferences_ai_controls">AI-indstillinger</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Med %s har du altid et valg</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Det inkluderer, om du vil bruge funktioner forbedret med AI. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Det inkluderer, om du vil bruge funktioner forbedret med AI.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Læs mere</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Bloker AI-forbedringer</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Hvis du blokerer dette, vil du ikke se nye eller nuværende AI-forbedringer i %s - eller pop op-vinduer om dem.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Se hvad der er og ikke er inkluderet</string>
   <!-- Banner text shown when AI enhancements are blocked -->
   <string name="ai_controls_blocked_info_banner">Nye og nuværende AI-forbedringer er som standard blokeret. Fjern blokeringen af en specifik funktion nedenfor.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">AI-drevne funktioner</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Oversættelser</string>
   <!-- Description for the translations AI feature toggle -->
@@ -391,8 +401,12 @@
   <string name="ai_controls_more_page_summary_settings">Flere indstillinger for sammenfatning af sider</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Stemme-søgning</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Lyd konverteres til tekst af Google Speech Services.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Bloker AI-forbedringer?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Du vil ikke se nye eller nuværende AI-forbedringer i %1$s - eller pop op-vinduer om dem. Du kan fjerne blokeringen af de funktioner, du fortsat ønsker at bruge.\n\nBlokering påvirker også udvidelser, der bruger AI leveret af %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Hvad bliver blokeret:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -699,8 +713,26 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Del, hvordan du opdagede Firefox, og at du bruger appen med Mozillas partnere indenfor markedsføringsteknologi. Disse data vil aldrig blive solgt. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Del, hvordan du opdagede Firefox, og at du bruger appen med Mozillas partnere indenfor markedsføringsteknologi. Disse data vil aldrig blive solgt.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Du kan hjælpe os med at nå ud til flere mennesker ved at give Mozilla tilladelse til at informere de kanaler, hvor vi promoverer Firefox, om at du er Firefox-bruger.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Du kan hjælpe os med at nå ud til flere personer ved at give Mozilla tilladelse til at informere den platform, du kom fra, om, at du bruger Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Hjælp os med at nå ud til flere mennesker ved at give Mozilla tilladelse til at informere den platform, du kommer fra, om, at du bruger Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Sådan bruger vi dataene</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Hjælp Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Nej tak</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Meddelelser gør dig mere sikker, når du bruger Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -1111,6 +1143,8 @@
   <string name="customize_wallpapers">Baggrunde</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Sponsorerede genveje</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">VM</string>
   <!--
     Wallpapers
 
@@ -1427,6 +1461,8 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Scroll for at skjule værktøjslinje</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Stryg værktøjslinje lodret for at åbne faneblade</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Stryg værktøjslinje op for at åbne faneblade</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Stryg adresselinjen sidelæns for at skifte faneblade</string>
@@ -1691,6 +1727,10 @@
   <string name="pwa_site_controls_title_private">%1$s (Privat tilstand)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Åbn søgning i faneblade</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Prøv fanebladsgrupper for mindre scrolling og mere produktivitet</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Vælg faneblade for at oprette en gruppe. De er gemt her, så de er klar, når du er det.</string>
   <!--
     Tab Group
 
@@ -1700,6 +1740,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Rediger gruppe</string>
   <string name="create_tab_group_save_button">Gem</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Ny gruppe, træk i håndtaget for at skjule</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Luk redigering af fanebladsgruppe</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Gruppe</string>
@@ -1715,6 +1757,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Føj til</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Føj til fanebladsgruppe, træk i håndtaget for at skjule</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Føj til ny fanebladsgruppe</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Luk føj til fanebladsgruppe</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Ny fanebladsgruppe</string>
@@ -1726,6 +1772,33 @@
     <item quantity="one">%1$d faneblad</item>
     <item quantity="other">%1$d faneblade</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Føj til fanebladsgruppen %1$s, %2$d faneblad, farve %3$s</item>
+    <item quantity="other">Føj til fanebladsgruppen %1$s, %2$d faneblade, farve %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Del fanebladsgruppen %1$s med %2$d faneblad.</item>
+    <item quantity="other">Del fanebladsgruppen %1$s med %2$d faneblade.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Vis fanebladsgruppe, træk i håndtaget for at skjule</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Fanebladsgruppe %1$s med %2$d faneblad, farve %3$s</item>
+    <item quantity="other">Fanebladsgruppe %1$s med %2$d faneblade, farve %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Slet fanebladsgruppe?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1734,6 +1807,38 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Slet gruppe</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Annuller</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Luk faneblad og slet gruppe?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Dette sletter gruppen permanent.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Slet gruppe</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Annuller</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Gul</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Orange</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Rød</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Pink</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Lilla</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Violet</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Blå</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cyan</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Grøn</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Grå</string>
   <!--
     History
 
@@ -1869,6 +1974,8 @@
   <string name="download_rename_error_exists_error">En fil med navnet “%s” findes allerede på denne placering</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Filnavne kan ikke indeholde “/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Navnet du indtastede ændrer kun store eller små bogstaver. Prøv et andet filnavn.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Kan ikke omdøbe fil</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2118,6 +2225,12 @@
   <string name="bookmark_sort_menu_a_to_z">Sorter A til Å</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Sorter Å til A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Importer fra fil</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Kunne ikke importere bogmærker. Prøv igen.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Importerede bogmærker</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2176,8 +2289,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Luk mappe: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Luk bogmærker</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Importer fra fil</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Ingen bogmærker endnu</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Hold alle dine foretrukne bogmærker samlet</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Bogmærker i mappen: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2640,6 +2757,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Du er beskyttet</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Hjælp med at fange sporings-mekanismer</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standard</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3036,10 +3155,22 @@
   <string name="email_masks_max_free_tier_reached">Du har brugt dine fem gratis mail-masker, så vi har valgt én for dig, som du kan genbruge.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Mail-masker er ikke tilgængelige lige nu. Prøv igen om et par minutter.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Indbygget VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">Den indbyggede VPN i %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Brug nettet med yderligere beskyttelse ved at skjule din placering, selv når du er på et offentligt wi-fi.</string>
   <!-- Link text that opens additional information about the browser VPN -->
   <string name="ip_protection_learn_more">Lær mere</string>
   <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
@@ -3071,8 +3202,15 @@
   <string name="ip_protection_menu_paused">Sat på pause</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Fejl</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Prøv den</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Åbn VPN-indstillinger</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Grænsen på %1$d GB er nået</string>
   <!--
     Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
     %1$d is the total monthly allowance in GB (for example "50").
@@ -3082,6 +3220,27 @@
   <string name="ip_protection_toolbar_pill_label">VPN slået til</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description">VPN er aktiv.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Kom i gang</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Den indbyggede VPN i %s</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s ved at skjule din placering, selv på offentlige wi-fi. Få %2$d GB gratis hver måned.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Brug nettet med ekstra beskyttelse</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Ikke nu</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Kunne ikke oprette forbindelse til VPN. Prøv igen om et par minutter.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">%1$d GB \u0020VPN-data brugt. Mængden af tilgængelig data nulstilles næste måned.</string>
   <!--
     Autofill
 
@@ -4314,6 +4473,201 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Du kan læse mere %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">her</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title">Følg dit hold</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Nordamerika</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Afrika</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Asien</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Europa</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Oceanien</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Sydamerika</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">England</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Skotland</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">LIVE</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Verdensmestre 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Andenpladser</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Tredjeplads</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32">Sekstendedelsfinaler</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16">Ottendedelsfinaler</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final">Kvartfinaler</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final">Semifinaler</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">Finale</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">Bronzekamp</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Kampoplysninger er ikke tilgængelige lige nu. Prøv at opdatere om et par minutter.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">Forbindelse afbrudt — liveopdateringer sat på pause.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Opdater</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Gruppe A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Gruppe B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Gruppe C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Gruppe D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Gruppe E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Gruppe F</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Gruppe G</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Gruppe H</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Gruppe I</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Gruppe J</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Gruppe K</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Gruppe L</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Se resultater</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Se kampdetaljer</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches">Relaterede kampe</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Kommende</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Færdigspillet)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Færdigspillet</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Hold øje med VM</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Få direkte kampopdateringer og meget mere.</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Skift hold</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Hent tilpassede baggrunde</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">Fjern</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow">Vil du stadig følge med?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">Vælg et andet hold for at holde trit med VM.</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team">Følg et andet hold</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Nedtælling til VM</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Se tidsplan</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Spring over</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Halvleg</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Forlænget spilletid</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Straffe</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">D</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">T</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Luk holdudvælgelsesoversigten\u0020</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">Luk</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Flere indstillinger</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">Resterende tid. Dage: %1$d. Timer: %2$d. Minutter: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Gå til VM-hjemmesiden</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Kommende: %1$s mod %2$s, %3$s kl. %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, direkte kamp</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, direkte</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, side %2$d af %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Resultater af VM-slutrunden, side %1$d af %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Fjern WM fra startsiden</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Følger: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Kom tilbage senere for kampoplysninger, når turneringen nærmer sig.</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Første halvleg</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Anden halvleg</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Det ser ud til, at du er offline.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Kontroller din internetforbindelse og prøv igen.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Gruppespillet</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

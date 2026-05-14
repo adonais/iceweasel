@@ -713,8 +713,14 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Deel met Mozilla’s marketingtechnologiepartners hoe u Firefox hebt ontdekt en dat u het gebruikt. Deze gegevens worden nooit verkocht. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Deel met Mozilla’s marketingtechnologiepartners hoe u Firefox hebt ontdekt en dat u het gebruikt. Deze gegevens worden nooit verkocht.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Hoe we gegevens gebruiken</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Firefox helpen</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Nee bedankt</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Meldingen helpen u veiliger te blijven met Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3184,6 +3190,8 @@
   <string name="ip_protection_menu_paused">Gepauzeerd</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Fout</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Uitproberen</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">VPN-instellingen openen</string>
   <!--
@@ -4646,6 +4654,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Het lijkt erop dat u offline bent.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Controleer uw internetverbinding en probeer het opnieuw.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Groepsfase</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

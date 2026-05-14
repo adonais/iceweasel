@@ -713,8 +713,26 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Расскажите маркетинговым партнерам Mozilla о том, как вы открыли для себя Firefox и о том, что вы его используете. Эти данные никогда не продаются. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Расскажите маркетинговым партнёрам Mozilla о том, как вы открыли для себя Firefox и о том, что вы его используете. Эти данные никогда не продаются.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Вы можете помочь нам охватить больше людей, разрешив Mozilla информировать каналы, по которым мы продвигаем Firefox, о том, что вы являетесь пользователем Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Вы можете помочь нам охватить больше людей, разрешив Mozilla информировать платформу, с которой вы пришли, о том, что вы используете Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Помогите нам охватить больше людей, разрешив Mozilla информировать платформу, с которой вы пришли, о том, что вы используете Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Как мы используем данные</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Помогите Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Нет, спасибо</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Уведомления помогают вам оставаться в безопасности с Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3192,6 +3210,8 @@
   <string name="ip_protection_menu_paused">Приостановлено</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Ошибка</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Попробовать</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Открыть настройки VPN</string>
   <!--
@@ -4654,6 +4674,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Похоже, вы не в сети.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Проверьте подключение к Интернету и повторите попытку.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Групповой этап</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

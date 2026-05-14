@@ -595,6 +595,8 @@
   <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Z enim dotikom se uprite podjetjem, ki vohunijo za vašimi kliki.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Sinhronizirajte podatke povsod, kjer uporabljate Firefox</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Dostopajte do zaznamkov, zavihkov in gesel s katerekoli naprave. Vsi podatki bodo zaščiteni s šifriranjem.</string>
   <!-- Sync onboarding redesign positive button text. -->
   <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">Začni s sinhronizacijo</string>
   <!-- Sync onboarding redesign negative button text. -->
@@ -695,6 +697,19 @@
   <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Začnite vsako iskanje z domače strani svojega telefona in vedite, da vam Firefox s svojimi zaščitami krije hrbet.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Dodaj pripomoček Firefox</string>
+  <plurals name="nova_onboarding_customize_prompt_body" tools:ignore="UnusedResources">
+    <!--
+      Customize prompt onboarding body.
+      %1$s is replaced by the product name (for example "Firefox"),
+      %2$,d is replaced by the number of trackers blocked. The comma represents the thousand
+      separator (e.g. 1,000 in English), and it will automatically use the correct character
+      for your locale (don't change or remove it).
+    -->
+    <item quantity="one">Medtem ko ste pohajkovali po spletu, je %1$s blokiral %2$,d sledilca.</item>
+    <item quantity="two">Medtem ko ste pohajkovali po spletu, je %1$s blokiral %2$,d sledilca.</item>
+    <item quantity="few">Medtem ko ste pohajkovali po spletu, je %1$s blokiral %2$,d sledilce.</item>
+    <item quantity="other">Medtem ko ste pohajkovali po spletu, je %1$s blokiral %2$,d sledilcev.</item>
+  </plurals>
   <!-- Customize prompt onboarding positive button. -->
   <string name="nova_onboarding_customize_prompt_positive_button" tools:ignore="UnusedResources">Začni s prilagajanjem</string>
   <!-- App icon onboarding title. -->
@@ -1675,6 +1690,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Uredi skupino</string>
   <string name="create_tab_group_save_button">Shrani</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nova skupina, strni držaj za vlečenje</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Zapri urejanje skupine zavihkov</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Skupina</string>
@@ -1689,6 +1706,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Ime</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Dodaj v</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Dodaj skupini zavihkov, strni držaj za vlečenje</string>
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">Dodaj novi skupini zavihkov</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
@@ -1715,6 +1734,16 @@
     <item quantity="few">Dodaj skupini zavihkov %1$s, %2$d zavihki, barva %3$s</item>
     <item quantity="other">Dodaj skupini zavihkov %1$s, %2$d zavihkov, barva %3$s</item>
   </plurals>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s skupina zavihkov z %2$d zavihkom, barva %3$s</item>
+    <item quantity="two">%1$s skupina zavihkov z %2$d zavihkoma, barva %3$s</item>
+    <item quantity="few">%1$s skupina zavihkov s %2$d zavihki, barva %3$s</item>
+    <item quantity="other">%1$s skupina zavihkov, %2$d zavihkov, barva %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Želite izbrisati skupino zavihkov?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1723,6 +1752,8 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Izbriši skupino</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Prekliči</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Želite zapreti zavihek in izbrisati skupino?</string>
   <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
   <string name="close_tab_and_delete_group_confirmation_dialog_body">S tem boste trajno izbrisali skupino.</string>
   <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
@@ -3105,6 +3136,10 @@
   <string name="ip_protection_toolbar_pill_description">VPN deluje.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Začnite</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Preizkusite %sov vgrajeni VPN</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Brskajte z dodatno zaščito</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">Ne zdaj</string>
   <!--
@@ -4365,6 +4400,8 @@
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Škotska</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">V ŽIVO</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Zmagovalci svetovnega prvenstva 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
   <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Tretje mesto</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
@@ -4431,6 +4468,8 @@
   <string name="sports_widget_follow_another_team">Spremljaj drugo ekipo</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
   <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Odštevanje do svetovnega prvenstva</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Prikaži spored</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
   <string name="sports_widget_skip">Preskoči</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
@@ -4452,6 +4491,18 @@
   <string name="sports_widget_countdown_remaining_content_description">Preostali čas. Dni: %1$d. Ur: %2$d. Minut: %3$d.</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Obišči spletno stran svetovnega prvenstva</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, tekma v živo</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, v živo</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),

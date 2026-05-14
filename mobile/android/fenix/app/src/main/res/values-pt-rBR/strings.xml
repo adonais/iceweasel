@@ -362,6 +362,56 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Descartar mensagem</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Resumos de páginas</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">Controles de inteligência artificial</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Você sempre tem escolha no %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Isto inclui usar ou não recursos aprimorados com inteligência artificial. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Isto inclui usar ou não recursos aprimorados com inteligência artificial.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Saiba mais</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Bloquear aprimoramentos de inteligência artificial</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Bloquear significa que não aparecem aprimoramentos novos ou atuais de inteligência artificial no %s, nem notificações sobre eles.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Ver o que está e o que não está incluído</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Aprimoramentos novos e atuais de inteligência artificial são bloqueados por padrão. Desbloqueie recursos específicos abaixo.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Recursos capacitados por inteligência artificial</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Tradução</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Todas as traduções permanecem privativas no seu dispositivo.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Mais configurações de tradução</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Mais configurações de resumo de página</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Pesquisa por voz</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">O áudio é convertido em texto pelo Google Speech Services.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Bloquear aprimoramentos de inteligência artificial?</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">O que será bloqueado:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Cancelar</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Bloquear</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -661,8 +711,12 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Compartilhe que você usa o Firefox e como o descobriu, com parceiros de marketing da Mozilla. Esses dados nunca são vendidos. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Compartilhe que você usa o Firefox e como o descobriu, com parceiros de marketing da Mozilla. Esses dados nunca são vendidos.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Como usamos os dados</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Não, obrigado</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Notificações ajudam você a ficar mais seguro com o Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -1073,6 +1127,8 @@
   <string name="customize_wallpapers">Fundo de tela</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Atalhos patrocinados</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Copa do Mundo</string>
   <!--
     Wallpapers
 
@@ -1389,9 +1445,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Ocultar barra de ferramentas ao deslizar para cima</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Deslizar a barra de ferramentas na vertical para ver as abas abertas</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Abrir abas ao deslizar a barra de ferramentas para cima</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Mudar de aba ao deslizar a barra de endereços para o lado</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Balançar para resumir</string>
   <!--
     Library
 
@@ -1554,6 +1614,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Abas privativas abertas: %1$s. Toque para mudar de aba.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d grupo de abas aberto. Toque para alternar abas.</item>
+    <item quantity="other">%1$d grupos de abas abertos. Toque para alternar abas.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1666,6 +1734,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nome</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Adicionar a</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Adicionar a novo grupo de abas</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Fechar adicionar a grupo de abas</string>
   <!-- Label for adding to a new tab group. -->
@@ -1678,6 +1748,15 @@
     <item quantity="one">%1$d aba</item>
     <item quantity="other">%1$d abas</item>
   </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Compartilhar %1$s grupo de abas com %2$d aba.</item>
+    <item quantity="other">Compartilhar %1$s grupo de abas com %2$d abas.</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Excluir grupo de abas?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1686,6 +1765,38 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Excluir grupo</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Cancelar</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Fechar aba e excluir grupo?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Exclui o grupo permanentemente.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Excluir grupo</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Cancelar</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Amarelo</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Laranja</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Vermelho</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Rosa</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Roxo</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Violeta</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Azul</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Ciano</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Verde</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Cinza</string>
   <!--
     History
 
@@ -2070,6 +2181,10 @@
   <string name="bookmark_sort_menu_a_to_z">Ordenar de A a Z</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Ordenar de Z a A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Importar de arquivo</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Favoritos importados</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2128,8 +2243,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Fechar pasta: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Fechar favoritos</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Importar de arquivo</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Nenhum favorito ainda</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Mantenha todos os seus favoritos juntos</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Favoritos da pasta: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2989,6 +3108,74 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Máscaras de email não estão disponíveis no momento. Tente novamente em alguns minutos.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">VPN integrada</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN integrada no %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Navegue com proteção extra, ocultando sua localização, mesmo em redes públicas de WiFi.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Saiba mais</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Limite mensal de dados</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">Resta %1$.1f GB de %2$.1f GB</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Local</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Recomendado</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Seleciona o local de VPN mais rápido para você.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Ativado</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Desativado</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Conectando…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Pausado</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Erro</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Experimentar</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Abrir configurações de VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Limite de %1$d GB atingido</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Você usou todos os seus %1$d GB de dados na VPN. O acesso é renovado no próximo mês.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label">VPN ativada</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description">A VPN está ativa.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Introdução</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Experimente a VPN integrada no %s</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Navegue com proteção extra</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Agora não</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3526,6 +3713,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Nunca traduzir estes sites</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Baixar idiomas</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Tradução</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Todas as traduções permanecem privativas no seu dispositivo.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Saiba mais</string>
   <!--
     Automatic translation preference screen
 
@@ -4212,6 +4405,107 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Você pode saber mais %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">aqui</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title">Siga seu time</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">América do Norte</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">África</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Ásia</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Europa</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Oceania</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">América do Sul</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Inglaterra</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Escócia</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">AO VIVO</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Campeões da Copa do Mundo de 2026</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32">Rodada de 32</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16">Rodada de 16</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final">Quartas de final</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final">Semifinais</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">Final</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">Final para terceiro lugar</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Seguintes</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(tempo regulamentar)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Tempo regulamentar</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team">Seguir outro time</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Contagem regressiva para a Copa do Mundo</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Ver calendário</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Pular</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Intervalo</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Prorrogação</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Pênaltis</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">D</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">H</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">Fechar</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Mais opções</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">Tempo restante. Dias: %1$d. Horas: %2$d. Minutos: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Ir para o site da Copa do Mundo</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Seguindo: \n%s</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Primeiro tempo</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Segundo tempo</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Parece que você está sem conexão.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Verifique sua conexão com a internet e tente novamente.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Fase de grupos</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

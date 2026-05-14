@@ -375,12 +375,16 @@
   <string name="preferences_ai_controls">Ovládání AI</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">V aplikaci %s máte vždy na výběr</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">To zahrnuje i to, zda používat funkce vylepšené o umělou inteligenci. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">To zahrnuje i to, zda používat funkce vylepšené umělou inteligencí.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Zjistit více</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Blokovat vylepšení pomocí AI</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Blokování znamená, že neuvidíte nová či aktuální vylepšení AI v aplikaci %s, ani vyskakovací okna o nich.</string>
   <!-- Link text to see what AI enhancements are and aren’t included -->
   <string name="ai_controls_see_whats_included">Podívejte se, co je a není zahrnuto</string>
   <!-- Banner text shown when AI enhancements are blocked -->
@@ -401,6 +405,8 @@
   <string name="ai_controls_voice_search_description">Zvuk je převáděn na text pomocí služby Google Speech Services.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Blokovat vylepšování umělou inteligencí?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Nová či aktuální vylepšení AI v aplikaci %1$s neuvidíte, ani vyskakovací okna o nich. Poté můžete odblokovat vše, co chcete nadále používat.\n\nBlokování ovlivní také rozšíření aplikace %1$s, která používají umělou inteligenci poskytovanou aplikací.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Co bude blokováno:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -707,6 +713,15 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Podělte se s marketingovými partnery Mozilly o tom, jak jste objevili Firefox a že jej používáte. Tato data nejsou nikdy prodávána. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Podělte se s marketingovými partnery Mozilly o to, jak jste Firefox objevili a že ho používáte. Tyto údaje nejsou nikdy prodávány.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Můžete nám pomoci oslovit více uživatelů tím, že umožníte Mozille informovat kanály, kde propagujeme Firefox, že jste jeho uživatelem.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Pomůžete nám oslovit více lidí tím, že povolíte Mozille sdělovat platformě, odkud jste přišli, že používáte Firefox.</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
@@ -1617,6 +1632,16 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Počet otevřených anonymních panelů: %1$s. Pro přepnutí panelu klepněte.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">Počet otevřených skupin panelů: %1$d. Klepnutím přepnete panely.</item>
+    <item quantity="few">Počet otevřených skupin panelů: %1$d. Klepnutím přepnete panely.</item>
+    <item quantity="many">Počet otevřených skupin panelů: %1$d. Klepnutím přepnete panely.</item>
+    <item quantity="other">Počet otevřených skupin panelů: %1$d. Klepnutím přepnete panely.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1719,6 +1744,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Upravit skupinu</string>
   <string name="create_tab_group_save_button">Uložit</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nová skupina, sbalit úchyt pro přetažení</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Zavřít Upravit skupinu panelů</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Skupina</string>
@@ -1733,6 +1760,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Název</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Přidat do</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Přidat do skupiny panelů, sbalit úchyt pro přetažení</string>
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">Přidat do nové skupiny panelů</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
@@ -1749,8 +1778,39 @@
     <item quantity="many">%1$d panelů</item>
     <item quantity="other">%1$d panelů</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Přidat do skupiny panelů %1$s, %2$d panel, barva %3$s</item>
+    <item quantity="few">Přidat do skupiny panelů %1$s, %2$d panely, barva %3$s</item>
+    <item quantity="many">Přidat do skupiny panelů %1$s, %2$d panelů, barva %3$s</item>
+    <item quantity="other">Přidat do skupiny panelů %1$s, %2$d panelů, barva %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Sdílet skupinu panelů %1$s s %2$d panelem.</item>
+    <item quantity="few">Sdílet skupinu panelů %1$s s %2$d panely.</item>
+    <item quantity="many">Sdílet skupinu panelů %1$s s %2$d panely.</item>
+    <item quantity="other">Sdílet skupinu panelů %1$s s %2$d panely.</item>
+  </plurals>
   <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
   <string name="tab_group_sheet_dismiss_description">Zobrazit skupinu panelů, úchyt pro sbalení</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Skupina panelů %1$s obsahující %2$d panel, barva %3$s</item>
+    <item quantity="few">Skupina panelů %1$s obsahující %2$d panely, barva %3$s</item>
+    <item quantity="many">Skupina panelů %1$s obsahující %2$d panelů, barva %3$s</item>
+    <item quantity="other">Skupina panelů %1$s obsahující %2$d panelů, barva %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Smazat skupinu panelů?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -3180,6 +3240,12 @@
   <string name="ip_protection_get_started">Začít</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_onboarding_card_headline">Vyzkoušejte VPN vestavěnou přímo v aplikaci %s</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s skrytím vaší polohy, a to i ve veřejných Wi-Fi sítích. Získejte %2$d GB každý měsíc zdarma.</string>
   <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
   <string name="ip_protection_onboarding_body_link">Prohlížejte s extra ochranou</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
@@ -4561,6 +4627,8 @@
     Your translation will be automatically truncated at 2 characters to avoid layout issues
   -->
   <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Zavřít výběr týmu</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">Zavřít</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->

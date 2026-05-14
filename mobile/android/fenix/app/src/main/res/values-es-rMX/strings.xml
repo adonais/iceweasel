@@ -717,6 +717,16 @@
   <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Comparte con los socios de marketing de Mozilla cómo descubriste Firefox y cómo lo usas. Estos datos nunca se venden.</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Puedes ayudarnos a llegar a más personas permitiendo que Mozilla informe a los canales donde promocionamos Firefox que eres usuario de Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Puedes ayudarnos a llegar a más personas permitiendo que Mozilla informe a la plataforma desde la que accediste que utilizas Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Ayúdanos a llegar a más personas permitiendo que Mozilla informe a la plataforma desde la que accedes que utilizas Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Cómo utilizamos los datos</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
@@ -2938,7 +2948,7 @@
   <!-- Summary displayed for "Off" option under "DNS over HTTPS" -->
   <string name="preference_doh_off_summary">Usar la resolución de DNS predeterminada</string>
   <!-- Text displayed above provider dropdown under "DNS over HTTPS" -->
-  <string name="preference_doh_choose_provider">Elije un proveedor</string>
+  <string name="preference_doh_choose_provider">Selecciona un proveedor</string>
   <!-- Text displayed for "Default provider" under "DNS over HTTPS" providers -->
   <string name="preference_doh_provider_default">(predeterminado)</string>
   <!-- Text displayed for "Custom" under "DNS over HTTPS" providers -->

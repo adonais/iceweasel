@@ -1738,6 +1738,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">名称</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">添加到</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">添加到标签页群组，折叠拖拽手柄</string>
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">添加到新的标签页群组</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
@@ -1757,6 +1759,23 @@
       %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
     -->
     <item quantity="other">添加到“%1$s”标签页群组，%2$d 个标签页，颜色为%3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="other">共享“%1$s”标签页组（内含 %2$d 个标签页）。</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">查看标签页群组，折叠拖拽手柄</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="other">标签页组“%1$s”内含 %2$d 个标签页，颜色 %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">删除标签页群组？</string>
@@ -1932,6 +1951,8 @@
   <string name="download_rename_error_exists_error">此位置已存在名为“%s”的文件</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">文件名不能使用“/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">您输入的名称只更改了大小写，请尝试其他文件名。</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">无法重命名文件</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2183,6 +2204,8 @@
   <string name="bookmark_sort_menu_z_to_a">按 Z-A 排序</string>
   <!-- Label for button to import bookmarks from file. -->
   <string name="bookmark_import_menu_button">从文件导入</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">无法导入书签，请重试。</string>
   <!-- Default name for the folder created when importing bookmarks from a file. -->
   <string name="bookmark_import_destination_default_name">导入的书签</string>
   <!--
@@ -3121,9 +3144,11 @@
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">%s 的内置 VPN</string>
   <!-- Body text for the browser VPN promo card -->
-  <string name="ip_protection_promo_body">即使使用公共 Wi-Fi，也能隐藏真实位置，获得额外保护。</string>
+  <string name="ip_protection_promo_body">即使使用公共 Wi-Fi，也能隐藏真实位置，在浏览时获得额外保护。</string>
   <!-- Link text that opens additional information about the browser VPN -->
   <string name="ip_protection_learn_more">详细了解</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">每月流量限额</string>
   <!--
     Data usage shown on the browser VPN settings screen.
     %1$.1f is the data remaining in GB (for example "8.3").
@@ -3151,6 +3176,8 @@
   <string name="ip_protection_menu_paused">已暂停</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">错误</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">试试看</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">打开 VPN 设置</string>
   <!--
@@ -3163,8 +3190,22 @@
     %1$d is the total monthly allowance in GB (for example "50").
   -->
   <string name="ip_protection_data_limit_reached_description">您已用完全部 %1$d GB VPN 流量，使用权限将于下个月重置。</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label">VPN 已开启</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description">VPN 已启用。</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">开始使用</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">试用 %s 内置的 VPN</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">即使使用公共 Wi-Fi，也能隐藏真实位置，%1$s。每月可免费获得 %2$d GB 流量。</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">在浏览时获得额外保护</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">暂时不要</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->

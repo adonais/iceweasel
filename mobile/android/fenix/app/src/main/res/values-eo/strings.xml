@@ -375,6 +375,8 @@
   <string name="preferences_ai_controls">Regiloj de AI</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Vi ĉiam povas decidi en %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Tio inkluzivas la uzon aŭ ne uzon de trajtoj pelataj aŭ plibonigitaj de AI. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Tio inkluzivas la uzon aŭ ne uzon de trajtoj pelataj aŭ plibonigitaj de AI.</string>
   <!-- Link text for learning more about AI controls -->
@@ -711,8 +713,26 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Rakontu pri kiel vi malkovris Firefox kaj la fakton ke vi ĝin uzas al la marketikaj asociitoj de Mozilla. Tiuj datumoj neniam estos venditaj. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Rakontu pri kiel vi malkovris Firefox kaj la fakton ke vi ĝin uzas al la marketikaj asociitoj de Mozilla. Tiuj datumoj neniam estos venditaj.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Vi povas helpi nin atingi pli da personoj se vi permesas al Mozilla informi ke vi estas uzanto de Firefox, en la kanaloj kie ni promocias Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Vi povas helpi nin atingi pli da personoj se vi permesas al Mozilla informi al la platformo, el kie vi venas, ke vi uzas Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Helpu nin atingi pli da personoj se vi permesas al Mozilla informi al la platformo, el kie vi venas, ke vi uzas Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Kiel ni uzas la datumojn</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Helpi Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Ne, dankon</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Sciigoj helpas vin resti sekura kun Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -1123,6 +1143,8 @@
   <string name="customize_wallpapers">Ekranfonoj</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Patronitaj ligiloj</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Piedpilka mondpokalo</string>
   <!--
     Wallpapers
 
@@ -1439,6 +1461,8 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Rulumi por kaŝi la ilaron</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Ŝovu la ilaron vertikale por vidi malfermitajn langetojn</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Ŝovi la ilaron supren por malfermi langetojn</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Ŝovi la adresan strion flanken por ŝanĝi langetojn</string>
@@ -1716,6 +1740,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Modifi grupon</string>
   <string name="create_tab_group_save_button">Konservi</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nova grupo, prenilo por treni kaj kuntiri</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Fini la modifon de grupo de langetoj</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
@@ -1731,6 +1757,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Aldoni al</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Aldoni al nova grupo de langetoj, prenilo por treni kaj kuntiri</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Aldoni al nova grupo de langetoj</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Fermi la aldonon al grupo de langetoj</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Nova grupo de langetoj</string>
@@ -1742,6 +1772,33 @@
     <item quantity="one">%1$d langeto</item>
     <item quantity="other">%1$d langetoj</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Aldoni al la grupo de langetoj %1$s, %2$d langeto, koloro %3$s</item>
+    <item quantity="other">Aldoni al la grupo de langetoj %1$s, %2$d langetoj, koloro %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Dividi grupon de langetoj %1$s kun %2$d langeto.</item>
+    <item quantity="other">Dividi grupon de langetoj %1$s kun %2$d langetoj.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Vidi grupon de langetoj, prenilo por treni kaj kuntiri</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Grupo de langetoj %1$s kun %2$d langeto, koloro %3$s</item>
+    <item quantity="other">Grupo de langetoj %1$s kun %2$d langetoj, koloro %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Ĉu forigi grupon de langetoj?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1750,6 +1807,38 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Forigi grupon</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Nuligi</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Ĉu fermi langeton kaj forigi grupon?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Tio ĉi definitive forigas la grupon.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Forigi grupon</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Nuligi</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Flava</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Oranĝa</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Ruĝa</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Roza</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Purpura</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Viola</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Blua</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cejanblua</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Verda</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Griza</string>
   <!--
     History
 
@@ -1885,6 +1974,8 @@
   <string name="download_rename_error_exists_error">Jam ekzistas en tiu ejo dosiero kun la nomo “%s”</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Nomoj de dosieroj ne povas enhavi “/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">La nomo tajpita de vi nur ŝanĝas majusklajn aŭ minusklajn literojn. Provu alian nomon.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Ne eblas renomi dosieron</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2134,6 +2225,12 @@
   <string name="bookmark_sort_menu_a_to_z">Ordigi alfabete el A al Z</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Ordigi alfabete el Z al A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Importi el dosiero</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Ne eblis importi legosignojn. Provu denove.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Importitaj legosignoj</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2192,8 +2289,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Fermi dosierujon: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Fermi legosignojn</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Importi el dosiero</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Ankoraŭ ne estas legosignoj</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Tenu viajn plej ŝatatajn legosignojn kune</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Legosignoj en dosierujo: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2656,6 +2757,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Vi estas protektata</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Helpi kapti spurilojn</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Norma</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3052,6 +3155,16 @@
   <string name="email_masks_max_free_tier_reached">Vi jam uzis viajn 5 senpagajn retpoŝtajn maskojn, do ni elektis unu por ke vi reuzu ĝin.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Retpoŝtaj maskoj ne haveblas en tiu ĉi momento. Provu denove post kelkaj minutoj.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Integrita VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3089,12 +3202,45 @@
   <string name="ip_protection_menu_paused">Paŭzigita</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Eraro</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Provi</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Malfermi agordojn de VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Limo de %1$d GB atingita</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Vi elĉerpis la %1$d GB de via datumoj en VPN. Venontmonate ili disponeblos denove.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label">VPN ŝaltita</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description">VPN estas aktiva.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Unuaj paŝoj</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Provu la integritan VPN de %s</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s, tio fareblas per kaŝo de via loko, eĉ en publikaj Wi-Fi. Ricevu %2$d GB da senpagaj datumoj ĉiumonate.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Retumi ekstre protektita</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Ne nun</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Ne eblis konektiĝi al VPN. Provu denove post kelkaj minutoj.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">%1$d GB de datumoj VPN uzitaj. Venontmonate ili disponeblos denove.</string>
   <!--
     Autofill
 
@@ -4327,6 +4473,201 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Pli da informo %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">ĉi tie</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title">Sekvu vian teamon</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Nordameriko</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Afriko</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Azio</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Eŭropo</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Oceanio</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Sudameriko</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Anglio</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Skotlando</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">REKTE</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Ĉampionoj de la piedpilka mondpokalo 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Dua loko</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Tria loko</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32">Rondo de 32</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16">Rondo de 16</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final">Kvaronfinaloj</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final">Duonfinaloj</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">Finalo</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">Bronza finalo</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Informoj pri ludo ne haveblas en tiu ĉi momento. Provu refreŝigi post kelkaj minutoj.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">Konekto interrompita — samtempaj ĝisdatigoj paŭzigitaj.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Refreŝigi</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Grupo A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Grupo B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Grupo C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Grupo D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Grupo E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Grupo F</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Grupo G</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Grupo H</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Grupo I</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Grupo J</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Grupo K</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Grupo L</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Montri rezultojn</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Montri detalojn de la ludo</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches">Rilatitaj ludoj</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Venontaj</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Ludo finita)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Ludo finita</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Akompanu la piedpilkan mondpokalon</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Ricevu informojn pri ludoj kaj pli.</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Ŝanĝi teamon</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Ricevi personecigitan ekranfonon</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">Forigi</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow">Ĉu vi plu volas sekvi la pokalon?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">Elektu alian teamon por sekvi dum la piedpilka mondpokalo.</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team">Sekvi alian teamon</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Retronombrado ĝis la piedpilka mondpokalo</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Montri kalendaron</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Ignori</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Intertempa paŭzo</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Ekstra tempo</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Penaloj</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">T</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">H</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Fermi panelon de elekto de teamoj</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">Fermi</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Pli da ebloj</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">Restanta tempo. Tagoj: %1$d. Horoj: %2$d. Minutoj: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Iri al la retejo de la piedpilka mondpokalo</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Baldaŭ: %1$s kontraŭ %2$s, %3$s ĉe %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, nuna ludo</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, nuna</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, paĝo %2$d el %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Definitivaj rezultoj de la piedpilka mondpokalo, paĝo %1$d el %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Forigi la piedpilkan mondpokalon el la hejma ekrano</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Sekvata: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Revenu por havi pli da informoj pri la ludoj dum la pokalo iĝas pli proksima.</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Unua duono</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Dua duono</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Ŝajne vi ne estas konektita.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Kontrolu vian retaliron kaj provu denove.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Grupa fazo</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

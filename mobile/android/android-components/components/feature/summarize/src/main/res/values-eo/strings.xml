@@ -83,4 +83,6 @@
   <string name="mozac_ai_controls_page_summary_title">Resumoj de paĝoj</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Paĝoj kaj resumoj neniam estas konservitaj.</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">Ignori</string>
 </resources>

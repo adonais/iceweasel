@@ -713,8 +713,26 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Chia sẻ cách bạn khám phá ra Firefox và bạn sử dụng nó với các đối tác tiếp thị của Mozilla. Dữ liệu này không bao giờ được bán. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Chia sẻ cách bạn khám phá ra Firefox và bạn sử dụng nó với các đối tác tiếp thị của Mozilla. Dữ liệu này không bao giờ được bán.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Bạn có thể giúp chúng tôi tiếp cận nhiều người hơn bằng cách cho phép Mozilla thông báo cho các kênh mà chúng tôi quảng bá Firefox rằng bạn là người dùng Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Bạn có thể giúp chúng tôi tiếp cận nhiều người hơn bằng cách cho phép Mozilla thông báo cho nền tảng bạn vừa sử dụng rằng bạn đang dùng Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Hãy giúp chúng tôi tiếp cận nhiều người hơn bằng cách cho phép Mozilla thông báo cho nền tảng bạn vừa sử dụng rằng bạn đang dùng Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Cách chúng tôi sử dụng dữ liệu</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Giúp đỡ Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Không, cảm ơn</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Thông báo giúp bạn an toàn hơn với Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3176,6 +3194,8 @@
   <string name="ip_protection_menu_paused">Đã tạm dừng</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Lỗi</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Thử ngay</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Mở cài đặt VPN</string>
   <!--
@@ -4638,6 +4658,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Có vẻ như bạn đang ngoại tuyến.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Kiểm tra kết nối internet của bạn và thử lại.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Vòng bảng</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

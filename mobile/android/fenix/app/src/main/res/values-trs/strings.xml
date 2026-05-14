@@ -713,8 +713,26 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Nātà’ nan’ānj dàj gayī’ìt garâj sunt Firefox nī aràj sunt man ngà nej duguî’ ‘nïnj ra’a si marketin Mozzilla. Nitāj si ane’ nej nuguan’ nan. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Nātà’ nan’ānj dàj gayī’ìt garâj sunt Firefox nī aràj sunt man ngà nej duguî’ ‘nïnj ra’a si marketin Mozzilla. Nitāj si ane’ nej nuguan’ nan.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Gā’hue rūgûñu’ūnjt ñûnj da’ gīni’in doj guìi ñûnj sa gī’hiât huin sisī gānïnt gānatà’ Mozilla sisī arâj sunt Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Gā’hue rūgûñu’ūnjt ñûnj da’ gīni’in doj guìi ñûnj sa gī’hiât huin sisī gānïnt gānatà’ Mozilla riña hìaj gini’hiājt sisī arâj sunt Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Rūgûñu’ūnjt ñûnj da’ gīni’in doj guìi ñûnj sa gī’hiât huin sisī gānïnt gānatà’ Mozilla riña hìaj gini’hiājt sisī arâj sunt Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Dàj arâj sun ñunj nej nuguan’an</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Rūgûñu’ūnj Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Sī ga’hue, guruhuât</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Rugûñu’ūnj nej nuguan’ atāj a riñat da’ gāchē nu sà’ riña Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -928,24 +946,42 @@
   <string name="errorpage_httpsonly_message_summary">Si gūruhuaj nī, huā ‘ngō sa yī’ìi gatûj riña aga’ nan. Sisī huā nï̀n’ gīnunt riña sitiô nan nī, sī gachrûnt à’ngō nuguan’ gā’hue gārasun nej si da’ gī’hiaj yī’ì nej si sò’. Sisī huā nï̀n’ gīnunt hiūj nan don nī, gī’hiaj desaktivando akuan’ HTTPS.</string>
   <!-- Preference for accessibility -->
   <string name="preferences_accessibility">Dàj gā gātū\'</string>
+  <!-- Preference to override the Mozilla account server -->
+  <string name="preferences_override_account_server">Si sērbidor kuentâ Mozilla ganahuin</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Servidor nagi\'iaj man\'ânt riña Sync</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Kuênta</string>
+  <!-- Preference for changing where the AddressBar is positioned -->
+  <string name="preferences_toolbar_2">Riña nū dukuán ‘na’ nej dīreksiûn</string>
+  <!-- Preference for changing toolbar layout -->
+  <string name="preferences_toolbar_layout">Dànanj hua dukuán rasuun</string>
   <!-- Preference for changing default theme to dark or light mode -->
   <string name="preferences_theme">Têma</string>
   <!-- Preference for customizing the home screen -->
   <string name="preferences_home_2">Ñanj ayi\'ì\'</string>
+  <!-- Preference for customizing the app icon -->
+  <string name="preferences_app_icon">Si ikonô app</string>
+  <!-- Preference for showing the tab strip -->
+  <string name="preferences_tab_strip">Dànanj rugui’ dukuán ‘na’ nej rakïj ñanj</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_shortcut">Gātū nikâ riña nùn dukuán rasuun</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_select_shortcut">Nāguī ‘ngō riña gātū nikât</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Da\'nga\'a</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Nādunō\' dàj huin ruhuô\'</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">Nāgi’hiaj nūguan’ànt nej rakïj ñanj, nej markadô, nej da’nga’ huìi nī doj sa huāa.</string>
+  <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
+  <string name="preferences_account_default_name_2">Si kuendâ Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
   <string name="preferences_account_sync_error">Nātū nākà ñû da\' gānahuij nāgi\'iaj nūguàn\'anj</string>
   <!-- Preference for language -->
   <string name="preferences_language">Nânj ga\'minj</string>
+  <!-- Preference for translations -->
+  <string name="preferences_translations">Nej sa nachrûn’</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Nara\'uij nej dâto</string>
   <!-- Preference for developers -->
@@ -956,6 +992,10 @@
   <string name="preferences_show_voice_search">Dīgân riña nānà\'uì\' ngà nanè\'</string>
   <!-- Preference title for switch preference to show search suggestions also in private mode -->
   <string name="preferences_show_search_suggestions_in_private">Dīgân riña nej sesiûn huìi</string>
+  <!-- Preference title for switch preference to show trending search suggestions -->
+  <string name="preferences_show_trending_search_suggestions">Nādigân nej sa nana’hui’ nìko guìi doj</string>
+  <!-- Preference title for switch preference to show recent search suggestions -->
+  <string name="preferences_show_recent_search_suggestions">Nādigân sa hìaj nana’huí akuan’</string>
   <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
   <string name="preferences_show_clipboard_suggestions">Dīgân a\'ngô nuguan\' nù riña portapapel</string>
   <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -968,6 +1008,30 @@
   <string name="preferences_account_settings">Nāgi\'iô\' riña kuênta</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Nāhuin chrē’ mān’an URLs</string>
+  <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
+  <string name="preferences_show_sponsored_suggestions">Riña ‘na’ huìj huà’nïnj sa rugûñu’ūnj un</string>
+  <!--
+    Summary for preference to show sponsored Firefox Suggest search suggestions.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="preferences_show_sponsored_suggestions_summary">Rugûñu’ûn riña %1$s ngà ‘ngō nuguan’ nadiganj dā’āj</string>
+  <!--
+    Preference title for switch preference to show Firefox Suggest search suggestions for web content.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="preferences_show_nonsponsored_suggestions">Nuguan’ narikî %1$s</string>
+  <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
+  <string name="preferences_show_nonsponsored_suggestions_summary">Gānahuin rā’a doj nuguan’ huā rayi’î sa nana’huî’t</string>
+  <!-- Preference for link sharing -->
+  <string name="preferences_link_sharing">Nej link giyinga’</string>
+  <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="link_sharing_toggle_title">Nīka link nādunïnjt %1$s riña si sun WhatsApp</string>
+  <!-- Body for the link sharing toggle.  %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="link_sharing_toggle_body">Nākïnj nej duguî’t da’ gāchē nu hìo si doj riña %1$s da’ duyinga’t link riña WhatsApp.</string>
+  <!-- Snackbar message shown when user shares a link -->
+  <string name="link_shared_snackbar_message">Link giyinga’</string>
+  <!-- Snackbar action label shown when user shares a link -->
+  <string name="link_shared_snackbar_action">Gānatsij dàj ruhuât nāgi’hiát</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">Nā\'nīn nej lînk riña nej aplikasiûn</string>
   <!-- Preference for open links in third party apps always open in apps option -->
@@ -982,6 +1046,10 @@
   <string name="preferences_enable_gecko_logs">Nāchrūn riña nāgimàn nej si dā’nga Gecko</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
   <string name="quit_application">Gāhuī riña aplikasiûn nan da’ gā’hue nātū sa nākàa…</string>
+  <!-- Preference for extensions -->
+  <string name="preferences_extensions">Nej extensiûn</string>
+  <!-- Preference for installing a local extension -->
+  <string name="preferences_install_local_extension">Si ekstensiûn sa ga’nïnt dan asij riña archibô</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">Sa atāj nan\'ānj an</string>
   <!-- Summary for notification preference indicating notifications are allowed -->
