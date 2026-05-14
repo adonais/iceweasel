@@ -213,6 +213,7 @@ class WindowGlobalParent final : public WindowContext,
   nsITransportSecurityInfo* GetSecurityInfo() { return mSecurityInfo; }
 
   const nsACString& GetRemoteType() override;
+  void GetRemoteType(nsACString& aRemoteType);
 
   void NotifySessionStoreUpdatesComplete(Element* aEmbedder);
 
