@@ -4381,25 +4381,25 @@
   -->
   <string name="sports_widget_country_selector_title">Sledite svoji ekipi</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Severna Amerika</string>
+  <string name="sports_widget_confederation_north_america">Severna Amerika</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Afrika</string>
+  <string name="sports_widget_confederation_africa">Afrika</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Azija</string>
+  <string name="sports_widget_confederation_asia">Azija</string>
   <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <string name="sports_widget_confederation_concacaf">CONCACAF</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Evropa</string>
+  <string name="sports_widget_confederation_europe">Evropa</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Oceanija</string>
+  <string name="sports_widget_confederation_oceania">Oceanija</string>
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Južna Amerika</string>
+  <string name="sports_widget_confederation_south_america">Južna Amerika</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">Anglija</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Škotska</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">V ŽIVO</string>
+  <string name="sports_widget_match_live">V ŽIVO</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Zmagovalci svetovnega prvenstva 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
@@ -4415,35 +4415,35 @@
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Osveži</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Skupina A</string>
+  <string name="sports_widget_group_a">Skupina A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Skupina B</string>
+  <string name="sports_widget_group_b">Skupina B</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Skupina C</string>
+  <string name="sports_widget_group_c">Skupina C</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Skupina D</string>
+  <string name="sports_widget_group_d">Skupina D</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Skupina E</string>
+  <string name="sports_widget_group_e">Skupina E</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Skupina F</string>
+  <string name="sports_widget_group_f">Skupina F</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Skupina G</string>
+  <string name="sports_widget_group_g">Skupina G</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Skupina H</string>
+  <string name="sports_widget_group_h">Skupina H</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Skupina I</string>
+  <string name="sports_widget_group_i">Skupina I</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Skupina J</string>
+  <string name="sports_widget_group_j">Skupina J</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Skupina K</string>
+  <string name="sports_widget_group_k">Skupina K</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Skupina L</string>
+  <string name="sports_widget_group_l">Skupina L</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Ogled izidov</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Ogled podrobnosti tekme</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">Povezane tekme</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Povezane tekme</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4451,15 +4451,15 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Spremljajte svetovno prvenstvo</string>
+  <string name="sports_widget_card_title">Spremljajte svetovno prvenstvo</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">V živo prejemajte obvestila o dogajanju na tekmah in še več.</string>
+  <string name="sports_widget_card_description">V živo prejemajte obvestila o dogajanju na tekmah in še več.</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Zamenjaj ekipo</string>
+  <string name="sports_widget_change_team">Zamenjaj ekipo</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Pridobite ozadje po meri</string>
+  <string name="sports_widget_get_custom_wallpaper">Pridobite ozadje po meri</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">Odstrani</string>
+  <string name="sports_widget_remove">Odstrani</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">Vas še zanima?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4467,7 +4467,7 @@
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Spremljaj drugo ekipo</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Odštevanje do svetovnega prvenstva</string>
+  <string name="sports_widget_countdown_to_world_cup">Odštevanje do svetovnega prvenstva</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
   <string name="sports_widget_view_schedule">Prikaži spored</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
@@ -4477,7 +4477,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Podaljški</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Enajstmetrovke</string>
+  <string name="sports_widget_penalties">Enajstmetrovke</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
   <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Zapri seznam za izbiro ekip</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->

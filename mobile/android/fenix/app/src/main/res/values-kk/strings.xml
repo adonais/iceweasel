@@ -713,8 +713,26 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Firefox-ты өзіңіз үшін қалай ашқаныңызды және оны қалай пайдаланғаныңызды Mozilla маркетинг серіктестерімен бөлісіңіз. Бұл деректер ешқашан сатылмайды. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Firefox-ты өзіңіз үшін қалай ашқаныңызды және оны қалай пайдаланғаныңызды Mozilla маркетинг серіктестерімен бөлісіңіз. Бұл деректер ешқашан сатылмайды.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Mozilla-ға Firefox-ты насихаттайтын арналарға сіздің Firefox пайдаланушысы екеніңізді хабарлауға рұқсат беру арқылы бізге көбірек адамға жетуге көмектесе аласыз.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Mozilla-ға сіздің Firefox пайдаланушысы екеніңізді сіз келген платформаға хабарлауға рұқсат беру арқылы бізге көбірек адамға жетуге көмектесе аласыз.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Mozilla-ға сіздің Firefox пайдаланушысы екеніңізді сіз келген платформаға хабарлауға рұқсат беру арқылы бізге көбірек адамға жетуге көмектесіңіз.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Біз деректерді қалай қолданамыз</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Firefox-қа көмектесу</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Жоқ, рахмет</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Хабарландырулар Firefox көмегімен қауіпсіз болып қалуға көмектеседі</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3184,6 +3202,8 @@
   <string name="ip_protection_menu_paused">Аялдатылған</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Қате</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Қолданып көру</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">VPN баптауларын ашу</string>
   <!--
@@ -4460,25 +4480,25 @@
   -->
   <string name="sports_widget_country_selector_title">Командаңыздың соңынан еріңіз</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Солтүстік Америка</string>
+  <string name="sports_widget_confederation_north_america">Солтүстік Америка</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Африка</string>
+  <string name="sports_widget_confederation_africa">Африка</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Азия</string>
+  <string name="sports_widget_confederation_asia">Азия</string>
   <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">КОНКАКАФ</string>
+  <string name="sports_widget_confederation_concacaf">КОНКАКАФ</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Еуропа</string>
+  <string name="sports_widget_confederation_europe">Еуропа</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Океания</string>
+  <string name="sports_widget_confederation_oceania">Океания</string>
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Оңтүстік Америка</string>
+  <string name="sports_widget_confederation_south_america">Оңтүстік Америка</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">Англия</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Шотландия</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">ТІКЕЛЕЙ ЭФИР</string>
+  <string name="sports_widget_match_live">ТІКЕЛЕЙ ЭФИР</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 ӘЧ чемпиондары</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
@@ -4504,35 +4524,35 @@
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Жаңарту</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">А тобы</string>
+  <string name="sports_widget_group_a">А тобы</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">B тобы</string>
+  <string name="sports_widget_group_b">B тобы</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">C тобы</string>
+  <string name="sports_widget_group_c">C тобы</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">D тобы</string>
+  <string name="sports_widget_group_d">D тобы</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Е тобы</string>
+  <string name="sports_widget_group_e">Е тобы</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">F тобы</string>
+  <string name="sports_widget_group_f">F тобы</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">G тобы</string>
+  <string name="sports_widget_group_g">G тобы</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">H тобы</string>
+  <string name="sports_widget_group_h">H тобы</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">I тобы</string>
+  <string name="sports_widget_group_i">I тобы</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">J тобы</string>
+  <string name="sports_widget_group_j">J тобы</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">K тобы</string>
+  <string name="sports_widget_group_k">K тобы</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">L тобы</string>
+  <string name="sports_widget_group_l">L тобы</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Нәтижелерді көру</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Матч мәліметтерін қарау</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">Байланысқан матчтар</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Байланысқан матчтар</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Алдағы уақытта</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
@@ -4546,15 +4566,15 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Әлем чемпионатын бақылауда ұстаңыз</string>
+  <string name="sports_widget_card_title">Әлем чемпионатын бақылауда ұстаңыз</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Тікелей матч жаңалықтарын және басқа да ақпараттарды алыңыз.</string>
+  <string name="sports_widget_card_description">Тікелей матч жаңалықтарын және басқа да ақпараттарды алыңыз.</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Команданы ауыстыру</string>
+  <string name="sports_widget_change_team">Команданы ауыстыру</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Таңдауыңызша тұсқағаз алу</string>
+  <string name="sports_widget_get_custom_wallpaper">Таңдауыңызша тұсқағаз алу</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">Өшіру</string>
+  <string name="sports_widget_remove">Өшіру</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">Әлі де бақылағыңыз келе ме?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4562,7 +4582,7 @@
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Басқа командаға жазылу</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Әлем чемпионатына дейінгі кері санақ</string>
+  <string name="sports_widget_countdown_to_world_cup">Әлем чемпионатына дейінгі кері санақ</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
   <string name="sports_widget_view_schedule">Кестені қарау</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
@@ -4572,7 +4592,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Қосымша уақыт</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Пенальти</string>
+  <string name="sports_widget_penalties">Пенальти</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
@@ -4635,9 +4655,9 @@
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Әлем чемпионатын үй парағынан алып тастау</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Жазылған: \n%s</string>
+  <string name="sports_widget_team_followed_title">Жазылған: \n%s</string>
   <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Турнир жақындаған сайын матч туралы ақпаратты тексеріп отырыңыз.</string>
+  <string name="sports_widget_team_followed_description">Турнир жақындаған сайын матч туралы ақпаратты тексеріп отырыңыз.</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">Бірінші тайм</string>
   <!-- Sports widget match status label shown during second half of a match. -->
@@ -4646,6 +4666,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Сіз офлайн режимде сияқтысыз.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Интернет байланысын тексеріп, әрекетті қайталаңыз.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage">Топтық кезең</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

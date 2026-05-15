@@ -4474,25 +4474,25 @@
   -->
   <string name="sports_widget_country_selector_title">關注您支持的隊伍</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">北美洲</string>
+  <string name="sports_widget_confederation_north_america">北美洲</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">非洲</string>
+  <string name="sports_widget_confederation_africa">非洲</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">亞洲</string>
+  <string name="sports_widget_confederation_asia">亞洲</string>
   <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">中北美洲及加勒比海足協</string>
+  <string name="sports_widget_confederation_concacaf">中北美洲及加勒比海足協</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">歐洲</string>
+  <string name="sports_widget_confederation_europe">歐洲</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">大洋洲</string>
+  <string name="sports_widget_confederation_oceania">大洋洲</string>
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">南美洲</string>
+  <string name="sports_widget_confederation_south_america">南美洲</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">英格蘭</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">蘇格蘭</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">進行中</string>
+  <string name="sports_widget_match_live">進行中</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 年世界盃足球賽冠軍</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
@@ -4518,35 +4518,35 @@
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">重新整理</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">A 組</string>
+  <string name="sports_widget_group_a">A 組</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">B 組</string>
+  <string name="sports_widget_group_b">B 組</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">C 組</string>
+  <string name="sports_widget_group_c">C 組</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">D 組</string>
+  <string name="sports_widget_group_d">D 組</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">E 組</string>
+  <string name="sports_widget_group_e">E 組</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">F 組</string>
+  <string name="sports_widget_group_f">F 組</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">G 組</string>
+  <string name="sports_widget_group_g">G 組</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">H 組</string>
+  <string name="sports_widget_group_h">H 組</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">I 組</string>
+  <string name="sports_widget_group_i">I 組</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">J 組</string>
+  <string name="sports_widget_group_j">J 組</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">K 組</string>
+  <string name="sports_widget_group_k">K 組</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">L 組</string>
+  <string name="sports_widget_group_l">L 組</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">看比賽結果</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">檢視比賽結果</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">相關比賽</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">相關比賽</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">即將到來</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
@@ -4560,15 +4560,15 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">獲得世界盃賽事的最新資訊</string>
+  <string name="sports_widget_card_title">獲得世界盃賽事的最新資訊</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">獲得即時比賽資訊與更多資訊。</string>
+  <string name="sports_widget_card_description">獲得即時比賽資訊與更多資訊。</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">更換隊伍</string>
+  <string name="sports_widget_change_team">更換隊伍</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">獲得自訂桌布</string>
+  <string name="sports_widget_get_custom_wallpaper">獲得自訂桌布</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">移除</string>
+  <string name="sports_widget_remove">移除</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">還是想要關注嗎？</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4576,7 +4576,7 @@
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">關注另一隊</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">世界盃足球賽倒數計時</string>
+  <string name="sports_widget_countdown_to_world_cup">世界盃足球賽倒數計時</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
   <string name="sports_widget_view_schedule">檢視賽程</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
@@ -4586,7 +4586,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">加時</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">PK 大戰</string>
+  <string name="sports_widget_penalties">PK 大戰</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
@@ -4649,9 +4649,9 @@
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">從首頁移除世界盃足球賽相關資訊</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">關注中：\n%s</string>
+  <string name="sports_widget_team_followed_title">關注中：\n%s</string>
   <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">接近比賽時間時，請再回來獲得賽事最新資訊。</string>
+  <string name="sports_widget_team_followed_description">接近比賽時間時，請再回來獲得賽事最新資訊。</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">上半場</string>
   <!-- Sports widget match status label shown during second half of a match. -->
@@ -4661,7 +4661,7 @@
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">請確認網路連線正常後再試一次。</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
-  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">小組賽</string>
+  <string name="sports_widget_group_stage">小組賽</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

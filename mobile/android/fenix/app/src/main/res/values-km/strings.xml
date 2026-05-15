@@ -355,6 +355,8 @@
   <string name="translation_toolbar_expand_action">បើកសន្លឹកបកប្រែ</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">បដិសេធសារ</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">បោះបង់</string>
   <!--
     Locale Settings Fragment
 
@@ -1272,6 +1274,10 @@
     %d is the number of existing tab groups + 1.
   -->
   <string name="create_tab_group_form_default_name">​​ក្រុម %d</string>
+  <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_cancel">បោះបង់</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">បោះបង់</string>
   <!--
     History
 
@@ -1365,11 +1371,15 @@
   <string name="download_delete_multi_select_dialog_confirm">លុប</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">បោះបង់</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">បោះបង់</string>
   <!-- Title for the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_title">ប្ដូរឈ្មោះឯកសារ</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_label">ឈ្មោះ</string>
   <string name="download_rename_dialog_cancel_button">បោះបង់</string>
+  <string name="download_rename_error_dismiss_button">យល់ព្រម</string>
+  <string name="change_file_extension_cancel_button">បោះបង់</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">កំពុងដំណើរការ</string>
   <!--
@@ -1602,6 +1612,8 @@
   <string name="create_collection_save_to_collection_tab_selected">បានជ្រើសរើសផ្ទាំង %d</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
   <string name="create_collection_tab_saved_2">បានរក្សាទុកផ្ទាំង</string>
+  <!-- Text for the OK button from collection dialogs -->
+  <string name="create_collection_positive">យល់ព្រម</string>
   <!-- Text for the cancel button from collection dialogs -->
   <string name="create_collection_negative">បោះបង់</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -1635,6 +1647,8 @@
   <string name="snackbar_private_data_deleted">បានលុបទិន្នន័យរុករកឯកជន</string>
   <!-- QR code scanner prompt dialog positive option to allow navigation to scanned link -->
   <string name="qr_scanner_dialog_positive">អនុញ្ញាត</string>
+  <!-- QR code scanner prompt dialog positive option when there is an error -->
+  <string name="qr_scanner_dialog_invalid_ok">យល់ព្រម</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">តើអ្នកប្រាកដថាចង់លុប %1$s មែនទេ?</string>
   <!-- Title for the Delete browsing data preference -->

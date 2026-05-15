@@ -3943,7 +3943,7 @@
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">ഇവിടെ</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">മാറ്റുക</string>
+  <string name="sports_widget_remove">മാറ്റുക</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
   <string name="sports_widget_skip">ഒഴിവാക്കുക</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->

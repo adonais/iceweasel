@@ -401,6 +401,8 @@
   <string name="ai_controls_more_page_summary_settings">ਹੋਰ ਸਫ਼ਾ ਸਾਰ ਦੀਆਂ ਸੈਟਿੰਗਾਂ</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">ਆਵਾਜ਼ ਰਾਹੀਂ ਖੋਜੋ</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">ਆਡੀਓ ਨੂੰ Google ਸਪੀਚ ਸਰਵਿਸਾਂ ਰਾਹੀਂ ਲਿਖਤ ਵਿੱਚ ਬਦਲਿਆ ਗਿਆ ਹੈ।</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">AI ਸੁਧਾਰਾਂ ਉੱਤੇ ਪਾਬੰਦੀ ਲਾਉਣੀ ਹੈ?</string>
   <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
@@ -711,8 +713,26 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ਤੁਸੀਂ Firefox ਨੂੰ ਕਿਵੇਂ ਲੱਭਿਆ ਅਤੇ ਇਸ ਨੂੰ ਕਿਵੇਂ ਵਰਤਦੇ ਹੋ, ਉਸ ਜਾਣਕਾਰੀ ਨੂੰ Mozilla ਦੇ ਮਾਰਕੀਟਿੰਗ ਹਿੱਸੇਦਾਰਾਂ ਨਾਲ ਸਾਂਝਾ ਕਰੋ। ਇਹ ਡਾਟੇ ਨੂੰ ਕਦੇ ਨਹੀਂ ਵੇਚਿਆ ਜਾਂਦਾ ਹੈ। %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">ਤੁਸੀਂ Firefox ਨੂੰ ਕਿਵੇਂ ਲੱਭਿਆ ਅਤੇ ਇਸ ਨੂੰ ਕਿਵੇਂ ਵਰਤਦੇ ਹੋ, ਉਸ ਜਾਣਕਾਰੀ ਨੂੰ Mozilla ਦੇ ਮਾਰਕੀਟਿੰਗ ਹਿੱਸੇਦਾਰਾਂ ਨਾਲ ਸਾਂਝਾ ਕਰੋ। ਇਹ ਡਾਟੇ ਨੂੰ ਕਦੇ ਨਹੀਂ ਵੇਚਿਆ ਜਾਂਦਾ ਹੈ।</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">ਤੁਸੀਂ Mozilla ਨੂੰ ਜਾਣਕਾਰੀ ਚੈਨਲਾਂ, ਜਿੱਥੇ ਅਸੀਂ Firefox ਲਈ ਪ੍ਰਚਾਰ ਕਰਦੇ ਹਾਂ ਕਿ ਤੁਸੀਂ ਇੱਕ Firefox ਵਰਤੋਂਕਾਰ ਹੈ, ਦੀ ਇਜਾਜ਼ਤ ਦੇ ਕੇ ਹੋਰ ਲੋਕਾਂ ਤੱਕ ਸਾਨੂੰ ਪਹੁੰਚਣ ਲਈ ਮਦਦ ਕਰ ਸਕਦੇ ਹੋ।</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">ਤੁਸੀਂ Mozilla ਨੂੰ ਪਲੇਟਫਾਰਮ ਉੱਤੇ ਤੁਹਾਡੇ Firefox ਵਰਤਣ ਬਾਰੇ ਜਾਣਕਾਰੀ ਦੇ ਕੇ ਸਾਨੂੰ ਲੋਕਾਂ ਤੱਕ ਅੱਪੜਨ ਲਈ ਮਦਦ ਕਰ ਸਕਦੇ ਹੋ।</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Mozilla ਨੂੰ ਪਲੇਟਫਾਰਮ ਉੱਤੇ ਤੁਹਾਡੇ Firefox ਵਰਤਣ ਬਾਰੇ ਜਾਣਕਾਰੀ ਦੇ ਕੇ ਸਾਨੂੰ ਲੋਕਾਂ ਤੱਕ ਅੱਪੜਨ ਲਈ ਮਦਦ ਕਰੋ।</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">ਅਸੀਂ ਤੁਹਾਡੇ ਡਾਟੇ ਨੂੰ ਕਿਵੇਂ ਵਰਤਦੇ ਹਾਂ</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Firefox ਦੀ ਮਦਦ ਕਰੋ</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">ਨਹੀਂ, ਧੰਨਵਾਦ</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">ਨੋਟੀਫ਼ਿਕੇਸ਼ਨ Firefox ਨਾਲ ਤੁਹਾਨੂੰ ਸੁਰੱਖਿਅਤ ਰਹਿਣ ਲਈ ਮਦਦ ਕਰਦੇ ਹਨ</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -1441,6 +1461,8 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">ਟੂਲਬਾਰ ਲੁਕਾਉਣ ਲਈ ਸਕਰੋਲ ਕਰੋ</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">ਖੁੱਲ੍ਹੀਆਂ ਟੈਬਾਂ ਨੂੰ ਵੇਖਣ ਲਈ ਟੂਲਬਾਰ ਨੂੰ ਖੜ੍ਹਵੇਂ ਰੂਪ ਵਿੱਚ ਰੱਖੋ</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">ਟੈਬਾਂ ਖੋਲ੍ਹਣ ਲਈ ਟੂਲਬਾਰ ਉੱਤੇ ਵੱਲ ਸਰਕਾਓ</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ਟੈਬਾਂ ਵਿੱਚ ਬਦਲਣ ਲਈ ਸਿਰਨਾਵਾਂ ਪੱਟੀ ਨੂੰ ਪਾਸੇ ਵੱਲ ਸਰਕਾਓ</string>
@@ -1608,6 +1630,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">ਖੁੱਲ੍ਹੀਆਂ ਪ੍ਰਾਈਵੇਟ ਟੈਬਾਂ: %1$s। ਟੈਬਾਂ ਬਦਲਣ ਲਈ ਛੂਹੋ।</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d ਟੈਬ ਗਰੁੱਪ ਖੋਲ੍ਹੋ। ਟੈਬਾਂ ਵਿੱਚ ਬਦਲਣ ਲਈ ਛੂਹੋ।</item>
+    <item quantity="other">%1$d ਟੈਬ ਗਰੁੱਪਾਂ ਨੂੰ ਖੋਲ੍ਹੋ। ਟੈਬਾਂ ਵਿੱਚ ਬਦਲਣ ਲਈ ਛੂਹੋ।</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1697,6 +1727,10 @@
   <string name="pwa_site_controls_title_private">%1$s (ਪ੍ਰਾਈਵੇਟ ਮੋਡ)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">ਟੈਬ ਖੋਜ ਨੂੰ ਖੋਲ੍ਹੋ</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">ਘੱਟ ਸਕਰੋਲਿੰਗ ਤੇ ਵੱਧ ਕਰਨ ਲਈ ਟੈਗ ਗਰੁੱਪਾਂ ਨੂੰ ਅਜ਼ਮਾਓ</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">ਗਰੁੱਪ ਬਣਾਉਣ ਥਈ ਟੈਬ ਨੂੰ ਚੁਣੋ। ਉਹਨਾਂ ਨੂੰ ਇੱਥੇ ਸੰਭਾਲਿਆ ਜਾਂਦਾ ਹੈ, ਜਦੋਂ ਤੁਸੀਂ ਚਾਹੋ, ਤਿਆਰ ਲਵੋ।</string>
   <!--
     Tab Group
 
@@ -1706,6 +1740,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">ਗਰੁੱਪ ਨੂੰ ਸੋਧੋ</string>
   <string name="create_tab_group_save_button">ਸੰਭਾਲੋ</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">ਨਵਾਂ ਗਰੁੱਪ, ਡਰੈਗ ਹੈਂਡਲ ਨੂੰ ਸਮੇਟੋ</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">ਟੈਬ ਗਰੁੱਪ ਸੋਧ ਨੂੰ ਬੰਦ ਕਰੋ</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">ਗਰੁੱਪ</string>
@@ -1721,6 +1757,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">ਇਸ ਵਿੱਚ ਜੋੜੋ</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">ਟੈਬ ਗਰੁੱਪ ਵਿੱਚ ਜੋੜੋ, ਡਰੈਗ ਹੈਂਡਲ ਨੂੰ ਸਮੇਟੋ</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">ਨਵੇਂ ਟੈਬ ਗਰੁੱਪ ਵਿੱਚ ਜੋੜੋ</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">ਟੈਗ ਗਰੁੱਪ ਵਿੱਚ ਜੋੜੋ ਨੂੰ ਬੰਦ ਕਰੋ</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">ਨਵਾਂ ਟੈਬ ਗਰੁੱਪ</string>
@@ -1731,6 +1771,33 @@
     -->
     <item quantity="one">%1$d ਟੈਬ</item>
     <item quantity="other">%1$d ਟੈਬ</item>
+  </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s ਟੈਬ ਗਰੁੱਪ ਵਿੱਚ ਜੋੜੋ, %2$d ਟੈਬ, ਰੰਗ %3$s</item>
+    <item quantity="other">%1$s ਟੈਬ ਗਰੁੱਪ ਵਿੱਚ ਜੋੜੋ, %2$d ਟੈਬਾਂ, ਰੰਗ %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%2$d ਟੈਬ ਨਾਲ %1$s ਟੈਬ ਗਰੁੱਪ ਨੂੰ ਸਾਂਝਾ ਕਰੋ।</item>
+    <item quantity="other">%2$d ਟੈਬਾਂ ਨਾਲ %1$s ਟੈਬ ਗਰੁੱਪ ਨੂੰ ਸਾਂਝਾ ਕਰੋ।</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">ਟੈਬ ਗਰੁੱਪ ਨੂੰ ਵੇਖੋ, ਡਰੈਗ ਹੈਂਡਲ ਨੂੰ ਸਮੇਟੋ</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%2$d ਟੈਬ, ਰੰਗ %3$s ਨਾਲ %1$s ਟੈਬ ਗਰੁੱਪ</item>
+    <item quantity="other">%2$d ਟੈਬਾਂ, ਰੰਗ %3$s ਨਾਲ %1$s ਟੈਬ ਗਰੁੱਪ</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">ਟੈਬ ਗਰੁੱਪ ਨੂੰ ਹਟਾਉਣਾ ਹੈ?</string>
@@ -1907,6 +1974,8 @@
   <string name="download_rename_error_exists_error">ਇਸ ਟਿਕਾਣੇ ਵਿੱਚ “%s” ਨਾਂ ਦੀ ਫਾਇਲ ਪਹਿਲਾਂ ਹੀ ਮੌਜੂਦ ਹੈ</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">ਫਾਇਲ ਨਾਂ ਵਿੱਚ “/” ਨਹੀਂ ਵਰਤਿਆ ਜਾ ਸਕਦਾ ਹੈ</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">ਤੁਹਾਡੇ ਵਲੋਂ ਦਿੱਤੇ ਗਏ ਨਾਂ ਵਿੱਚ ਸਿਰਫ਼ ਵੱਡੇ ਅਤੇ ਛੋਟੇ ਅੱਖਰ ਹੀ ਹਨ। ਵੱਖਰੇ ਫ਼ਾਇਲ ਨਾਂ ਕੋਸ਼ਿਸ਼ ਕਰਕੇ ਵੇਖੋ।</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">ਫ਼ਾਇਲ ਦਾ ਨਾਂ ਨਹੀਂ ਬਦਲਿਆ ਜਾ ਸਕਦਾ ਹੈ</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -3133,6 +3202,8 @@
   <string name="ip_protection_menu_paused">ਵਿਰਾਮ ਹੈ</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">ਗਲਤੀ</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">ਅਜ਼ਮਾਓ</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">VPN ਸੈਟਿੰਗਾਂ ਨੂੰ ਖੋਲ੍ਹੋ</string>
   <!--
@@ -3153,10 +3224,18 @@
   <string name="ip_protection_get_started">ਸ਼ੁਰੂ ਕਰੀਏ</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_onboarding_card_headline">%s ਦੇ ਵਿੱਚ ਮੌਜੂਦ VPN ਨੂੰ ਅਜ਼ਮਾਓ</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">ਆਪਣੇ ਟਿਕਾਣੇ ਨੂੰ ਲੁਕਾ ਕੇ %1$s, ਪਬਲਿਕ Wi-Fi ਉੱਤੇ ਵੀ। ਹਰ ਮਹੀਨੇ %2$d GB ਮੁਫ਼ਤ ਲਵੋ।</string>
   <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
   <string name="ip_protection_onboarding_body_link">ਵਧੀਕ ਸੁਰੱਖਿਆ ਨਾਲ ਬਰਾਊਜ਼ ਕਰੋ</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">ਹੁਣੇ ਨਹੀਂ</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">VPN ਨਾਲ ਕਨੈਕਟ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ। ਕੁਝ ਕੁ ਮਿੰਟਾਂ \'ਚ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰਿਓ।</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
@@ -4401,25 +4480,25 @@
   -->
   <string name="sports_widget_country_selector_title">ਆਪਣੀ ਟੀਮ ਨੂੰ ਫ਼ਾਲੋ ਕਰੋ</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">ਉੱਤਰੀ ਅਮਰੀਕਾ</string>
+  <string name="sports_widget_confederation_north_america">ਉੱਤਰੀ ਅਮਰੀਕਾ</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">ਅਫ਼ਰੀਕਾ</string>
+  <string name="sports_widget_confederation_africa">ਅਫ਼ਰੀਕਾ</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">ਏਸ਼ੀਆ</string>
+  <string name="sports_widget_confederation_asia">ਏਸ਼ੀਆ</string>
   <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <string name="sports_widget_confederation_concacaf">CONCACAF</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">ਯੂਰਪ</string>
+  <string name="sports_widget_confederation_europe">ਯੂਰਪ</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">ਓਸ਼ੇਨੀਆ</string>
+  <string name="sports_widget_confederation_oceania">ਓਸ਼ੇਨੀਆ</string>
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">ਦੱਖਣੀ ਅਮਰੀਕਾ</string>
+  <string name="sports_widget_confederation_south_america">ਦੱਖਣੀ ਅਮਰੀਕਾ</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">ਇੰਗਲੈਂਡ</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">ਸਕਾਟਲੈਂਡ</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">ਲਾਈਵ</string>
+  <string name="sports_widget_match_live">ਲਾਈਵ</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 ਵਰਲਡ ਕੱਪ ਚੈਪੀਅਨ</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
@@ -4445,35 +4524,35 @@
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">ਤਾਜ਼ਾ ਕਰੋ</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">ਗਰੁੱਪ A</string>
+  <string name="sports_widget_group_a">ਗਰੁੱਪ A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">ਗਰੁੱਪ B</string>
+  <string name="sports_widget_group_b">ਗਰੁੱਪ B</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">ਗਰੁੱਪ C</string>
+  <string name="sports_widget_group_c">ਗਰੁੱਪ C</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">ਗਰੁੱਪ D</string>
+  <string name="sports_widget_group_d">ਗਰੁੱਪ D</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">ਗਰੁੱਪ E</string>
+  <string name="sports_widget_group_e">ਗਰੁੱਪ E</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">ਗਰੁੱਪ F</string>
+  <string name="sports_widget_group_f">ਗਰੁੱਪ F</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">ਗਰੁੱਪ G</string>
+  <string name="sports_widget_group_g">ਗਰੁੱਪ G</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">ਗਰੁੱਪ H</string>
+  <string name="sports_widget_group_h">ਗਰੁੱਪ H</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">ਗਰੁੱਪ I</string>
+  <string name="sports_widget_group_i">ਗਰੁੱਪ I</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">ਗਰੁਪ J</string>
+  <string name="sports_widget_group_j">ਗਰੁਪ J</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">ਗਰੁੱਪ K</string>
+  <string name="sports_widget_group_k">ਗਰੁੱਪ K</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">ਗਰੁੱਪ L</string>
+  <string name="sports_widget_group_l">ਗਰੁੱਪ L</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">ਨਤੀਜਿਆਂ ਨੂੰ ਵੇਖੋ</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">ਮੈਚ ਵੇਰਵਿਆਂ ਨੂੰ ਵੇਖੋ</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">ਸੰਬੰਧਿਤ ਮੈਚ</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">ਸੰਬੰਧਿਤ ਮੈਚ</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">ਆਉਣ ਵਾਲੇ</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
@@ -4487,15 +4566,15 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">ਵਰਲਡ ਕੱਪ ਉੱਤੇ ਨਿਗ੍ਹਾ ਰੱਖੋ</string>
+  <string name="sports_widget_card_title">ਵਰਲਡ ਕੱਪ ਉੱਤੇ ਨਿਗ੍ਹਾ ਰੱਖੋ</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">ਲਾਈਵ ਮੈਚ ਅੱਪਡੇਟ ਅਤੇ ਹੋਰ ਲਵੋ।</string>
+  <string name="sports_widget_card_description">ਲਾਈਵ ਮੈਚ ਅੱਪਡੇਟ ਅਤੇ ਹੋਰ ਲਵੋ।</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">ਟੀਮ ਨੂੰ ਬਦਲੋ</string>
+  <string name="sports_widget_change_team">ਟੀਮ ਨੂੰ ਬਦਲੋ</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">ਪਸੰਦੀਦਾ ਵਾਲਪੇਪਰ ਲਵੋ</string>
+  <string name="sports_widget_get_custom_wallpaper">ਪਸੰਦੀਦਾ ਵਾਲਪੇਪਰ ਲਵੋ</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">ਹਟਾਓ</string>
+  <string name="sports_widget_remove">ਹਟਾਓ</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">ਹਾਲੇ ਵੀ ਫ਼ਾਲੋ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4503,7 +4582,7 @@
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">ਹੋਰ ਟੀਮ ਨੂੰ ਫ਼ਾਲੋ ਕਰੋ</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">ਵਰਲਡ ਕੱਪ ਲਈ ਉਲਟੀ ਗਿਣਤੀ</string>
+  <string name="sports_widget_countdown_to_world_cup">ਵਰਲਡ ਕੱਪ ਲਈ ਉਲਟੀ ਗਿਣਤੀ</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
   <string name="sports_widget_view_schedule">ਸੈਡਿਊਲ ਨੂੰ ਵੇਖੋ</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
@@ -4513,7 +4592,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">ਵਾਧੂ ਟਾਈਮ</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">ਪਨੈਲਟੀਆਂ</string>
+  <string name="sports_widget_penalties">ਪਨੈਲਟੀਆਂ</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
@@ -4576,9 +4655,9 @@
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">ਵਰਲਡ ਕੱਪ ਨੂੰ ਮੁੱਖ-ਸਫ਼ੇ ਤੋਂ ਹਟਾਓ</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">ਫ਼ਾਲੋ ਕੀਤੇ:\n%s</string>
+  <string name="sports_widget_team_followed_title">ਫ਼ਾਲੋ ਕੀਤੇ:\n%s</string>
   <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">ਟੂਰਨਾਮੈਂਟ ਨੇੜੇ ਆਉਣ ਉੱਤੇ ਮੈਚ ਬਾਰੇ ਜਾਣਕਾਰੀ ਵਾਸਤੇ ਫੇਰ ਵੇਖਿਓ।</string>
+  <string name="sports_widget_team_followed_description">ਟੂਰਨਾਮੈਂਟ ਨੇੜੇ ਆਉਣ ਉੱਤੇ ਮੈਚ ਬਾਰੇ ਜਾਣਕਾਰੀ ਵਾਸਤੇ ਫੇਰ ਵੇਖਿਓ।</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">ਪਹਿਲਾ ਅੱਧ</string>
   <!-- Sports widget match status label shown during second half of a match. -->
@@ -4587,6 +4666,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">ਤੁਸੀਂ ਆਫਲਾਈਨ ਜਾਪਦੇ ਹੋ।</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">ਆਪਣੇ ਇੰਟਰਨੈੱਟ ਕਨੈਕਸ਼ਨ ਦੀ ਜਾਂਚ ਕਰਕੇ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage">ਗਰੁੱਪ ਸਟੇਜ</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

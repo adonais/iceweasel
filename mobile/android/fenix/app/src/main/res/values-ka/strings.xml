@@ -4480,25 +4480,25 @@
   -->
   <string name="sports_widget_country_selector_title">მიჰყევით თქვენს გუნდს</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">ჩრდილო ამერიკა</string>
+  <string name="sports_widget_confederation_north_america">ჩრდილო ამერიკა</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">აფრიკა</string>
+  <string name="sports_widget_confederation_africa">აფრიკა</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">აზია</string>
+  <string name="sports_widget_confederation_asia">აზია</string>
   <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">კონკაკაფი</string>
+  <string name="sports_widget_confederation_concacaf">კონკაკაფი</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">ევროპა</string>
+  <string name="sports_widget_confederation_europe">ევროპა</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">ოკეანეთი</string>
+  <string name="sports_widget_confederation_oceania">ოკეანეთი</string>
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">სამხრეთი ამერიკა</string>
+  <string name="sports_widget_confederation_south_america">სამხრეთი ამერიკა</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">ინგლისი</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">შოტლანდია</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">ᲞᲘᲠᲓ.</string>
+  <string name="sports_widget_match_live">ᲞᲘᲠᲓ.</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 მსოფლიოს გამარჯვებულები</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
@@ -4524,35 +4524,35 @@
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">გაახლება</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">ჯგუფი A</string>
+  <string name="sports_widget_group_a">ჯგუფი A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">ჯგუფი B</string>
+  <string name="sports_widget_group_b">ჯგუფი B</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">ჯგუფი C</string>
+  <string name="sports_widget_group_c">ჯგუფი C</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">ჯგუფი D</string>
+  <string name="sports_widget_group_d">ჯგუფი D</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">ჯგუფი E</string>
+  <string name="sports_widget_group_e">ჯგუფი E</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">ჯგუფი F</string>
+  <string name="sports_widget_group_f">ჯგუფი F</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">ჯგუფი G</string>
+  <string name="sports_widget_group_g">ჯგუფი G</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">ჯგუფი H</string>
+  <string name="sports_widget_group_h">ჯგუფი H</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">ჯგუფი I</string>
+  <string name="sports_widget_group_i">ჯგუფი I</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">ჯგუფი J</string>
+  <string name="sports_widget_group_j">ჯგუფი J</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">ჯგუფი K</string>
+  <string name="sports_widget_group_k">ჯგუფი K</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">ჯგუფი L</string>
+  <string name="sports_widget_group_l">ჯგუფი L</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">იხილეთ შედეგები</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">შეხვედრის შესახებ ვრცლად</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">მსგავსი შეხვედრები</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">მსგავსი შეხვედრები</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">მოახლოებული</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
@@ -4566,15 +4566,15 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">თვალი ადევნეთ მსოფლიო თასს</string>
+  <string name="sports_widget_card_title">თვალი ადევნეთ მსოფლიო თასს</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">მიმდინარე შეხვედრების სიახლეები და სხვ.</string>
+  <string name="sports_widget_card_description">მიმდინარე შეხვედრების სიახლეები და სხვ.</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">გუნდის შეცვლა</string>
+  <string name="sports_widget_change_team">გუნდის შეცვლა</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">მიიღეთ სასურველი ფონი</string>
+  <string name="sports_widget_get_custom_wallpaper">მიიღეთ სასურველი ფონი</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">მოცილება</string>
+  <string name="sports_widget_remove">მოცილება</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">კვლავ გსურთ თვალი ადევნოთ?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4582,7 +4582,7 @@
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">სხვა გუნდის მიდევნება</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">დროის ათვლა მსოფლიო თასამდე</string>
+  <string name="sports_widget_countdown_to_world_cup">დროის ათვლა მსოფლიო თასამდე</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
   <string name="sports_widget_view_schedule">განრიგის ნახვა</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
@@ -4592,7 +4592,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">დამატებითი დრო</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">თერთმეტმეტრიანები</string>
+  <string name="sports_widget_penalties">თერთმეტმეტრიანები</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
@@ -4655,9 +4655,9 @@
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">მსოფლიო თასის მოცილება საწყისი გვერდიდან</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">გამოწერილი: \n%s</string>
+  <string name="sports_widget_team_followed_title">გამოწერილი: \n%s</string>
   <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">გადაამოწმეთ შეხვედრის შესახებ ცნობები შეჯიბრების მოახლოებისას.</string>
+  <string name="sports_widget_team_followed_description">გადაამოწმეთ შეხვედრის შესახებ ცნობები შეჯიბრების მოახლოებისას.</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">პირველი ნახევარი</string>
   <!-- Sports widget match status label shown during second half of a match. -->
@@ -4667,7 +4667,7 @@
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">შეამოწმეთ ქსელთან კავშირი და კვლავ სცადეთ.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
-  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">ჯგუფური ეტაპი</string>
+  <string name="sports_widget_group_stage">ჯგუფური ეტაპი</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

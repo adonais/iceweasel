@@ -375,6 +375,8 @@
   <string name="preferences_ai_controls">سۈنئىي ئەقىل تىزگىنى</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">%s تا تاللاش ھەمىشە سىزدە</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">سۇنئىي ئەقىلنىڭ ئالىي ئىقتىدارىنى ئىشلىتىش ئىشلەتمەسلىكمۇ شۇنىڭ ئىچىدە. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">سۇنئىي ئەقىلنىڭ ئالىي ئىقتىدارىنى ئىشلىتىش ئىشلەتمەسلىكمۇ شۇنىڭ ئىچىدە.</string>
   <!-- Link text for learning more about AI controls -->
@@ -711,6 +713,10 @@
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Firefox نى قانداق بايقىغانلىقىڭىز ۋە ئۇنى ئىشلىتىشنى Mozilla نىڭ بازارچىلىق ھەمكارلاشقۇچىلىرى بىلەن ھەمبەھىرلەڭ. بۇ سانلىق مەلۇماتلار ھەرگىز سېتىلمايدۇ. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">سانلىق مەلۇماتنى قانداق ئىشلىتىمىز</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Firefox ياردەم</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">ياق رەھمەت</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">ئۇقتۇرۇش Firefox ئارقىلىق تېخىمۇ بىخەتەر بولۇشىڭىزغا ياردەم بېرىدۇ</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -1439,9 +1445,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">دومىلاتقاندا قورال بالداقنى يوشۇر</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">قورال بالداق بويىغا سىيرىلسا ئوچۇق بەتكۈچنى كۆرسىتىدۇ</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">قورال بالداق ئۈستىگە سۈرۈلسە بەتكۈچ ئاچىدۇ</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ئادرېس بالداقتا يانغا سۈرۈلسە بەتكۈچ ئالماشتۇرىدۇ</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">سىلكىسە خۇلاسىلەيدۇ</string>
   <!--
     Library
 

@@ -69,6 +69,8 @@
   <string name="mozac_feature_prompts_before_unload_stay">Sitede kal</string>
   <!-- Leave button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to leave in the website. -->
   <string name="mozac_feature_prompts_before_unload_leave">Çık</string>
+  <!-- Continue button label for WebAuthn related origin prompt. -->
+  <string name="webauthn_continue">Devam et</string>
   <!-- Title of the month chooser dialog. -->
   <string name="mozac_feature_prompts_set_month">Bir ay seçin</string>
   <!-- January (short description), used on the month chooser dialog. -->

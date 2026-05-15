@@ -4453,25 +4453,25 @@
   -->
   <string name="sports_widget_country_selector_title">Eho nde atygua ndive</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">América del Norte</string>
+  <string name="sports_widget_confederation_north_america">América del Norte</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">África</string>
+  <string name="sports_widget_confederation_africa">África</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Asia</string>
+  <string name="sports_widget_confederation_asia">Asia</string>
   <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <string name="sports_widget_confederation_concacaf">CONCACAF</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Europa</string>
+  <string name="sports_widget_confederation_europe">Europa</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Oceanía</string>
+  <string name="sports_widget_confederation_oceania">Oceanía</string>
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">América del Sur</string>
+  <string name="sports_widget_confederation_south_america">América del Sur</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">Inglaterra</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Escocia</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">HECHAPY</string>
+  <string name="sports_widget_match_live">HECHAPY</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Copa del Mundo 2026 oganáva</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
@@ -4497,35 +4497,35 @@
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Mbopiro’y</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Aty A</string>
+  <string name="sports_widget_group_a">Aty A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Aty B</string>
+  <string name="sports_widget_group_b">Aty B</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Aty C</string>
+  <string name="sports_widget_group_c">Aty C</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Aty D</string>
+  <string name="sports_widget_group_d">Aty D</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Aty E</string>
+  <string name="sports_widget_group_e">Aty E</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Aty F</string>
+  <string name="sports_widget_group_f">Aty F</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Aty G</string>
+  <string name="sports_widget_group_g">Aty G</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Aty H</string>
+  <string name="sports_widget_group_h">Aty H</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Aty I</string>
+  <string name="sports_widget_group_i">Aty I</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Aty J</string>
+  <string name="sports_widget_group_j">Aty J</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Aty K</string>
+  <string name="sports_widget_group_k">Aty K</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Aty L</string>
+  <string name="sports_widget_group_l">Aty L</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Ehecha mba’éicha osẽ</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Ehecha partído rehegua</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">Partidoita ojuehegua</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Partidoita ojuehegua</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Oupotáva</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
@@ -4539,15 +4539,15 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Eñemomarandu Copa del Mundo rehe</string>
+  <string name="sports_widget_card_title">Eñemomarandu Copa del Mundo rehe</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Erekóta mbohekopyahu partído rehegua oiko jave ha hetave.</string>
+  <string name="sports_widget_card_description">Erekóta mbohekopyahu partído rehegua oiko jave ha hetave.</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Aty moambue</string>
+  <string name="sports_widget_change_team">Aty moambue</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Eipotápa mba’erechaha rugua mboavapyréva</string>
+  <string name="sports_widget_get_custom_wallpaper">Eipotápa mba’erechaha rugua mboavapyréva</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">Mboguete</string>
+  <string name="sports_widget_remove">Mboguete</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">¿Nde ehapykuehose gueteri?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4555,7 +4555,7 @@
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Ehapykueho ambue atýpe</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Copa del Mundo ñeg̃uahẽ jepapa</string>
+  <string name="sports_widget_countdown_to_world_cup">Copa del Mundo ñeg̃uahẽ jepapa</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
   <string name="sports_widget_view_schedule">Ehecha nde aravorã</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
@@ -4565,7 +4565,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Aravo’i juapyvegua</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Penal-kuéra</string>
+  <string name="sports_widget_penalties">Penal-kuéra</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
@@ -4628,9 +4628,9 @@
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Eipe’a Copa del Mundo nde rógagui</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Upeigua: \n%s</string>
+  <string name="sports_widget_team_followed_title">Upeigua: \n%s</string>
   <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Eporandu ko kuatiarogue ereko hag̃ua marandu partído og̃uahẽtavo torneo.</string>
+  <string name="sports_widget_team_followed_description">Eporandu ko kuatiarogue ereko hag̃ua marandu partído og̃uahẽtavo torneo.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

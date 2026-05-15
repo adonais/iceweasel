@@ -957,7 +957,7 @@
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Umístění adresního řádku</string>
   <!-- Preference for changing toolbar layout -->
-  <string name="preferences_toolbar_layout">Upravit lišty</string>
+  <string name="preferences_toolbar_layout">Rozložení nástrojové lišty</string>
   <!-- Preference for changing default theme to dark or light mode -->
   <string name="preferences_theme">Vzhled</string>
   <!-- Preference for customizing the home screen -->
@@ -965,7 +965,7 @@
   <!-- Preference for customizing the app icon -->
   <string name="preferences_app_icon">Ikona aplikace</string>
   <!-- Preference for showing the tab strip -->
-  <string name="preferences_tab_strip">Zobrazení lišty s panely</string>
+  <string name="preferences_tab_strip">Zobrazení lišty panelů</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_toolbar_shortcut">Zkratka na nástrojové liště</string>
   <!-- Preference for gestures based actions -->
@@ -1411,11 +1411,11 @@
   <!-- Preference for using bottom toolbar -->
   <string name="preference_bottom_toolbar">Dole</string>
   <!-- Preference for using simple toolbar -->
-  <string name="preference_simple_toolbar">Jednoduchý</string>
+  <string name="preference_simple_toolbar">Jednoduché</string>
   <!-- Preference for using expanded toolbar -->
   <string name="preference_expanded_toolbar">Rozvinuté</string>
   <!-- Preference description indicating the toolbar location preference is disabled when the tab strip is enabled -->
-  <string name="preference_toolbar_pref_disabled_explanation">Když je zobrazen řádek panelů, musí být adresní řádek nahoře.</string>
+  <string name="preference_toolbar_pref_disabled_explanation">Když se zobrazuje lišta panelů, musí být adresní řádek umístěn nahoře.</string>
   <!-- New tab shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_new_tab">Otevře nový panel</string>
   <!-- Share shortcut in toolbar customization -->
@@ -1453,7 +1453,7 @@
 
     Preferences for showing tab strip
   -->
-  <string name="preference_tab_strip_show">Zobrazit lištu panelů</string>
+  <string name="preference_tab_strip_show">Zobrazovat lištu panelů</string>
   <!--
     Gestures Preferences
 
@@ -1652,7 +1652,7 @@
   <!-- Text for the tabs header normal tabs -->
   <string name="tabs_header_normal_tabs_title">Panely</string>
   <!-- Text for the tabs header synced tabs -->
-  <string name="tabs_header_synced_tabs_title">Sync</string>
+  <string name="tabs_header_synced_tabs_title">Synchronizované</string>
   <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
   <string name="tab_manager_floating_action_button_new_normal_tab">Nový panel</string>
   <!-- Text for the new tab button in the Tab Manager to indicate opening a new private tab -->
@@ -4496,25 +4496,25 @@
   -->
   <string name="sports_widget_country_selector_title">Sledujte svůj tým</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Severní Amerika</string>
+  <string name="sports_widget_confederation_north_america">Severní Amerika</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Afrika</string>
+  <string name="sports_widget_confederation_africa">Afrika</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Asie</string>
+  <string name="sports_widget_confederation_asia">Asie</string>
   <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <string name="sports_widget_confederation_concacaf">CONCACAF</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Evropa</string>
+  <string name="sports_widget_confederation_europe">Evropa</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Oceánie</string>
+  <string name="sports_widget_confederation_oceania">Oceánie</string>
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Jižní Amerika</string>
+  <string name="sports_widget_confederation_south_america">Jižní Amerika</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">Anglie</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Skotsko</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">ŽIVĚ</string>
+  <string name="sports_widget_match_live">ŽIVĚ</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Mistrovství světa ve fotbale 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
@@ -4540,35 +4540,35 @@
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Obnovit</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Skupina A</string>
+  <string name="sports_widget_group_a">Skupina A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Skupina B</string>
+  <string name="sports_widget_group_b">Skupina B</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Skupina C</string>
+  <string name="sports_widget_group_c">Skupina C</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Skupina D</string>
+  <string name="sports_widget_group_d">Skupina D</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Skupina E</string>
+  <string name="sports_widget_group_e">Skupina E</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Skupina F</string>
+  <string name="sports_widget_group_f">Skupina F</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Skupina G</string>
+  <string name="sports_widget_group_g">Skupina G</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Skupina H</string>
+  <string name="sports_widget_group_h">Skupina H</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Skupina I</string>
+  <string name="sports_widget_group_i">Skupina I</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Skupina J</string>
+  <string name="sports_widget_group_j">Skupina J</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Skupina K</string>
+  <string name="sports_widget_group_k">Skupina K</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Skupina L</string>
+  <string name="sports_widget_group_l">Skupina L</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Zobrazit výsledky</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Zobrazit podrobnosti o zápase</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">Související zápasy</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Související zápasy</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Nadcházející</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
@@ -4582,15 +4582,15 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Sledujte Mistrovství světa ve fotbale</string>
+  <string name="sports_widget_card_title">Sledujte Mistrovství světa ve fotbale</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Získejte živé informace o zápasech a další informace.</string>
+  <string name="sports_widget_card_description">Získejte živé informace o zápasech a další informace.</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Změnit tým</string>
+  <string name="sports_widget_change_team">Změnit tým</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Získejte vlastní tapetu</string>
+  <string name="sports_widget_get_custom_wallpaper">Získejte vlastní tapetu</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">Odebrat</string>
+  <string name="sports_widget_remove">Odebrat</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">Stále chcete sledovat?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4598,7 +4598,7 @@
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Sledovat jiný tým</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Odpočítávání do Mistrovství světa</string>
+  <string name="sports_widget_countdown_to_world_cup">Odpočítávání do Mistrovství světa</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
   <string name="sports_widget_view_schedule">Zobrazit rozpis zápasů</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
@@ -4608,7 +4608,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Prodloužení</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Penalty</string>
+  <string name="sports_widget_penalties">Penalty</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
@@ -4671,9 +4671,9 @@
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Odstranit Mistrovství světa z domovské stránky</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Sledujete: \n%s</string>
+  <string name="sports_widget_team_followed_title">Sledujete: \n%s</string>
   <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">S blížícím se turnajem se sem vraťte pro informace o zápasech.</string>
+  <string name="sports_widget_team_followed_description">S blížícím se turnajem se sem vraťte pro informace o zápasech.</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">První poločas</string>
   <!-- Sports widget match status label shown during second half of a match. -->
@@ -4683,7 +4683,7 @@
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Zkontrolujte své připojení k internetu a zkuste to znovu.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
-  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Skupinová fáze</string>
+  <string name="sports_widget_group_stage">Skupinová fáze</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

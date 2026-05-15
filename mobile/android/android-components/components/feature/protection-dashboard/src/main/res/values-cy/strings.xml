@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <!-- Title shown in the protection dashboard indicating the user is protected -->
+  <string name="mozac_protections_dashboard_youre_protected">Wedi\'ch diogelu</string>
+  <plurals name="mozac_protections_dashboard_trackers_blocked_this_week">
+    <!--
+      Label shown below the tracker count in the dashboard. The count is displayed separately
+      above this string and is used to select the correct plural form. Do not include the number in
+      the translation.
+    -->
+    <item quantity="one">Traciwr wedi\'i rwystro yr wythnos hon</item>
+    <item quantity="zero">Tracwyr wedi\'u rhwystro yr wythnos hon</item>
+    <item quantity="two">Tracwyr wedi\'u rhwystro yr wythnos hon</item>
+    <item quantity="few">Tracwyr wedi\'u rhwystro yr wythnos hon</item>
+    <item quantity="many">Tracwyr wedi\'u rhwystro yr wythnos hon</item>
+    <item quantity="other">Tracwyr wedi\'u rhwystro yr wythnos hon</item>
+  </plurals>
+  <plurals name="mozac_protections_dashboard_data_saved">
+    <!-- Label showing data saved in megabytes. %1$d is the number of MB saved -->
+    <item quantity="one">%1$d MB wedi\'i gadw</item>
+    <item quantity="zero">%1$d MB wedi\'i gadw</item>
+    <item quantity="two">%1$d MB wedi\'i gadw</item>
+    <item quantity="few">%1$d MB wedi\'i gadw</item>
+    <item quantity="many">%1$d MB wedi\'i gadw</item>
+    <item quantity="other">%1$d MB wedi\'i gadw</item>
+  </plurals>
+  <!-- Section header for tracker category breakdown -->
+  <string name="protections_dashboard_where_they_came_from">O ble y daethant</string>
+  <!-- Tracker category: Advertising trackers -->
+  <string name="protections_dashboard_category_ads">Hysbysebion</string>
+  <!-- Tracker category: Analytics trackers -->
+  <string name="protections_dashboard_category_analytics">Dadansoddeg</string>
+  <!-- Tracker category: Social media trackers -->
+  <string name="protections_dashboard_category_social">Cymdeithasol</string>
+  <!-- Tracker category: Other trackers -->
+  <string name="protections_dashboard_category_others">Eraill</string>
+</resources>

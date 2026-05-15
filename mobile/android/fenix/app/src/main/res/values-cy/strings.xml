@@ -721,16 +721,16 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
   -->
-  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Gallwch ein helpu i gyrraedd mwy o bobl drwy ganiatáu i Mozilla hysbysu\'r platfform y daethoch ohono eich bod yn defnyddio Firefox.</string>
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Gallwch ein helpu i gyrraedd mwy o bobl drwy ganiatáu i Mozilla hysbysu\'r platfform y daethoch ohono a\'ch bod nawr defnyddio Firefox.</string>
   <!--
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
   -->
-  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Helpwch ni i gyrraedd mwy o bobl trwy ganiatáu i Mozilla hysbysu\'r platfform y daethoch ohono eich bod yn defnyddio Firefox.</string>
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Helpwch ni i gyrraedd mwy o bobl trwy ganiatáu i Mozilla hysbysu\'r platfform y daethoch ohono a\'ch bod nawr defnyddio Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Sut rydym yn defnyddio\'r data</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Helpwch Firefox</string>
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Helpu Firefox</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text">Dim Diolch</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -4512,25 +4512,25 @@
   -->
   <string name="sports_widget_country_selector_title">Dilynwch eich tîm</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Gogledd America</string>
+  <string name="sports_widget_confederation_north_america">Gogledd America</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Affrica</string>
+  <string name="sports_widget_confederation_africa">Affrica</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Asia</string>
+  <string name="sports_widget_confederation_asia">Asia</string>
   <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <string name="sports_widget_confederation_concacaf">CONCACAF</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Ewrop</string>
+  <string name="sports_widget_confederation_europe">Ewrop</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Ynysoedd y De</string>
+  <string name="sports_widget_confederation_oceania">Ynysoedd y De</string>
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">De America</string>
+  <string name="sports_widget_confederation_south_america">De America</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">Lloegr</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Yr Alban</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">BYW</string>
+  <string name="sports_widget_match_live">BYW</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Pencampwyr Cwpan y Byd 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
@@ -4556,35 +4556,35 @@
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Adnewyddu</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Grŵp A</string>
+  <string name="sports_widget_group_a">Grŵp A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Grŵp B</string>
+  <string name="sports_widget_group_b">Grŵp B</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Grŵp C</string>
+  <string name="sports_widget_group_c">Grŵp C</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Grŵp D</string>
+  <string name="sports_widget_group_d">Grŵp D</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Grŵp E</string>
+  <string name="sports_widget_group_e">Grŵp E</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Grŵp F</string>
+  <string name="sports_widget_group_f">Grŵp F</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Grŵp G</string>
+  <string name="sports_widget_group_g">Grŵp G</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Grŵp H</string>
+  <string name="sports_widget_group_h">Grŵp H</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Grŵp I</string>
+  <string name="sports_widget_group_i">Grŵp I</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Grŵp J</string>
+  <string name="sports_widget_group_j">Grŵp J</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Grŵp K</string>
+  <string name="sports_widget_group_k">Grŵp K</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Grŵp L</string>
+  <string name="sports_widget_group_l">Grŵp L</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Gweld y canlyniadau</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Gweld manylion y gêm</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">Gemau cysylltiedig</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Gemau cysylltiedig</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">I Ddod</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
@@ -4598,15 +4598,15 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Cadw golwg ar Gwpan y Byd</string>
+  <string name="sports_widget_card_title">Cadw golwg ar Gwpan y Byd</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Cael diweddariadau gemau byw a mwy.</string>
+  <string name="sports_widget_card_description">Cael diweddariadau gemau byw a mwy.</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Newid tîm</string>
+  <string name="sports_widget_change_team">Newid tîm</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Cael papur wal cyfaddas</string>
+  <string name="sports_widget_get_custom_wallpaper">Cael papur wal cyfaddas</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">Tynnu</string>
+  <string name="sports_widget_remove">Tynnu</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">Dal eisiau dilyn?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4614,7 +4614,7 @@
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Dilyn tîm arall</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Paratoi ar gyfer Cwpan y Byd</string>
+  <string name="sports_widget_countdown_to_world_cup">Paratoi ar gyfer Cwpan y Byd</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
   <string name="sports_widget_view_schedule">Gweld amserlen</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
@@ -4624,7 +4624,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Amser ychwanegol</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Ciciau cosb</string>
+  <string name="sports_widget_penalties">Ciciau cosb</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
@@ -4687,9 +4687,9 @@
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Tynnu Cwpan y Byd o\'r cartref</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Yn dilyn: \n%s</string>
+  <string name="sports_widget_team_followed_title">Yn dilyn: \n%s</string>
   <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Dewch nôl am wybodaeth am y gemau wrth i\'r twrnamaint agosáu.</string>
+  <string name="sports_widget_team_followed_description">Dewch nôl am wybodaeth am y gemau wrth i\'r twrnamaint agosáu.</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">Hanner cyntaf</string>
   <!-- Sports widget match status label shown during second half of a match. -->
@@ -4699,7 +4699,7 @@
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Gwiriwch eich cysylltiad rhyngrwyd a cheisio eto.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
-  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Cymal Grŵp</string>
+  <string name="sports_widget_group_stage">Cymal Grŵp</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

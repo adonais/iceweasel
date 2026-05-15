@@ -4394,45 +4394,45 @@
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">ин ҷой</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Осиё</string>
+  <string name="sports_widget_confederation_asia">Осиё</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Аврупо</string>
+  <string name="sports_widget_confederation_europe">Аврупо</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
   <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Ҷойи сеюм</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Нав кардан</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Гурӯҳи «A»</string>
+  <string name="sports_widget_group_a">Гурӯҳи «A»</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Гурӯҳи «B»</string>
+  <string name="sports_widget_group_b">Гурӯҳи «B»</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Гурӯҳи «C»</string>
+  <string name="sports_widget_group_c">Гурӯҳи «C»</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Гурӯҳи «F»</string>
+  <string name="sports_widget_group_f">Гурӯҳи «F»</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Гурӯҳи «G»</string>
+  <string name="sports_widget_group_g">Гурӯҳи «G»</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Гурӯҳи «H»</string>
+  <string name="sports_widget_group_h">Гурӯҳи «H»</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Гурӯҳи «I»</string>
+  <string name="sports_widget_group_i">Гурӯҳи «I»</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Гурӯҳи «J»</string>
+  <string name="sports_widget_group_j">Гурӯҳи «J»</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Гурӯҳи «K»</string>
+  <string name="sports_widget_group_k">Гурӯҳи «K»</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Гурӯҳи «L»</string>
+  <string name="sports_widget_group_l">Гурӯҳи «L»</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Дидани натиҷаҳо</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Дидани тафсилоти бозӣ</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">Бозиҳои марбут</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Бозиҳои марбут</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(Вақти пурра)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Вақти пурра</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">Тоза кардан</string>
+  <string name="sports_widget_remove">Тоза кардан</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
   <string name="sports_widget_skip">Нодида гузарондан</string>
   <!--
