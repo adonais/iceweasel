@@ -50,6 +50,8 @@ interface HTMLMediaElement : HTMLElement {
   [Throws]
   undefined fastSeek(double time);
   readonly attribute unrestricted double duration;
+  [Func="IsChromeOrUAWidget"]
+  undefined updateCueDisplay();
   [ChromeOnly]
   readonly attribute boolean isEncrypted;
   // TODO: Bug 847376 - readonly attribute any startDate;
@@ -114,10 +116,6 @@ partial interface HTMLMediaElement {
   attribute MediaStream? srcObject;
 
   attribute boolean preservesPitch;
-
-  // NB: for internal use with the video controls:
-  [Func="IsChromeOrUAWidget"] attribute boolean mozAllowCasting;
-  [Func="IsChromeOrUAWidget"] attribute boolean mozIsCasting;
 
   // Mozilla extension: return embedded metadata from the stream as a
   // JSObject with key:value pairs for each tag. This can be used by

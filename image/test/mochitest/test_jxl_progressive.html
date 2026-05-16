@@ -1,0 +1,90 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+Test that JXL images with a progressive codestream show an LF (low frequency)
+frame approximation before the full image finishes loading. The test image has
+a solid grey top half and a 2x2 red/black checkerboard bottom half. The LF
+frame averages the checkerboard into a dark reddish color, while the final
+image shows bright red at the same position.
+-->
+<head>
+  <meta charset="utf-8">
+  <title>Test for JXL progressive decoding</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/WindowSnapshot.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body onload="SimpleTest.waitForFocus(runTest)">
+<script>
+SimpleTest.waitForExplicitFinish();
+
+function getPixel(imgElement, x, y) {
+  let r = imgElement.getBoundingClientRect();
+  let canvas = snapshotRect(window, r);
+  let ctx = canvas.getContext("2d");
+  let data = ctx.getImageData(x, y, 1, 1).data;
+  return { r: data[0], g: data[1], b: data[2], a: data[3] };
+}
+
+async function runTest() {
+  await SpecialPowers.pushPrefEnv({ set: [["image.jxl.enabled", true]] });
+
+  let img = document.createElement("img");
+  img.width = 500;
+  img.height = 375;
+
+  let imageLoaded = false;
+  let loadedPromise = new Promise(resolve => {
+    img.onload = () => { imageLoaded = true; resolve(); };
+  });
+
+  document.body.appendChild(img);
+  img.src = "sendprogressivejxl.sjs";
+
+  // Poll until we see the LF frame approximation in the checkerboard area.
+  // The image is 500x375 with a 2x2 red/black checkerboard in the bottom
+  // half. Pixel (252, 280) is a red square. The LF frame averages 8x8 blocks,
+  // making this area appear dark reddish (R ~128, G ~0, B ~0) rather than
+  // the final bright red (R ~255).
+  //
+  // The SJS holds the second chunk until we call sendprogressivejxl.sjs?continue,
+  // so the image stays in the partial state until we are ready.
+  let sawLFFrame = false;
+  let lfPixel;
+  while (!sawLFFrame && !imageLoaded) {
+    await new Promise(requestAnimationFrame);
+    let pixel = getPixel(img, 252, 280);
+    if (pixel.r > 50 && pixel.r < 220 && pixel.g < 80 && pixel.b < 80) {
+      sawLFFrame = true;
+      lfPixel = pixel;
+    }
+  }
+  ok(
+    sawLFFrame,
+    `saw LF frame approximation: r=${lfPixel?.r} g=${lfPixel?.g} b=${lfPixel?.b}`
+  );
+
+  if (!sawLFFrame) {
+    SimpleTest.finish();
+    return;
+  }
+
+  // Signal the SJS to send the rest of the image data.
+  await fetch("sendprogressivejxl.sjs?continue");
+
+  await loadedPromise;
+
+  // After all data arrives the checkerboard shows bright red at (252, 280).
+  await new Promise(requestAnimationFrame);
+  await new Promise(requestAnimationFrame);
+  let finalPixel = getPixel(img, 252, 280);
+  ok(
+    finalPixel.r > 220 && finalPixel.g < 50,
+    `final pixel is bright red: r=${finalPixel.r} g=${finalPixel.g} b=${finalPixel.b}`
+  );
+
+  SimpleTest.finish();
+}
+</script>
+</body>
+</html>

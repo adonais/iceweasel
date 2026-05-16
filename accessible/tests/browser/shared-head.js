@@ -975,7 +975,7 @@ async function getContentBoundsForDOMElm(browser, id) {
   });
 }
 
-const CACHE_WAIT_TIMEOUT_MS = 5000;
+const CACHE_WAIT_TIMEOUT_MS = 20000;
 
 /**
  * Wait for a predicate to be true after cache ticks.

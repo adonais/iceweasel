@@ -7,7 +7,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
 });
 
-const rustMirrorTelemetryVersion = "4";
+const rustMirrorTelemetryVersion = "6";
 
 // checks validity of an origin
 function checkOrigin(origin) {
@@ -150,6 +150,10 @@ function normalizeRustStorageErrorMessage(error) {
     .replace(/\{[0-9a-fA-F-]{36}\}/, "{UUID}");
 }
 
+function isInvalidOriginError(message) {
+  return message.includes("illegal origin");
+}
+
 //Normalize a Unix timestamp (ms) to the first day of its month at 00:00 UTC
 function roundToMonthUTC(timestampMs) {
   if (!timestampMs) {
@@ -174,6 +178,10 @@ function recordMirrorFailure(runId, operation, error, login = null) {
     "signon.rustMirror.poisoned",
     false
   );
+  const collectFailedOrigins = Services.prefs.getBoolPref(
+    "signon.rustMirror.collectFailedOrigins",
+    false
+  );
 
   const data = {
     metric_version: rustMirrorTelemetryVersion,
@@ -185,6 +193,10 @@ function recordMirrorFailure(runId, operation, error, login = null) {
 
     is_deleted: false,
 
+    has_origin: false,
+    has_form_action_origin: false,
+    has_http_realm: false,
+
     origin_error: null,
     origin_fixable: false,
     form_action_origin_error: null,
@@ -192,7 +204,6 @@ function recordMirrorFailure(runId, operation, error, login = null) {
 
     has_punycode_origin: false,
     has_punycode_form_action_origin: false,
-
     has_ftp_origin: false,
 
     has_empty_password: false,
@@ -204,15 +215,26 @@ function recordMirrorFailure(runId, operation, error, login = null) {
   };
 
   if (login) {
+    const timeCreated = roundToMonthUTC(login.timeCreated);
+    const timeLastUsed = roundToMonthUTC(login.timeLastUsed);
     data.is_deleted = login.deleted;
 
-    const [originError, fixableOriginError] = validateOrigin(login.origin);
+    data.has_origin = !!login.origin;
+    data.has_form_action_origin = !!login.formActionOrigin;
+    data.has_http_realm = !!login.httpRealm;
+
+    const [originError, fixedOrigin] = validateOrigin(login.origin);
     data.origin_error = originError;
-    data.origin_fixable = !!fixableOriginError;
-    const [formActionOriginError, fixableFormActionOriginError] =
-      validateOrigin(login.formActionOrigin);
+    data.origin_fixable = !!fixedOrigin;
+    let formActionOriginError = null;
+    let fixedFormActionOrigin = null;
+    if (login.formActionOrigin) {
+      [formActionOriginError, fixedFormActionOrigin] = validateOrigin(
+        login.formActionOrigin
+      );
+    }
     data.form_action_origin_error = formActionOriginError;
-    data.form_action_origin_fixable = !!fixableFormActionOriginError;
+    data.form_action_origin_fixable = !!fixedFormActionOrigin;
 
     data.has_punycode_origin = isPunycodeOrigin(login.origin);
     data.has_punycode_form_action_origin = isPunycodeOrigin(
@@ -225,8 +247,19 @@ function recordMirrorFailure(runId, operation, error, login = null) {
     data.has_username_line_break = containsLineBreaks(login.username);
     data.has_username_nul = containsNul(login.username);
 
-    data.time_created = roundToMonthUTC(login.timeCreated);
-    data.time_last_used = roundToMonthUTC(login.timeLastUsed);
+    data.time_created = timeCreated;
+    data.time_last_used = timeLastUsed;
+
+    const rustInvalidOrigin = isInvalidOriginError(data.error_message);
+
+    if (collectFailedOrigins && rustInvalidOrigin) {
+      recordOriginFailurePing(
+        login,
+        data.error_message,
+        timeCreated,
+        timeLastUsed
+      );
+    }
   }
 
   Glean.pwmgr.rustWriteFailure.record(data);
@@ -235,6 +268,19 @@ function recordMirrorFailure(runId, operation, error, login = null) {
   if (!poisoned) {
     Services.prefs.setBoolPref("signon.rustMirror.poisoned", true);
   }
+}
+
+function recordOriginFailurePing(login, error, timeCreated, timeLastUsed) {
+  const data = {
+    metric_version: rustMirrorTelemetryVersion,
+    origin: login.origin ?? "",
+    form_action_origin: login.formActionOrigin ?? "",
+    error_message: error,
+    time_created: timeCreated,
+    time_last_used: timeLastUsed,
+  };
+  Glean.pwmgr.rustOriginFailure.record(data);
+  GleanPings.pwmgrOriginFailure.submit();
 }
 
 function recordMirrorStatus(runId, operation, status) {

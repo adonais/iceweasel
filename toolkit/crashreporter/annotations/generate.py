@@ -164,7 +164,8 @@ def emit_header(annotations, _output_name):
 
 def javadoc_sanitize(s):
     return (
-        s.replace("<", "&lt;")
+        s
+        .replace("<", "&lt;")
         .replace(">", "&gt;")
         .replace("@", "&#064;")
         # Kotlin supports nested comments, so change anything that looks like the start of a block comment.

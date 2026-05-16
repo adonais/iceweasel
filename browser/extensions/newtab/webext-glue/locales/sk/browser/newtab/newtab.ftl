@@ -146,6 +146,9 @@ newtab-menu-report = Nahlásiť
 newtab-menu-section-block = Blokovať
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Prestať sledovať
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Prestať sledovať tému
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -307,9 +310,24 @@ newtab-error-fallback-refresh-link = Obnovením stránky to skúsite znova.
 
 newtab-custom-shortcuts-title = Skratky
 newtab-custom-shortcuts-subtitle = Stránky, ktoré si uložíte alebo navštívite
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Skratky
     .description = Stránky, ktoré si uložíte alebo navštívite
+newtab-custom-shortcuts-nova =
+    .label = Skratky
+newtab-custom-row-description =
+    .description = Počet riadkov
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } riadok
+            [few] { $num } riadky
+           *[other] { $num } riadkov
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -321,9 +339,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Sponzorované skratky
 newtab-custom-pocket-title = Odporúčané službou { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Výnimočný obsah vybraný službou { -pocket-brand-name }, ktorá je súčasťou rodiny { -brand-product-name(case: "gen") }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Odporúčané príbehy
     .description = Výnimočný obsah spravovaný rodinou { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Odporúčané príbehy
 newtab-custom-stories-personalized-toggle =
     .label = Príbehy
 newtab-custom-stories-personalized-checkbox-label = Prispôsobené príbehy na základe vašej aktivity
@@ -357,8 +378,11 @@ newtab-custom-settings = Ďalšie nastavenia
 
 newtab-wallpaper-title = Tapety
 newtab-wallpaper-reset = Obnoviť predvolenú tapetu
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Nahrať obrázok
 newtab-wallpaper-custom-color = Zvoľte farbu
+newtab-wallpaper-toggle-title =
+    .label = Tapety
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Obrázok prekročil limit veľkosti súboru { $file_size } MB. Skúste nahrať menší súbor.
@@ -381,6 +405,7 @@ newtab-wallpaper-light-fox-anniversary = Líška na trávnatom poli so zahmlenou
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Plné farby
 newtab-wallpaper-blue = Modrá
 newtab-wallpaper-light-blue = Svetlomodrá
@@ -487,7 +512,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celzius
 newtab-weather-menu-change-temperature-units-fahrenheit = Prepnúť na stupne Fahrenheita
 newtab-weather-menu-change-temperature-units-celsius = Prepnite na stupne Celzia
-newtab-weather-menu-hide-weather-v2 = Skryť počasie
 newtab-weather-menu-hide-weather = Skryť počasie na novej karte
 newtab-weather-menu-learn-more = Ďalšie informácie
 newtab-weather-menu-detect-my-location = Zistiť moju polohu
@@ -500,6 +524,12 @@ newtab-weather-opt-in-yes =
     .label = Áno
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Najvyššia
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Najnižšia
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -573,6 +603,7 @@ newtab-section-confirm-block-topic-p2 = Zablokované témy sa už nebudú zobraz
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Blokovať { $topic }
+newtab-section-block-cancel-button = Zrušiť
 
 ## Strings for custom wallpaper highlight
 
@@ -636,6 +667,18 @@ newtab-toast-thanks-for-reporting =
     .message = Ďakujeme za nahlásenie.
 newtab-toast-widgets-hidden =
     .message = Vyberte ikonu ceruzky a kedykoľvek znova pridajte miniaplikácie.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Teraz sledujete tému { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Už viac nesledujete tému { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Už sa vám nebudú zobrazovať články z témy { $topic }.
 
 ## Strings for task / to-do list productivity widget
 
@@ -655,7 +698,6 @@ newtab-widget-lists-menu-edit = Upraviť názov zoznamu
 newtab-widget-lists-menu-create = Vytvoriť nový zoznam
 newtab-widget-lists-menu-delete = Odstrániť tento zoznam
 newtab-widget-lists-menu-copy = Kopírovať zoznam do schránky
-newtab-widget-lists-menu-hide = Skryť všetky zoznamy
 newtab-widget-lists-menu-learn-more = Ďalšie informácie
 newtab-widget-lists-input-add-an-item =
     .placeholder = Pridať položku
@@ -677,6 +719,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = Nový zoznam
 newtab-widget-section-title = Miniaplikácie
 newtab-widget-menu-hide = Skryť miniaplikáciu
+newtab-widget-menu-change-size = Zmeniť veľkosť
+newtab-widget-size-small = Malá
+newtab-widget-size-medium = Stredná
+newtab-widget-size-large = Veľká
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Skryť miniaplikácie
@@ -708,7 +754,6 @@ newtab-widget-timer-reset =
     .title = Vynulovať
 newtab-widget-timer-menu-notifications = Vypnúť upozornenia
 newtab-widget-timer-menu-notifications-on = Zapnúť upozornenia
-newtab-widget-timer-menu-hide = Skryť časovač
 newtab-widget-timer-menu-learn-more = Ďalšie informácie
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Najlepšie titulky
@@ -719,6 +764,12 @@ newtab-daily-briefing-card-timestamp = Aktualizované pred { $minutes } min.
 newtab-widget-message-title = Zostaňte sústredení vďaka zoznamom a vstavanému časovaču
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Od rýchlych pripomienok až po denné úlohy, od sústredených stretnutí až po prestávky – sústreďte sa na úlohy a dodržujte čas.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Prispôsobte si { -brand-product-name(case: "acc") }
+newtab-promo-card-body-addons = Vyberte si tapetu z našej kolekcie alebo si vytvorte vlastnú.
+newtab-promo-card-cta-addons = Vyskúšajte si to teraz
 newtab-promo-card-title = Podporiť { -brand-product-name }
 newtab-promo-card-body = Naši sponzori podporujú našu misiu budovať lepší web
 newtab-promo-card-cta = Ďalšie informácie

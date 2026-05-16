@@ -28,7 +28,7 @@ task-defaults:
     worker:
         artifacts:
             - name: 'public/build/diff-summary.log'
-              path: '/builds/worker/tools/release/updates/diff-summary.log'
+              path: '/builds/worker/workspace/diff-summary.log'
               type: file
         docker-image:
             in-tree: "update-verify"

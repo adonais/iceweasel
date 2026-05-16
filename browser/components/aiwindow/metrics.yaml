@@ -34,15 +34,15 @@ smart_window:
         type: string
         description: >
           What was the detected intent for the request: navigate, search, chat, or action
+      length: &length
+        type: quantity
+        unit: characters
+        description: >
+          Number of characters submitted
       location: &location
         type: string
         description: >
           Which input was used: fullpage, sidebar, or urlbar
-      memories:
-        type: quantity
-        unit: count
-        description: >
-          Number of memories included
       mentions:
         type: quantity
         unit: count
@@ -66,11 +66,6 @@ smart_window:
         unit: count
         description: >
           Number of tabs selected
-      tokens:
-        type: quantity
-        unit: count
-        description: >
-          Number of tokens in the request
 
   search_submit:
     type: event
@@ -88,11 +83,7 @@ smart_window:
     extra_keys:
       chat_id: *chat_id
       detected_intent: *detected_intent
-      length:
-        type: quantity
-        unit: characters
-        description: >
-          Number of characters for the search terms
+      length: *length
       location: *location
       message_seq: *message_seq
       model: *model
@@ -100,6 +91,7 @@ smart_window:
         type: string
         description: >
           Search provider used in the request
+      submit_type: *submit_type
 
   navigate_submit:
     type: event
@@ -117,6 +109,7 @@ smart_window:
     extra_keys:
       chat_id: *chat_id
       detected_intent: *detected_intent
+      length: *length
       location: *location
       message_seq: *message_seq
       model: *model
@@ -607,7 +600,7 @@ smart_window:
   onboarding_model_navigate:
     type: event
     description: |
-      Recorded when user clicks done on the model selection screen
+      Recorded when user clicks next on the model selection screen
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
     data_reviews:
@@ -621,6 +614,41 @@ smart_window:
         description: >
           Identifier for the selected model during onboarding when user clicks done,
           for example: '1', '2', '3'
+        type: string
+    expires: never
+
+  onboarding_memories_navigate:
+    type: event
+    description: |
+      Recorded when user clicks done on the memories onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - pdahiya@mozilla.com
+    expires: never
+
+  onboarding_memories_settings:
+    type: event
+    description: |
+      Records memories checklist selections made by user on the memories onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - pdahiya@mozilla.com
+    extra_keys:
+      source:
+        description: >
+          Comma-separated list of memory checkbox ids the user had selected
+          when clicking done, for example: 'memories-chats,memories-browsing'.
+          Empty string if the user deselects all options
         type: string
     expires: never
 
@@ -644,8 +672,10 @@ smart_window:
       Recorded when a Smart Window is opened
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009610
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037980
     data_reviews:
       - https://phabricator.services.mozilla.com/D285902
+      - https://phabricator.services.mozilla.com/D299196
     data_sensitivity:
       - interaction
     notification_emails:
@@ -663,6 +693,59 @@ smart_window:
         type: boolean
         description: >
           Whether the user saw firstrun onboarding when opening Smart Window. True if onboarding has not yet been completed.
+      opened_tabs:
+        type: quantity
+        unit: count
+        description: >
+          Number of tabs the user had opened when they switched to Smart window if the switch was used
+    expires: never
+
+  classic_switch:
+    type: event
+    description: |
+      The user switches from Smart Window to classic mode
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2024069
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037980
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D290316
+      - https://phabricator.services.mozilla.com/D299196
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - yjamora@mozilla.com
+    extra_keys:
+      duration_ms: &opened_duration_ms
+        type: quantity
+        unit: ms
+        description: >
+          The amount of time in Ms since the user opened the SmartWindow
+      opened_tabs:
+        type: quantity
+        unit: count
+        description: >
+          Number of tabs the user had opened when they switched to Classic window
+    expires: never
+
+  close_window:
+    type: event
+    description: |
+      Recorded when an active Smart Window is closed
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037980
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D299196
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - elee@mozilla.com
+    extra_keys:
+      duration_ms: *opened_duration_ms
+      opened_tabs:
+        type: quantity
+        unit: count
+        description: >
+          Number of tabs the user had opened when they closed the window
     expires: never
 
   uri_load:

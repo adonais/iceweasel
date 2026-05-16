@@ -1228,7 +1228,7 @@ def gtest(
             append_env=gtest_env,
             cwd=cwd,
             ensure_exit_code=False,
-            line_handler=lambda line: format_gtest_line(line),
+            line_handler=format_gtest_line,
         )
         gtest_log.shutdown()
         return result
@@ -1443,25 +1443,140 @@ def android_gtest(
     category="misc",
     description="Package source for distribution.",
 )
-def source_package(command_context, verbose=False):
+@CommandArgument(
+    "-o",
+    "--output",
+    type=str,
+    default=None,
+    help="Force archive name.",
+)
+@CommandArgument(
+    "--upload",
+    type=str,
+    default="",
+    help="Compute package check sum and move both to the given location.",
+)
+def source_package(command_context, output, upload):
+    substs = command_context.substs
     if conditions.is_jsshell(command_context):
+        if output:
+            command_context.log(
+                logging.ERROR,
+                "source-package-unsupported-output",
+                {},
+                "Source package output is currently not supported for SpiderMonkey",
+            )
+            return 1
         js_src = os.path.join(command_context.topsrcdir, "js", "src")
         command_context.run_process(
             [sys.executable, os.path.join(js_src, "make-source-package.py")],
             cwd=js_src,
             append_env={
-                "DIST": command_context.substs["DIST"],
-                "MOZJS_MAJOR_VERSION": command_context.substs["MOZJS_MAJOR_VERSION"],
-                "MOZJS_MINOR_VERSION": command_context.substs["MOZJS_MINOR_VERSION"],
-                "MOZJS_PATCH_VERSION": command_context.substs["MOZJS_PATCH_VERSION"],
-                "MOZJS_ALPHA": command_context.substs["MOZJS_ALPHA"],
+                "DIST": substs["DIST"],
+                "MOZJS_MAJOR_VERSION": substs["MOZJS_MAJOR_VERSION"],
+                "MOZJS_MINOR_VERSION": substs["MOZJS_MINOR_VERSION"],
+                "MOZJS_PATCH_VERSION": substs["MOZJS_PATCH_VERSION"],
+                "MOZJS_ALPHA": substs["MOZJS_ALPHA"],
             },
             ensure_exit_code=0,
         )
-    else:
+        if upload:
+            command_context.log(
+                logging.ERROR,
+                "source-package-unsupported-upload",
+                {},
+                "Source package upload is currently supported only for Firefox",
+            )
+            return 1
+    elif substs.get("MOZ_WIDGET_TOOLKIT"):
+        if output:
+            if not output.endswith(".tar.xz"):
+                command_context.log(
+                    logging.ERROR,
+                    "source-package-unsupported-output",
+                    {},
+                    "Source package output must use the .tar.xz extension",
+                )
+                return 1
+
         command_context._run_make(
-            directory=".", target="source-package", ensure_exit_code=True
+            target="buildid.h",
+            ensure_exit_code=True,
         )
+        with open(os.path.join(command_context.topobjdir, "buildid.h")) as fd:
+            _, _, buildid = fd.read().split()
+
+        source_url = ""
+        if substs.get("MOZ_INCLUDE_SOURCE_INFO"):
+            repo = substs.get("MOZ_SOURCE_REPO")
+            changeset = substs.get("MOZ_SOURCE_CHANGESET")
+            if repo and changeset:
+                source_url = f"{repo}/rev/{changeset}"
+
+        # FIXME: don't create this in topsrcdir
+        with open(
+            os.path.join(command_context.topsrcdir, "sourcestamp.txt"), "w"
+        ) as fd:
+            fd.write(f"{buildid}\n{source_url}")
+
+        # this should match SOURCE_TAR in packager.mk.
+        archive_prefix = f"{substs['MOZ_APP_NAME']}-{substs['MOZ_APP_VERSION']}"
+        archive_path = os.path.join(
+            substs["DIST"], output or f"{archive_prefix}.tar.xz"
+        )
+
+        # FIXME: this list would not exist if we relying on vcs output
+        excludes = [
+            "--exclude=./.hg*",
+            "--exclude=./.git",
+            "--exclude=./.gitattributes",
+            "--exclude=./.gitkeep",
+            "--exclude=./.gitmodules",
+            "--exclude=CVS",
+            "--exclude=.cvs*",
+            "--exclude=./.mozconfig*",
+            "--exclude=*.pyc",
+            "--exclude=./Makefile",
+            f"--exclude=./{substs['DIST']}",
+            f"--exclude={os.path.basename(command_context.topobjdir)}",
+        ]
+        command_context.run_process(
+            [
+                "tar",
+                "-cJv",
+                "--owner=0",
+                "--group=0",
+                "--numeric-owner",
+                "--mode=go-w",
+                *excludes,
+                f"--transform=s,^./,{archive_prefix}/,",
+                "-f",
+                archive_path,
+                "./",
+            ],
+            ensure_exit_code=True,
+            pass_thru=True,
+        )
+        if upload:
+            checksum_path = archive_path[: -len(".tar.xz")] + ".checksums"
+            command_context._run_make(
+                target=[
+                    "upload",
+                    f"UPLOAD_PATH={upload}",
+                    f"UPLOAD_FILES={archive_path}",
+                    f"CHECKSUM_FILE={checksum_path}",
+                ],
+                ensure_exit_code=True,
+            )
+
+    else:
+        command_context.log(
+            logging.ERROR,
+            "source-package-unsupported-product",
+            {},
+            "Source packaging is not supported for the current project",
+        )
+        return 1
     command_context.notify("Packaging complete")
 
 

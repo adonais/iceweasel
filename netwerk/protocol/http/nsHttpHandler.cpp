@@ -29,6 +29,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Printf.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/SHA1.h"
@@ -690,14 +691,6 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
 
             nsAutoCStringN<64> encodedHash = ":"_ns + aDict->GetHash() + ":"_ns;
 
-            // Need to retain access to the dictionary until the request
-            // completes. Note that this includes if the dictionary we offered
-            // gets replaced by another request while we're waiting for a
-            // response; in that case we need to read in a copy of the
-            // dictionary into memory before overwriting it and store in dict
-            // temporarily.
-            aRequest->SetDictionary(aDict);
-
             // We want to make sure that the cache entry doesn't disappear out
             // from under us if we set the header, so do the callback to
             // Prefetch() the entry before adding the headers (so we don't
@@ -709,6 +702,14 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
             if ((aCallback)(aNeedsResume, aDict)) {
               LOG_DICTIONARIES(
                   ("Setting Available-Dictionary: %s", encodedHash.get()));
+              // Need to retain access to the dictionary until the request
+              // completes. Note that this includes if the dictionary we offered
+              // gets replaced by another request while we're waiting for a
+              // response; in that case we need to read in a copy of the
+              // dictionary into memory before overwriting it and store in dict
+              // temporarily.
+              aRequest->SetDictionary(aDict);
+
               nsresult rv = aRequest->SetHeader(
                   nsHttp::Available_Dictionary, encodedHash, false,
                   nsHttpHeaderArray::eVarietyRequestOverride);
@@ -728,7 +729,7 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
               return aRequest->SetHeader(
                   nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
                   false, nsHttpHeaderArray::eVarietyRequestOverride);
-            }
+            }  // else probably Prefetch failed
             return NS_OK;
           });
     }
@@ -1540,9 +1541,9 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
       // and accept-encoding.dictionary, update both if either changes (which is
       // quite rare, so there's no real perf hit)
       nsAutoCString acceptDictionaryEncodings;
-      rv = Preferences::GetCString(HTTP_PREF("accept-encoding.dictionary"),
-                                   acceptDictionaryEncodings);
-      if (NS_SUCCEEDED(rv) && !acceptDictionaryEncodings.IsEmpty()) {
+      nsresult rvDic = Preferences::GetCString(
+          HTTP_PREF("accept-encoding.dictionary"), acceptDictionaryEncodings);
+      if (NS_SUCCEEDED(rvDic) && !acceptDictionaryEncodings.IsEmpty()) {
         acceptEncodings.Append(", "_ns);
         acceptEncodings.Append(acceptDictionaryEncodings);
         rv = SetAcceptEncodings(acceptEncodings.get(), true, true);
@@ -2573,10 +2574,33 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
     }
   }
 
+  bool fetchHTTPSRR = EchConfigEnabled();
+  if (StaticPrefs::network_http_happy_eyeballs_enabled()) {
+    ci->SetHappyEyeballsEnabled(true);
+    // When HE is enabled, HTTPS RR lookups are handled by
+    // HappyEyeballsConnectionAttempt.
+    fetchHTTPSRR = false;
+  }
+
   LOG(("MaybeSpeculativeConnectWithHTTPSRR for ci=%s", ci->HashKey().get()));
   // When ech is enabled, always do speculative connect with HTTPS RR.
-  return MaybeSpeculativeConnectWithHTTPSRR(ci, aCallbacks, 0,
-                                            EchConfigEnabled());
+  return MaybeSpeculativeConnectWithHTTPSRR(ci, aCallbacks, 0, fetchHTTPSRR);
+}
+
+nsresult nsHttpHandler::SpeculativeConnect(nsHttpConnectionInfo* ci,
+                                           nsIInterfaceRequestor* callbacks,
+                                           uint32_t caps,
+                                           SpeculativeTransaction* aTrans) {
+  if (mDebugObservations) {
+    nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
+    if (obsService) {
+      nsPrintfCString debugHashKey("%s", ci->HashKey().get());
+      obsService->NotifyObservers(nullptr, "speculative-connect-request",
+                                  NS_ConvertUTF8toUTF16(debugHashKey).get());
+    }
+  }
+  RefPtr<nsHttpConnectionInfo> clone = ci->Clone();
+  return mConnMgr->SpeculativeConnect(clone, callbacks, caps, aTrans);
 }
 
 NS_IMETHODIMP

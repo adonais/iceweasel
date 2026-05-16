@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2016 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,14 +27,19 @@
 #include "vm/Compartment.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
+#include "vm/JSFunction.h"
 #include "vm/JSObject.h"
 #include "vm/NativeObject.h"
 #include "vm/PromiseObject.h"
+#include "wasm/WasmAnyRef.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmContext.h"
 #include "wasm/WasmFeatures.h"
+#include "wasm/WasmGcObject.h"
 #include "wasm/WasmGenerator.h"
 #include "wasm/WasmIonCompile.h"  // IonPlatformSupport
+#include "wasm/WasmJS.h"
+#include "wasm/WasmStacks.h"
 #include "wasm/WasmValidate.h"
 
 #include "vm/Compartment-inl.h"
@@ -50,412 +53,142 @@ using namespace js::jit;
 #ifdef ENABLE_WASM_JSPI
 namespace js::wasm {
 
-void SuspenderObject::releaseStackMemory() {
-  void* memory = stackMemory();
-  MOZ_ASSERT(isMoribund() == !memory);
-  if (memory) {
-    js_free(memory);
-    setStackMemory(nullptr);
-    setState(SuspenderState::Moribund);
-  }
-}
+// Slot that is used in WasmPromisingFunction
+const size_t WRAPPED_FN_SLOT = 0;
 
-// Slots that used in various JSFunctionExtended below.
-const size_t SUSPENDER_SLOT = 0;
-const size_t WRAPPED_FN_SLOT = 1;
-const size_t CONTINUE_ON_SUSPENDABLE_SLOT = 1;
-const size_t PROMISE_SLOT = 2;
-
-static JitActivation* FindSuspendableStackActivation(
-    JSTracer* trc, SuspenderObject* suspender) {
-  // The jitActivation.refNoCheck() can be used since during trace/marking
-  // the main thread will be paused.
-  JitActivation* activation =
-      trc->runtime()->mainContextFromAnyThread()->jitActivation.refNoCheck();
-  while (activation) {
-    // Skip activations without Wasm exit FP -- they are mostly debugger
-    // related.
-    if (activation->hasWasmExitFP()) {
-      // Scan all JitActivations to find one that starts with suspended stack
-      // frame pointer.
-      WasmFrameIter iter(activation);
-      if (!iter.done() && suspender->hasStackAddress(iter.frame())) {
-        return activation;
-      }
-    }
-    activation = activation->prevJitActivation();
-  }
-  MOZ_CRASH("Suspendable stack activation not found");
-}
-
-void TraceSuspendableStack(JSTracer* trc, SuspenderObject* suspender) {
-  MOZ_ASSERT(suspender->isTraceable());
-  void* exitFP = suspender->suspendableExitFP();
-
-  // Create and iterator for wasm frames:
-  //  - If a stack entry for suspended stack exists, the
-  //  suspender->suspendableFP()
-  //    and suspender->suspendedReturnAddress() provide start of the frames.
-  //  - Otherwise, the stack is the part of the main stack, the context
-  //    JitActivation frames will be used to trace.
-  WasmFrameIter iter =
-      suspender->isSuspended()
-          ? WasmFrameIter(
-                static_cast<FrameWithInstances*>(suspender->suspendableFP()),
-                suspender->suspendedReturnAddress())
-          : WasmFrameIter(FindSuspendableStackActivation(trc, suspender));
-  MOZ_ASSERT_IF(suspender->isSuspended(), iter.currentFrameStackSwitched());
-  uintptr_t highestByteVisitedInPrevWasmFrame = 0;
-  while (true) {
-    MOZ_ASSERT(!iter.done());
-    uint8_t* nextPC = iter.resumePCinCurrentFrame();
-    Instance* instance = iter.instance();
-    TraceInstanceEdge(trc, instance, "WasmFrameIter instance");
-    highestByteVisitedInPrevWasmFrame = instance->traceFrame(
-        trc, iter, nextPC, highestByteVisitedInPrevWasmFrame);
-    if (iter.frame() == exitFP) {
-      break;
-    }
-    ++iter;
-    if (iter.currentFrameStackSwitched()) {
-      highestByteVisitedInPrevWasmFrame = 0;
-    }
-  }
-}
-
-static_assert(JS_STACK_GROWTH_DIRECTION < 0,
-              "JS-PI implemented only for native stacks that grows towards 0");
-
-SuspenderObject* SuspenderObject::create(JSContext* cx) {
-  Rooted<SuspenderObject*> suspender(
-      cx, NewBuiltinClassInstance<SuspenderObject>(cx));
-  if (!suspender) {
-    return nullptr;
-  }
-
-  // Initialize all of the slots
-  suspender->initFixedSlot(StateSlot, Int32Value(SuspenderState::Moribund));
-  suspender->initFixedSlot(PromisingPromiseSlot, NullValue());
-  suspender->initFixedSlot(SuspendingReturnTypeSlot,
-                           Int32Value(int32_t(ReturnType::Unknown)));
-  suspender->initFixedSlot(StackMemorySlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(MainFPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(MainSPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(SuspendableFPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(SuspendableSPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(SuspendableExitFPSlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(SuspendedRASlot, PrivateValue(nullptr));
-  suspender->initFixedSlot(MainExitFPSlot, PrivateValue(nullptr));
-
-  void* stackMemory = js_malloc(SuspendableStackPlusRedZoneSize);
-  if (!stackMemory) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  if (!cx->wasm().suspenders_.putNew(suspender)) {
-    js_free(stackMemory);
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  // We are now fully constructed and can transition states
-  suspender->setStackMemory(stackMemory);
-  suspender->setFixedSlot(SuspendableSPSlot,
-                          PrivateValue(static_cast<uint8_t*>(stackMemory) +
-                                       SuspendableStackPlusRedZoneSize));
-  suspender->setState(SuspenderState::Initial);
-
-  return suspender;
-}
-
-const JSClass SuspenderObject::class_ = {
-    "SuspenderObject",
-    JSCLASS_HAS_RESERVED_SLOTS(SlotCount) | JSCLASS_FOREGROUND_FINALIZE,
-    &SuspenderObject::classOps_,
-    nullptr,
-    &SuspenderObject::classExt_,
-};
-
-const JSClassOps SuspenderObject::classOps_ = {
-    nullptr,   // addProperty
-    nullptr,   // delProperty
-    nullptr,   // enumerate
-    nullptr,   // newEnumerate
-    nullptr,   // resolve
-    nullptr,   // mayResolve
-    finalize,  // finalize
-    nullptr,   // call
-    nullptr,   // construct
-    trace,     // trace
-};
-
-const ClassExtension SuspenderObject::classExt_ = {
-    .objectMovedOp = SuspenderObject::moved,
-};
-
-/* static */
-void SuspenderObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  SuspenderObject& suspender = obj->as<SuspenderObject>();
-  if (!suspender.isMoribund()) {
-    gcx->runtime()->mainContextFromOwnThread()->wasm().suspenders_.remove(
-        &suspender);
-  }
-  suspender.releaseStackMemory();
-  MOZ_ASSERT(suspender.isMoribund());
-}
-
-/* static */
-void SuspenderObject::trace(JSTracer* trc, JSObject* obj) {
-  SuspenderObject& suspender = obj->as<SuspenderObject>();
-  // The SuspenderObject refers stacks frames that need to be traced
-  // only during major GC to determine if SuspenderObject content is
-  // reachable from JS.
-  if (!suspender.isTraceable() || trc->isTenuringTracer()) {
-    return;
-  }
-  TraceSuspendableStack(trc, &suspender);
-}
-
-/* static */
-size_t SuspenderObject::moved(JSObject* obj, JSObject* old) {
-  wasm::Context& context =
-      obj->runtimeFromMainThread()->mainContextFromOwnThread()->wasm();
-  context.suspenders_.rekeyIfMoved(&old->as<SuspenderObject>(),
-                                   &obj->as<SuspenderObject>());
-  return 0;
-}
-
-void SuspenderObject::setMoribund(JSContext* cx) {
-  MOZ_ASSERT(state() == SuspenderState::Active);
-  cx->wasm().leaveSuspendableStack(cx);
-  if (!this->isMoribund()) {
-    cx->wasm().suspenders_.remove(this);
-  }
-  this->releaseStackMemory();
-  MOZ_ASSERT(this->isMoribund());
-}
-
-void SuspenderObject::setActive(JSContext* cx) {
-  this->setState(SuspenderState::Active);
-  cx->wasm().enterSuspendableStack(cx, this);
-}
-
-void SuspenderObject::setSuspended(JSContext* cx) {
-  this->setState(SuspenderState::Suspended);
-  cx->wasm().leaveSuspendableStack(cx);
-}
-
-void SuspenderObject::enter(JSContext* cx) {
-  // We can enter a suspender normally from Initial, or through unwinding when
-  // are in the 'CalledOnMain' or 'Suspended' states.
-  MOZ_ASSERT(state() == SuspenderState::Initial ||
-             state() == SuspenderState::CalledOnMain ||
-             state() == SuspenderState::Suspended);
-  setActive(cx);
-}
-
-void SuspenderObject::suspend(JSContext* cx) {
-  MOZ_ASSERT(state() == SuspenderState::Active);
-  setSuspended(cx);
-
-  if (cx->realm()->isDebuggee()) {
-    WasmFrameIter iter(cx->activation()->asJit());
-    while (true) {
-      MOZ_ASSERT(!iter.done());
-      if (iter.debugEnabled()) {
-        DebugAPI::onSuspendWasmFrame(cx, iter.debugFrame());
-      }
-      ++iter;
-      if (iter.currentFrameStackSwitched()) {
-        break;
-      }
-    }
-  }
-}
-
-void SuspenderObject::resume(JSContext* cx) {
-  MOZ_ASSERT(state() == SuspenderState::Suspended);
-  setActive(cx);
-  // Use barrier because object is being removed from the suspendable stack
-  // from roots.
-  gc::PreWriteBarrier(this);
-
-  if (cx->realm()->isDebuggee()) {
-    for (FrameIter iter(cx);; ++iter) {
-      MOZ_RELEASE_ASSERT(!iter.done(), "expecting stackSwitched()");
-      if (iter.isWasm()) {
-        WasmFrameIter& wasmIter = iter.wasmFrame();
-        if (wasmIter.currentFrameStackSwitched()) {
-          break;
-        }
-        if (wasmIter.debugEnabled()) {
-          DebugAPI::onResumeWasmFrame(cx, iter);
-        }
-      }
-    }
-  }
-}
-
-void SuspenderObject::leave(JSContext* cx) {
-  // We are exiting suspended stack if state is active,
-  // otherwise the stack was just suspended.
-  switch (state()) {
-    case SuspenderState::Active: {
-      setMoribund(cx);
-      break;
-    }
-    case SuspenderState::Suspended: {
-      MOZ_ASSERT(!cx->wasm().onSuspendableStack());
-      break;
-    }
-    case SuspenderState::Initial:
-    case SuspenderState::Moribund:
-    case SuspenderState::CalledOnMain:
-      MOZ_CRASH();
-  }
-}
-
-void SuspenderObject::unwind(JSContext* cx) {
-  switch (state()) {
-    case SuspenderState::Suspended:
-    case SuspenderState::CalledOnMain: {
-      cx->wasm().suspenders_.remove(this);
-      this->releaseStackMemory();
-      MOZ_ASSERT(this->isMoribund());
-      break;
-    }
-    case SuspenderState::Active:
-    case SuspenderState::Initial:
-    case SuspenderState::Moribund:
-      MOZ_CRASH();
-  }
-}
-
-void SuspenderObject::forwardToSuspendable() {
-  // Injecting suspendable stack back into main one at the exit frame.
-  uint8_t* mainExitFP = (uint8_t*)this->mainExitFP();
-  *reinterpret_cast<void**>(mainExitFP + Frame::callerFPOffset()) =
-      this->suspendableFP();
-  *reinterpret_cast<void**>(mainExitFP + Frame::returnAddressOffset()) =
-      this->suspendedReturnAddress();
-}
+// Slots that are used in the WasmPromiseReaction
+const size_t CONT_SLOT = 0;
+const size_t REACTION_SLOT = 1;
+const size_t PROMISING_PROMISE_SLOT = 2;
 
 // Suspending
 
 // Builds a wasm module with following structure:
 // (module
-//   (type $params (struct (field ..)*)))
 //   (type $results (struct (field ..)*)))
-//   (import "" "" (func $suspending.wrappedfn ..))
+//   (import "" "tag" (tag $on-suspend))
+//   (import "" "wrapped" (func $suspending.wrappedfn ..))
 //   (func $suspending.exported .. )
-//   (func $suspending.trampoline ..)
-//   (func $suspending.continue-on-suspendable ..)
 //   (export "" (func $suspending.exported))
 // )
-//
-// The module provides logic for the state transitions (see the SMDOC):
-//  - Invoke Suspending Import via $suspending.exported
-//  - Suspending Function Returns a Promise via $suspending.trampoline
-//  - Promise Resolved transitions via $suspending.continue-on-suspendable
 //
 class SuspendingFunctionModuleFactory {
  public:
   enum TypeIdx {
-    ParamsTypeIndex,
     ResultsTypeIndex,
+    TagFuncTypeIndex,
+  };
+
+  enum TagIdx {
+    OnSuspendTagIndex,
   };
 
   enum FnIdx {
     WrappedFnIndex,
     ExportedFnIndex,
-    TrampolineFnIndex,
-    ContinueOnSuspendableFnIndex
   };
 
  private:
   // Builds function that will be imported to wasm module:
   // (func $suspending.exported
   //   (param ..)* (result ..)*
-  //   (local $suspender externref)
+  //
+  //   (local $promise externref)
   //   (local $results (ref $results))
-  //   call $builtin.current-suspender
-  //   local.tee $suspender
-  //   ref.func $suspending.trampoline
-  //   local.get $i*
-  //   stuct.new $param-type
-  //   stack-switch SwitchToMain ;; <- (suspender,fn,data)
-  //   local.get $suspender
-  //   call $builtin.get-suspending-promise-result
-  //   ref.cast $results-type
+  //
+  //   ;; ensure that there is a WebAssembly.promising function on the stack
+  //   guard-suspending
+  //
+  //   ;; call the wrapped fn
+  //   (local.get $param)*
+  //   call $suspending.wrappedfn
+  //
+  //   ;; call Promise.resolve on the result of wrapped fn
+  //   call $builtin.promise-resolve
+  //   ;; save the promise for when we resume
+  //   local.tee $promise
+  //   suspend $on-suspend
+  //
+  //   ;; get the results from the promise as a struct
+  //   local.get $promise
+  //   call $builtin.get-promise-results
+  //   ref.cast $results
   //   local.set $results
-  //   (struct.get $results (local.get $results))*
+  //
+  //   ;; unbox the struct and return the results
+  //   (struct.get $results i local.get $results)*
+  //   return
   // )
   bool encodeExportedFunction(CodeMetadata& codeMeta, uint32_t paramsSize,
                               uint32_t resultSize, uint32_t paramsOffset,
                               RefType resultType, Bytes& bytecode) {
     Encoder encoder(bytecode, *codeMeta.types);
+
+    const uint32_t promiseIndex = paramsSize;
+    const uint32_t resultsIndex = paramsSize + 1;
+
     ValTypeVector locals;
-    if (!locals.emplaceBack(RefType::extern_())) {
-      return false;
-    }
-    if (!locals.emplaceBack(resultType)) {
+    if (!locals.emplaceBack(RefType::extern_()) ||
+        !locals.emplaceBack(resultType)) {
       return false;
     }
     if (!EncodeLocalEntries(encoder, locals)) {
       return false;
     }
 
-    const int suspenderIndex = paramsSize;
-    if (!encoder.writeOp(Op::I32Const) || !encoder.writeVarU32(0)) {
-      return false;
-    }
-    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32((uint32_t)BuiltinModuleFuncId::CurrentSuspender)) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::LocalTee) ||
-        !encoder.writeVarU32(suspenderIndex)) {
+    if (!encoder.writeOp(Opcode(MozOp::GuardSuspending)) ||
+        !encoder.writeVarU32(OnSuspendTagIndex)) {
       return false;
     }
 
-    // Results local is located after all params and suspender.
-    const int resultsIndex = paramsSize + 1;
-
-    if (!encoder.writeOp(Op::RefFunc) ||
-        !encoder.writeVarU32(TrampolineFnIndex)) {
-      return false;
-    }
+    // (local.get $param)* call $suspending.wrappedfn
     for (uint32_t i = 0; i < paramsSize; i++) {
       if (!encoder.writeOp(Op::LocalGet) ||
           !encoder.writeVarU32(i + paramsOffset)) {
         return false;
       }
     }
-    if (!encoder.writeOp(GcOp::StructNew) ||
-        !encoder.writeVarU32(ParamsTypeIndex)) {
+    if (!encoder.writeOp(Op::Call) || !encoder.writeVarU32(WrappedFnIndex)) {
       return false;
     }
 
-    if (!encoder.writeOp(MozOp::StackSwitch) ||
-        !encoder.writeVarU32(uint32_t(StackSwitchKind::SwitchToMain))) {
+    // call $builtin.promise-resolve
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32((uint32_t)BuiltinModuleFuncId::PromiseResolve)) {
       return false;
     }
 
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(suspenderIndex)) {
+    // local.tee $promise
+    if (!encoder.writeOp(Op::LocalTee) || !encoder.writeVarU32(promiseIndex)) {
+      return false;
+    }
+
+    // suspend $on-suspend
+    if (!encoder.writeOp(Op::Suspend) ||
+        !encoder.writeVarU32(OnSuspendTagIndex)) {
+      return false;
+    }
+
+    // local.get $promise
+    // call $builtin.get-promise-results
+    if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(promiseIndex)) {
       return false;
     }
     if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
         !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::GetSuspendingPromiseResult)) {
+            (uint32_t)BuiltinModuleFuncId::GetPromiseResults)) {
       return false;
     }
+
+    // ref.cast $results
+    // local.set $results
     if (!encoder.writeOp(GcOp::RefCast) ||
         !encoder.writeVarU32(ResultsTypeIndex) ||
         !encoder.writeOp(Op::LocalSet) || !encoder.writeVarU32(resultsIndex)) {
       return false;
     }
+
+    // (struct.get $results i (local.get $results))*
     for (uint32_t i = 0; i < resultSize; i++) {
       if (!encoder.writeOp(Op::LocalGet) ||
           !encoder.writeVarU32(resultsIndex) ||
@@ -463,139 +196,6 @@ class SuspendingFunctionModuleFactory {
           !encoder.writeVarU32(ResultsTypeIndex) || !encoder.writeVarU32(i)) {
         return false;
       }
-    }
-    return encoder.writeOp(Op::End);
-  }
-
-  // Builds function that is called on main stack:
-  // (func $suspending.trampoline
-  //   (param $params (ref $suspender)) (param $param (ref $param-type))
-  //   (result anyref)
-  //   local.get $suspender ;; for $builtin.forward-exn-to-suspended below
-  //   block (result exnref)
-  //    try_table (catch_all_ref 0)
-  //     local.get $suspender ;; for call $add-promise-reactions
-  //     (struct.get $param-type $i (local.get $param))*
-  //     call $suspending.wrappedfn
-  //     ref.func $suspending.continue-on-suspendable
-  //     call $builtin.add-promise-reactions
-  //     return
-  //    end
-  //    unreachable
-  //   end
-  //   call $builtin.forward-exn-to-suspended
-  // )
-  // The function calls suspending import and returns into the
-  // $promising.exported function because that was the top function
-  // on the main stack.
-  bool encodeTrampolineFunction(CodeMetadata& codeMeta, uint32_t paramsSize,
-                                Bytes& bytecode) {
-    Encoder encoder(bytecode, *codeMeta.types);
-    if (!EncodeLocalEntries(encoder, ValTypeVector())) {
-      return false;
-    }
-    const uint32_t SuspenderIndex = 0;
-    const uint32_t ParamsIndex = 1;
-
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(Op::Block) ||
-        !encoder.writeFixedU8(uint8_t(TypeCode::ExnRef))) {
-      return false;
-    }
-
-    if (!encoder.writeOp(Op::TryTable) ||
-        !encoder.writeFixedU8(uint8_t(TypeCode::BlockVoid)) ||
-        !encoder.writeVarU32(1) ||
-        !encoder.writeFixedU8(/* catch_all_ref = */ 0x03) ||
-        !encoder.writeVarU32(0)) {
-      return false;
-    }
-
-    // For AddPromiseReactions call below.
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-
-    for (uint32_t i = 0; i < paramsSize; i++) {
-      if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(ParamsIndex)) {
-        return false;
-      }
-      if (!encoder.writeOp(GcOp::StructGet) ||
-          !encoder.writeVarU32(ParamsTypeIndex) || !encoder.writeVarU32(i)) {
-        return false;
-      }
-    }
-    if (!encoder.writeOp(Op::Call) || !encoder.writeVarU32(WrappedFnIndex)) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::RefFunc) ||
-        !encoder.writeVarU32(ContinueOnSuspendableFnIndex)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::AddPromiseReactions)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(Op::Return) || !encoder.writeOp(Op::End) ||
-        !encoder.writeOp(Op::Unreachable) || !encoder.writeOp(Op::End)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::ForwardExceptionToSuspended)) {
-      return false;
-    }
-
-    return encoder.writeOp(Op::End);
-  }
-
-  // Builds function that is called on main stack:
-  // (func $suspending.continue-on-suspendable
-  //   (param $params (ref $suspender)) (param $results externref)
-  //   (result externref)
-  //   local.get $suspender
-  //   ref.null funcref
-  //   local.get $results
-  //   any.convert_extern
-  //   stack-switch ContinueOnSuspendable
-  // )
-  bool encodeContinueOnSuspendableFunction(CodeMetadata& codeMeta,
-                                           uint32_t resultsSize,
-                                           Bytes& bytecode) {
-    Encoder encoder(bytecode, *codeMeta.types);
-    if (!EncodeLocalEntries(encoder, ValTypeVector())) {
-      return false;
-    }
-
-    const uint32_t SuspenderIndex = 0;
-    const uint32_t ResultsIndex = 1;
-
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::RefNull) ||
-        !encoder.writeValType(ValType(RefType::func()))) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(ResultsIndex) ||
-        !encoder.writeOp(GcOp::AnyConvertExtern)) {
-      return false;
-    }
-
-    if (!encoder.writeOp(MozOp::StackSwitch) ||
-        !encoder.writeVarU32(
-            uint32_t(StackSwitchKind::ContinueOnSuspendable))) {
-      return false;
     }
 
     return encoder.writeOp(Op::End);
@@ -620,41 +220,22 @@ class SuspendingFunctionModuleFactory {
     }
     MutableCodeMetadata codeMeta = moduleMeta->codeMeta;
 
+    // If the function we're wrapping is WebAssembly, treat it as if it was JS.
+    // This is required by the specification so that type mismatches don't
+    // surface as link errors. It also ensures that we don't need a suspend
+    // barrier instruction when calling the wrapped function.
+    codeMeta->funcImportsAreJS = true;
+
     MOZ_ASSERT(IonPlatformSupport());
     CompilerEnvironment compilerEnv(CompileMode::Once, Tier::Optimized,
                                     DebugEnabled::False);
     compilerEnv.computeParameters();
 
-    RefType suspenderType = RefType::extern_();
-    RefType promiseType = RefType::extern_();
-
-    ValTypeVector paramsWithoutSuspender;
-
     const size_t resultsSize = results.length();
     const size_t paramsSize = params.length();
     const size_t paramsOffset = 0;
-    if (!paramsWithoutSuspender.append(params.begin(), params.end())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
 
-    ValTypeVector resultsRef;
-    if (!resultsRef.emplaceBack(promiseType)) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-
-    StructType boxedParamsStruct;
-    if (!StructType::createImmutable(paramsWithoutSuspender,
-                                     &boxedParamsStruct)) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    MOZ_ASSERT(codeMeta->types->length() == ParamsTypeIndex);
-    if (!codeMeta->types->addType(std::move(boxedParamsStruct))) {
-      return nullptr;
-    }
-
+    // Type 0: $results struct
     StructType boxedResultType;
     if (!StructType::createImmutable(results, &boxedResultType)) {
       ReportOutOfMemory(cx);
@@ -665,49 +246,48 @@ class SuspendingFunctionModuleFactory {
       return nullptr;
     }
 
-    MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(paramsWithoutSuspender),
-                                    std::move(resultsRef))) {
+    // Type 1: tag func type (param externref)
+    ValTypeVector tagParams, tagResults;
+    if (!tagParams.emplaceBack(RefType::extern_())) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    MOZ_ASSERT(codeMeta->types->length() == TagFuncTypeIndex);
+    if (!codeMeta->types->addType(
+            FuncType(std::move(tagParams), std::move(tagResults)))) {
       return nullptr;
     }
 
-    // Imports names are not important, declare functions above as imports.
+    // Tag 0: $on-suspend
+    MutableTagType tagType = js_new<TagType>();
+    if (!tagType ||
+        !tagType->initialize(&(*codeMeta->types)[TagFuncTypeIndex])) {
+      return nullptr;
+    }
+    if (!codeMeta->tags.emplaceBack(TagKind::Exception, tagType)) {
+      return nullptr;
+    }
+
+    // Func 0: $suspending.wrappedfn (imported) - params -> (externref)
+    ValTypeVector wrappedParams, wrappedResults;
+    if (!wrappedParams.append(params.begin(), params.end()) ||
+        !wrappedResults.emplaceBack(RefType::extern_())) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
+    if (!moduleMeta->addDefinedFunc(std::move(wrappedParams),
+                                    std::move(wrappedResults))) {
+      return nullptr;
+    }
+
     codeMeta->numFuncImports = codeMeta->funcs.length();
 
-    // We will be looking up and using the exports function by index so
-    // the name doesn't matter.
+    // Func 1: $suspending.exported (defined, exported) - params -> results
     MOZ_ASSERT(codeMeta->funcs.length() == ExportedFnIndex);
     if (!moduleMeta->addDefinedFunc(std::move(params), std::move(results),
                                     /*declareForRef = */ true,
                                     mozilla::Some(CacheableName()))) {
-      return nullptr;
-    }
-
-    ValTypeVector paramsTrampoline, resultsTrampoline;
-    if (!paramsTrampoline.emplaceBack(suspenderType) ||
-        !paramsTrampoline.emplaceBack(RefType::fromTypeDef(
-            &(*codeMeta->types)[ParamsTypeIndex], false)) ||
-        !resultsTrampoline.emplaceBack(RefType::any())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    MOZ_ASSERT(codeMeta->funcs.length() == TrampolineFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(paramsTrampoline),
-                                    std::move(resultsTrampoline),
-                                    /*declareForRef = */ true)) {
-      return nullptr;
-    }
-
-    ValTypeVector paramsContinueOnSuspendable, resultsContinueOnSuspendable;
-    if (!paramsContinueOnSuspendable.emplaceBack(suspenderType) ||
-        !paramsContinueOnSuspendable.emplaceBack(RefType::extern_())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    MOZ_ASSERT(codeMeta->funcs.length() == ContinueOnSuspendableFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(paramsContinueOnSuspendable),
-                                    std::move(resultsContinueOnSuspendable),
-                                    /*declareForRef = */ true)) {
       return nullptr;
     }
 
@@ -720,7 +300,7 @@ class SuspendingFunctionModuleFactory {
     if (!mg.initializeCompleteTier()) {
       return nullptr;
     }
-    // Build functions and keep bytecodes around until the end.
+
     uint32_t funcBytecodeOffset = CallSite::FIRST_VALID_BYTECODE_OFFSET;
     Bytes bytecode;
     if (!encodeExportedFunction(
@@ -735,32 +315,6 @@ class SuspendingFunctionModuleFactory {
                            bytecode.begin() + bytecode.length())) {
       return nullptr;
     }
-    funcBytecodeOffset += bytecode.length();
-
-    Bytes bytecode2;
-    if (!encodeTrampolineFunction(*codeMeta, paramsSize, bytecode2)) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    if (!mg.compileFuncDef(TrampolineFnIndex, funcBytecodeOffset,
-                           bytecode2.begin(),
-                           bytecode2.begin() + bytecode2.length())) {
-      return nullptr;
-    }
-    funcBytecodeOffset += bytecode2.length();
-
-    Bytes bytecode3;
-    if (!encodeContinueOnSuspendableFunction(*codeMeta, paramsSize,
-                                             bytecode3)) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-    if (!mg.compileFuncDef(ContinueOnSuspendableFnIndex, funcBytecodeOffset,
-                           bytecode3.begin(),
-                           bytecode3.begin() + bytecode3.length())) {
-      return nullptr;
-    }
-    funcBytecodeOffset += bytecode3.length();
 
     if (!mg.finishFuncDefs()) {
       return nullptr;
@@ -771,68 +325,9 @@ class SuspendingFunctionModuleFactory {
   }
 };
 
-// Reaction on resolved/rejected suspending promise.
-static bool WasmPISuspendTaskContinue(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  // The arg[0] has result of resolved promise, or rejection reason.
-  Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
-  RootedValue suspender(cx, callee->getExtendedSlot(SUSPENDER_SLOT));
-  RootedValue suspendingPromise(cx, callee->getExtendedSlot(PROMISE_SLOT));
-
-  // Convert result of the promise into the parameters/arguments for the
-  // $suspending.continue-on-suspendable.
-  RootedFunction continueOnSuspendable(
-      cx, &callee->getExtendedSlot(CONTINUE_ON_SUSPENDABLE_SLOT)
-               .toObject()
-               .as<JSFunction>());
-  JS::RootedValueArray<2> argv(cx);
-  argv[0].set(suspender);
-  argv[1].set(suspendingPromise);
-
-  JS::Rooted<JS::Value> rval(cx);
-  if (Call(cx, UndefinedHandleValue, continueOnSuspendable, argv, &rval)) {
-    return true;
-  }
-
-  // The stack was unwound during exception.
-  MOZ_RELEASE_ASSERT(!cx->wasm().activeSuspender());
-  MOZ_RELEASE_ASSERT(
-      suspender.toObject().as<wasm::SuspenderObject>().isMoribund());
-
-  if (cx->isThrowingOutOfMemory()) {
-    return false;
-  }
-  Rooted<PromiseObject*> promise(
-      cx, suspender.toObject().as<SuspenderObject>().promisingPromise());
-  return RejectPromiseWithPendingError(cx, promise);
-}
-
-// Wraps original import to catch all exceptions and convert result to a
-// promise.
-// Seen as $suspending.wrappedfn in wasm.
-static bool WasmPIWrapSuspendingImport(JSContext* cx, unsigned argc,
-                                       Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
-  RootedValue originalImportFunc(cx, callee->getExtendedSlot(WRAPPED_FN_SLOT));
-
-  // Catching exceptions here.
-  RootedValue rval(cx);
-  if (Call(cx, UndefinedHandleValue, originalImportFunc, args, &rval)) {
-    // Convert the result to a resolved promise later in AddPromiseReactions.
-    args.rval().set(rval);
-    return true;
-  }
-
-  // Deferring pending exception to the handler in the
-  // $suspending.trampoline.
-  return false;
-}
-
 static bool ValidateTypes(JSContext* cx, const ValTypeVector& src) {
   for (ValType t : src) {
     if (t.typeDef()) {
-      // Error for internal types defined in the main module.
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_JSPI_ARG_TYPE);
       return false;
@@ -872,14 +367,19 @@ JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
   Rooted<ImportValues> imports(cx);
 
   // Add $suspending.wrappedfn to imports.
-  RootedFunction funcWrapper(
-      cx, NewNativeFunction(cx, WasmPIWrapSuspendingImport, 0, nullptr,
-                            gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  if (!funcWrapper) {
+  if (!imports.get().funcs.append(func)) {
+    ReportOutOfMemory(cx);
     return nullptr;
   }
-  funcWrapper->initExtendedSlot(WRAPPED_FN_SLOT, ObjectValue(*func));
-  if (!imports.get().funcs.append(funcWrapper)) {
+
+  // Add $on-suspend to imports.
+  Rooted<WasmNamespaceObject*> wasmNamespace(
+      cx, WasmNamespaceObject::getOrCreate(cx));
+  if (!wasmNamespace) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  if (!imports.get().tagObjs.append(wasmNamespace->jsPromiseTag())) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -906,10 +406,16 @@ JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
 // (module
 //   (type $params (struct (field ..)*))
 //   (type $results (struct (field ..)*))
-//   (type $create-suspender-result (struct (field externref externref)))
-//   (import "" "" (func $promising.wrappedfn ..))
+//   (type $cont (cont))
+//   (import "" "wrapped" (func $promising.wrappedfn ..))
+//   (import "" "tag" (tag $on-suspend))
+//   ;; globals for passing values from exported to trampoline.
+//   ;; works around work-in-progress stack switching implementation.
+//   (global $promisingPromise (mut externref))
+//   (global $params (mut (ref null $params)))
 //   (func $promising.exported .. )
 //   (func $promising.trampoline ..)
+//   (func $promising.reaction ..)
 //   (export "" (func $promising.exported))
 // )
 //
@@ -918,34 +424,74 @@ JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
 //
 class PromisingFunctionModuleFactory {
  public:
+  // Type indices. Types added by addDefinedFunc are interleaved.
   enum TypeIdx {
-    ParamsTypeIndex,
-    ResultsTypeIndex,
+    ParamsTypeIndex = 0,
+    ResultsTypeIndex = 1,
+    // Type 2: wrapped fn func type (added by addDefinedFunc for WrappedFn)
+    // Type 3: exported fn func type (added by addDefinedFunc for Exported)
+    TrampolineFuncTypeIndex = 4,
+    // Type 5: trampoline fn func type (added by addDefinedFunc, same as 4)
+    ContTypeIndex = 6,
+    TagFuncTypeIndex = 7,
+    SuspendBlockTypeIndex = 8,
+    // Type 9: reaction fn func type (added by addDefinedFunc for Reaction)
+  };
+
+  enum TagIdx {
+    OnSuspendTagIndex,
+  };
+
+  enum GlobalIdx {
+    PromisingPromiseGlobalIndex,
+    ParamsGlobalIndex,
   };
 
   enum FnIdx {
     WrappedFnIndex,
     ExportedFnIndex,
     TrampolineFnIndex,
+    ReactionFnIndex,
   };
 
  private:
   // Builds function that will be exported for JS:
   // (func $promising.exported
   //   (param ..)* (result externref)
-  //   (local $suspender externref)
-  //   call $builtin.create-suspender
-  //   local.tee $suspender
-  //   call $builtin.create-promising-promise ;; -> (promise)
-  //   local.get $suspender
-  //   ref.func $promising.trampoline
-  //   local.get $i*
-  //   stuct.new $param-type
-  //   stack-switch SwitchToSuspendable ;; <- (suspender,fn,data)
+  //   (local $promisingPromise externref)
+  //
+  //   call $builtin.create-promise
+  //   local.set $promisingPromise
+  //
+  //   block $suspend (result externref (ref $cont))
+  //     local.get *
+  //     struct.new $params
+  //     global.set $params
+  //
+  //     local.get $promisingPromise
+  //     global.set $promisingPromise
+  //
+  //     ref.func $promising.trampoline
+  //     cont.new $cont
+  //     resume (on $on-suspend $suspend)
+  //
+  //     local.get $promisingPromise
+  //     return
+  //   end
+  //
+  //   ;; implicitly passing suspending's promise and continuation here
+  //   ref.func $promising.reaction
+  //   local.get $promisingPromise
+  //   call $builtin.add-promise-reactions
+  //
+  //   local.get $promisingPromise
   // )
   bool encodeExportedFunction(CodeMetadata& codeMeta, uint32_t paramsSize,
                               Bytes& bytecode) {
     Encoder encoder(bytecode, *codeMeta.types);
+
+    const uint32_t promisingPromiseIndex = paramsSize;
+
     ValTypeVector locals;
     if (!locals.emplaceBack(RefType::extern_())) {
       return false;
@@ -954,33 +500,41 @@ class PromisingFunctionModuleFactory {
       return false;
     }
 
-    const uint32_t SuspenderIndex = paramsSize;
-    if (!encoder.writeOp(Op::I32Const) || !encoder.writeVarU32(0)) {
+#  ifdef DEBUG
+    // Trap if the global promise is non-null. This would only happen if we
+    // messed up our global state clearing or had unexpected re-entrance.
+    if (!encoder.writeOp(Op::GlobalGet) ||
+        !encoder.writeVarU32(PromisingPromiseGlobalIndex)) {
       return false;
     }
+    if (!encoder.writeOp(Op::RefIsNull) || !encoder.writeOp(Op::I32Eqz)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::If) ||
+        !encoder.writeFixedU8((uint8_t)TypeCode::BlockVoid) ||
+        !encoder.writeOp(Op::Unreachable) || !encoder.writeOp(Op::End)) {
+      return false;
+    }
+#  endif
+
+    // call $builtin.create-promise
+    // local.set $promisingPromise
     if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32((uint32_t)BuiltinModuleFuncId::CreateSuspender)) {
+        !encoder.writeVarU32((uint32_t)BuiltinModuleFuncId::CreatePromise)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::LocalSet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
       return false;
     }
 
-    if (!encoder.writeOp(Op::LocalTee) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
-        !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::CreatePromisingPromise)) {
+    // block $suspend (result externref (ref $cont))
+    if (!encoder.writeOp(Op::Block) ||
+        !encoder.writeVarS32(SuspendBlockTypeIndex)) {
       return false;
     }
 
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
-      return false;
-    }
-    if (!encoder.writeOp(Op::RefFunc) ||
-        !encoder.writeVarU32(TrampolineFnIndex)) {
-      return false;
-    }
+    // local.get * ; struct.new $params ; global.set $params
     for (uint32_t i = 0; i < paramsSize; i++) {
       if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(i)) {
         return false;
@@ -990,43 +544,168 @@ class PromisingFunctionModuleFactory {
         !encoder.writeVarU32(ParamsTypeIndex)) {
       return false;
     }
-    if (!encoder.writeOp(MozOp::StackSwitch) ||
-        !encoder.writeVarU32(uint32_t(StackSwitchKind::SwitchToSuspendable))) {
+    if (!encoder.writeOp(Op::GlobalSet) ||
+        !encoder.writeVarU32(ParamsGlobalIndex)) {
+      return false;
+    }
+
+    // local.get $promisingPromise ; global.set $promisingPromise
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::GlobalSet) ||
+        !encoder.writeVarU32(PromisingPromiseGlobalIndex)) {
+      return false;
+    }
+
+    // ref.func $promising.trampoline ; cont.new $cont
+    if (!encoder.writeOp(Op::RefFunc) ||
+        !encoder.writeVarU32(TrampolineFnIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::ContNew) || !encoder.writeVarU32(ContTypeIndex)) {
+      return false;
+    }
+
+    // resume (on $on-suspend $suspend)
+    // Handler: 1 handler, kind=Suspend(0), tag=OnSuspendTagIndex, label=0
+    if (!encoder.writeOp(Op::Resume) || !encoder.writeVarU32(ContTypeIndex) ||
+        !encoder.writeVarU32(1) ||
+        !encoder.writeFixedU8(uint8_t(HandlerKind::Suspend)) ||
+        !encoder.writeVarU32(OnSuspendTagIndex) || !encoder.writeVarU32(0)) {
+      return false;
+    }
+
+    // local.get $promisingPromise ; return
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::Return)) {
+      return false;
+    }
+
+    // end (block $suspend)
+    if (!encoder.writeOp(Op::End)) {
+      return false;
+    }
+
+    // Stack now has: externref (suspending promise), (ref $cont)
+    // ref.func $promising.reaction
+    if (!encoder.writeOp(Op::RefFunc) ||
+        !encoder.writeVarU32(ReactionFnIndex)) {
+      return false;
+    }
+
+    // local.get $promisingPromise
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
+      return false;
+    }
+
+    // call $builtin.add-promise-reactions
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32(
+            (uint32_t)BuiltinModuleFuncId::AddPromiseReactions)) {
+      return false;
+    }
+
+    // local.get $promisingPromise ; return
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
       return false;
     }
 
     return encoder.writeOp(Op::End);
   }
 
-  // Builds function that is called on alternative stack:
-  // (func $promising.trampoline
-  //   (param $suspender externref) (param $params (ref $param-type))
-  //   (result externref)
-  //   local.get $suspender ;; for call $set-results
-  //   (local.get $suspender)?
-  //   (struct.get $param-type $i (local.get $param))*
-  //   (local.get $suspender)?
+  // Builds function that is called on cont stack and calls wrapped
+  // function: (func $promising.trampoline
+  //   (local $params (ref null $params))
+  //   (local $promisingPromise externref)
+  //
+  //   (local.set $params global.get $params)
+  //   (global.set $params ref.null $params)
+  //
+  //   (local.set $promisingPromise global.get $promisingPromise)
+  //   (global.set $promisingPromise ref.null extern)
+  //
+  //   ;; destructure the params struct
+  //   (struct.get $params $i (local.get $params))*
+  //   ;; clear the params local
+  //   (local.set $params (ref.null $params))
+  //
+  //   ;; call the wrapped function
   //   call $promising.wrappedfn
-  //   struct.new $result-type
-  //   call $builtin.set-promising-promise-results
+  //
+  //   ;; box up the results
+  //   struct.new $results
+  //   local.get $promisingPromise
+  //   ;; resolve the promise with results
+  //   call $builtin.resolve-promise-with-results
   // )
   bool encodeTrampolineFunction(CodeMetadata& codeMeta, uint32_t paramsSize,
                                 Bytes& bytecode) {
     Encoder encoder(bytecode, *codeMeta.types);
-    if (!EncodeLocalEntries(encoder, ValTypeVector())) {
+
+    const uint32_t paramsLocalIndex = 0;
+    const uint32_t promisingPromiseLocalIndex = 1;
+
+    ValTypeVector locals;
+    if (!locals.emplaceBack(RefType::fromTypeDef(
+            &codeMeta.types->type(ParamsTypeIndex), true)) ||
+        !locals.emplaceBack(RefType::extern_())) {
       return false;
     }
-    const uint32_t SuspenderIndex = 0;
-    const uint32_t ParamsIndex = 1;
-
-    // Reserved for SetResultsFnIndex call at the end
-    if (!encoder.writeOp(Op::LocalGet) ||
-        !encoder.writeVarU32(SuspenderIndex)) {
+    if (!EncodeLocalEntries(encoder, locals)) {
       return false;
     }
 
+    // local.set $params (global.get $params)
+    if (!encoder.writeOp(Op::GlobalGet) ||
+        !encoder.writeVarU32(ParamsGlobalIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::LocalSet) ||
+        !encoder.writeVarU32(paramsLocalIndex)) {
+      return false;
+    }
+
+    // global.set $params (ref.null $params)
+    if (!encoder.writeOp(Op::RefNull) ||
+        !encoder.writeVarS32(ParamsTypeIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::GlobalSet) ||
+        !encoder.writeVarU32(ParamsGlobalIndex)) {
+      return false;
+    }
+
+    // local.set $promisingPromise (global.get $promisingPromise)
+    if (!encoder.writeOp(Op::GlobalGet) ||
+        !encoder.writeVarU32(PromisingPromiseGlobalIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::LocalSet) ||
+        !encoder.writeVarU32(promisingPromiseLocalIndex)) {
+      return false;
+    }
+
+    // global.set $promisingPromise (ref.null extern)
+    if (!encoder.writeOp(Op::RefNull) ||
+        !encoder.writeFixedU8(uint8_t(TypeCode::ExternRef))) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::GlobalSet) ||
+        !encoder.writeVarU32(PromisingPromiseGlobalIndex)) {
+      return false;
+    }
+
+    // (struct.get $params $i (local.get $params))*
     for (uint32_t i = 0; i < paramsSize; i++) {
-      if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(ParamsIndex)) {
+      if (!encoder.writeOp(Op::LocalGet) ||
+          !encoder.writeVarU32(paramsLocalIndex)) {
         return false;
       }
       if (!encoder.writeOp(GcOp::StructGet) ||
@@ -1034,17 +713,117 @@ class PromisingFunctionModuleFactory {
         return false;
       }
     }
+
+    // local.set $params (ref.null $params)
+    if (!encoder.writeOp(Op::RefNull) ||
+        !encoder.writeVarS32(ParamsTypeIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(Op::LocalSet) ||
+        !encoder.writeVarU32(paramsLocalIndex)) {
+      return false;
+    }
+
+    // call $promising.wrappedfn
     if (!encoder.writeOp(Op::Call) || !encoder.writeVarU32(WrappedFnIndex)) {
       return false;
     }
 
+    // struct.new $results
     if (!encoder.writeOp(GcOp::StructNew) ||
         !encoder.writeVarU32(ResultsTypeIndex)) {
       return false;
     }
+
+    // local.get $promisingPromise
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseLocalIndex)) {
+      return false;
+    }
+
+    // call $builtin.resolve-promise-with-results
     if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
         !encoder.writeVarU32(
-            (uint32_t)BuiltinModuleFuncId::SetPromisingPromiseResults)) {
+            (uint32_t)BuiltinModuleFuncId::ResolvePromiseWithResults)) {
+      return false;
+    }
+
+    return encoder.writeOp(Op::End);
+  }
+
+  // Builds function that is called by event loop when promise resolves.
+  //
+  // (func $promising.reaction
+  //   (param $cont (ref $cont))
+  //   (param $promisingPromise externref)
+  //
+  //   block $suspend (result externref (ref $cont))
+  //     local.get $cont
+  //     resume (on $on-suspend $suspend)
+  //     return
+  //   end
+  //
+  //   ;; implicitly passing suspending's promise and continuation here
+  //   ref.func $promising.reaction
+  //   local.get $promisingPromise
+  //   call $builtin.add-promise-reactions
+  // )
+  bool encodeReactionFunction(CodeMetadata& codeMeta, Bytes& bytecode) {
+    Encoder encoder(bytecode, *codeMeta.types);
+
+    const uint32_t contIndex = 0;
+    const uint32_t promisingPromiseIndex = 1;
+
+    if (!EncodeLocalEntries(encoder, ValTypeVector())) {
+      return false;
+    }
+
+    // block $suspend (result externref (ref $cont))
+    if (!encoder.writeOp(Op::Block) ||
+        !encoder.writeVarS32(SuspendBlockTypeIndex)) {
+      return false;
+    }
+
+    // local.get $cont
+    if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(contIndex)) {
+      return false;
+    }
+
+    // resume (on $on-suspend $suspend)
+    if (!encoder.writeOp(Op::Resume) || !encoder.writeVarU32(ContTypeIndex) ||
+        !encoder.writeVarU32(1) ||
+        !encoder.writeFixedU8(uint8_t(HandlerKind::Suspend)) ||
+        !encoder.writeVarU32(OnSuspendTagIndex) || !encoder.writeVarU32(0)) {
+      return false;
+    }
+
+    // return
+    if (!encoder.writeOp(Op::Return)) {
+      return false;
+    }
+
+    // end (block $suspend)
+    if (!encoder.writeOp(Op::End)) {
+      return false;
+    }
+
+    // Stack: externref (suspending promise), (ref $cont)
+    // ref.func $promising.reaction
+    if (!encoder.writeOp(Op::RefFunc) ||
+        !encoder.writeVarU32(ReactionFnIndex)) {
+      return false;
+    }
+
+    // local.get $promisingPromise
+    if (!encoder.writeOp(Op::LocalGet) ||
+        !encoder.writeVarU32(promisingPromiseIndex)) {
+      return false;
+    }
+
+    // call $builtin.add-promise-reactions
+    if (!encoder.writeOp(MozOp::CallBuiltinModuleFunc) ||
+        !encoder.writeVarU32(
+            (uint32_t)BuiltinModuleFuncId::AddPromiseReactions)) {
       return false;
     }
 
@@ -1056,8 +835,6 @@ class PromisingFunctionModuleFactory {
                      ValTypeVector&& results) {
     const FuncType& fnType = fn->wasmTypeDef()->funcType();
     size_t paramsSize = params.length();
-
-    RefType suspenderType = RefType::extern_();
 
     FeatureOptions options;
     options.isBuiltinModule = true;
@@ -1080,6 +857,7 @@ class PromisingFunctionModuleFactory {
                                     DebugEnabled::False);
     compilerEnv.computeParameters();
 
+    // Type 0: $params struct
     StructType boxedParamsStruct;
     if (!StructType::createImmutable(params, &boxedParamsStruct)) {
       ReportOutOfMemory(cx);
@@ -1112,35 +890,113 @@ class PromisingFunctionModuleFactory {
       return nullptr;
     }
 
+    // Func 0 (imported): $promising.wrappedfn
+    // addDefinedFunc creates Type 2: wrapped fn func type
     MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
     if (!moduleMeta->addDefinedFunc(std::move(paramsForWrapper),
                                     std::move(resultsForWrapper))) {
       return nullptr;
     }
 
-    // Imports names are not important, declare functions above as imports.
     codeMeta->numFuncImports = codeMeta->funcs.length();
 
-    // We will be looking up and using the exports function by index so
-    // the name doesn't matter.
+    // Func 1 (exported): $promising.exported
+    // addDefinedFunc creates Type 3: exported fn func type
     MOZ_ASSERT(codeMeta->funcs.length() == ExportedFnIndex);
     if (!moduleMeta->addDefinedFunc(std::move(params), std::move(results),
-                                    /* declareFoRef = */ true,
+                                    /* declareForRef = */ true,
                                     mozilla::Some(CacheableName()))) {
       return nullptr;
     }
 
-    ValTypeVector paramsTrampoline, resultsTrampoline;
-    if (!paramsTrampoline.emplaceBack(suspenderType) ||
-        !paramsTrampoline.emplaceBack(RefType::fromTypeDef(
-            &(*codeMeta->types)[ParamsTypeIndex], false))) {
+    // Type 4: trampoline func type () -> ()
+    // This is the func type the cont type will reference.
+    MOZ_ASSERT(codeMeta->types->length() == TrampolineFuncTypeIndex);
+    if (!codeMeta->types->addType(FuncType(ValTypeVector(), ValTypeVector()))) {
+      return nullptr;
+    }
+
+    // Func 2: $promising.trampoline () -> ()
+    // addDefinedFunc creates Type 5: trampoline func type (duplicate of 4)
+    ValTypeVector trampolineParams, trampolineResults;
+    MOZ_ASSERT(codeMeta->funcs.length() == TrampolineFnIndex);
+    if (!moduleMeta->addDefinedFunc(std::move(trampolineParams),
+                                    std::move(trampolineResults),
+                                    /* declareForRef = */ true)) {
+      return nullptr;
+    }
+
+    // Type 6: $cont = cont(TrampolineFuncTypeIndex)
+    MOZ_ASSERT(codeMeta->types->length() == ContTypeIndex);
+    if (!codeMeta->types->addType(
+            ContType(&codeMeta->types->type(TrampolineFuncTypeIndex)))) {
+      return nullptr;
+    }
+
+    // Type 7: tag func type (param externref)
+    ValTypeVector tagParams, tagResults;
+    if (!tagParams.emplaceBack(RefType::extern_())) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
-    MOZ_ASSERT(codeMeta->funcs.length() == TrampolineFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(paramsTrampoline),
-                                    std::move(resultsTrampoline),
-                                    /* declareFoRef = */ true)) {
+    MOZ_ASSERT(codeMeta->types->length() == TagFuncTypeIndex);
+    if (!codeMeta->types->addType(
+            FuncType(std::move(tagParams), std::move(tagResults)))) {
+      return nullptr;
+    }
+
+    // Type 8: suspend block type () -> (externref, (ref $cont))
+    ValTypeVector suspendBlockParams, suspendBlockResults;
+    if (!suspendBlockResults.emplaceBack(RefType::extern_()) ||
+        !suspendBlockResults.emplaceBack(RefType::fromTypeDef(
+            &codeMeta->types->type(ContTypeIndex), false))) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    MOZ_ASSERT(codeMeta->types->length() == SuspendBlockTypeIndex);
+    if (!codeMeta->types->addType(FuncType(std::move(suspendBlockParams),
+                                           std::move(suspendBlockResults)))) {
+      return nullptr;
+    }
+
+    // Func 3: $promising.reaction
+    // addDefinedFunc creates Type 9: reaction func type
+    ValTypeVector reactionParams, reactionResults;
+    if (!reactionParams.emplaceBack(RefType::fromTypeDef(
+            &codeMeta->types->type(ContTypeIndex), true)) ||
+        !reactionParams.emplaceBack(RefType::extern_())) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    MOZ_ASSERT(codeMeta->funcs.length() == ReactionFnIndex);
+    if (!moduleMeta->addDefinedFunc(std::move(reactionParams),
+                                    std::move(reactionResults),
+                                    /* declareForRef = */ true)) {
+      return nullptr;
+    }
+
+    // Tag 0: $on-suspend
+    MutableTagType tagType = js_new<TagType>();
+    if (!tagType ||
+        !tagType->initialize(&(*codeMeta->types)[TagFuncTypeIndex])) {
+      return nullptr;
+    }
+    if (!codeMeta->tags.emplaceBack(TagKind::Exception, tagType)) {
+      return nullptr;
+    }
+
+    // Global 0: $promisingPromise (mut externref)
+    if (!codeMeta->globals.append(
+            GlobalDesc(InitExpr(LitVal(ValType(RefType::extern_()))),
+                       /* isMutable = */ true))) {
+      return nullptr;
+    }
+
+    // Global 1: $params (mut (ref null $params))
+    if (!codeMeta->globals.append(
+            GlobalDesc(InitExpr(LitVal(ValType(RefType::fromTypeDef(
+                           &codeMeta->types->type(ParamsTypeIndex), true)))),
+                       /* isMutable = */ true))) {
       return nullptr;
     }
 
@@ -1153,9 +1009,10 @@ class PromisingFunctionModuleFactory {
     if (!mg.initializeCompleteTier()) {
       return nullptr;
     }
-    // Build functions and keep bytecodes around until the end.
-    Bytes bytecode;
+
     uint32_t funcBytecodeOffset = CallSite::FIRST_VALID_BYTECODE_OFFSET;
+
+    Bytes bytecode;
     if (!encodeExportedFunction(*codeMeta, paramsSize, bytecode)) {
       ReportOutOfMemory(cx);
       return nullptr;
@@ -1179,45 +1036,53 @@ class PromisingFunctionModuleFactory {
     }
     funcBytecodeOffset += bytecode2.length();
 
+    Bytes bytecode3;
+    if (!encodeReactionFunction(*codeMeta, bytecode3)) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    if (!mg.compileFuncDef(ReactionFnIndex, funcBytecodeOffset,
+                           bytecode3.begin(),
+                           bytecode3.begin() + bytecode3.length())) {
+      return nullptr;
+    }
+
     if (!mg.finishFuncDefs()) {
       return nullptr;
     }
 
-    return mg.finishModule(BytecodeBufferOrSource(), *moduleMeta,
-                           /*maybeCompleteTier2Listener=*/nullptr);
+    SharedModule m = mg.finishModule(BytecodeBufferOrSource(), *moduleMeta,
+                                     /*maybeCompleteTier2Listener=*/nullptr);
+    return m;
   }
 };
 
-// Wraps call to wasm $promising.exported function to catch an exception and
-// return a promise instead.
-static bool WasmPIPromisingFunction(JSContext* cx, unsigned argc, Value* vp) {
+// Wraps `$promising.exported` function so that it's not a host function as
+// required by the spec.
+static bool WasmPromisingFunction(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
   RootedFunction fn(
       cx,
       &callee->getExtendedSlot(WRAPPED_FN_SLOT).toObject().as<JSFunction>());
 
-  // Catching exceptions here.
   if (Call(cx, UndefinedHandleValue, fn, args, args.rval())) {
     return true;
   }
 
   // The stack was unwound during exception. There should be no active
-  // suspender.
-  MOZ_RELEASE_ASSERT(!cx->wasm().activeSuspender());
+  // continuation.
+  MOZ_RELEASE_ASSERT(!cx->wasm().currentStack());
 
-  if (cx->isThrowingOutOfMemory()) {
+  // Any errors from invoking the wasm function need to be converted to a
+  // rejected promise.
+  JSObject* newPromise = NewPromiseObject(cx, nullptr);
+  if (!newPromise) {
     return false;
   }
-
-  RootedObject promiseObject(cx, NewPromiseObject(cx, nullptr));
-  if (!promiseObject) {
-    return false;
-  }
+  Rooted<PromiseObject*> promiseObject(cx, &newPromise->as<PromiseObject>());
   args.rval().setObject(*promiseObject);
-
-  Rooted<PromiseObject*> promise(cx, &promiseObject->as<PromiseObject>());
-  return RejectPromiseWithPendingError(cx, promise);
+  return RejectPromiseWithPendingError(cx, promiseObject);
 }
 
 JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
@@ -1247,12 +1112,23 @@ JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
   if (!module) {
     return nullptr;
   }
-
   // Instantiate the module.
   Rooted<ImportValues> imports(cx);
 
   // Add wrapped function ($promising.wrappedfn) to imports.
   if (!imports.get().funcs.append(func)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  // Add $on-suspend to imports.
+  Rooted<WasmNamespaceObject*> wasmNamespace(
+      cx, WasmNamespaceObject::getOrCreate(cx));
+  if (!wasmNamespace) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  if (!imports.get().tagObjs.append(wasmNamespace->jsPromiseTag())) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -1272,7 +1148,7 @@ JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
   }
 
   RootedFunction wasmFuncWrapper(
-      cx, NewNativeFunction(cx, WasmPIPromisingFunction, 0, nullptr,
+      cx, NewNativeFunction(cx, WasmPromisingFunction, 0, nullptr,
                             gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
   if (!wasmFuncWrapper) {
     return nullptr;
@@ -1281,111 +1157,86 @@ JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
   return wasmFuncWrapper;
 }
 
-// Gets active suspender.
-// The reserved parameter is a workaround for limitation in the
-// WasmBuiltinModule.yaml generator to always have params.
-// Seen as $builtin.current-suspender to wasm.
-SuspenderObject* CurrentSuspender(Instance* instance, int32_t reserved) {
-  MOZ_ASSERT(SASigCurrentSuspender.failureMode == FailureMode::FailOnNullPtr);
-  JSContext* cx = instance->cx();
-  SuspenderObject* suspender = cx->wasm().activeSuspender();
-  if (!suspender) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_JSPI_INVALID_STATE);
-    return nullptr;
-  }
-  return suspender;
-}
+// Reaction on fulfilled suspending promise. This will call $promising.reaction.
+static bool WasmPromiseReaction(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  Rooted<JSFunction*> callee(cx, &args.callee().as<JSFunction>());
+  RootedFunction reactionFunc(
+      cx, &callee->getExtendedSlot(REACTION_SLOT).toObject().as<JSFunction>());
+  Rooted<PromiseObject*> promisingPromiseObject(
+      cx, &callee->getExtendedSlot(PROMISING_PROMISE_SLOT)
+               .toObject()
+               .as<PromiseObject>());
+  JS::RootedValueArray<2> argv(cx);
+  JS::Rooted<JS::Value> rval(cx);
+  argv[0].set(callee->getExtendedSlot(CONT_SLOT));
+  argv[1].set(ObjectValue(*promisingPromiseObject));
 
-// Creates a suspender and promise (that will be returned to JS code).
-// Seen as $builtin.create-suspender to wasm.
-SuspenderObject* CreateSuspender(Instance* instance, int32_t reserved) {
-  MOZ_ASSERT(SASigCreateSuspender.failureMode == FailureMode::FailOnNullPtr);
-  JSContext* cx = instance->cx();
-  return SuspenderObject::create(cx);
-}
-
-// Creates a promise that will be returned at promising call.
-// Seen as $builtin.create-promising-promise to wasm.
-PromiseObject* CreatePromisingPromise(Instance* instance,
-                                      SuspenderObject* suspender) {
-  MOZ_ASSERT(SASigCreatePromisingPromise.failureMode ==
-             FailureMode::FailOnNullPtr);
-  JSContext* cx = instance->cx();
-
-  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
-  RootedObject promiseObject(cx, NewPromiseObject(cx, nullptr));
-  if (!promiseObject) {
-    return nullptr;
+  if (Call(cx, UndefinedHandleValue, reactionFunc, argv, &rval)) {
+    return true;
   }
 
-  Rooted<PromiseObject*> promise(cx, &promiseObject->as<PromiseObject>());
-  suspenderObject->setPromisingPromise(promise);
-  return promise.get();
+  // The stack was unwound during exception.
+  MOZ_RELEASE_ASSERT(!cx->wasm().currentStack());
+
+  // Any errors from invoking the wasm function need to be converted to a
+  // rejected promise.
+  return RejectPromiseWithPendingError(cx, promisingPromiseObject);
+}
+
+// Creates a promise.
+//
+// Seen as $builtin.create-promise to wasm.
+void* CreatePromise(Instance* instance) {
+  MOZ_ASSERT(SASigCreatePromise.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+  JSObject* promise = NewPromiseObject(cx, nullptr);
+  if (!promise) {
+    MOZ_ASSERT(cx->isExceptionPending());
+    return nullptr;
+  }
+  return AnyRef::fromJSObject(*promise).forCompiledCode();
 }
 
 // Converts promise results into actual function result, or exception/trap
 // if rejected.
-// Seen as $builtin.get-suspending-promise-result to wasm.
-JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
-                                     SuspenderObject* suspender) {
-  MOZ_ASSERT(SASigGetSuspendingPromiseResult.failureMode ==
-             FailureMode::FailOnNullPtr);
+//
+// Seen as $builtin.get-promise-results to wasm.
+void* GetPromiseResults(Instance* instance, void* promiseRef) {
+  MOZ_ASSERT(SASigGetPromiseResults.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
-  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
-  RootedAnyRef resultRef(cx, AnyRef::fromCompiledCode(result));
 
-  SuspenderObject::ReturnType returnType =
-      suspenderObject->suspendingReturnType();
-  MOZ_ASSERT(returnType != SuspenderObject::ReturnType::Unknown);
-  bool hasPromise = false;
-  bool promiseRejected = false;
-  RootedValue promiseReasonOrValue(cx);
-
-  if (returnType == SuspenderObject::ReturnType::Promise) {
-    JSObject* promiseObj = &resultRef.toJSObject();
-    if (IsWrapper(promiseObj)) {
-      promiseObj = UncheckedUnwrap(promiseObj);
-      if (JS_IsDeadWrapper(promiseObj)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_DEAD_OBJECT);
-        return nullptr;
-      }
-    }
-    PromiseObject* promise = &promiseObj->as<PromiseObject>();
-    hasPromise = true;
-    promiseRejected = promise->state() == JS::PromiseState::Rejected;
-    promiseReasonOrValue = promise->valueOrReason();
-    if (!cx->compartment()->wrap(cx, &promiseReasonOrValue)) {
+  JSObject* promiseObj = &AnyRef::fromCompiledCode(promiseRef).toJSObject();
+  if (IsWrapper(promiseObj)) {
+    promiseObj = UncheckedUnwrap(promiseObj);
+    if (JS_IsDeadWrapper(promiseObj)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEAD_OBJECT);
       return nullptr;
     }
   }
-
-#  ifdef DEBUG
-  auto resetReturnType = mozilla::MakeScopeExit([&suspenderObject]() {
-    suspenderObject->setSuspendingReturnType(
-        SuspenderObject::ReturnType::Unknown);
-  });
-#  endif
-
-  if (hasPromise ? promiseRejected
-                 : returnType == SuspenderObject::ReturnType::Exception) {
-    // Promise was rejected or an exception was thrown, set pending exception
-    // and fail.
-    RootedValue reason(
-        cx, hasPromise ? promiseReasonOrValue : resultRef.get().toJSValue());
-    cx->setPendingException(reason, ShouldCaptureStack::Maybe);
+  Rooted<PromiseObject*> promise(cx, &promiseObj->as<PromiseObject>());
+  bool promiseRejected = promise->state() == JS::PromiseState::Rejected;
+  RootedValue promiseReasonOrValue(cx, promise->valueOrReason());
+  if (!cx->compartment()->wrap(cx, &promiseReasonOrValue)) {
     return nullptr;
   }
 
-  // The exception and rejection are handled above -- expect resolved promise.
-  MOZ_ASSERT(hasPromise && !promiseRejected);
+  if (promiseRejected) {
+    cx->setPendingException(promiseReasonOrValue, ShouldCaptureStack::Maybe);
+    return nullptr;
+  }
+
+  MOZ_ASSERT(promise->state() == JS::PromiseState::Fulfilled);
   RootedValue jsValue(cx, promiseReasonOrValue);
 
   // Construct the results object.
   Rooted<WasmStructObject*> results(
       cx, instance->constantStructNewDefault(
               cx, SuspendingFunctionModuleFactory::ResultsTypeIndex));
+  if (!results) {
+    return nullptr;
+  }
   const FieldTypeVector& fields = results->typeDef().structType().fields_;
 
   if (fields.length() > 0) {
@@ -1432,123 +1283,114 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
       }
     }
   }
-  return results;
+
+  return AnyRef::fromCompiledCode(results).forCompiledCode();
 }
 
 // Collects returned suspending promising, and registers callbacks to
-// react on it using WasmPISuspendTaskContinue.
+// react on it using WasmPromiseReaction.
+//
 // Seen as $builtin.add-promise-reactions to wasm.
-void* AddPromiseReactions(Instance* instance, SuspenderObject* suspender,
-                          void* result, JSFunction* continueOnSuspendable) {
-  MOZ_ASSERT(SASigAddPromiseReactions.failureMode ==
-             FailureMode::FailOnInvalidRef);
+int32_t AddPromiseReactions(Instance* instance, void* promiseRef, void* contRef,
+                            void* reactionRef, void* promisingPromiseRef) {
+  MOZ_ASSERT(SASigAddPromiseReactions.failureMode == FailureMode::FailOnNegI32);
   JSContext* cx = instance->cx();
+  Rooted<PromiseObject*> promiseObject(
+      cx,
+      &AnyRef::fromCompiledCode(promiseRef).toJSObject().as<PromiseObject>());
+  Rooted<ContObject*> contObject(
+      cx, &AnyRef::fromCompiledCode(contRef).toJSObject().as<ContObject>());
+  RootedFunction reactionFunc(
+      cx, &AnyRef::fromCompiledCode(reactionRef).toJSObject().as<JSFunction>());
+  Rooted<PromiseObject*> promisingPromise(
+      cx, &AnyRef::fromCompiledCode(promisingPromiseRef)
+               .toJSObject()
+               .as<PromiseObject>());
 
-  RootedAnyRef resultRef(cx, AnyRef::fromCompiledCode(result));
-  RootedValue resultValue(cx, resultRef.get().toJSValue());
-  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
-  RootedFunction fn(cx, continueOnSuspendable);
-
-  RootedObject promiseConstructor(cx, GetPromiseConstructor(cx));
-  RootedObject promiseObject(
-      cx, PromiseResolve(cx, promiseConstructor, resultValue));
-  if (!promiseObject) {
-    return AnyRef::invalid().forCompiledCode();
-  }
-
-  suspenderObject->setSuspendingReturnType(
-      SuspenderObject::ReturnType::Promise);
-
-  // Add promise reactions
+  // Build a `then` function
   RootedFunction then_(
-      cx, NewNativeFunction(cx, WasmPISuspendTaskContinue, 1, nullptr,
+      cx, NewNativeFunction(cx, WasmPromiseReaction, 1, nullptr,
                             gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
-  then_->initExtendedSlot(SUSPENDER_SLOT, ObjectValue(*suspenderObject));
-  then_->initExtendedSlot(CONTINUE_ON_SUSPENDABLE_SLOT, ObjectValue(*fn));
-  then_->initExtendedSlot(PROMISE_SLOT, ObjectValue(*promiseObject));
-  if (!JS::AddPromiseReactions(cx, promiseObject, then_, then_)) {
-    return AnyRef::invalid().forCompiledCode();
+  if (!then_) {
+    return -1;
   }
-  return AnyRef::fromJSObject(*promiseObject).forCompiledCode();
+  then_->initExtendedSlot(CONT_SLOT, ObjectValue(*contObject));
+  then_->initExtendedSlot(REACTION_SLOT, ObjectValue(*reactionFunc));
+  then_->initExtendedSlot(PROMISING_PROMISE_SLOT,
+                          ObjectValue(*promisingPromise));
+
+  // Add the `then` function as a promise reaction
+  if (!JS::AddPromiseReactions(cx, promiseObject, then_, then_)) {
+    MOZ_ASSERT(cx->isExceptionPending());
+    return -1;
+  }
+  return 0;
 }
 
-// Changes exit stack frame pointers to suspendable stack and recast exception
-// to wasm reference. Seen as $builtin.forward-exn-to-suspended to wasm.
-void* ForwardExceptionToSuspended(Instance* instance,
-                                  SuspenderObject* suspender, void* exception) {
-  MOZ_ASSERT(SASigForwardExceptionToSuspended.failureMode ==
-             FailureMode::Infallible);
-
-  suspender->forwardToSuspendable();
-  suspender->setSuspendingReturnType(SuspenderObject::ReturnType::Exception);
-  return exception;
+// Calls `Promise.resolve(value)`.
+//
+// Seen as $builtin.promise-resolve to wasm.
+void* PromiseResolve(Instance* instance, void* valueRef) {
+  MOZ_ASSERT(SASigPromiseResolve.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+  RootedObject promiseConstructor(cx, GetPromiseConstructor(cx));
+  RootedValue value(cx, AnyRef::fromCompiledCode(valueRef).toJSValue());
+  RootedObject promise(cx, PromiseResolve(cx, promiseConstructor, value));
+  if (!promise) {
+    MOZ_ASSERT(cx->isExceptionPending());
+    return nullptr;
+  }
+  return AnyRef::fromJSObject(*promise).forCompiledCode();
 }
 
 // Resolves the promise using results packed by wasm.
-// Seen as $builtin.set-promising-promise-results to wasm.
-int32_t SetPromisingPromiseResults(Instance* instance,
-                                   SuspenderObject* suspender,
-                                   WasmStructObject* results) {
-  MOZ_ASSERT(SASigSetPromisingPromiseResults.failureMode ==
+//
+// Seen as $builtin.resolve-promise-with-results to wasm.
+int32_t ResolvePromiseWithResults(Instance* instance, void* resultsRef,
+                                  void* promiseRef) {
+  MOZ_ASSERT(SASigResolvePromiseWithResults.failureMode ==
              FailureMode::FailOnNegI32);
   JSContext* cx = instance->cx();
-  Rooted<WasmStructObject*> res(cx, results);
-  Rooted<SuspenderObject*> suspenderObject(cx, suspender);
-  RootedObject promise(cx, suspenderObject->promisingPromise());
+  RootedObject promise(cx, &AnyRef::fromCompiledCode(promiseRef).toJSObject());
+  Rooted<WasmStructObject*> results(cx, &AnyRef::fromCompiledCode(resultsRef)
+                                             .toJSObject()
+                                             .as<WasmStructObject>());
 
-  const StructType& resultType = res->typeDef().structType();
+  const StructType& resultType = results->typeDef().structType();
+
   RootedValue val(cx);
   // Unbox the result value from the struct, if any.
   switch (resultType.fields_.length()) {
     case 0:
       break;
     case 1: {
-      if (!res->getField(cx, /*index=*/0, &val)) {
-        return false;
+      if (!results->getField(cx, /*index=*/0, &val)) {
+        return -1;
       }
     } break;
     default: {
       Rooted<ArrayObject*> array(cx, NewDenseEmptyArray(cx));
       if (!array) {
-        return false;
+        return -1;
       }
       for (size_t i = 0; i < resultType.fields_.length(); i++) {
         RootedValue item(cx);
-        if (!res->getField(cx, i, &item)) {
-          return false;
+        if (!results->getField(cx, i, &item)) {
+          return -1;
         }
         if (!NewbornArrayPush(cx, array, item)) {
-          return false;
+          return -1;
         }
       }
       val.setObject(*array);
     } break;
   }
-  ResolvePromise(cx, promise, val);
-  return 0;
-}
 
-void UpdateSuspenderState(Instance* instance, SuspenderObject* suspender,
-                          UpdateSuspenderStateAction action) {
-  MOZ_ASSERT(SASigUpdateSuspenderState.failureMode == FailureMode::Infallible);
-
-  JSContext* cx = instance->cx();
-  switch (action) {
-    case UpdateSuspenderStateAction::Enter:
-      suspender->enter(cx);
-      break;
-    case UpdateSuspenderStateAction::Suspend:
-      suspender->suspend(cx);
-      break;
-    case UpdateSuspenderStateAction::Resume:
-      suspender->resume(cx);
-      break;
-    case UpdateSuspenderStateAction::Leave:
-      suspender->leave(cx);
-      break;
-    default:
-      MOZ_CRASH();
+  if (!ResolvePromise(cx, promise, val)) {
+    MOZ_ASSERT(cx->isExceptionPending());
+    return -1;
   }
+  return 0;
 }
 
 }  // namespace js::wasm

@@ -82,11 +82,12 @@ static void convolve_2d_sr_w4_avx2(
   }
 }
 
-static void convolve_2d_sr_general_avx2(
-    const uint8_t *src, int src_stride, uint8_t *dst, int dst_stride, int w,
-    int h, const InterpFilterParams *filter_params_x,
-    const InterpFilterParams *filter_params_y, const int subpel_x_qn,
-    const int subpel_y_qn, ConvolveParams *conv_params) {
+static void convolve_2d_sr_avx2(const uint8_t *src, int src_stride,
+                                uint8_t *dst, int dst_stride, int w, int h,
+                                const InterpFilterParams *filter_params_x,
+                                const InterpFilterParams *filter_params_y,
+                                const int subpel_x_qn, const int subpel_y_qn,
+                                ConvolveParams *conv_params) {
   if (filter_params_x->taps > 8) {
     const int bd = 8;
     int im_stride = 8, i;
@@ -215,8 +216,7 @@ void av1_convolve_2d_sr_avx2(
                            filter_params_x, filter_params_y, subpel_x_qn,
                            subpel_y_qn, conv_params);
   } else {
-    convolve_2d_sr_general_avx2(src, src_stride, dst, dst_stride, w, h,
-                                filter_params_x, filter_params_y, subpel_x_qn,
-                                subpel_y_qn, conv_params);
+    convolve_2d_sr_avx2(src, src_stride, dst, dst_stride, w, h, filter_params_x,
+                        filter_params_y, subpel_x_qn, subpel_y_qn, conv_params);
   }
 }

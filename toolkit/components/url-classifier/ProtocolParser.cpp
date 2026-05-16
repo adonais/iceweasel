@@ -1238,7 +1238,7 @@ static nsresult DoRiceDeltaDecode4Bytes(
   bool rv = decoder.Decode(
       aEncoding.rice_parameter(), first_value,
       aEncoding.entries_count(),  // # of entries (first value not included).
-      &aDecoded[0]);
+      &aDecoded[0], /* aIsV5 */ true);
 
   NS_ENSURE_TRUE(rv, NS_ERROR_UC_PARSER_DECODE_FAILURE);
 

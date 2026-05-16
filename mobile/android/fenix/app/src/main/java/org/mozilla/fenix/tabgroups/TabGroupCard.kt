@@ -5,7 +5,6 @@
 package org.mozilla.fenix.tabgroups
 
 import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,9 +23,11 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +43,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.createTab
-import mozilla.components.compose.base.RadioCheckmarkColors
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
@@ -52,6 +52,7 @@ import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.compose.TabThumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.TabsTrayTestTag.TAB_GROUP_TITLE
+import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ui.tabitems.LOREM_IPSUM
@@ -65,6 +66,8 @@ import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.tabstray.ui.tabitems.ThumbnailShape
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemClickable
+import org.mozilla.fenix.tabstray.ui.tabitems.tabItemConditionalBorder
+import org.mozilla.fenix.tabstray.ui.tabitems.tabItemInteractionAnimation
 import org.mozilla.fenix.theme.FirefoxTheme
 
 const val TOP_START_THUMBNAIL_INDEX = 0
@@ -78,6 +81,9 @@ const val BOTTOM_END_THUMBNAIL_INDEX = 3
  * @param selectionState: The tab selection state.
  * @param clickHandler: Handler for all click-handling inputs (long click, click, etc)
  * @param modifier: The Modifier
+ * @param interactionState The tab item's interaction state (hover, drag, etc)
+ * @param onDeleteTabGroup Invoked when the user clicks on delete tab group.
+ * @param editTabGroupClick Invoked when the user clicks to edit the tab group.
  */
 @Composable
 fun TabGroupCard(
@@ -85,10 +91,14 @@ fun TabGroupCard(
     selectionState: TabsTrayItemSelectionState,
     clickHandler: TabsTrayItemClickHandler,
     modifier: Modifier = Modifier,
+    interactionState: TabItemInteractionState,
+    onDeleteTabGroup: (TabsTrayItem.TabGroup) -> Unit,
+    editTabGroupClick: () -> Unit,
 ) {
     Box(
         modifier = modifier
             .wrapContentSize()
+            .tabItemInteractionAnimation(interactionState)
             .testTag(TabsTrayTestTag.TAB_ITEM_ROOT),
     ) {
         Card(
@@ -100,11 +110,7 @@ fun TabGroupCard(
                     clickedItem = group,
                 ),
             shape = TabContentCardShape,
-            border = if (selectionState.isFocused) {
-                BorderStroke(width = 4.dp, color = MaterialTheme.colorScheme.tertiary)
-            } else {
-                null
-            },
+            border = tabItemConditionalBorder(selectionState),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
             ),
@@ -118,25 +124,30 @@ fun TabGroupCard(
                         .wrapContentHeight(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Spacer(
-                        modifier = Modifier
-                            .width(FirefoxTheme.layout.space.static100),
-                    )
+                    CompositionLocalProvider(LocalContentColor provides group.theme.onPrimary) {
+                        Spacer(
+                            modifier = Modifier
+                                .width(FirefoxTheme.layout.space.static100),
+                        )
 
-                    Text(
-                        text = group.title.take(MAX_URI_LENGTH),
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag(TAB_GROUP_TITLE),
-                        color = group.theme.onPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = FirefoxTheme.typography.caption,
-                    )
+                        Text(
+                            text = group.title.take(MAX_URI_LENGTH),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag(TAB_GROUP_TITLE),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = FirefoxTheme.typography.caption,
+                        )
 
-                    Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static50))
+                        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static50))
 
-                    TabGroupOptionButton(groupTheme = group.theme, selectionState = selectionState)
+                        TabGroupOptionButton(
+                            selectionState = selectionState,
+                            onDeleteTabGroup = { onDeleteTabGroup(group) },
+                            editTabGroupClick = editTabGroupClick,
+                        )
+                    }
                 }
 
                 Spacer(
@@ -169,16 +180,23 @@ fun TabGroupCard(
  * Renders the button in the top-right corner of the TabGroupCard.
  */
 @Composable
-private fun TabGroupOptionButton(groupTheme: TabGroupTheme, selectionState: TabsTrayItemSelectionState) {
+private fun TabGroupOptionButton(
+    selectionState: TabsTrayItemSelectionState,
+    onDeleteTabGroup: () -> Unit,
+    editTabGroupClick: () -> Unit,
+) {
     if (selectionState.multiSelectEnabled) {
         MultiSelectTabButton(
             isSelected = selectionState.isSelected,
-            isActive = selectionState.isFocused,
-            activeColors = RadioCheckmarkColors.default(),
-            uncheckedBorderColor = groupTheme.onPrimary,
+            uncheckedBorderColor = LocalContentColor.current,
         )
     } else {
-        TabGroupMenuButton(modifier = Modifier.size(TabHeaderIconTouchTargetSize), includeCloseOption = true)
+        TabGroupMenuButton(
+            modifier = Modifier.size(TabHeaderIconTouchTargetSize),
+            includeCloseOption = true,
+            onDeleteTabGroup = onDeleteTabGroup,
+            editTabGroupClick = editTabGroupClick,
+        )
     }
 }
 
@@ -278,7 +296,7 @@ fun ThumbnailsGridView(
 }
 
 /**
- * A TabGroup has anywhere from 0 to 4 thumbnail images.
+ * A ExpandedTabGroup has anywhere from 0 to 4 thumbnail images.
  * Renders a thumbnail image if thumbnail image data is available,
  * or an empty box if the thumbnail image data is null.
  *
@@ -308,12 +326,6 @@ private fun TabGroupThumbnail(
 }
 
 private data class TabGroupCardPreviewState(
-    val group: TabsTrayItem.TabGroup = TabsTrayItem.TabGroup(
-        title = "Tab Group Item",
-        theme = TabGroupTheme.default,
-        tabs = hashSetOf(),
-        closed = false,
-    ),
     val title: String = "Group 1",
     val color: Color = PhotonColors.Pink70,
     val selectionState: TabsTrayItemSelectionState =
@@ -323,6 +335,24 @@ private data class TabGroupCardPreviewState(
             multiSelectEnabled = false,
         ),
     val groupSize: Int,
+    val group: TabsTrayItem.TabGroup = TabsTrayItem.TabGroup(
+        title = "Tab Group Item",
+        theme = TabGroupTheme.default,
+        closed = false,
+        tabs = List(groupSize) { index ->
+            TabsTrayItem.Tab(
+                id = "Tab$index",
+                title = "Tab $index",
+                url = "mozilla.org",
+                inactive = false,
+                private = false,
+                icon = null,
+                lastAccess = 0L,
+                isFocused = false,
+            )
+        }.toMutableList(),
+    ),
+    val interactionState: TabItemInteractionState = TabItemInteractionState(),
 )
 
 private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCardPreviewState> {
@@ -386,6 +416,19 @@ private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCar
                         multiSelectEnabled = true,
                     ),
                 groupSize = 4,
+            ),
+        ),
+        Pair(
+            "Dragged",
+            TabGroupCardPreviewState(
+                selectionState =
+                    TabsTrayItemSelectionState(
+                        isFocused = false,
+                        isSelected = false,
+                        multiSelectEnabled = false,
+                    ),
+                groupSize = 4,
+                interactionState = TabItemInteractionState(isDragged = true),
             ),
         ),
     )
@@ -461,6 +504,7 @@ private fun TabGroupCardPreview(
                 ),
                 onCloseClick = {},
                 onClick = {},
+                interactionState = tabGroupCardState.interactionState,
             )
 
             TabGroupCard(
@@ -473,6 +517,9 @@ private fun TabGroupCardPreview(
                     onLongClick = { item: TabsTrayItem -> {} },
                 ),
                 modifier = Modifier.weight(1f),
+                interactionState = tabGroupCardState.interactionState,
+                onDeleteTabGroup = {},
+                editTabGroupClick = {},
             )
         }
     }

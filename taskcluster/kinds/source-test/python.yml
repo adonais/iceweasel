@@ -12,7 +12,7 @@ task-defaults:
         by-platform:
             linux2404-64.*: t-linux-docker-amd
             macosx1470-64.*: t-osx-1400-r8
-            windows11-64.*: win11-64-24h2-source
+            windows11-64.*: win11-64-25h2-source
     worker:
         by-platform:
             linux2404-64.*:

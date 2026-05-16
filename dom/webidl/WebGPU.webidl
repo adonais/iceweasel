@@ -28,7 +28,11 @@ interface GPUSupportedLimits {
     readonly attribute unsigned long maxDynamicStorageBuffersPerPipelineLayout;
     readonly attribute unsigned long maxSampledTexturesPerShaderStage;
     readonly attribute unsigned long maxSamplersPerShaderStage;
+    readonly attribute unsigned long maxStorageBuffersInVertexStage;
+    readonly attribute unsigned long maxStorageBuffersInFragmentStage;
     readonly attribute unsigned long maxStorageBuffersPerShaderStage;
+    readonly attribute unsigned long maxStorageTexturesInVertexStage;
+    readonly attribute unsigned long maxStorageTexturesInFragmentStage;
     readonly attribute unsigned long maxStorageTexturesPerShaderStage;
     readonly attribute unsigned long maxUniformBuffersPerShaderStage;
     readonly attribute unsigned long long maxUniformBufferBindingSize;
@@ -1176,7 +1180,7 @@ interface mixin GPURenderCommandsMixin {
     undefined setPipeline(GPURenderPipeline pipeline);
 
     undefined setIndexBuffer(GPUBuffer buffer, GPUIndexFormat indexFormat, optional GPUSize64 offset = 0, optional GPUSize64 size);
-    undefined setVertexBuffer(GPUIndex32 slot, GPUBuffer buffer, optional GPUSize64 offset = 0, optional GPUSize64 size);
+    undefined setVertexBuffer(GPUIndex32 slot, GPUBuffer? buffer, optional GPUSize64 offset = 0, optional GPUSize64 size);
 
     undefined draw(GPUSize32 vertexCount, optional GPUSize32 instanceCount = 1,
         optional GPUSize32 firstVertex = 0, optional GPUSize32 firstInstance = 0);

@@ -394,9 +394,9 @@ enum class TextureHostType : int8_t {
  * lifetime. This means that the lifetime of the underlying shared data
  * matches the lifetime of the TextureClient/Host pair. It also means
  * TextureClient/Host do not implement double buffering, which is the
- * reponsibility of the compositable (which would use two Texture pairs).
+ * responsibility of the compositable (which would use two Texture pairs).
  *
- * The Lock/Unlock mecanism here mirrors Lock/Unlock in TextureClient.
+ * The Lock/Unlock mechanism here mirrors Lock/Unlock in TextureClient.
  *
  */
 class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
@@ -445,6 +445,16 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
    * Apple's YCBCR_422 is R8G8B8X8.
    */
   virtual gfx::SurfaceFormat GetReadFormat() const { return GetFormat(); }
+
+  /**
+   * Return the transfer function used for reading the texture, this makes the
+   * difference between SDR content and HDR content. For YUV textures this is
+   * one of BT709, PQ (HDR), HLG (HDR), for RGB textures this can be SRGB, BT709
+   * PQ (HDR), HLG (HDR), or LINEAR.
+   */
+  virtual gfx::TransferFunction GetTransferFunction() const {
+    return gfx::TransferFunction::SRGB;
+  }
 
   virtual gfx::YUVColorSpace GetYUVColorSpace() const {
     return gfx::YUVColorSpace::Identity;
@@ -796,6 +806,7 @@ class BufferTextureHost : public TextureHost {
   virtual ~BufferTextureHost();
 
   virtual uint8_t* GetBuffer() const = 0;
+  virtual uint16_t* GetBuffer16() const = 0;
 
   virtual size_t GetBufferSize() const = 0;
 
@@ -813,6 +824,8 @@ class BufferTextureHost : public TextureHost {
   gfx::SurfaceFormat GetFormat() const override;
 
   gfx::YUVColorSpace GetYUVColorSpace() const override;
+
+  gfx::TransferFunction GetTransferFunction() const override;
 
   gfx::ColorDepth GetColorDepth() const override;
 
@@ -849,9 +862,14 @@ class BufferTextureHost : public TextureHost {
                         const Range<wr::ImageKey>& aImageKeys,
                         PushDisplayItemFlagSet aFlags) override;
 
+  bool IsYCbCr() const;
+
   uint8_t* GetYChannel();
   uint8_t* GetCbChannel();
   uint8_t* GetCrChannel();
+  uint16_t* GetYChannel16();
+  uint16_t* GetCbChannel16();
+  uint16_t* GetCrChannel16();
   int32_t GetYStride() const;
   int32_t GetCbCrStride() const;
 
@@ -888,6 +906,7 @@ class ShmemTextureHost : public BufferTextureHost {
   void ForgetSharedData() override;
 
   uint8_t* GetBuffer() const override;
+  uint16_t* GetBuffer16() const override;
 
   size_t GetBufferSize() const override;
 
@@ -938,6 +957,7 @@ class MemoryTextureHost : public BufferTextureHost {
   void ForgetSharedData() override;
 
   uint8_t* GetBuffer() const override;
+  uint16_t* GetBuffer16() const override;
 
   size_t GetBufferSize() const override;
 

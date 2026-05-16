@@ -567,7 +567,7 @@ public class SessionAccessibility {
 
     if (mViewFocusRequested && className == CLASSNAME_WEBVIEW) {
       // If the view was focused from an accessiblity action or
-      // explore-by-touch, we supress this focus event to avoid noise.
+      // explore-by-touch, we suppress this focus event to avoid noise.
       mViewFocusRequested = false;
       return;
     }

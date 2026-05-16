@@ -329,18 +329,17 @@ already_AddRefed<Response> Response::CreateFromJson(const GlobalObject& aGlobal,
                                                     const ResponseInit& aInit,
                                                     ErrorResult& aRv) {
   aRv.MightThrowJSException();
-  nsAutoString serializedValue;
-  if (!nsContentUtils::StringifyJSON(aCx, aData, serializedValue,
+  Nullable<fetch::ResponseBodyInit> body;
+  auto& result = body.SetValue().SetAsUSVString();
+  if (!nsContentUtils::StringifyJSON(aCx, aData, result,
                                      UndefinedIsVoidString)) {
     aRv.StealExceptionFromJSContext(aCx);
     return nullptr;
   }
-  if (serializedValue.IsVoid()) {
+  if (result.IsVoid()) {
     aRv.ThrowTypeError<MSG_JSON_INVALID_VALUE>();
     return nullptr;
   }
-  Nullable<fetch::ResponseBodyInit> body;
-  body.SetValue().SetAsUSVString().ShareOrDependUpon(serializedValue);
   return CreateAndInitializeAResponse(aGlobal, body, "application/json"_ns,
                                       aInit, aRv);
 }

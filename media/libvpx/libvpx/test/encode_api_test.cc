@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <initializer_list>
+#include <memory>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -56,7 +57,8 @@ void *Memset16(void *dest, int val, size_t length) {
 }
 
 vpx_image_t *CreateImage(vpx_bit_depth_t bit_depth, vpx_img_fmt_t fmt,
-                         unsigned int width, unsigned int height) {
+                         unsigned int width, unsigned int height,
+                         libvpx_test::ACMRandom *rng = nullptr) {
   assert(fmt != VPX_IMG_FMT_NV12);
   if (bit_depth > VPX_BITS_8) {
     fmt = static_cast<vpx_img_fmt_t>(fmt | VPX_IMG_FMT_HIGHBITDEPTH);
@@ -64,26 +66,38 @@ vpx_image_t *CreateImage(vpx_bit_depth_t bit_depth, vpx_img_fmt_t fmt,
   vpx_image_t *image = vpx_img_alloc(nullptr, fmt, width, height, 1);
   if (!image) return image;
 
-  const int val = 1 << (bit_depth - 1);
+  auto get_val = [bit_depth, &rng]() {
+    if (rng != nullptr) {
+      switch (bit_depth) {
+        case VPX_BITS_8: return static_cast<int>(rng->Rand8());
+        case VPX_BITS_10: return static_cast<int>(rng->Rand10());
+        case VPX_BITS_12: return static_cast<int>(rng->Rand12());
+      }
+    }
+    return 1 << (bit_depth - 1);
+  };
+  const int val_y = get_val();
+  const int val_u = get_val();
+  const int val_v = get_val();
   const unsigned int uv_h =
       (image->d_h + image->y_chroma_shift) >> image->y_chroma_shift;
   const unsigned int uv_w =
       (image->d_w + image->x_chroma_shift) >> image->x_chroma_shift;
   if (bit_depth > VPX_BITS_8) {
     for (unsigned int i = 0; i < image->d_h; ++i) {
-      Memset16(image->planes[0] + i * image->stride[0], val, image->d_w);
+      Memset16(image->planes[0] + i * image->stride[0], val_y, image->d_w);
     }
     for (unsigned int i = 0; i < uv_h; ++i) {
-      Memset16(image->planes[1] + i * image->stride[1], val, uv_w);
-      Memset16(image->planes[2] + i * image->stride[2], val, uv_w);
+      Memset16(image->planes[1] + i * image->stride[1], val_u, uv_w);
+      Memset16(image->planes[2] + i * image->stride[2], val_v, uv_w);
     }
   } else {
     for (unsigned int i = 0; i < image->d_h; ++i) {
-      memset(image->planes[0] + i * image->stride[0], val, image->d_w);
+      memset(image->planes[0] + i * image->stride[0], val_y, image->d_w);
     }
     for (unsigned int i = 0; i < uv_h; ++i) {
-      memset(image->planes[1] + i * image->stride[1], val, uv_w);
-      memset(image->planes[2] + i * image->stride[2], val, uv_w);
+      memset(image->planes[1] + i * image->stride[1], val_u, uv_w);
+      memset(image->planes[2] + i * image->stride[2], val_v, uv_w);
     }
   }
 
@@ -154,6 +168,116 @@ TEST(EncodeAPI, InvalidParams) {
 
     EXPECT_EQ(VPX_CODEC_OK, vpx_codec_destroy(&enc));
   }
+}
+
+TEST(EncodeAPI, InvalidUVStrides) {
+  static const std::vector<vpx_img_fmt_t> kVp8ImageFormats = {
+    VPX_IMG_FMT_YV12, VPX_IMG_FMT_I420, VPX_IMG_FMT_NV12
+  };
+  static const std::vector<vpx_img_fmt_t> kVp9ImageFormats = {
+    VPX_IMG_FMT_YV12,   VPX_IMG_FMT_I420,   VPX_IMG_FMT_I422,
+    VPX_IMG_FMT_I444,   VPX_IMG_FMT_I440,   VPX_IMG_FMT_NV12,
+    VPX_IMG_FMT_I42016, VPX_IMG_FMT_I42216, VPX_IMG_FMT_I44416,
+    VPX_IMG_FMT_I44016
+  };
+  struct UVStride {
+    int u_stride;
+    int v_stride;
+  };
+  constexpr int kWidth = 64;
+  constexpr int kHeight = 64;
+  static constexpr std::array<UVStride, 4> kUVStrides = {
+    UVStride{ kWidth, kWidth - 1 }, UVStride{ kWidth, kWidth + 1 },
+    UVStride{ kWidth - 1, kWidth }, UVStride{ kWidth + 1, kWidth }
+  };
+  vpx_image_t img;
+  vpx_codec_ctx_t enc;
+  vpx_codec_enc_cfg_t cfg;
+  // Allocate a buffer large enough for a non-subsampled, high bitdepth image.
+  auto buf = std::make_unique<uint8_t[]>(kWidth * kHeight * 3 * 2);
+
+  for (const auto *iface : kCodecIfaces) {
+    SCOPED_TRACE(vpx_codec_iface_name(iface));
+    ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, /*usage=*/0),
+              VPX_CODEC_OK);
+
+    for (const auto img_fmt :
+         IsVP9(iface) ? kVp9ImageFormats : kVp8ImageFormats) {
+      const bool high_bit_depth =
+          (img_fmt & VPX_IMG_FMT_HIGHBITDEPTH) == VPX_IMG_FMT_HIGHBITDEPTH;
+      if (high_bit_depth &&
+          !(vpx_codec_get_caps(iface) & VPX_CODEC_CAP_HIGHBITDEPTH)) {
+        break;
+      }
+      ASSERT_EQ(vpx_img_wrap(&img, img_fmt, kWidth, kHeight, /*stride_align=*/1,
+                             buf.get()),
+                &img)
+          << "Unable to wrap vpx_image for format: " << img_fmt;
+      const bool is_420 =
+          (img.x_chroma_shift == 1 && img.y_chroma_shift == 1) ||
+          img_fmt == VPX_IMG_FMT_NV12;
+      // In profiles 0 and 2, only 4:2:0 format is allowed. In profiles 1 and 3,
+      // all other subsampling formats are allowed. In profiles 0 and 1, only
+      // bit depth 8 is allowed. In profiles 2 and 3, only bit depths 10 and 12
+      // are allowed.
+      cfg.g_profile = 2 * high_bit_depth + !is_420;
+      cfg.g_w = kWidth;
+      cfg.g_h = kHeight;
+      cfg.g_bit_depth = high_bit_depth ? VPX_BITS_10 : VPX_BITS_8;
+      ASSERT_EQ(
+          vpx_codec_enc_init(&enc, iface, &cfg,
+                             high_bit_depth ? VPX_CODEC_USE_HIGHBITDEPTH : 0),
+          VPX_CODEC_OK)
+          << " high_bit_depth: " << high_bit_depth;
+
+      for (const auto uv_stride : kUVStrides) {
+        const UVStride orig = { img.stride[VPX_PLANE_U],
+                                img.stride[VPX_PLANE_V] };
+        img.stride[VPX_PLANE_U] = uv_stride.u_stride;
+        img.stride[VPX_PLANE_V] = uv_stride.v_stride;
+        EXPECT_EQ(vpx_codec_encode(&enc, &img, /*pts=*/0, /*duration=*/1,
+                                   /*flags=*/0, VPX_DL_REALTIME),
+                  VPX_CODEC_INVALID_PARAM)
+            << "Error: " << vpx_codec_error_detail(&enc)
+            << ", format: " << img_fmt << ", U stride: " << uv_stride.u_stride
+            << ", V stride: " << uv_stride.v_stride;
+
+        // Ensure the encoder can recover when given valid strides.
+        img.stride[VPX_PLANE_U] = orig.u_stride;
+        img.stride[VPX_PLANE_V] = orig.v_stride;
+        EXPECT_EQ(vpx_codec_encode(&enc, &img, /*pts=*/0, /*duration=*/1,
+                                   /*flags=*/0, VPX_DL_REALTIME),
+                  VPX_CODEC_OK)
+            << "Error: " << vpx_codec_error_detail(&enc)
+            << ", format: " << img_fmt << ", U stride: " << orig.u_stride
+            << ", V stride: " << orig.v_stride;
+      }
+
+      EXPECT_EQ(
+          vpx_codec_encode(&enc, /*img=*/nullptr, /*pts=*/0, /*duration=*/0,
+                           /*flags=*/0, VPX_DL_REALTIME),
+          VPX_CODEC_OK);
+      EXPECT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+    }
+  }
+}
+
+TEST(EncodeAPI, InvalidImageFormats) {
+  EXPECT_EQ(vpx_img_alloc(/*img=*/nullptr, VPX_IMG_FMT_NONE, /*d_w=*/32,
+                          /*d_h=*/32, /*align=*/1),
+            nullptr);
+  EXPECT_EQ(vpx_img_alloc(/*img=*/nullptr,
+                          static_cast<vpx_img_fmt_t>(VPX_IMG_FMT_NONE - 1),
+                          /*d_w=*/32, /*d_h=*/32, /*align=*/1),
+            nullptr);
+  EXPECT_EQ(vpx_img_alloc(/*img=*/nullptr,
+                          static_cast<vpx_img_fmt_t>(VPX_IMG_FMT_NV12 + 1),
+                          /*d_w=*/32, /*d_h=*/32, /*align=*/1),
+            nullptr);
+  EXPECT_EQ(vpx_img_alloc(/*img=*/nullptr,
+                          static_cast<vpx_img_fmt_t>(VPX_IMG_FMT_I44016 + 1),
+                          /*d_w=*/32, /*d_h=*/32, /*align=*/1),
+            nullptr);
 }
 
 TEST(EncodeAPI, HighBitDepthCapability) {
@@ -1249,7 +1373,9 @@ class VP9Encoder {
 
   void Configure(unsigned int threads, unsigned int width, unsigned int height,
                  vpx_rc_mode end_usage, vpx_enc_deadline_t deadline);
-  void Encode(bool key_frame);
+  // If `rng` is non-null, use it to generate the image values for encoding.
+  // Otherwise the midpoint of the configured bitdepth is used.
+  void Encode(bool key_frame, libvpx_test::ACMRandom *rng = nullptr);
 
  private:
   const int speed_;
@@ -1316,10 +1442,10 @@ void VP9Encoder::Configure(unsigned int threads, unsigned int width,
       << vpx_codec_error_detail(&enc_);
 }
 
-void VP9Encoder::Encode(bool key_frame) {
+void VP9Encoder::Encode(bool key_frame, libvpx_test::ACMRandom *rng) {
   assert(initialized_);
   const vpx_codec_cx_pkt_t *pkt;
-  vpx_image_t *image = CreateImage(bit_depth_, fmt_, cfg_.g_w, cfg_.g_h);
+  vpx_image_t *image = CreateImage(bit_depth_, fmt_, cfg_.g_w, cfg_.g_h, rng);
   ASSERT_NE(image, nullptr);
   const vpx_enc_frame_flags_t frame_flags = key_frame ? VPX_EFLAG_FORCE_KF : 0;
   ASSERT_EQ(
@@ -2386,6 +2512,58 @@ TEST(EncodeAPI, PerFramePsnrNotSupportedWithLagInFrames) {
 
   // Free resources.
   vpx_img_free(image);
+  ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+}
+
+TEST(EncodeAPI, Buganizer487259772ScaledRefs) {
+  libvpx_test::ACMRandom rng;
+  VP9Encoder encoder(/*speed=*/7, /*row_mt=*/0, VPX_BITS_8, VPX_IMG_FMT_I420);
+  encoder.Configure(/*threads=*/1, /*width=*/478, /*height=*/755, VPX_VBR,
+                    VPX_DL_REALTIME);
+  encoder.Configure(/*threads=*/1, /*width=*/387, /*height=*/438, VPX_VBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/false, &rng);
+  encoder.Encode(/*key_frame=*/true, &rng);
+  encoder.Encode(/*key_frame=*/false, &rng);
+  encoder.Encode(/*key_frame=*/false, &rng);
+
+  encoder.Configure(/*threads=*/1, /*width=*/341, /*height=*/655, VPX_VBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/false, &rng);
+  encoder.Encode(/*key_frame=*/false, &rng);
+}
+
+TEST(EncodeAPI, DISABLED_Buganizer488585490CostTableOverflow) {
+  // Initialize libvpx encoder.
+  vpx_codec_iface_t *const iface = vpx_codec_vp9_cx();
+  vpx_codec_ctx_t enc;
+  vpx_codec_enc_cfg_t cfg;
+
+  ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, /*usage=*/0),
+            VPX_CODEC_OK);
+
+  cfg.g_w = 149;
+  cfg.g_h = 48;
+  cfg.g_profile = 3;
+  cfg.g_bit_depth = VPX_BITS_10;
+  cfg.g_input_bit_depth = 10;
+  cfg.g_pass = VPX_RC_ONE_PASS;
+  cfg.g_lag_in_frames = 0;
+
+  ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, VPX_CODEC_USE_HIGHBITDEPTH),
+            VPX_CODEC_OK);
+
+  ASSERT_EQ(vpx_codec_control(&enc, VP8E_SET_CPUUSED, 7), VPX_CODEC_OK);
+  ASSERT_EQ(vpx_codec_control(&enc, VP9E_SET_LOSSLESS, 1), VPX_CODEC_OK);
+
+  libvpx_test::YUVVideoSource video(
+      "repro-b488585490.yuv", VPX_IMG_FMT_I44416, cfg.g_w, cfg.g_h,
+      /*rate_numerator=*/1, /*rate_denominator=*/30, /*start=*/0, /*limit=*/1);
+  video.Begin();
+  ASSERT_EQ(vpx_codec_encode(&enc, video.img(), video.pts(), /*duration=*/66666,
+                             /*flags=*/0, VPX_DL_REALTIME),
+            VPX_CODEC_OK);
+
   ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
 }
 #endif  // CONFIG_VP9_ENCODER

@@ -273,6 +273,54 @@ def add_eager_cache_index_tasks(taskgraph, label_to_taskid, parameters, graph_co
 
 
 @register_morph
+def add_code_coverage_task(taskgraph, label_to_taskid, parameters, graph_config):
+    """
+    Add a code-coverage-artifacts task that depends on all ccov test tasks, if
+    and only if any such tasks are present in the graph.  This ensures the task
+    is not added (and does not pull in extra dependencies) when only a subset of
+    ccov tasks is targeted.
+    """
+    ccov_tasks = {
+        label: task.task_id
+        for label, task in taskgraph.tasks.items()
+        if task.attributes.get("ccov")
+    }
+    if not ccov_tasks:
+        return taskgraph, label_to_taskid
+
+    task_def = {
+        "provisionerId": "built-in",
+        "workerType": "succeed",
+        "dependencies": sorted(ccov_tasks.values()),
+        "requires": "all-resolved",
+        "created": {"relative-datestamp": "0 seconds"},
+        "deadline": {"relative-datestamp": "1 day"},
+        "expires": {"relative-datestamp": "1 day"},
+        "metadata": {
+            "name": "code-coverage-artifacts",
+            "description": "Notify when all code-coverage tasks in this task group are complete",
+            "owner": parameters["owner"],
+            "source": parameters["head_repository"],
+        },
+        "scopes": [],
+        "payload": {},
+        "routes": ["project.codecoverage.v1.tasks_done"],
+        "tags": {},
+    }
+    task = Task(
+        kind="code-coverage",
+        label="code-coverage-artifacts",
+        attributes={},
+        task=task_def,
+        dependencies=ccov_tasks,
+    )
+    task.task_id = slugid()
+    taskgraph, label_to_taskid = amend_taskgraph(taskgraph, label_to_taskid, [task])
+    logger.info("Added code-coverage-artifacts task.")
+    return taskgraph, label_to_taskid
+
+
+@register_morph
 def add_try_task_duplicates(taskgraph, label_to_taskid, parameters, graph_config):
     try_config = parameters.get("try_task_config", {})
     tasks = try_config.get("tasks", [])

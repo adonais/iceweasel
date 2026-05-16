@@ -525,7 +525,7 @@ nsMultiplexInputStream::Seek(int32_t aWhence, int64_t aOffset) {
 
       mStreams[i].mCurrentPos -= seek;
       mCurrentStream = i;
-      mStartedReadingCurrent = seek != -pos;
+      mStartedReadingCurrent = seek != pos;
 
       remaining -= seek;
     }

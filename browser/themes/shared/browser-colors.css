@@ -23,16 +23,8 @@
   --short-notification-gradient: #9059ff;
   --warning-icon-bgcolor: light-dark(#ffa436, #ffbd4f);
 
-  --urlbar-box-bgcolor: var(--button-background-color-hover);
-  --urlbar-box-focus-bgcolor: var(--button-background-color);
-  --urlbar-box-hover-bgcolor: var(--button-background-color-hover);
-  --urlbar-box-active-bgcolor: var(--button-background-color-active);
-  --urlbar-box-text-color: inherit;
-  --urlbar-box-hover-text-color: var(--urlbar-box-text-color);
-  --urlbar-icon-fill-opacity: 0.9;
   @media (prefers-contrast) {
-    --urlbar-icon-fill-opacity: 1;
-    --sidebar-border-color: var(--card-border-color);
+    --sidebar-border-color: var(--border-color-card);
   }
 
   --content-area-shadow: var(--card-box-shadow);
@@ -56,14 +48,6 @@
       --focus-outline-color: light-dark(#0061e0, #00ddff);
     }
   }
-
-  @media (prefers-color-scheme: dark) {
-    /* Increase the contrast of urlbar boxes in dark mode.
-       In practice these are bumped-up --button(-hover)-bgcolor rules */
-    --urlbar-box-bgcolor: color-mix(in srgb, currentColor 16%, transparent);
-    --urlbar-box-focus-bgcolor: color-mix(in srgb, currentColor 16%, transparent);
-    --urlbar-box-hover-bgcolor: color-mix(in srgb, currentColor 22%, transparent);
-  }
 }
 
 /**
@@ -80,13 +64,6 @@
     --button-background-color-active: light-dark(rgb(207, 207, 216), rgba(207, 207, 216, 0.4));
     --button-text-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
 
-    --arrowpanel-background: light-dark(white, rgb(66, 65, 77));
-    --arrowpanel-color: light-dark(black, rgb(251, 251, 254));
-    --arrowpanel-border-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
-
-    --arrowpanel-dimmed: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
-    --arrowpanel-dimmed-further: light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 14%, transparent));
-
     --input-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
     --input-bgcolor: light-dark(rgb(255, 255, 255), #42414d);
 
@@ -96,18 +73,6 @@
 
     &:where([customtitlebar]) {
       --toolbox-bgcolor-inactive: light-dark(rgb(235, 235, 239), rgb(31, 30, 37));
-    }
-
-    --urlbarView-action-color: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));
-    --urlbarView-separator-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
-    --urlbarView-highlight-background: light-dark(#e0e0e6, rgb(43, 42, 51));
-    --urlbarView-highlight-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
-    --urlbarView-hover-background: light-dark(rgb(240, 240, 244), var(--arrowpanel-dimmed));
-
-    --urlbar-box-bgcolor: light-dark(white, rgb(66, 65, 77));
-    --urlbar-icon-fill-opacity: 0.72;
-    @media (prefers-color-scheme: dark) {
-      --urlbar-icon-fill-opacity: 1;
     }
 
     /* stylelint-disable-next-line media-query-no-invalid */

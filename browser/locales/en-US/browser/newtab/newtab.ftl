@@ -5,9 +5,13 @@
 ### Firefox Home / New Tab strings for about:home / about:newtab.
 
 newtab-page-title = New Tab
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Customize this page
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Customize
+newtab-customize-panel-label =
+    .label = Customize
 newtab-settings-dialog-label =
     .aria-label = Settings
 newtab-logo-and-wordmark =
@@ -124,7 +128,7 @@ newtab-menu-report = Report
 newtab-menu-section-block = Block
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
-newtab-menu-section-unfollow = Unfollow topic
+newtab-menu-section-unfollow-topic = Unfollow
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
 
@@ -224,20 +228,30 @@ newtab-error-fallback-refresh-link = Refresh page to try again.
 
 ## Customization Menu
 
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
   .label = Shortcuts
   .description = Sites you save or visit
 
+newtab-custom-shortcuts-nova =
+  .label = Shortcuts
+
+newtab-custom-row-description =
+  .description = Number of rows
 # Variables
 #   $num (number) - Number of rows to display
-newtab-custom-row-selector =
-        { $num ->
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+        .label = { $num ->
             [one] { $num } row
            *[other] { $num } rows
         }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
   .label = Recommended stories
   .description = Exceptional content curated by the { -brand-product-name } family
+newtab-recommended-stories-toggle =
+  .label = Recommended stories
 newtab-custom-stories-personalized-toggle =
   .label = Stories
 newtab-custom-stories-personalized-checkbox-label = Personalized stories based on your activity
@@ -267,8 +281,12 @@ newtab-custom-settings = Manage more settings
 
 newtab-wallpaper-title = Wallpapers
 newtab-wallpaper-reset = Reset to default
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Upload an image
+newtab-wallpaper-add-an-image = Add an image
 newtab-wallpaper-custom-color = Choose a color
+newtab-wallpaper-toggle-title =
+    .label = Wallpapers
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = The image exceeded the file size limit of { $file_size }MB. Please try uploading a smaller file.
@@ -290,7 +308,9 @@ newtab-wallpaper-light-fox-anniversary = A fox in a grassy field with a misty mo
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Solid colors
+newtab-wallpaper-colors = Colors
 newtab-wallpaper-blue = Blue
 newtab-wallpaper-light-blue = Light blue
 newtab-wallpaper-light-purple = Light purple
@@ -384,6 +404,9 @@ newtab-weather-menu-change-location = Change location
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Search location
     .aria-label = Search location
+# "Current" refers to the user's physical/geographic location detected via geolocation.
+newtab-weather-change-location-search-use-current =
+    .label = Use current location
 newtab-weather-menu-weather-display = Weather display
 newtab-weather-todays-forecast = Today’s forecast
 newtab-weather-see-full-forecast = See full forecast
@@ -408,8 +431,18 @@ newtab-weather-opt-in-not-now =
     .label = Not now
 newtab-weather-opt-in-yes =
     .label = Yes
+newtab-weather-opt-in-headline = Get your local weather forecast
+newtab-weather-opt-in-use-location =
+    .label = Use location
+newtab-weather-opt-in-choose-location = Choose location
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = High
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Low
 
 ## Topic Labels
 
@@ -478,7 +511,7 @@ newtab-section-confirm-block-topic-p2 = Blocked topics will no longer appear in 
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Block { $topic }
-newtab-section-cancel-button = Not now
+newtab-section-block-cancel-button = Cancel
 
 ## Panel in the Customize menu section to manage followed and blocked topics
 
@@ -502,6 +535,12 @@ newtab-custom-wallpaper-cta = Try it
 newtab-new-user-custom-wallpaper-title = Choose a wallpaper to make { -brand-product-name } yours
 newtab-new-user-custom-wallpaper-subtitle = Make every new tab feel like home with custom wallpapers and colors.
 newtab-new-user-custom-wallpaper-cta = Try it now
+
+## Strings for Nova wallpaper feature highlight
+
+newtab-wallpaper-feature-highlight-title = Fresh new wallpapers just landed
+newtab-wallpaper-feature-highlight-subtitle = Choose your favorite and make every new tab feel like home.
+newtab-wallpaper-feature-highlight-cta = Choose wallpaper
 
 ## Strings for download mobile highlight
 
@@ -545,11 +584,27 @@ newtab-toast-thanks-for-reporting =
     .message = Thank you for reporting this.
 newtab-toast-widgets-hidden =
     .message = Select the pencil icon to add widgets back anytime.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = You’re now following { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = You’re no longer following { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = You won’t see stories about { $topic } anymore.
 
 ## Strings for task / to-do list productivity widget
 
 newtab-widget-section-title = Widgets
 newtab-widget-menu-hide = Hide widget
+newtab-widget-menu-change-size = Change size
+newtab-widget-size-small = Small
+newtab-widget-size-medium = Medium
+newtab-widget-size-large = Large
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Hide widgets
@@ -560,11 +615,21 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimize widgets
     .aria-label = Collapse all widgets to compact size
+newtab-widget-section-menu-button =
+    .title = Widgets menu
+    .aria-label = Open widgets menu
+newtab-widget-section-menu-hide-all = Hide widgets
+newtab-widget-section-menu-learn-more = Learn more
 newtab-widget-section-feedback = Tell us what you think
+newtab-widget-lists-name-default = Checklist
 newtab-widget-lists-name-label-default =
     .label = Task list
+newtab-widget-lists-name-label-checklist =
+    .label = Checklist
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Task list
+newtab-widget-lists-name-placeholder-checklist =
+    .placeholder = Checklist
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = New list
@@ -639,6 +704,13 @@ newtab-widget-message-copy = From quick reminders to daily to-dos, focus session
 newtab-promo-card-title = Support { -brand-product-name }
 newtab-promo-card-body = Our sponsors support our mission to build a better web
 newtab-promo-card-cta = Learn more
+
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Make { -brand-product-name } yours
+newtab-promo-card-body-addons = Pick a wallpaper from our collection, or create your own.
+newtab-promo-card-cta-addons = Try it now
 newtab-promo-card-dismiss-button =
     .title = Dismiss
     .aria-label = Dismiss

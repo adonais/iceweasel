@@ -11,7 +11,6 @@
 #include "mozilla/dom/TextTrackCueList.h"
 #include "mozilla/dom/TextTrackList.h"
 #include "nsContentUtils.h"
-#include "nsIDOMEventListener.h"
 
 class nsIWebVTTParserWrapper;
 
@@ -36,14 +35,12 @@ class CompareTextTracks {
 class TextTrack;
 class TextTrackCue;
 
-class TextTrackManager final : public nsIDOMEventListener {
+class TextTrackManager final : public nsISupports {
   ~TextTrackManager();
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(TextTrackManager)
-
-  NS_DECL_NSIDOMEVENTLISTENER
 
   explicit TextTrackManager(HTMLMediaElement* aMediaElement);
 
@@ -87,8 +84,6 @@ class TextTrackManager final : public nsIDOMEventListener {
 
   void PopulatePendingList();
 
-  void AddListeners();
-
   // The HTMLMediaElement that this TextTrackManager manages the TextTracks of.
   RefPtr<HTMLMediaElement> mMediaElement;
 
@@ -104,7 +99,7 @@ class TextTrackManager final : public nsIDOMEventListener {
 
   bool IsLoaded();
 
- private:
+  void SetCuesDirty();
   /**
    * Converts the TextTrackCue's cuetext into a tree of DOM objects
    * and attaches it to a div on its owning TrackElement's
@@ -112,6 +107,7 @@ class TextTrackManager final : public nsIDOMEventListener {
    */
   void UpdateCueDisplay();
 
+ private:
   // List of the TextTrackManager's owning HTMLMediaElement's TextTracks.
   RefPtr<TextTrackList> mTextTracks;
   // List of text track objects awaiting loading.

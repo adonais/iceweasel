@@ -1,0 +1,17 @@
+{
+  "label": "nsandi.com",
+  "bugs": {
+    "1873166": {
+      "issue": "unsupported-warning",
+      "matches": ["*://*.nsandi.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "css": ["bug1873166-nsandi.com-hide-unsupported-message.css"]
+      }
+    }
+  ]
+}

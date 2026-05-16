@@ -133,7 +133,7 @@ void nsHtml5HtmlAttributes::clear(int32_t aMode) {
     nsHtml5AttributeEntry& entry = mStorage.Elements()[i];
     entry.ReleaseValue();
   }
-  mStorage.TruncateLength(0);
+  mStorage.ClearAndRetainStorage();
   mMode = aMode;
   mDuplicateAttributeError = false;
 }
@@ -145,7 +145,7 @@ void nsHtml5HtmlAttributes::releaseValue(int32_t aIndex) {
 }
 
 void nsHtml5HtmlAttributes::clearWithoutReleasingContents() {
-  mStorage.TruncateLength(0);
+  mStorage.ClearAndRetainStorage();
 }
 
 bool nsHtml5HtmlAttributes::contains(nsHtml5AttributeName* aName) {

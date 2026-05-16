@@ -752,8 +752,7 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
     // let the MathMLChar stretch itself...
     nsresult res = mMathMLChar.Stretch(
         this, aDrawTarget, fontSizeInflation, aStretchDirection, container,
-        charSize, stretchFlags,
-        StyleVisibility()->mDirection == StyleDirection::Rtl);
+        charSize, stretchFlags, GetWritingMode().IsBidiRTL());
     if (NS_FAILED(res)) {
       // gracefully handle cases where stretching the char failed (i.e.,
       // GetBoundingMetrics failed) clear our 'form' to behave as if the
@@ -882,9 +881,7 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
     aDesiredStretchSize.Width() = mBoundingMetrics.width;
     aDesiredStretchSize.mBoundingMetrics.width = mBoundingMetrics.width;
 
-    nscoord dx = StyleVisibility()->mDirection == StyleDirection::Rtl
-                     ? trailingSpace
-                     : leadingSpace;
+    nscoord dx = GetWritingMode().IsBidiRTL() ? trailingSpace : leadingSpace;
     mBoundingMetrics.leftBearing += dx;
     mBoundingMetrics.rightBearing += dx;
     aDesiredStretchSize.mBoundingMetrics.leftBearing += dx;
@@ -993,8 +990,7 @@ void nsMathMLmoFrame::Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
     nsresult rv = mMathMLChar.Stretch(
         this, aDrawTarget, nsLayoutUtils::FontSizeInflationFor(this),
         StretchDirection::Vertical, aDesiredSize.mBoundingMetrics, newMetrics,
-        MathMLStretchFlag::LargeOperator,
-        StyleVisibility()->mDirection == StyleDirection::Rtl);
+        MathMLStretchFlag::LargeOperator, GetWritingMode().IsBidiRTL());
 
     if (NS_FAILED(rv)) {
       // Just use the initial size
@@ -1065,7 +1061,7 @@ void nsMathMLmoFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
     leadingSpace = mEmbellishData.leadingSpace;
     trailingSpace = mEmbellishData.trailingSpace;
   }
-  bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
+  bool isRTL = GetWritingMode().IsBidiRTL();
   aDesiredSize.Width() += leadingSpace + trailingSpace;
   aDesiredSize.mBoundingMetrics.width = aDesiredSize.Width();
   if (isRTL) {

@@ -354,7 +354,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
                           AllowRangeCrossShadowBoundary::No);
   void Collapse(bool aToStart);
 
-  static void GetInnerTextNoFlush(mozilla::dom::DOMString& aValue,
+  static void GetInnerTextNoFlush(nsAString& aValue,
                                   mozilla::ErrorResult& aError,
                                   nsIContent* aContainer);
 

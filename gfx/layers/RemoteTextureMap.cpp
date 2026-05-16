@@ -197,7 +197,8 @@ void RemoteTextureOwnerClient::PushDummyTexture(
   auto flags = TextureFlags::DEALLOCATE_CLIENT | TextureFlags::REMOTE_TEXTURE |
                TextureFlags::DUMMY_TEXTURE;
   auto* rawData = BufferTextureData::Create(
-      gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, gfx::BackendType::SKIA,
+      gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, gfx::ColorSpace2::SRGB,
+      gfx::TransferFunction::SRGB, gfx::BackendType::SKIA,
       LayersBackend::LAYERS_WR, flags, ALLOC_DEFAULT, nullptr);
   if (!rawData) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -244,9 +245,10 @@ RemoteTextureOwnerClient::CreateOrRecycleBufferTextureData(
   }
 
   auto flags = TextureFlags::DEALLOCATE_CLIENT | TextureFlags::REMOTE_TEXTURE;
-  auto* data = BufferTextureData::Create(aSize, aFormat, gfx::BackendType::SKIA,
-                                         LayersBackend::LAYERS_WR, flags,
-                                         ALLOC_DEFAULT, nullptr);
+  auto* data = BufferTextureData::Create(
+      aSize, aFormat, gfx::ColorSpace2::SRGB, gfx::TransferFunction::SRGB,
+      gfx::BackendType::SKIA, LayersBackend::LAYERS_WR, flags, ALLOC_DEFAULT,
+      nullptr);
   return UniquePtr<TextureData>(data);
 }
 

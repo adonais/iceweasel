@@ -26,7 +26,7 @@ mod mach;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 pub(crate) use mach::PlatformData;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use crash_annotations::{
     should_include_annotation, type_of_annotation, CrashAnnotation, CrashAnnotationType,
 };
@@ -272,6 +272,16 @@ fn retrieve_annotations(
             data: AnnotationData::ByteBuffer(vec![1]),
         });
     }
+
+    // Add a unique identifier for this crash event.
+    let crash_id = uuid::Uuid::new_v4()
+        .as_hyphenated()
+        .encode_lower(&mut uuid::Uuid::encode_buffer())
+        .to_string();
+    annotations.push(CAnnotation {
+        id: CrashAnnotation::CrashID as u32,
+        data: AnnotationData::String(CString::new(crash_id).context("uuid contains nul byte")?),
+    });
 
     Ok(annotations)
 }

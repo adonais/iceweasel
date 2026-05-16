@@ -132,6 +132,15 @@ void CacheStorageService::Shutdown() {
   Dispatch(event);
 
 #ifdef NS_FREE_PERMANENT_DATA
+  // Clear pending callbacks on all entries before dropping them.
+  // Each pending Callback holds a RefPtr<CacheEntry> back to its owning
+  // entry, forming a prevent-release cycle that the destructor alone
+  // cannot break.
+  for (const auto& table : sGlobalEntryTables->Values()) {
+    for (const auto& entry : table->Values()) {
+      entry->ClearCallbacks();
+    }
+  }
   sGlobalEntryTables->Clear();
   delete sGlobalEntryTables;
 #endif

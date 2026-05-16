@@ -307,10 +307,6 @@ TEST_F(psm_OCSPCacheTest, TestOriginAttributes) {
   // because we don't have entries that have both attributes set because the two
   // features that use these attributes are mutually exclusive.
 
-  // Set pref for OCSP cache network partitioning.
-  mozilla::Preferences::SetBool("privacy.partition.network_state.ocsp_cache",
-                                true);
-
   SCOPED_TRACE("");
   OriginAttributes attrs;
   attrs.mFirstPartyDomain.AssignLiteral("foo.com");

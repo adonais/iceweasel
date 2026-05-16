@@ -27,6 +27,7 @@
 #include "VRProcessManager.h"
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_memory.h"
 #include "mozilla/RDDProcessManager.h"
 #include "mozilla/Services.h"
 #include "mozilla/glean/XpcomMetrics.h"
@@ -1965,8 +1966,8 @@ nsresult nsMemoryReporterManager::StartGettingReports() {
   if (!s->mChildrenPending.IsEmpty()) {
     nsCOMPtr<nsITimer> timer;
     rv = NS_NewTimerWithFuncCallback(
-        getter_AddRefs(timer), TimeoutCallback, this, kTimeoutLengthMS,
-        nsITimer::TYPE_ONE_SHOT,
+        getter_AddRefs(timer), TimeoutCallback, this,
+        StaticPrefs::memory_reporter_timeout(), nsITimer::TYPE_ONE_SHOT,
         "nsMemoryReporterManager::StartGettingReports"_ns);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       FinishReporting();

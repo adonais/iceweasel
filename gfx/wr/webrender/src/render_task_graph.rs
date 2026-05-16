@@ -58,8 +58,10 @@ impl<'l> RenderTaskAllocation<'l> {
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[derive(MallocSizeOf)]
+#[derive(bytemuck::Pod, bytemuck::Zeroable)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[repr(C)]
 pub struct RenderTaskId {
     pub index: u32,
 }

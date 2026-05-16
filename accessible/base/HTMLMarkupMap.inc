@@ -167,7 +167,7 @@ MARKUPMAP(
 
 MARKUPMAP(dt, New_HTMLDtOrDd<HTMLLIAccessible>, roles::TERM)
 
-MARKUPMAP(em, New_HyperText, roles::EMPHASIS)
+MARKUPMAP(em, New_HyperText, roles::EMPHASIS, Attr(xmlroles, emphasis))
 
 MARKUPMAP(
     figcaption,
@@ -360,7 +360,7 @@ MARKUPMAP(
     },
     0)
 
-MARKUPMAP(strong, New_HyperText, roles::STRONG)
+MARKUPMAP(strong, New_HyperText, roles::STRONG, Attr(xmlroles, strong))
 
 MARKUPMAP(sub, New_HyperText, roles::SUBSCRIPT)
 

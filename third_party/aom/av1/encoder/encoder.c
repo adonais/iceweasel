@@ -3157,20 +3157,24 @@ static int encode_without_recode(AV1_COMP *cpi) {
 
   // This is for rtc temporal filtering case.
   if (is_psnr_calc_enabled(cpi) && cpi->sf.rt_sf.use_rtc_tf) {
-    const SequenceHeader *seq_params = cm->seq_params;
-
     if (cpi->orig_source.buffer_alloc_sz == 0 ||
-        cpi->rc.prev_coded_width != cpi->oxcf.frm_dim_cfg.width ||
-        cpi->rc.prev_coded_height != cpi->oxcf.frm_dim_cfg.height) {
-      // Allocate a source buffer to store the true source for psnr calculation.
-      if (aom_alloc_frame_buffer(
-              &cpi->orig_source, cpi->oxcf.frm_dim_cfg.width,
-              cpi->oxcf.frm_dim_cfg.height, seq_params->subsampling_x,
-              seq_params->subsampling_y, seq_params->use_highbitdepth,
-              cpi->oxcf.border_in_pixels, cm->features.byte_alignment, false,
-              0))
+        cpi->orig_source.y_crop_width != cpi->source->y_crop_width ||
+        cpi->orig_source.y_crop_height != cpi->source->y_crop_height ||
+        cpi->orig_source.subsampling_x != cpi->source->subsampling_x ||
+        cpi->orig_source.subsampling_y != cpi->source->subsampling_y ||
+        cpi->orig_source.flags != cpi->source->flags) {
+      // Allocate a source buffer to store the original source for psnr
+      // calculation.
+      const int use_highbitdepth =
+          (cpi->source->flags & YV12_FLAG_HIGHBITDEPTH) != 0;
+      if (aom_alloc_frame_buffer(&cpi->orig_source, cpi->source->y_crop_width,
+                                 cpi->source->y_crop_height,
+                                 cpi->source->subsampling_x,
+                                 cpi->source->subsampling_y, use_highbitdepth,
+                                 cpi->oxcf.border_in_pixels,
+                                 cm->features.byte_alignment, false, 0))
         aom_internal_error(cm->error, AOM_CODEC_MEM_ERROR,
-                           "Failed to allocate scaled buffer");
+                           "Failed to allocate cpi->orig_source buffer");
     }
 
     aom_yv12_copy_y(cpi->source, &cpi->orig_source, 1);
@@ -3438,9 +3442,7 @@ static int encode_with_recode_loop(AV1_COMP *cpi, size_t *size, uint8_t *dest,
       }
     }
 
-    if (cpi->ext_ratectrl.ready &&
-        (cpi->ext_ratectrl.funcs.rc_type & AOM_RC_QP) != 0 &&
-        cpi->ext_ratectrl.funcs.get_encodeframe_decision != NULL) {
+    if (av1_encode_for_extrc(&cpi->ext_ratectrl)) {
       aom_codec_err_t codec_status;
       aom_rc_encodeframe_decision_t encode_frame_decision;
       const int sb_rows = CEIL_POWER_OF_TWO(cm->mi_params.mi_rows,
@@ -3456,6 +3458,7 @@ static int encode_with_recode_loop(AV1_COMP *cpi, size_t *size, uint8_t *dest,
                 sb_rows * sb_cols, sizeof(*cpi->ext_ratectrl.sb_params_list)));
       }
       encode_frame_decision.sb_params_list = cpi->ext_ratectrl.sb_params_list;
+      encode_frame_decision.use_delta_q = &cpi->ext_ratectrl.use_delta_q;
       codec_status = av1_extrc_get_encodeframe_decision(
           &cpi->ext_ratectrl, cpi->gf_frame_index, &encode_frame_decision);
       if (codec_status != AOM_CODEC_OK) {
@@ -3612,9 +3615,7 @@ static int encode_with_recode_loop(AV1_COMP *cpi, size_t *size, uint8_t *dest,
     }
 
     // Do not recode if external rate control is used.
-    if (cpi->ext_ratectrl.ready &&
-        (cpi->ext_ratectrl.funcs.rc_type & AOM_RC_QP) != 0 &&
-        cpi->ext_ratectrl.funcs.get_encodeframe_decision != NULL) {
+    if (av1_encode_for_extrc(&cpi->ext_ratectrl)) {
       loop = 0;
     }
 #if CONFIG_BITRATE_ACCURACY || CONFIG_RD_COMMAND
@@ -3905,7 +3906,7 @@ static int encode_with_and_without_superres(AV1_COMP *cpi, size_t *size,
     // Note: Both use common rdmult based on base qindex of fullres.
     const int64_t rdmult = av1_compute_rd_mult_based_on_qindex(
         bit_depth, update_type, cm->quant_params.base_qindex,
-        cpi->oxcf.tune_cfg.tuning);
+        cpi->oxcf.tune_cfg.tuning, cpi->oxcf.mode);
 
     // Find the best rdcost among all superres denoms.
     int best_denom = -1;
@@ -3970,7 +3971,7 @@ static int encode_with_and_without_superres(AV1_COMP *cpi, size_t *size,
     // Note: Both use common rdmult based on base qindex of fullres.
     const int64_t rdmult = av1_compute_rd_mult_based_on_qindex(
         bit_depth, update_type, cm->quant_params.base_qindex,
-        cpi->oxcf.tune_cfg.tuning);
+        cpi->oxcf.tune_cfg.tuning, cpi->oxcf.mode);
     proj_rdcost1 =
         RDCOST_DBL_WITH_NATIVE_BD_DIST(rdmult, rate1, sse1, bit_depth);
     const double proj_rdcost2 =

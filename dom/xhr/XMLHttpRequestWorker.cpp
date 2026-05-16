@@ -1391,6 +1391,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(XMLHttpRequestWorker,
   tmp->mResponseBlob = nullptr;
   tmp->mResponseArrayBufferValue = nullptr;
   tmp->mResponseJSONValue.setUndefined();
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(XMLHttpRequestWorker,

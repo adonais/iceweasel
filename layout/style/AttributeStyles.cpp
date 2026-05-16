@@ -16,7 +16,6 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "nsError.h"
-#include "nsGkAtoms.h"
 #include "nsHashKeys.h"
 #include "nsPresContext.h"
 #include "nsStyleConsts.h"

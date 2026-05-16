@@ -273,9 +273,21 @@ newtab-error-fallback-refresh-link = ولدا کوشش کرݨ کیتے ورقے 
 
 newtab-custom-shortcuts-title = شارٹ کٹ
 newtab-custom-shortcuts-subtitle = سائٹاں جہڑیاں تساں محفوظ کریندے یا ݙیہدے ہو
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = شارٹ کٹ
     .description = سائٹاں جہڑیاں تساں محفوظ کریندے یا ݙیہدے ہو
+newtab-custom-shortcuts-nova =
+    .label = شارٹ کٹ
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } قطار
+           *[other] { $num } قطاراں
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -286,9 +298,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = سپانسر تھئے شارٹ کٹ
 newtab-custom-pocket-title = { -pocket-brand-name } دی طرفوں سفارش کیتے ڳئے
 newtab-custom-pocket-subtitle = { -pocket-brand-name } دے ذریعے تیار تھئے غیر معمولی مواد، { -brand-product-name } ٹٻر دا حصہ
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = تجویز کردہ کہاݨیاں
     .description = { -brand-product-name }ٹَٻَّر دے ذریعے تیار کردہ غیر معمولی مواد
+newtab-recommended-stories-toggle =
+    .label = تجویز کردہ کہاݨیاں
 newtab-custom-pocket-sponsored = سپانسر تھیاں کہاݨیاں
 newtab-custom-pocket-show-recent-saves = حالیہ ہتھیکڑیاں ظاہر کرو
 newtab-custom-recent-title = حالیہ سرگرمی
@@ -303,6 +318,8 @@ newtab-custom-settings = ودھیک ترتیباں دا بندوبست کرو
 
 newtab-wallpaper-title = وال پیپرز
 newtab-wallpaper-reset = ڈیفالٹ تے مقرر کرو
+newtab-wallpaper-toggle-title =
+    .label = وال پیپرز
 newtab-wallpaper-light-red-panda = رتا پانڈا
 newtab-wallpaper-light-mountain = چٹی پہاڑی
 newtab-wallpaper-light-sky = ڄُمُّوں اَتے غُلابی بَدلاں دے نال اَسمان
@@ -318,6 +335,7 @@ newtab-wallpaper-dark-city = ڄَمُّوں رنگ دے شہر د امنظر
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = ٹھوس رنگ
 newtab-wallpaper-blue = نیلا
 newtab-wallpaper-light-blue = پھکا نیلا

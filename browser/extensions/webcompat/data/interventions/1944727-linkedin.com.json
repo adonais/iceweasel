@@ -1,0 +1,20 @@
+{
+  "label": "linkedin.com",
+  "bugs": {
+    "1944727": {
+      "issue": "broken-layout",
+      "matches": ["*://*.linkedin.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "pref_check": {
+        "layout.css.webkit-fill-available.enabled": false
+      },
+      "content_scripts": {
+        "css": ["bug1944727-www.linkedin.com-fix-dark-overlay.css"]
+      }
+    }
+  ]
+}

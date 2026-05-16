@@ -204,8 +204,11 @@
     <action
         android:id="@+id/action_global_to_installedAddonDetailsFragment"
         app:destination="@id/installedAddonDetailsFragment" />
+    <action
+      android:id="@+id/action_global_aiControlsFragment"
+      app:destination="@+id/aiControlsFragment"/>
 
-    <dialog
+    <fragment
         android:id="@+id/tabManagementFragment"
         android:name="org.mozilla.fenix.tabstray.ui.TabManagementFragment">
         <argument
@@ -220,7 +223,7 @@
             android:name="accessPoint"
             android:defaultValue="None"
             app:argType="org.mozilla.fenix.tabstray.ui.AccessPoint" />
-    </dialog>
+    </fragment>
 
     <fragment
         android:id="@+id/startupFragment"
@@ -262,6 +265,10 @@
             app:argType="org.mozilla.fenix.components.metrics.MetricsUtils$Source" />
         <argument
             android:name="focusOnAddressBar"
+            android:defaultValue="false"
+            app:argType="boolean" />
+        <argument
+            android:name="startVoiceSearch"
             android:defaultValue="false"
             app:argType="boolean" />
         <action
@@ -686,6 +693,13 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <action
+            android:id="@+id/action_settingsFragment_to_ipProtectionFragment"
+            app:destination="@id/ipProtectionFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
             android:id="@+id/action_settingsFragment_to_trackingProtectionFragment"
             app:destination="@id/trackingProtectionFragment"
             app:enterAnim="@anim/slide_in_right"
@@ -734,6 +748,14 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_settingsFragment_to_aiControlsFragment"
+            app:destination="@id/aiControlsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"
+            app:popUpTo="@id/settingsFragment" />
         <action
             android:id="@+id/action_settingsFragment_to_addonsFragment"
             app:destination="@id/addons_management_graph"
@@ -863,6 +885,29 @@
         android:name="org.mozilla.fenix.settings.wallpaper.WallpaperSettingsFragment"
         android:label="@string/customize_wallpapers"/>
     <fragment
+        android:id="@+id/ipProtectionFragment"
+        android:name="org.mozilla.fenix.settings.IPProtectionFragment"
+        android:label="@string/ip_protection_title" />
+    <fragment
+        android:id="@+id/aiControlsFragment"
+        android:name="org.mozilla.fenix.settings.ai.AIControlsFragment"
+        android:label="@string/preferences_ai_controls">
+        <action
+            android:id="@+id/action_aiControlsFragment_to_translationsSettingsFragment"
+            app:destination="@id/translations_settings_graph"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_aiControlsFragment_to_pageSummariesSettingsFragment"
+            app:destination="@id/pageSummariesSettingsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
+    <fragment
         android:id="@+id/dataChoicesFragment"
         android:name="org.mozilla.fenix.settings.datachoices.DataChoicesFragment"
         android:label="@string/preferences_data_collection">
@@ -874,6 +919,11 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right"
             app:popUpTo="@id/dataChoicesFragment" />
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
     </fragment>
     <fragment
         android:id="@+id/studiesFragment"
@@ -1701,7 +1751,7 @@
         app:startDestination="@id/translationSettingsFragment">
         <fragment
             android:id="@+id/translationSettingsFragment"
-            android:name="org.mozilla.fenix.translations.TranslationSettingsFragment">
+            android:name="org.mozilla.fenix.translations.settings.TranslationSettingsFragment">
             <action
                 android:id="@+id/action_translationSettingsFragment_to_translationsDialogFragment"
                 app:destination="@id/translationsDialogFragment"
@@ -1830,6 +1880,9 @@
             <action
                 android:id="@+id/action_menuDialogFragment_to_installedAddonDetailsFragment"
                 app:destination="@id/installedAddonDetailsFragment" />
+            <action
+                android:id="@+id/action_menuDialogFragment_to_ipProtectionFragment"
+                app:destination="@id/ipProtectionFragment" />
         </dialog>
     </navigation>
 
@@ -1903,6 +1956,9 @@
             <argument
                 android:name="isLocalPdf"
                 app:argType="boolean" />
+            <action
+                android:id="@+id/action_trustPanelFragment_to_ipProtectionFragment"
+                app:destination="@id/ipProtectionFragment" />
         </dialog>
     </navigation>
     <dialog

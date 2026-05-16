@@ -202,7 +202,6 @@ ScriptLoader::ScriptLoader(Document* aDocument)
   mSpeculativeOMTParsingEnabled = StaticPrefs::
       dom_script_loader_external_scripts_speculative_omt_parse_enabled();
 
-#ifdef NIGHTLY_BUILD
   // NOTE: The loader for the system principal aren't supposed to
   //       load remote contents, and it doesn't have to use the in-memory cache.
   //       A non-system-principal document can also load internal resources,
@@ -214,7 +213,6 @@ ScriptLoader::ScriptLoader(Document* aDocument)
     RegisterToCache();
     LOG(("ScriptLoader (%p): Using in-memory cache.", this));
   }
-#endif
 
   mShutdownObserver = new AsyncCompileShutdownObserver(this);
   nsContentUtils::RegisterShutdownObserver(mShutdownObserver);
@@ -446,6 +444,7 @@ nsContentPolicyType ScriptLoadRequestToContentPolicyType(
         case JS::ModuleType::CSS:
           return nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD;
         case JS::ModuleType::Bytes:
+        case JS::ModuleType::Text:
         case JS::ModuleType::Unknown:
           MOZ_ASSERT_UNREACHABLE("Unknown module type");
       }
@@ -458,6 +457,7 @@ nsContentPolicyType ScriptLoadRequestToContentPolicyType(
     switch (aRequest->AsModuleRequest()->mModuleType) {
       case JS::ModuleType::Unknown:
       case JS::ModuleType::Bytes:
+      case JS::ModuleType::Text:
         MOZ_CRASH("Unexpected module type");
       case JS::ModuleType::JavaScript:
         return nsIContentPolicy::TYPE_INTERNAL_MODULE;
@@ -4832,6 +4832,7 @@ static bool MimeTypeMatchesExpectedModuleType(
       return nsContentUtils::HasCssMimeTypeEssence(typeString);
     case JS::ModuleType::Unknown:
     case JS::ModuleType::Bytes:
+    case JS::ModuleType::Text:
       break;
   }
 

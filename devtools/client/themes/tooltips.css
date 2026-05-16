@@ -229,8 +229,16 @@ strong {
 }
 
 /* Tooltip: query container info */
+.tooltip-container:has(.devtools-tooltip-query-container) {
+  /* By default, in dark mode, the tooltip background color is lighter than the background
+     color of the Rules view. Since we're using the same color than in the Rules view
+     for CSS values, this can lead to poor contrast.
+     To prevent this, we apply the same background color than in the Rules view */
+  --theme-arrowpanel-background: var(--theme-body-background);
+}
+
 .devtools-tooltip-query-container {
-  color: var(--theme-arrowpanel-color);
+  color: var(--theme-body-color);
   margin: 0;
   padding: 10px 14px 12px;
   font-size: 12px;
@@ -247,12 +255,37 @@ strong {
   text-overflow: ellipsis;
   overflow: hidden;
   color: var(--theme-body-color);
+
+  .open-inspector {
+    display: inline-block;
+    vertical-align: top;
+    height: 15px;
+    width: 15px;
+    margin: 1px 4px 0;
+    padding: 0;
+    border: none;
+    color: var(--theme-icon-color);
+    fill: currentColor;
+    cursor: pointer;
+    -moz-context-properties: fill;
+    background: url("chrome://devtools/skin/images/open-inspector.svg") no-repeat;
+  }
+
+  .objectBox-node:hover .open-inspector {
+    color: var(--theme-icon-alternate-hover-color);
+  }
 }
 
 .devtools-tooltip-query-container ul {
   padding: 0;
   margin: 0;
   list-style: none;
+}
+
+.devtools-tooltip-query-container ul.unset-properties {
+  margin-block-start: 1em;
+  padding-block-start: 1em;
+  border-block-start: 1px solid var(--theme-popup-dimmed);
 }
 
 .devtools-tooltip-query-container .objectBox-node .tag-name {
@@ -269,6 +302,10 @@ strong {
 
 .devtools-tooltip-query-container .property-value {
   color: var(--theme-highlight-red);
+
+  &.empty {
+    color: var(--theme-text-color-inactive);
+  }
 }
 
 /* Tooltip: Tiles */

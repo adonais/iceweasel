@@ -10,7 +10,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/BrowsingContext.h"
-#include "nsIGeolocationUIUtilsWin.h"
+#include "nsIGeolocationUIUtils.h"
 #include "nsIWifiListener.h"
 #include "nsIWifiMonitor.h"
 
@@ -231,8 +231,8 @@ class WindowsGeolocationPermissionRequest final
 
   nsresult DismissPrompt() {
     nsresult rv;
-    nsCOMPtr<nsIGeolocationUIUtilsWin> utils =
-        do_GetService("@mozilla.org/geolocation/ui-utils-win;1", &rv);
+    nsCOMPtr<nsIGeolocationUIUtils> utils =
+        do_GetService("@mozilla.org/geolocation/ui-utils;1", &rv);
     NS_ENSURE_SUCCESS(rv, rv);
     return utils->DismissPrompts(mBrowsingContext);
   }

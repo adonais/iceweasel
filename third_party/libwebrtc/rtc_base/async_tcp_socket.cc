@@ -59,13 +59,13 @@ AsyncTCPSocketBase::AsyncTCPSocketBase(
   inbuf_.EnsureCapacity(kMinimumRecvSize);
 
   socket_->SubscribeConnectEvent(
-      [this](Socket* socket) { OnConnectEvent(socket); });
+      this, [this](Socket* socket) { OnConnectEvent(socket); });
   socket_->SubscribeReadEvent(this,
                               [this](Socket* socket) { OnReadEvent(socket); });
   socket_->SubscribeWriteEvent(
       this, [this](Socket* socket) { OnWriteEvent(socket); });
   socket_->SubscribeCloseEvent(
-      [this](Socket* socket, int error) { OnCloseEvent(socket, error); });
+      this, [this](Socket* socket, int error) { OnCloseEvent(socket, error); });
 }
 
 AsyncTCPSocketBase::~AsyncTCPSocketBase() {}
@@ -139,7 +139,7 @@ int AsyncTCPSocketBase::FlushOutBuffer() {
       res = -1;
       break;
     }
-    view = view.subview(res);
+    view = view.subspan(res);
   }
   if (res > 0) {
     // The output buffer may have been written out over multiple partial Send(),
@@ -156,8 +156,7 @@ int AsyncTCPSocketBase::FlushOutBuffer() {
       res = outbuf_.size() - view.size();
     }
     if (view.size() < outbuf_.size()) {
-      memmove(outbuf_.data(), view.data(), view.size());
-      outbuf_.SetSize(view.size());
+      outbuf_.SetData(view);
     }
   }
   return res;
@@ -212,9 +211,11 @@ void AsyncTCPSocketBase::OnReadEvent(Socket* socket) {
     inbuf_.Clear();
   } else {
     if (bytes_remaining > 0) {
-      memmove(inbuf_.data(), inbuf_.data() + processed, bytes_remaining);
+      // Move remaining bytes to beginning of buffer.
+      inbuf_.SetData(ArrayView<uint8_t>(inbuf_).subspan(processed));
+    } else {
+      inbuf_.Clear();
     }
-    inbuf_.SetSize(bytes_remaining);
   }
 }
 
@@ -280,12 +281,13 @@ size_t AsyncTCPSocket::ProcessInput(ArrayView<const uint8_t> data) {
     if (bytes_left < kPacketLenSize)
       return processed_bytes;
 
-    PacketLength pkt_len = GetBE16(data.data() + processed_bytes);
+    PacketLength pkt_len =
+        GetBE16(data.subspan(processed_bytes, kPacketLenSize));
     if (bytes_left < kPacketLenSize + pkt_len)
       return processed_bytes;
 
     ReceivedIpPacket received_packet(
-        data.subview(processed_bytes + kPacketLenSize, pkt_len), remote_addr,
+        data.subspan(processed_bytes + kPacketLenSize, pkt_len), remote_addr,
         env_.clock().CurrentTime());
     NotifyPacketReceived(received_packet);
     processed_bytes += kPacketLenSize + pkt_len;

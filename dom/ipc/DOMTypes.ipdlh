@@ -293,6 +293,7 @@ struct ParentShowInfo
   float dpi;
   int32_t widgetRounding;
   double defaultScale;
+  double desktopToDeviceScale;
 };
 
 // Struct with information to show an iframe from the process that owns the

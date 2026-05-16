@@ -16,7 +16,6 @@
 #include "nsContentUtils.h"  // for NS_INTERFACE_MAP_ENTRY_TEAROFF
 #include "nsDOMString.h"
 #include "nsError.h"
-#include "nsGkAtoms.h"
 #include "nsNodeInfoManager.h"
 #include "nsPIDOMWindow.h"
 

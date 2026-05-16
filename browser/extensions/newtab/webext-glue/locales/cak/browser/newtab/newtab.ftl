@@ -242,9 +242,21 @@ newtab-error-fallback-refresh-link = Titzolïx ruxaq richin nitojtob'ëx chik.
 
 newtab-custom-shortcuts-title = Chojmin Okem
 newtab-custom-shortcuts-subtitle = Taq ruxaq xe'ayäk o xe'atz'ët
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Chojmin Okem
     .description = Taq ruxaq xe'ayäk o xe'atz'ët
+newtab-custom-shortcuts-nova =
+    .label = Chojmin Okem
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } cholaj
+           *[other] { $num } taq cholaj
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =

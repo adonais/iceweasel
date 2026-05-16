@@ -178,7 +178,7 @@ size_t AudioData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 AlignedAudioBuffer AudioData::MoveableData() {
   // Trim buffer according to trimming mask.
   mAudioData.PopFront(mDataOffset);
-  mAudioData.SetLength(mFrames * mChannels);
+  (void)mAudioData.SetLength(mFrames * mChannels);
   mDataOffset = 0;
   mFrames = 0;
   mTrimWindow.reset();

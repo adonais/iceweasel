@@ -60,6 +60,14 @@ interface nsIWebBrowserPersistURIMap : nsISupports
 interface nsIWebBrowserPersistDocument : nsISupports
 {
   readonly attribute boolean isClosed;
+
+  /**
+   * Tear down the IPC actor for a remote document, releasing the
+   * content-side reference to the DOM document.  For local documents
+   * this is a no-op.  After close(), isClosed will return true.
+   */
+  void close();
+
   readonly attribute boolean isPrivate;
   readonly attribute AUTF8String documentURI;
   readonly attribute AUTF8String baseURI;

@@ -170,8 +170,7 @@ start with a filter:
 
 .. code-block:: shell
 
-    $ ./mach python build/macosx/catalog.py --filter SDK
-    061-44071 Beats Updater 1.0
+    $ ./mach python build/macosx/catalog.py --filter MOS_SDK
     071-29699 Command Line Tools for Xcode 12.5
     001-89745 Command Line Tools for Xcode 12.4
     071-54303 Command Line Tools for Xcode 12.5

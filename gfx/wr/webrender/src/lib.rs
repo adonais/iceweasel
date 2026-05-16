@@ -125,6 +125,7 @@ mod resource_cache;
 pub mod scene;
 mod scene_builder_thread;
 mod scene_building;
+mod scratch_buffer;
 mod screen_capture;
 mod segment;
 mod spatial_node;

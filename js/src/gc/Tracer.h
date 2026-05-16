@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -147,7 +145,7 @@ void AssertShouldMarkInZone(GCMarker* marker, T* thing) {}
 // wrapped in the WeakCache<> template to perform the appropriate sweeping.
 
 template <typename T>
-inline void TraceEdge(JSTracer* trc, const WriteBarriered<T>* thingp,
+inline void TraceEdge(JSTracer* trc, const BarrieredBase<T>* thingp,
                       const char* name) {
   gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp->unbarrieredAddress()),
                         name);
@@ -184,9 +182,10 @@ inline void TraceCellHeaderEdge(JSTracer* trc, gc::CellWithGCPointer<T>* thingp,
 // tracing.
 
 template <typename T>
-inline void TraceNullableEdge(JSTracer* trc, const WriteBarriered<T>* thingp,
+inline void TraceNullableEdge(JSTracer* trc, const BarrieredBase<T>* thingp,
                               const char* name) {
-  if (InternalBarrierMethods<T>::isMarkable(thingp->get())) {
+  T thing = *thingp->unbarrieredAddress();
+  if (InternalBarrierMethods<T>::isMarkable(thing)) {
     TraceEdge(trc, thingp, name);
   }
 }
@@ -334,6 +333,9 @@ inline TraceWeakResult<T> TraceManuallyBarrieredWeakEdge(JSTracer* trc,
 template <typename T>
 void TraceRange(JSTracer* trc, size_t len, BarrieredBase<T>* vec,
                 const char* name) {
+  if (len == 0) {
+    return;
+  }
   gc::TraceRangeInternal(trc, len,
                          gc::ConvertToBase(vec[0].unbarrieredAddress()), name);
 }
@@ -372,7 +374,7 @@ void TraceManuallyBarrieredCrossCompartmentEdge(JSTracer* trc, JSObject* src,
 // destination thing is not being GC'd, then the edge will not be traced.
 template <typename T>
 void TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src,
-                               const WriteBarriered<T>* dst, const char* name) {
+                               const BarrieredBase<T>* dst, const char* name) {
   TraceManuallyBarrieredCrossCompartmentEdge(
       trc, src, gc::ConvertToBase(dst->unbarrieredAddress()), name);
 }
@@ -401,7 +403,7 @@ void TraceWeakMapKeyEdgeInternal(JSTracer* trc, Zone* weakMapZone, T* thingp,
 
 template <typename T>
 inline void TraceWeakMapKeyEdge(JSTracer* trc, Zone* weakMapZone,
-                                const WriteBarriered<T>* thingp,
+                                const BarrieredBase<T>* thingp,
                                 const char* name) {
   TraceWeakMapKeyEdgeInternal(
       trc, weakMapZone, gc::ConvertToBase(thingp->unbarrieredAddress()), name);

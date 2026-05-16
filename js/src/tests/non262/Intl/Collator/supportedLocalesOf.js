@@ -15,6 +15,7 @@ const allLocales = [
   "bg",
   "bn",
   "bo",
+  "bqi",
   "br",
   "brx",
   "bs",
@@ -125,6 +126,7 @@ const unsupported = [
   "ach",  // Acoli
   "an",   // Aragonese
   "ast",  // Asturian
+  "bqi",  // Bakhtiari
   "brx",  // Bodo (India)
   "cak",  // Cakchiquel; Kaqchikel
   "ckb",  // Central Kurdish

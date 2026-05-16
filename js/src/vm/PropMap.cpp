@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -1089,18 +1087,13 @@ void PropMap::forEachPropMapFlag(uintptr_t flags, KnownF known,
 }
 
 const char* PropMapTypeToString(const js::PropMap* map) {
-  if (map->isLinked()) {
-    return "js::LinkedPropMap";
+  if (map->isDictionary()) {
+    return "js::DictionaryPropMap";
   }
-
-  if (map->isShared()) {
-    if (map->isCompact()) {
-      return "js::CompactPropMap";
-    }
-    return "js::NormalPropMap";
+  if (map->isCompact()) {
+    return "js::CompactPropMap";
   }
-
-  return "js::DictionaryPropMap";
+  return "js::NormalPropMap";
 }
 
 void PropMap::dumpFields(js::JSONPrinter& json) const {

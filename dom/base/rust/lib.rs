@@ -154,6 +154,8 @@ bitflags! {
         const STALLED = 1u64 << 55;
         /// https://html.spec.whatwg.org/multipage/semantics-other.html#selector-muted
         const MUTED = 1u64 << 56;
+        /// This element is fullscreen and was requested to have keyboard lock.
+        const FULLSCREEN_KEYBOARD_LOCK = 1u64 << 57;
         /// https://drafts.csswg.org/selectors-5/#headings
         /// These 4 bits are used to pack the elements heading level into the element state
         /// Heading levels can be from 1-9 so 4 bits allows us to express the full range.

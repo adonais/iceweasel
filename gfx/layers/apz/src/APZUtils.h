@@ -181,14 +181,32 @@ enum class HandoffConsumer { Scrolling, PullToRefresh };
 namespace apz {
 
 /**
- * Is aAngle within the given threshold of the horizontal axis?
- * @param aAngle an angle in radians in the range [0, pi]
+ * Is aVector within the given threshold of the horizontal axis?
+ * Returns false if aVector is a zero vector.
  * @param aThreshold an angle in radians in the range [0, pi/2]
  */
-bool IsCloseToHorizontal(float aAngle, float aThreshold);
+inline bool IsCloseToHorizontal(const ParentLayerPoint& aVector,
+                                float aThreshold) {
+  if (aVector == ParentLayerPoint()) {
+    return false;
+  }
+  float angle = float(fabs(atan2(aVector.y, aVector.x)));
+  return angle < aThreshold || angle > (M_PI - aThreshold);
+}
 
-// As above, but for the vertical axis.
-bool IsCloseToVertical(float aAngle, float aThreshold);
+/**
+ * Is aVector within the given threshold of the vertical axis?
+ * Returns false if aVector is a zero vector.
+ * @param aThreshold an angle in radians in the range [0, pi/2]
+ */
+inline bool IsCloseToVertical(const ParentLayerPoint& aVector,
+                              float aThreshold) {
+  if (aVector == ParentLayerPoint()) {
+    return false;
+  }
+  float angle = float(fabs(atan2(aVector.y, aVector.x)));
+  return fabs(angle - float(M_PI / 2)) < aThreshold;
+}
 
 // Returns true if a sticky layer with async translation |aTranslation| is
 // stuck with a bottom margin. The inner/outer ranges are produced by the main

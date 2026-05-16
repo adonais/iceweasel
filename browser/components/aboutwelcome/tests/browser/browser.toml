@@ -57,6 +57,8 @@ skip-if = [
 
 ["browser_aboutwelcome_multistage_transitions.js"]
 
+["browser_aboutwelcome_nimbus_gate.js"]
+
 ["browser_aboutwelcome_observer.js"]
 https_first_disabled = true
 

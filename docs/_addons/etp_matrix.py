@@ -140,12 +140,6 @@ OTHER_PRIVACY_PREFS = {
             "Shows cookie banner reduction controls in Firefox settings.",
         ),
         (
-            "Network State Partitioning",
-            "privacy.partition.network_state",
-            None,
-            "Partitions HTTP cache, connection pools, and other network state by top-level site.",
-        ),
-        (
             "Strip on Share",
             "privacy.query_stripping.strip_on_share.enabled",
             None,
@@ -248,14 +242,6 @@ FEATURES = [
         "pref_normal": "network.http.referer.disallowCrossSiteRelaxingDefault.top_navigation",
         "pref_pb": None,
         "desc": "Applies strict referrer policy to top-level navigation (not just subresources).",
-    },
-    {
-        "name": "OCSP Cache Partitioning",
-        "normal_code": "ocsp",
-        "pb_code": None,
-        "pref_normal": "privacy.partition.network_state.ocsp_cache",
-        "pref_pb": None,
-        "desc": "Partitions OCSP cache by top-level origin key.",
     },
     {
         "name": "Bounce Tracking Protection",

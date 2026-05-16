@@ -246,9 +246,9 @@ fn iter_declarations<'builder, 'decls: 'builder>(
         } else {
             let id = declaration.id().as_longhand().unwrap();
             declarations.note_declaration(declaration, priority, id);
-            if CustomPropertiesBuilder::might_have_non_custom_dependency(id, declaration) {
+            if CustomPropertiesBuilder::might_have_non_custom_or_attr_dependency(id, declaration) {
                 if let Some(ref mut builder) = custom_builder {
-                    builder.maybe_note_non_custom_dependency(id, declaration);
+                    builder.maybe_note_non_custom_dependency(id, declaration, attribute_tracker);
                 }
             }
         }
@@ -318,7 +318,8 @@ where
 
     let properties_to_apply = match cascade_mode {
         CascadeMode::Visited { unvisited_context } => {
-            context.builder.custom_properties = unvisited_context.builder.custom_properties.clone();
+            context.builder.substitution_functions =
+                unvisited_context.builder.substitution_functions.clone();
             context.builder.writing_mode = unvisited_context.builder.writing_mode;
             context.builder.color_scheme = unvisited_context.builder.color_scheme;
             // We never insert visited styles into the cache so we don't need to try looking it up.
@@ -404,8 +405,6 @@ where
 
     cascade.finished_applying_properties(&mut context.builder);
 
-    std::mem::drop(cascade);
-
     context.builder.clear_modified_reset();
 
     if matches!(cascade_mode, CascadeMode::Unvisited { .. }) {
@@ -413,6 +412,7 @@ where
             layout_parent_style.unwrap_or(inherited_style),
             element,
             try_tactic,
+            &cascade.author_specified,
         );
     }
 
@@ -435,6 +435,7 @@ where
 /// This is a bit of a clunky way of achieving this.
 type DeclarationsToApplyUnlessOverriden = SmallVec<[PropertyDeclaration; 2]>;
 
+#[cfg(feature = "gecko")]
 fn is_base_appearance(context: &computed::Context) -> bool {
     use computed::Appearance;
     let box_style = context.builder.get_box();
@@ -714,18 +715,10 @@ impl<'b> Cascade<'b> {
             // declarations, but we don't have that information at this point,
             // and it doesn't seem like an important enough optimization to
             // warrant it.
-            match declaration.id {
-                LonghandId::Display => {
-                    context
-                        .builder
-                        .add_flags(ComputedValueFlags::DISPLAY_DEPENDS_ON_INHERITED_STYLE);
-                },
-                LonghandId::Content => {
-                    context
-                        .builder
-                        .add_flags(ComputedValueFlags::CONTENT_DEPENDS_ON_INHERITED_STYLE);
-                },
-                _ => {},
+            if matches!(declaration.id, LonghandId::Display | LonghandId::Content) {
+                context
+                    .builder
+                    .add_flags(ComputedValueFlags::DISPLAY_OR_CONTENT_DEPEND_ON_INHERITED_STYLE);
             }
         }
 
@@ -735,7 +728,7 @@ impl<'b> Cascade<'b> {
         );
         declaration.value.substitute_variables(
             declaration.id,
-            context.builder.custom_properties(),
+            &context.builder.substitution_functions(),
             context.builder.stylist.unwrap(),
             context,
             shorthand_cache,
@@ -813,7 +806,9 @@ impl<'b> Cascade<'b> {
             return;
         }
 
+        #[cfg(feature = "gecko")]
         apply!(MozDefaultAppearance);
+        #[cfg(feature = "gecko")]
         if apply!(Appearance) && is_base_appearance(&context) {
             context
                 .style()
@@ -1135,10 +1130,6 @@ impl<'b> Cascade<'b> {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND);
         }
 
-        if self.author_specified.contains(LonghandId::FontFamily) {
-            builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_FONT_FAMILY);
-        }
-
         if self.author_specified.contains(LonghandId::Color) {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_TEXT_COLOR);
         }
@@ -1147,33 +1138,9 @@ impl<'b> Cascade<'b> {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_TEXT_SHADOW);
         }
 
-        if self.author_specified.contains(LonghandId::LetterSpacing) {
-            builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_LETTER_SPACING);
-        }
-
-        if self.author_specified.contains(LonghandId::WordSpacing) {
-            builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_WORD_SPACING);
-        }
-
-        if self
-            .author_specified
-            .contains(LonghandId::FontSynthesisWeight)
-        {
-            builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_FONT_SYNTHESIS_WEIGHT);
-        }
-
-        #[cfg(feature = "gecko")]
-        if self
-            .author_specified
-            .contains(LonghandId::FontSynthesisStyle)
-        {
-            builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_FONT_SYNTHESIS_STYLE);
-        }
-
         if self.author_specified.contains(LonghandId::GridAutoFlow) {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_GRID_AUTO_FLOW);
         }
-
         #[cfg(feature = "servo")]
         {
             if let Some(font) = builder.get_font_if_mutated() {

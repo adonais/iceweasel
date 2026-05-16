@@ -37,8 +37,6 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
 
   BrowsingContext* GetBrowsingContext() { return mBrowsingContext; }
 
-  nsILoadContext* GetLoadContext();
-
   void NavigateByKey(bool aForward, bool aForDocumentNavigation);
 
   void Activate(uint64_t aActionId);
@@ -87,8 +85,8 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvScrollRectIntoView(
-      const nsRect& aRect, const ScrollAxis& aVertical,
-      const ScrollAxis& aHorizontal, const ScrollFlags& aScrollFlags,
+      const nsRect& aRect, const AxisScrollParams& aVertical,
+      const AxisScrollParams& aHorizontal, const ScrollFlags& aScrollFlags,
       const int32_t& aAppUnitsPerDevPixel);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY

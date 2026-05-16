@@ -172,8 +172,12 @@ add_task(async function test_http2() {
   equal(req.QueryInterface(Ci.nsIHttpChannel).responseStatus, 200);
   equal(req.QueryInterface(Ci.nsIHttpChannel).protocolVersion, "h2");
 
-  verifyGleanValues("Check HTTP/2 IPv4", {
-    metricKey: "http_2_ipv4",
+  let heEnabled = Services.prefs.getBoolPref(
+    "network.http.happy_eyeballs_enabled",
+    false
+  );
+  verifyGleanValues(heEnabled ? "Check HTTP/2 IPv6" : "Check HTTP/2 IPv4", {
+    metricKey: heEnabled ? "http_2_ipv6" : "http_2_ipv4",
     value: 1,
   });
 

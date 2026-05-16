@@ -31,5 +31,8 @@ support-files = [
 ["test_memoryReporters.xhtml"]
 
 ["test_memoryReporters2.xhtml"]
+skip-if = [
+  "standalone", # Bug 2026600
+]
 
 ["test_sqliteMultiReporter.xhtml"]

@@ -472,8 +472,7 @@ nsresult nsCocoaUtils::CreateCGImageFromSurface(SourceSurface* aSurface,
   CGDataProviderRef dataProvider = ::CGDataProviderCreateWithData(
       dataSurface.forget().take(), map.mData, map.mStride * height,
       data_ss_release_callback);
-  CGColorSpaceRef colorSpace =
-      ::CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+  CGColorSpaceRef colorSpace = ::CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
   *aResult = ::CGImageCreate(
       width, height, 8, 32, map.mStride, colorSpace,
       kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst, dataProvider,
@@ -1871,7 +1870,7 @@ already_AddRefed<nsISupports> nsCocoaUtils::GetDataFromPasteboardItem(
     return genericDataWrapper.forget();
   }
 
-  // We have never supported this on Mac OS X, we should someday. Normally
+  // We have never supported this on macOS, we should someday. Normally
   // dragging images in is accomplished with a file path drag instead of the
   // image data itself.
   /*

@@ -7,6 +7,7 @@
 #include "mozilla/ipc/DataPipe.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsIAsyncInputStream.h"
+#include "nsICloneableInputStream.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsIInputStream.h"
@@ -935,6 +936,74 @@ void TestMultiplexStreamReadWhileWaiting(nsIAsyncInputStream* pipeIn,
   EXPECT_STREQ(extraRead, "xxxx");
   ASSERT_NS_SUCCEEDED(asyncMultiplex->Available(&available));
   EXPECT_EQ(available, 0u);
+}
+
+// Seeking backward with NS_SEEK_CUR to position 0 should reset the read
+// state, allowing Clone/Length operations that require an unread stream.
+TEST(MultiplexInputStream, Seek_CUR_Backward_To_Start)
+{
+  nsCString buf1;
+  nsCString buf2;
+  buf1.AssignLiteral("Hello");
+  buf2.AssignLiteral("World");
+
+  nsCOMPtr<nsIInputStream> inputStream1;
+  nsCOMPtr<nsIInputStream> inputStream2;
+  nsresult rv = NS_NewCStringInputStream(getter_AddRefs(inputStream1), buf1);
+  ASSERT_NS_SUCCEEDED(rv);
+  rv = NS_NewCStringInputStream(getter_AddRefs(inputStream2), buf2);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsCOMPtr<nsIMultiplexInputStream> multiplexStream =
+      do_CreateInstance("@mozilla.org/io/multiplex-input-stream;1");
+  ASSERT_TRUE(multiplexStream);
+  nsCOMPtr<nsIInputStream> stream(do_QueryInterface(multiplexStream));
+  ASSERT_TRUE(stream);
+
+  rv = multiplexStream->AppendStream(inputStream1);
+  ASSERT_NS_SUCCEEDED(rv);
+  rv = multiplexStream->AppendStream(inputStream2);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsCOMPtr<nsISeekableStream> seekStream = do_QueryInterface(multiplexStream);
+  ASSERT_TRUE(seekStream);
+  nsCOMPtr<nsICloneableInputStream> cloneableStream =
+      do_QueryInterface(multiplexStream);
+  ASSERT_TRUE(cloneableStream);
+
+  // Read 8 bytes, crossing the stream boundary
+  char readBuf[4096];
+  uint32_t count;
+  rv = stream->Read(readBuf, 8, &count);
+  ASSERT_NS_SUCCEEDED(rv);
+  ASSERT_EQ(8u, count);
+  ASSERT_EQ(0, strncmp(readBuf, "HelloWor", 8));
+
+  // No longer cloneable since we've been reading
+  bool cloneable;
+  rv = cloneableStream->GetCloneable(&cloneable);
+  ASSERT_NS_SUCCEEDED(rv);
+  ASSERT_FALSE(cloneable);
+
+  // Seek backward to position 0 across stream boundaries
+  rv = seekStream->Seek(nsISeekableStream::NS_SEEK_CUR, -8);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  int64_t tell;
+  rv = seekStream->Tell(&tell);
+  ASSERT_NS_SUCCEEDED(rv);
+  ASSERT_EQ(0, tell);
+
+  // Should be cloneable again since we've fully rewound to the start
+  rv = cloneableStream->GetCloneable(&cloneable);
+  ASSERT_NS_SUCCEEDED(rv);
+  ASSERT_TRUE(cloneable);
+
+  // Verify reading produces the correct data
+  rv = stream->Read(readBuf, sizeof(readBuf), &count);
+  ASSERT_NS_SUCCEEDED(rv);
+  ASSERT_EQ(10u, count);
+  ASSERT_EQ(0, strncmp(readBuf, "HelloWorld", 10));
 }
 
 TEST(MultiplexInputStream, ReadWhileWaiting_nsPipe)

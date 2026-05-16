@@ -10,22 +10,25 @@
 @import url("chrome://browser/skin/tabbrowser/content-area.css");
 @import url("chrome://browser/skin/tabbrowser/ctrlTab.css");
 @import url("chrome://browser/skin/tabbrowser/fullscreen-and-pointerlock.css");
+@import url("chrome://browser/skin/tabbrowser/tab.tokens.css");
 @import url("chrome://browser/skin/tabbrowser/tabs.css");
+@import url("chrome://browser/skin/tabbrowser/tab-groups-list.css");
 @import url("chrome://browser/skin/tabbrowser/tab-hover-preview.css");
 @import url("chrome://browser/skin/toolbarbuttons.css");
 @import url("chrome://browser/skin/toolbarbutton-icons.css");
 @import url("chrome://browser/skin/menupanel.css");
+@import url("chrome://browser/skin/urlbar/tokens.css");
+@import url("chrome://browser/skin/urlbar/variables.css");
+@import url("chrome://browser/skin/urlbar/view.css");
 @import url("chrome://browser/skin/urlbar-searchbar.css");
 @import url("chrome://browser/skin/identity-block/identity-block.css");
 @import url("chrome://browser/skin/notification-icons.css");
 @import url("chrome://browser/skin/addon-notification.css");
 @import url("chrome://browser/skin/identity-credential-notification.css");
-@import url("chrome://browser/skin/urlbarView.css");
 @import url("chrome://browser/skin/autocomplete.css");
 @import url("chrome://browser/skin/places/editBookmarkPanel.css");
 @import url("chrome://browser/skin/searchbar.css");
 @import url("chrome://browser/skin/sidebar.css");
-@import url("chrome://browser/skin/urlbar-variables.css");
 @import url("chrome://browser/skin/aiWindowSidebar.css");
 @import url("chrome://browser/skin/customizableui/customizeMode.css");
 @import url("chrome://browser/skin/UITour.css");
@@ -660,8 +663,8 @@ menupopup::part(drop-indicator) {
    themes cannot set */
 #DateTimePickerPanel {
   color-scheme: env(-moz-content-preferred-color-scheme);
-  --arrowpanel-background: Field;
-  --arrowpanel-color: FieldText;
+  --panel-background: Field;
+  --panel-color: FieldText;
 }
 
 #widget-overflow .webextension-popup-browser {
@@ -952,7 +955,7 @@ menupopup::part(drop-indicator) {
 
 #cfr-notification-footer-text-and-addon-info {
   display: block;
-  padding: 10px var(--arrowpanel-padding);
+  padding: 10px var(--panel-padding);
 }
 
 #cfr-notification-feature-steps {
@@ -1376,7 +1379,7 @@ popupnotificationcontent {
 
   /* Toggle button should only have padding-inline-end if #PanelUI-button both visible and rendered next to it */
   :root:not([aiwindow-first-run]) &:has(+ #PanelUI-button) {
-    padding: 0 var(--toolbarbutton-outer-padding);
+    padding: 0 var(--smartwindow-ai-toggle-padding, 4px);
   }
 
   > .toolbarbutton-icon {
@@ -1406,6 +1409,10 @@ popupnotificationcontent {
     margin-inline-end: var(--space-small);
     width: var(--icon-size-medium);
     height: var(--icon-size-medium);
+  }
+
+  .toolbarbutton-text {
+    padding-inline-start: 0;
   }
 
   &::after {

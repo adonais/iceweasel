@@ -34,10 +34,4 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     }),
     startupHome: window.createStartupConfig(),
   });
-
-  // Allow train-hoppable code in AboutPreferences to run and register the remaining groups.
-  Services.obs.notifyObservers(
-    /** @type {nsISupports} */ (/** @type {unknown} */ (window)),
-    "home-pane-loaded"
-  );
 }

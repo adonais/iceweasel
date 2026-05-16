@@ -8,7 +8,6 @@
 #include "js/RootingAPI.h"
 #include "js/experimental/TypedData.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/dom/ReadableByteStreamController.h"
 
 namespace mozilla::dom {
 

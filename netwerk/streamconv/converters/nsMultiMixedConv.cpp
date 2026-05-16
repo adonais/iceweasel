@@ -1021,6 +1021,12 @@ nsresult nsMultiMixedConv::ProcessHeader() {
                  !p.ReadInteger(&mByteRangeEnd)) {
         return NS_ERROR_CORRUPTED_CONTENT;
       }
+      // RFC 7233 Section 4.2: "A Content-Range field value is invalid if
+      // it contains a byte-range-resp that has a last-byte-pos value less
+      // than its first-byte-pos value."
+      if (mByteRangeStart > mByteRangeEnd) {
+        return NS_ERROR_CORRUPTED_CONTENT;
+      }
       mIsByteRangeRequest = true;
       if (mContentLength == UINT64_MAX) {
         mContentLength = uint64_t(mByteRangeEnd - mByteRangeStart + 1);

@@ -180,7 +180,7 @@ bool MatchInPutList(const InternalRequest& aRequest,
     const CacheResponse& cachedResponse = aPutList[i].response();
 
     nsAutoCString url;
-    aRequest.GetURL(url);
+    MOZ_ALWAYS_SUCCEEDS(aRequest.GetURLWithoutFragment()->GetSpec(url));
 
     nsAutoCString requestUrl(cachedRequest.urlWithoutQuery());
     requestUrl.Append(cachedRequest.urlQuery());

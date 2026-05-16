@@ -947,12 +947,6 @@ export let ProfileDataUpgrader = {
       }
     }
 
-    // Updating from 161 to 165 to trigger re-migrations of the Rusts store.
-    if (existingDataVersion < 165) {
-      // Force all logins to be re-migrated to the rust store.
-      Services.prefs.setBoolPref("signon.rustMirror.migrationNeeded", true);
-    }
-
     if (existingDataVersion < 166) {
       // Bug 1978550: Migrate Local Network Access permissions from old
       // "localhost" type to new "loopback-network" type.
@@ -983,6 +977,12 @@ export let ProfileDataUpgrader = {
         );
         Services.prefs.clearUserPref("permissions.default.localhost");
       } catch (e) {}
+    }
+
+    // Updating from 167 to 168 to trigger re-migrations of the Rusts store.
+    if (existingDataVersion < 168) {
+      // Force all logins to be re-migrated to the rust store.
+      Services.prefs.setBoolPref("signon.rustMirror.migrationNeeded", true);
     }
 
     // Update the migration version.

@@ -27,6 +27,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.findLast(predicate);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

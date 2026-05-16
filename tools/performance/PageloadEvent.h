@@ -55,7 +55,7 @@ struct PageLoadDomainExtra;
   _(networkType, uint32_t)                     \
   _(androidAppLinkLaunchType, uint32_t)        \
   _(androidAppLinkToNavigationStart, uint32_t) \
-  _(androidIsolationCategory, nsCString)
+  _(androidIsolationCategory, uint32_t)
 
 namespace mozilla::performance::pageload_event {
 /*
@@ -65,6 +65,13 @@ namespace mozilla::performance::pageload_event {
 enum UserFeature : uint32_t { USING_A11Y = 1 << 0 };
 
 enum DocumentFeature : uint32_t { FETCH_PRIORITY_IMAGES = 1 << 0 };
+
+enum AndroidIsolationCategory : uint32_t {
+  OTHER = 0,
+  SHARED_WEB = 1,
+  SITE_ISOLATED = 2,
+  COOP_ISOLATED = 3,
+};
 
 // Type of pageload event that will fire after loading has finished.
 // - kNormal:  Default pageload event type which contains non-sensitive

@@ -1,0 +1,17 @@
+{
+  "label": "www.wrangler.in",
+  "bugs": {
+    "1993454": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://www.wrangler.in/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "css": ["1993454-www.wrangler.in-fix-product-image-hovering.css"]
+      }
+    }
+  ]
+}

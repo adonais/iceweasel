@@ -65,8 +65,12 @@ for patch in \
  bug-2000225-ICU-23264-increase-measure-unit-capacity.diff \
  bug-2000225-ICU-23262-missing-resource-error-for-iso8601-era.diff \
  bug-2002735-ICU-23277-coptic-single-era.diff \
- bug-2010411-patch-cldr-hv-en-root.diff \
  skip-norm-coll.diff \
+ bug-1989738-remove-historical-eras.diff \
+ bug-1989738-use-gregorian-era.diff \
+ bug-1989738-gregorian-era-gannen.diff \
+ bug-2028127-add-inherited-era-names.diff \
+ bug-2028127-remove-historical-eras.diff \
  bug-2028443-CLDR-19362-CLDR-19382-london-tz-abbr.diff \
 ; do
   echo "Applying local patch $patch"

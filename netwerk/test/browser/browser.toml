@@ -88,17 +88,7 @@ prefs = [
 ["browser_103_assets_extension.js"]
 
 ["browser_103_cleanup.js"]
-support-files = [
-  "103_preload_no_img.html",
-  "103_preload_no_img.html^headers^",
-  "103_preload_no_img.html^informationalResponse^",
-]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1829935
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1829935
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'",
-]
+support-files = ["103_cleanup.sjs"]
 
 ["browser_103_csp.js"]
 support-files = ["early_hint_preload_test_helper.sys.mjs",]
@@ -162,9 +152,6 @@ skip-if = [
 ["browser_bug1535877.js"]
 
 ["browser_bug1629307.js"]
-fail-if = [
-  "a11y_checks", # Bug 1854523 clicked button may not be focusable
-]
 
 ["browser_child_resource.js"]
 run-if = [
@@ -295,6 +282,7 @@ skip-if = [
 ["browser_test_local_network_access_sni_leak.js"]
 support-files = [
   "page_fetch_localhost_https.html",
+  "!/netwerk/test/unit/http2-ca.pem", # for node server
 ]
 
 ["browser_test_local_network_access_telemetry.js"]

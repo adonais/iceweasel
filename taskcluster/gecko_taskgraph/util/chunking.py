@@ -207,8 +207,6 @@ def get_runtimes(platform, suite_name):
     def _strip_job_name(job_name):
         name = re.sub(r"-\d+$", "", job_name)
         name = name.replace("-geckoview-", "-")
-        name = name.replace("-swr", "")
-        name = name.replace("-1proc", "")
         return name
 
     # Try each platform candidate until we find jobs

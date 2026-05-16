@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -100,26 +98,26 @@ static inline void TracePersistentRootedTraceableList(
   }
 }
 
-void JSRuntime::tracePersistentRoots(JSTracer* trc) {
-#define TRACE_ROOTS(name, type, _, _1)                                       \
-  TracePersistentRootedList<type*>(trc, heapRoots.ref()[JS::RootKind::name], \
+void GCRuntime::tracePersistentRoots(JSTracer* trc) {
+#define TRACE_ROOTS(name, type, _, _1)                                         \
+  TracePersistentRootedList<type*>(trc, persistentRoots()[JS::RootKind::name], \
                                    "persistent-" #name);
   JS_FOR_EACH_TRACEKIND(TRACE_ROOTS)
 #undef TRACE_ROOTS
-  TracePersistentRootedList<jsid>(trc, heapRoots.ref()[JS::RootKind::Id],
+  TracePersistentRootedList<jsid>(trc, persistentRoots()[JS::RootKind::Id],
                                   "persistent-id");
-  TracePersistentRootedList<Value>(trc, heapRoots.ref()[JS::RootKind::Value],
+  TracePersistentRootedList<Value>(trc, persistentRoots()[JS::RootKind::Value],
                                    "persistent-value");
 
   // RootedTraceable uses virtual dispatch.
   JS::AutoSuppressGCAnalysis nogc;
 
   TracePersistentRootedTraceableList(
-      trc, heapRoots.ref()[JS::RootKind::Traceable], "persistent-traceable");
+      trc, persistentRoots()[JS::RootKind::Traceable], "persistent-traceable");
 }
 
 static void TracePersistentRooted(JSRuntime* rt, JSTracer* trc) {
-  rt->tracePersistentRoots(trc);
+  rt->gc.tracePersistentRoots(trc);
 }
 
 template <typename T>
@@ -130,13 +128,13 @@ static void FinishPersistentRootedChain(
   }
 }
 
-void JSRuntime::finishPersistentRoots() {
+void GCRuntime::finishPersistentRoots() {
 #define FINISH_ROOT_LIST(name, type, _, _1) \
-  FinishPersistentRootedChain<type*>(heapRoots.ref()[JS::RootKind::name]);
+  FinishPersistentRootedChain<type*>(persistentRoots()[JS::RootKind::name]);
   JS_FOR_EACH_TRACEKIND(FINISH_ROOT_LIST)
 #undef FINISH_ROOT_LIST
-  FinishPersistentRootedChain<jsid>(heapRoots.ref()[JS::RootKind::Id]);
-  FinishPersistentRootedChain<Value>(heapRoots.ref()[JS::RootKind::Value]);
+  FinishPersistentRootedChain<jsid>(persistentRoots()[JS::RootKind::Id]);
+  FinishPersistentRootedChain<Value>(persistentRoots()[JS::RootKind::Value]);
 
   // Note that we do not finalize the Traceable list as we do not know how to
   // safely clear members. We instead assert that none escape the RootLists.
@@ -423,7 +421,7 @@ void js::gc::GCRuntime::finishRoots() {
 
   rootsHash.ref().clear();
 
-  rt->finishPersistentRoots();
+  finishPersistentRoots();
 
   rt->finishSelfHosting();
 
@@ -456,10 +454,10 @@ void js::gc::GCRuntime::checkNoRuntimeRoots(AutoGCSession& session) {
 JS_PUBLIC_API void JS::AddPersistentRoot(JS::RootingContext* cx, RootKind kind,
                                          PersistentRootedBase* root) {
   JSRuntime* rt = static_cast<JSContext*>(cx)->runtime();
-  rt->heapRoots.ref()[kind].insertBack(root);
+  rt->gc.persistentRoots()[kind].insertBack(root);
 }
 
 JS_PUBLIC_API void JS::AddPersistentRoot(JSRuntime* rt, RootKind kind,
                                          PersistentRootedBase* root) {
-  rt->heapRoots.ref()[kind].insertBack(root);
+  rt->gc.persistentRoots()[kind].insertBack(root);
 }

@@ -7,46 +7,53 @@ package mozilla.components.concept.llm
 import kotlinx.coroutines.flow.Flow
 
 /**
- * A value type representing a prompt that can be delivered to a LLM.
+ * A prompt that can be delivered to a LLM.
+ *
+ * @param userPrompt The user message to send to the LLM.
+ * @param systemPrompt An optional system-level instruction that shapes LLM behavior.
+ */
+data class Prompt(
+    val userPrompt: String,
+    val systemPrompt: String? = null,
+)
+
+/**
+ * An integer error code that can be used to categorize failures.
  */
 @JvmInline
-value class Prompt(val value: String)
+value class ErrorCode(val value: Int)
 
 /**
  * An abstract definition of a LLM that can receive prompts.
  */
 interface Llm {
     /**
-     * A prompt request delivered to the LLM for inference, which will stream a series
-     * of [Response]s as they are made available.
+     * A prompt request delivered to the LLM for inference.
+     *
+     * @param prompt a [Prompt] that will be sent to the [Llm].
+     * @return a [Flow] of [String] of the response from the [Llm].
      */
-    suspend fun prompt(prompt: Prompt): Flow<Response>
+    suspend fun prompt(prompt: Prompt): Flow<String>
 
     /**
-     * A response from prompting a LLM.
+     * An exception thrown by an LLM, equipped with an [ErrorCode] to differentiate
+     * error types. Implementation modules may subclass this to attach additional context.
+     *
+     * @param message A human-readable description of the failure.
+     * @param errorCode The error code identifying the failure category.
      */
-    sealed class Response {
-
-        /**
-         * A successful response from the LLM has occurred. This may include partial data,
-         * or be an indication that the reply has completed.
-         */
-        sealed class Success : Response() {
+    open class Exception(
+        message: String,
+        val errorCode: ErrorCode,
+    ) : kotlin.Exception(message) {
+        companion object {
             /**
-             * A (potentially) partial reply from the LLM. This may be a complete reply if
-             * it is short or the underlying implementation does not stream responses.
+             * Create an unspecified error with the general error code.
              */
-            data class ReplyPart(val value: String) : Success()
-
-            /**
-             * An indication that the reply from the LLM is finishes.
-             */
-            data object ReplyFinished : Success()
+            fun unknown(message: String?) = Llm.Exception(
+                message = message ?: "Unknown Llm Exception",
+                errorCode = ErrorCode(0),
+            )
         }
-
-        /**
-         * A failure response from a LLM.
-         */
-        data class Failure(val reason: String) : Response()
     }
 }

@@ -41,7 +41,6 @@ namespace mozilla {
 class AccessibleCaretEventHub;
 class ErrorResult;
 class HTMLEditor;
-class PostContentIterator;
 enum class CaretAssociationHint;
 enum class TableSelectionMode : uint32_t;
 struct AutoPrepareFocusRange;
@@ -248,12 +247,13 @@ class Selection final : public nsSupportsWeakReference,
 
   nsresult PostScrollSelectionIntoViewEvent(SelectionRegion aRegion,
                                             ScrollFlags aFlags,
-                                            ScrollAxis aVertical,
-                                            ScrollAxis aHorizontal);
+                                            AxisScrollParams aVertical,
+                                            AxisScrollParams aHorizontal);
 
   MOZ_CAN_RUN_SCRIPT nsresult ScrollIntoView(
-      SelectionRegion, ScrollAxis aVertical = ScrollAxis(),
-      ScrollAxis aHorizontal = ScrollAxis(), ScrollFlags = ScrollFlags::None,
+      SelectionRegion, AxisScrollParams aVertical = AxisScrollParams(),
+      AxisScrollParams aHorizontal = AxisScrollParams(),
+      ScrollFlags = ScrollFlags::None,
       SelectionScrollMode = SelectionScrollMode::Async);
 
  private:
@@ -473,9 +473,6 @@ class Selection final : public nsSupportsWeakReference,
 
   // Returns whether both normal range and cross-shadow-boundary
   // range are collapsed.
-  //
-  // If StaticPrefs::dom_shadowdom_selection_across_boundary_enabled is
-  // disabled, this method always returns result as nsRange::IsCollapsed.
   bool AreNormalAndCrossShadowBoundaryRangesCollapsed() const {
     if (!IsCollapsed()) {
       return false;
@@ -931,7 +928,8 @@ class Selection final : public nsSupportsWeakReference,
     MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_DECL_NSIRUNNABLE
 
     ScrollSelectionIntoViewEvent(Selection* aSelection, SelectionRegion aRegion,
-                                 ScrollAxis aVertical, ScrollAxis aHorizontal,
+                                 AxisScrollParams aVertical,
+                                 AxisScrollParams aHorizontal,
                                  ScrollFlags aFlags)
         : Runnable("dom::Selection::ScrollSelectionIntoViewEvent"),
           mSelection(aSelection),
@@ -946,8 +944,8 @@ class Selection final : public nsSupportsWeakReference,
    private:
     Selection* mSelection;
     SelectionRegion mRegion;
-    ScrollAxis mVerticalScroll;
-    ScrollAxis mHorizontalScroll;
+    AxisScrollParams mVerticalScroll;
+    AxisScrollParams mHorizontalScroll;
     ScrollFlags mFlags;
   };
 
@@ -958,13 +956,6 @@ class Selection final : public nsSupportsWeakReference,
   void SetAnchorFocusRange(size_t aIndex);
   void RemoveAnchorFocusRange() { mAnchorFocusRange = nullptr; }
   void SelectFramesOf(nsIContent* aContent, bool aSelected) const;
-
-  /**
-   * https://dom.spec.whatwg.org/#concept-tree-inclusive-descendant.
-   */
-  nsresult SelectFramesOfInclusiveDescendantsOfContent(
-      PostContentIterator& aPostOrderIter, nsIContent* aContent,
-      bool aSelected) const;
 
   void SelectFramesOfFlattenedTreeOfContent(nsIContent* aContent,
                                             bool aSelected) const;
@@ -1329,8 +1320,8 @@ inline std::ostream& operator<<(
 
 inline nsresult nsISelectionController::ScrollSelectionIntoView(
     mozilla::SelectionType aType, SelectionRegion aRegion,
-    const mozilla::ScrollAxis& aVertical = mozilla::ScrollAxis(),
-    const mozilla::ScrollAxis& aHorizontal = mozilla::ScrollAxis(),
+    const mozilla::AxisScrollParams& aVertical = mozilla::AxisScrollParams(),
+    const mozilla::AxisScrollParams& aHorizontal = mozilla::AxisScrollParams(),
     mozilla::ScrollFlags aScrollFlags = mozilla::ScrollFlags::None,
     mozilla::SelectionScrollMode aMode = mozilla::SelectionScrollMode::Async) {
   RefPtr selection = GetSelection(mozilla::RawSelectionType(aType));
@@ -1344,8 +1335,8 @@ inline nsresult nsISelectionController::ScrollSelectionIntoView(
 inline nsresult nsISelectionController::ScrollSelectionIntoView(
     mozilla::SelectionType aType, SelectionRegion aRegion,
     mozilla::SelectionScrollMode aMode) {
-  return ScrollSelectionIntoView(aType, aRegion, mozilla::ScrollAxis(),
-                                 mozilla::ScrollAxis(),
+  return ScrollSelectionIntoView(aType, aRegion, mozilla::AxisScrollParams(),
+                                 mozilla::AxisScrollParams(),
                                  mozilla::ScrollFlags::None, aMode);
 }
 

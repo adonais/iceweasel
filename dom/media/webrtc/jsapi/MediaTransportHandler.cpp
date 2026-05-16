@@ -14,15 +14,10 @@
 #include "transport/transportlayersrtp.h"
 
 // Config stuff
+#include "mozilla/IceServerParser.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
-
-// Parsing STUN/TURN URIs
-#include "nsIURI.h"
-#include "nsIURLParser.h"
-#include "nsNetUtil.h"
-#include "nsURLHelper.h"
 
 // Logging stuff
 #include "common/browser_logging/CSFLog.h"
@@ -288,168 +283,6 @@ static NrIceCtx::Policy toNrIcePolicy(dom::RTCIceTransportPolicy aPolicy) {
   return NrIceCtx::ICE_POLICY_ALL;
 }
 
-// list of known acceptable ports for webrtc
-int16_t gGoodWebrtcPortList[] = {
-    53,    // Some deplyoments use DNS port to punch through overzealous NATs
-    3478,  // stun or turn
-    5349,  // stuns or turns
-    0,     // Sentinel value: This MUST be zero
-};
-
-static nsresult addNrIceServer(const nsString& aIceUrl,
-                               const dom::RTCIceServer& aIceServer,
-                               std::vector<NrIceStunServer>* aStunServersOut,
-                               std::vector<NrIceTurnServer>* aTurnServersOut) {
-  // Without STUN/TURN handlers, NS_NewURI returns nsSimpleURI rather than
-  // nsStandardURL. To parse STUN/TURN URI's to spec
-  // http://tools.ietf.org/html/draft-nandakumar-rtcweb-stun-uri-02#section-3
-  // http://tools.ietf.org/html/draft-petithuguenin-behave-turn-uri-03#section-3
-  // we parse out the query-string, and use ParseAuthority() on the rest
-  RefPtr<nsIURI> url;
-  nsresult rv = NS_NewURI(getter_AddRefs(url), aIceUrl);
-  NS_ENSURE_SUCCESS(rv, rv);
-  bool isStun = url->SchemeIs("stun");
-  bool isStuns = url->SchemeIs("stuns");
-  bool isTurn = url->SchemeIs("turn");
-  bool isTurns = url->SchemeIs("turns");
-  if (!(isStun || isStuns || isTurn || isTurns)) {
-    return NS_ERROR_FAILURE;
-  }
-  if (isStuns) {
-    return NS_OK;  // TODO: Support STUNS (Bug 1056934)
-  }
-
-  nsAutoCString spec;
-  rv = url->GetSpec(spec);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  // TODO(jib@mozilla.com): Revisit once nsURI supports STUN/TURN (Bug 833509)
-  int32_t port;
-  nsAutoCString host;
-  nsAutoCString transport;
-  {
-    uint32_t hostPos;
-    int32_t hostLen;
-    nsAutoCString path;
-    rv = url->GetPathQueryRef(path);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    // Tolerate query-string + parse 'transport=[udp|tcp]' by hand.
-    int32_t questionmark = path.FindChar('?');
-    if (questionmark >= 0) {
-      const nsCString match = "transport="_ns;
-
-      for (int32_t i = questionmark, endPos; i >= 0; i = endPos) {
-        endPos = path.FindCharInSet("&", i + 1);
-        const nsDependentCSubstring fieldvaluepair =
-            Substring(path, i + 1, endPos);
-        if (StringBeginsWith(fieldvaluepair, match)) {
-          transport = Substring(fieldvaluepair, match.Length());
-          ToLowerCase(transport);
-        }
-      }
-      path.SetLength(questionmark);
-    }
-
-    nsCOMPtr<nsIURLParser> parser = net_GetAuthURLParser();
-    rv = parser->ParseAuthority(path.get(), static_cast<int>(path.Length()),
-                                nullptr, nullptr, nullptr, nullptr, &hostPos,
-                                &hostLen, &port);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!hostLen) {
-      return NS_ERROR_FAILURE;
-    }
-    if (hostPos > 1) {
-      /* The username was removed */
-      return NS_ERROR_FAILURE;
-    }
-    path.Mid(host, hostPos, hostLen);
-    // Strip off brackets around IPv6 literals
-    host.Trim("[]");
-  }
-  if (port == -1) port = (isStuns || isTurns) ? 5349 : 3478;
-
-  // First check the known good ports for webrtc
-  bool goodPort = false;
-  for (int i = 0; !goodPort && gGoodWebrtcPortList[i]; i++) {
-    if (port == gGoodWebrtcPortList[i]) {
-      goodPort = true;
-    }
-  }
-
-  // if not in the list of known good ports for webrtc, check
-  // the generic block list using NS_CheckPortSafety.
-  if (!goodPort) {
-    rv = NS_CheckPortSafety(port, nullptr);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  if (isStuns || isTurns) {
-    // Should we barf if transport is set to udp or something?
-    transport = kNrIceTransportTls;
-  }
-
-  if (transport.IsEmpty()) {
-    transport = kNrIceTransportUdp;
-  }
-
-  if (isTurn || isTurns) {
-    std::string pwd(
-        NS_ConvertUTF16toUTF8(aIceServer.mCredential.Value()).get());
-    std::string username(
-        NS_ConvertUTF16toUTF8(aIceServer.mUsername.Value()).get());
-
-    std::vector<unsigned char> password(pwd.begin(), pwd.end());
-
-    UniquePtr<NrIceTurnServer> server(NrIceTurnServer::Create(
-        host.get(), port, username, password, transport.get()));
-    if (!server) {
-      return NS_ERROR_FAILURE;
-    }
-    if (server->HasFqdn()) {
-      // Add an IPv4 entry, then an IPv6 entry
-      aTurnServersOut->push_back(*server);
-      server->SetUseIPv6IfFqdn();
-    }
-    aTurnServersOut->emplace_back(std::move(*server));
-  } else {
-    UniquePtr<NrIceStunServer> server(
-        NrIceStunServer::Create(host.get(), port, transport.get()));
-    if (!server) {
-      return NS_ERROR_FAILURE;
-    }
-    if (server->HasFqdn()) {
-      // Add an IPv4 entry, then an IPv6 entry
-      aStunServersOut->push_back(*server);
-      server->SetUseIPv6IfFqdn();
-    }
-    aStunServersOut->emplace_back(std::move(*server));
-  }
-  return NS_OK;
-}
-
-/* static */
-nsresult MediaTransportHandler::ConvertIceServers(
-    const nsTArray<dom::RTCIceServer>& aIceServers,
-    std::vector<NrIceStunServer>* aStunServers,
-    std::vector<NrIceTurnServer>* aTurnServers) {
-  for (const auto& iceServer : aIceServers) {
-    NS_ENSURE_STATE(iceServer.mUrls.WasPassed());
-    NS_ENSURE_STATE(iceServer.mUrls.Value().IsStringSequence());
-    for (const auto& iceUrl : iceServer.mUrls.Value().GetAsStringSequence()) {
-      nsresult rv =
-          addNrIceServer(iceUrl, iceServer, aStunServers, aTurnServers);
-      if (NS_FAILED(rv)) {
-        CSFLogError(LOGTAG, "%s: invalid STUN/TURN server: %s", __FUNCTION__,
-                    NS_ConvertUTF16toUTF8(iceUrl).get());
-        return rv;
-      }
-    }
-  }
-
-  return NS_OK;
-}
-
 static NrIceCtx::GlobalConfig GetGlobalConfig() {
   NrIceCtx::GlobalConfig config;
   config.mTcpEnabled =
@@ -610,22 +443,26 @@ void MediaTransportHandlerSTS::CreateIceCtx(const std::string& aName) {
       });
 }
 
+using ParsedIceServer = IceServerParser::ParsedIceServer;
+
 nsresult MediaTransportHandlerSTS::SetIceConfig(
     const nsTArray<dom::RTCIceServer>& aIceServers,
     dom::RTCIceTransportPolicy aIcePolicy) {
-  // We rely on getting an error when this happens, so do it up front.
-  std::vector<NrIceStunServer> stunServers;
-  std::vector<NrIceTurnServer> turnServers;
-  nsresult rv = ConvertIceServers(aIceServers, &stunServers, &turnServers);
-  if (NS_FAILED(rv)) {
-    return rv;
+  auto result = IceServerParser::Parse(aIceServers);
+  if (result.isErr()) {
+    // Discard the detailed ErrorResult; callers at this level use nsresult.
+    result.unwrapErr().SuppressException();
+    return NS_ERROR_FAILURE;
   }
+
+  nsTArray<ParsedIceServer> entries = result.unwrap();
 
   MOZ_RELEASE_ASSERT(mInitPromise);
 
   mInitPromise->Then(
       mStsThread, __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
+      [this, aIcePolicy, entries = std::move(entries),
+       self = RefPtr<MediaTransportHandlerSTS>(this)]() {
         if (!mIceCtx) {
           CSFLogError(LOGTAG, "%s: mIceCtx is null", __FUNCTION__);
           return;
@@ -642,18 +479,9 @@ nsresult MediaTransportHandlerSTS::SetIceConfig(
 
         nsresult rv;
 
-        if (NS_FAILED(rv = mIceCtx->SetStunServers(stunServers))) {
-          CSFLogError(LOGTAG, "%s: Failed to set stun servers", __FUNCTION__);
+        if (NS_FAILED(rv = mIceCtx->SetIceServers(entries, mTurnDisabled))) {
+          CSFLogError(LOGTAG, "%s: Failed to set ICE servers", __FUNCTION__);
           return;
-        }
-        if (!mTurnDisabled) {
-          if (NS_FAILED(rv = mIceCtx->SetTurnServers(turnServers))) {
-            CSFLogError(LOGTAG, "%s: Failed to set turn servers", __FUNCTION__);
-            return;
-          }
-        } else if (!turnServers.empty()) {
-          CSFLogError(LOGTAG, "%s: Setting turn servers disabled",
-                      __FUNCTION__);
         }
         if (NS_FAILED(rv = mIceCtx->SetIceConfig(config))) {
           CSFLogError(LOGTAG, "%s: Failed to set config", __FUNCTION__);

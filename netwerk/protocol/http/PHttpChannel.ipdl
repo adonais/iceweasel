@@ -65,7 +65,6 @@ parent:
   async SetCookies(nsCString baseDomain,
                                     OriginAttributes attrs,
                                     nullable nsIURI host,
-                                    bool fromHttp,
                                     bool isThirdParty,
                                     CookieStruct[] cookies);
 
@@ -87,9 +86,9 @@ child:
   // AsyncOpen of nsHttpChannel on the parent.
   async FailedAsyncOpen(nsresult status);
 
-  // OnStartRequest is sent over PHttpBackgroundChannel. However, sometime we
-  // need to wait for some PContent IPCs, e.g., permission, cookies. Those IPC
-  // are sent just before the background thread OnStartRequest, which is racy.
+  // OnStartRequest is sent over PHttpBackgroundChannel. However, sometimes we
+  // need to wait for cookies to be sent over PCookieService. Cookie service IPC
+  // is sent just before the background thread OnStartRequest, which is racy.
   // Therefore, need one main thread IPC event for synchronizing the event
   // sequence.
   async OnStartRequestSent();

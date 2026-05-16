@@ -6,7 +6,7 @@
 
 const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
 const { clampDimensionsIfNeeded } = ChromeUtils.importESModule(
-  "resource:///modules/ScreenshotsUtils.sys.mjs"
+  "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs"
 );
 
 const CONTAINER_FLASHING_DURATION = 500;

@@ -102,6 +102,7 @@ using mozilla::dom::NativeThreadId from "mozilla/dom/NativeThreadId.h";
 using mozilla::hal::ProcessPriority from "mozilla/HalTypes.h";
 using mozilla::gfx::IntSize from "mozilla/gfx/2D.h";
 using mozilla::gfx::SurfaceFormat from "mozilla/gfx/Types.h";
+using mozilla::gfx::CrashGuardType from "DriverCrashGuard.h";
 using gfxPlatform::GlobalReflowFlags from "gfxPlatform.h";
 using mozilla::dom::TabId from "mozilla/dom/ipc/IdType.h";
 using mozilla::dom::ContentParentId from "mozilla/dom/ipc/IdType.h";
@@ -127,6 +128,8 @@ using mozilla::Telemetry::ChildEventData from "mozilla/TelemetryComms.h";
 using mozilla::TimeStamp from "mozilla/TimeStamp.h";
 using mozilla::dom::geolocation::SystemGeolocationPermissionBehavior from "mozilla/dom/GeolocationIPCUtils.h";
 using mozilla::dom::geolocation::GeolocationPermissionStatus from "mozilla/dom/GeolocationIPCUtils.h";
+using mozilla::dom::PermissionName from "mozilla/dom/PermissionMessageUtils.h";
+using mozilla::dom::PermissionState from "mozilla/dom/PermissionMessageUtils.h";
 
 #if defined(XP_WIN)
 [MoveOnly] using mozilla::UntrustedModulesData from "mozilla/UntrustedModulesData.h";
@@ -772,6 +775,15 @@ child:
     async AddPermission(Permission permission);
     async RemoveAllPermissions();
 
+    // Browser-scoped (per-tab) permission forwarded from the parent process.
+    async SetBrowserPermission(nsCString origin, nsCString type,
+                               uint32_t action, uint64_t browserId,
+                               bool isRemoval);
+
+    // Clear all browser-scoped permissions for a given browserId, optionally
+    // filtered by action (0 = clear all regardless of action).
+    async ClearBrowserPermissions(uint64_t browserId, uint32_t actionFilter);
+
     // memory-pressure and memory-pressure-stop notifications.
     async MemoryPressure(nsString reason);
     async MemoryPressureStop();
@@ -1278,9 +1290,8 @@ parent:
     // Graphics errors
     async GraphicsError(nsCString aError);
 
-    // Driver crash guards. aGuardType must be a member of CrashGuardType.
-    sync BeginDriverCrashGuard(uint32_t aGuardType) returns (bool crashDetected);
-    sync EndDriverCrashGuard(uint32_t aGuardType);
+    sync BeginDriverCrashGuard(CrashGuardType aGuardType) returns (bool crashDetected);
+    sync EndDriverCrashGuard(CrashGuardType aGuardType);
 
     async AddIdleObserver(uint64_t observerId, uint32_t idleTimeInS);
     async RemoveIdleObserver(uint64_t observerId, uint32_t idleTimeInS);
@@ -1591,7 +1602,7 @@ parent:
     /**
      * Messages for communicating child Glean data to the parent process
      */
-    async RecordPageLoadEvent(PageloadEventData event, TimeStamp navigationStartTime, uint64_t aAndroidAppLinkLoadIdentifier);
+    async RecordPageLoadEvent(PageloadEventData event, TimeStamp navigationStartTime, MaybeDiscardedBrowsingContext aBrowsingContext);
 
     /**
      * Messages for communicating child Telemetry to the parent process
@@ -1934,6 +1945,10 @@ child:
     // Tells the child to flush any pending data. Used in tests and ping
     // assembly. Buffer contains bincoded Rust structs.
     async FlushFOGData() returns (ByteBuf buf);
+
+    // Notifies content processes when an OS-level permission changes,
+    // so that PermissionStatus objects can fire onchange events.
+    async SystemPermissionChanged(PermissionName aName, PermissionState aState);
 
 parent:
     async SetContainerFeaturePolicy(MaybeDiscardedBrowsingContext aContainerContext,

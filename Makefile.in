@@ -175,21 +175,21 @@ symbolsarchive: prepsymbolsarchive
 	$(call py_action,symbols_archive $(SYMBOL_ARCHIVE_BASENAME).zip,'$(DIST)/$(PKG_PATH)$(SYMBOL_ARCHIVE_BASENAME).zip' \
                                      $(abspath $(DIST)/crashreporter-symbols))
 
-ifdef MOZ_CRASHREPORTER
 # Set MOZ_ENABLE_FULL_SYMBOLS to enable generation and upload of the full
 # crashreporter symbols archives
 ifdef MOZ_ENABLE_FULL_SYMBOLS
 buildsymbols: symbolsfullarchive symbolsarchive
 else
+ifdef MOZ_CRASHREPORTER
 buildsymbols: symbolsarchive
-endif # MOZ_ENABLE_FULL_SYMBOLS
 else
 buildsymbols:
 	@echo "Skipping symbols generation because MOZ_CRASHREPORTER is not set."
-endif
+endif # MOZ_CRASHREPORTER
+endif # MOZ_ENABLE_FULL_SYMBOLS
 
 uploadsymbols:
-ifdef MOZ_CRASHREPORTER
+ifdef MOZ_ENABLE_FULL_SYMBOLS
 	$(PYTHON3) -u $(topsrcdir)/toolkit/crashreporter/tools/upload_symbols.py '$(DIST)/$(PKG_PATH)$(SYMBOL_FULL_ARCHIVE_BASENAME).tar.zst'
 endif
 

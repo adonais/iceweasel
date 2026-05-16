@@ -16,6 +16,9 @@
 #include "nsTHashSet.h"
 #include "nsWeakReference.h"
 
+// Forward declaration for GTest access to private members.
+class WAICTHeaderParsingTest;
+
 class nsIPrincipal;
 class nsIURI;
 
@@ -97,6 +100,8 @@ class IntegrityPolicyWAICT : public nsIStreamLoaderObserver {
   bool mQueueUpMessages = true;
   bool mEnforce = false;
   bool mManifestValid = false;
+
+  friend class ::WAICTHeaderParsingTest;
 };
 
 }  // namespace mozilla::dom

@@ -12,13 +12,13 @@ Differential Revision: https://phabricator.services.mozilla.com/D196729
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d92a578327f524ec3e1c144c82492a4c76b8266f
 ---
  call/rtp_video_sender.cc                      |  1 +
- modules/rtp_rtcp/source/rtcp_sender.cc        | 19 +++++++++++++++++--
- .../rtp_rtcp/source/rtcp_sender_unittest.cc   |  5 +++--
+ modules/rtp_rtcp/source/rtcp_sender.cc        | 23 +++++++++++++++----
+ .../rtp_rtcp/source/rtcp_sender_unittest.cc   |  5 ++--
  modules/rtp_rtcp/source/rtp_rtcp_interface.h  |  2 +-
- 4 files changed, 22 insertions(+), 5 deletions(-)
+ 4 files changed, 24 insertions(+), 7 deletions(-)
 
 diff --git a/call/rtp_video_sender.cc b/call/rtp_video_sender.cc
-index 8a09f25ce0..1166c8b71f 100644
+index c25fe194bf..615db18574 100644
 --- a/call/rtp_video_sender.cc
 +++ b/call/rtp_video_sender.cc
 @@ -528,6 +528,7 @@ void RtpVideoSender::SetModuleIsActive(bool sending,
@@ -30,18 +30,22 @@ index 8a09f25ce0..1166c8b71f 100644
    rtp_module.SetSendingMediaStatus(sending);
    if (sending) {
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index 2b936a151e..43d9fc784d 100644
+index 3a5c4d94e3..4fb1702e91 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender.cc
-@@ -193,8 +193,23 @@ bool RTCPSender::Sending() const {
+@@ -198,10 +198,25 @@ bool RTCPSender::Sending() const {
  
  void RTCPSender::SetSendingStatus(const FeedbackState& /* feedback_state */,
                                    bool sending) {
 -  MutexLock lock(&mutex_rtcp_sender_);
+-  RTC_DCHECK(is_rtp_sender_ || !sending)
+-      << "Only senders can have sending turned on";
 -  sending_ = sending;
 +  bool sendRTCPBye = false;
 +  {
 +    MutexLock lock(&mutex_rtcp_sender_);
++    RTC_DCHECK(is_rtp_sender_ || !sending)
++        << "Only senders can have sending turned on";
 +
 +    if (method_ != RtcpMode::kOff) {
 +      if (sending == false && sending_ == true) {
@@ -60,10 +64,10 @@ index 2b936a151e..43d9fc784d 100644
  
  void RTCPSender::SetNonSenderRttMeasurement(bool enabled) {
 diff --git a/modules/rtp_rtcp/source/rtcp_sender_unittest.cc b/modules/rtp_rtcp/source/rtcp_sender_unittest.cc
-index 5d0b47e262..9263f12ab3 100644
+index abe4761bd0..1a198ab7cb 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender_unittest.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender_unittest.cc
-@@ -338,12 +338,13 @@ TEST_F(RtcpSenderTest, SendBye) {
+@@ -340,12 +340,13 @@ TEST_F(RtcpSenderTest, SendBye) {
    EXPECT_EQ(kSenderSsrc, parser()->bye()->sender_ssrc());
  }
  
@@ -80,7 +84,7 @@ index 5d0b47e262..9263f12ab3 100644
  
  TEST_F(RtcpSenderTest, SendFir) {
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index 5c6a9fcb85..13e7765cea 100644
+index a43345587e..491ed5fa05 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 @@ -273,7 +273,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {

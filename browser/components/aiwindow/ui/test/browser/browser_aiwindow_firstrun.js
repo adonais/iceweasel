@@ -250,14 +250,25 @@ add_task(async function test_firstrun_explainer_page_opens() {
     );
 
     const model1Box = content.document.querySelectorAll(".select-item")[0];
-    const letsGoButton = content.document.querySelector(
+    const nextButton = content.document.querySelector(
       ".action-buttons > button"
     );
 
     Assert.ok(model1Box, "Model 1 box exists");
-    Assert.ok(letsGoButton, "Let's go button exists");
+    Assert.ok(nextButton, "Next button exists");
 
     EventUtils.synthesizeMouseAtCenter(model1Box, {}, content);
+    EventUtils.synthesizeMouseAtCenter(nextButton, {}, content);
+
+    await ContentTaskUtils.waitForMutationCondition(
+      root,
+      { childList: true, subtree: true, attributes: true },
+      () => content.document.querySelector(".screen.AI_WINDOW_MEMORIES")
+    );
+
+    const letsGoButton = content.document.getElementById("additional_button");
+    Assert.ok(letsGoButton, "Let's go button exists on memories screen");
+
     EventUtils.synthesizeMouseAtCenter(letsGoButton, {}, content);
   });
 
@@ -324,14 +335,25 @@ add_task(async function test_firstrun_telemetry() {
     );
 
     const model2Box = content.document.querySelectorAll(".select-item")[1];
-    const letsGoButton = content.document.querySelector(
+    const nextButton = content.document.querySelector(
       ".action-buttons > button"
     );
 
     Assert.ok(model2Box, "Model 2 box exists");
-    Assert.ok(letsGoButton, "Let's go button exists");
+    Assert.ok(nextButton, "Next button exists");
 
     EventUtils.synthesizeMouseAtCenter(model2Box, {}, content);
+    EventUtils.synthesizeMouseAtCenter(nextButton, {}, content);
+
+    await ContentTaskUtils.waitForMutationCondition(
+      root,
+      { childList: true, subtree: true, attributes: true },
+      () => content.document.querySelector(".screen.AI_WINDOW_MEMORIES")
+    );
+
+    const letsGoButton = content.document.getElementById("additional_button");
+    Assert.ok(letsGoButton, "Let's go button exists on memories screen");
+
     EventUtils.synthesizeMouseAtCenter(letsGoButton, {}, content);
   });
 
@@ -344,8 +366,8 @@ add_task(async function test_firstrun_telemetry() {
     Glean.smartWindow.onboardingScreenImpression.testGetValue();
   Assert.equal(
     impressionEvents?.length,
-    2,
-    "Two screen impression events were recorded"
+    3,
+    "Three screen impression events were recorded"
   );
   Assert.ok(
     impressionEvents[0].extra.message_id.includes("AI_WINDOW_INTRO"),
@@ -354,6 +376,10 @@ add_task(async function test_firstrun_telemetry() {
   Assert.ok(
     impressionEvents[1].extra.message_id.includes("AI_WINDOW_CHOOSE_MODEL"),
     "Second impression is for AI_WINDOW_CHOOSE_MODEL"
+  );
+  Assert.ok(
+    impressionEvents[2].extra.message_id.includes("AI_WINDOW_MEMORIES"),
+    "Third impression is for AI_WINDOW_MEMORIES"
   );
 
   const modelSelectedEvents =
@@ -380,6 +406,19 @@ add_task(async function test_firstrun_telemetry() {
     modelNavigateEvents[0].extra.model,
     "2",
     "Model navigate event records 2 for model 2"
+  );
+
+  const memoriesSettingsEvents =
+    Glean.smartWindow.onboardingMemoriesSettings.testGetValue();
+  Assert.equal(
+    memoriesSettingsEvents?.length,
+    1,
+    "One memories settings event was recorded"
+  );
+  Assert.equal(
+    memoriesSettingsEvents[0].extra.source,
+    "memories-chats,memories-browsing",
+    "Memories settings event records both default-checked checkbox ids"
   );
 
   const completeEvents = Glean.smartWindow.onboardingComplete.testGetValue();

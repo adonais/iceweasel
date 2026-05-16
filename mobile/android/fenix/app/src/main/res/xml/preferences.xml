@@ -95,6 +95,18 @@
             app:isPreferenceVisible="false"
             android:title="@string/preferences_page_summaries" />
 
+        <androidx.preference.Preference
+            android:key="@string/pref_key_ai_controls"
+            app:iconSpaceReserved="false"
+            app:isPreferenceVisible="false"
+            android:title="@string/preferences_ai_controls" />
+
+        <androidx.preference.Preference
+            android:key="@string/pref_key_import_bookmarks"
+            app:iconSpaceReserved="false"
+            app:isPreferenceVisible="false"
+            android:title="@string/preferences_import_bookmarks" />
+
         <org.mozilla.fenix.settings.DefaultBrowserPreference
             android:key="@string/pref_key_make_default_browser"
             app:iconSpaceReserved="false"
@@ -110,6 +122,11 @@
             android:key="@string/pref_key_private_browsing"
             app:iconSpaceReserved="false"
             android:title="@string/preferences_private_browsing_options" />
+
+        <org.mozilla.fenix.settings.IPProtectionPreference
+            android:key="@string/pref_key_ip_protection_settings"
+            app:iconSpaceReserved="false"
+            app:isPreferenceVisible="false" />
 
         <androidx.preference.Preference
             android:key="@string/pref_key_https_only_settings"
@@ -193,7 +210,7 @@
         <androidx.preference.Preference
             android:key="@string/pref_key_downloads"
             app:iconSpaceReserved="false"
-            android:title="@string/preferences_downloads" />
+            android:title="@string/preferences_downloads_2" />
 
         <androidx.preference.Preference
             android:key="@string/pref_key_firefox_labs"

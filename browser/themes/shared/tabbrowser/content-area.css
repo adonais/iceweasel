@@ -107,6 +107,11 @@
         border-start-end-radius: var(--border-radius-medium);
       }
     }
+
+    :root[ai-window]:not([inDOMFullscreen]) & {
+      border-start-start-radius: var(--border-radius-medium);
+      border-start-end-radius: var(--border-radius-medium);
+    }
   }
 }
 
@@ -200,7 +205,6 @@
     .browserContainer {
       border-radius: var(--border-radius-medium);
       overflow: clip;
-      outline: var(--border-width) solid var(--border-color);
 
       /* The selected panel's dialogs need to sit above the non-selected tab panels. */
       .deck-selected > & {
@@ -212,12 +216,17 @@
     .split-view-panel[column="0"] {
       order: 0;
       margin-inline-end: 0;
+
+      @media not (-moz-platform: macos) {
+        z-index: 1;
+      }
     }
 
     .split-view-splitter {
       order: 1;
       flex: none;
       -moz-user-focus: normal;
+      border-color: transparent;
 
       &:focus-visible {
         outline: auto;
@@ -232,6 +241,10 @@
     /* Panels with a custom width shouldn't grow. */
     .split-view-panel[width] {
       flex: none;
+
+      @media not (prefers-reduced-motion) {
+        transition: width 50ms ease-out;
+      }
     }
 
     /* Display split view footer within inactive panels. */
@@ -412,12 +425,12 @@ split-view-footer {
 }
 
 .ask-chat-shortcut-warning {
-  margin: var(--arrowpanel-menuitem-margin);
+  margin: var(--panel-menuitem-margin);
   margin-bottom: var(--space-xsmall);
 }
 
 .ask-chat-shortcuts-custom-prompt {
-  margin: var(--arrowpanel-menuitem-margin);
+  margin: var(--panel-menuitem-margin);
   margin-top: var(--space-small);
 }
 

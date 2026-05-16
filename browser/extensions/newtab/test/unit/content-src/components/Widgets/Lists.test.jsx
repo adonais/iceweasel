@@ -670,3 +670,116 @@ describe("<Lists>", () => {
     assert.strictEqual(editableInput.exists(), false);
   });
 });
+
+describe("<Lists> size submenu (nova)", () => {
+  let sandbox;
+  let dispatch;
+  let handleUserInteraction;
+
+  const novaState = {
+    ...mockState,
+    Prefs: {
+      ...mockState.Prefs,
+      values: {
+        ...mockState.Prefs.values,
+        "nova.enabled": true,
+        "widgets.lists.size": "medium",
+      },
+    },
+  };
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    dispatch = sandbox.stub();
+    handleUserInteraction = sandbox.stub();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it("does not render size submenu when nova is disabled", () => {
+    const wrapper = mount(
+      <WrapWithProvider state={mockState}>
+        <Lists
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+    assert.isFalse(
+      wrapper.find("panel-list[id='lists-size-submenu']").exists()
+    );
+  });
+
+  it("renders size submenu with small/medium/large items when nova is enabled", () => {
+    const wrapper = mount(
+      <WrapWithProvider state={novaState}>
+        <Lists
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={true}
+        />
+      </WrapWithProvider>
+    );
+    const submenu = wrapper.find("panel-list[id='lists-size-submenu']");
+    assert.isTrue(submenu.exists());
+
+    const items = submenu.find("panel-item");
+    assert.equal(items.length, 3);
+
+    const smallItem = items.filterWhere(n => n.prop("data-size") === "small");
+    assert.isTrue(smallItem.exists(), "small item should exist");
+    assert.ok(smallItem.prop("disabled"), "small item should be disabled");
+  });
+
+  it("marks the current size as checked and others as undefined", () => {
+    const wrapper = mount(
+      <WrapWithProvider state={novaState}>
+        <Lists
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={true}
+        />
+      </WrapWithProvider>
+    );
+    const submenu = wrapper.find("panel-list[id='lists-size-submenu']");
+    const items = submenu.find("panel-item");
+
+    const mediumItem = items.filterWhere(n => n.prop("data-size") === "medium");
+    const largeItem = items.filterWhere(n => n.prop("data-size") === "large");
+
+    assert.equal(mediumItem.prop("checked"), true, "medium should be checked");
+    assert.isUndefined(largeItem.prop("checked"), "large should be unchecked");
+  });
+
+  it("dispatches SET_PREF and WIDGETS_USER_EVENT when clicking a size item", () => {
+    const wrapper = mount(
+      <WrapWithProvider state={novaState}>
+        <Lists
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={true}
+        />
+      </WrapWithProvider>
+    );
+    const submenuNode = wrapper
+      .find("panel-list[id='lists-size-submenu']")
+      .getDOMNode();
+    const mockItem = document.createElement("div");
+    mockItem.dataset.size = "large";
+    const event = new MouseEvent("click", { bubbles: true });
+    Object.defineProperty(event, "composedPath", { value: () => [mockItem] });
+    submenuNode.dispatchEvent(event);
+
+    assert.ok(dispatch.calledTwice);
+
+    const [setPrefAction] = dispatch.getCall(0).args;
+    assert.equal(setPrefAction.type, at.SET_PREF);
+    assert.equal(setPrefAction.data.name, "widgets.lists.size");
+    assert.equal(setPrefAction.data.value, "large");
+
+    const [telemetryAction] = dispatch.getCall(1).args;
+    assert.equal(telemetryAction.type, at.WIDGETS_USER_EVENT);
+  });
+});

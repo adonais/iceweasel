@@ -17,7 +17,6 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIObserverService.h"
-#include "nsITokenPasswordDialogs.h"
 #include "nsNSSComponent.h"
 #include "nsNSSHelper.h"
 #include "nsNetCID.h"
@@ -76,7 +75,7 @@ void BackgroundSdrDecryptStrings(const nsTArray<nsCString>& encryptedStrings,
 
     if (NS_FAILED(rv)) {
       if (rv == NS_ERROR_NOT_AVAILABLE) {
-        // Master Password entry was canceled. Don't keep prompting again.
+        // Password entry was canceled. Don't keep prompting again.
         break;
       }
 
@@ -113,19 +112,13 @@ nsresult SecretDecoderRing::Encrypt(CK_MECHANISM_TYPE type,
                                     /*out*/ nsACString& result) {
   UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
   if (!slot) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  /* Make sure token is initialized. */
-  nsCOMPtr<nsIInterfaceRequestor> ctx = new PipUIContext();
-  nsresult rv = setPassword(slot.get(), ctx);
-  if (NS_FAILED(rv)) {
-    return rv;
+    return NS_ERROR_FAILURE;
   }
 
   /* Force authentication */
+  nsCOMPtr<nsIInterfaceRequestor> ctx = new PipUIContext();
   if (PK11_Authenticate(slot.get(), true, ctx) != SECSuccess) {
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   /* Use default key id */
@@ -150,7 +143,7 @@ nsresult SecretDecoderRing::Decrypt(const nsACString& data,
   /* Find token with SDR key */
   UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
   if (!slot) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return NS_ERROR_FAILURE;
   }
 
   /* Force authentication */
@@ -295,30 +288,6 @@ SecretDecoderRing::AsyncDecryptStrings(
 
   promise.forget(aPromise);
   return NS_OK;
-}
-
-NS_IMETHODIMP
-SecretDecoderRing::ChangePassword() {
-  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
-  if (!slot) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  // nsPK11Token::nsPK11Token takes its own reference to slot, so we pass a
-  // non-owning pointer here.
-  nsCOMPtr<nsIPK11Token> token = new nsPK11Token(slot.get());
-
-  nsCOMPtr<nsITokenPasswordDialogs> dialogs;
-  nsresult rv = getNSSDialogs(getter_AddRefs(dialogs),
-                              NS_GET_IID(nsITokenPasswordDialogs),
-                              NS_TOKENPASSWORDSDIALOG_CONTRACTID);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsCOMPtr<nsIInterfaceRequestor> ctx = new PipUIContext();
-  bool canceled;  // Ignored
-  return dialogs->SetPassword(ctx, token, &canceled);
 }
 
 NS_IMETHODIMP

@@ -92,8 +92,6 @@ export class TogglePrefCheckbox extends React.PureComponent {
 export class DiscoveryStreamAdminUI extends React.PureComponent {
   constructor(props) {
     super(props);
-    this.restorePrefDefaults = this.restorePrefDefaults.bind(this);
-    this.setConfigValue = this.setConfigValue.bind(this);
     this.expireCache = this.expireCache.bind(this);
     this.refreshCache = this.refreshCache.bind(this);
     this.showPlaceholder = this.showPlaceholder.bind(this);
@@ -124,6 +122,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
       toggledStories: {},
       weatherQuery: "",
       pendingOverrides: {},
+      overridesTogglePressed: null,
     };
   }
 
@@ -131,29 +130,10 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     this.requestDebugFeatures();
   }
 
-  setConfigValue(configName, configValue) {
-    this.props.dispatch(
-      ac.OnlyToMain({
-        type: at.DISCOVERY_STREAM_CONFIG_SET_VALUE,
-        data: { name: configName, value: configValue },
-      })
-    );
-  }
-
-  restorePrefDefaults() {
-    this.props.dispatch(
-      ac.OnlyToMain({
-        type: at.DISCOVERY_STREAM_CONFIG_RESET_DEFAULTS,
-      })
-    );
-  }
-
   refreshCache() {
-    const { config } = this.props.state.DiscoveryStream;
     this.props.dispatch(
       ac.OnlyToMain({
-        type: at.DISCOVERY_STREAM_CONFIG_CHANGE,
-        data: config,
+        type: at.DISCOVERY_STREAM_DEV_REFRESH_CACHE,
       })
     );
   }
@@ -222,13 +202,17 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     const features = this.getDebugFeaturesList();
     const currentOverrides = this.getOverrideValues(features, true);
     if (!pressed) {
-      this.setState({ pendingOverrides: { ...currentOverrides } });
+      this.setState({
+        pendingOverrides: { ...currentOverrides },
+        overridesTogglePressed: false,
+      });
       this.setDebugOverrides(null);
       return;
     }
     const overrides = Object.keys(this.state.pendingOverrides).length
       ? { ...this.state.pendingOverrides }
       : currentOverrides;
+    this.setState({ overridesTogglePressed: true });
     this.setDebugOverrides(overrides);
   }
 
@@ -541,7 +525,11 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
       return null;
     }
     const overrides = this.getOverrideValues(features);
-    const overridesEnabled = Object.keys(overrides).length;
+    const storeOverridesEnabled = !!Object.keys(overrides).length;
+    const overridesEnabled =
+      this.state.overridesTogglePressed !== null
+        ? this.state.overridesTogglePressed
+        : storeOverridesEnabled;
     const hasAnyNonZeroOverride = Object.values(overrides).some(
       value => Number.isFinite(value) && value > 0
     );
@@ -574,9 +562,11 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
               <td className="min inferred-score-col" />
               <td>
                 <div className="toggle-wrapper">
+                  {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
                   <moz-toggle
                     id="inferred-personalization-overrides"
                     pressed={overridesEnabled || null}
+                    ontoggle={this.handleDebugOverridesToggle}
                     onToggle={this.handleDebugOverridesToggle}
                     label="Enable overrides"
                   />
@@ -798,11 +788,13 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
           <tbody>
             <Row>
               <td colSpan="2">
+                {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
                 <moz-toggle
                   id="sections-toggle"
                   disabled={!unifiedAdsSpocsEnabled || null}
                   pressed={allizomEnabled || null}
                   ontoggle={this.handleAllizomToggle}
+                  onToggle={this.handleAllizomToggle}
                   label="Toggle allizom"
                 />
               </td>
@@ -889,8 +881,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
   }
 
   render() {
-    const prefToggles = "enabled collapsible".split(" ");
-    const { config, layout } = this.props.state.DiscoveryStream;
+    const { layout } = this.props.state.DiscoveryStream;
     const sectionsEnabled = this.props.otherPrefs[PREF_SECTIONS_ENABLED];
 
     // Prefs for IAB Banners
@@ -908,9 +899,6 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
 
     return (
       <div>
-        <button className="button" onClick={this.restorePrefDefaults}>
-          Restore Pref Defaults
-        </button>{" "}
         <button className="button" onClick={this.refreshCache}>
           Refresh Cache
         </button>
@@ -936,10 +924,12 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
           Show Placeholder Cards
         </button>{" "}
         <div className="toggle-wrapper">
+          {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
           <moz-toggle
             id="sections-toggle"
             pressed={sectionsEnabled || null}
             ontoggle={this.handleSectionsToggle}
+            onToggle={this.handleSectionsToggle}
             label="Toggle DS Sections"
           />
         </div>
@@ -947,26 +937,32 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
         <details className="details-section">
           <summary>IAB Banner Ad Sizes</summary>
           <div className="toggle-wrapper">
+            {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
             <moz-toggle
               id="newtab_leaderboard"
               pressed={leaderboardPressed || null}
               ontoggle={this.toggleIABBanners}
+              onToggle={this.toggleIABBanners}
               label="Enable IAB Leaderboard"
             />
           </div>
           <div className="toggle-wrapper">
+            {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
             <moz-toggle
               id="newtab_billboard"
               pressed={billboardPressed || null}
               ontoggle={this.toggleIABBanners}
+              onToggle={this.toggleIABBanners}
               label="Enable IAB Billboard"
             />
           </div>
           <div className="toggle-wrapper">
+            {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
             <moz-toggle
               id="newtab_rectangle"
               pressed={mediumRectangleEnabledPressed || null}
               ontoggle={this.toggleIABBanners}
+              onToggle={this.toggleIABBanners}
               label="Enable IAB Medium Rectangle (MREC)"
             />
           </div>
@@ -974,21 +970,6 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
         <button className="button" onClick={this.sendConversionEvent}>
           Send conversion event
         </button>
-        <table>
-          <tbody>
-            {prefToggles.map(pref => (
-              <Row key={pref}>
-                <td>
-                  <TogglePrefCheckbox
-                    checked={config[pref]}
-                    pref={pref}
-                    onChange={this.setConfigValue}
-                  />
-                </td>
-              </Row>
-            ))}
-          </tbody>
-        </table>
         <h3>Layout</h3>
         {layout.map((row, rowIndex) => (
           <div key={`row-${rowIndex}`}>

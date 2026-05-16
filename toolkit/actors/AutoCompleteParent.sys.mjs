@@ -528,8 +528,10 @@ export class AutoCompleteParent extends JSWindowActorParent {
   }
 
   // This defines the supported autocomplete providers and the prioity to show the autocomplete
-  // entry.
-  #AUTOCOMPLETE_PROVIDERS = ["FormAutofill", "LoginManager", "FormHistory"];
+  // entry. LoginManager is prioritized to handle potential username fields first,
+  // allowing FormAutofill to safely support single email fields without
+  // manual exclusions.
+  #AUTOCOMPLETE_PROVIDERS = ["LoginManager", "FormAutofill", "FormHistory"];
 
   /**
    * Search across multiple module to gather autocomplete entries for a given search string.

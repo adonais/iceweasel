@@ -138,3 +138,56 @@ ipprotection:
         type: boolean
         description: >
           True if the enrollment finished successfully.
+
+  location_selector_button_clicked:
+    type: event
+    description: >
+      Recorded when a user clicks the location selector button to open the
+      locations subview.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035944
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035944
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - kpatenio@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+
+  location_changed:
+    type: event
+    description: >
+      Recorded when a user picks a new egress location from the location selector.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035944
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035944
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - kpatenio@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      location:
+        type: string
+        description: >
+          The country code of the selected egress location, or "REC" if the
+          recommended location was selected.
+
+  location_upgrade_promo_clicked:
+    type: event
+    description: >
+      Recorded when a user clicks the upgrade promo button in the locations
+      subview.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035944
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035944
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - kpatenio@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never

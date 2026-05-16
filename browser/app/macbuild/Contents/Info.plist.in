@@ -280,5 +280,14 @@
 
   <key>NSCameraReactionEffectGesturesEnabledDefault</key>
   <false/>
+
+  <key>NSLocationUsageDescription</key>
+  <string>Only sites you allow within @MAC_APP_NAME@ will be able to use location services.</string>
+
+  <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+  <string>Only sites you allow within @MAC_APP_NAME@ will be able to use location services.</string>
+
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>Only sites you allow within @MAC_APP_NAME@ will be able to use location services.</string>
 </dict>
 </plist>

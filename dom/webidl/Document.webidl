@@ -302,6 +302,9 @@ partial interface Document {
   // Events handlers
   attribute EventHandler onfullscreenchange;
   attribute EventHandler onfullscreenerror;
+
+  [ChromeOnly, BinaryName="getFullscreenKeyboardLockStatus"]
+  readonly attribute FullscreenKeyboardLock fullscreenKeyboardLock;
 };
 
 // https://w3c.github.io/pointerlock/#extensions-to-the-document-interface

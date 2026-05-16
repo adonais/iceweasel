@@ -32,10 +32,6 @@ constexpr auto MathMLFrameTypeCount = size_t(MathMLFrameType::Unknown);
 // Bits used for the presentation flags -- these bits are set
 // in their relevant situation as they become available
 enum class MathMLPresentationFlag : uint8_t {
-  // This bit is used to emulate TeX rendering.
-  // Internal use only, cannot be set by the user with an attribute.
-  Compressed,
-
   // This bit is set if the frame will fire a vertical stretch
   // command on all its (non-empty) children.
   // Tags like <mrow> (or an inferred mrow), mpadded, etc, will fire a

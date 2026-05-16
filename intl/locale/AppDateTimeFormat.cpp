@@ -86,7 +86,7 @@ nsresult AppDateTimeFormat::Format(const DateTimeFormat::ComponentsBag& aBag,
   auto dateTimeFormat = result.unwrap();
 
   double unixEpoch =
-      static_cast<float>((PR_ImplodeTime(aExplodedTime) / PR_USEC_PER_MSEC));
+      static_cast<double>(PR_ImplodeTime(aExplodedTime) / PR_USEC_PER_MSEC);
 
   aStringOut.SetLength(DATETIME_FORMAT_INITIAL_LEN);
   nsTStringToBufferAdapter buffer(aStringOut);

@@ -156,26 +156,6 @@ class NSSSocketControl final : public CommonSocketControl {
     return mEchExtensionStatus;
   }
 
-  void WillSendMlkemShare() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    mSentMlkemShare = true;
-  }
-
-  bool SentMlkemShare() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    return mSentMlkemShare;
-  }
-
-  void SetHasTls13HandshakeSecrets() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    mHasTls13HandshakeSecrets = true;
-  }
-
-  bool HasTls13HandshakeSecrets() {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    return mHasTls13HandshakeSecrets;
-  }
-
   bool GetJoined() {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     return mJoined;
@@ -328,8 +308,6 @@ class NSSSocketControl final : public CommonSocketControl {
   bool mIsFullHandshake;
   bool mNotedTimeUntilReady;
   EchExtensionStatus mEchExtensionStatus;  // Currently only used for telemetry.
-  bool mSentMlkemShare;
-  bool mHasTls13HandshakeSecrets;
 
   // True when SSL layer has indicated an "SSL short write", i.e. need
   // to call on send one or more times to push all pending data to write.

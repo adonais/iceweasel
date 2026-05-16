@@ -24,8 +24,48 @@ object BookmarksSelectors {
         groups = listOf("bookmarksThreeDotMenu"),
     )
 
+    val NAVIGATE_UP_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.bookmark_navigate_back_button_content_description),
+        description = "Bookmark edit navigate up button",
+        groups = listOf("bookmarkEdit"),
+    )
+
+    val EDIT_TITLE_FIELD = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TAG,
+        value = "edit.bookmark.item.title.text.field",
+        description = "Bookmark edit title field",
+        groups = listOf("bookmarkEdit"),
+    )
+
+    val EDIT_URL_FIELD = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TAG,
+        value = "edit.bookmark.item.url.text.field",
+        description = "Bookmark edit URL field",
+        groups = listOf("bookmarkEdit"),
+    )
+
+    val DELETE_BOOKMARK_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.bookmark_delete_bookmark_content_description),
+        description = "Delete bookmark button",
+        groups = listOf("bookmarkEdit"),
+    )
+
+    val BOOKMARK_TITLE_TEXT = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = "Bookmark title",
+        description = "Bookmark title text",
+        groups = listOf(),
+    )
+
     val all = listOf(
         TOOLBAR_TITLE,
         OPEN_IN_NEW_TAB_BUTTON,
+        NAVIGATE_UP_BUTTON,
+        EDIT_TITLE_FIELD,
+        EDIT_URL_FIELD,
+        DELETE_BOOKMARK_BUTTON,
+        BOOKMARK_TITLE_TEXT,
     )
 }

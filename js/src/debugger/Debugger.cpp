@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -1219,7 +1217,7 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
         // Debugger's D.Fs in that global. This means that one D.F's onPop can
         // kill the next D.F. So we have to check whether frameobj is still "on
         // the stack".
-        if (frameobj->isOnStack() && frameobj->onPopHandler()) {
+        if (frameobj->isOnStack(cx) && frameobj->onPopHandler()) {
           OnPopHandler* handler = frameobj->onPopHandler();
 
           bool result = dbg->enterDebuggerHook(cx, [&]() -> bool {
@@ -2762,7 +2760,7 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
         MOZ_ASSERT(&frameObj.unwrappedGenerator() == &genObj);
 
         // Live Debugger.Frames were already counted in dbg->frames loop.
-        if (frameObj.isOnStack()) {
+        if (frameObj.isOnStack(cx)) {
           continue;
         }
 
@@ -6747,7 +6745,7 @@ bool Debugger::CallData::adoptFrame() {
   }
 
   Rooted<DebuggerFrame*> adoptedFrame(cx);
-  if (frameObj->isOnStack()) {
+  if (frameObj->isOnStack(cx)) {
     FrameIter iter = frameObj->getFrameIter(cx);
     if (!dbg->observesFrame(iter)) {
       JS_ReportErrorASCII(cx, "Debugger.Frame's global is not a debuggee");
@@ -7072,33 +7070,19 @@ bool Debugger::observesWasm(wasm::Instance* instance) const {
 }
 
 /* static */
-bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
+void Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
                                 AbstractFramePtr to, ScriptFrameIter& iter) {
   MOZ_ASSERT(from != to);
+  AutoEnterOOMUnsafeRegion unsafe;
 
   // Rekey missingScopes to maintain Debugger.Environment identity and
   // forward liveScopes to point to the new frame.
   DebugEnvironments::forwardLiveFrame(cx, from, to);
 
-  // If we hit an OOM anywhere in here, we need to make sure there aren't any
-  // Debugger.Frame objects left partially-initialized.
-  auto terminateDebuggerFramesOnExit = MakeScopeExit([&] {
-    terminateDebuggerFrames(cx, from);
-    terminateDebuggerFrames(cx, to);
-
-    MOZ_ASSERT(!DebugAPI::inFrameMaps(from));
-    MOZ_ASSERT(!DebugAPI::inFrameMaps(to));
-  });
-
   // Forward live Debugger.Frame objects.
   Rooted<DebuggerFrameVector> frames(cx);
   if (!getDebuggerFrames(from, &frames)) {
-    // An OOM here means that all Debuggers' frame maps still contain
-    // entries for 'from' and no entries for 'to'. Since the 'from' frame
-    // will be gone, they are removed by terminateDebuggerFramesOnExit
-    // above.
-    ReportOutOfMemory(cx);
-    return false;
+    unsafe.crash("replaceFrameGuts");
   }
 
   for (size_t i = 0; i < frames.length(); i++) {
@@ -7107,13 +7091,12 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
 
     // Update frame object's ScriptFrameIter::data pointer.
     if (!frameobj->replaceFrameIterData(cx, iter)) {
-      return false;
+      unsafe.crash("replaceFrameGuts");
     }
 
     // Add the frame object with |to| as key.
     if (!dbg->frames.putNew(to, frameobj)) {
-      ReportOutOfMemory(cx);
-      return false;
+      unsafe.crash("replaceFrameGuts");
     }
 
     // Remove the old frame entry after all fallible operations are completed
@@ -7121,12 +7104,8 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
     dbg->frames.remove(from);
   }
 
-  // All frames successfuly replaced, cancel the rollback.
-  terminateDebuggerFramesOnExit.release();
-
   MOZ_ASSERT(!DebugAPI::inFrameMaps(from));
   MOZ_ASSERT_IF(!frames.empty(), DebugAPI::inFrameMaps(to));
-  return true;
 }
 
 /* static */
@@ -7230,15 +7209,15 @@ const JSClass DebuggerDebuggeeLink::class_ = {
 };
 
 /* static */
-bool DebugAPI::handleBaselineOsr(JSContext* cx, InterpreterFrame* from,
+void DebugAPI::handleBaselineOsr(JSContext* cx, InterpreterFrame* from,
                                  jit::BaselineFrame* to) {
   ScriptFrameIter iter(cx);
   MOZ_ASSERT(iter.abstractFramePtr() == to);
-  return Debugger::replaceFrameGuts(cx, from, to, iter);
+  Debugger::replaceFrameGuts(cx, from, to, iter);
 }
 
 /* static */
-bool DebugAPI::handleIonBailout(JSContext* cx, jit::RematerializedFrame* from,
+void DebugAPI::handleIonBailout(JSContext* cx, jit::RematerializedFrame* from,
                                 jit::BaselineFrame* to) {
   // When we return to a bailed-out Ion real frame, we must update all
   // Debugger.Frames that refer to its inline frames. However, since we
@@ -7252,7 +7231,7 @@ bool DebugAPI::handleIonBailout(JSContext* cx, jit::RematerializedFrame* from,
   while (iter.abstractFramePtr() != to) {
     ++iter;
   }
-  return Debugger::replaceFrameGuts(cx, from, to, iter);
+  Debugger::replaceFrameGuts(cx, from, to, iter);
 }
 
 /* static */

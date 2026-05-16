@@ -7,7 +7,7 @@
 #define mozilla_image_decoders_nsJXLDecoder_h
 
 #include "Decoder.h"
-#include "StreamingLexer.h"
+#include "SurfacePipe.h"
 #include "mozilla/Vector.h"
 #include "mozilla/image/jxl_decoder_ffi.h"
 
@@ -33,9 +33,7 @@ class nsJXLDecoder final : public Decoder {
 
   explicit nsJXLDecoder(RasterImage* aImage);
 
-  std::unique_ptr<JxlApiDecoder, JxlDecoderDeleter> mDecoder;
-
-  enum class State { JXL_DATA, DRAIN_FRAMES, FINISHED_JXL_DATA };
+  enum class DecoderState { Initial, HaveBasicInfo };
 
   enum class FrameOutputResult {
     BufferAllocated,
@@ -45,19 +43,35 @@ class nsJXLDecoder final : public Decoder {
     Error
   };
 
+  enum class ProcessResult { NeedMoreData, YieldOutput, Complete, Error };
+
   JxlDecoderStatus ProcessInput(const uint8_t** aData, size_t* aLength);
-  nsresult ProcessFrame(Vector<uint8_t>& aPixelBuffer);
   FrameOutputResult HandleFrameOutput();
+  ProcessResult ProcessAvailableData();
 
-  LexerTransition<State> ReadJXLData(const char* aData, size_t aLength);
-  LexerTransition<State> DrainFrames();
-  LexerTransition<State> FinishedJXLData();
+  LexerResult ScanForFrameCount(SourceBufferIterator& aIterator,
+                                IResumable* aOnResume);
 
-  StreamingLexer<State> mLexer;
+  FrameOutputResult BeginFrame();
+  nsresult FinishFrame();
+  void FlushPartialFrame();
+
+  LexerResult DrainFrames();
+
+  std::unique_ptr<JxlApiDecoder, JxlDecoderDeleter> mDecoder;
+  std::unique_ptr<JxlApiDecoder, JxlDecoderDeleter> mScanner;
+
+  DecoderState mDecoderState = DecoderState::Initial;
 
   uint32_t mFrameIndex = 0;
 
   Vector<uint8_t> mPixelBuffer;
+  Maybe<SurfacePipe> mCurrentPipe;
+
+  bool mIteratorComplete = false;
+
+  Vector<uint8_t> mBufferedData;
+  size_t mBytesConsumed = 0;
 };
 
 }  // namespace mozilla::image

@@ -121,6 +121,7 @@ static void TestPrintfFormats() {
   MOZ_RELEASE_ASSERT(print_one("-1", "%d", -1));
   MOZ_RELEASE_ASSERT(print_one("23", "%u", 23u));
   MOZ_RELEASE_ASSERT(print_one("0x17", "0x%x", 23u));
+  MOZ_RELEASE_ASSERT(print_one("17", "%#x", 23u));
   MOZ_RELEASE_ASSERT(print_one("0xFF", "0x%X", 255u));
   MOZ_RELEASE_ASSERT(print_one("027", "0%o", 23u));
   MOZ_RELEASE_ASSERT(print_one("-1", "%hd", (short)-1));

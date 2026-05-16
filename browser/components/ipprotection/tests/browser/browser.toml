@@ -38,6 +38,12 @@ prefs = [
 
 ["browser_ipprotection_keyboard_navigation.js"]
 
+["browser_ipprotection_location_selector_telemetry.js"]
+
+["browser_ipprotection_locations_keyboard_navigation.js"]
+
+["browser_ipprotection_locations_list.js"]
+
 ["browser_ipprotection_message_bar.js"]
 
 ["browser_ipprotection_network_error.js"]
@@ -58,3 +64,5 @@ prefs = [
 skip-if = [
   "devedition",
 ]
+
+["browser_ipprotection_utils.js"]

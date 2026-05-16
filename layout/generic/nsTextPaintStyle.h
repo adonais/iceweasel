@@ -118,6 +118,10 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   nscolor GetSystemFieldForegroundColor();
   nscolor GetSystemFieldBackgroundColor();
 
+  const ComputedStyle* GetSelectionPseudoStyle() const {
+    return mSelectionPseudoStyle;
+  }
+
  protected:
   nsTextFrame* mFrame;
   nsPresContext* mPresContext;

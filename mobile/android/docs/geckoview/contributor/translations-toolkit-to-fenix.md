@@ -515,9 +515,9 @@ handleEvent(aEvent) {
   switch (aEvent.type) {
     case "TranslationsParent:OfferTranslation":
      // Send the event to GeckoView’s Java-side.
-     this.eventDispatcher.sendRequest({
-       type: "GeckoView:Translations:Offer",
-       });
+     this.eventDispatcher.sendRequest(
+       "GeckoView:Translations:Offer",
+     );
      break;
   }
 }

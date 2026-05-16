@@ -78,7 +78,7 @@ sealed class PreferenceFileInformation(
      */
     object DownloadsSettingsPreferences : PreferenceFileInformation(
         xmlResourceId = R.xml.downloads_settings_preferences,
-        topBreadcrumbResourceId = R.string.preferences_downloads,
+        topBreadcrumbResourceId = R.string.preferences_downloads_2,
         categoryHeaderResourceId = R.string.preferences_category_advanced,
         fragmentId = R.id.openDownloadsSettingsFragment,
     )
@@ -171,5 +171,16 @@ sealed class PreferenceFileInformation(
         topBreadcrumbResourceId = R.string.preferences_debug_settings,
         categoryHeaderResourceId = R.string.preferences_debug_settings,
         fragmentId = R.id.secretSettingsPreference,
+    )
+
+    /**
+     * Represents the "Data Collection" settings screen.
+     * This screen is Compose-based and has no backing XML preference file.
+     */
+    object DataChoicesPreferences : PreferenceFileInformation(
+        xmlResourceId = R.id.dataChoicesFragment,
+        topBreadcrumbResourceId = R.string.preferences_data_collection,
+        categoryHeaderResourceId = R.string.preferences_category_privacy_security,
+        fragmentId = R.id.dataChoicesFragment,
     )
 }

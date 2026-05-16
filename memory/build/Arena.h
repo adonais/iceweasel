@@ -96,15 +96,27 @@ struct ArenaChunkMapLink {
 };
 
 struct ArenaAvailTreeTrait : public ArenaChunkMapLink {
+  // This compare function is used to compare to existing runs within a red
+  // black tree.  It compares both size and address to create a consistent
+  // total order.
   static inline Order Compare(arena_chunk_map_t* aNode,
                               arena_chunk_map_t* aOther) {
     size_t size1 = aNode->bits & ~mozilla::gPageSizeMask;
     size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
     Order ret = CompareInt(size1, size2);
-    return (ret != Order::eEqual)
-               ? ret
-               : CompareAddr((aNode->bits & CHUNK_MAP_KEY) ? nullptr : aNode,
-                             aOther);
+    return (ret != Order::eEqual) ? ret : CompareAddr(aNode, aOther);
+  }
+
+  using SearchKey = size_t;
+
+  // This Compare function is used to search for a run of a given size
+  // within a red-black tree. It will first compare size and if that's equal
+  // it will return eLess so that the leftmost node of the tree of that size
+  // is returned.
+  static inline Order Compare(SearchKey aSize, arena_chunk_map_t* aOther) {
+    size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
+    Order ret = CompareInt(aSize, size2);
+    return (ret != Order::eEqual) ? ret : Order::eLess;
   }
 };
 
@@ -250,7 +262,7 @@ static_assert(sizeof(arena_bin_t) == 32);
 
 enum PurgeCondition { PurgeIfThreshold, PurgeUnconditional };
 
-struct arena_t {
+struct arena_t : public BaseAllocClass {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
 #  define ARENA_MAGIC 0x947d3d24
   uint32_t mMagic = ARENA_MAGIC;
@@ -397,6 +409,9 @@ struct arena_t {
   static constexpr size_t LABEL_MAX_CAPACITY = 128;
   char mLabel[LABEL_MAX_CAPACITY] = {};
 
+  // Chunk allocator used for all of this arena's allocations.
+  chunk_allocator_t* mChunkAllocator;
+
  private:
   // Size/address-ordered tree of this arena's available runs.  This tree
   // is used for first-best-fit run allocation.
@@ -470,8 +485,25 @@ struct arena_t {
       MOZ_REQUIRES(mLock);
 #endif
 
-  [[nodiscard]] bool SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
-                              bool aZero) MOZ_REQUIRES(mLock);
+  // Split an unallocated run into two parts, allocate the first part and
+  // make the 2nd part available for future allocations.
+  //
+  // Before calling:
+  //   aRun must not be allocated or available for allocation in mAvailRuns,
+  //   it may be fresh, decommitted, dirty etc.
+  // On return:
+  //   aRun is not in mAvailRuns, the caller may immediately use it.  It
+  //   will be marked as allocated, and not dirty/decommitted etc.
+  //
+  //   The other half of the original run will be added to mAvailRuns, it
+  //   may have been partially un-decommitted (MALLOC_DECOMMIT) or touched
+  //   (when gPageSize < gRealPageSize).
+  //
+  // This can only fail if committing memory failed.
+  //
+  [[nodiscard]] bool SplitAndAllocRun(arena_run_t* aRun, size_t aSize,
+                                      bool aLarge, bool aZero)
+      MOZ_REQUIRES(mLock);
 
   void TrimRunHead(arena_chunk_t* aChunk, arena_run_t* aRun, size_t aOldSize,
                    size_t aNewSize) MOZ_REQUIRES(mLock);
@@ -681,11 +713,15 @@ struct arena_t {
 
   bool IsMainThreadOnly() const { return !mLock.LockIsEnabled(); }
 
-  void* operator new(size_t aCount) = delete;
-
+  // Overload new to customise the size.
   void* operator new(size_t aCount, const mozilla::fallible_t&) noexcept;
 
-  void operator delete(void*);
+  // Fallible allocation is unused and an array of arena_t is impossible.
+  void* operator new(size_t aCount) noexcept = delete;
+  void* operator new[](size_t aCount) noexcept = delete;
+  void* operator new[](size_t aCount,
+                       const mozilla::fallible_t&) noexcept = delete;
+  void operator delete[](void* aPtr) = delete;
 };
 
 #endif /* ! ARENA_H */

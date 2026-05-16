@@ -5,6 +5,9 @@
 import { IPPProxyManager } from "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs";
 import { BANDWIDTH } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
 
+const BANDWIDTH_WARNING_DISMISSED_PREF =
+  "browser.ipProtection.bandwidthWarningDismissedThreshold";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionService:
@@ -109,6 +112,32 @@ class IPPUsageHelperSingleton extends EventTarget {
     }
 
     this.#setState(newState);
+  }
+
+  getDismissedThresholds() {
+    try {
+      const prefValue = Services.prefs.getStringPref(
+        BANDWIDTH_WARNING_DISMISSED_PREF,
+        ""
+      );
+      if (!prefValue) {
+        return { infobar: 0, panel: 0 };
+      }
+      const obj = JSON.parse(prefValue);
+      return {
+        infobar: typeof obj.infobar === "number" ? obj.infobar : 0,
+        panel: typeof obj.panel === "number" ? obj.panel : 0,
+      };
+    } catch {
+      return { infobar: 0, panel: 0 };
+    }
+  }
+
+  setDismissedThresholds(obj) {
+    Services.prefs.setStringPref(
+      BANDWIDTH_WARNING_DISMISSED_PREF,
+      JSON.stringify(obj)
+    );
   }
 
   #setState(state) {

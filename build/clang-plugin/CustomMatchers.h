@@ -424,6 +424,9 @@ AST_MATCHER(FunctionDecl, isMarkedImplicit) {
 AST_MATCHER(FunctionDecl, isMarkedMustOverride) {
   return hasCustomAttribute<moz_must_override>(&Node);
 }
+AST_MATCHER(FunctionDecl, isMarkedNonTerminatedString) {
+  return hasCustomAttribute<moz_non_terminated_string>(&Node);
+}
 
 AST_MATCHER(CXXRecordDecl, isConcreteClass) { return !Node.isAbstract(); }
 

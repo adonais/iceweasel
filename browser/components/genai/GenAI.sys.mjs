@@ -730,7 +730,7 @@ export const GenAI = {
       contextTabs = null,
     } = contextMenu;
 
-    // DO NOT show menu when inside an extension panel
+    // DO NOT show menu when inside an extension panel or the Smart Window
     const uri = browser.browsingContext?.currentURI.spec;
     if (
       uri?.startsWith("moz-extension:") ||

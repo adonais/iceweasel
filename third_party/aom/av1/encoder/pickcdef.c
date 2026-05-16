@@ -824,7 +824,7 @@ void av1_cdef_search(AV1_COMP *cpi) {
   AV1_COMMON *cm = &cpi->common;
   CDEF_CONTROL cdef_control = cpi->oxcf.tool_cfg.cdef_control;
   const bool apply_adaptive_cdef =
-      cdef_control == CDEF_ADAPTIVE && cpi->oxcf.mode == ALLINTRA &&
+      cdef_control == CDEF_ADAPTIVE &&
       (cpi->oxcf.rc_cfg.mode == AOM_Q || cpi->oxcf.rc_cfg.mode == AOM_CQ);
 
   assert(cdef_control != CDEF_NONE);
@@ -874,7 +874,7 @@ void av1_cdef_search(AV1_COMP *cpi) {
 
   if (!cpi->cdef_search_ctx)
     CHECK_MEM_ERROR(cm, cpi->cdef_search_ctx,
-                    aom_malloc(sizeof(*cpi->cdef_search_ctx)));
+                    aom_calloc(1, sizeof(*cpi->cdef_search_ctx)));
   CdefSearchCtx *cdef_search_ctx = cpi->cdef_search_ctx;
 
   // Initialize parameters related to CDEF search context.

@@ -26,7 +26,6 @@
 #include "nsAtom.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"
-#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsINode.h"

@@ -12,13 +12,7 @@ add_task(
     const SPANISH_TEXT = "Hola, ¿cómo estás?";
     const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
       {
-        // Spanish is intentionally omitted so detected "es" is unsupported in this scenario.
-        languagePairs: [
-          { fromLang: "en", toLang: "fr" },
-          { fromLang: "fr", toLang: "en" },
-          { fromLang: "en", toLang: "de" },
-          { fromLang: "de", toLang: "en" },
-        ],
+        languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
         autoDownloadFromRemoteSettings: false,
       }
     );

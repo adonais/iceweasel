@@ -839,8 +839,8 @@ function runInParent(aFunctionOrURL) {
 function manageLoginsInParent() {
   return runInParent(function addLoginsInParentInner() {
     /* eslint-env mozilla/chrome-script */
-    addMessageListener("removeAllUserFacingLogins", () => {
-      Services.logins.removeAllUserFacingLogins();
+    addMessageListener("removeAllUserFacingLogins", async () => {
+      await Services.logins.removeAllUserFacingLoginsAsync();
     });
 
     addMessageListener("getLogins", async () => {

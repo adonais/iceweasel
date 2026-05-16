@@ -130,8 +130,8 @@ gfxRect SVGMaskFrame::GetMaskArea(nsIFrame* aMaskedFrame) {
   gfxRect bbox;
   if (units == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) {
     bbox =
-        SVGUtils::GetBBox(aMaskedFrame, SVGUtils::eUseFrameBoundsForOuterSVG |
-                                            SVGUtils::eBBoxIncludeFillGeometry);
+        SVGUtils::GetBBox(aMaskedFrame, {SVGBBoxFlag::UseFrameBoundsForOuterSVG,
+                                         SVGBBoxFlag::IncludeFillGeometry});
   }
 
   // Bounds in the user space of aMaskedFrame
@@ -175,11 +175,11 @@ gfxMatrix SVGMaskFrame::GetMaskTransform(nsIFrame* aMaskedFrame) {
   SVGAnimatedEnumeration* maskContentUnits =
       &content->mEnumAttributes[SVGMaskElement::MASKCONTENTUNITS];
 
-  uint32_t flags = SVGUtils::eBBoxIncludeFillGeometry |
-                   (aMaskedFrame->StyleBorder()->mBoxDecorationBreak ==
-                            StyleBoxDecorationBreak::Clone
-                        ? SVGUtils::eIncludeOnlyCurrentFrameForNonSVGElement
-                        : 0);
+  SVGBBoxFlags flags = SVGBBoxFlag::IncludeFillGeometry;
+  if (aMaskedFrame->StyleBorder()->mBoxDecorationBreak ==
+      StyleBoxDecorationBreak::Clone) {
+    flags += SVGBBoxFlag::IncludeOnlyCurrentFrameForNonSVGElement;
+  }
 
   return SVGUtils::AdjustMatrixForUnits(gfxMatrix(), maskContentUnits,
                                         aMaskedFrame, flags);

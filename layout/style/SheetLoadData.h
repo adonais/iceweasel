@@ -227,9 +227,6 @@ class SheetLoadData final
   // The principal that identifies who started loading us.
   const nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
 
-  // The principal that identifies our loader.
-  const nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
-
   // Referrer info of the load.
   const nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
 

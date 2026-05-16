@@ -61,6 +61,7 @@ template struct StyleStrong<StyleStartingStyleRule>;
 template struct StyleStrong<StyleAppearanceBaseRule>;
 template struct StyleStrong<StyleLockedPositionTryRule>;
 template struct StyleStrong<StyleLockedNestedDeclarationsRule>;
+template struct StyleStrong<StyleViewTransitionRule>;
 
 template <typename T>
 inline void StyleOwnedSlice<T>::Clear() {
@@ -500,6 +501,10 @@ StyleGradient::ColorInterpolationMethod() const {
   }
   return AsConic().color_interpolation_method;
 }
+
+inline StyleAnimationName::StyleAnimationName() : _0(nsGkAtoms::_empty) {};
+
+inline StyleTimelineIdent::StyleTimelineIdent() : _0(nsGkAtoms::_empty) {};
 
 template <typename Integer>
 inline StyleGenericGridLine<Integer>::StyleGenericGridLine()
@@ -1128,6 +1133,10 @@ using FontStretch = StyleFontStretch;
 using FontSlantStyle = StyleFontStyle;
 using FontWeight = StyleFontWeight;
 
+inline StyleFontPalette StyleFontPalette::Normal() {
+  return StyleFontPalette{StyleAtom(nsGkAtoms::normal->ToAddRefed())};
+}
+
 template <>
 inline double StyleComputedTimingFunction::At(double aPortion,
                                               bool aBeforeFlag) const {
@@ -1302,14 +1311,14 @@ inline gfx::Point StyleCoordinatePair<LengthPercentage>::ToGfxPoint(
 }
 
 template <>
-inline gfx::Point StyleShapePosition<StyleCSSFloat>::ToGfxPoint(
+inline gfx::Point
+StyleGenericPosition<StyleCSSFloat, StyleCSSFloat>::ToGfxPoint(
     const CSSSize* aBasis) const {
   return gfx::Point(horizontal, vertical);
 }
 
 template <>
-inline gfx::Point StyleShapePosition<LengthPercentage>::ToGfxPoint(
-    const CSSSize* aBasis) const {
+inline gfx::Point StylePosition::ToGfxPoint(const CSSSize* aBasis) const {
   MOZ_ASSERT(aBasis);
   return gfx::Point(horizontal.ResolveToCSSPixels(aBasis->Width()),
                     vertical.ResolveToCSSPixels(aBasis->Height()));
@@ -1317,7 +1326,7 @@ inline gfx::Point StyleShapePosition<LengthPercentage>::ToGfxPoint(
 
 template <>
 inline gfx::Point
-StyleCommandEndPoint<StyleShapePosition<StyleCSSFloat>,
+StyleCommandEndPoint<StyleGenericPosition<StyleCSSFloat, StyleCSSFloat>,
                      StyleCSSFloat>::ToGfxPoint(const CSSSize* aBasis) const {
   if (IsToPosition()) {
     auto& pos = AsToPosition();
@@ -1329,9 +1338,9 @@ StyleCommandEndPoint<StyleShapePosition<StyleCSSFloat>,
 }
 
 template <>
-inline gfx::Point StyleCommandEndPoint<
-    StyleShapePosition<LengthPercentage>,
-    LengthPercentage>::ToGfxPoint(const CSSSize* aBasis) const {
+inline gfx::Point
+StyleCommandEndPoint<StylePosition, LengthPercentage>::ToGfxPoint(
+    const CSSSize* aBasis) const {
   MOZ_ASSERT(aBasis);
   if (IsToPosition()) {
     auto& pos = AsToPosition();
@@ -1367,9 +1376,10 @@ inline gfx::Coord StyleAxisEndPoint<LengthPercentage>::ToGfxCoord(
 
 template <>
 inline gfx::Point
-StyleControlPoint<StyleShapePosition<StyleCSSFloat>, StyleCSSFloat>::ToGfxPoint(
-    const gfx::Point aStatePos, const gfx::Point aEndPoint,
-    const CSSSize* aBasis) const {
+StyleControlPoint<StyleGenericPosition<StyleCSSFloat, StyleCSSFloat>,
+                  StyleCSSFloat>::ToGfxPoint(const gfx::Point aStatePos,
+                                             const gfx::Point aEndPoint,
+                                             const CSSSize* aBasis) const {
   if (IsAbsolute()) {
     auto& pos = AsAbsolute();
     return pos.ToGfxPoint();
@@ -1389,10 +1399,9 @@ StyleControlPoint<StyleShapePosition<StyleCSSFloat>, StyleCSSFloat>::ToGfxPoint(
 
 template <>
 inline gfx::Point
-StyleControlPoint<StyleShapePosition<LengthPercentage>,
-                  LengthPercentage>::ToGfxPoint(const gfx::Point aStatePos,
-                                                const gfx::Point aEndPoint,
-                                                const CSSSize* aBasis) const {
+StyleControlPoint<StylePosition, LengthPercentage>::ToGfxPoint(
+    const gfx::Point aStatePos, const gfx::Point aEndPoint,
+    const CSSSize* aBasis) const {
   MOZ_ASSERT(aBasis);
   if (IsAbsolute()) {
     auto& pos = AsAbsolute();

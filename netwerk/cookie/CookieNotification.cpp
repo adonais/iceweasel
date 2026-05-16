@@ -64,7 +64,7 @@ CookieNotification::GetBrowsingContext(dom::BrowsingContext** aResult) {
 NS_IMETHODIMP
 CookieNotification::GetOperationID(nsID** aOperationID) {
   NS_ENSURE_ARG_POINTER(aOperationID);
-  *aOperationID = mOperationID;
+  *aOperationID = mOperationID ? mOperationID->Clone() : nullptr;
   return NS_OK;
 }
 

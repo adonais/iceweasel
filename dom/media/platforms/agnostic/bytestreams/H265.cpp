@@ -6,8 +6,6 @@
 
 #include <stdint.h>
 
-#include <cmath>
-
 #include "AnnexB.h"
 #include "BitReader.h"
 #include "BitWriter.h"
@@ -759,7 +757,8 @@ Result<Ok, nsresult> H265::ParseStRefPicSet(BitReader& aReader,
       curStRefPicSet.num_negative_pics + curStRefPicSet.num_positive_pics;
   // 7.4.8 - NumDeltaPocs = num_negative_pics + num_positive_pics counts DPB
   // entries, bounded by sps_max_dec_pic_buffering_minus1.
-  IN_RANGE_OR_RETURN(curStRefPicSet.numDeltaPocs, 0, spsMaxDecPicBufferingMinus1);
+  IN_RANGE_OR_RETURN(curStRefPicSet.numDeltaPocs, 0,
+                     spsMaxDecPicBufferingMinus1);
   return Ok();
 }
 
@@ -1227,6 +1226,101 @@ already_AddRefed<mozilla::MediaByteBuffer> H265::DecodeNALUnit(
   }
   return rbsp.forget();
 }
+
+#ifdef MOZ_WMF
+static void AppendSEIInt(MediaByteBuffer* aDest, size_t aValue) {
+  while (aValue >= 0xff) {
+    aDest->AppendElement(0xff);
+    aValue -= 0xff;
+  }
+  aDest->AppendElement(static_cast<uint8_t>(aValue));
+}
+
+static already_AddRefed<MediaByteBuffer> EncodeH265NALUnit(
+    const uint8_t* aHeader, const MediaByteBuffer* aRBSP) {
+  RefPtr<MediaByteBuffer> nalu = new MediaByteBuffer;
+  nalu->AppendElements(aHeader, 2);
+  BufferReader reader(aRBSP);
+  while (reader.Remaining()) {
+    auto res = reader.ReadU8();
+    if (res.isErr()) {
+      return nullptr;
+    }
+    uint8_t b = res.unwrap();
+    if (b <= 0x03 && nalu->ElementAt(nalu->Length() - 2) == 0 &&
+        nalu->ElementAt(nalu->Length() - 1) == 0) {
+      nalu->AppendElement(0x03);
+    }
+    nalu->AppendElement(b);
+  }
+  return nalu.forget();
+}
+
+/* static */
+already_AddRefed<mozilla::MediaByteBuffer> H265::FilterPrefixSEIForWindows(
+    const H265NALU& aNALU) {
+  MOZ_ASSERT(aNALU.mNalUnitType == H265NALU::NAL_TYPES::PREFIX_SEI_NUT);
+  // user_data_unregistered (H.265 Annex D.2.1, payloadType=5) carries no
+  // normative decoding information — H.265 Annex D.1 explicitly states that
+  // decoders are not required to process SEI for output conformance, and
+  // Table D.1 lists its persistence scope as "Unspecified". Stripping it is
+  // safe while preserving other SEI types (e.g. HDR metadata, buffering
+  // period) that do carry normative data.
+  static constexpr uint8_t kSEIUserDataUnregisteredPayloadType = 5;
+
+  RefPtr<MediaByteBuffer> rbsp = H265::DecodeNALUnit(aNALU.mNALU);
+  if (!rbsp) {
+    return nullptr;
+  }
+
+  const Span<const uint8_t> data(rbsp->Elements(), rbsp->Length());
+  RefPtr<MediaByteBuffer> filteredRBSP = new MediaByteBuffer;
+  size_t offset = 0;
+  while (offset < data.Length()) {
+    if (offset + 1 == data.Length() && data[offset] == 0x80) {
+      break;
+    }
+
+    size_t payloadType = 0;
+    while (offset < data.Length() && data[offset] == 0xff) {
+      payloadType += 0xff;
+      offset++;
+    }
+    if (offset >= data.Length()) {
+      return nullptr;
+    }
+    payloadType += data[offset++];
+
+    size_t payloadSize = 0;
+    while (offset < data.Length() && data[offset] == 0xff) {
+      payloadSize += 0xff;
+      offset++;
+    }
+    if (offset >= data.Length()) {
+      return nullptr;
+    }
+    payloadSize += data[offset++];
+
+    if (offset + payloadSize > data.Length()) {
+      return nullptr;
+    }
+    if (payloadType != kSEIUserDataUnregisteredPayloadType) {
+      AppendSEIInt(filteredRBSP, payloadType);
+      AppendSEIInt(filteredRBSP, payloadSize);
+      filteredRBSP->AppendElements(data.Elements() + offset, payloadSize);
+    }
+
+    offset += payloadSize;
+  }
+
+  if (filteredRBSP->IsEmpty()) {
+    return nullptr;
+  }
+
+  filteredRBSP->AppendElement(0x80);
+  return EncodeH265NALUnit(aNALU.mNALU.Elements(), filteredRBSP);
+}
+#endif
 
 /* static */
 already_AddRefed<mozilla::MediaByteBuffer> H265::ExtractHVCCExtraData(

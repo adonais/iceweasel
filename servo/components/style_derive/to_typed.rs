@@ -23,15 +23,15 @@ use synstructure::{BindingInfo, Structure};
 ///   * Mixed enums with unit variants: Enums that contain both unit
 ///     variants (keywords) and data-carrying variants. The derive generates a
 ///     `match` implementation where unit variants are reified as
-///     `TypedValue::Keyword`, and fielded variants may be reified by calling
-///     `.to_typed()` on their inner values when the `derive_fields` attribute
-///     is enabled. Otherwise, those variants return `Err(())`.
+///     `TypedValue::Keyword`, and fielded variants reify by calling
+///     `.to_typed()` on their inner values by default. Variants or types
+///     marked with `skip_derive_fields` return `Err(())` instead.
 ///
 /// * Structs
 ///   * Structs are handled similarly to data-carrying variants in mixed enums.
-///     When `derive_fields` is enabled and the type is not marked as a
-///     bitflags type, `.to_typed()` may be generated for their inner values;
-///     otherwise, they return `Err(())`.
+///     Unless `skip_derive_fields` is set, and as long as the type is not
+///     marked as a bitflags type, `.to_typed()` is generated for their inner
+///     values; otherwise, they return `Err(())`.
 ///
 /// Unit variants are mapped to keywords using their Rust identifier converted
 /// via `to_css_identifier`. Attributes like `#[css(keyword = "...")]` will
@@ -46,18 +46,18 @@ use synstructure::{BindingInfo, Structure};
 ///
 /// Summary of derive attributes recognized by this derive:
 ///
-/// * `#[typed_value(derive_fields)]` on the type enables limited recursion
-///   for structs and data-carrying enum variants.
+/// * `#[typed(skip_derive_fields)]` on the type disables field recursion for
+///   structs and data-carrying enum variants.
 ///
-/// * `#[css(skip)]`, `#[typed_value(skip)]`, or `#[typed_value(todo)]` on a
-///   variant mark it as unsupported and cause the generated arm to return
+/// * `#[css(skip)]`, `#[typed(skip)]`, or `#[typed(todo)]` on a variant mark
+///   it as unsupported and cause the generated arm to return
 ///   `Err(())`.
 ///
 /// * `#[css(skip)]` on a field disables reification for that field.
 ///
-/// * `#[typed_value(skip_if = "...")]` on a field conditionally disables
-///   reification for that field. If the provided function returns `true` for
-///   the field value, the field is ignored.
+/// * `#[typed(skip_if = "...")]` on a field conditionally disables reification
+///   for that field. If the provided function returns `true` for the field
+///   value, the field is ignored.
 ///
 /// * `#[css(keyword = "...")]` on a unit variant overrides the keyword
 ///   string.
@@ -78,14 +78,14 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
     // can append trait bounds only when necessary. In particular, a bound of
     // the form `T: ToTyped` is added only if the generated code actually calls
     // `.to_typed()` on that inner value. This avoids forcing unrelated types
-    // to implement `ToTyped` prematurely, keeping compilation requirements
-    // minimal and isolated to cases where reification recursion is explicitly
-    // performed.
+    // to implement `ToTyped` when field recursion is disabled, keeping
+    // compilation requirements minimal and isolated to cases where reification
+    // recursion is actually performed.
     let mut where_clause = input.generics.where_clause.take();
 
     let css_input_attrs = cg::parse_input_attrs::<CssInputAttrs>(&input);
 
-    let input_attrs = cg::parse_input_attrs::<TypedValueInputAttrs>(&input);
+    let input_attrs = cg::parse_input_attrs::<TypedInputAttrs>(&input);
 
     let body = match &input.data {
         // Handle enums.
@@ -112,7 +112,11 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
                 // selective handling of individual variants.
                 let s = Structure::new(&input);
                 let match_body = s.each_variant(|variant| {
-                    derive_variant_arm(variant, input_attrs.derive_fields, &mut where_clause)
+                    derive_variant_arm(
+                        variant,
+                        input_attrs.skip_derive_fields || input_attrs.todo_derive_fields,
+                        &mut where_clause,
+                    )
                 });
 
                 quote! {
@@ -130,7 +134,11 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
             if css_input_attrs.bitflags.is_none() {
                 let s = Structure::new(&input);
                 let match_body = s.each_variant(|variant| {
-                    derive_variant_arm(variant, input_attrs.derive_fields, &mut where_clause)
+                    derive_variant_arm(
+                        variant,
+                        input_attrs.skip_derive_fields || input_attrs.todo_derive_fields,
+                        &mut where_clause,
+                    )
                 });
 
                 quote! {
@@ -171,10 +179,10 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
 /// * Unit variants are reified into `TypedValue::Keyword`, using the variant’s
 ///   identifier converted with `cg::to_css_identifier` or a custom keyword if
 ///   provided through `#[css(keyword = "...")]`.
-/// * Variants marked with `#[css(skip)]` or `#[typed_value(skip)]` or
-///   `#[typed_value(todo)]` return `Err(())`.
-/// * Variants with fields delegate to `derive_variant_fields_expr()` when
-///   `derive_fields` is enabled; otherwise they return `Err(())`.
+/// * Variants marked with `#[css(skip)]` or `#[typed(skip)]` or
+///   `#[typed(todo)]` return `Err(())`.
+/// * Variants with fields delegate to `derive_variant_fields_expr()` by
+///   default; if `skip_derive_fields` is set, they return `Err(())`.
 ///
 /// Note: `#[css(keyword = "...")]` overrides are now recognized in this
 /// `derive_variant_arm` path, but the support is not yet exercised because we
@@ -184,7 +192,7 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
 /// pure keyword enums and are handled through the all-unit `ToCss` path.
 fn derive_variant_arm(
     variant: &synstructure::VariantInfo,
-    derive_fields: bool,
+    skip_derive_fields: bool,
     where_clause: &mut Option<WhereClause>,
 ) -> TokenStream {
     let bindings = variant.bindings();
@@ -195,8 +203,8 @@ fn derive_variant_arm(
     // Parse any #[css(...)] attributes attached to this variant.
     let css_variant_attrs = cg::parse_variant_attrs_from_ast::<CssVariantAttrs>(&ast);
 
-    // Parse any #[typed_value(...)] attributes attached to this variant.
-    let variant_attrs = cg::parse_variant_attrs_from_ast::<TypedValueVariantAttrs>(&ast);
+    // Parse any #[typed(...)] attributes attached to this variant.
+    let variant_attrs = cg::parse_variant_attrs_from_ast::<TypedVariantAttrs>(&ast);
 
     // If the variant is explicitly marked #[css(skip)], don’t generate
     // anything for it, always return Err(()).
@@ -204,9 +212,8 @@ fn derive_variant_arm(
         return quote! {Err(())};
     }
 
-    // If the variant is explicitly marked #[typed_value(skip)] or
-    // #[typed_value(todo)], don’t generate anything for it, always return
-    // Err(()).
+    // If the variant is explicitly marked #[typed(skip)] or #[typed(todo)],
+    // don’t generate anything for it, always return Err(()).
     if variant_attrs.skip || variant_attrs.todo {
         return quote! {Err(())};
     }
@@ -228,11 +235,11 @@ fn derive_variant_arm(
             ));
             Ok(())
         }
-    } else if derive_fields {
+    } else if !skip_derive_fields {
         derive_variant_fields_expr(bindings, where_clause, css_variant_attrs.comma)
     } else {
         // This variant has one or more fields, but field reification is
-        // disabled. Without `derive_fields`, this variant simply returns
+        // disabled. With `skip_derive_fields`, this variant simply returns
         // `Err(())`.
         quote! {
             Err(())
@@ -255,7 +262,7 @@ fn derive_variant_arm(
 ///   variant’s `#[css(comma)]` setting.
 ///
 /// Fields marked with `#[css(skip)]`, or skipped by
-/// `#[typed_value(skip_if = "...")]`, are ignored.
+/// `#[typed(skip_if = "...")]`, are ignored.
 fn derive_variant_fields_expr(
     bindings: &[BindingInfo],
     where_clause: &mut Option<WhereClause>,
@@ -267,7 +274,7 @@ fn derive_variant_fields_expr(
         .iter()
         .filter_map(|binding| {
             let css_field_attrs = cg::parse_field_attrs::<CssFieldAttrs>(&binding.ast());
-            let field_attrs = cg::parse_field_attrs::<TypedValueFieldAttrs>(&binding.ast());
+            let field_attrs = cg::parse_field_attrs::<TypedFieldAttrs>(&binding.ast());
             if css_field_attrs.skip {
                 return None;
             }
@@ -334,16 +341,15 @@ fn derive_variant_fields_expr(
 /// For non-iterable fields, it generates a direct `ToTyped::to_typed` call
 /// for the field value.
 ///
-/// If `#[typed_value(skip_if = "...")]` is present and the provided function
-/// returns `true` for the field value, the field contributes no reified
-/// output.
+/// If `#[typed(skip_if = "...")]` is present and the provided function returns
+/// `true` for the field value, the field contributes no reified output.
 ///
 /// The appropriate `T: ToTyped` bounds for the field type or iterable element
 /// type(s) are added to the `where` clause.
 fn derive_single_field_expr(
     field: &BindingInfo,
     css_field_attrs: CssFieldAttrs,
-    field_attrs: TypedValueFieldAttrs,
+    field_attrs: TypedFieldAttrs,
     where_clause: &mut Option<WhereClause>,
 ) -> TokenStream {
     let mut expr = if css_field_attrs.iterable {
@@ -453,28 +459,47 @@ pub(crate) fn field_generic_arguments(field: &BindingInfo) -> Vec<syn::Type> {
 }
 
 #[derive(Default, FromDeriveInput)]
-#[darling(attributes(typed_value), default)]
-pub struct TypedValueInputAttrs {
-    /// Enables field-level recursion when deriving `ToTyped`.
+#[darling(attributes(typed), default)]
+pub struct TypedInputAttrs {
+    /// Disables field-level recursion when deriving `ToTyped`.
     ///
-    /// When set, the derive will attempt to call `.to_typed()` on inner
-    /// values (for example, struct fields or data-carrying enum variants)
-    /// instead of always returning `Err(())`.
+    /// When set, the derive will not call `.to_typed()` on inner values (for
+    /// example, struct fields or data-carrying enum variants), and instead
+    /// the generated code will return `Err(())` for those cases.
     ///
-    /// This is intentionally opt-in: blindly enabling recursion would require
-    /// many types to implement `ToTyped` even when they don’t need to. Once
-    /// reification coverage is complete, this attribute may be replaced by
-    /// an opposite flag (see bug 1995184).
-    pub derive_fields: bool,
+    /// This is useful to avoid requiring inner types to implement `ToTyped`
+    /// when reification of those fields is not yet supported.
+    pub skip_derive_fields: bool,
+
+    /// Temporarily disables field-level recursion while marking it as TODO.
+    ///
+    /// When set, the derive will not call `.to_typed()` on inner values and
+    /// instead return `Err(())` for those cases.
+    ///
+    /// Unlike `skip_derive_fields`, this indicates that reification is
+    /// expected to be revisited later, either to implement it or to switch to
+    /// `skip_derive_fields` if it turns out to be unsupported.
+    pub todo_derive_fields: bool,
 }
 
 #[derive(Default, FromVariant)]
-#[darling(attributes(typed_value), default)]
-pub struct TypedValueVariantAttrs {
-    /// Same as the top-level `derive_fields`, but included here because
+#[darling(attributes(typed), default)]
+pub struct TypedVariantAttrs {
+    /// Same as the top-level `skip_derive_fields`, but included here because
     /// struct variants are represented as both a variant and a type
     /// definition.
-    pub derive_fields: bool,
+    ///
+    /// When set, field-level reification for this variant is disabled and the
+    /// generated code returns `Err(())`.
+    pub skip_derive_fields: bool,
+
+    /// Same as the top-level `todo_derive_fields`, but included here because
+    /// struct variants are represented as both a variant and a type
+    /// definition.
+    ///
+    /// When set, field-level reification for this variant is disabled and the
+    /// generated code returns `Err(())`.
+    pub todo_derive_fields: bool,
 
     /// If present, this variant is excluded from generated reification code.
     /// `to_typed()` will always return `Err(())` for it.
@@ -487,8 +512,8 @@ pub struct TypedValueVariantAttrs {
 }
 
 #[derive(Default, FromField)]
-#[darling(attributes(typed_value), default)]
-pub struct TypedValueFieldAttrs {
+#[darling(attributes(typed), default)]
+pub struct TypedFieldAttrs {
     /// Conditionally skips reification of this field.
     ///
     /// The provided function is called with the field value. If it returns

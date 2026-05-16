@@ -240,25 +240,40 @@ newtab-error-fallback-refresh-link = మళ్ళీ ప్రయత్నిం
 newtab-custom-shortcuts-subtitle = మీరు భద్రపరచుకున్న లేదా చూసిన సైట్లు
 # Variables
 #   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } వరుస
+           *[other] { $num } వరుసలు
+        }
+# Variables
+#   $num (number) - Number of rows to display
 newtab-custom-row-selector =
     { $num ->
         [one] { $num } వరుస
        *[other] { $num } వరుసలు
     }
+newtab-custom-stories-personalized-toggle =
+    .label = కథనాలు
 newtab-custom-pocket-sponsored = ప్రాయోజిక కథనాలు
 newtab-custom-recent-title = ఇటీవలి కార్యకలాపం
 newtab-custom-weather-toggle =
     .label = వాతావరణం
     .description = నేటి వాతావరణ అంచనా
+newtab-custom-widget-lists-toggle =
+    .label = జాబితాలు
 newtab-custom-close-button = మూసివేయి
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = నిండు రంగులు
 newtab-wallpaper-blue = నీలం
 newtab-wallpaper-light-blue = లేత నీలం
 newtab-wallpaper-light-green = లేత ఆకుపచ్చ
 newtab-wallpaper-green = పచ్చ
+newtab-wallpaper-yellow = పసుపు
 newtab-wallpaper-red = ఎరుపు
 newtab-wallpaper-dark-blue = ముదురు నీలం
 newtab-wallpaper-dark-green = ముదురాకుపచ్చ
@@ -275,6 +290,8 @@ newtab-wallpaper-feature-highlight-button = అర్థమైంది
 newtab-weather-menu-temperature-units = ఉష్ణోగ్రత యూనిట్లు
 newtab-weather-menu-temperature-option-celsius = సెల్సియస్
 newtab-weather-menu-learn-more = ఇంకా తెలుసుకోండి
+newtab-weather-opt-in-yes =
+    .label = అవును
 
 ## Topic Labels
 
@@ -299,3 +316,23 @@ newtab-topic-selection-cancel-button = రద్దుచేయి
 newtab-topic-selection-button-maybe-later = బహుశా తర్వాత
 newtab-topic-selection-button-update-interests = మీ ఆసక్తులను తాజాకరించండి
 newtab-topic-selection-button-pick-interests = మీ ఆసక్తులను ఎంచుకోండి
+
+## Strings for reporting issues with ads and content
+
+newtab-report-content-requires-payment-subscription-learn-more = ఇంకా తెలుసుకోండి
+newtab-report-cancel = రద్దుచేయి
+
+## Strings for task / to-do list productivity widget
+
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = కొత్తది
+newtab-widget-lists-label-beta =
+    .label = బీటా
+newtab-widget-lists-menu-learn-more = ఇంకా తెలుసుకోండి
+newtab-widget-lists-input-menu-delete = తొలగించు
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-menu-learn-more = ఇంకా తెలుసుకోండి

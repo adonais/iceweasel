@@ -36,8 +36,6 @@ class CommandEvent : public Event {
 
   Element* GetSource();
 
-  static bool IsCallerChromeOrCommandForEnabled(JSContext*, JSObject*);
-
  protected:
   ~CommandEvent() = default;
 

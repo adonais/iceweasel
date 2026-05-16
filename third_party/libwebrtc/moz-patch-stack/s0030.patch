@@ -11,7 +11,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/7330681cf4de6d8dd
  2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index ae9951e6f9..c69ec1a674 100644
+index 2f895ec2d8..2171f7419d 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -240,6 +240,9 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
@@ -25,10 +25,10 @@ index ae9951e6f9..c69ec1a674 100644
  
        // See LntfConfig for description.
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 054b9c1126..30e97de170 100644
+index 2a86c55e21..bccc316619 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -1366,7 +1366,7 @@ void RtpVideoStreamReceiver2::StartReceive() {
+@@ -1371,7 +1371,7 @@ void RtpVideoStreamReceiver2::StartReceive() {
      // Change REMB candidate egibility.
      packet_router_->RemoveReceiveRtpModule(rtp_rtcp_.get());
      packet_router_->AddReceiveRtpModule(rtp_rtcp_.get(),

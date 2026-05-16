@@ -19,7 +19,6 @@
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSRendering.h"
 #include "nsDisplayList.h"
-#include "nsGkAtoms.h"
 #include "nsIFrameInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleConsts.h"
@@ -249,8 +248,8 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     BuildDisplayListForChild(aBuilder, legend, set);
   }
 
-  if (GetPrevInFlow()) {
-    DisplayPushedAbsoluteFrames(aBuilder, aLists);
+  if (GetPrevInFlow() || GetNextInFlow()) {
+    DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, aLists);
   }
 
   // Put the inner frame's display items on the master list. Note that this

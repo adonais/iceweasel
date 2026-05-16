@@ -583,8 +583,8 @@ class TabsUseCases(
             val url = alternativeUrl ?: tab.content.url
             val newTab = createTab(url)
 
-            store.dispatch(TabListAction.RemoveTabAction(tabId, false))
             store.dispatch(TabListAction.AddTabAction(newTab, true))
+            store.dispatch(TabListAction.RemoveTabAction(tabId, false))
 
             return newTab.id
         }

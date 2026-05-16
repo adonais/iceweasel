@@ -5,12 +5,13 @@
 #ifndef mozilla_dom_VideoPlaybackQuality_h_
 #define mozilla_dom_VideoPlaybackQuality_h_
 
-#include "mozilla/dom/HTMLMediaElement.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla::dom {
+
+class HTMLMediaElement;
 
 class VideoPlaybackQuality final : public nsWrapperCache {
  public:
@@ -33,7 +34,7 @@ class VideoPlaybackQuality final : public nsWrapperCache {
   uint32_t DroppedVideoFrames() const { return mDroppedFrames; }
 
  private:
-  ~VideoPlaybackQuality() = default;
+  ~VideoPlaybackQuality();
 
   RefPtr<HTMLMediaElement> mElement;
   DOMHighResTimeStamp mCreationTime;

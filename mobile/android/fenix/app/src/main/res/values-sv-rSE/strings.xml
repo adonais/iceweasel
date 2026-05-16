@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Sök flikar</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Ange söktermer</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Dina öppna flikar visas här.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Dina privata flikar kommer att visas här.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Privat surfning</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Välj samling</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Avsluta flervalsläge</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Spara valda flikar i samlingen</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Hämta flikar från vilken enhet som helst</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Stopp</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Tillägg</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Du har tillägg installerade, men inte aktiverade</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Hantera tillägg</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Prova ett rekommenderat tillägg</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Kontoinformation</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Hjälp</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Vad är nytt</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Inställningar</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Bibliotek</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Webbplats för datorer</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Öppna i vanlig flik</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Lägg till på startsidan</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">DRIVS AV %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Tillhandahålls av %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Läsvy</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Öppna i app</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Anpassa läsvyn</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Anpassa läsvyn</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Lägg till</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Redigera</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Anpassa startsidan</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Logga in</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Stäng meny</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigering</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Stäng menybladet för tillägg</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Stäng menyblad för spara</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Stäng menyblad för verktyg</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Stäng menyblad för anpassad flik</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -368,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Startsidan</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Översätt sida</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -391,6 +362,58 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Ignorera meddelande</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Sidsammanfattningar</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">AI-kontroller</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Du har alltid ett val i %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Det inkluderar huruvida man ska använda funktioner som förbättrats med AI. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Det inkluderar om man ska använda funktioner förbättrade med AI.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Läs mer</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Blockera AI-förbättringar</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Blockering innebär att du inte ser nya eller aktuella AI-förbättringar i %s eller popup-fönster om dem.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Se vad som ingår och inte ingår</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Nya och aktuella AI-förbättringar blockeras som standard. Avblockera specifika funktioner nedan.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">AI-drivna funktioner</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Översättningar</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Alla översättningar förblir privata på din enhet.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Fler översättningsinställningar</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Fler inställningar för sidsammanfattning</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Röstsökning</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Ljud konverteras till text av Googles taltjänster.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Blockera AI-förbättringar?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Du kommer inte att se nya eller aktuella AI-förbättringar i %1$s, eller popup-fönster om dem. Efteråt kan du avblockera allt du vill fortsätta använda.\n\nBlockering påverkar även tillägg som använder AI som tillhandahålls av %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Vad kommer att blockeras:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Avbryt</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Blockera</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -408,7 +431,11 @@
   <string name="search_scan_button_2">Skanna QR-kod</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Inställningar för sökmotor</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Fyll i länk från urklipp</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Tillåt</string>
@@ -581,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Fortsätt</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Hjälp oss att utveckla Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Hjälp oss att utveckla Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Dela med dig av hur du upptäckte Firefox och att du använder det till Mozillas marknadsföringspartners. Denna information säljs aldrig.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -685,9 +712,27 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Dela med dig av hur du upptäckte Firefox och att du använder det med Mozillas marknadsföringspartners. Denna data säljs aldrig. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Dela med dig av hur du upptäckte Firefox och att du använder det med Mozillas marknadsföringspartners. Denna data säljs aldrig. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Dela med dig av hur du upptäckte Firefox och att du använder det till Mozillas marknadsföringspartners. Denna information säljs aldrig.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Du kan hjälpa oss att nå fler människor genom att tillåta Mozilla att informera de kanaler där vi marknadsför Firefox att du använder Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Du kan hjälpa oss att nå fler människor genom att tillåta Mozilla att informera plattformen du kom från att du använder Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Hjälp oss att nå fler människor genom att tillåta Mozilla att informera plattformen du kom från att du använder Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Hur vi använder informationen</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Hjälp Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Nej tack</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Aviseringar hjälper dig att vara säkrare med Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -1098,6 +1143,8 @@
   <string name="customize_wallpapers">Bakgrundsbilder</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Sponsrade genvägar</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">VM</string>
   <!--
     Wallpapers
 
@@ -1414,9 +1461,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Bläddra för att dölja verktygsfältet</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Svep verktygsfältet vertikalt för att se öppna flikar</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Svep verktygsfältet uppåt för att öppna flikar</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Svep adressfältet i sidled för att växla flikar</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Skaka för att sammanfatta</string>
   <!--
     Library
 
@@ -1579,6 +1630,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Öppna privata flikar: %1$s. Peka här för att växla mellan flikar.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d flikgrupp öppen. Peka här för att växla mellan flikar.</item>
+    <item quantity="other">%1$d flikgrupper öppna. Peka här för att växla mellan flikar.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1600,18 +1659,10 @@
   <string name="add_tab">Lägg till flik</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Lägg till privat flik</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privat</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Synkronisera</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Sök i dina flikar</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Dela alla flikar</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Nyligen stängda flikar</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Nyligen stängda</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Kontoinställningar</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1626,12 +1677,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Stäng flikar</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Avbryt</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Bokmärk</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Bokmärk markerade flikar</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Stäng</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Stäng valda flikar</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1680,6 +1727,10 @@
   <string name="pwa_site_controls_title_private">%1$s (Privat läge)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Öppna fliksökning</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Testa flikgrupper för mindre skrollning, mer görande</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Välj flikar för att skapa en grupp. De sparas här, redo när du är det.</string>
   <!--
     Tab Group
 
@@ -1689,6 +1740,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Redigera grupp</string>
   <string name="create_tab_group_save_button">Spara</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Ny grupp, komprimera drahandtaget</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Stäng redigera flikgrupp</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupp</string>
@@ -1704,6 +1757,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Lägg till i</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Lägg till i en flikgrupp, komprimera drahandtaget</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Lägg till i ny flikgrupp</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Stäng lägg till i flikgrupp</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Ny flikgrupp</string>
@@ -1715,6 +1772,33 @@
     <item quantity="one">%1$d flik</item>
     <item quantity="other">%1$d flikar</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Lägg till i flikgrupp %1$s, %2$d flik, färg %3$s</item>
+    <item quantity="other">Lägg till i flikgrupp %1$s, %2$d flikar, färg %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Dela flikgrupp %1$s med %2$d flik.</item>
+    <item quantity="other">Dela flikgrupp %1$s med %2$d flikar.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Visa flikgrupp, komprimera drahandtaget</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Flikgrupp %1$s med %2$d flik, färg %3$s</item>
+    <item quantity="other">Flikgrupp %1$s med %2$d flikar, färg %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Ta bort flikgrupp?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1723,6 +1807,38 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Ta bort grupp</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Avbryt</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Stäng flik och ta bort grupp?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Detta tar bort gruppen permanent.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Ta bort grupp</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Avbryt</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Gul</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Orange</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Röd</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Rosa</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Lila</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Violett</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Blå</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cyan</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Grön</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Grå</string>
   <!--
     History
 
@@ -1858,6 +1974,8 @@
   <string name="download_rename_error_exists_error">En fil med namnet \"%s\" finns redan på den här platsen</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Filnamn kan inte använda ”/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Namnet du angav ändrar bara versaler eller gemener. Försök med ett annat filnamn.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Kan inte byta namn på fil</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2107,6 +2225,12 @@
   <string name="bookmark_sort_menu_a_to_z">Sortera från A till Ö</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Sortera från Ö till A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Importera från fil</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Det gick inte att importera bokmärken. Försök igen.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Importerade bokmärken</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2165,8 +2289,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Stäng mapp: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Stäng bokmärken</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Importera från fil</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Inga bokmärken än</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Håll alla dina favoritbokmärken samlade</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Bokmärken i mappen: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2382,8 +2510,6 @@
   <string name="toast_copy_link_to_clipboard">Kopierad till urklipp</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Logga in till Sync</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Logga in</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Skicka till alla enheter</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2540,8 +2666,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Ta bort surfdata vid avslut</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Tar automatiskt bort surfdata när du väljer \"Avsluta\" från huvudmenyn</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Avsluta</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Tidsintervall att radera</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2633,6 +2757,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Du är skyddad</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Hjälp till att fånga spårare</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standard</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2643,10 +2769,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Strikt</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Starkare spårningsskydd och snabbare prestanda, men vissa webbplatser kanske inte fungerar korrekt.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Tillåt %1$s att automatiskt tillämpa undantag som krävs för att undvika större webbplatsfel.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Tillämpa även undantag automatiskt som bara krävs för att åtgärda mindre problem och göra bekvämlighetsfunktioner tillgängliga.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Åtgärda större webbplatsproblem (rekommenderas)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3034,6 +3156,92 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">E-postalias är inte tillgängliga just nu. Försök igen om några minuter.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Inbyggt VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">%s:s inbyggda VPN</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Surfa med extra skydd genom att dölja din plats, även på offentligt Wi-Fi.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Läs mer</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Datagräns per månad</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB av %2$.1f GB kvar</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Återställs till %1$.0f GB den första i varje månad.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Plats</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Rekommenderad</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Väljer den snabbaste VPN-platsen åt dig.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">På</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Av</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Ansluter…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Pausad</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Fel</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Prova den</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Öppna VPN-inställningar</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Gränsen på %1$d GB har nåtts</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Du har använt alla %1$d GB av din VPN-data. Åtkomsten återställs nästa månad.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label">VPN på</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description">VPN är aktivt.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Kom igång</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Testa %s:s inbyggda VPN</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s genom att dölja din plats, även på offentligt Wi-Fi. Få %2$d GB gratis varje månad.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Surfa med extra skydd</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Inte nu</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Det gick inte att ansluta till VPN. Försök igen om några minuter.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">%1$d GB VPN-data använd. Åtkomst återställs nästa månad.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3268,26 +3476,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Verifierad av: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Ta bort</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Redigera</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Är du säker på att du vill ta bort det här lösenordet?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Ta bort</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Avbryt</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Lösenordsalternativ</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Det redigerbara textfältet för webbplatsadressen.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Det redigerbara textfältet för användarnamnet.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Det redigerbara textfältet för lösenordet.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Spara ändringar.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Redigera lösenord</string>
   <!-- The page title for adding new password. -->
@@ -3347,6 +3541,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Visa alla genvägar</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Lägg till genväg</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Ange en webbplatsadress</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Övre gräns för genvägar nådd</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3460,16 +3656,6 @@
   <string name="experiments_snackbar">Aktivera telemetri för att skicka data.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Gå till inställningar</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Vi tilldelar varje produkts recensioner ett <b>bokstavsbetyg</b> från A till F.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Det <b>justerade betyget</b> baseras endast på recensioner som vi anser vara pålitliga.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Höjdpunkter</b> är från %s recensioner under de senaste 80 dagarna som vi tror är pålitliga.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3595,6 +3781,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Översätt aldrig dessa webbplatser</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Ladda ner språk</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Översättningar</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Alla översättningar förblir privata på din enhet.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Läs mer</string>
   <!--
     Automatic translation preference screen
 
@@ -4281,6 +4473,201 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Du kan läsa mer %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">här</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title">Följ ditt lag</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Nordamerika</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Afrika</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Asien</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Europa</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Oceanien</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Sydamerika</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Storbritannien</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Skottland</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">LIVE</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Världsmästare 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Tvåa</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Tredje plats</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32">Sextondelsfinal</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16">Åttondelsfinal</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final">Kvartsfinaler</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final">Semifinaler</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">Final</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">Bronsfinal</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Matchinfo är inte tillgänglig just nu. Testa att uppdatera om några minuter.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">Anslutningen avbröts — liveuppdateringar pausades.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Uppdatera</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Grupp A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Grupp B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Grupp C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Grupp D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Grupp E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Grupp F</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Grupp G</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Grupp H</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Grupp I</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Grupp J</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Grupp K</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Grupp L</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Se resultat</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Visa matchdetaljer</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches">Relaterade matcher</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Kommande</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Heltid)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Heltid</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Håll koll på världscupen</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Få liveuppdateringar om matcher och mycket mer.</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Ändra lag</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Få anpassade bakgrundsbilder</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">Ta bort</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow">Vill du fortfarande följa turneringen?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">Välj ett annat lag för att hänga med i VM.</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team">Följ ett annat lag</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Nedräkning till VM</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Visa schema</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Hoppa över</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Halvtid</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Förlängning</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Straffar</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">D</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">T</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Stäng lagets urvalslista</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">Stäng</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Fler alternativ</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">Återstående tid. Dagar: %1$d. Timmar: %2$d. Minuter: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Gå till VM-sajten</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Kommande: %1$s mot %2$s, %3$s kl. %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, livematch</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, live</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, sida %2$d av %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">VM-slutresultat, sida %1$d av %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Ta bort VM från hem</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Följer: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Återkom för matchinformation när turneringen närmar sig.</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Första halvlek</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Andra halvlek</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Du verkar vara offline.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Kontrollera din internetanslutning och försök igen.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Gruppspel</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

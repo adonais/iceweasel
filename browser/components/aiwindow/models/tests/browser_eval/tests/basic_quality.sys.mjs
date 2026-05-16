@@ -14,6 +14,8 @@ import {
   basicQualityEvalConfig,
 } from "chrome://mochitests/content/browser/browser/components/aiwindow/models/tests/browser_eval/prompts/basic_quality.sys.mjs";
 
+import { MLTestUtils } from "resource://testing-common/MLTestUtils.sys.mjs";
+
 const TEST_CASES = [
   ["Hello there, how are you?", "about:newtab", "about:newtab"],
   [
@@ -30,14 +32,7 @@ const TEST_CASES = [
 
 export async function runChatEvalForModel(
   model,
-  {
-    Assert,
-    SpecialPowers,
-    setupEvaluation,
-    collectChatResponse,
-    renderPrompt,
-    reportEvalResult,
-  }
+  { Assert, SpecialPowers, setupEvaluation, collectChatResponse, renderPrompt }
 ) {
   const token = Services.env.get("MOZ_FXA_BEARER_TOKEN");
   Assert.ok(
@@ -102,7 +97,7 @@ export async function runChatEvalForModel(
       current_url: currentUrl,
     });
 
-    reportEvalResult({
+    MLTestUtils.reportEvalData({
       messages,
       response_format: basicQualityEvalResponseFormat,
       eval_config: basicQualityEvalConfig,

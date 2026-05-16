@@ -79,7 +79,7 @@ function run_test() {
   gMockPrompter.passwordToTry = "*******";
   throws(
     () => sdr.encryptString("poke2"),
-    /NS_ERROR_FAILURE/,
+    /NS_ERROR_NOT_AVAILABLE/,
     "logging in with the wrong password should fail"
   );
   equal(gMockPrompter.numPrompts, 2, "should have prompted for password twice");

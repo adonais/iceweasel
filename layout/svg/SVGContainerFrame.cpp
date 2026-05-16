@@ -397,7 +397,7 @@ void SVGDisplayContainerFrame::NotifySVGChanged(ChangeFlags aFlags) {
 }
 
 SVGBBox SVGDisplayContainerFrame::GetBBoxContribution(
-    const Matrix& aToBBoxUserspace, uint32_t aFlags) {
+    const Matrix& aToBBoxUserspace, SVGBBoxFlags aFlags) {
   SVGBBox bboxUnion;
 
   for (nsIFrame* kid : mFrames) {

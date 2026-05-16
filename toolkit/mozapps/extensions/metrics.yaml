@@ -639,10 +639,12 @@ blocklist:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820155
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1861296
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912167
+      - https://bugzilla.mozilla.org/2018311/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1662857#c11
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1861296#c5
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912167#c4
+      - https://bugzilla.mozilla.org/2018311/
     data_sensitivity:
       - technical
     metadata:
@@ -652,17 +654,15 @@ blocklist:
       - addons-dev-internal@mozilla.com
       - rwu@mozilla.com
     expires: never
-    telemetry_mirror: BLOCKLIST_MLBF_SOURCE
-    no_lint:
-      - GIFFT_NON_PING_LIFETIME
 
   mlbf_softblocks_source:
     <<: *mlbf_source
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1917859
+      - https://bugzilla.mozilla.org/2018311/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1917859#c2
-    telemetry_mirror: BLOCKLIST_MLBF_SOFTBLOCKS_SOURCE
+      - https://bugzilla.mozilla.org/2018311/
 
   mlbf_generation_time: &mlbf_generation_time
     type: datetime

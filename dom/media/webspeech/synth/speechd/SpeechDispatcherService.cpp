@@ -331,13 +331,13 @@ void SpeechDispatcherService::Setup() {
     return;
   }
 
-  for (uint32_t i = 0; i < std::size(kSpeechDispatcherSymbols); i++) {
-    *kSpeechDispatcherSymbols[i].function = PR_FindFunctionSymbol(
-        speechdLib, kSpeechDispatcherSymbols[i].functionName);
+  for (auto speechDispatcherSymbol : kSpeechDispatcherSymbols) {
+    *speechDispatcherSymbol.function =
+        PR_FindFunctionSymbol(speechdLib, speechDispatcherSymbol.functionName);
 
-    if (!*kSpeechDispatcherSymbols[i].function) {
+    if (!*speechDispatcherSymbol.function) {
       NS_WARNING(nsPrintfCString("Failed to find speechd symbol for'%s'",
-                                 kSpeechDispatcherSymbols[i].functionName)
+                                 speechDispatcherSymbol.functionName)
                      .get());
       NotifyError(u"missing-symbol"_ns);
       return;

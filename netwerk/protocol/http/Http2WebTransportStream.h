@@ -71,7 +71,7 @@ class Http2WebTransportStream final : public WebTransportStreamBase {
   void TakeOutputCapsule(mozilla::Queue<UniquePtr<CapsuleEncoder>>& aOutput);
 
   void OnStopSending();
-  void OnReset(uint64_t aSize);
+  nsresult OnReset(uint64_t aSize);
   void OnStreamDataSent(size_t aCount);
 
  private:

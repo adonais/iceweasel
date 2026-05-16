@@ -219,13 +219,6 @@ bool nsScriptSecurityManager::SecurityCompareURIs(nsIURI* aSourceURI,
                                 sStrictFileOriginPolicy);
 }
 
-// SecurityHashURI is consistent with SecurityCompareURIs because
-// NS_SecurityHashURI is consistent with NS_SecurityCompareURIs.  See
-// nsNetUtil.h.
-uint32_t nsScriptSecurityManager::SecurityHashURI(nsIURI* aURI) {
-  return NS_SecurityHashURI(aURI);
-}
-
 bool nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(nsIURI* aUriA,
                                                           nsIURI* aUriB) {
   if (!aUriA || !net::SchemeIsHttpOrHttps(aUriA) || !aUriB ||
@@ -1072,7 +1065,8 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
         }
       } else if (targetScheme.EqualsLiteral("moz-page-thumb") ||
                  targetScheme.EqualsLiteral("page-icon") ||
-                 targetScheme.EqualsLiteral("moz-newtab-wallpaper")) {
+                 targetScheme.EqualsLiteral("moz-newtab-wallpaper") ||
+                 targetScheme.EqualsLiteral("moz-newtab-remote-renderer")) {
         if (XRE_IsParentProcess()) {
           return NS_OK;
         }
@@ -1232,8 +1226,7 @@ nsScriptSecurityManager::CheckLoadURIStrWithPrincipal(
   // available.
   uint32_t flags[] = {nsIURIFixup::FIXUP_FLAG_NONE,
                       nsIURIFixup::FIXUP_FLAG_FIX_SCHEME_TYPOS};
-  for (uint32_t i = 0; i < std::size(flags); ++i) {
-    uint32_t fixupFlags = flags[i];
+  for (unsigned int fixupFlags : flags) {
     if (aPrincipal->OriginAttributesRef().IsPrivateBrowsing()) {
       fixupFlags |= nsIURIFixup::FIXUP_FLAG_PRIVATE_CONTEXT;
     }

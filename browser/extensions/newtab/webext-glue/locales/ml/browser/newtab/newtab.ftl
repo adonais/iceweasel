@@ -280,9 +280,21 @@ newtab-error-fallback-refresh-link = വീണ്ടും ശ്രമിക്
 
 newtab-custom-shortcuts-title = കുറുക്കുവഴികൾ
 newtab-custom-shortcuts-subtitle = താങ്ങൾ കരുതിവയ്ക്കുന്ന അല്ലെങ്കിൽ സന്ദൎശിക്കുന്ന വെബ്സ്ഥാനങ്ങൾ
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = കുറുക്കുവഴികൾ
     .description = താങ്ങൾ കരുതിവയ്ക്കുന്ന അല്ലെങ്കിൽ സന്ദൎശിക്കുന്ന വെബ്സ്ഥാനങ്ങൾ
+newtab-custom-shortcuts-nova =
+    .label = കുറുക്കുവഴികൾ
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } വരികൾ
+           *[other] { $num } വരികൾ
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -309,14 +321,18 @@ newtab-custom-close-button = അടയ്ക്കുക
 
 newtab-wallpaper-title = ചുവർകടലാസുകൾ
 newtab-wallpaper-reset = തനിമട്ടിലാക്കുക
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = ചിത്രം കയറ്റുവയ്ക്കുക
 newtab-wallpaper-custom-color = ഒരു നിറം തെരഞ്ഞെടുക്കുക
+newtab-wallpaper-toggle-title =
+    .label = ചുവർകടലാസുകൾ
 newtab-wallpaper-light-red-panda = ചുമന്ന കരടിപ്പൂച്ച
 newtab-wallpaper-light-mountain = വെളുത്ത മല
 newtab-wallpaper-light-sky = പാടലന്നിറത്തിന്റെയും ഊതന്നിറത്തിന്റെയും മുകിലുകൾ നിറഞ്ഞവ്വിണ്ണു്
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = കടും നിറങ്ങൾ
 newtab-wallpaper-blue = നീല
 newtab-wallpaper-light-blue = ഇളം നീല
@@ -485,7 +501,6 @@ newtab-widget-lists-label-new =
 newtab-widget-lists-label-beta =
     .label = ബീറ്റ
 newtab-widget-task-list-menu-copy = പകൎത്തുക
-newtab-widget-lists-menu-hide = പട്ടികകളെല്ലാം മറയ്ക്കുക
 newtab-widget-lists-menu-learn-more = കൂടുതല്‍ അറിയുക
 newtab-widget-lists-input-add-an-item =
     .placeholder = ഇനം ചേർക്കുക

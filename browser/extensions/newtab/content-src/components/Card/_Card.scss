@@ -149,7 +149,8 @@
 
   .card-title {
     font-size: inherit;
-    font-weight: var(--font-weight-heading);
+    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+    font-weight: var(--font-weight-heading, var(--heading-font-weight));
     line-height: $card-text-line-height;
     margin: 0 0 var(--space-xxsmall);
     word-wrap: break-word;

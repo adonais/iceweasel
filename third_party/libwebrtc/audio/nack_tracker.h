@@ -78,11 +78,11 @@ class NackTracker {
   void UpdateLastReceivedPacket(uint16_t sequence_number, uint32_t timestamp);
 
   // Get a list of "missing" packets which have expected time-to-play larger
-  // than the given round-trip-time (in milliseconds).
+  // than the given round-trip-time.
   // Note: Late packets are not included.
   // Calling this method multiple times may give different results, since the
   // internal nack list may get flushed if never_nack_multiple_times_ is true.
-  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms);
+  std::vector<uint16_t> GetNackList(std::optional<TimeDelta> round_trip_time);
 
   // Reset to default values. The NACK list is cleared.
   // `max_nack_list_size_` preserves its value.
@@ -115,7 +115,7 @@ class NackTracker {
     // If set, the maximum nack delay will be fixed and compared to the latest
     // received packet instead of using the time to play estimate and the loss
     // rate.
-    std::optional<TimeDelta> fixed_delay;
+    std::optional<TimeDelta> fixed_delay = TimeDelta::Seconds(1);
   };
 
   struct NackElement {

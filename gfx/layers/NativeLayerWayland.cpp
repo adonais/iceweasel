@@ -103,28 +103,39 @@ already_AddRefed<NativeLayerRootWayland> NativeLayerRootWayland::Create(
   return MakeAndAddRef<NativeLayerRootWayland>(std::move(aWaylandSurface));
 }
 
+void NativeLayerRootWayland::SetDRMFormat(DRMFormat* aFormat) {
+  if (aFormat) {
+    aFormat->AddRef();
+  }
+  if (DRMFormat* oldFormat = mDRMFormat.exchange(aFormat)) {
+    oldFormat->Release();
+  }
+}
+
 void NativeLayerRootWayland::Init() {
   mTmpBuffer = widget::WaylandBufferSHM::Create(LayoutDeviceIntSize(1, 1));
 
   // Get DRM format for surfaces created by GBM.
   if (!gfx::gfxVars::UseDMABufSurfaceExport()) {
     RefPtr<DMABufFormats> formats = WaylandDisplayGet()->GetDMABufFormats();
+    DRMFormat* format = nullptr;
     if (formats) {
-      if (!(mDRMFormat = formats->GetFormat(GBM_FORMAT_ARGB8888,
-                                            /* aScanoutFormat */ true))) {
+      if (!(format = formats->GetFormat(GBM_FORMAT_ARGB8888,
+                                        /* aScanoutFormat */ true))) {
         LOGVERBOSE(
             "NativeLayerRootWayland::Init() missing scanout format, use global "
             "one");
-        mDRMFormat = formats->GetFormat(GBM_FORMAT_ARGB8888,
-                                        /* aScanoutFormat */ false);
+        format = formats->GetFormat(GBM_FORMAT_ARGB8888,
+                                    /* aScanoutFormat */ false);
       }
     }
-    if (!mDRMFormat) {
+    if (!format) {
       LOGVERBOSE(
           "NativeLayerRootWayland::Init() fallback to format without "
           "modifiers");
-      mDRMFormat = new DRMFormat(GBM_FORMAT_ARGB8888);
+      format = new DRMFormat(GBM_FORMAT_ARGB8888);
     }
+    SetDRMFormat(format);
   }
 
   // Unmap all layers if nsWindow is unmapped
@@ -181,14 +192,14 @@ void NativeLayerRootWayland::Init() {
                                                   /* aScanoutFormat */ true)) {
         LOG("NativeLayerRootWayland DMABuf format refresh: we have scanout "
             "format.");
-        mDRMFormat = format;
+        SetDRMFormat(format);
         return;
       }
       if (DRMFormat* format = aFormats->GetFormat(GBM_FORMAT_ARGB8888,
                                                   /* aScanoutFormat */ false)) {
         LOG("NativeLayerRootWayland DMABuf format refresh: missing scanout "
             "format, use generic one.");
-        mDRMFormat = format;
+        SetDRMFormat(format);
         return;
       }
       LOG("NativeLayerRootWayland DMABuf format refresh: missing DRM "
@@ -240,6 +251,7 @@ NativeLayerRootWayland::~NativeLayerRootWayland() {
   MOZ_DIAGNOSTIC_ASSERT(
       !mRootSurface,
       "NativeLayerRootWayland destroyed without Shutdown() call!");
+  SetDRMFormat(nullptr);
 }
 
 #ifdef MOZ_LOGGING
@@ -948,7 +960,18 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
       /* aEmulateFrameCallback */ true);
 
   if (mIsHDR) {
-    mSurface->EnableColorManagementLocked(surfaceLock);
+    gfx::YUVColorSpace yuvColorSpace = gfx::YUVColorSpace::BT709;
+    gfx::TransferFunction transferFunction = gfx::TransferFunction::BT709;
+    if (auto* external = AsNativeLayerWaylandExternal()) {
+      if (RefPtr surface = external->GetSurface()) {
+        if (auto* surfaceYUV = surface->GetAsDMABufSurfaceYUV()) {
+          yuvColorSpace = surfaceYUV->GetYUVColorSpace();
+          transferFunction = surfaceYUV->GetTransferFunction();
+        }
+      }
+    }
+    mSurface->EnableColorManagementLocked(surfaceLock, yuvColorSpace,
+                                          transferFunction);
   }
 
   if (auto* external = AsNativeLayerWaylandExternal()) {

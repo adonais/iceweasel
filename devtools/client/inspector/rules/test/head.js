@@ -373,6 +373,14 @@ var addProperty = async function (
   );
   await onMutations;
 
+  const prop = textProps.at(-1);
+  is(prop.name, name, "The new/last property name has the expected name");
+  is(
+    prop.value + (prop.priority ? " !" + prop.priority : ""),
+    value,
+    "The new/last property value has the expected value"
+  );
+
   if (blurNewProperty) {
     view.styleDocument.activeElement.blur();
   }
@@ -1607,15 +1615,21 @@ function checkRuleViewContent(view, expectedElements) {
 function _getRuleViewElements(view) {
   const elementsInView = [];
   for (const el of view.element.children) {
-    if (el.classList.contains("registered-properties")) {
+    if (el.id == "registered-properties-container") {
       // We don't check @property content for now
       continue;
     }
-    // Gather all the children of expandable containers (e.g. Pseudo-element, @keyframe, …)
-    if (el.classList.contains("ruleview-expandable-container")) {
-      elementsInView.push(...el.children);
-    } else {
+
+    // We should either have headers or containers as children
+    if (el.classList.contains("ruleview-header")) {
+      // Only ignore "This element" hidden header (and not collapsed containers)
+      if (el.hidden) {
+        continue;
+      }
       elementsInView.push(el);
+    } else {
+      // Gather all the children of containers (e.g. Pseudo-element, @keyframe, …)
+      elementsInView.push(...el.children);
     }
   }
   return elementsInView;
@@ -1659,4 +1673,75 @@ function assertRuleViewHeaders(view, expected) {
   }
 
   return headers;
+}
+
+/**
+ * Expand the pseudo element container.
+ * This assumes it was collapsed and allows interacting with pseudo element rules.
+ *
+ * @param {RuleView} view
+ */
+function expandPseudoElementContainer(view) {
+  info("Expand the pseudo element section");
+  const pseudoElementToggle = view.styleDocument.querySelector(
+    `[aria-controls="pseudo-elements-container"]`
+  );
+  // sanity check
+  is(
+    pseudoElementToggle.ariaExpanded,
+    "false",
+    "pseudo element section is collapsed at first"
+  );
+  pseudoElementToggle.click();
+  is(
+    pseudoElementToggle.ariaExpanded,
+    "true",
+    "pseudo element section is now expanded"
+  );
+}
+
+/**
+ * Edit a given rule with a new selector.
+ *
+ * @param {RuleView} view
+ * @param {RuleEditor} ruleEditor
+ * @param {string} newSelector
+ */
+async function editSelectorForRuleEditor(view, ruleEditor, newSelector) {
+  info(
+    `Editing rule selector from "${ruleEditor.selectorText.textContent}" to "${newSelector}"`
+  );
+  let editor = null;
+  const { activeElement } = ruleEditor.selectorText.ownerDocument;
+  // The selector input may already be focused if we just created a new rule
+  if (inplaceEditor(ruleEditor.selectorText)?.input == activeElement) {
+    editor = inplaceEditor(ruleEditor.selectorText);
+  } else {
+    info("Focusing an existing selector name in the rule-view");
+    editor = await focusEditableField(view, ruleEditor.selectorText);
+    is(
+      inplaceEditor(ruleEditor.selectorText),
+      editor,
+      "The selector editor got focused"
+    );
+  }
+
+  info("Entering a new selector name and committing");
+  editor.input.value = newSelector;
+
+  info("Entering the commit key");
+  const onRuleViewChanged = once(view, "ruleview-changed");
+  const onInvalidSelector = once(view, "ruleview-invalid-selector");
+  // If we change the selector in a way that cause the selected element
+  // to be destroyed, the parent element will be selected
+  // and none of the other event will be fired
+  const onNewElementSelected = view.inspector.selection.once("new-node-front");
+  EventUtils.synthesizeKey("KEY_Enter");
+
+  info("Waiting for rule view to update");
+  await Promise.race([
+    onRuleViewChanged,
+    onInvalidSelector,
+    onNewElementSelected,
+  ]);
 }

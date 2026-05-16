@@ -12,6 +12,7 @@
 #define LOG_ENABLED() LOG5_ENABLED()
 
 #include "nsHttpConnectionInfo.h"
+#include "mozilla/HashFunctions.h"
 
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/NeckoChannelParams.h"
@@ -664,24 +665,10 @@ bool nsHttpConnectionInfo::HostIsLocalIPLiteral() const {
 // static
 HashNumber nsHttpConnectionInfo::BuildOriginFrameHashKey(
     nsHttpConnectionInfo* ci, const nsACString& host, int32_t port) {
-  nsAutoCString newKey(host);
-  if (ci->GetAnonymous()) {
-    newKey.AppendLiteral("~A:");
-  } else {
-    newKey.AppendLiteral("~.:");
-  }
-  if (ci->GetFallbackConnection()) {
-    newKey.AppendLiteral("~F:");
-  } else {
-    newKey.AppendLiteral("~.:");
-  }
-  newKey.AppendInt(port);
-  newKey.AppendLiteral("/[");
-  nsAutoCString suffix;
-  ci->GetOriginAttributes().CreateSuffix(suffix);
-  newKey.Append(suffix);
-  newKey.AppendLiteral("]viaORIGIN.FRAME");
-  return HashString(newKey);
+  static const HashNumber kViaOriginFrame = HashString("viaORIGIN.FRAME");
+  return AddToHash(HashString(host), ci->GetAnonymous(),
+                   ci->GetFallbackConnection(), port,
+                   ci->GetOriginAttributes().Hash(), kViaOriginFrame);
 }
 
 }  // namespace net

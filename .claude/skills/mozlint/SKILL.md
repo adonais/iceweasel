@@ -29,6 +29,8 @@ See `docs/code-quality/lint/create.rst` for the full guide on creating a new lin
   1. Create a YAML configuration in `tools/lint/`
   2. If it's a custom linter, implement the Python module in `tools/lint/python/`
   3. Add tests in `tools/lint/test/`
+- To run the full mozlint test suite (slow): `./mach python-test --subsuite mozlint --run-slow`
+- To run a single mozlint test: `./mach python-test --subsuite mozlint <test_name>`
 
 ## Common Linters
 - **eslint**: JavaScript and JSX linting

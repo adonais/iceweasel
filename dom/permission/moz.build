@@ -5,8 +5,15 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
+XPIDL_SOURCES += [
+    "nsIPermissionMonitor.idl",
+]
+
+XPIDL_MODULE = "dom_permission"
+
 EXPORTS.mozilla.dom += [
     "MidiPermissionStatus.h",
+    "PermissionObserver.h",
     "Permissions.h",
     "PermissionStatus.h",
     "PermissionUtils.h",

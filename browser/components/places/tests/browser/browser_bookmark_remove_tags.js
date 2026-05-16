@@ -208,6 +208,13 @@ add_task(async function test_remove_tags_from_Sidebar() {
 });
 
 add_task(async function test_remove_tags_from_Library() {
+  if (AppConstants.platform === "linux") {
+    info(
+      "Skipping on Linux due to unreliable context menu synthesis (bug 1915658)."
+    );
+    return;
+  }
+
   await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: TEST_URL,

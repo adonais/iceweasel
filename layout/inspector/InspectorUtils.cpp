@@ -553,6 +553,7 @@ static uint32_t CollectAtRules(ServoCSSRuleList& aRuleList,
       case StyleCssRuleType::StartingStyle:
       case StyleCssRuleType::NestedDeclarations:
       case StyleCssRuleType::AppearanceBase:
+      case StyleCssRuleType::ViewTransition:
         break;
     }
 

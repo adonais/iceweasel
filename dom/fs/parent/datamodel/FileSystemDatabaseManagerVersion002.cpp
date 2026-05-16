@@ -4,6 +4,8 @@
 
 #include "FileSystemDatabaseManagerVersion002.h"
 
+#include <limits>
+
 #include "ErrorList.h"
 #include "FileSystemContentTypeGuess.h"
 #include "FileSystemDataManager.h"
@@ -360,7 +362,7 @@ Result<FileId, QMResult> GetNextFreeFileId(
 
     auto Increase = [](IdBuffer& aIn) {
       for (int i = 0; i < bufferSize; ++i) {
-        if (1u + aIn[i] != 0u) {
+        if (aIn[i] < std::numeric_limits<IntegerType>::max()) {
           ++aIn[i];
           return;
         }

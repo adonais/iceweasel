@@ -35,7 +35,7 @@ moz-select-description =
 moz-select-aria-label =
   .aria-label = Select an option
 moz-option-1 =
-    .label = Option 1
+    .label = Option 1 Option 1 Option 1 Option 1 Option 1
 moz-option-2 =
     .label = Option 2
 moz-option-3 =
@@ -117,37 +117,40 @@ const Template = ({
   withSeparator,
   inputLayout,
 }) => html`
-  <div style="width:300px">
-    <moz-select
-      name=${name}
-      value=${ifDefined(value || null)}
-      iconsrc=${ifDefined(iconSrc || null)}
-      ?disabled=${disabled}
-      data-l10n-id=${l10nId}
-      support-page=${ifDefined(supportPage || null)}
-      accesskey=${ifDefined(accessKey || null)}
-      inputlayout=${ifDefined(inputLayout)}
-      class=${classMap({ "text-truncated-ellipsis": ellipsized })}
-    >
-      ${hasSlottedDescription
-        ? html`<div slot="description">${description}</div>`
-        : ""}
-      ${hasSlottedSupportLink
-        ? html`<a slot="support-link" href="www.example.com">Click me!</a>`
-        : ""}
-      ${options.map(
-        (opt, i) =>
-          html`${i == 2 && withSeparator ? html`<hr />` : ""}
-            <moz-option
-              value=${opt.value}
-              data-l10n-id=${opt.l10nId}
-              iconsrc=${opt.iconSrc}
-              ?disabled=${disabledOption && i == 1}
-              ?hidden=${hiddenOption && i == 2}
-            ></moz-option>`
-      )}
-    </moz-select>
-  </div>
+  <style>
+    moz-select {
+      --select-max-width: 225px;
+    }
+  </style>
+  <moz-select
+    name=${name}
+    value=${ifDefined(value || null)}
+    iconsrc=${ifDefined(iconSrc || null)}
+    ?disabled=${disabled}
+    data-l10n-id=${l10nId}
+    support-page=${ifDefined(supportPage || null)}
+    accesskey=${ifDefined(accessKey || null)}
+    inputlayout=${ifDefined(inputLayout)}
+    class=${classMap({ "text-truncated-ellipsis": ellipsized })}
+  >
+    ${hasSlottedDescription
+      ? html`<div slot="description">${description}</div>`
+      : ""}
+    ${hasSlottedSupportLink
+      ? html`<a slot="support-link" href="www.example.com">Click me!</a>`
+      : ""}
+    ${options.map(
+      (opt, i) =>
+        html`${i == 2 && withSeparator ? html`<hr />` : ""}
+          <moz-option
+            value=${opt.value}
+            data-l10n-id=${opt.l10nId}
+            iconsrc=${opt.iconSrc}
+            ?disabled=${disabledOption && i == 1}
+            ?hidden=${hiddenOption && i == 2}
+          ></moz-option>`
+    )}
+  </moz-select>
 `;
 
 export const Default = Template.bind({});

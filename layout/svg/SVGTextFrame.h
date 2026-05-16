@@ -242,7 +242,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
   nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) override;
   void ReflowSVG() override;
   SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                              uint32_t aFlags) override;
+                              SVGBBoxFlags aFlags) override;
 
   // SVG DOM text methods:
   uint32_t GetNumberOfChars(nsIContent* aContent);

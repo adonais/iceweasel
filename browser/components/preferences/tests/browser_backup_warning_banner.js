@@ -105,10 +105,7 @@ add_task(
     });
 
     let doc = gBrowser.contentDocument;
-    let win = gBrowser.contentWindow;
     let banner = doc.getElementById("backup-multi-profile-warning-message-bar");
-
-    win.gPrivacyPane.updateBackupBannerVisibility();
 
     ok(
       banner.hidden,
@@ -133,10 +130,7 @@ add_task(async function test_banner_hidden_when_no_profiles_enabled() {
   });
 
   let doc = gBrowser.contentDocument;
-  let win = gBrowser.contentWindow;
   let banner = doc.getElementById("backup-multi-profile-warning-message-bar");
-
-  win.gPrivacyPane.updateBackupBannerVisibility();
 
   ok(banner.hidden, "Banner should be hidden when no profiles have backup");
 

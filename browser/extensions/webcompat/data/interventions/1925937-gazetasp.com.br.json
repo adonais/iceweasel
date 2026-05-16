@@ -1,0 +1,17 @@
+{
+  "label": "gazetasp.com.br",
+  "bugs": {
+    "1925937": {
+      "issue": "extra-scrollbars",
+      "matches": ["*://www.gazetasp.com.br/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "css": ["bug1925937-gazetasp.com.br-hide-extra-scrollbars.css"]
+      }
+    }
+  ]
+}

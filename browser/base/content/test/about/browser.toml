@@ -64,6 +64,10 @@ support-files = [
   "blank_page.sjs",
 ]
 
+["browser_aboutNetError_connectionFailure.js"]
+
+["browser_aboutNetError_contentEncodingError.js"]
+
 ["browser_aboutNetError_csp_iframe.js"]
 https_first_disabled = true
 support-files = [
@@ -91,6 +95,8 @@ support-files = [
   "invalid_header.sjs",
 ]
 
+["browser_aboutNetError_netInterrupt.js"]
+
 ["browser_aboutNetError_server_error.js"]
 support-files = [
   "http_error.sjs",
@@ -104,12 +110,10 @@ skip-if = [
 
 ["browser_aboutNetError_trr.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1831977
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 1831977
   "socketprocess_networking",
 ]
 
-["browser_aboutNetError_neterror_telemetry.js"]
+["browser_aboutNetError_telemetry.js"]
 
 ["browser_aboutNetError_xfo_iframe.js"]
 https_first_disabled = true

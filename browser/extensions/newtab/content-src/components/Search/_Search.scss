@@ -191,6 +191,29 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
   }
 }
 
+// @nova-cleanup(remove-conditional): Remove this selector; make search-wrapper subgrid layout and search-inner-wrapper width styles the default, and remove the classic media-query widths in .search-wrapper .search-inner-wrapper.
+.nova-enabled {
+  .search-wrapper {
+    container-type: normal;
+    display: grid;
+    grid-template-columns: subgrid;
+  }
+
+  .search-inner-wrapper {
+    grid-column: 1 / -1;
+    margin-inline: auto;
+    width: calc(4 * var(--col-width) + 3 * var(--space-medium));
+
+    @include at-content-cols(6) {
+      width: calc(6 * var(--col-width) + 5 * var(--space-medium));
+    }
+
+    @include at-content-cols(10) {
+      width: calc(10 * var(--col-width) + 9 * var(--space-medium));
+    }
+  }
+}
+
 @media (height > 700px) {
   .activity-stream .fixed-search {
     .search-wrapper {

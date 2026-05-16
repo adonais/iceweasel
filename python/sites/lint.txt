@@ -13,8 +13,8 @@ pypi:pluggy==0.13.1
 pypi:psutil==5.9.4
 pypi:py==1.11.0
 pypi:pytz==2022.7.1
-pypi:rstcheck==6.2.4
-pypi:ruff==0.14.9
+pypi:rstcheck==6.2.5
+pypi:ruff==0.15.0
 pypi:snowballstemmer==2.2.0
 pypi:sphinxcontrib-applehelp==1.0.4
 pypi:sphinxcontrib-htmlhelp==2.0.1

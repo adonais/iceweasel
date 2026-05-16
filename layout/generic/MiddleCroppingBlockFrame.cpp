@@ -163,6 +163,8 @@ void MiddleCroppingBlockFrame::Reflow(nsPresContext* aPresContext,
     AddStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION);
     LinesBegin()->MarkDirty();
     nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
+    // We can't be fragmented.
+    aStatus.Reset();
     if (cropped) {
       break;
     }
@@ -175,7 +177,6 @@ void MiddleCroppingBlockFrame::Reflow(nsPresContext* aPresContext,
       // The value overflows - crop it and reflow again (once).
       if (CropTextToWidth(*aReflowInput.mRenderingContext, sizeToFit, value)) {
         nsBlockFrame::DidReflow(aPresContext, &aReflowInput);
-        aStatus.Reset();
         MarkSubtreeDirty();
         AddStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION);
         // FIXME(emilio): Why do we need to clear cached intrinsics, if they are

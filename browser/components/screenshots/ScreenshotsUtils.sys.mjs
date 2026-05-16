@@ -14,6 +14,7 @@ const SCREENSHOTS_ENABLED_PREF = "screenshots.browser.component.enabled";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
@@ -1185,6 +1186,12 @@ export var ScreenshotsUtils = {
     );
     let context = canvas.getContext("2d");
 
+    // Fill with the same background color used by drawSnapshot so that any
+    // device pixel rows the renderer doesn't cover (due to rounding) get
+    // the expected background instead of remaining transparent.
+    context.fillStyle = "rgb(255,255,255)";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
     const snapshotSize = Math.floor(MAX_SNAPSHOT_DIMENSION * devicePixelRatio);
 
     for (
@@ -1268,43 +1275,8 @@ export var ScreenshotsUtils = {
       return;
     }
 
-    const imageTools = Cc["@mozilla.org/image/tools;1"].getService(
-      Ci.imgITools
-    );
-
     let buffer = await blob.arrayBuffer();
-    const imgDecoded = imageTools.decodeImageFromArrayBuffer(
-      buffer,
-      "image/png"
-    );
-
-    const transferable = Cc[
-      "@mozilla.org/widget/transferable;1"
-    ].createInstance(Ci.nsITransferable);
-    transferable.init(null);
-    // Internal consumers expect the image data to be stored as a
-    // nsIInputStream. On Linux and Windows, pasted data is directly
-    // retrieved from the system's native clipboard, and made available
-    // as a nsIInputStream.
-    //
-    // On macOS, nsClipboard::GetNativeClipboardData (nsClipboard.mm) uses
-    // a cached copy of nsITransferable if available, e.g. when the copy
-    // was initiated by the same browser instance. To make sure that a
-    // nsIInputStream is returned instead of the cached imgIContainer,
-    // the image is exported as as `kNativeImageMime`. Data associated
-    // with this type is converted to a platform-specific image format
-    // when written to the clipboard. The type is not used when images
-    // are read from the clipboard (on all platforms, not just macOS).
-    // This forces nsClipboard::GetNativeClipboardData to fall back to
-    // the native clipboard, and return the image as a nsITransferable.
-    transferable.addDataFlavor("application/x-moz-nativeimage");
-    transferable.setTransferData("application/x-moz-nativeimage", imgDecoded);
-
-    Services.clipboard.setData(
-      transferable,
-      null,
-      Services.clipboard.kGlobalClipboard
-    );
+    lazy.BrowserUtils.copyImageToClipboard(buffer);
 
     this.showCopiedConfirmationHint(browser);
 
@@ -1360,15 +1332,12 @@ export var ScreenshotsUtils = {
     const targetFile = new lazy.FileUtils.File(filename);
 
     // Create download and track its progress.
+    let isPrivate = lazy.PrivateBrowsingUtils.isBrowserPrivate(browser);
     try {
       const download = await lazy.Downloads.createDownload({
-        source: blobURL,
+        source: { url: blobURL, isPrivate },
         target: targetFile,
       });
-
-      let isPrivate = lazy.PrivateBrowsingUtils.isWindowPrivate(
-        browser.ownerGlobal
-      );
       const list = await lazy.Downloads.getList(
         isPrivate ? lazy.Downloads.PRIVATE : lazy.Downloads.PUBLIC
       );

@@ -90,7 +90,7 @@ class TelemetryMiddleware(
                 return
             }
             is EngineAction.LoadUrlAction -> {
-                metrics.track(Event.GrowthData.FirstUriLoadForDay)
+                metrics.track(Event.GrowthData.ConversionEvent3)
             }
             else -> {
                 // no-op

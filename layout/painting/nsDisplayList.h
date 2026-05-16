@@ -2316,13 +2316,6 @@ class nsDisplayItem {
   }
 
   /**
-   * Returns true if this item was reused during display list merging.
-   */
-  bool IsReused() const { return mItemFlags.contains(ItemFlag::ReusedItem); }
-
-  void SetReused(bool aReused) { SetItemFlag(ItemFlag::ReusedItem, aReused); }
-
-  /**
    * Returns true if this item can be reused during display list merging.
    */
   bool CanBeReused() const {
@@ -2330,12 +2323,6 @@ class nsDisplayItem {
   }
 
   void SetCantBeReused() { mItemFlags += ItemFlag::CantBeReused; }
-
-  bool CanBeCached() const {
-    return !mItemFlags.contains(ItemFlag::CantBeCached);
-  }
-
-  void SetCantBeCached() { mItemFlags += ItemFlag::CantBeCached; }
 
   bool IsOldItem() const { return !!mOldList; }
 
@@ -2458,21 +2445,6 @@ class nsDisplayItem {
  public:
   nsDisplayItem() = delete;
   nsDisplayItem(const nsDisplayItem&) = delete;
-
-  /**
-   * Invalidate cached information that depends on this node's contents, after
-   * a mutation of those contents.
-   *
-   * Specifically, if you mutate an |nsDisplayItem| in a way that would change
-   * the WebRender display list items generated for it, you should call this
-   * method.
-   *
-   * If a |RestoreState| method exists to restore some piece of state, that's a
-   * good indication that modifications to said state should be accompanied by a
-   * call to this method. Opacity flattening's effects on
-   * |nsDisplayBackgroundColor| items are one example.
-   */
-  virtual void InvalidateItemCacheEntry() {}
 
   struct HitTestState {
     explicit HitTestState() = default;
@@ -2972,10 +2944,8 @@ class nsDisplayItem {
  private:
   enum class ItemFlag : uint16_t {
     CantBeReused,
-    CantBeCached,
     DeletedFrame,
     ModifiedFrame,
-    ReusedItem,
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
     MergedItem,
     PreProcessedItem,
@@ -3076,20 +3046,6 @@ class nsPaintedDisplayItem : public nsDisplayItem {
    */
   virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) = 0;
 
-  /**
-   * External storage used by |DisplayItemCache| to avoid hashmap lookups.
-   * If an item is reused and has the cache index set, it means that
-   * |DisplayItemCache| has assigned a cache slot for the item.
-   */
-  Maybe<uint16_t>& CacheIndex() { return mCacheIndex; }
-
-  void InvalidateItemCacheEntry() override {
-    // |nsPaintedDisplayItem|s may have |DisplayItemCache| entries
-    // that no longer match after a mutation. The cache will notice
-    // on its own that the entry is no longer in use, and free it.
-    mCacheIndex = Nothing();
-  }
-
   const HitTestInfo& GetHitTestInfo() final { return mHitTestInfo; }
   void InitializeHitTestInfo(nsDisplayListBuilder* aBuilder) {
     mHitTestInfo.Initialize(aBuilder, Frame());
@@ -3111,7 +3067,6 @@ class nsPaintedDisplayItem : public nsDisplayItem {
 
  protected:
   HitTestInfo mHitTestInfo;
-  Maybe<uint16_t> mCacheIndex;
 };
 
 template <typename T>
@@ -4172,17 +4127,13 @@ class nsDisplaySolidColor final : public nsPaintedDisplayItem {
   }
 
   nsDisplaySolidColor(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                      const nsRect& aBounds, nscolor aColor,
-                      bool aCanBeReused = true)
+                      const nsRect& aBounds, nscolor aColor)
       : nsPaintedDisplayItem(aBuilder, aFrame),
         mColor(aColor),
         mBounds(aBounds) {
     NS_ASSERTION(NS_GET_A(aColor) > 0,
                  "Don't create invisible nsDisplaySolidColors!");
     MOZ_COUNT_CTOR(nsDisplaySolidColor);
-    if (!aCanBeReused) {
-      SetCantBeReused();
-    }
   }
 
   MOZ_COUNTED_DTOR_FINAL(nsDisplaySolidColor)

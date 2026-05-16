@@ -62,19 +62,27 @@ private fun downloadStateReducer(
 
         is DownloadUIAction.ExitEditMode -> state.copy(mode = Mode.Normal)
         is DownloadUIAction.AddPendingDeletionSet ->
-            state.copy(pendingDeletionIds = state.pendingDeletionIds + action.itemIds)
+            state.copy(
+                pendingDeletionIds = state.pendingDeletionIds + action.items.map { it.id }.toSet(),
+                deletionSnackbarState = DownloadUIState.SnackbarState.UndoDeletion(action.items),
+                dialogState = DownloadUIState.DialogState.None,
+                mode = Mode.Normal,
+            )
 
         is DownloadUIAction.UndoPendingDeletionSet ->
-            state.copy(pendingDeletionIds = state.pendingDeletionIds - action.itemIds)
+            state.copy(
+                pendingDeletionIds = state.pendingDeletionIds - action.itemIds,
+                deletionSnackbarState = DownloadUIState.SnackbarState.None,
+            )
 
         is DownloadUIAction.UpdateFileItems -> state.copy(items = action.items)
 
         is DownloadUIAction.ContentTypeSelected -> state.copy(userSelectedContentTypeFilter = action.contentTypeFilter)
 
-        is DownloadUIAction.FileItemDeletedSuccessfully -> state
+        is DownloadUIAction.FileItemDeletedSuccessfully ->
+            state.copy(deletionSnackbarState = DownloadUIState.SnackbarState.None)
 
         is DownloadUIAction.SearchQueryEntered -> state.copy(searchQuery = action.searchQuery)
-        is DownloadUIAction.UpdateDeleteDialogVisibility -> state.copy(isDeleteDialogVisible = action.visibility)
 
         DownloadUIAction.Init -> state
         is DownloadUIAction.ShareUrlClicked -> state
@@ -96,11 +104,28 @@ private fun downloadStateReducer(
         is DownloadUIAction.NavigationIconClicked -> state
         is DownloadUIAction.SettingsIconClicked -> state
 
+        is DownloadUIAction.RequestDelete -> state
+        is DownloadUIAction.ShowDeleteDialog ->
+            state.copy(dialogState = DownloadUIState.DialogState.DeleteConfirmation(action.items))
+
+        is DownloadUIAction.DismissDeleteDialog ->
+            state.copy(dialogState = DownloadUIState.DialogState.None)
+
         is DownloadUIAction.SearchBarDismissRequest -> state.copy(
             isSearchFieldRequested = false,
             searchQuery = "",
         )
 
         is DownloadUIAction.SearchBarVisibilityRequest -> state.copy(isSearchFieldRequested = true)
+
+        is DownloadUIAction.ShowMultiSelectDeleteDialog ->
+            state.copy(
+                dialogState = DownloadUIState.DialogState.MultiSelectDeleteConfirmation(
+                    items = action.items,
+                ),
+            )
+
+        is DownloadUIAction.ConfirmMultiSelectDelete ->
+            state.copy(dialogState = DownloadUIState.DialogState.None)
     }
 }

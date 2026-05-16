@@ -15,13 +15,13 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
 #include "api/adaptation/resource.h"
-#include "api/array_view.h"
 #include "api/call/bitrate_allocation.h"
 #include "api/crypto/crypto_options.h"
 #include "api/environment/environment.h"
@@ -350,7 +350,10 @@ std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
     VideoEncoderFactory::EncoderSelectorInterface* encoder_selector) {
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> encoder_queue =
       env.task_queue_factory().CreateTaskQueue(
-          "EncoderQueue", TaskQueueFactory::Priority::NORMAL);
+          "VideoEncoderQueue",
+          env.field_trials().IsEnabled("WebRTC-MediaTaskQueuePriorities")
+              ? TaskQueueFactory::Priority::kVideo
+              : TaskQueueFactory::Priority::kNormal);
   TaskQueueBase* encoder_queue_ptr = encoder_queue.get();
   return std::make_unique<VideoStreamEncoder>(
       env, num_cpu_cores, stats_proxy, encoder_settings,
@@ -580,7 +583,7 @@ void VideoSendStreamImpl::SetStats(const Stats& stats) {
   stats_proxy_.SetStats(stats);
 }
 
-void VideoSendStreamImpl::SetCsrcs(ArrayView<const uint32_t> csrcs) {
+void VideoSendStreamImpl::SetCsrcs(std::span<const uint32_t> csrcs) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   rtp_video_sender_->SetCsrcs(csrcs);
 }
@@ -627,7 +630,7 @@ void VideoSendStreamImpl::GenerateKeyFrame(
   }
 }
 
-void VideoSendStreamImpl::DeliverRtcp(ArrayView<const uint8_t> packet) {
+void VideoSendStreamImpl::DeliverRtcp(std::span<const uint8_t> packet) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   rtp_video_sender_->DeliverRtcp(packet);
 }
@@ -901,6 +904,12 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
 
 void VideoSendStreamImpl::OnDroppedFrame(
     EncodedImageCallback::DropReason reason) {
+  activity_ = true;
+}
+
+void VideoSendStreamImpl::OnFrameDropped(uint32_t rtp_timestamp,
+                                         int spatial_id,
+                                         bool is_end_of_temporal_unit) {
   activity_ = true;
 }
 

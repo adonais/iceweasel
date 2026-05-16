@@ -116,7 +116,7 @@ enables ccache and disables the AV1 encoder:
 The available configuration options are too numerous to list here. Build system
 configuration options can be found at the top of the CMakeLists.txt file found
 in the root of the AV1 repository, and AV1 codec configuration options can
-currently be found in the file `build/cmake/aom_config_defaults.cmake`.
+currently be found in the file `cmake/aom_config_defaults.cmake`.
 
 ### Dylib builds {#dylib-builds}
 
@@ -189,7 +189,7 @@ a x86\_64 MacOS host:
 
 ~~~
     $ cmake path/to/aom \
-      -DCMAKE_TOOLCHAIN_FILE=path/to/aom/build/cmake/toolchains/x86-macos.cmake
+      -DCMAKE_TOOLCHAIN_FILE=path/to/aom/cmake/toolchains/x86-macos.cmake
     $ make
 ~~~
 

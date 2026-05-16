@@ -1,0 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/**
+ * www.stgguaiba.com.br/versao-mobile - text on right side of table has line breaks
+ * Bug #2009358 - https://bugzilla.mozilla.org/show_bug.cgi?id=2009358
+ * WebCompat issue #199372 - https://github.com/webcompat/web-bugs/issues/199372
+ *
+ * The page's design is fragile, leading to line-breaks in Firefox. We can avoid them.
+ */
+#comp-kt7lh89a p.font_8.wixui-rich-text__text {
+  white-space: nowrap;
+}

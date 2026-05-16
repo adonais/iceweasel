@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -47,6 +45,7 @@
 #include "js/WaitCallbacks.h"
 #include "js/Warnings.h"  // JS::WarningReporter
 #include "js/Zone.h"
+#include "util/LanguageId.h"
 #include "vm/Caches.h"  // js::RuntimeCaches
 #include "vm/CodeCoverage.h"
 #include "vm/GeckoProfiler.h"
@@ -367,7 +366,6 @@ struct JSRuntime {
  public:
   JSContext* mainContextFromAnyThread() const { return mainContext_; }
   const void* addressOfMainContext() { return &mainContext_; }
-  js::Fprinter parserWatcherFile;
 
   inline JSContext* mainContextFromOwnThread();
 
@@ -443,12 +441,6 @@ struct JSRuntime {
    */
   js::MainThreadData<bool> allowRelazificationForTesting;
 
-  /* Zone destroy callback. */
-  js::MainThreadData<JSDestroyZoneCallback> destroyZoneCallback;
-
-  /* Compartment destroy callback. */
-  js::MainThreadData<JSDestroyCompartmentCallback> destroyCompartmentCallback;
-
   /* Compartment memory reporting callback. */
   js::MainThreadData<JSSizeOfIncludingThisCompartmentCallback>
       sizeOfIncludingThisCompartmentCallback;
@@ -461,9 +453,6 @@ struct JSRuntime {
    * js/public/UbiNode.h.
    */
   void (*constructUbiNodeForDOMObjectCallback)(void*, JSObject*) = nullptr;
-
-  /* Realm destroy callback. */
-  js::MainThreadData<JS::DestroyRealmCallback> destroyRealmCallback;
 
   /* Call this to get the name of a realm. */
   js::MainThreadData<JS::RealmNameCallback> realmNameCallback;
@@ -551,17 +540,6 @@ struct JSRuntime {
  public:
   js::GeckoProfilerRuntime& geckoProfiler() { return geckoProfiler_.ref(); }
 
-  // Heap GC roots for PersistentRooted pointers.
-  js::MainThreadData<mozilla::EnumeratedArray<
-      JS::RootKind, mozilla::LinkedList<js::PersistentRootedBase>,
-      size_t(JS::RootKind::Limit)>>
-      heapRoots;
-
-  void tracePersistentRoots(JSTracer* trc);
-  void finishPersistentRoots();
-
-  void finishRoots();
-
  private:
   js::UnprotectedData<const JSPrincipals*> trustedPrincipals_;
 
@@ -601,20 +579,6 @@ struct JSRuntime {
  public:
   const JSClass* maybeWindowProxyClass() const { return windowProxyClass_; }
   void setWindowProxyClass(const JSClass* clasp) { windowProxyClass_ = clasp; }
-
- private:
-  // List of non-ephemeron weak containers to sweep during
-  // beginSweepingSweepGroup.
-  js::MainThreadData<mozilla::LinkedList<JS::detail::WeakCacheBase>>
-      weakCaches_;
-
- public:
-  mozilla::LinkedList<JS::detail::WeakCacheBase>& weakCaches() {
-    return weakCaches_.ref();
-  }
-  void registerWeakCache(JS::detail::WeakCacheBase* cachep) {
-    weakCaches().insertBack(cachep);
-  }
 
   template <typename T>
   struct GlobalObjectWatchersLinkAccess {
@@ -712,7 +676,7 @@ struct JSRuntime {
   js::MainThreadData<const JSLocaleCallbacks*> localeCallbacks;
 
   /* Default locale for Internationalization API */
-  js::MainThreadData<js::UniqueChars> defaultLocale;
+  js::MainThreadData<js::LanguageId> defaultLocale;
 
   /* If true, new scripts must be created with PC counter information. */
   js::MainThreadOrIonCompileData<bool> profilingScripts;
@@ -768,7 +732,6 @@ struct JSRuntime {
       randomHashCodeGenerator_;
 
  public:
-  mozilla::HashCodeScrambler randomHashCodeScrambler();
   mozilla::non_crypto::XorShift128PlusRNG forkRandomKeyGenerator();
 
   js::HashNumber randomHashCode();
@@ -802,28 +765,41 @@ struct JSRuntime {
   // Locale information
   //-------------------------------------------------------------------------
 
+  void setDefaultLocale(js::LanguageId locale);
+
  public:
   /*
    * Set the default locale for the ECMAScript Internationalization API
-   * (Intl.Collator, Intl.NumberFormat, Intl.DateTimeFormat).
-   * Note that the Internationalization API encourages clients to
-   * specify their own locales.
+   * (Intl.Collator, Intl.NumberFormat, Intl.DateTimeFormat, ...).
+   * Note that the Internationalization API encourages clients to specify their
+   * own locales.
+   *
+   * The *actual* default locale for Intl operations is computed by a prefix
+   * lookup on the ICU available locales.
+   *
    * The locale string remains owned by the caller.
+   *
+   * A null-pointer input is ignored.
    */
   bool setDefaultLocale(const char* locale);
 
   /* Reset the default locale to OS defaults. */
   void resetDefaultLocale();
 
-  /* Gets current default locale. String remains owned by runtime. */
-  const char* getDefaultLocale();
+  /*
+   * Gets the current default locale.
+   *
+   * The returned locale is canonicalized, but not necessarily an available
+   * locale for the ECMA-402 Intl API. `intl::GlobalIntlData::defaultLocale()`
+   * returns the *actual* default locale used for `Intl` objects.
+   */
+  js::LanguageId getDefaultLocale();
 
   /*
-   * Gets current default locale or nullptr if not initialized.
-   * String remains owned by runtime.
+   * Gets the current default locale or `LanguageId::und()` if not initialized.
    */
-  const char* getDefaultLocaleIfInitialized() const {
-    return defaultLocale.ref().get();
+  js::LanguageId getDefaultLocaleIfInitialized() const {
+    return defaultLocale.ref();
   }
 
   /* Garbage collector state. */
@@ -1055,9 +1031,6 @@ struct JSRuntime {
    * function to assess the size of malloc'd blocks of memory.
    */
   js::MainThreadData<mozilla::MallocSizeOf> debuggerMallocSizeOf;
-
-  /* Last time at which an animation was played for this runtime. */
-  js::MainThreadData<mozilla::TimeStamp> lastAnimationTime;
 
  private:
   /* The stack format for the current runtime.  Only valid on non-child

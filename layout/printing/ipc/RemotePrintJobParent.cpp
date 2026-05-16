@@ -4,8 +4,6 @@
 
 #include "RemotePrintJobParent.h"
 
-#include <fstream>
-
 #include "PrintTranslator.h"
 #include "gfxContext.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -26,8 +24,7 @@
 namespace mozilla::layout {
 
 RemotePrintJobParent::RemotePrintJobParent(nsIPrintSettings* aPrintSettings)
-    : mPrintSettings(aPrintSettings),
-      mStatus(NS_ERROR_UNEXPECTED) {
+    : mPrintSettings(aPrintSettings), mStatus(NS_ERROR_UNEXPECTED) {
   MOZ_COUNT_CTOR(RemotePrintJobParent);
 }
 

@@ -20,7 +20,9 @@
 #include "BlockReflowState.h"
 #include "CounterStyleManager.h"
 #include "TextOverflow.h"
-#include "fmt/format.h"
+#ifdef DEBUG
+#  include "fmt/base.h"
+#endif
 #include "gfxContext.h"
 #include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/AppUnits.h"
@@ -573,7 +575,7 @@ void nsBlockFrame::InvalidateFrameWithRect(const nsRect& aRect,
 
 nscoord nsBlockFrame::SynthesizeFallbackBaseline(
     WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
-  if (IsButtonLike() && StyleDisplay()->IsInlineOutsideStyle()) {
+  if (IsButtonOrTextInput() && StyleDisplay()->IsInlineOutsideStyle()) {
     return Baseline::SynthesizeBOffsetFromContentBox(this, aWM, aBaselineGroup);
   }
   return Baseline::SynthesizeBOffsetFromMarginBox(this, aWM, aBaselineGroup);
@@ -648,7 +650,7 @@ Maybe<nscoord> nsBlockFrame::GetNaturalBaselineBOffset(
                                aExportContext)
           : GetBaselineBOffset(LinesRBegin(), LinesREnd(), aWM, aBaselineGroup,
                                aExportContext);
-  if (!offset && IsButtonLike()) {
+  if (!offset && IsButtonOrTextInput()) {
     for (const auto& line : Reversed(Lines())) {
       if (line.IsEmpty()) {
         continue;
@@ -2307,8 +2309,8 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 void nsBlockFrame::AlignContent(BlockReflowState& aState,
                                 ReflowOutput& aMetrics,
                                 nscoord aBEndEdgeOfChildren) {
-  StyleAlignFlags alignment = EffectiveAlignContent();
-  alignment &= ~StyleAlignFlags::FLAG_BITS;
+  const StyleAlignFlags originalAlignment = EffectiveAlignContent();
+  const auto alignment = originalAlignment & ~StyleAlignFlags::FLAG_BITS;
 
   // Short circuit
   const bool isCentered = alignment == StyleAlignFlags::CENTER ||
@@ -2338,7 +2340,7 @@ void nsBlockFrame::AlignContent(BlockReflowState& aState,
     shift = std::min(availB, endB) - aBEndEdgeOfChildren;
 
     // note: these measures all include start BP, so it subtracts out
-    if (!(StylePosition()->mAlignContent.primary & StyleAlignFlags::UNSAFE)) {
+    if (!(originalAlignment & StyleAlignFlags::UNSAFE)) {
       shift = std::max(0, shift);
     }
     if (isCentered) {
@@ -2437,6 +2439,13 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
     const auto paddingInflatedOverflow =
         ComputePaddingInflatedScrollableOverflow(inFlowChildBounds);
     aOverflowAreas.UnionAllWith(paddingInflatedOverflow);
+
+    // For backwards compatibility reasons, we don't allow scrollable overflow
+    // on the block axis on inline inputs.
+    if (IsSingleLineTextInput()) {
+      overflowClipAxes +=
+          wm.IsVertical() ? PhysicalAxis::Horizontal : PhysicalAxis::Vertical;
+    }
   }
   // Note: we're using UnionAllWith so as to maintain the invariant of
   // ink overflow being a superset of scrollable overflow.
@@ -2463,9 +2472,7 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 #endif
 }
 
-// Depending on our ancestor, determine if we need to restrict padding inflation
-// in inline direction. This assumes that the passed-in frame is a scrolled
-// frame. HACK(dshin): Reaching out and querying the type like this isn't ideal.
+// Text control padding handling is kinda disgusting.
 static bool RestrictPaddingInflationInInline(const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
   if (aFrame->Style()->GetPseudoType() != PseudoStyleType::MozScrolledContent) {
@@ -2475,13 +2482,7 @@ static bool RestrictPaddingInflationInInline(const nsIFrame* aFrame) {
   }
   // If we're `input` or `textarea`, our grandparent element must be the text
   // control element that we can query.
-  const auto* parent = aFrame->GetParent();
-  if (!parent) {
-    return false;
-  }
-  MOZ_ASSERT(parent->IsScrollContainerOrSubclass(), "Not a scrolled frame?");
-
-  nsTextControlFrame* textControl = do_QueryFrame(parent->GetParent());
+  nsTextControlFrame* textControl = do_QueryFrame(aFrame->GetParent());
   if (MOZ_LIKELY(!textControl)) {
     return false;
   }
@@ -7644,11 +7645,10 @@ bool nsBlockFrame::HasPushedFloatsFromPrevContinuation() const {
 static void ComputeInkOverflowArea(nsLineList& aLines, nscoord aWidth,
                                    nscoord aHeight, nsRect& aResult) {
   nscoord xa = 0, ya = 0, xb = aWidth, yb = aHeight;
-  for (nsLineList::iterator line = aLines.begin(), line_end = aLines.end();
-       line != line_end; ++line) {
+  for (const auto& line : aLines) {
     // Compute min and max x/y values for the reflowed frame's
     // combined areas
-    nsRect inkOverflow(line->InkOverflowRect());
+    nsRect inkOverflow(line.InkOverflowRect());
     nscoord x = inkOverflow.x;
     nscoord y = inkOverflow.y;
     nscoord xmost = x + inkOverflow.width;
@@ -7800,7 +7800,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   // Prepare for text-overflow processing.
-  Maybe<TextOverflow> textOverflow =
+  UniquePtr<TextOverflow> textOverflow =
       TextOverflow::WillProcessLines(aBuilder, this);
 
   const bool hasDescendantPlaceHolders =
@@ -7846,7 +7846,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       // frame in our child list, it's also true for |this|.
       return false;
     }
-    if (textOverflow.isSome()) {
+    if (textOverflow) {
       // Also skip the cursor if we're creating text overflow markers, since we
       // need to know what line number we're up to in order to generate unique
       // display item keys.
@@ -7874,7 +7874,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                           : nullptr;
   LineIterator line_end = LinesEnd();
 
-  TextOverflow* textOverflowPtr = textOverflow.ptrOr(nullptr);
+  TextOverflow* textOverflowPtr = textOverflow.get();
   bool foundClamp = false;
 
   if (cursor) {
@@ -7886,7 +7886,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         if (lineArea.y >= aBuilder->GetDirtyRect().YMost()) {
           break;
         }
-        MOZ_ASSERT(textOverflow.isNothing());
+        MOZ_ASSERT(!textOverflow);
 
         if (ShouldDescendIntoLine(lineArea)) {
           DisplayLine(aBuilder, line, line->IsInline(), aLists, this, nullptr,
@@ -7965,8 +7965,8 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       lineCount++;
     }
 
-    if (GetPrevInFlow()) {
-      DisplayPushedAbsoluteFrames(aBuilder, aLists);
+    if (GetPrevInFlow() || GetNextInFlow()) {
+      DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, aLists);
     }
 
     if (nonDecreasingYs && lineCount >= MIN_LINES_NEEDING_CURSOR) {
@@ -7978,7 +7978,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  if (textOverflow.isSome()) {
+  if (textOverflow) {
     // Put any text-overflow:ellipsis markers on top of the non-positioned
     // content of the block's lines. (If we ever start sorting the Content()
     // list this will end up in the wrong place.)
@@ -8217,8 +8217,7 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
           !GetParent()->Style()->IsPseudoOrAnonBox()) ||
          pseudo == PseudoStyleType::MozFieldsetContent ||
          pseudo == PseudoStyleType::MozColumnContent ||
-         (pseudo == PseudoStyleType::MozScrolledContent &&
-          !GetParent()->IsListControlFrame()) ||
+         pseudo == PseudoStyleType::MozScrolledContent ||
          pseudo == PseudoStyleType::MozSvgText) &&
         !IsMathMLFrame() && !IsColumnSetWrapperFrame() &&
         !IsComboboxControlFrame() &&
@@ -8894,8 +8893,8 @@ void nsBlockFrame::VerifyOverflowSituation() {
   // |this|. Later next-in-flows must have the same or later parents.
   ChildListID childLists[] = {FrameChildListID::Float,
                               FrameChildListID::PushedFloats};
-  for (size_t i = 0; i < std::size(childLists); ++i) {
-    const nsFrameList& children = GetChildList(childLists[i]);
+  for (const auto childList : childLists) {
+    const nsFrameList& children = GetChildList(childList);
     for (nsIFrame* f : children) {
       nsIFrame* parent = this;
       nsIFrame* nif = f->GetNextInFlow();

@@ -74,11 +74,6 @@ def _run_worker(config, paths, **lintargs):
     ):
         lintargs["show_warnings"] = True
 
-    # Override ignore thirdparty
-    # Only deactivating include_thirdparty is set on a linter.yml in use
-    if config.get("include_thirdparty", False):
-        lintargs["include_thirdparty"] = True
-
     func = supported_types[config["type"]]
     start_time = time.monotonic()
     try:
@@ -178,7 +173,15 @@ class LintRoller:
         50  # set a max size to prevent command lines that are too long on Windows
     )
 
-    def __init__(self, root, exclude=None, setupargs=None, **lintargs):
+    def __init__(
+        self,
+        root,
+        exclude=None,
+        third_party_exclude=None,
+        include_thiry_party=False,
+        setupargs=None,
+        **lintargs,
+    ):
         self.parse = Parser(root)
         try:
             self.vcs = get_repository_object(root)
@@ -199,6 +202,8 @@ class LintRoller:
 
         self.root = root
         self.exclude = exclude or []
+        self.third_party_exclude = third_party_exclude or []
+        self.include_third_party = include_thiry_party
 
         _setup_logger(log, lintargs.get("show_verbose"))
 
@@ -214,7 +219,13 @@ class LintRoller:
             # Add only the excludes present in paths
             linter["local_exclude"] = linter.get("exclude", [])[:]
             # Add in our global excludes
-            linter.setdefault("exclude", []).extend(self.exclude)
+            exclude = linter.setdefault("exclude", [])
+            exclude.extend(self.exclude)
+            # Add in third-party excludes if not configured otherwise
+            if not self.include_third_party and not linter.get(
+                "include_third_party", False
+            ):
+                exclude.extend(self.third_party_exclude)
             self.linters.append(linter)
 
     def setup(self, virtualenv_manager=None):

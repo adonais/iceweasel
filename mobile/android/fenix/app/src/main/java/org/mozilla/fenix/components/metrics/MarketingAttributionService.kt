@@ -16,6 +16,7 @@ import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.nimbus.FxNimbus
 
 const val GCLID_PREFIX = "gclid="
 const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
@@ -140,6 +141,10 @@ class MarketingAttributionService(private val context: Context) {
             }
 
             if (installReferrerResponse.isNullOrBlank()) {
+                return false
+            }
+
+            if (!FxNimbus.features.marketingOnboardingCard.value().enabled) {
                 return false
             }
 

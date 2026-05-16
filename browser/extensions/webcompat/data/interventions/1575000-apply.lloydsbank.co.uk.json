@@ -1,0 +1,17 @@
+{
+  "label": "apply.lloydsbank.co.uk",
+  "bugs": {
+    "1575000": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://apply.lloydsbank.co.uk/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1575000-apply.lloydsbank.co.uk-radio-buttons-fix.css"]
+      }
+    }
+  ]
+}

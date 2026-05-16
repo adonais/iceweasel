@@ -18,7 +18,7 @@ class TabsTrayItemTest {
         val group = TabsTrayItem.TabGroup(
             title = "Title",
             theme = TabGroupTheme.Yellow,
-            tabs = hashSetOf(),
+            tabs = mutableListOf(),
         )
 
         val thumbnails = group.thumbnails
@@ -31,7 +31,7 @@ class TabsTrayItemTest {
         val group = TabsTrayItem.TabGroup(
             title = "Title",
             theme = TabGroupTheme.Yellow,
-            tabs = hashSetOf(
+            tabs = mutableListOf(
                 createTab(url = "www.mozilla.org"),
             ),
         )
@@ -46,7 +46,7 @@ class TabsTrayItemTest {
         val group = TabsTrayItem.TabGroup(
             title = "Title",
             theme = TabGroupTheme.Yellow,
-            tabs = hashSetOf(
+            tabs = mutableListOf(
                 createTab(url = "www.mozilla.org"),
                 createTab(url = "www.wikipedia.org"),
             ),
@@ -62,7 +62,7 @@ class TabsTrayItemTest {
         val group = TabsTrayItem.TabGroup(
             title = "Title",
             theme = TabGroupTheme.Yellow,
-            tabs = hashSetOf(
+            tabs = mutableListOf(
                 createTab(url = "www.mozilla.org"),
                 createTab(url = "www.wikipedia.org"),
                 createTab(url = "www.website.com"),
@@ -79,7 +79,7 @@ class TabsTrayItemTest {
         val group = TabsTrayItem.TabGroup(
             title = "Title",
             theme = TabGroupTheme.Yellow,
-            tabs = hashSetOf(
+            tabs = mutableListOf(
                 createTab(url = "www.mozilla.org"),
                 createTab(url = "www.wikipedia.org"),
                 createTab(url = "www.website.com"),
@@ -97,7 +97,7 @@ class TabsTrayItemTest {
         val group = TabsTrayItem.TabGroup(
             title = "Title",
             theme = TabGroupTheme.Yellow,
-            tabs = List(100) { createTab(url = "www.mozilla.org") }.toHashSet(),
+            tabs = MutableList(100) { createTab(url = "www.mozilla.org") },
         )
 
         val thumbnails = group.thumbnails
@@ -110,7 +110,7 @@ class TabsTrayItemTest {
         val group = TabsTrayItem.TabGroup(
             title = "Title",
             theme = TabGroupTheme.Yellow,
-            tabs = List(100) { createTab(url = "www.mozilla.org") }.toHashSet(),
+            tabs = MutableList(100) { createTab(url = "www.mozilla.org") },
         )
 
         val thumbnails = group.thumbnails
@@ -125,7 +125,7 @@ class TabsTrayItemTest {
         val group = TabsTrayItem.TabGroup(
             title = "Title",
             theme = TabGroupTheme.Yellow,
-            tabs = hashSetOf(tab),
+            tabs = mutableListOf(tab),
         )
 
         val thumbnails = group.thumbnails

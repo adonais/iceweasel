@@ -100,6 +100,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.addons.showSnackBar
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.LensFeature
 import org.mozilla.fenix.components.QrScanFenixFeature
 import org.mozilla.fenix.components.VoiceSearchFeature
 import org.mozilla.fenix.components.appstate.AppAction
@@ -189,6 +190,12 @@ class HistoryFragment :
     private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             voiceSearchFeature?.get()?.handleVoiceSearchResult(result.resultCode, result.data)
+        }
+    private var lensFeature: ViewBoundFeatureWrapper<LensFeature>? =
+        ViewBoundFeatureWrapper<LensFeature>()
+    private val lensLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            lensFeature?.get()?.handleImageResult(result.resultCode, result.data)
         }
 
     private val menuBinding by lazy {
@@ -304,6 +311,7 @@ class HistoryFragment :
         if (requireContext().settings().shouldUseComposableToolbar) {
             qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
             voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
+            lensFeature = LensFeature.register(this, lensLauncher)
         }
 
         consumeFrom(historyStore) {
@@ -845,6 +853,7 @@ class HistoryFragment :
                 BrowserStoreToFenixSearchMapperMiddleware(
                     browserStore = requireComponents.core.store,
                     scope = lifecycleScope,
+                    appStore = requireComponents.appStore,
                 ),
                 FenixSearchMiddleware(
                     fragment = this@HistoryFragment,

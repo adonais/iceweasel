@@ -8,6 +8,9 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.view.View
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag
+import mozilla.components.concept.awesomebar.optimizedsuggestions.FlightData
+import mozilla.components.concept.awesomebar.optimizedsuggestions.FlightSuggestionStatus
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionCategory
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
@@ -133,7 +136,7 @@ interface AwesomeBar {
      * @property query The full query string that triggered this suggestion.
      * @property name The full display name of the stock or fund.
      * @property ticker The stock ticker symbol.
-     * @property changePercToday The percentage change today.
+     * @property todaysChangePerc The percentage change today.
      * @property lastPrice The last traded price, including currency.
      * @property exchange The index the stock belongs to.
      * @property imageUrl The URL of the stock's logo.
@@ -142,7 +145,7 @@ interface AwesomeBar {
         val query: String,
         val name: String,
         val ticker: String,
-        val changePercToday: String,
+        val todaysChangePerc: String,
         val lastPrice: String,
         val exchange: String,
         val imageUrl: String?,
@@ -158,7 +161,7 @@ interface AwesomeBar {
          *
          * @param query The current user input from the address/search bar.
          *
-         * @return A list of [StockItem] representing stock suggestions relevant to the query.
+         * @return A list of [StockItem] representing sport suggestions relevant to the query.
          * Implementations may return an empty list if no matches are found.
          */
         suspend fun fetch(query: String): List<SportItem>
@@ -173,20 +176,24 @@ interface AwesomeBar {
      *
      * @property query The full query string that triggered this suggestion.
      * @property sport The sport name.
+     * @property sportCategory The category of the sport (e.g. "baseball", "basketball", "football", "hockey").
      * @property date The date of the event.
      * @property status The status of the event.
      * @property statusType The type of the status.
      * @property homeTeam The home team information.
      * @property awayTeam The away team information.
+     * @property touched The last time this sport event was updated, in ISO 8601 format.
      */
     data class SportItem(
         val query: String,
         val sport: String,
+        val sportCategory: String,
         val date: String,
         val status: String,
         val statusType: String,
         val homeTeam: Team,
         val awayTeam: Team,
+        val touched: String,
     ) {
         /**
          * Represents a team in a sport suggestion.
@@ -196,6 +203,85 @@ interface AwesomeBar {
             val name: String,
             val colors: List<String>,
             val score: Int?,
+            val iconUrl: String?,
+        )
+    }
+
+    /**
+     * This interface decouples the [FlightsOnlineSuggestionProvider] from the
+     * underlying data source (e.g. mocked data, network API, local cache, etc.).
+     */
+    interface FlightsSuggestionDataSource {
+        /**
+         * Fetch flights suggestions for the given [query].
+         *
+         * @param query The current user input from the address/search bar.
+         *
+         * @return A list of [FlightItem] representing flight suggestions relevant to the query.
+         * Implementations may return an empty list if no matches are found.
+         */
+        suspend fun fetch(query: String): List<FlightItem>
+    }
+
+    /**
+     * Domain model representing a single flight suggestion result.
+     *
+     * This model is independent of UI classes and is used as an intermediate
+     * data representation before being mapped into an AwesomeBar-specific
+     * suggestion type (e.g. [AwesomeBar.FlightSuggestion]).
+     *
+     * @property flightNumber The IATA flight designator (e.g., "AA123").
+     * @property destination The arrival airport information.
+     * @property origin The departure airport information.
+     * @property departure The departure timing information.
+     * @property arrival The arrival timing information.
+     * @property status The status of the flight.
+     * @property progressPercent The progress of the flight until it reaches its destination (0-100).
+     * @property timeLeftMinutes The time left in minutes until the flight reaches its destination.
+     * @property delayed Whether the flight is delayed by ≥15 minutes compared to the scheduled time.
+     * @property url The direct link to the FlightAware live page for this flight.
+     * @property airline The operating airline for this flight.
+     */
+    data class FlightItem(
+        val flightNumber: String,
+        val destination: Airport,
+        val origin: Airport,
+        val departure: Timing,
+        val arrival: Timing,
+        val status: String,
+        val progressPercent: Int,
+        val timeLeftMinutes: Int?,
+        val delayed: Boolean,
+        val url: String,
+        val airline: Airline,
+    ) {
+        /**
+         * Represents an airport in a flight suggestion.
+         */
+        data class Airport(
+            val code: String,
+            val city: String,
+        )
+
+        /**
+         * Represents the departure and arrival times in a flight suggestion.
+         *
+         * Both scheduled and estimated times are in local airport time.
+         * Estimated time is used when the flight is delayed. Otherwise, scheduled time is used.
+         */
+        data class Timing(
+            val scheduledTime: String,
+            val estimatedTime: String?,
+        )
+
+        /**
+         * Represents an airline in a flight suggestion.
+         */
+        data class Airline(
+            val code: String?,
+            val name: String?,
+            val color: String?,
+            val icon: String?,
         )
     }
 
@@ -363,6 +449,7 @@ interface AwesomeBar {
      * @property onSuggestionClicked A callback to be executed when the [SportSuggestion] was clicked by the user.
      * @property query The user input in the toolbar.
      * @property sport The sport name.
+     * @property sportCategory The category of the sport (e.g. "baseball", "basketball", "football", "hockey").
      * @property date The date of the event.
      * @property status The status of the event.
      * @property statusType The type of the status.
@@ -377,11 +464,41 @@ interface AwesomeBar {
         override val onSuggestionClicked: (() -> Unit)? = null,
         val query: String,
         val sport: String,
+        val sportCategory: SportSuggestionCategory,
         val date: SportSuggestionDate,
         val status: SportSuggestionStatus,
         val statusType: SportSuggestionStatusType,
         val homeTeam: SportSuggestionTeam,
         val awayTeam: SportSuggestionTeam,
+        override val flags: Set<Flag> = emptySet(),
+    ) : SuggestionItem
+
+    /**
+     * [FlightSuggestion] to be displayed by an [AwesomeBar] implementation for flight information.
+     *
+     * @property provider The provider this suggestion came from.
+     * @property id A unique ID (provider scope) identifying this [FlightSuggestion].
+     * @property score A score used to rank suggestions of this provider against each other.
+     * @property onSuggestionClicked A callback to be executed when the [FlightSuggestion] was clicked by the user.
+     * @property flightNumber The IATA flight designator (e.g., "AA123").
+     * @property airlineName The name of the airline.
+     * @property flightStatus The status of the flight.
+     * @property progress The progress of the flight until it reaches its destination (0f - 1f).
+     * @property departureFlightData The departure flight data.
+     * @property arrivalFlightData The arrival flight data.
+     * @property flags A set of [Flag] values for this [Suggestion].
+     */
+    data class FlightSuggestion(
+        override val provider: SuggestionProvider,
+        override val id: String = UUID.randomUUID().toString(),
+        override val score: Int = 0,
+        override val onSuggestionClicked: (() -> Unit)? = null,
+        val flightNumber: String,
+        val airlineName: String?,
+        val flightStatus: FlightSuggestionStatus,
+        val progress: Float,
+        val departureFlightData: FlightData,
+        val arrivalFlightData: FlightData,
         override val flags: Set<Flag> = emptySet(),
     ) : SuggestionItem
 

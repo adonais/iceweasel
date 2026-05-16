@@ -173,18 +173,9 @@ void MediaTransportHandlerIPC::CreateIceCtx(const std::string& aName) {
 nsresult MediaTransportHandlerIPC::SetIceConfig(
     const nsTArray<dom::RTCIceServer>& aIceServers,
     dom::RTCIceTransportPolicy aIcePolicy) {
-  // Run some validation on this side of the IPC boundary so we can return
-  // errors synchronously. We don't actually use the results. It might make
-  // sense to move this check to PeerConnection and have this API take the
-  // converted form, but we would need to write IPC serialization code for
-  // the NrIce*Server types.
-  std::vector<NrIceStunServer> stunServers;
-  std::vector<NrIceTurnServer> turnServers;
-  nsresult rv = ConvertIceServers(aIceServers, &stunServers, &turnServers);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
+  // PeerConnectionImpl validates before calling this.
+  // The socket process will re-validate when it receives the RTCIceServer
+  // array, so no pre-validation is needed here.
   mInitPromise->Then(
       mThread, __func__,
       [=, this, iceServers = aIceServers.Clone(),

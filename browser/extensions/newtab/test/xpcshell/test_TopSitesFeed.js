@@ -41,6 +41,8 @@ const SEARCH_SHORTCUTS_HAVE_PINNED_PREF =
   "improvesearch.topSiteSearchShortcuts.havePinned";
 const SHOWN_ON_NEWTAB_PREF = "feeds.topsites";
 const SHOW_SPONSORED_PREF = "showSponsoredTopSites";
+const PREF_SYSTEM_SHORTCUTS_PERSONALIZATION =
+  "discoverystream.shortcuts.personalization.enabled";
 const TOP_SITES_BLOCKED_SPONSORS_PREF = "browser.topsites.blockedSponsors";
 
 // This pref controls how long the contile cache is valid for in seconds.
@@ -300,6 +302,88 @@ add_task(async function test_getLinksWithDefaults() {
 
   info("getLinksWithDefaults should indicate the links get typed bonus");
   Assert.ok(result[0].typedBonus, "Expected typed bonus property to be true.");
+
+  sandbox.restore();
+});
+
+add_task(
+  async function test_getLinksWithDefaults_ranks_with_local_pref_fallback() {
+    let sandbox = sinon.createSandbox();
+    let feed = getTopSitesFeedForTest(sandbox);
+
+    feed.store.state.Prefs.values[PREF_SYSTEM_SHORTCUTS_PERSONALIZATION] = true;
+    sandbox.stub(feed.ranker, "rankTopSites").callsFake(async sites => sites);
+
+    await feed.getLinksWithDefaults();
+
+    Assert.ok(
+      feed.ranker.rankTopSites.calledOnce,
+      "local pref triggers ranking without trainhop config"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(async function test_getLinksWithDefaults_remote_false_skips_ranking() {
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+
+  feed.store.state.Prefs.values[PREF_SYSTEM_SHORTCUTS_PERSONALIZATION] = true;
+  feed.store.state.Prefs.values.trainhopConfig = {
+    smartShortcuts: { enabled: false },
+  };
+  sandbox.stub(feed.ranker, "rankTopSites").callsFake(async sites => sites);
+
+  await feed.getLinksWithDefaults();
+
+  Assert.ok(
+    feed.ranker.rankTopSites.notCalled,
+    "explicit remote false skips ranking"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_refresh_discards_stale_results() {
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+  feed._startedUp = true;
+  feed._tippyTopProvider.initialized = true;
+
+  let resolveFirst;
+  let resolveSecond;
+  let firstPromise = new Promise(resolve => {
+    resolveFirst = resolve;
+  });
+  let secondPromise = new Promise(resolve => {
+    resolveSecond = resolve;
+  });
+
+  sandbox
+    .stub(feed, "getLinksWithDefaults")
+    .onFirstCall()
+    .returns(firstPromise)
+    .onSecondCall()
+    .returns(secondPromise);
+
+  let firstRefresh = feed.refresh({ broadcast: true });
+  let secondRefresh = feed.refresh({ broadcast: true });
+
+  resolveSecond([{ url: "https://second.example" }]);
+  await secondRefresh;
+
+  Assert.equal(feed.store.dispatch.callCount, 1, "newest refresh dispatched");
+  Assert.deepEqual(
+    feed.store.dispatch.firstCall.args[0].data.links,
+    [{ url: "https://second.example" }],
+    "the newest links win"
+  );
+
+  resolveFirst([{ url: "https://first.example" }]);
+  await firstRefresh;
+
+  Assert.equal(feed.store.dispatch.callCount, 1, "stale refresh was dropped");
 
   sandbox.restore();
 });

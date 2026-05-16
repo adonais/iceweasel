@@ -20,6 +20,28 @@ const PREF_NORMAL = "privacy.trackingprotection.enabled";
 const PREF_PRIVATE = "privacy.trackingprotection.pbmode.enabled";
 const SCOPED_PREF = Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_ENABLED;
 
+// Simple (non-pbmode) tracker-blocking prefs and their corresponding scoped pref constant.
+const SIMPLE_SCOPED_PREFS = [
+  {
+    globalPref: "privacy.trackingprotection.cryptomining.enabled",
+    scopedPref:
+      Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_CRYPTOMINING_ENABLED,
+    label: "cryptomining",
+  },
+  {
+    globalPref: "privacy.trackingprotection.fingerprinting.enabled",
+    scopedPref:
+      Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_FINGERPRINTING_ENABLED,
+    label: "fingerprinting",
+  },
+  {
+    globalPref: "privacy.trackingprotection.socialtracking.enabled",
+    scopedPref:
+      Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_SOCIALTRACKING_ENABLED,
+    label: "socialtracking",
+  },
+];
+
 async function getTabBcPrefs(browser, config) {
   let tab = await BrowserTestUtils.openNewForegroundTab(browser, config);
   let bc = tab.linkedBrowser.browsingContext;
@@ -179,4 +201,98 @@ add_task(async function test_scoped_clear() {
     sp => sp.clearScopedPrefByHost(SCOPED_PREF, "https://example.org"),
     false
   );
+});
+
+// For each simple (non-pbmode) pref, verify the scoped service returns the global
+// pref value and that a scoped override takes precedence.
+add_task(async function test_simple_prefs_obey_global() {
+  let [tab, bc, sp] = await getTabBcPrefs(gBrowser, "https://example.com");
+
+  for (const { globalPref, scopedPref, label } of SIMPLE_SCOPED_PREFS) {
+    for (const value of [false, true]) {
+      await SpecialPowers.setBoolPref(globalPref, value);
+      Assert.equal(
+        sp.getBoolPrefScoped(scopedPref, bc),
+        value,
+        `${label}: scoped pref reflects global pref (${value})`
+      );
+    }
+    SpecialPowers.clearUserPref(globalPref);
+  }
+
+  await BrowserTestUtils.removeTab(tab);
+});
+
+// A scoped override for each simple pref takes precedence over the global pref.
+add_task(async function test_simple_prefs_scoped_override() {
+  for (const { globalPref, scopedPref, label } of SIMPLE_SCOPED_PREFS) {
+    await SpecialPowers.pushPrefEnv({ set: [[globalPref, true]] });
+    let [tab, bc, sp] = await getTabBcPrefs(gBrowser, "https://example.com");
+
+    Assert.equal(
+      sp.getBoolPrefScoped(scopedPref, bc),
+      true,
+      `${label}: precondition - pref is true`
+    );
+
+    sp.setBoolPrefScoped(scopedPref, bc, false);
+    Assert.equal(
+      sp.getBoolPrefScoped(scopedPref, bc),
+      false,
+      `${label}: scoped override returns false despite global pref being true`
+    );
+
+    await BrowserTestUtils.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+// Email tracking has a pbmode variant: the scoped pref is true if either the
+// normal or pbmode global pref is true.
+add_task(async function test_emailtracking_obeys_global_with_pbmode() {
+  const PREF_EMAIL = "privacy.trackingprotection.emailtracking.enabled";
+  const PREF_EMAIL_PBM =
+    "privacy.trackingprotection.emailtracking.pbmode.enabled";
+  const SCOPED_EMAIL =
+    Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_EMAILTRACKING_ENABLED;
+
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+  let [normalTab, normalBc, normalSp] = await getTabBcPrefs(
+    gBrowser,
+    "https://example.com"
+  );
+  let [privateTab, privateBc, privateSp] = await getTabBcPrefs(
+    privateWin.gBrowser,
+    "https://example.com"
+  );
+
+  let prefValues = [
+    [false, false],
+    [false, true],
+    [true, false],
+    [true, true],
+  ];
+  for (const [normal, pbm] of prefValues) {
+    await SpecialPowers.setBoolPref(PREF_EMAIL, normal);
+    await SpecialPowers.setBoolPref(PREF_EMAIL_PBM, pbm);
+
+    Assert.equal(
+      normalSp.getBoolPrefScoped(SCOPED_EMAIL, normalBc),
+      normal,
+      `emailtracking: normal mode value is correct (normal=${normal}, pbm=${pbm})`
+    );
+    Assert.equal(
+      privateSp.getBoolPrefScoped(SCOPED_EMAIL, privateBc),
+      normal || pbm,
+      `emailtracking: private mode value is correct (normal=${normal}, pbm=${pbm})`
+    );
+  }
+
+  await BrowserTestUtils.removeTab(normalTab);
+  await BrowserTestUtils.removeTab(privateTab);
+  await BrowserTestUtils.closeWindow(privateWin);
+  SpecialPowers.clearUserPref(PREF_EMAIL);
+  SpecialPowers.clearUserPref(PREF_EMAIL_PBM);
 });

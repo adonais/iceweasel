@@ -30,27 +30,12 @@ add_task(async function () {
   await testEditSelector(view, "span");
 });
 
-async function testEditSelector(view, name) {
+async function testEditSelector(view, newSelector) {
   info("Test editing existing selector fields");
 
   let ruleEditor = getRuleViewRuleEditorAt(view, 1);
 
-  info("Focusing an existing selector name in the rule-view");
-  const editor = await focusEditableField(view, ruleEditor.selectorText);
-
-  is(
-    inplaceEditor(ruleEditor.selectorText),
-    editor,
-    "The selector editor got focused"
-  );
-
-  info("Entering a new selector name and committing");
-  editor.input.value = name;
-
-  info("Entering the commit key");
-  const onRuleViewChanged = once(view, "ruleview-changed");
-  EventUtils.synthesizeKey("KEY_Enter");
-  await onRuleViewChanged;
+  await editSelectorForRuleEditor(view, ruleEditor, newSelector);
 
   // Get the new rule editor that replaced the original
   ruleEditor = getRuleViewRuleEditorAt(view, 1);
@@ -58,10 +43,13 @@ async function testEditSelector(view, name) {
   const textPropEditor = rule.textProps[0].editor;
 
   assertDisplayedRulesCount(view, 3);
-  ok(getRuleViewRule(view, name), "Rule with " + name + " selector exists.");
+  ok(
+    getRuleViewRule(view, newSelector),
+    `Rule with ${newSelector} selector exists.`
+  );
   ok(
     ruleEditor.element.getAttribute("unmatched"),
-    "Rule with " + name + " does not match the current element."
+    `Rule with ${newSelector} does not match the current element.`
   );
   ok(!textPropEditor.filterProperty, "Overridden search is hidden.");
 }

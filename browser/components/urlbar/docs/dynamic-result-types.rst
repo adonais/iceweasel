@@ -178,9 +178,9 @@ for a description of this object.
 ~~~~~~~~~~~~~~~~~~~~
 
 If you are creating the provider in the internal address bar implementation in
-mozilla-central, then add styling `urlbar-dynamic-results.css`_.
+mozilla-central, then add styling to `dynamic-results.css`_.
 
-.. _urlbar-dynamic-results.css: https://searchfox.org/mozilla-central/source/browser/themes/shared/urlbar-dynamic-results.css
+.. _dynamic-results.css: https://searchfox.org/mozilla-central/source/browser/themes/shared/urlbar/dynamic-results.css
 
 The rest of this section will discuss the CSS rules you need to use to style
 your results.

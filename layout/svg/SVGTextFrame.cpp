@@ -3432,13 +3432,13 @@ void SVGTextFrame::ReflowSVG() {
  * for the specified rendered run.
  */
 static TextRenderedRun::GeometryFlags TextRenderedRunFlagsForBBoxContribution(
-    const TextRenderedRun& aRun, uint32_t aBBoxFlags) {
+    const TextRenderedRun& aRun, SVGBBoxFlags aBBoxFlags) {
   TextRenderedRun::GeometryFlags flags;
-  if (aBBoxFlags & SVGUtils::eBBoxIncludeFillGeometry) {
+  if (aBBoxFlags.contains(SVGBBoxFlag::IncludeFillGeometry)) {
     flags += TextRenderedRun::GeometryFlag::IncludeFill;
   }
-  if ((aBBoxFlags & SVGUtils::eBBoxIncludeStrokeGeometry) ||
-      ((aBBoxFlags & SVGUtils::eBBoxIncludeStroke) &&
+  if (aBBoxFlags.contains(SVGBBoxFlag::IncludeStrokeGeometry) ||
+      (aBBoxFlags.contains(SVGBBoxFlag::IncludeStroke) &&
        SVGUtils::HasStroke(aRun.mFrame))) {
     flags += TextRenderedRun::GeometryFlag::IncludeStroke;
   }
@@ -3446,11 +3446,11 @@ static TextRenderedRun::GeometryFlags TextRenderedRunFlagsForBBoxContribution(
 }
 
 SVGBBox SVGTextFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                                          uint32_t aFlags) {
+                                          SVGBBoxFlags aFlags) {
   NS_ASSERTION(PrincipalChildList().FirstChild(), "must have a child frame");
   SVGBBox bbox;
 
-  if (aFlags & SVGUtils::eForGetClientRects) {
+  if (aFlags.contains(SVGBBoxFlag::ForGetClientRects)) {
     if (!mRect.IsEmpty()) {
       Rect rect = NSRectToRect(mRect, AppUnitsPerCSSPixel());
       bbox = aToBBoxUserspace.TransformBounds(rect);

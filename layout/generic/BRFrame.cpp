@@ -14,7 +14,6 @@
 #include "nsComputedDOMStyle.h"
 #include "nsContainerFrame.h"
 #include "nsFontMetrics.h"
-#include "nsGkAtoms.h"
 #include "nsHTMLParts.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"

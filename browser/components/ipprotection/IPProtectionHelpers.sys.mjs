@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
+import { IPPFxaAuthProvider } from "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs";
 import { IPPUsageHelper } from "moz-src:///browser/components/ipprotection/IPPUsageHelper.sys.mjs";
 import { IPPOnboardingMessage } from "moz-src:///browser/components/ipprotection/IPPOnboardingMessageHelper.sys.mjs";
 import { IPPOptOutHelper } from "moz-src:///browser/components/ipprotection/IPPOptOutHelper.sys.mjs";
@@ -84,6 +85,9 @@ IPProtectionActivator.addHelpers([
   IPPOptOutHelper,
   IPProtectionAlertManager,
   IPProtectionInfobarManager,
+  ...IPPFxaAuthProvider.helpers,
 ]);
+
+IPProtectionActivator.setAuthProvider(IPPFxaAuthProvider);
 
 export { IPProtectionActivator };

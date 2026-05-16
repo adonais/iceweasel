@@ -506,7 +506,7 @@ class SettingsSearchTest {
             typeSearch("mozilla")
             verifyAllowSuggestionsInPrivateModeDialog()
             allowSuggestionsInPrivateMode()
-            verifySearchSuggestionsAreDisplayed("mozilla firefox")
+            verifySearchSuggestionsAreDisplayed("mozilla")
         }.dismissSearchBar {
         }.openThreeDotMenu {
         }.clickSettingsButton {
@@ -516,7 +516,7 @@ class SettingsSearchTest {
         }.goBack(composeTestRule) {
         }.openSearch {
             typeSearch("mozilla")
-            verifySuggestionsAreNotDisplayed("mozilla firefox")
+            verifySuggestionsAreNotDisplayed("mozilla")
         }
     }
 

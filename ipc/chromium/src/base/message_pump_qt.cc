@@ -12,7 +12,6 @@
 
 #include <fcntl.h>
 #include <limits>
-#include <math.h>
 
 #include "base/eintr_wrapper.h"
 #include "base/logging.h"

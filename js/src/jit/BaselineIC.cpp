@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -239,8 +237,8 @@ class MOZ_STATIC_CLASS OpToFallbackKindTable {
   uint8_t lookup(JSOp op) const { return table_[size_t(op)]; }
 
   constexpr OpToFallbackKindTable() {
-    for (size_t i = 0; i < JSOP_LIMIT; i++) {
-      table_[i] = NoICValue;
+    for (unsigned char& i : table_) {
+      i = NoICValue;
     }
 
     setKind(JSOp::Not, BaselineICFallbackKind::ToBool);
@@ -550,11 +548,14 @@ void ICFallbackStub::unlinkStubUnbarriered(ICEntry* icEntry,
 
   state_.trackUnlinkedStub();
 
-#ifdef DEBUG
-  // Poison stub code to ensure we don't call this stub again. However, if
-  // this stub can make calls, a pointer to it may be stored in a stub frame
-  // on the stack, so we can't touch the stubCode_ or GC will crash when
-  // tracing this pointer.
+  // Poison stub code to ensure we don't call this stub again if possible.
+  //
+  // If the GC might still access this stub then we can't touch the stubCode_ or
+  // it will crash when tracing this pointer. This can happen for two reasons:
+  //  1) During concurrent marking it may already have a pointer to it.
+  //  2) If this stub can make calls, a pointer to it may be stored in a stub
+  //     frame on the stack.
+#if defined(DEBUG) && !defined(JS_GC_CONCURRENT_MARKING)
   if (!stub->makesGCCalls()) {
     stub->stubCode_ = (uint8_t*)0xbad;
   }
@@ -1736,10 +1737,8 @@ bool DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame,
     Rooted<ArrayObject*> aobj(cx, &arr.toObject().as<ArrayObject>());
     MOZ_ASSERT(IsPackedArray(aobj));
 
-    HandleValueArray args = HandleValueArray::fromMarkedLocation(
-        aobj->length(), aobj->getDenseElements());
     CallIRGenerator gen(cx, script, pc, stub->state(), frame, 1, callee, thisv,
-                        newTarget, args);
+                        newTarget, aobj);
     switch (gen.tryAttachStub()) {
       case AttachDecision::NoAction:
         break;

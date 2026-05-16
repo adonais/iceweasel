@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -9,7 +7,6 @@
 #include "BounceTrackingRecord.h"
 #include "ProfileAfterChangeGate.h"
 
-#include "BounceTrackingStorageObserver.h"
 #include "ErrorList.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -803,50 +800,6 @@ nsresult BounceTrackingState::OnDocumentLoaded(
   // Set the navigable’s bounce tracking record's final host to the host of
   // finalSite.
   mBounceTrackingRecord->SetFinalHost(siteHost);
-
-  return NS_OK;
-}
-
-nsresult BounceTrackingState::OnCookieWrite(const nsACString& aSiteHost) {
-  NS_ENSURE_TRUE(!aSiteHost.IsEmpty(), NS_ERROR_FAILURE);
-
-  MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Verbose,
-              "{}: OnCookieWrite: {}.", __FUNCTION__, aSiteHost);
-
-  if (!mBounceTrackingRecord) {
-    return NS_OK;
-  }
-
-  mBounceTrackingRecord->AddStorageAccessHost(aSiteHost);
-  return NS_OK;
-}
-
-nsresult BounceTrackingState::OnStorageAccess(nsIPrincipal* aPrincipal) {
-  NS_ENSURE_ARG_POINTER(aPrincipal);
-  // The caller should already filter out principals for us.
-  MOZ_ASSERT(BounceTrackingState::ShouldTrackPrincipal(aPrincipal));
-
-  if (MOZ_LOG_TEST(gBounceTrackingProtectionLog, LogLevel::Debug)) {
-    nsAutoCString origin;
-    nsresult rv = aPrincipal->GetOrigin(origin);
-    if (NS_FAILED(rv)) {
-      origin = "err";
-    }
-    MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                "{}: origin: {}, mBounceTrackingRecord: {}", __FUNCTION__,
-                origin, mBounceTrackingRecord);
-  }
-
-  if (!mBounceTrackingRecord) {
-    return NS_OK;
-  }
-
-  nsAutoCString siteHost;
-  nsresult rv = aPrincipal->GetBaseDomain(siteHost);
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(!siteHost.IsEmpty(), NS_ERROR_FAILURE);
-
-  mBounceTrackingRecord->AddStorageAccessHost(siteHost);
 
   return NS_OK;
 }

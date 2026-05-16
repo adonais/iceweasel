@@ -644,7 +644,7 @@ void SVGOuterSVGFrame::PaintSVG(gfxContext& aContext,
 }
 
 SVGBBox SVGOuterSVGFrame::GetBBoxContribution(
-    const gfx::Matrix& aToBBoxUserspace, uint32_t aFlags) {
+    const gfx::Matrix& aToBBoxUserspace, SVGBBoxFlags aFlags) {
   NS_ASSERTION(
       PrincipalChildList().FirstChild()->IsSVGOuterSVGAnonChildFrame() &&
           !PrincipalChildList().FirstChild()->GetNextSibling(),

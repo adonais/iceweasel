@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.tabstray.ui.tabitems
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -14,10 +16,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,9 +31,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.compose.base.RadioCheckmarkColors
@@ -38,6 +47,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import mozilla.components.ui.icons.R as iconsR
 
@@ -70,17 +80,11 @@ private const val PLACEHOLDER_THREE_DOT_MENU_CONTENT_DESCRIPTION = "More options
 
 /**
  * @param isSelected: Whether the tab is selected in multiselect mode
- * @param isActive: Whether the tab is the active tab, or single-selected
- * @param activeColors: The coloring of the RadioCheckmark in the active state.  Note that
- * this param will probably be unnecessary once TabGridItem and TabGroupItem are aligned on
- * the active (outlined) state representation.
  * @param uncheckedBorderColor: The border color to display when the item is unchecked
  */
 @Composable
 fun MultiSelectTabButton(
     isSelected: Boolean,
-    isActive: Boolean,
-    activeColors: RadioCheckmarkColors,
     uncheckedBorderColor: Color = RadioCheckmarkColors.default().borderColor,
 ) {
     Box(
@@ -89,14 +93,7 @@ fun MultiSelectTabButton(
     ) {
         RadioCheckmark(
             isSelected = isSelected,
-            // Note - when active state switches to use a border rather than a color change,
-            // this UI will look the same for TabGroupCard and TabGridItem.  In the interim,
-            // handling this difference by passing in the active color set
-            colors = if (isActive) {
-                activeColors
-            } else {
-                RadioCheckmarkColors.default(borderColor = uncheckedBorderColor)
-            },
+            colors = RadioCheckmarkColors.default(borderColor = uncheckedBorderColor),
         )
     }
 }
@@ -156,11 +153,15 @@ val gridItemAspectRatio: Float
  * Renders the three dot button and its menu items for [org.mozilla.fenix.tabstray.data.TabsTrayItem.TabGroup] views.
  * @param modifier: The Modifier parameter
  * @param includeCloseOption: Whether to include the "Close" dropdown item in the menu item list.
+ * @param onDeleteTabGroup Invoked when the user clicks on delete tab group.
+ * @param editTabGroupClick Invoked when the user clicks to edit the selected tab group.
  */
 @Composable
 fun TabGroupMenuButton(
     modifier: Modifier = Modifier,
     includeCloseOption: Boolean = false,
+    onDeleteTabGroup: () -> Unit,
+    editTabGroupClick: () -> Unit,
 ) {
     var showDropdownMenu by remember { mutableStateOf(false) }
     IconButton(
@@ -169,20 +170,22 @@ fun TabGroupMenuButton(
         },
         modifier = modifier
             .testTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON),
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = LocalContentColor.current,
+        ),
     ) {
         Icon(
             painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
             contentDescription = PLACEHOLDER_THREE_DOT_MENU_CONTENT_DESCRIPTION,
-            tint = MaterialTheme.colorScheme.onSurface,
         )
 
         DropdownMenu(
             expanded = showDropdownMenu,
             onDismissRequest = { showDropdownMenu = false },
             menuItems = generateTabGroupMenuItems(
-                editTabGroup = {}, // handle edit
+                editTabGroup = editTabGroupClick,
                 closeTabGroup = {}, // handle close
-                deleteTabGroup = {}, // handle delete
+                deleteTabGroup = onDeleteTabGroup,
                 includeCloseOption = includeCloseOption,
             ),
         )
@@ -200,7 +203,7 @@ private fun generateTabGroupMenuItems(
         drawableRes = iconsR.drawable.mozac_ic_edit_24,
         testTag = TabsTrayTestTag.EDIT_TAB_GROUP,
         onClick = editTabGroup,
-        enabled = false,
+        enabled = true,
     )
     val closeItem = MenuItem.IconItem(
         text = Text.String(PLACEHOLDER_CLOSE),
@@ -215,7 +218,7 @@ private fun generateTabGroupMenuItems(
         testTag = TabsTrayTestTag.DELETE_TAB_GROUP,
         onClick = deleteTabGroup,
         level = MenuItem.FixedItem.Level.Critical,
-        enabled = false,
+        enabled = true,
     )
     return if (includeCloseOption) {
         listOf(editItem, closeItem, deleteItem)
@@ -226,8 +229,83 @@ private fun generateTabGroupMenuItems(
 
 // Long text string for verifying that tab items handle long titles with appropriate truncation.
 const val LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do " +
-        "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis " +
-        "nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute " +
-        "irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla " +
-        "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia " +
-        "deserunt mollit anim id est laborum."
+    "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis " +
+    "nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute " +
+    "irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla " +
+    "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia " +
+    "deserunt mollit anim id est laborum."
+
+/**
+ * Renders a border around a [TabsTrayItem] to signify that it is in focus.
+ * When the tab is not in focus, its BorderStroke will be null.
+ */
+@Composable
+@ReadOnlyComposable
+fun tabItemConditionalBorder(selectionState: TabsTrayItemSelectionState): BorderStroke? {
+    return if (selectionState.isFocused) {
+        tabItemBorderFocused()
+    } else {
+        null
+    }
+}
+
+/**
+ * Renders a border around a [TabsTrayItem] to signify that it is in focus.
+ */
+@Composable
+@ReadOnlyComposable
+fun tabItemBorderFocused(): BorderStroke {
+    return BorderStroke(width = 4.dp, color = MaterialTheme.colorScheme.tertiary)
+}
+
+/**
+ * Animates the tab item's alpha value to be slightly transparent when it is dragged.
+ */
+@Composable
+private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
+    return animateFloatAsState(
+        targetValue = if (interactionState.isDragged) { 0.7f } else { 1f },
+    )
+}
+
+/**
+ * Animates the tab item's size to be slightly reduced when it is dragged.
+ */
+@Composable
+private fun tabItemAnimatedScale(interactionState: TabItemInteractionState): State<Float> {
+    return animateFloatAsState(
+        targetValue = if (interactionState.isDragged) 0.75f else 1f,
+    )
+}
+
+/**
+ * Renders an animated scale and alpha transition for the tab item based on its interaction state.
+ * This happens at the graphics layer to avoid recomposition of the item.
+ * The semantics properties are provided so that the state can be evaluated, as evaluating the composable will not
+ * return the correct result, since these graphical animations occur at draw time.
+ */
+@Composable
+fun Modifier.tabItemInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
+    val tabItemAlpha: Float by tabItemAnimatedAlpha(interactionState)
+    val tabItemScale: Float by tabItemAnimatedScale(interactionState)
+    return this
+        .graphicsLayer(alpha = tabItemAlpha, scaleX = tabItemScale, scaleY = tabItemScale)
+        .semantics {
+            scale = tabItemScale
+            alpha = tabItemAlpha
+        }
+}
+
+/**
+ * Semantic property for accessing a Composable item's current graphical scale property.
+ * This is intended to be applied evenly across X and Y and set and fetched as needed for verification.
+ */
+internal val ScaleKey = SemanticsPropertyKey<Float>("Scale")
+internal var SemanticsPropertyReceiver.scale by ScaleKey
+
+/**
+ * Semantic property for accessing a Composable item's alpha property.
+ * This is intended to be set and fetched as needed for verification.
+ */
+internal val AlphaKey = SemanticsPropertyKey<Float>("Alpha")
+internal var SemanticsPropertyReceiver.alpha by AlphaKey

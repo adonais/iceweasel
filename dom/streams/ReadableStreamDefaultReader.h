@@ -99,22 +99,6 @@ class ReadableStreamDefaultReader final : public ReadableStreamGenericReader,
   LinkedList<RefPtr<ReadRequest>> mReadRequests = {};
 };
 
-namespace streams_abstract {
-
-void SetUpReadableStreamDefaultReader(ReadableStreamDefaultReader* aReader,
-                                      ReadableStream* aStream,
-                                      ErrorResult& aRv);
-
-void ReadableStreamDefaultReaderErrorReadRequests(
-    JSContext* aCx, ReadableStreamDefaultReader* aReader,
-    JS::Handle<JS::Value> aError, ErrorResult& aRv);
-
-void ReadableStreamDefaultReaderRelease(JSContext* aCx,
-                                        ReadableStreamDefaultReader* aReader,
-                                        ErrorResult& aRv);
-
-}  // namespace streams_abstract
-
 }  // namespace mozilla::dom
 
 #endif  // mozilla_dom_ReadableStreamDefaultReader_h

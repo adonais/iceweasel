@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -197,6 +195,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   size_t numFuncs() const { return funcs.length(); }
   size_t numFuncDefs() const { return funcs.length() - numFuncImports; }
   size_t numTables() const { return tables.length(); }
+  size_t numTags() const { return tags.length(); }
   size_t numMemories() const { return memories.length(); }
 
   bool funcIsImport(uint32_t funcIndex) const {
@@ -207,6 +206,10 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   }
   const FuncType& getFuncType(uint32_t funcIndex) const {
     return getFuncTypeDef(funcIndex).funcType();
+  }
+
+  const TagType& getTagType(uint32_t tagIndex) const {
+    return *tags[tagIndex].type;
   }
 
   BuiltinModuleFuncId knownFuncImport(uint32_t funcIndex) const {

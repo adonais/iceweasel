@@ -104,6 +104,9 @@ class AltSvcMapping {
 
   bool IsHttp3() { return mIsHttp3; }
   const nsCString& NPNToken() const { return mNPNToken; }
+  const OriginAttributes& GetOriginAttributes() const {
+    return mOriginAttributes;
+  }
   SupportedAlpnRank AlpnRank() const { return mAlpnRank; }
 
  protected:

@@ -1536,10 +1536,10 @@ nsresult nsSystemInfo::Init() {
                {PR_SI_RELEASE, "version"},
                {PR_SI_RELEASE_BUILD, "build"}};
 
-  for (uint32_t i = 0; i < (sizeof(items) / sizeof(items[0])); i++) {
+  for (auto item : items) {
     char buf[SYS_INFO_BUFFER_LENGTH];
-    if (PR_GetSystemInfo(items[i].cmd, buf, sizeof(buf)) == PR_SUCCESS) {
-      rv = SetPropertyAsACString(NS_ConvertASCIItoUTF16(items[i].name),
+    if (PR_GetSystemInfo(item.cmd, buf, sizeof(buf)) == PR_SUCCESS) {
+      rv = SetPropertyAsACString(NS_ConvertASCIItoUTF16(item.name),
                                  nsDependentCString(buf));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -1576,9 +1576,9 @@ nsresult nsSystemInfo::Init() {
 #endif
   if (virtualMem) SetUint64Property(u"virtualmemsize"_ns, virtualMem);
 
-  for (uint32_t i = 0; i < std::size(cpuPropItems); i++) {
-    rv = SetPropertyAsBool(NS_ConvertASCIItoUTF16(cpuPropItems[i].name),
-                           cpuPropItems[i].propfun());
+  for (auto cpuPropItem : cpuPropItems) {
+    rv = SetPropertyAsBool(NS_ConvertASCIItoUTF16(cpuPropItem.name),
+                           cpuPropItem.propfun());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }

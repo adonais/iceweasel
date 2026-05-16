@@ -1121,6 +1121,8 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   nsAutoCString url("-moz-evil:lying-event-listener"_ns);
   MOZ_ASSERT(body);
   MOZ_ASSERT(aElement);
+  MOZ_ASSERT(!aElement->ChromeOnlyAccess(),
+             "Don't use inline handlers on NAC/UAWidget");
   nsIURI* uri = aElement->OwnerDoc()->GetDocumentURI();
   if (uri) {
     uri->GetSpec(url);
@@ -1133,17 +1135,16 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   nsContentUtils::GetEventArgNames(aElement->GetNameSpaceID(), aTypeAtom, win,
                                    &argCount, &argNames);
 
-  // Wrap the event target, so that we can use it as the scope for the event
-  // handler. Note that mTarget is different from aElement in the <body> case,
-  // where mTarget is a Window.
+  // Use the document's realm as per spec:
   //
-  // The wrapScope doesn't really matter here, because the target will create
-  // its reflector in the proper scope, and then we'll enter that realm.
+  //     Let settings object be the relevant settings object of document.
+  //
+  // https://html.spec.whatwg.org/#getting-the-current-value-of-the-event-handler
   JS::Rooted<JSObject*> wrapScope(cx, global->GetGlobalJSObject());
   JS::Rooted<JS::Value> v(cx);
   {
     JSAutoRealm ar(cx, wrapScope);
-    nsresult rv = nsContentUtils::WrapNative(cx, mTarget, &v,
+    nsresult rv = nsContentUtils::WrapNative(cx, global, &v,
                                              /* aAllowWrapping = */ false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;

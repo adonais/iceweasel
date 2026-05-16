@@ -789,7 +789,6 @@
       ["menulist", "chrome://global/content/elements/menulist.js"],
       ["named-deck", "chrome://global/content/elements/named-deck.js"],
       ["named-deck-button", "chrome://global/content/elements/named-deck.js"],
-      ["panel-list", "chrome://global/content/elements/panel-list.js"],
       ["stringbundle", "chrome://global/content/elements/stringbundle.js"],
       [
         "printpreview-pagination",
@@ -887,6 +886,7 @@
         "moz-visual-picker-item",
         "chrome://global/content/elements/moz-visual-picker.mjs",
       ],
+      ["panel-list", "chrome://global/content/elements/panel-list.mjs"],
     ];
     document.addEventListener(
       "DOMContentLoaded",

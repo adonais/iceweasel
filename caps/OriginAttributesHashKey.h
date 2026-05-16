@@ -7,7 +7,6 @@
 
 #include "OriginAttributes.h"
 #include "PLDHashTable.h"
-#include "nsHashKeys.h"
 
 namespace mozilla {
 
@@ -36,11 +35,7 @@ class OriginAttributesHashKey : public PLDHashEntryHdr {
 
   static KeyTypePointer KeyToPointer(KeyTypeRef aKey) { return &aKey; }
 
-  static PLDHashNumber HashKey(KeyTypePointer aKey) {
-    nsAutoCString suffix;
-    aKey->CreateSuffix(suffix);
-    return mozilla::HashString(suffix);
-  }
+  static PLDHashNumber HashKey(KeyTypePointer aKey) { return aKey->Hash(); }
 
   enum { ALLOW_MEMMOVE = true };
 

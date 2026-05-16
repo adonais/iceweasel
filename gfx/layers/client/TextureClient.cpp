@@ -1436,8 +1436,9 @@ already_AddRefed<TextureClient> TextureClient::CreateForRawBufferAccess(
 
   // For future changes, check aAllocFlags aAllocFlags & ALLOC_DO_NOT_ACCELERATE
   TextureData* texData = BufferTextureData::Create(
-      aSize, aFormat, gfx::BackendType::SKIA, aLayersBackend, aTextureFlags,
-      aAllocFlags, aAllocator);
+      aSize, aFormat, gfx::ColorSpace2::SRGB, gfx::TransferFunction::SRGB,
+      gfx::BackendType::SKIA, aLayersBackend, aTextureFlags, aAllocFlags,
+      aAllocator);
   if (!texData) {
     return nullptr;
   }
@@ -1451,8 +1452,8 @@ already_AddRefed<TextureClient> TextureClient::CreateForYCbCr(
     const gfx::IntSize& aYSize, uint32_t aYStride,
     const gfx::IntSize& aCbCrSize, uint32_t aCbCrStride, StereoMode aStereoMode,
     gfx::ColorDepth aColorDepth, gfx::YUVColorSpace aYUVColorSpace,
-    gfx::ColorRange aColorRange, gfx::ChromaSubsampling aSubsampling,
-    TextureFlags aTextureFlags) {
+    gfx::ColorRange aColorRange, gfx::TransferFunction aTransferFunction,
+    gfx::ChromaSubsampling aSubsampling, TextureFlags aTextureFlags) {
   if (!aAllocator || !aAllocator->GetLayersIPCActor()->IPCOpen()) {
     return nullptr;
   }
@@ -1463,8 +1464,8 @@ already_AddRefed<TextureClient> TextureClient::CreateForYCbCr(
 
   TextureData* data = BufferTextureData::CreateForYCbCr(
       aAllocator, aDisplay, aYSize, aYStride, aCbCrSize, aCbCrStride,
-      aStereoMode, aColorDepth, aYUVColorSpace, aColorRange, aSubsampling,
-      aTextureFlags);
+      aStereoMode, aColorDepth, aYUVColorSpace, aColorRange, aTransferFunction,
+      aSubsampling, aTextureFlags);
   if (!data) {
     return nullptr;
   }

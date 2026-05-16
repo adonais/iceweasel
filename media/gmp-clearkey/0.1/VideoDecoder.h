@@ -29,9 +29,8 @@
 
 class VideoDecoder : public RefCounted {
  public:
-  explicit VideoDecoder(cdm::Host_11* aHost);
-
-  cdm::Status InitDecode(const cdm::VideoDecoderConfig_2& aConfig);
+  static VideoDecoder* Create(cdm::Host_11* aHost,
+                              const cdm::VideoDecoderConfig_2& aConfig);
 
   cdm::Status Decode(const cdm::InputBuffer_2& aEncryptedBuffer,
                      cdm::VideoFrame* aVideoFrame);
@@ -43,6 +42,7 @@ class VideoDecoder : public RefCounted {
   bool HasShutdown() { return mHasShutdown; }
 
  private:
+  VideoDecoder(cdm::Host_11* aHost, wmf::WMFH264Decoder* aDecoder);
   virtual ~VideoDecoder();
 
   cdm::Status Drain(cdm::VideoFrame* aVideoFrame);
@@ -71,7 +71,7 @@ class VideoDecoder : public RefCounted {
   };
   std::queue<OutputData> mOutputQueue;
 
-  bool mHasShutdown;
+  bool mHasShutdown = false;
 };
 
 #endif  // VideoDecoder_h_

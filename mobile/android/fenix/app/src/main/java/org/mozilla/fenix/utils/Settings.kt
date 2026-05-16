@@ -47,7 +47,6 @@ import org.mozilla.fenix.autofill.address.RegionAddressFeatureGate
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.settings.counterPreference
 import org.mozilla.fenix.components.settings.featureFlagBooleanPreference
-import org.mozilla.fenix.components.settings.lazyBooleanPreference
 import org.mozilla.fenix.components.settings.lazyFeatureFlagBooleanPreference
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.debugsettings.addresses.EmptyAddressesDebugRegionRepository
@@ -200,6 +199,7 @@ class Settings(
     /**
      * Indicates if the stories homescreen section should be shown.
      */
+    @Suppress("DEPRECATION")
     var showPocketRecommendationsFeature by lazyFeatureFlagBooleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_pocket_homescreen_recommendations),
         featureFlag = ContentRecommendationsFeatureHelper.isContentRecommendationsFeatureEnabled(appContext),
@@ -239,6 +239,7 @@ class Settings(
     /**
      * Indicates if the Pocket recommendations homescreen section should also show sponsored stories.
      */
+    @Suppress("DEPRECATION")
     val showPocketSponsoredStories by lazyFeatureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_pocket_sponsored_stories),
         defaultValue = { homescreenSections[HomeScreenSection.POCKET_SPONSORED_STORIES] == true },
@@ -756,9 +757,9 @@ class Settings(
      * Rollouts are completely decoupled from telemetry and experiments, so users
      * can receive feature updates regardless of their telemetry or experiment settings.
      */
-    var isRolloutsEnabled by lazyBooleanPreference(
+    var isRolloutsEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_rollouts),
-        defaultValue = { appContext.components.nimbus.sdk.rolloutParticipation },
+        default = { appContext.components.nimbus.sdk.rolloutParticipation },
     )
 
     /**
@@ -828,11 +829,6 @@ class Settings(
     val shouldShowClipboardSuggestions by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_show_clipboard_suggestions),
         default = true,
-    )
-
-    val shouldShowSearchShortcuts by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_show_search_engine_shortcuts),
-        default = false,
     )
 
     var gridTabView by booleanPreference(
@@ -1145,6 +1141,11 @@ class Settings(
         default = true,
     )
 
+    var shouldUseTrackingProtectionDatabase by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_tracking_protection_database_status),
+        default = false,
+    )
+
     var shouldEnableGlobalPrivacyControl by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_privacy_enable_global_privacy_control),
         false,
@@ -1412,6 +1413,106 @@ class Settings(
         appContext.getPreferenceKey(R.string.pref_key_delete_downloads_now),
         default = true,
     )
+
+    /**
+     * Defines the user's preferred behavior when deleting a downloaded file.
+     *
+     * This enum class represents the different actions that can be taken when a user
+     * initiates a deletion for a download entry in the app. The preference is stored
+     * as an integer and can be retrieved or updated via the `deleteDownloadBehavior` setting.
+     *
+     * @property value The integer value associated with each behavior.
+     */
+    enum class DeleteDownloadBehavior(val value: Int) {
+        /**
+         * Deletes the file from the device's storage.
+         */
+        DELETE_FROM_DEVICE(0),
+
+        /**
+         * Only removes the download entry from the app's history, leaving the file on the device.
+         */
+        REMOVE_FROM_HISTORY(1),
+
+        /**
+         * Prompts the user to choose between deleting from the device or removing from history each time.
+         */
+        ASK_WHEN_DELETING(2),
+        ;
+
+        companion object {
+            /**
+             * Converts an integer value into its corresponding [DeleteDownloadBehavior] enum constant.
+             *
+             * If the integer does not match any known value, it defaults to [DELETE_FROM_DEVICE].
+             *
+             * @param value The integer to convert.
+             * @return The matching [DeleteDownloadBehavior] or the default.
+             */
+            fun fromInt(value: Int) = entries.firstOrNull { it.value == value } ?: DELETE_FROM_DEVICE
+        }
+    }
+
+    /**
+     * Migrates legacy download deletion preferences to the new unified [DeleteDownloadBehavior] setting.
+     *
+     * Previously, the user's preference for handling deleted downloads was stored across multiple
+     * separate boolean keys (including a legacy "clean up files automatically" toggle). This
+     * function reads those old boolean values, maps them to the appropriate [DeleteDownloadBehavior]
+     * enum value, saves the new integer preference, and removes the legacy keys from
+     * [SharedPreferences].
+     *
+     * This migration ensures existing users do not lose their settings after updating the app.
+     * It will safely return early if the migration has already been performed.
+     */
+    fun migrateDeleteDownloadBehaviorIfNeeded() {
+        val newKey = appContext.getString(R.string.pref_key_downloads_delete_behavior)
+        if (preferences.contains(newKey)) return
+
+        val legacyCleanupKey = appContext.getString(
+            R.string.pref_key_downloads_clean_up_files_automatically,
+        )
+        val oldDeleteFromDeviceKey = appContext.getString(R.string.pref_key_downloads_delete_from_device)
+        val oldRemoveFromHistoryKey = appContext.getString(
+            R.string.pref_key_downloads_remove_from_downloads_history,
+        )
+        val oldAskWhenDeletingKey = appContext.getString(R.string.pref_key_downloads_ask_when_to_delete_files)
+
+        val migratedBehavior = when {
+            preferences.contains(legacyCleanupKey) -> {
+                if (preferences.getBoolean(legacyCleanupKey, false)) {
+                    DeleteDownloadBehavior.DELETE_FROM_DEVICE
+                } else {
+                    DeleteDownloadBehavior.REMOVE_FROM_HISTORY
+                }
+            }
+            preferences.getBoolean(oldRemoveFromHistoryKey, false) -> DeleteDownloadBehavior.REMOVE_FROM_HISTORY
+            preferences.getBoolean(oldAskWhenDeletingKey, false) -> DeleteDownloadBehavior.ASK_WHEN_DELETING
+            else -> DeleteDownloadBehavior.DELETE_FROM_DEVICE
+        }
+
+        preferences.edit {
+            putInt(newKey, migratedBehavior.value)
+            remove(legacyCleanupKey)
+            remove(oldDeleteFromDeviceKey)
+            remove(oldRemoveFromHistoryKey)
+            remove(oldAskWhenDeletingKey)
+        }
+    }
+
+    var deleteDownloadBehavior: DeleteDownloadBehavior
+        get() = DeleteDownloadBehavior.fromInt(
+            preferences.getInt(
+                appContext.getString(R.string.pref_key_downloads_delete_behavior),
+                DeleteDownloadBehavior.DELETE_FROM_DEVICE.value,
+            ),
+        )
+        set(value) = preferences.edit {
+            putInt(
+                appContext.getString(R.string.pref_key_downloads_delete_behavior),
+                value.value,
+            )
+        }
 
     var shouldUseBottomToolbar by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_toolbar_bottom),
@@ -2019,15 +2120,22 @@ class Settings(
         default = true,
     )
 
+    var isSwipeToolbarToShowTabsEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_swipe_toolbar_show_tabs),
+        default = true,
+    )
+
     /**
      * Address Sync feature.
      */
+    @Suppress("DEPRECATION")
     var isAddressSyncEnabled by featureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_address_sync),
         defaultValue = true,
         featureFlag = isAddressFeatureEnabled(appContext),
     )
 
+    @Suppress("DEPRECATION")
     var addressFeature by featureFlagBooleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_show_address_feature),
         defaultValue = true,
@@ -2119,11 +2227,6 @@ class Settings(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_contile),
         default = true,
     )
-
-    /**
-     * Indicates if the Unified Search feature should be visible.
-     */
-    val showUnifiedSearchFeature = true
 
     /**
      * Blocklist used to filter items from the home screen that have previously been removed.
@@ -2230,9 +2333,14 @@ class Settings(
         default = true,
     )
 
-    var shouldUseComposableToolbar by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_composable_toolbar),
-        default = { FxNimbus.features.composableToolbar.value().enabled },
+    val shouldUseComposableToolbar = true
+
+    /**
+     * Indicates if the homepage wallpaper background should be rendered in Compose.
+     */
+    var shouldUseComposeWallpaper by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_compose_wallpaper),
+        default = false,
     )
 
     var shouldUseMinimalBottomToolbarWhenEnteringText by booleanPreference(
@@ -2362,7 +2470,7 @@ class Settings(
         default = false,
     )
 
-    var usageTimeGrowthData by longPreference(
+    var firstDayUsageTimeGrowthData by longPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_growth_usage_time),
         default = -1,
     )
@@ -2407,14 +2515,6 @@ class Settings(
     )
 
     /**
-     * Indicates if the Homepage "Discover more" stories is enabled.
-     */
-    var enableDiscoverMoreStories by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_discover_more_stories),
-        default = FeatureFlags.DISCOVER_MORE_STORIES,
-    )
-
-    /**
      * Indicates if the Mozilla Ads Client is enabled.
      */
     var enableMozillaAdsClient by booleanPreference(
@@ -2431,6 +2531,14 @@ class Settings(
     )
 
     /**
+     * Indicates if Add Shortcuts improvement is enabled.
+     */
+    var enableAddShortcutsImprovement by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_add_shortcuts_improvement),
+        default = { FxNimbus.features.addShortcutsImprovement.value().enabled },
+    )
+
+    /**
      * Indicates if Merino Client is enabled.
      */
     var enableMerinoClient by booleanPreference(
@@ -2439,11 +2547,63 @@ class Settings(
     )
 
     /**
+     * Indicates if the Merino Manifest is enabled.
+     */
+    var enableMerinoManifest by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_merino_manifest),
+        default = { FxNimbus.features.merinoManifest.value().enabled },
+    )
+
+    /**
      * Indicates if the Unified Trust Panel is enabled.
      */
     var enableUnifiedTrustPanel by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_unified_trust_panel),
         default = { FxNimbus.features.unifiedTrustPanel.value().enabled },
+    )
+
+    /**
+     * Indicates if Homepage Sports Widget is enabled.
+     */
+    var enableHomepageSportsWidget by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_homepage_sports_widget),
+        default = { FxNimbus.features.homepageSportsWidget.value().enabled },
+    )
+
+    /**
+     * Indicates if the Homepage Sports Widget should be visible on the homepage.
+     * This is the user-controlled visibility toggle, independent of the
+     * [enableHomepageSportsWidget] feature flag.
+     */
+    var showHomepageSportsWidget by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_show_homepage_sports_widget),
+        default = true,
+    )
+
+    /**
+     * Indicates if the Homepage Countdown Widget should be visible on the homepage.
+     * This is independent of the [enableHomepageSportsWidget] feature flag and [showHomepageSportsWidget] setting.
+     */
+    var showHomepageCountdownWidget by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_show_homepage_countdown_widget),
+        default = true,
+    )
+
+    /**
+     * The set of ISO codes of the user's selected countries to follow for the sports widget.
+     */
+    var sportsSelectedCountries by stringSetPreference(
+        appContext.getPreferenceKey(R.string.pref_key_sports_selected_countries),
+        default = setOf(),
+    )
+
+    /**
+     * Whether the user has dismissed the sports widget "Follow your team" card via the
+     * "Skip" action. When true, the "Follow your team" card is not shown again.
+     */
+    var hasSkippedSportsFollowTeam by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_sports_has_skipped_follow_team),
+        default = false,
     )
 
     /**
@@ -2460,19 +2620,6 @@ class Settings(
     var numFontListSent by intPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_num_font_list_sent),
         default = 0,
-    )
-
-    /**
-     * Indicates how many days in the first week user opened the app.
-     */
-    val growthEarlyUseCount = counterPreference(
-        appContext.getPreferenceKey(R.string.pref_key_growth_early_browse_count),
-        maxCount = 3,
-    )
-
-    var growthEarlyUseCountLastIncrement by longPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_growth_early_browse_count_last_increment),
-        default = 0L,
     )
 
     /**
@@ -2496,6 +2643,7 @@ class Settings(
     /**
      * Indicates if Firefox Suggest is enabled.
      */
+    @Suppress("DEPRECATION")
     var enableFxSuggest by lazyFeatureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_fxsuggest),
         defaultValue = { FxNimbus.features.fxSuggest.value().enabled },
@@ -2520,6 +2668,7 @@ class Settings(
      * Indicates if the user has chosen to show sponsored search suggestions in the awesomebar.
      * The default value is computed lazily, and based on whether Firefox Suggest is enabled.
      */
+    @Suppress("DEPRECATION")
     var showSponsoredSuggestions by lazyFeatureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_show_sponsored_suggestions),
         defaultValue = { enableFxSuggest },
@@ -2531,6 +2680,7 @@ class Settings(
      * awesomebar. The default value is computed lazily, and based on whether Firefox Suggest
      * is enabled.
      */
+    @Suppress("DEPRECATION")
     var showNonSponsoredSuggestions by lazyFeatureFlagBooleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_show_nonsponsored_suggestions),
         defaultValue = { enableFxSuggest },
@@ -2616,6 +2766,34 @@ class Settings(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_shake_to_summarize),
         default = { FxNimbus.features.shakeToSummarize.value().enabled },
     )
+
+    var aiControlsFeatureFlagEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_ai_controls),
+        default = true,
+    )
+
+    var importBookmarksFeatureFlagEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_import_bookmarks),
+        default = Config.channel.isDebug,
+    )
+
+    /**
+     * Persists IPProtection state set through Secret Settings.
+     *
+     * `true` makes the IPProtection UI elements visible across the app, while `false` hides them.
+     */
+    var isIPProtectionEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_ip_protection),
+        default = false,
+    )
+
+    /**
+     * Indicates if the IPProtection feature is available for the user.
+     *
+     * The flag is backed by a Nimbus `ip-protection` feature, with an option to override it through secret settings.
+     */
+    val isIPProtectionAvailable: Boolean
+        get() = FxNimbus.features.ipProtection.value().enabled || isIPProtectionEnabled
 
     /**
      * Tracks how many times the summarize menu item has been shown.
@@ -3004,11 +3182,24 @@ class Settings(
     )
 
     /**
+     * Whether drag and drop is enabled for the Tab Groups feature.
+     */
+    var tabGroupsDragAndDropEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_tab_groups_drag_and_drop),
+        default = { DefaultTabManagementFeatureHelper.tabGroupsDragAndDropEnabled },
+    )
+
+    /**
      * Whether the Native Share Sheet feature is enabled.
      */
     var nativeShareSheetEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_native_share_sheet),
         default = { FxNimbus.features.nativeShareSheet.value().enabled },
+    )
+
+    var googleLensIntegrationEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_google_lens_integration),
+        default = { FxNimbus.features.googleLensIntegration.value().enabled },
     )
 
     /**

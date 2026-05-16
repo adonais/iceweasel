@@ -372,7 +372,10 @@ private fun FoxEmojiButtonPreview(
 }
 
 private class FoxEmojiButtonLabelProvider :
-    ThemedValueProvider<String>(sequenceOf("It’s great!", "It’s great! And the text is very long omg"))
+    ThemedValueProvider<String>(
+        baseValues = sequenceOf("It’s great!", "It’s great! And the text is very long omg"),
+        displayNames = listOf("Single-line", "Multi-line"),
+    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview

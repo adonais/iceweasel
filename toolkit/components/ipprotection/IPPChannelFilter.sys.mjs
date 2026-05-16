@@ -7,6 +7,8 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = XPCOMUtils.declareLazy({
   IPPExceptionsManager:
     "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
+  IPProtectionService:
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   ProxyService: {
     service: "@mozilla.org/network/protocol-proxy-service;1",
     iid: Ci.nsIProtocolProxyService,
@@ -58,9 +60,6 @@ const TRACKING_FLAGS =
 
 const DEFAULT_EXCLUDED_URL_PREFS = [
   "browser.ipProtection.guardian.endpoint",
-  "identity.fxaccounts.remote.profile.uri",
-  "identity.fxaccounts.auth.uri",
-  "identity.fxaccounts.remote.profile.uri",
   "captivedetect.canonicalURL",
 ];
 
@@ -224,6 +223,13 @@ export class IPPChannelFilter {
       }
     });
 
+    lazy.IPProtectionService.authProvider.excludedUrlPrefs.forEach(pref => {
+      const prefValue = Services.prefs.getStringPref(pref, "");
+      if (prefValue) {
+        this.addPageExclusion(prefValue);
+      }
+    });
+
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "mode",
@@ -338,15 +344,27 @@ export class IPPChannelFilter {
         return true;
       }
 
-      if (IPPChannelFilter.isLocal(uri)) {
+      // Only get the principal from the channel URI when both loadingPrincipal
+      // and triggeringPrincipal are system principals.
+      let { loadingPrincipal, triggeringPrincipal } = channel.loadInfo ?? {};
+      let principal;
+      if (loadingPrincipal && !loadingPrincipal.isSystemPrincipal) {
+        principal = loadingPrincipal;
+      } else if (
+        triggeringPrincipal &&
+        !triggeringPrincipal.isSystemPrincipal
+      ) {
+        principal = triggeringPrincipal;
+      } else {
+        principal =
+          Services.scriptSecurityManager.getChannelURIPrincipal(channel);
+      }
+
+      if (IPPChannelFilter.isLocal(principal)) {
         return true;
       }
 
       const origin = uri.prePath; // scheme://host[:port]
-
-      let principal =
-        channel.loadInfo?.loadingPrincipal ||
-        Services.scriptSecurityManager.getChannelURIPrincipal(channel);
 
       let hasExclusion = lazy.IPPExceptionsManager.hasExclusion(principal);
 
@@ -370,28 +388,12 @@ export class IPPChannelFilter {
     return new MatchPatternSet(patterns, MATCH_PATTERN_OPTIONS);
   }
 
-  static isLocal(uri) {
-    if (Services.io.hostnameIsLocalIPAddress(uri)) {
-      return true;
-    }
-
-    const hostname = uri.host;
-    return (
-      /^(.+\.)?localhost$/.test(hostname) ||
-      /^(.+\.)?localhost6$/.test(hostname) ||
-      /^(.+\.)?localhost.localdomain$/.test(hostname) ||
-      /^(.+\.)?localhost6.localdomain6$/.test(hostname) ||
-      // https://tools.ietf.org/html/rfc2606
-      /\.example$/.test(hostname) ||
-      /\.invalid$/.test(hostname) ||
-      /\.test$/.test(hostname) ||
-      // https://tools.ietf.org/html/rfc8375
-      /^(.+\.)?home\.arpa$/.test(hostname) ||
-      // https://tools.ietf.org/html/rfc6762
-      /\.local$/.test(hostname) ||
-      // Loopback
-      /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)
-    );
+  /**
+   *
+   * @param {nsIPrincipal} principal
+   */
+  static isLocal(principal) {
+    return principal.isLoopbackHost || principal.isLocalIpAddress;
   }
 
   /**

@@ -6,7 +6,6 @@
 #include "2D.h"
 #include "DataSurfaceHelpers.h"
 
-#include <math.h>
 #include <algorithm>
 
 namespace mozilla {

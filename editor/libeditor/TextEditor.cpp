@@ -706,7 +706,8 @@ nsresult TextEditor::HandlePasteAsQuotation(
   }
 
   if (!flavor.EqualsLiteral(kTextMime) &&
-      !flavor.EqualsLiteral(kMozTextInternal)) {
+      !flavor.EqualsLiteral(kMozTextInternal) &&
+      !flavor.EqualsLiteral(kURLDataMime)) {
     return NS_OK;
   }
 

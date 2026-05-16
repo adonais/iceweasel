@@ -137,6 +137,15 @@ testing_config_options = (
                 "help": "Instruct the test harness to terminate on failure and restart where it left off",
             },
         ],
+        [
+            ["--restart-between-tests"],
+            {
+                "action": "store_true",
+                "default": False,
+                "dest": "restartBetweenTests",
+                "help": "Restart the browser between each test to identify tests with undocumented dependencies",
+            },
+        ],
     ]
     + copy.deepcopy(virtualenv_config_options)
     + copy.deepcopy(try_config_options)

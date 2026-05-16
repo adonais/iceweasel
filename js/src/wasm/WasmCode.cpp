@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2016 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -690,15 +688,12 @@ class Module::PartialTier2CompileTaskImpl : public PartialTier2CompileTask {
   }
 };
 
+// The caller must call tryClaimTierUp() before.
 bool Code::requestTierUp(uint32_t funcIndex) const {
   // Note: this runs on the requesting (wasm-running) thread, not on a
   // compilation-helper thread.
-  MOZ_ASSERT(mode_ == CompileMode::LazyTiering);
-  FuncState& state = funcStates_[funcIndex - codeMeta_->numFuncImports];
-  if (!state.tierUpState.compareExchange(TierUpState::NotRequested,
-                                         TierUpState::Requested)) {
-    return true;
-  }
+  MOZ_ASSERT(funcStates_[funcIndex - codeMeta_->numFuncImports].tierUpState ==
+             TierUpState::Requested);
 
   auto task =
       js::MakeUnique<Module::PartialTier2CompileTaskImpl>(*this, funcIndex);
@@ -1644,6 +1639,7 @@ void wasm::PatchDebugSymbolicAccesses(uint8_t* codeBase, MacroAssembler& masm) {
       case SymbolicAddress::PrintF32:
       case SymbolicAddress::PrintF64:
       case SymbolicAddress::PrintText:
+      case SymbolicAddress::Printf:
         break;
       default:
         MOZ_CRASH("unexpected symbol in PatchDebugSymbolicAccesses");

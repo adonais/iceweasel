@@ -275,14 +275,21 @@ void GetBoxQuads(nsINode* aNode, const dom::BoxQuadOptions& aOptions,
   Document* ownerDoc = aNode->OwnerDoc();
   nsIFrame* relativeToFrame = GetFirstNonAnonymousFrameForGeometryNode(
       aOptions.mRelativeTo, ownerDoc, aOptions);
-  // The first frame might be destroyed now if the above call lead to an
-  // EnsureFrameForTextNode call.  We need to get the first frame again
+  AutoWeakFrame weakRelativeToFrame(relativeToFrame);
+  // The first frame might be destroyed now if the above call led to an
+  // EnsureFrameForTextNode call. We need to get the first frame again
   // when that happens and re-check it.
   if (!weakFrame.IsAlive()) {
     frame = GetFrameForNode(aNode, aOptions);
     if (!frame) {
       // No boxes to return
       return;
+    }
+    // The retry flush above can destroy relativeToFrame's PresShell, leaving
+    // relativeToFrame dangling. We treat this the same as the null case below;
+    // do not retry again since that could in turn (re-)invalidate frame.
+    if (!weakRelativeToFrame.IsAlive()) {
+      relativeToFrame = nullptr;
     }
   }
   if (!relativeToFrame) {
@@ -398,11 +405,17 @@ static void TransformPoints(nsINode* aTo, const GeometryNode& aFrom,
       GetFirstNonAnonymousFrameForGeometryNode(aFrom, aOptions);
   AutoWeakFrame weakFrame(fromFrame);
   nsIFrame* toFrame = GetFirstNonAnonymousFrameForNode(aTo, aOptions);
+  AutoWeakFrame weakToFrame(toFrame);
   // The first frame might be destroyed now if the above call lead to an
   // EnsureFrameForTextNode call.  We need to get the first frame again
   // when that happens.
   if (fromFrame && !weakFrame.IsAlive()) {
     fromFrame = GetFirstNonAnonymousFrameForGeometryNode(aFrom, aOptions);
+    // The retry flush above can destroy toFrame's PresShell; treat this the
+    // same as the null case below rather than retrying a second time.
+    if (!weakToFrame.IsAlive()) {
+      toFrame = nullptr;
+    }
   }
   if (!fromFrame || !toFrame) {
     aRv.ThrowNotFoundError(

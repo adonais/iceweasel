@@ -113,12 +113,20 @@
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
-@media -moz-pref("sidebar.revamp") {
-  #sidebar-splitter {
+#sidebar-splitter {
+  -moz-user-focus: normal;
+  margin-block-end: 1.5px; /* Make space for the 'medium'/3px outline to show */
+
+  &:focus-visible {
+    outline: auto;
+  }
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("sidebar.revamp") {
     width: var(--space-medium);
     border-inline: calc((var(--space-medium) - var(--splitter-width)) / 2) solid transparent;
     background-clip: padding-box;
+    /* Adjust to better align with the bottom of the sidebar-box */
+    margin-block-end: var(--space-small);
   }
 }
 

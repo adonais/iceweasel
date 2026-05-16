@@ -26,6 +26,8 @@
 #include "logging/rtc_event_log/events/rtc_event_field_extraction.h"
 #include "rtc_base/checks.h"
 
+namespace webrtc {
+
 using webrtc_event_logging::UnsignedDelta;
 
 namespace {
@@ -59,8 +61,6 @@ std::string SerializeLittleEndian(uint64_t value, uint8_t bytes) {
 }
 
 }  // namespace
-
-namespace webrtc {
 
 std::string EncodeOptionalValuePositions(std::vector<bool> positions) {
   BitWriter writer((positions.size() + 7) / 8);
@@ -214,7 +214,7 @@ void EventEncoder::EncodeField(const FieldParameters& params,
   // Compute delta parameters
   ArrayView<const uint64_t> all_values(values);
   uint64_t base = values[0];
-  ArrayView<const uint64_t> remaining_values(all_values.subview(1));
+  ArrayView<const uint64_t> remaining_values = all_values.subspan(1);
 
   FixedLengthEncodingParametersV3 delta_params =
       FixedLengthEncodingParametersV3::CalculateParameters(

@@ -21,11 +21,10 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
     const StyleViewTimeline& aStyleTimeline) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  // 1. Lookup scroller. We have to find the nearest scroller from |aSubject|
-  // and |aPseudoType|.
-  auto [element, pseudo] = FindNearestScroller(aSubject, aPseudoRequest);
-  auto scroller =
-      Scroller::Nearest(const_cast<Element*>(element), pseudo.mType);
+  // 1. Create an anonymous scroller, as if `scroll(nearest)`.
+  auto scroller = ScrollerInfo::Anonymous(
+      StyleScroller::Nearest,
+      NonOwningAnimationTarget{aSubject, aPseudoRequest});
 
   // 2. Create timeline.
   return MakeAndAddRef<ViewTimeline>(
@@ -38,10 +37,7 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
     Document* aDocument, const NonOwningAnimationTarget& aTarget,
     StyleScrollAxis aAxis, const StyleViewTimelineInset& aInset) {
   // view() finds the nearest scroll container from the animation target.
-  auto [element, pseudo] =
-      FindNearestScroller(aTarget.mElement, aTarget.mPseudoRequest);
-  Scroller scroller =
-      Scroller::Nearest(const_cast<Element*>(element), pseudo.mType);
+  auto scroller = ScrollerInfo::Anonymous(StyleScroller::Nearest, aTarget);
   return MakeAndAddRef<ViewTimeline>(aDocument, scroller, aAxis,
                                      aTarget.mElement,
                                      aTarget.mPseudoRequest.mType, aInset);
@@ -103,20 +99,22 @@ void ViewTimeline::UpdateCachedCurrentTime() {
 
   mCachedCurrentTime.reset();
 
+  const auto state = GetState();
   // If no layout box, this timeline is inactive.
-  if (!mSource || !mSource.mElement->GetPrimaryFrame()) {
+  if (const auto* e = state.mSource.mElement; !e || !e->GetPrimaryFrame()) {
     return;
   }
 
   // if this is not a scroller container, this timeline is inactive.
-  const ScrollContainerFrame* scrollContainerFrame = GetScrollContainerFrame();
+  const ScrollContainerFrame* scrollContainerFrame =
+      state.GetScrollContainerFrame();
   if (!scrollContainerFrame) {
     return;
   }
 
   // If there is no scrollable overflow, then the ScrollTimeline is inactive.
   // https://drafts.csswg.org/scroll-animations-1/#scrolltimeline-interface
-  const auto orientation = Axis();
+  const auto orientation = state.Axis();
   if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
           orientation)) {
     return;
@@ -195,49 +193,124 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   }
 }
 
-/* static */
+// FIXME: Bug 2018678. Need to be adjusted for sticky positioning element.
+// https://drafts.csswg.org/scroll-animations-1/#view-timelines-ranges
 std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
     const StyleTimelineRangeName aName,
-    const ScrollTimeline::ComputedTimelineData& aData) {
-  nscoord rangeStart = 0.0;
-  switch (aName) {
-    case StyleTimelineRangeName::None:
-    case StyleTimelineRangeName::Normal:
-    case StyleTimelineRangeName::Cover:
-      rangeStart = aData.mStart;
-      break;
-    case StyleTimelineRangeName::Contain:
-    case StyleTimelineRangeName::Entry:
-    case StyleTimelineRangeName::Exit:
-    case StyleTimelineRangeName::EntryCrossing:
-    case StyleTimelineRangeName::ExitCrossing:
-    case StyleTimelineRangeName::Scroll:
-      // TODO: Bug 2015125, Bug 2015128, Bug 2015130, Bug 2015131. Implement
-      // the other keywords.
-      break;
-  }
+    const ScrollTimeline::ComputedTimelineData& aData) const {
+  MOZ_ASSERT(mCachedCurrentTime, "We should have a cached current time");
 
-  nscoord rangeEnd = 1.0;
-  switch (aName) {
-    case StyleTimelineRangeName::None:
-    case StyleTimelineRangeName::Normal:
-    case StyleTimelineRangeName::Cover:
-      rangeEnd = aData.mEnd;
-      break;
-    case StyleTimelineRangeName::Contain:
-    case StyleTimelineRangeName::Entry:
-    case StyleTimelineRangeName::Exit:
-    case StyleTimelineRangeName::EntryCrossing:
-    case StyleTimelineRangeName::ExitCrossing:
-    case StyleTimelineRangeName::Scroll:
-      // TODO: Bug 2015125, Bug 2015128, Bug 2015130, Bug 2015131. Implement
-      // the other keywords.
-      break;
-  }
+  // The following variable names are based on the vertical scrolling direction
+  // and the subject becomes visible from the bottom of the scroll port.
 
-  // FIXME: Bug 2015125. Check the case for RTL for horizontal axis. Perhaps we
+  // The scroll offset when we align the start border edge of the subject with
+  // the end edge of the scroll port.
+  const nscoord alignedSubjectStartViewEnd = aData.mStart;
+  // The scroll offset when we align the end border edge of the subject with
+  // the start edge of the scroll port.
+  const nscoord alignedSubjectEndViewStart = aData.mEnd;
+  // The scroll offset when we align the start border edge of the subject with
+  // the start edge of the scroll port.
+  const nscoord alignedSubjectStartViewStart =
+      alignedSubjectEndViewStart - mCachedCurrentTime->mSubjectSize;
+  // The scroll offset when we align the end border edge of the subject with the
+  // end edge of the scroll port.
+  const nscoord alignedSubjectEndViewEnd =
+      alignedSubjectStartViewEnd + mCachedCurrentTime->mSubjectSize;
+
+  // Precompute the range of `contain` to avoid the code duplication. See below
+  // for more details.
+  const nscoord containStart =
+      std::min(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+  const nscoord containEnd =
+      std::max(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+
+  // FIXME: Bug 2030453. Check the case for RTL for horizontal axis. Perhaps we
   // have to swap these two values.
-  return {rangeStart, rangeEnd};
+  switch (aName) {
+    case StyleTimelineRangeName::None:
+    case StyleTimelineRangeName::Normal:
+      // The default behavior is equalivant to `cover` for view timeline.
+    case StyleTimelineRangeName::Cover:
+      // Represents the full range of the view progress timeline:
+      // * 0% progress represents the latest position at which the start border
+      //   edge of the element’s principal box coincides with the end edge of
+      //   its view progress visibility range.
+      // * 100% progress represents the earliest position at which the end
+      //   border edge of the element’s principal box coincides with the start
+      //   edge of its view progress visibility range.
+      return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
+
+    case StyleTimelineRangeName::Contain:
+      // Represents the range during which the principal box is either fully
+      // contained by, or fully covers, its view progress visibility range
+      // within the scrollport.
+      // 0% progress represents the earliest position at which either:
+      //   1. the start border edge of the element’s principal box coincides
+      //      with the start edge of its view progress visibility range.
+      //   2. the end border edge of the element’s principal box coincides with
+      //      the end edge of its view progress visibility range.
+      // 100% progress represents the latest position at which either:
+      //   1. the start border edge of the element’s principal box coincides
+      //      with the start edge of its view progress visibility range.
+      //   2. the end border edge of the element’s principal box coincides with
+      //      the end edge of its view progress visibility range.
+      //
+      // Note that we swap the values if the subject size is larger than the
+      // scrollport size. That's why there are 2 options for 0% and 2 options
+      // for 100% in the spec.
+      //
+      // For more visual explanation, see:
+      // https://github.com/w3c/csswg-drafts/issues/7973#issuecomment-1427150014
+      return {containStart, containEnd};
+
+    case StyleTimelineRangeName::Entry:
+      // Represents the range during which the principal box is entering the
+      // view progress visibility range.
+      // * 0% is equivalent to 0% of the cover range.
+      // * 100% is equivalent to 0% of the contain range.
+      return {alignedSubjectStartViewEnd, containStart};
+
+    case StyleTimelineRangeName::Exit:
+      // Represents the range during which the principal box is exiting the view
+      // progress visibility range.
+      // * 0% is equivalent to 100% of the contain range.
+      // * 100% is equivalent to 100% of the cover range.
+      return {containEnd, alignedSubjectEndViewStart};
+
+    case StyleTimelineRangeName::EntryCrossing:
+      // Represents the range during which the principal box crosses the end
+      // border edge.
+      // * 0% is equivalent to 0% of the cover range.
+      //
+      // Note that the duration of the entry-crossing range is equal to the
+      // subject size, so this is equivalent to
+      // `{alignedSubjectStartViewEnd,
+      //   alignedSubjectStartViewEnd + mCachedCurrentTime->mSubjectSize}`.
+      return {alignedSubjectStartViewEnd, alignedSubjectEndViewEnd};
+
+    case StyleTimelineRangeName::ExitCrossing:
+      // Represents the range during which the principal box crosses the start
+      // border edge.
+      // * 100% is equivalent to 100% of the cover range.
+      //
+      // Note that the duration of the exit-crossing range is equal to the
+      // subject size, so this is equivalent to
+      // `{alignedSubjectEndViewStart - mCachedCurrentTime->mSubjectSize,
+      //   alignedSubjectEndViewStart}`.
+      return {alignedSubjectStartViewStart, alignedSubjectEndViewStart};
+
+    case StyleTimelineRangeName::Scroll:
+      // Represents the full range of the scroll container on which the view
+      // progress timeline is defined.
+      //
+      // So this is equivalent to scroll timeline's full range.
+      return {0, mCachedCurrentTime->mScrollData.mMaxScrollOffset};
+  }
+
+  MOZ_ASSERT_UNREACHABLE("All cases should be hanlded.");
+  // Use cover as the default value. However, we shouldn't be here.
+  return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
 }
 
 // TODO: Bug 2020822. We have to align the start time of animation with this

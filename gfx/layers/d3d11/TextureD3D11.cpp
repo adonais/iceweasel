@@ -383,9 +383,10 @@ void D3D11TextureData::SyncWithObject(RefPtr<SyncObjectClient> aSyncObject) {
 
 bool D3D11TextureData::SerializeSpecific(
     SurfaceDescriptorD3D10* const aOutDesc) {
-  *aOutDesc = SurfaceDescriptorD3D10(
-      mSharedHandle, mGpuProcessTextureId, mArrayIndex, mFormat, mSize,
-      mColorSpace, mColorRange, mHasKeyedMutex, mFencesHolderId);
+  *aOutDesc = SurfaceDescriptorD3D10(mSharedHandle, mGpuProcessTextureId,
+                                     mArrayIndex, mFormat, mSize, mColorSpace,
+                                     mColorRange, mTransferFunction,
+                                     mHasKeyedMutex, mFencesHolderId);
   return true;
 }
 
@@ -409,8 +410,9 @@ void D3D11TextureData::GetSubDescriptor(
 already_AddRefed<TextureClient> D3D11TextureData::CreateTextureClient(
     ID3D11Texture2D* aTexture, uint32_t aIndex, gfx::IntSize aSize,
     gfx::SurfaceFormat aFormat, gfx::ColorSpace2 aColorSpace,
-    gfx::ColorRange aColorRange, KnowsCompositor* aKnowsCompositor,
-    ZeroCopyUsageInfo* aUsageInfo, const RefPtr<FenceD3D11> aWriteFence) {
+    gfx::ColorRange aColorRange, gfx::TransferFunction aTransferFunction,
+    KnowsCompositor* aKnowsCompositor, ZeroCopyUsageInfo* aUsageInfo,
+    const RefPtr<FenceD3D11> aWriteFence) {
   MOZ_ASSERT(aTexture);
 
   RefPtr<ID3D11Device> device;
@@ -428,6 +430,7 @@ already_AddRefed<TextureClient> D3D11TextureData::CreateTextureClient(
       aWriteFence, TextureAllocationFlags::ALLOC_MANUAL_SYNCHRONIZATION);
   data->mColorSpace = aColorSpace;
   data->SetColorRange(aColorRange);
+  data->SetTransferFunction(aTransferFunction);
 
   RefPtr<TextureClient> textureClient = MakeAndAddRef<TextureClient>(
       data, TextureFlags::NO_FLAGS,
@@ -711,7 +714,8 @@ DXGIYCbCrTextureData* DXGIYCbCrTextureData::Create(
     ID3D11Texture2D* aTextureCr, const gfx::IntSize& aSize,
     const gfx::IntSize& aSizeY, const gfx::IntSize& aSizeCbCr,
     const gfx::ColorDepth aColorDepth, const YUVColorSpace aYUVColorSpace,
-    const gfx::ColorRange aColorRange) {
+    const gfx::ColorRange aColorRange,
+    const gfx::TransferFunction aTransferFunction) {
   if (!aTextureY || !aTextureCb || !aTextureCr) {
     return nullptr;
   }
@@ -789,7 +793,7 @@ DXGIYCbCrTextureData* DXGIYCbCrTextureData::Create(
 
   DXGIYCbCrTextureData* texture = new DXGIYCbCrTextureData(
       textures, handles, aSize, aSizeY, aSizeCbCr, aColorDepth, aYUVColorSpace,
-      aColorRange, fencesHolderId, fence);
+      aColorRange, aTransferFunction, fencesHolderId, fence);
   return texture;
 }
 
@@ -799,6 +803,7 @@ DXGIYCbCrTextureData::DXGIYCbCrTextureData(
     const gfx::IntSize& aSizeY, const gfx::IntSize& aSizeCbCr,
     const gfx::ColorDepth aColorDepth, const gfx::YUVColorSpace aYUVColorSpace,
     const gfx::ColorRange aColorRange,
+    const gfx::TransferFunction aTransferFunction,
     const CompositeProcessFencesHolderId aFencesHolderId,
     const RefPtr<FenceD3D11> aWriteFence)
     : mSize(aSize),
@@ -807,6 +812,7 @@ DXGIYCbCrTextureData::DXGIYCbCrTextureData(
       mColorDepth(aColorDepth),
       mYUVColorSpace(aYUVColorSpace),
       mColorRange(aColorRange),
+      mTransferFunction(aTransferFunction),
       mFencesHolderId(aFencesHolderId),
       mWriteFence(aWriteFence),
       mD3D11Textures{aD3D11Textures[0], aD3D11Textures[1], aD3D11Textures[2]},
@@ -830,9 +836,10 @@ void DXGIYCbCrTextureData::FillInfo(TextureData::Info& aInfo) const {
 
 void DXGIYCbCrTextureData::SerializeSpecific(
     SurfaceDescriptorDXGIYCbCr* const aOutDesc) {
-  *aOutDesc = SurfaceDescriptorDXGIYCbCr(
-      mHandles[0], mHandles[1], mHandles[2], mSize, mSizeY, mSizeCbCr,
-      mColorDepth, mYUVColorSpace, mColorRange, mFencesHolderId);
+  *aOutDesc = SurfaceDescriptorDXGIYCbCr(mHandles[0], mHandles[1], mHandles[2],
+                                         mSize, mSizeY, mSizeCbCr, mColorDepth,
+                                         mYUVColorSpace, mColorRange,
+                                         mTransferFunction, mFencesHolderId);
 }
 
 bool DXGIYCbCrTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
@@ -961,7 +968,8 @@ DXGITextureHostD3D11::DXGITextureHostD3D11(
       mHasKeyedMutex(aDescriptor.hasKeyedMutex()),
       mFencesHolderId(aDescriptor.fencesHolderId()),
       mColorSpace(aDescriptor.colorSpace()),
-      mColorRange(aDescriptor.colorRange()) {
+      mColorRange(aDescriptor.colorRange()),
+      mTransferFunction(aDescriptor.transferFunction()) {
   if (!mFencesHolderId) {
     return;
   }
@@ -1075,7 +1083,8 @@ DXGITextureHostD3D11::GetAsSurfaceWithDevice(ID3D11Device* const aDevice) {
   }
 
   RefPtr<gfx::SourceSurface> sourceSurface = gfx::SourceSurfaceD3D11::Create(
-      d3dTexture, mArrayIndex, mColorSpace, mColorRange, mFencesHolderId);
+      d3dTexture, mArrayIndex, mColorSpace, mColorRange, mTransferFunction,
+      mFencesHolderId);
   if (!sourceSurface) {
     return nullptr;
   }
@@ -1094,7 +1103,7 @@ void DXGITextureHostD3D11::CreateRenderTexture(
 
   RefPtr<wr::RenderDXGITextureHost> texture = new wr::RenderDXGITextureHost(
       mHandle, mGpuProcessTextureId, mArrayIndex, mFormat, mColorSpace,
-      mColorRange, mSize, mHasKeyedMutex, mFencesHolderId);
+      mColorRange, mTransferFunction, mSize, mHasKeyedMutex, mFencesHolderId);
   if (mFlags & TextureFlags::SOFTWARE_DECODED_VIDEO) {
     texture->SetIsSoftwareDecodedVideo();
   }
@@ -1378,6 +1387,7 @@ DXGIYCbCrTextureHostD3D11::DXGIYCbCrTextureHostD3D11(
       mColorDepth(aDescriptor.colorDepth()),
       mYUVColorSpace(aDescriptor.yUVColorSpace()),
       mColorRange(aDescriptor.colorRange()),
+      mTransferFunction(aDescriptor.transferFunction()),
       mFencesHolderId(aDescriptor.fencesHolderId()) {
   if (auto* fenceHolderMap = CompositeProcessD3D11FencesHolderMap::Get()) {
     fenceHolderMap->RegisterReference(mFencesHolderId);
@@ -1399,8 +1409,8 @@ void DXGIYCbCrTextureHostD3D11::CreateRenderTexture(
   MOZ_ASSERT(mExternalImageId.isSome());
 
   RefPtr<wr::RenderTextureHost> texture = new wr::RenderDXGIYCbCrTextureHost(
-      mHandles, mYUVColorSpace, mColorDepth, mColorRange, mSizeY, mSizeCbCr,
-      mFencesHolderId);
+      mHandles, mYUVColorSpace, mColorDepth, mColorRange, mTransferFunction,
+      mSizeY, mSizeCbCr, mFencesHolderId);
 
   wr::RenderThread::Get()->RegisterExternalImage(aExternalImageId,
                                                  texture.forget());

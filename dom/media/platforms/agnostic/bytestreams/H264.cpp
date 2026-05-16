@@ -13,6 +13,7 @@
 #include "ByteStreamsUtils.h"
 #include "ByteWriter.h"
 #include "MediaInfo.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Result.h"
 #include "mozilla/Try.h"

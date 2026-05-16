@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* -*- indent-tabs-mode: nil; js-indent-level: 4 -*- */
 
 "use strict";
 
@@ -96,6 +95,7 @@ var ignoreClasses = {
     "malloc_hook_table_t": true, // replace_malloc
     "mozilla::MallocSizeOf": true,
     "MozMallocSizeOf": true,
+    "chunk_allocator_s": true, // arena chunk allocator
 };
 
 // Ignore calls through TYPE.FIELD, where TYPE is the class or struct name containing

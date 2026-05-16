@@ -26,6 +26,10 @@ const histogram = Services.telemetry.getHistogramById(
 
 add_setup(async () => {
   Services.prefs.setBoolPref("browser.region.log", true);
+  Services.prefs.setBoolPref("network.dns.disableIPv6", true);
+  registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref("network.dns.disableIPv6");
+  });
 });
 
 // Region.sys.mjs will call init() on being loaded and set a background

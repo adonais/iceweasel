@@ -65,6 +65,10 @@ function addon_url(path) {
   return `moz-extension://${uuid}/${path}`;
 }
 
+function validate_path(path) {
+  return path.match(/[A-Za-z0-9._\-]/i);
+}
+
 async function check_path_exists(path) {
   try {
     await (await fetch(addon_url(path))).text();
@@ -83,10 +87,11 @@ function check_valid_array(a, key, id) {
   return valid;
 }
 
-function validate_match_info(id, key, matches) {
+function validate_match_info(id, key, matches, excludes) {
   ok(
-    Array.isArray(matches) && matches.length,
-    `${key} key exists and is an array with items for id ${id}`
+    (Array.isArray(matches) && matches.length) ||
+      (Array.isArray(excludes) && excludes.length),
+    `${key} or exludes_${key} exists, and are an array with items for id ${id}`
   );
 
   for (const match of matches) {
@@ -147,7 +152,7 @@ add_task(async function test_json_data() {
     );
   }
 
-  const json = await (await fetch(addon_url("data/interventions.json"))).json();
+  const json = await WebCompatExtension.allOriginalInterventions();
   const ids = new Set();
   for (const [id, config] of Object.entries(json)) {
     const { bugs, hidden, interventions, label } = config;
@@ -174,7 +179,11 @@ add_task(async function test_json_data() {
       `bugs key exists and has entries for id ${id}`
     );
     let hasBlocks = false;
-    for (const [bug, { issue, blocks, matches }] of Object.entries(bugs)) {
+    let hasMatchesOrBlocks = false;
+    for (const [
+      bug,
+      { issue, blocks, exclude_blocks, exclude_matches, matches },
+    ] of Object.entries(bugs)) {
       ok(
         typeof bug === "string" && bug == String(parseInt(bug)),
         `bug number is set properly for all bugs in id ${id}`
@@ -187,21 +196,34 @@ add_task(async function test_json_data() {
 
       ok(
         !interventions.find(i => i.content_scripts || i.ua_string) ||
-          (!!matches && Array.isArray(matches) && matches.length),
-        `matches key exists and is an array with items for id ${id}`
+          (!!matches && Array.isArray(matches) && matches.length) ||
+          (!!exclude_matches &&
+            Array.isArray(exclude_matches) &&
+            exclude_matches.length),
+        `matches or exclude_matches key exists and is an array with items for id ${id}`
       );
 
-      if (!matches && !blocks) {
-        ok(false, `no matches or blocks entries for id ${id}`);
+      if (matches || blocks) {
+        hasMatchesOrBlocks = true;
+      }
+
+      if (!matches && !exclude_matches && !blocks && !exclude_blocks) {
+        ok(
+          false,
+          `bug entry without any matches, exclude_matches, blocks, or exclude_blocks in id ${id}`
+        );
       }
 
       if (matches) {
-        validate_match_info(id, "matches", matches);
+        validate_match_info(id, "matches", matches, exclude_matches);
       }
       if (blocks) {
         hasBlocks = true;
-        validate_match_info(id, "blocks", blocks);
+        validate_match_info(id, "blocks", blocks, exclude_blocks);
       }
+    }
+    if (!hasMatchesOrBlocks) {
+      ok(false, `no matches or blocks for id ${id}`);
     }
 
     const non_custom_names = [
@@ -392,6 +414,7 @@ add_task(async function test_json_data() {
             if (!path.includes("/")) {
               path = `injections/${type}/${path}`;
             }
+            ok(validate_path(path), `${path} has no special characters`);
             ok(
               path.endsWith(`.${type}`),
               `${path} should be a ${type.toUpperCase()} file`

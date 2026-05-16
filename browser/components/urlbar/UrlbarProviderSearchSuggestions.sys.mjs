@@ -528,6 +528,9 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
             type: UrlbarUtils.RESULT_TYPE.SEARCH,
             source: UrlbarUtils.RESULT_SOURCE.SEARCH,
             isRichSuggestion: !!entry.icon,
+            richSuggestionIconSize: entry.icon
+              ? UrlbarProviderSearchSuggestions.RICH_ICON_SIZE
+              : undefined,
             payload: {
               title,
               engine: engine.name,
@@ -635,7 +638,6 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
   #shouldFetchTrending(queryContext) {
     return !!(
       queryContext.searchString == "" &&
-      queryContext.sapName != "searchbar" &&
       lazy.UrlbarPrefs.get("trending.featureGate") &&
       lazy.UrlbarPrefs.get("suggest.trending") &&
       (queryContext.searchMode ||

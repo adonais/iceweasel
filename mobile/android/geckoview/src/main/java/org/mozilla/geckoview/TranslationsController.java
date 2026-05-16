@@ -828,8 +828,12 @@ public class TranslationsController {
           .queryVoid(TRANSLATE_EVENT, bundle)
           .map(
               result -> result,
-              exception ->
-                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_TRANSLATE));
+              exception -> {
+                if (TranslationsException.isEngineDeactivated(exception)) {
+                  return new TranslationsException(TranslationsException.ERROR_ENGINE_DEACTIVATED);
+                }
+                return new TranslationsException(TranslationsException.ERROR_COULD_NOT_TRANSLATE);
+              });
     }
 
     /**
@@ -848,8 +852,12 @@ public class TranslationsController {
           .queryVoid(RESTORE_PAGE_EVENT)
           .map(
               result -> result,
-              exception ->
-                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_RESTORE));
+              exception -> {
+                if (TranslationsException.isEngineDeactivated(exception)) {
+                  return new TranslationsException(TranslationsException.ERROR_ENGINE_DEACTIVATED);
+                }
+                return new TranslationsException(TranslationsException.ERROR_COULD_NOT_RESTORE);
+              });
     }
 
     /**
@@ -863,7 +871,17 @@ public class TranslationsController {
       if (DEBUG) {
         Log.d(LOGTAG, "Retrieving never translate site setting.");
       }
-      return mSession.getEventDispatcher().queryBoolean(GET_NEVER_TRANSLATE_SITE);
+      return mSession
+          .getEventDispatcher()
+          .queryBoolean(GET_NEVER_TRANSLATE_SITE)
+          .map(
+              result -> result,
+              exception -> {
+                if (TranslationsException.isEngineDeactivated(exception)) {
+                  return new TranslationsException(TranslationsException.ERROR_ENGINE_DEACTIVATED);
+                }
+                return new TranslationsException(TranslationsException.ERROR_UNKNOWN);
+              });
     }
 
     /**
@@ -883,7 +901,17 @@ public class TranslationsController {
       }
       final GeckoBundle bundle = new GeckoBundle(2);
       bundle.putBoolean("neverTranslate", neverTranslate);
-      return mSession.getEventDispatcher().queryVoid(SET_NEVER_TRANSLATE_SITE, bundle);
+      return mSession
+          .getEventDispatcher()
+          .queryVoid(SET_NEVER_TRANSLATE_SITE, bundle)
+          .map(
+              result -> result,
+              exception -> {
+                if (TranslationsException.isEngineDeactivated(exception)) {
+                  return new TranslationsException(TranslationsException.ERROR_ENGINE_DEACTIVATED);
+                }
+                return new TranslationsException(TranslationsException.ERROR_UNKNOWN);
+              });
     }
 
     /**
@@ -1368,6 +1396,12 @@ public class TranslationsController {
     /** A download is required and the translate request specified do not download. */
     public static final int ERROR_MODEL_DOWNLOAD_REQUIRED = -11;
 
+    /**
+     * The translations engine is likely blocked by AI controls or else deactivated or in an invalid
+     * state.
+     */
+    public static final int ERROR_ENGINE_DEACTIVATED = -12;
+
     /** Translation exception error codes. */
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
@@ -1382,7 +1416,8 @@ public class TranslationsController {
           ERROR_MODEL_COULD_NOT_DELETE,
           ERROR_MODEL_COULD_NOT_DOWNLOAD,
           ERROR_MODEL_LANGUAGE_REQUIRED,
-          ERROR_MODEL_DOWNLOAD_REQUIRED
+          ERROR_MODEL_DOWNLOAD_REQUIRED,
+          ERROR_ENGINE_DEACTIVATED
         })
     public @interface Code {}
 
@@ -1392,6 +1427,23 @@ public class TranslationsController {
     @Override
     public String toString() {
       return "TranslationsException: " + code;
+    }
+
+    /**
+     * Convenience method for determining if translations isn't working because {@link
+     * AIFeaturesController} has actively blocked the feature.
+     *
+     * <p>If it isn't {@link AIFeaturesController}, then likely something else has gone wrong and
+     * the actor is missing.
+     *
+     * @return True when it is likely that the feature has been deactivated.
+     */
+    static boolean isEngineDeactivated(@NonNull final Throwable exception) {
+      return exception instanceof EventDispatcher.QueryException
+          && ((EventDispatcher.QueryException) exception)
+              .data
+              .toString()
+              .contains("No such JSWindowActor 'Translations'");
     }
   }
 }

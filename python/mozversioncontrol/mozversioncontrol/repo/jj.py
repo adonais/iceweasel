@@ -72,12 +72,16 @@ class JujutsuRepository(Repository):
 
         self._git._env["GIT_DIR"] = str(git_dir.resolve())
 
+    def _run(self, *args, **kwargs):
+        # Suppress extra output like "Snapshotting ..."
+        return super()._run("--quiet", *args, **kwargs)
+
     def _run_read_only(self, *args, **kwargs):
         """_run_read_only() should be used instead of _run() for read-only jj commands.
 
         It will avoid locking the working copy and can prevent potential concurrency issues.
         """
-        return super()._run("--ignore-working-copy", *args, **kwargs)
+        return self._run("--ignore-working-copy", *args, **kwargs)
 
     def _snapshot(self, reason):
         """_snapshot() can be used to update the repository after changing files in the working
@@ -340,10 +344,13 @@ class JujutsuRepository(Repository):
         self,
         remote: Optional[str] = None,
         ref: Optional[str] = None,
+        dest_branch: Optional[str] = None,
         force: bool = False,
     ):
         if ref and not remote:
             raise ValueError("Cannot specify ref without specifying remote")
+        if dest_branch and not ref:
+            raise ValueError("Cannot specify dest_branch without specifying ref")
 
         args = ["git", "push"]
         if remote:
@@ -365,6 +372,8 @@ class JujutsuRepository(Repository):
             args.extend(["--remote", remote])
         if ref:
             args.extend(["-r", ref])
+        if dest_branch:
+            args.extend(["-b", dest_branch])
         self._run(*args)
 
     def push_to_try(
@@ -388,6 +397,7 @@ class JujutsuRepository(Repository):
             self._run("git", "import")
             cmd = (
                 str(self._tool),
+                "--quiet",
                 "git",
                 "push",
                 "--remote",
@@ -495,6 +505,18 @@ class JujutsuRepository(Repository):
         function that can be called to restore the repository to its original
         state prior to this function having been run.
         """
+        print("Pushing changes:")
+        print(
+            self._run(
+                "log",
+                "--no-graph",
+                "-r",
+                "trunk()..@ ~ description(exact:'')",
+                "-T",
+                "'  ' ++ description.first_line() ++ '\n'",
+            ),
+            end="",
+        )
         self._snapshot("prepare_try_push")
         # Redundant with the snapshot from the next command, but the semantics
         # of this operation depend on a snapshot happening (and it will eat

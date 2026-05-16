@@ -359,7 +359,7 @@ TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
   EncodeAndWaitForFrame(input_frame, &encoded_frame, &codec_specific_info);
 
   // First frame should be a key frame.
-  encoded_frame._frameType = VideoFrameType::kVideoFrameKey;
+  encoded_frame.set_frame_type(VideoFrameType::kVideoFrameKey);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, -1));
   std::unique_ptr<VideoFrame> decoded_frame;
   std::optional<uint8_t> decoded_qp;
@@ -572,7 +572,7 @@ TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
   EncodeAndWaitForFrame(input_frame, &encoded_frame, &codec_specific_info);
 
   // First frame should be a key frame.
-  encoded_frame._frameType = VideoFrameType::kVideoFrameKey;
+  encoded_frame.set_frame_type(VideoFrameType::kVideoFrameKey);
   encoded_frame.ntp_time_ms_ = kTestNtpTimeMs;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, -1));
 
@@ -999,6 +999,10 @@ TEST_P(TestVp8ImplWithMaxFrameDropTrial, EnforcesMaxFrameDropInterval) {
       last_callback_ = timestamp;
       return Result(Result::Error::OK);
     }
+
+    void OnFrameDropped(uint32_t /*rtp_timestamp*/,
+                        int /*spatial_id*/,
+                        bool /*is_end_of_temporal_unit*/) override {}
 
    private:
     std::vector<TimeDelta> callback_deltas_;

@@ -871,6 +871,11 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   inline mozilla::dom::NodeInfo* NodeInfo() const { return mNodeInfo; }
 
+  // Per spec step 5.1.3.9 of
+  // https://dom.spec.whatwg.org/#concept-create-element
+  // Set the namespace prefix on a freshly-created, disconnected node.
+  void SetNamespacePrefix(nsAtom* aPrefix);
+
   /**
    * Called when we have been adopted, and the information of the
    * node has been changed.
@@ -1272,19 +1277,23 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   nsINode* GetRootNode(const mozilla::dom::GetRootNodeOptions& aOptions);
 
-  virtual mozilla::EventListenerManager* GetExistingListenerManager()
-      const override;
-  virtual mozilla::EventListenerManager* GetOrCreateListenerManager() override;
+  mozilla::EventListenerManager* GetExistingListenerManager() const override;
+  mozilla::EventListenerManager* GetOrCreateListenerManager() override;
 
   mozilla::Maybe<mozilla::dom::EventCallbackDebuggerNotificationType>
   GetDebuggerNotificationType() const override;
 
   bool ComputeDefaultWantsUntrusted(mozilla::ErrorResult& aRv) final;
 
-  virtual bool IsApzAware() const override;
+  bool IsApzAware() const override;
 
-  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
-  virtual nsIGlobalObject* GetOwnerGlobal() const override;
+  nsIGlobalObject* GetOwnerGlobal() const override;
+  nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
+  // The global of our owner document, as opposed to our global, which might be
+  // different in the case of adoption.
+  nsIGlobalObject* GetOwnerDocGlobal() const;
+  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder>
+  GetOwnerDocGlobalForBindings();
 
   using mozilla::dom::EventTarget::DispatchEvent;
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
@@ -1394,8 +1403,7 @@ class nsINode : public mozilla::dom::EventTarget {
   /**
    * Walks aNode, its attributes and, if aDeep is true, its descendant nodes.
    * If aClone is true the nodes will be cloned. If aNewNodeInfoManager is
-   * not null, it is used to create new nodeinfos for the nodes. Also reparents
-   * the XPConnect wrappers for the nodes into aReparentScope if non-null.
+   * not null, it is used to create new nodeinfos for the nodes.
    *
    * @param aNode Node to adopt/clone.
    * @param aClone If true the node will be cloned and the cloned node will
@@ -1406,8 +1414,6 @@ class nsINode : public mozilla::dom::EventTarget {
    *                            nodeinfos for aNode and its attributes and
    *                            descendants. May be null if the nodeinfos
    *                            shouldn't be changed.
-   * @param aReparentScope Scope into which wrappers should be reparented, or
-   *                             null if no reparenting should be done.
    * @param aParent If aClone is true the cloned node will be appended to
    *                aParent's children. May be null. If not null then aNode
    *                must be an nsIContent.
@@ -1419,27 +1425,21 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   static already_AddRefed<nsINode> CloneAndAdopt(
       nsINode* aNode, bool aClone, bool aDeep,
-      nsNodeInfoManager* aNewNodeInfoManager,
-      JS::Handle<JSObject*> aReparentScope, nsINode* aParent,
+      nsNodeInfoManager* aNewNodeInfoManager, nsINode* aParent,
       mozilla::ErrorResult& aError);
 
  public:
   /**
    * Walks the node, its attributes and descendant nodes. If aNewNodeInfoManager
-   * is not null, it is used to create new nodeinfos for the nodes. Also
-   * reparents the XPConnect wrappers for the nodes into aReparentScope if
-   * non-null.
+   * is not null, it is used to create new nodeinfos for the nodes.
    *
    * @param aNewNodeInfoManager The nodeinfo manager to use to create new
    *                            nodeinfos for the node and its attributes and
    *                            descendants. May be null if the nodeinfos
    *                            shouldn't be changed.
-   * @param aReparentScope New scope for the wrappers, or null if no reparenting
-   *                       should be done.
    * @param aError The error, if any.
    */
   void Adopt(nsNodeInfoManager* aNewNodeInfoManager,
-             JS::Handle<JSObject*> aReparentScope,
              mozilla::ErrorResult& aError);
 
   /**
@@ -1575,7 +1575,7 @@ class nsINode : public mozilla::dom::EventTarget {
     }
   }
 
-  inline bool IsEditable() const;
+  inline bool IsEditable() const { return HasFlag(NODE_IS_EDITABLE); }
 
   /**
    * Check if this node is an editing host. For avoiding confusion, this always
@@ -2282,6 +2282,9 @@ class nsINode : public mozilla::dom::EventTarget {
   void SetHasCustomElementData() { SetBoolFlag(ElementHasCustomElementData); }
   bool HasCustomElementData() const {
     return GetBoolFlag(ElementHasCustomElementData);
+  }
+  void ClearHasCustomElementData() {
+    ClearBoolFlag(ElementHasCustomElementData);
   }
 
   void SetElementCreatedFromPrototypeAndHasUnmodifiedL10n() {

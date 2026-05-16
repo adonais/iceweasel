@@ -281,9 +281,22 @@ newtab-error-fallback-refresh-link = Pārlādējiet lapu, lai mēģinātu vēlre
 
 newtab-custom-shortcuts-title = Saīsnes
 newtab-custom-shortcuts-subtitle = Saglabātās vai apmeklētās vietnes
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Saīsnes
     .description = Saglabātās vai apmeklētās vietnes
+newtab-custom-shortcuts-nova =
+    .label = Saīsnes
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [zero] { $num } rinda
+            [one] { $num } rindas
+           *[other] { $num } rindu
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -295,9 +308,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Sponsorētās saīsnes
 newtab-custom-pocket-title = Ieteica { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Izcils saturs, ko atlasījis { -pocket-brand-name }, kas ir daļa no { -brand-product-name } saimes
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Ieteiktie stāsti
     .description = Izcils saturs, ko atlasīja { -brand-product-name } saime
+newtab-recommended-stories-toggle =
+    .label = Ieteiktie stāsti
 newtab-custom-pocket-sponsored = Sponsorētie stāsti
 newtab-custom-pocket-show-recent-saves = Rādīt nesen saglabāto
 newtab-custom-recent-title = Nesenās aktivitātes
@@ -312,6 +328,8 @@ newtab-custom-settings = Pārvaldīt vairāk iestatījumu
 
 newtab-wallpaper-title = Tapetes
 newtab-wallpaper-reset = Atiestatīt uz noklusējumu
+newtab-wallpaper-toggle-title =
+    .label = Tapetes
 newtab-wallpaper-light-red-panda = Sarkana panda
 newtab-wallpaper-light-mountain = Balts kalns
 newtab-wallpaper-light-sky = Debesis ar violetiem un rozā mākoņiem
@@ -329,6 +347,7 @@ newtab-wallpaper-light-fox-anniversary = Lapsa pļavā ar dūmakainu kalnu ainav
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Vienkrāsains
 newtab-wallpaper-blue = Zils
 newtab-wallpaper-light-blue = Gaiši zils

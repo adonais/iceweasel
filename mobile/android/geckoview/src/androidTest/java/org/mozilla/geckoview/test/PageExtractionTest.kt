@@ -8,6 +8,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -16,6 +17,7 @@ import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.Autofill
+import org.mozilla.geckoview.PageExtractionController
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 
 /**
@@ -75,7 +77,30 @@ class PageExtractionTest : BaseSessionTest() {
 
     @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
     @Test
-    fun returnsPageMetadata() {
+    fun removeBoilerplateStripsNonArticleContent() {
+        mainSession.loadTestPath(PAGE_EXTRACTION_READER_MODE_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        val options = PageExtractionController.ContentParams(true)
+        val pageContent = sessionRule.waitForResult(
+            mainSession.sessionPageExtractor.getPageContent(options),
+        )
+        mainSession.waitForRoundTrip()
+
+        assertNotNull("Expected page content result to be non-null", pageContent)
+        assertTrue(
+            "Expected article body text to be present after boilerplate removal",
+            pageContent!!.contains("Lorem ipsum"),
+        )
+        assertTrue(
+            "Expected site header to be stripped by boilerplate removal",
+            !pageContent.contains("Site header"),
+        )
+    }
+
+    @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
+    @Test
+    fun returnsNonReaderPageMetadata() {
         mainSession.loadTestPath(PAGE_EXTRACTION_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -85,9 +110,25 @@ class PageExtractionTest : BaseSessionTest() {
         assertNotNull("Expected page metadata result to be non-null", metadata)
         assertTrue("Expected word count to be greater than 0", metadata.wordCount > 0)
         assertEquals("Expected language to be 'en'", "en", metadata.language)
+        assertFalse("Expected page to not be readerable", metadata.isReaderable)
         assertTrue(
             "Expected structuredDataTypes to contain 'Article'",
             metadata.structuredDataTypes.contains("Article"),
         )
+    }
+
+    @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
+    @Test
+    fun returnsReaderPageMetadata() {
+        mainSession.loadTestPath(PAGE_EXTRACTION_READER_MODE_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        val metadata = sessionRule.waitForResult(mainSession.sessionPageExtractor.pageMetadata)
+        mainSession.waitForRoundTrip()
+
+        assertNotNull("Expected page metadata result to be non-null", metadata)
+        assertTrue("Expected word count to be greater than 0", metadata.wordCount > 0)
+        assertEquals("Expected language to be 'en'", "en", metadata.language)
+        assertTrue("Expected page to be readerable", metadata.isReaderable)
     }
 }

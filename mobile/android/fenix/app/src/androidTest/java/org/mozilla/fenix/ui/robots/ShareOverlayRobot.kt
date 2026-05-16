@@ -21,6 +21,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.Matchers.allOf
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.AppAndSystemHelper.forceCloseApp
@@ -140,12 +141,9 @@ class ShareOverlayRobot {
 
     private fun verifySharedTabsIntent(text: String, subject: String) {
         Log.i(TAG, "verifySharedTabsIntent: Trying to verify the intent of the shared tab with text: $text, and subject: $subject")
-        Intents.intended(
-            allOf(
-                IntentMatchers.hasExtra(Intent.EXTRA_TEXT, text),
-                IntentMatchers.hasExtra(Intent.EXTRA_SUBJECT, subject),
-            ),
-        )
+        val urlMatchers = text.split("\n\n").map { IntentMatchers.hasExtra(Intent.EXTRA_TEXT, containsString(it)) }
+        val subjectMatchers = subject.split(", ").map { IntentMatchers.hasExtra(Intent.EXTRA_SUBJECT, containsString(it)) }
+        Intents.intended(allOf(*(urlMatchers + subjectMatchers).toTypedArray()))
         Log.i(TAG, "verifySharedTabsIntent: Verified the intent of the shared tab with text: $text, and subject: $subject")
     }
 

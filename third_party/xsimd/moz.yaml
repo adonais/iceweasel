@@ -2,7 +2,7 @@ schema: 1
 
 bugzilla:
   product: Core
-  component: Performance
+  component: "Performance: General"
 
 origin:
   name: xsimd

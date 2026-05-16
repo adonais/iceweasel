@@ -6,8 +6,8 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 const { IPProtectionPanel } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs"
 );
-const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+const { IPProtectionServerlist } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
 /**
@@ -34,11 +34,23 @@ class FakeIPProtectionPanelElement {
   remove() {
     /* NOOP */
   }
+}
 
-  closest() {
-    return {
-      state: "open",
+/**
+ * A class that mocks the IP Protection panel.
+ */
+class FakeIPProtectionPanelView {
+  constructor() {
+    this.state = "open";
+    this.ownerDocument = {
+      removeEventListener() {
+        /* NOOP */
+      },
     };
+  }
+
+  hidePopup() {
+    /* NOOP */
   }
 }
 
@@ -60,7 +72,8 @@ add_setup(async function () {
 add_task(async function test_setState() {
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
 
   ipProtectionPanel.state = {};
   fakeElement.state = {};
@@ -106,7 +119,8 @@ add_task(async function test_setState() {
 add_task(async function test_updateState() {
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
 
   ipProtectionPanel.state = {};
   fakeElement.state = {};
@@ -132,6 +146,73 @@ add_task(async function test_updateState() {
 });
 
 /**
+ * Tests that we can set a state on multiple fake elements.
+ */
+add_task(async function test_updateComponentState() {
+  let ipProtectionPanel = new IPProtectionPanel();
+  let fakeElementA = new FakeIPProtectionPanelElement();
+  let fakeElementB = new FakeIPProtectionPanelElement();
+
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
+  ipProtectionPanel.state = {
+    foo: "bar",
+  };
+  fakeElementA.state = {};
+  fakeElementA.isConnected = true;
+  fakeElementB.state = {};
+  fakeElementB.isConnected = true;
+
+  ipProtectionPanel.updateComponentState(fakeElementA);
+
+  Assert.ok(
+    ipProtectionPanel.components.has(fakeElementA),
+    "The fake element A should be in the components set"
+  );
+
+  Assert.deepEqual(
+    fakeElementA.state,
+    { foo: "bar" },
+    "The state should be set on the fake element A"
+  );
+
+  Assert.deepEqual(
+    fakeElementB.state,
+    {},
+    "The state should not be set on the fake element B"
+  );
+
+  ipProtectionPanel.updateComponentState(fakeElementB);
+
+  Assert.ok(
+    ipProtectionPanel.components.has(fakeElementB),
+    "The fake element B should be in the components set"
+  );
+
+  Assert.deepEqual(
+    fakeElementB.state,
+    { foo: "bar" },
+    "The state should be set on the fake element B"
+  );
+
+  // Updating the state now should update both elements.
+  ipProtectionPanel.setState({
+    isFoo: true,
+  });
+
+  Assert.deepEqual(
+    fakeElementA.state,
+    { foo: "bar", isFoo: true },
+    "The state should be set on the fake element A"
+  );
+
+  Assert.deepEqual(
+    fakeElementB.state,
+    { foo: "bar", isFoo: true },
+    "The state should be set on the fake element B"
+  );
+});
+
+/**
  * Tests that IPProtectionService ready state event updates the state.
  */
 add_task(async function test_IPProtectionPanel_signedIn() {
@@ -140,9 +221,7 @@ add_task(async function test_IPProtectionPanel_signedIn() {
   sandbox
     .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
     .get(() => true);
-  sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
-    .resolves(true);
+  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: null,
@@ -151,7 +230,8 @@ add_task(async function test_IPProtectionPanel_signedIn() {
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
   let signedInEventPromise = waitForEvent(
@@ -187,7 +267,8 @@ add_task(async function test_IPProtectionPanel_signedOut() {
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
   IPProtectionService.setState(IPProtectionStates.READY);
@@ -221,7 +302,8 @@ add_task(async function test_IPProtectionPanel_signedOut() {
 add_task(async function test_IPProtectionPanel_started_stopped() {
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
   let sandbox = sinon.createSandbox();
@@ -229,9 +311,7 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
   sandbox
     .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
     .get(() => true);
-  sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
-    .resolves(true);
+  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: null,
@@ -247,7 +327,9 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
       "2026-02-01T00:00:00.000Z"
     ),
   });
-  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({ ok: true });
+  sandbox
+    .stub(IPProtectionService.guardian, "enrollWithFxa")
+    .resolves({ ok: true });
 
   IPProtectionService.updateState();
 
@@ -304,54 +386,44 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
 });
 
 /**
- * Tests that egress location preference changes update the state.
+ * Tests that locationsList is populated from IPProtectionServerlist and
+ * kept in sync with IPProtectionServerlist:ListChanged events.
  */
-add_task(async function test_IPProtectionPanel_egressLocation_pref() {
+add_task(async function test_IPProtectionPanel_locationsList() {
+  await IPProtectionServerlist.maybeFetchList(true);
+
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
-  const expectedLocation = {
-    name: "United States",
-    code: "us",
-  };
+  Assert.deepEqual(
+    ipProtectionPanel.state.locationsList,
+    IPProtectionServerlist.countries,
+    "locationsList should be set to IPProtectionServerlist.countries at construction"
+  );
+  Assert.ok(
+    ipProtectionPanel.state.locationsList.some(c => c.code === "US"),
+    "locationsList should include the seeded US country"
+  );
 
-  Services.prefs.setBoolPref(
-    "browser.ipProtection.egressLocationEnabled",
-    true
+  IPProtectionServerlist.dispatchEvent(
+    new Event("IPProtectionServerlist:ListChanged")
   );
 
   Assert.deepEqual(
-    ipProtectionPanel.state.location,
-    expectedLocation,
-    "location should be set when preference is true"
+    ipProtectionPanel.state.locationsList,
+    IPProtectionServerlist.countries,
+    "locationsList should be refreshed when ListChanged fires"
   );
-
   Assert.deepEqual(
-    fakeElement.state.location,
-    expectedLocation,
-    "location should be set on the fake element when preference is true"
-  );
-
-  Services.prefs.setBoolPref(
-    "browser.ipProtection.egressLocationEnabled",
-    false
-  );
-
-  Assert.ok(
-    !ipProtectionPanel.state.location,
-    "location should be null when preference is false"
-  );
-
-  Assert.ok(
-    !fakeElement.state.location,
-    "location should be null on the fake element when preference is false"
+    fakeElement.state.locationsList,
+    IPProtectionServerlist.countries,
+    "locationsList should propagate to the connected element"
   );
 
   ipProtectionPanel.uninit();
-
-  Services.prefs.clearUserPref("browser.ipProtection.egressLocationEnabled");
 });
 
 /**
@@ -367,7 +439,8 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
-  ipProtectionPanel.panel = fakeElement;
+  ipProtectionPanel.components.add(fakeElement);
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
@@ -400,6 +473,48 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
   ipProtectionPanel.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
   sandbox.restore();
+});
+
+/**
+ * Tests that showLocationButtonBadge is true when the dismissed pref is not set.
+ */
+add_task(async function test_location_badge_initial_state_pref_unset() {
+  Services.prefs.clearUserPref(
+    "browser.ipProtection.locationButtonBadgeDismissed"
+  );
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  Assert.equal(
+    ipProtectionPanel.state.showLocationButtonBadge,
+    true,
+    "showLocationButtonBadge should be true when pref is not set"
+  );
+
+  ipProtectionPanel.uninit();
+});
+
+/**
+ * Tests that showLocationButtonBadge is false when the dismissed pref is set to true.
+ */
+add_task(async function test_location_badge_initial_state_pref_set() {
+  Services.prefs.setBoolPref(
+    "browser.ipProtection.locationButtonBadgeDismissed",
+    true
+  );
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  Assert.equal(
+    ipProtectionPanel.state.showLocationButtonBadge,
+    false,
+    "showLocationButtonBadge should be false when pref is set to true"
+  );
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref(
+    "browser.ipProtection.locationButtonBadgeDismissed"
+  );
 });
 
 function dispatchUsageEvent(max, remaining) {

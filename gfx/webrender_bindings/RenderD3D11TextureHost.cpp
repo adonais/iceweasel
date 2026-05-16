@@ -29,7 +29,8 @@ RenderDXGITextureHost::RenderDXGITextureHost(
     const Maybe<layers::GpuProcessTextureId>& aGpuProcessTextureId,
     const uint32_t aArrayIndex, const gfx::SurfaceFormat aFormat,
     const gfx::ColorSpace2 aColorSpace, const gfx::ColorRange aColorRange,
-    const gfx::IntSize aSize, bool aHasKeyedMutex,
+    const gfx::TransferFunction aTransferFunction, const gfx::IntSize aSize,
+    bool aHasKeyedMutex,
     const Maybe<layers::CompositeProcessFencesHolderId>& aFencesHolderId)
     : mHandle(aHandle),
       mGpuProcessTextureId(aGpuProcessTextureId),
@@ -40,6 +41,7 @@ RenderDXGITextureHost::RenderDXGITextureHost(
       mFormat(aFormat),
       mColorSpace(aColorSpace),
       mColorRange(aColorRange),
+      mTransferFunction(aTransferFunction),
       mSize(aSize),
       mHasKeyedMutex(aHasKeyedMutex),
       mFencesHolderId(aFencesHolderId),
@@ -575,7 +577,8 @@ bool RenderDXGITextureHost::SyncObjectNeeded() {
 RenderDXGIYCbCrTextureHost::RenderDXGIYCbCrTextureHost(
     const RefPtr<gfx::FileHandleWrapper> (&aHandles)[3],
     const gfx::YUVColorSpace aYUVColorSpace, const gfx::ColorDepth aColorDepth,
-    const gfx::ColorRange aColorRange, const gfx::IntSize aSizeY,
+    const gfx::ColorRange aColorRange,
+    const gfx::TransferFunction aTransferFunction, const gfx::IntSize aSizeY,
     const gfx::IntSize aSizeCbCr,
     const layers::CompositeProcessFencesHolderId aFencesHolderId)
     : mHandles{aHandles[0], aHandles[1], aHandles[2]},
@@ -585,6 +588,7 @@ RenderDXGIYCbCrTextureHost::RenderDXGIYCbCrTextureHost(
       mYUVColorSpace(aYUVColorSpace),
       mColorDepth(aColorDepth),
       mColorRange(aColorRange),
+      mTransferFunction(aTransferFunction),
       mSizeY(aSizeY),
       mSizeCbCr(aSizeCbCr),
       mFencesHolderId(aFencesHolderId) {

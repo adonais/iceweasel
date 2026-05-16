@@ -13,9 +13,9 @@
            autohide="true"
            context="toolbar-context-menu">
     <toolbaritem id="menubar-items" align="center">
-# The entire main menubar is placed into browser-menubar.inc, so that it can be
-# shared with other top level windows in macWindow.inc.xhtml.
-#include browser-menubar.inc
+# The entire main menubar is placed into browser-menubar.inc.xhtml, so that it
+# can be shared with other top level windows in macWindow.inc.xhtml.
+#include browser-menubar.inc.xhtml
     </toolbaritem>
     <spacer flex="1" skipintoolbarset="true" style="order: 1000;"/>
 #include titlebar-items.inc.xhtml
@@ -110,6 +110,7 @@
                     data-l10n-id="toolbar-button-ai-window-toggle"
                     cui-areatype="toolbar"
                     removable="false"
+                    aria-haspopup="true"
                     hidden="true"/>
 
     <toolbarbutton class="content-analysis-indicator toolbarbutton-1 content-analysis-indicator-icon"/>
@@ -238,6 +239,7 @@
                   <image class="sharing-icon" id="webrtc-sharing-icon"/>
                   <image class="sharing-icon geo-icon" id="geo-sharing-icon"/>
                   <image class="sharing-icon xr-icon" id="xr-sharing-icon"/>
+                  <image class="sharing-icon serial-icon" id="serial-sharing-icon"/>
               </box>
               <box id="blocked-permissions-container" align="center">
                 <image data-permission-id="geo" class="blocked-permission-icon geo-icon" role="button"
@@ -266,6 +268,8 @@
                       data-l10n-id="urlbar-canvas-blocked"/>
                 <image data-permission-id="midi" class="blocked-permission-icon midi-icon" role="button"
                       data-l10n-id="urlbar-midi-blocked"/>
+                <image data-permission-id="serial" class="blocked-permission-icon serial-icon" role="button"
+                      data-l10n-id="urlbar-serial-blocked"/>
                 <image data-permission-id="install" class="blocked-permission-icon install-icon" role="button"
                       data-l10n-id="urlbar-install-blocked"/>
                 <!-- A speaker icon for blocked speaker selection is not
@@ -315,6 +319,8 @@
                       data-l10n-id="urlbar-persistent-storage-notification-anchor"/>
               <image id="midi-notification-icon" class="notification-anchor-icon midi-icon" role="button"
                       data-l10n-id="urlbar-midi-notification-anchor"/>
+              <image id="serial-notification-icon" class="notification-anchor-icon serial-icon" role="button"
+                      data-l10n-id="urlbar-serial-notification-anchor"/>
               <image id="webauthn-notification-icon" class="notification-anchor-icon" role="button"
                       data-l10n-id="urlbar-web-authn-anchor"/>
               <image id="identity-credential-notification-icon" class="notification-anchor-icon" role="button"

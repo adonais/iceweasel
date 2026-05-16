@@ -15,7 +15,7 @@
 
 @media (min-width: 1122px) {
   .asrouter-newtab-message {
-    width: 904px;
+    max-width: 904px;
   }
 }
 
@@ -61,9 +61,8 @@
 }
 
 .button-group {
-  margin-block-start: var(--space-xlarge);
-  display: flex;
-  gap: var(--space-small);
+  margin-block-start: var(--space-medium);
+  justify-content: flex-start;
 }
 
 @media (min-width: 724px) {

@@ -1065,10 +1065,8 @@ already_AddRefed<VideoData> ChromiumCDMParent::CreateVideoFrame(
     }
   }
 
-  // We unfortunately can't know which colorspace the video is using at this
-  // stage.
-  b.mYUVColorSpace =
-      DefaultColorSpace({aFrame.mImageWidth(), aFrame.mImageHeight()});
+  b.mYUVColorSpace = mVideoInfo.mColorSpace.refOr(
+      DefaultColorSpace({aFrame.mImageWidth(), aFrame.mImageHeight()}));
 
   gfx::IntRect pictureRegion(0, 0, aFrame.mImageWidth(), aFrame.mImageHeight());
 

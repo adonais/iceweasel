@@ -26,6 +26,7 @@ async function testPacman(inspector, view) {
     keyframeRules: ["100%", "100%"],
   });
 
+  // See bug 1042036 and Bug 1894873 we are showing all keyframes with the same name.
   assertRuleViewHeaders(view, ["Keyframes pacman", "Keyframes pacman"]);
 }
 

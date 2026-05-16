@@ -77,8 +77,8 @@ class RenderBundleEncoder final : public nsWrapperCache,
   void SetIndexBuffer(const Buffer& aBuffer,
                       const dom::GPUIndexFormat& aIndexFormat, uint64_t aOffset,
                       const dom::Optional<uint64_t>& aSize);
-  void SetVertexBuffer(uint32_t aSlot, const Buffer& aBuffer, uint64_t aOffset,
-                       const dom::Optional<uint64_t>& aSize);
+  void SetVertexBuffer(uint32_t aSlot, const Buffer* const aBuffer,
+                       uint64_t aOffset, const dom::Optional<uint64_t>& aSize);
   void Draw(uint32_t aVertexCount, uint32_t aInstanceCount,
             uint32_t aFirstVertex, uint32_t aFirstInstance);
   void DrawIndexed(uint32_t aIndexCount, uint32_t aInstanceCount,

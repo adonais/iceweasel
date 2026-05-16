@@ -424,7 +424,7 @@ if CONFIG["CC_TYPE"] in ("clang", "gcc"):
         "-Wno-error=attributes",
     ]
 
-CXXFLAGS += ["-Werror=switch"]
+COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]
 
 FINAL_LIBRARY = "xul"
 

@@ -5021,7 +5021,7 @@ struct Internals {
     NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
     if (Maybe<PrefWrapper> pref = pref_Lookup(aPrefName)) {
-      rv = pref->GetValue(aKind, std::forward<T>(aResult));
+      rv = pref->GetValue(aKind, aResult);
 
       if (profiler_thread_is_being_profiled_for_markers()) {
         profiler_add_marker(

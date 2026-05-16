@@ -34,6 +34,7 @@ mozilla::ipc::IPCResult WebIdentityParent::RecvGetIdentityCredential(
   WindowGlobalParent* manager = static_cast<WindowGlobalParent*>(Manager());
   if (!manager) {
     aResolver(NS_ERROR_FAILURE);
+    return IPC_OK();
   }
   identity::GetCredentialInMainProcess(
       manager->DocumentPrincipal(), this, std::move(aOptions),
@@ -53,6 +54,7 @@ mozilla::ipc::IPCResult WebIdentityParent::RecvDisconnectIdentityCredential(
   WindowGlobalParent* manager = static_cast<WindowGlobalParent*>(Manager());
   if (!manager) {
     aResolver(NS_ERROR_FAILURE);
+    return IPC_OK();
   }
   identity::DisconnectInMainProcess(manager->DocumentPrincipal(), aOptions)
       ->Then(
@@ -67,6 +69,7 @@ mozilla::ipc::IPCResult WebIdentityParent::RecvPreventSilentAccess(
   WindowGlobalParent* manager = static_cast<WindowGlobalParent*>(Manager());
   if (!manager) {
     aResolver(NS_ERROR_FAILURE);
+    return IPC_OK();
   }
   nsIPrincipal* principal = manager->DocumentPrincipal();
   if (principal) {

@@ -31,6 +31,10 @@ class ResourceHandler(LogHandler):
             poll_interval=0.1,
         )
         self.resources.start()
+        self.resources.start_streaming(self.build_resources_profile_path)
+        print(
+            f"Streaming resource usage profile to: {self.build_resources_profile_path}"
+        )
 
     def shutdown(self, data):
         if not self.resources:

@@ -22,6 +22,12 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/glean/GleanPings.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "nsIEffectiveTLDService.h"
+#include "nsILoadInfo.h"
+#include "nsServiceManagerUtils.h"
+#include "nsNetCID.h"
 
 // brotli headers
 #undef assert
@@ -204,6 +210,21 @@ nsHTTPCompressConv::~nsHTTPCompressConv() {
   }
 }
 
+void nsHTTPCompressConv::ReportDecodingErrorWithSite(const nsACString& aLabel) {
+  if (mIsPrivateBrowsing) {
+    return;
+  }
+
+  nsAutoCString site(mSite);
+  if (site.IsEmpty()) {
+    site.AssignLiteral("unknown");
+  }
+
+  mozilla::glean::network::ContentDecodingErrorReportExtra extra = {
+      .errorType = Some(nsCString(aLabel)), .topLevelSite = Some(site)};
+  glean::network::content_decoding_error_report.Record(Some(extra));
+}
+
 NS_IMETHODIMP
 nsHTTPCompressConv::GetDecodedDataLength(uint64_t* aDecodedDataLength) {
   *aDecodedDataLength = mDecodedDataLength;
@@ -310,7 +331,27 @@ nsHTTPCompressConv::MaybeRetarget(nsIRequest* request) {
 
 NS_IMETHODIMP
 nsHTTPCompressConv::OnStartRequest(nsIRequest* request) {
+  MOZ_ASSERT(NS_IsMainThread());
   LOG(("nsHttpCompresssConv %p onstart\n", this));
+
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
+  if (channel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    if (loadInfo && loadInfo->GetOriginAttributes().IsPrivateBrowsing()) {
+      mIsPrivateBrowsing = true;
+    }
+    if (!mIsPrivateBrowsing) {
+      nsCOMPtr<nsIURI> uri;
+      if (NS_SUCCEEDED(channel->GetURI(getter_AddRefs(uri))) && uri) {
+        nsCOMPtr<nsIEffectiveTLDService> eTLDService =
+            do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+        if (eTLDService) {
+          (void)eTLDService->GetBaseDomain(uri, 0, mSite);
+        }
+      }
+    }
+  }
+
   nsCOMPtr<nsIStreamListener> listener;
   {
     MutexAutoLock lock(mMutex);
@@ -364,6 +405,8 @@ nsHTTPCompressConv::OnStopRequest(nsIRequest* request, nsresult aStatus) {
       fpChannel->ForcePending(true);
     }
     if (mBrotli && NS_FAILED(mBrotli->mStatus)) {
+      ReportDecodingErrorWithSite(
+          mMode == HTTP_COMPRESS_BROTLI_DICTIONARY ? "dcb"_ns : "brotli"_ns);
       status = NS_ERROR_INVALID_CONTENT_ENCODING;
     }
     LOG(("nsHttpCompresssConv %p onstop brotlihandler rv %" PRIx32 "\n", this,
@@ -432,6 +475,7 @@ nsresult nsHTTPCompressConv::BrotliHandler(nsIInputStream* stream,
             ("!! %p Brotli failed: bad magic header 0x%02x%02x%02x%02x", self,
              self->mBrotli->mHeader[0], self->mBrotli->mHeader[1],
              self->mBrotli->mHeader[2], self->mBrotli->mHeader[3]));
+        self->ReportDecodingErrorWithSite("dcb"_ns);
         self->mBrotli->mStatus = NS_ERROR_INVALID_CONTENT_ENCODING;
         return self->mBrotli->mStatus;
       }
@@ -472,6 +516,9 @@ nsresult nsHTTPCompressConv::BrotliHandler(nsIInputStream* stream,
           ("nsHttpCompressConv %p decoding error: marking invalid encoding "
            "(%zu)",
            self, avail));
+      self->ReportDecodingErrorWithSite(
+          self->mMode == HTTP_COMPRESS_BROTLI_DICTIONARY ? "dcb"_ns
+                                                         : "brotli"_ns);
       self->mBrotli->mStatus = NS_ERROR_INVALID_CONTENT_ENCODING;
       return self->mBrotli->mStatus;
     }
@@ -577,6 +624,9 @@ nsresult nsHTTPCompressConv::ZstdHandler(nsIInputStream* stream, void* closure,
 
       // If we errored when writing, flag this and abort writing.
       if (ZSTD_isError(result)) {
+        self->ReportDecodingErrorWithSite(
+            self->mMode == HTTP_COMPRESS_ZSTD_DICTIONARY ? "dcz"_ns
+                                                         : "zstd"_ns);
         self->mZstd->mStatus = NS_ERROR_INVALID_CONTENT_ENCODING;
         return self->mZstd->mStatus;
       }
@@ -626,6 +676,7 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request, nsIInputStream* iStr,
       streamLen = check_header(iStr, streamLen, &rv);
 
       if (rv != NS_OK) {
+        ReportDecodingErrorWithSite("gzip"_ns);
         return rv;
       }
 
@@ -758,6 +809,7 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request, nsIInputStream* iStr,
               NS_WARNING(
                   "endless loop detected"
                   " - invalid deflate");
+              ReportDecodingErrorWithSite("deflate"_ns);
               return NS_ERROR_INVALID_CONTENT_ENCODING;
             }
             mDummyStreamInitialised = true;
@@ -765,6 +817,7 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request, nsIInputStream* iStr,
             d_stream.next_in = mInpBuffer;
             d_stream.avail_in = (uInt)streamLen;
           } else {
+            ReportDecodingErrorWithSite("deflate"_ns);
             return NS_ERROR_INVALID_CONTENT_ENCODING;
           }
         } /* for */
@@ -820,6 +873,7 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request, nsIInputStream* iStr,
             }
             break;
           } else {
+            ReportDecodingErrorWithSite("gzip"_ns);
             return NS_ERROR_INVALID_CONTENT_ENCODING;
           }
         } /* for */
@@ -968,7 +1022,8 @@ nsresult nsHTTPCompressConv::do_OnDataAvailable(nsIRequest* request,
 #define COMMENT 0x10     /* bit 4 set: file comment present */
 #define RESERVED 0xE0    /* bits 5..7: reserved */
 
-static unsigned gz_magic[2] = {0x1f, 0x8b}; /* gzip magic header */
+static unsigned gz_magic[2] = {GZIP_MAGIC_0,
+                               GZIP_MAGIC_1}; /* gzip magic header */
 
 uint32_t nsHTTPCompressConv::check_header(nsIInputStream* iStr,
                                           uint32_t streamLen, nsresult* rs) {

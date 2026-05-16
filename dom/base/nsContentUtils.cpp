@@ -4431,79 +4431,39 @@ bool nsContentUtils::IsNameWithDash(nsAtom* aName) {
     return false;
   }
 
-  if (StaticPrefs::dom_custom_elements_relaxed_names_enabled()) {
-    uint32_t i = 1;
-    while (i < len) {
-      // name does not contain any ASCII upper alphas
-      if (name[i] >= 'A' && name[i] <= 'Z') {
-        return false;
-      }
-
-      // name is a valid element local name;
-      //
-      //   // https://dom.spec.whatwg.org/#valid-element-local-name
-      //   Step 2.1.
-      //   If name contains ASCII whitespace, U+0000 NULL, U+002F (/), or U+003E
-      //   (>), then return false.
-      //
-      //   ASCII whitespace is U+0009 TAB, U+000A LF, U+000C FF, U+000D CR, or
-      //   U+0020 SPACE.
-      if (name[i] == 0x0000 ||  // null
-          name[i] == 0x0009 ||  // tab
-          name[i] == 0x000A ||  // newline
-          name[i] == 0x000C ||  // form feed
-          name[i] == 0x000D ||  // carriage return
-          name[i] == 0x0020 ||  // space
-          name[i] == 0x002F ||  // /
-          name[i] == 0x003E) {  // >
-        return false;
-      }
-
-      if (name[i] == '-') {
-        hasDash = true;
-      }
-
-      i++;
-    }
-    return hasDash;
-  }
-
   uint32_t i = 1;
   while (i < len) {
-    if (i + 1 < len && NS_IS_SURROGATE_PAIR(name[i], name[i + 1])) {
-      // Merged two 16-bit surrogate pairs into code point.
-      char32_t code = SURROGATE_TO_UCS4(name[i], name[i + 1]);
-
-      if (code < 0x10000 || code > 0xEFFFF) {
-        return false;
-      }
-
-      i += 2;
-    } else {
-      if (name[i] == '-') {
-        hasDash = true;
-      }
-
-      if (name[i] != '-' && name[i] != '.' && name[i] != '_' &&
-          name[i] != 0xB7 && (name[i] < '0' || name[i] > '9') &&
-          (name[i] < 'a' || name[i] > 'z') &&
-          (name[i] < 0xC0 || name[i] > 0xD6) &&
-          (name[i] < 0xF8 || name[i] > 0x37D) &&
-          (name[i] < 0x37F || name[i] > 0x1FFF) &&
-          (name[i] < 0x200C || name[i] > 0x200D) &&
-          (name[i] < 0x203F || name[i] > 0x2040) &&
-          (name[i] < 0x2070 || name[i] > 0x218F) &&
-          (name[i] < 0x2C00 || name[i] > 0x2FEF) &&
-          (name[i] < 0x3001 || name[i] > 0xD7FF) &&
-          (name[i] < 0xF900 || name[i] > 0xFDCF) &&
-          (name[i] < 0xFDF0 || name[i] > 0xFFFD)) {
-        return false;
-      }
-
-      i++;
+    // name does not contain any ASCII upper alphas
+    if (name[i] >= 'A' && name[i] <= 'Z') {
+      return false;
     }
-  }
 
+    // name is a valid element local name;
+    //
+    //   // https://dom.spec.whatwg.org/#valid-element-local-name
+    //   Step 2.1.
+    //   If name contains ASCII whitespace, U+0000 NULL, U+002F (/), or U+003E
+    //   (>), then return false.
+    //
+    //   ASCII whitespace is U+0009 TAB, U+000A LF, U+000C FF, U+000D CR, or
+    //   U+0020 SPACE.
+    if (name[i] == 0x0000 ||  // null
+        name[i] == 0x0009 ||  // tab
+        name[i] == 0x000A ||  // newline
+        name[i] == 0x000C ||  // form feed
+        name[i] == 0x000D ||  // carriage return
+        name[i] == 0x0020 ||  // space
+        name[i] == 0x002F ||  // /
+        name[i] == 0x003E) {  // >
+      return false;
+    }
+
+    if (name[i] == '-') {
+      hasDash = true;
+    }
+
+    i++;
+  }
   return hasDash;
 }
 
@@ -7114,6 +7074,10 @@ void nsContentUtils::TriggerLinkMouseOver(nsIContent* aContent,
   }
 
   docShell->OnOverLink(aContent, aLinkURI, aTargetSpec);
+
+  if (nsPresContext* pc = aContent->OwnerDoc()->GetPresContext()) {
+    pc->EventStateManager()->SetLinkOverFrame(aContent->GetPrimaryFrame());
+  }
 }
 
 /* static */
@@ -10975,6 +10939,10 @@ static bool StartSerializingShadowDOM(
   if (shadow->Serializable()) {
     aBuilder.Append(u" shadowrootserializable=\"\"");
   }
+  if (StaticPrefs::dom_shadowdom_shadowRootSlotAssignment_enabled() &&
+      shadow->SlotAssignment() == SlotAssignmentMode::Manual) {
+    aBuilder.Append(u" shadowrootslotassignment=\"manual\"");
+  }
   if (shadow->Clonable()) {
     aBuilder.Append(u" shadowrootclonable=\"\"");
   }
@@ -11136,8 +11104,8 @@ bool nsContentUtils::SerializeNodeToMarkup(
         StartSerializingShadowDOM(aRoot, builder, aSerializableShadowRoots,
                                   aShadowRoots)) {
       SerializeNodeToMarkupInternal<SerializeShadowRoots::Yes>(
-          aRoot->GetShadowRoot()->GetFirstChild(), false, builder,
-          aSerializableShadowRoots, aShadowRoots);
+          aRoot->GetShadowRoot(), true, builder, aSerializableShadowRoots,
+          aShadowRoots);
       // The template tag is opened in StartSerializingShadowDOM, so we need
       // to close it here before serializing any children of aRoot.
       builder.Append(u"</template>");
@@ -11546,7 +11514,6 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       //         map[C] to registry."
       // 5.1.3. "Run these steps while catching any exceptions:
       //         Set result to the result of constructing C, with no arguments."
-      definition->mPrefixStack.AppendElement(nodeInfo->GetPrefixAtom());
       RefPtr<Document> doc = nodeInfo->GetDocument();
       DoCustomElementCreate(aResult, cx, doc, nodeInfo,
                             MOZ_KnownLive(definition->mConstructor), rv,
@@ -11562,8 +11529,10 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
           NS_IF_ADDREF(*aResult = nsXULElement::Construct(nodeInfo.forget()));
         }
         (*aResult)->SetDefined(false);
+      } else if (*aResult && nodeInfo->GetPrefixAtom()) {
+        // 5.1.3.9. Set result's namespace prefix to prefix.
+        (*aResult)->SetNamespacePrefix(nodeInfo->GetPrefixAtom());
       }
-      definition->mPrefixStack.RemoveLastElement();
       return NS_OK;
     }
 
@@ -11787,7 +11756,7 @@ nsContentUtils::ExtractFormAssociatedCustomElementValue(
 
           case IPCFormDataValue::TBlobImpl: {
             auto blobImpl = item.value().get_BlobImpl();
-            auto* blob = Blob::Create(aGlobal, blobImpl);
+            RefPtr<Blob> blob = Blob::Create(aGlobal, blobImpl);
             formData->AddNameBlobPair(item.name(), blob);
           } break;
 
@@ -12497,6 +12466,16 @@ nsContentUtils::TryGetBrowserChildGlobal(nsISupports* aFrom) {
 }
 
 /* static */
+Document* nsContentUtils::TryGetDocumentFromWindowGlobal(nsISupports* aFrom) {
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aFrom);
+  MOZ_DIAGNOSTIC_ASSERT(window, "Expected a window global");
+  if (!window) {
+    return nullptr;
+  }
+  return window->GetExtantDoc();
+}
+
+/* static */
 uint32_t nsContentUtils::InnerOrOuterWindowCreated() {
   MOZ_ASSERT(NS_IsMainThread());
   ++sInnerOrOuterWindowCount;
@@ -13089,7 +13068,7 @@ int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
 nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(
     nsIContent* aHost, ShadowRootMode aMode, bool aIsClonable,
     bool aIsSerializable, bool aDelegatesFocus, bool aCustomElementRegistry,
-    const nsAString& aReferenceTarget) {
+    SlotAssignmentMode aSlotAssignment, const nsAString& aReferenceTarget) {
   RefPtr<Element> host = mozilla::dom::Element::FromNodeOrNull(aHost);
   if (!host || host->GetShadowRoot()) {
     // https://html.spec.whatwg.org/#parsing-main-inhead:shadow-host
@@ -13099,7 +13078,7 @@ nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(
   ShadowRootInit init;
   init.mMode = aMode;
   init.mDelegatesFocus = aDelegatesFocus;
-  init.mSlotAssignment = SlotAssignmentMode::Named;
+  init.mSlotAssignment = aSlotAssignment;
   init.mClonable = aIsClonable;
   init.mSerializable = aIsSerializable;
 

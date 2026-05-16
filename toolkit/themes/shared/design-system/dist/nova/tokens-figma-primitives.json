@@ -1,4 +1,5 @@
 {
   "button/border/radius": "{Primitives$border/radius/circle}",
-  "button/size/icon/small": "{Primitives$size/item/medium}"
+  "button/size/icon/small": "{Primitives$size/item/medium}",
+  "badge/border/radius": "{Primitives$border/radius/circle}"
 }

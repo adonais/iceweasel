@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -702,7 +700,7 @@ void MapObject::clearNurseryIteratorsBeforeMinorGC() {
 
 /* static */
 MapObject* MapObject::sweepAfterMinorGC(JS::GCContext* gcx, MapObject* mapobj) {
-  Nursery& nursery = gcx->runtime()->gc.nursery();
+  Nursery& nursery = gcx->gcRuntime()->nursery();
   bool wasInCollectedRegion = nursery.inCollectedRegion(mapobj);
   if (wasInCollectedRegion && !IsForwarded(mapobj)) {
     // This MapObject is dead.
@@ -1434,7 +1432,7 @@ void SetObject::clearNurseryIteratorsBeforeMinorGC() {
 
 /* static */
 SetObject* SetObject::sweepAfterMinorGC(JS::GCContext* gcx, SetObject* setobj) {
-  Nursery& nursery = gcx->runtime()->gc.nursery();
+  Nursery& nursery = gcx->gcRuntime()->nursery();
   bool wasInCollectedRegion = nursery.inCollectedRegion(setobj);
   if (wasInCollectedRegion && !IsForwarded(setobj)) {
     // This SetObject is dead.
@@ -1486,9 +1484,6 @@ bool SetObject::tryOptimizeCtorWithIterable(JSContext* cx,
   // Fast path for `new Set(set)`.
   if (IsSetObjectWithDefaultIterator(iterable, cx)) {
     auto* iterableSet = &iterable->as<SetObject>();
-    if (!IsSetObjectWithDefaultIterator(iterableSet, cx)) {
-      return true;
-    }
     auto addEntry = [cx, this](auto& entry) {
       return addHashableValue(cx, entry);
     };

@@ -173,7 +173,7 @@ private fun MaskEmailChip(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                painter = painterResource(id = iconsR.drawable.mozac_ic_mask_email_24),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_email_mask_24),
                 contentDescription = null, // talkback should focus on the whole element
                 modifier = Modifier.size(16.dp),
             )

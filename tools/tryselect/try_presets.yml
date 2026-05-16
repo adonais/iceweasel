@@ -181,8 +181,8 @@ desktop-frontend:
         # results for frontend-only changes.
         # This won't run 32-bit debug tests, which seems an acceptable
         # trade-off for query complexity + runtime on infrastructure.
-        - "'browser-chrome                 !spi !asan !tsan !msix !a11y !swr | 'linux"
-        - "'mochitest-chrome               !spi !asan !tsan             !swr !gpu"
+        - "'browser-chrome     !standalone !spi !asan !tsan !msix !a11y !swr | 'linux"
+        - "'mochitest-chrome   !standalone !spi !asan !tsan             !swr !gpu"
         - "'xpcshell                       !spi !asan !tsan !msix !nofis !condprof !android"
         - "'browser-a11y | 'mochitest-a11y !spi !asan !tsan !no-cache   !swr"
         - "'marionette                          !asan       !source !headless !swr"
@@ -202,7 +202,7 @@ desktop-newtab-trainhop:
     selector: fuzzy
     full: true
     query:
-        - "'mochitest trainhop !cf !tsan !ccov !asan !shippable !debug !devedition !wayland !-32"
+        - "'mochitest trainhop !artifact !cf !tsan !ccov !asan !shippable !debug !devedition !wayland !-32"
 
 devtools:
     selector: fuzzy
@@ -273,7 +273,7 @@ layout-all-platforms:
         |mach try --preset layout-all-platforms -xq "windows 'opt"|
     query: &layout-all-platforms-query
         # Most mochitest + reftest + crashtest + wpt
-        - "!asan !tsan !jsreftest !shippable !webgl !condprof !media !webgpu !a11y-checks 'mochitest | 'web-platform | 'crashtest | 'reftest"
+        - "!asan !tsan !jsreftest !shippable !webgl !condprof !media !standalone !webgpu !a11y-checks 'mochitest | 'web-platform | 'crashtest | 'reftest"
         # Style system unit tests
         - "'rusttests"
 
@@ -348,7 +348,7 @@ mochitest-bc:
         tsan, msix, etc.) and some non-default configurations. For frontend
         only changes, use this with --artifact to speed up your trypushes.
     query:
-        - "'browser-chrome !tsan !asan !msix !spi !a11y !swr | 'linux"
+        - "'browser-chrome !standalone !tsan !asan !msix !spi !a11y !swr | 'linux"
     selector: fuzzy
 
 os-integration:

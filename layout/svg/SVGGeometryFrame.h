@@ -92,7 +92,7 @@ class SVGGeometryFrame final : public nsIFrame, public ISVGDisplayableFrame {
   void ReflowSVG() override;
   void NotifySVGChanged(ChangeFlags aFlags) override;
   SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                              uint32_t aFlags) override;
+                              SVGBBoxFlags aFlags) override;
   bool IsDisplayContainer() override { return false; }
 
   enum class RenderFlag { Fill, Stroke };

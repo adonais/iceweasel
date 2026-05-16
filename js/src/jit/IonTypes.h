@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -43,7 +41,7 @@ class IonCompilationId {
 
 namespace jit {
 
-using RecoverOffset = uint32_t;
+using RecoverOffset = uint64_t;
 using SnapshotOffset = uint32_t;
 
 // The maximum size of any buffer associated with an assembler or code object.
@@ -54,8 +52,8 @@ static const uint32_t MAX_BUFFER_SIZE = (1 << 30) - 1;
 // Maximum number of scripted arg slots.
 static const uint32_t SNAPSHOT_MAX_NARGS = 127;
 
-static const SnapshotOffset INVALID_RECOVER_OFFSET = uint32_t(-1);
-static const SnapshotOffset INVALID_SNAPSHOT_OFFSET = uint32_t(-1);
+static const RecoverOffset INVALID_RECOVER_OFFSET = RecoverOffset(-1);
+static const SnapshotOffset INVALID_SNAPSHOT_OFFSET = SnapshotOffset(-1);
 
 /*
  * [SMDOC] Avoiding repeated bailouts / invalidations

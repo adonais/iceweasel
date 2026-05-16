@@ -4,8 +4,6 @@
 
 #include "MediaTimer.h"
 
-#include <math.h>
-
 #include "mozilla/AwakeTimeStamp.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"

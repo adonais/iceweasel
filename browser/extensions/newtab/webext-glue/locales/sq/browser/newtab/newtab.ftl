@@ -307,9 +307,21 @@ newtab-error-fallback-refresh-link = Rifreskoni faqen që të riprovohet.
 
 newtab-custom-shortcuts-title = Shkurtore
 newtab-custom-shortcuts-subtitle = Sajte që ruani ose vizitoni
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Shkurtore
     .description = Sajte që ruani ose vizitoni
+newtab-custom-shortcuts-nova =
+    .label = Shkurtore
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } rresht
+           *[other] { $num } rreshta
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -320,9 +332,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Shkurtore të sponsorizuara
 newtab-custom-pocket-title = Rekomanduar nga { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Lëndë e jashtëzakonshme, në kujdesin e { -pocket-brand-name }, pjesë e familjes { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Histori të rekomanduara
     .description = Lëndë e veçantë, nën kujdesin e familjes { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Histori të rekomanduara
 newtab-custom-stories-personalized-toggle =
     .label = Histori
 newtab-custom-stories-personalized-checkbox-label = Histori të personalizuara, bazuar në veprimtarinë tuaj
@@ -356,8 +371,11 @@ newtab-custom-settings = Administroni më tepër rregullime
 
 newtab-wallpaper-title = Sfonde
 newtab-wallpaper-reset = Riktheje te parazgjedhjet
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Ngarkoni një figurë
 newtab-wallpaper-custom-color = Zgjidhni një ngjyrë
+newtab-wallpaper-toggle-title =
+    .label = Sfonde
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Figura tejkalonte kufirin { $file_size }MB e madhësive të kartelave. Ju lutemi, provoni të ngarkoni një kartelë më të vogël.
@@ -380,6 +398,7 @@ newtab-wallpaper-light-fox-anniversary = Një dhelpër në një lëndinë, në n
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Ngjyra të plota
 newtab-wallpaper-blue = Blu
 newtab-wallpaper-light-blue = Blu e çelët
@@ -486,7 +505,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Farenajt
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Kalo në Farenajt
 newtab-weather-menu-change-temperature-units-celsius = Kalo në Celsius
-newtab-weather-menu-hide-weather-v2 = Fshihe motin
 newtab-weather-menu-hide-weather = Fshihe motin në Skedë të Re
 newtab-weather-menu-learn-more = Mësoni më tepër
 newtab-weather-menu-detect-my-location = Pikas vendndodhjen time
@@ -653,7 +671,6 @@ newtab-widget-lists-menu-edit = Përpunoni emër liste
 newtab-widget-lists-menu-create = Krijoni një listë të re
 newtab-widget-lists-menu-delete = Fshije këtë listë
 newtab-widget-lists-menu-copy = Kopjoje listën në të papastër
-newtab-widget-lists-menu-hide = Fshihi krejt listat
 newtab-widget-lists-menu-learn-more = Mësoni më tepër
 newtab-widget-lists-input-add-an-item =
     .placeholder = Shtoni një objekt
@@ -706,7 +723,6 @@ newtab-widget-timer-reset =
     .title = Riktheje te parazgjedhjet
 newtab-widget-timer-menu-notifications = Çaktivizoni njoftimet
 newtab-widget-timer-menu-notifications-on = Aktivizoni njoftimet
-newtab-widget-timer-menu-hide = Fshihe kohëmatësin
 newtab-widget-timer-menu-learn-more = Mësoni më tepër
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Tituj Kryesues

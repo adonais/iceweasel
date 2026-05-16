@@ -650,7 +650,7 @@ void nsAppShell::ScheduleNativeEventCallback() {
 }
 
 // Undocumented Cocoa Event Manager function, present in the same form since
-// at least OS X 10.6.
+// at least macOS 10.6.
 extern "C" EventAttributes GetEventAttributes(EventRef inEvent);
 
 // ProcessNextNativeEvent

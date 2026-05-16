@@ -40,7 +40,7 @@ uint32_t PageloadEventData::sPageLoadEventCounter = 0;
 #ifdef EARLY_BETA_OR_EARLIER
 static constexpr uint64_t kNormalSamplingInterval = 1;  // Every pageload.
 #else
-static constexpr uint64_t kNormalSamplingInterval = 10;  // Every 10 pageloads.
+static constexpr uint64_t kNormalSamplingInterval = 3;  // Every 3 pageloads.
 #endif
 
 // Domain sampling

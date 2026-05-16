@@ -64,7 +64,7 @@ class GfxInfo : public GfxInfoBase {
                               uint32_t aRevision) override;
 #endif
 
-  virtual uint32_t OperatingSystemVersion() override { return mOSXVersion; }
+  virtual uint32_t OperatingSystemVersion() override { return mMacOSVersion; }
 
  protected:
   virtual ~GfxInfo() {}
@@ -95,8 +95,8 @@ class GfxInfo : public GfxInfoBase {
   nsString mAdapterVendorID[kMaxGPUs];
   nsString mAdapterDeviceID[kMaxGPUs];
 
-  GfxVersionEx mOSXVersionEx;
-  uint32_t mOSXVersion;
+  GfxVersionEx mMacOSVersionEx;
+  uint32_t mMacOSVersion;
 };
 
 }  // namespace widget

@@ -526,7 +526,8 @@ void av1_apply_roi_map(AV1_COMP *cpi) {
           qindex, cm->seq_params->bit_depth,
           cpi->ppi->gf_group.update_type[cpi->gf_frame_index], 0, 15,
           INTER_FRAME, cpi->oxcf.q_cfg.use_fixed_qp_offsets,
-          is_stat_consumption_stage(cpi), cpi->oxcf.tune_cfg.tuning);
+          is_stat_consumption_stage(cpi), cpi->oxcf.tune_cfg.tuning,
+          cpi->oxcf.mode);
     }
   } else {
     av1_disable_segmentation(seg);

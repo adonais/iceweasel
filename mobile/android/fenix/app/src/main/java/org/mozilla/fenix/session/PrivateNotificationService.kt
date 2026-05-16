@@ -38,7 +38,7 @@ class PrivateNotificationService : AbstractPrivateNotificationService() {
     override val notificationsDelegate: NotificationsDelegate by lazy { components.notificationsDelegate }
 
     override fun NotificationCompat.Builder.buildNotification() {
-        setSmallIcon(iconsR.drawable.mozac_ic_private_mode_24)
+        setSmallIcon(iconsR.drawable.mozac_ic_private_mode_fill_24)
 
         val contentTitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             applicationContext.getString(R.string.notification_erase_title_android_14)

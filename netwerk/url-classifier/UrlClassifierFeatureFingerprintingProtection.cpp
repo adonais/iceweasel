@@ -7,7 +7,7 @@
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "ChannelClassifierService.h"
-#include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/ScopedPrefs.h"
 #include "nsNetUtil.h"
 #include "mozilla/StaticPtr.h"
 #include "nsIWebProgressListener.h"
@@ -88,7 +88,9 @@ UrlClassifierFeatureFingerprintingProtection::MaybeCreate(
       ("UrlClassifierFeatureFingerprintingProtection::MaybeCreate - channel %p",
        aChannel));
 
-  if (!StaticPrefs::privacy_trackingprotection_fingerprinting_enabled()) {
+  if (!ScopedPrefs::BoolPrefScoped(
+          ScopedPrefs::PRIVACY_TRACKINGPROTECTION_FINGERPRINTING_ENABLED,
+          aChannel)) {
     return nullptr;
   }
 

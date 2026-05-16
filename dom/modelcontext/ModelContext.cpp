@@ -76,6 +76,10 @@ void ModelContext::RegisterTool(JSContext* aCx, const ModelContextTool& aTool,
       aRv.ThrowTypeError("Failed to serialize inputSchema"_ns);
       return;
     }
+    if (jsonStr.IsEmpty() || (jsonStr[0] != u'{')) {
+      aRv.ThrowTypeError("inputSchema must serialize to a JSON object"_ns);
+      return;
+    }
     def.inputSchema().emplace(NS_ConvertUTF16toUTF8(jsonStr));
   }
 
@@ -128,7 +132,11 @@ void ModelContext::GetTools(JSContext* aCx, nsTArray<ModelContextTool>& aRetval,
         aRv.ThrowInvalidStateError("Tool stored with invalid inputSchema");
         return;
       }
-      tool.mInputSchema.Construct(schemaVal.toObjectOrNull());
+      if (!schemaVal.isObject()) {
+        aRv.ThrowInvalidStateError("Tool stored with non-object inputSchema");
+        return;
+      }
+      tool.mInputSchema.Construct(&schemaVal.toObject());
     }
 
     tool.mExecute = entry.GetData().mExecute;

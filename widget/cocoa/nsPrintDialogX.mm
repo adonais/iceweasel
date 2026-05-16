@@ -460,8 +460,8 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
   [self addLabel:"pageHeadersTitleMac" withFrame:NSMakeRect(0, 44, 151, 22)];
   [self addLabel:"pageFootersTitleMac" withFrame:NSMakeRect(0, 0, 151, 22)];
   [self addCenteredLabel:"left" withFrame:NSMakeRect(156, 22, 100, 22)];
-  [self addCenteredLabel:"center" withFrame:NSMakeRect(256, 22, 100, 22)];
-  [self addCenteredLabel:"right" withFrame:NSMakeRect(356, 22, 100, 22)];
+  [self addCenteredLabel:"center" withFrame:NSMakeRect(262, 22, 100, 22)];
+  [self addCenteredLabel:"right" withFrame:NSMakeRect(368, 22, 100, 22)];
 
   // Lists
   nsString sel;
@@ -474,13 +474,13 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
   mSettings->GetHeaderStrCenter(sel);
   mHeaderCenterList =
-      [self headerFooterItemListWithFrame:NSMakeRect(256, 44, 100, 22)
+      [self headerFooterItemListWithFrame:NSMakeRect(262, 44, 100, 22)
                              selectedItem:sel];
   [self addSubview:mHeaderCenterList];
 
   mSettings->GetHeaderStrRight(sel);
   mHeaderRightList =
-      [self headerFooterItemListWithFrame:NSMakeRect(356, 44, 100, 22)
+      [self headerFooterItemListWithFrame:NSMakeRect(368, 44, 100, 22)
                              selectedItem:sel];
   [self addSubview:mHeaderRightList];
 
@@ -492,13 +492,13 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
   mSettings->GetFooterStrCenter(sel);
   mFooterCenterList =
-      [self headerFooterItemListWithFrame:NSMakeRect(256, 0, 100, 22)
+      [self headerFooterItemListWithFrame:NSMakeRect(262, 0, 100, 22)
                              selectedItem:sel];
   [self addSubview:mFooterCenterList];
 
   mSettings->GetFooterStrRight(sel);
   mFooterRightList =
-      [self headerFooterItemListWithFrame:NSMakeRect(356, 0, 100, 22)
+      [self headerFooterItemListWithFrame:NSMakeRect(368, 0, 100, 22)
                              selectedItem:sel];
   [self addSubview:mFooterRightList];
 }

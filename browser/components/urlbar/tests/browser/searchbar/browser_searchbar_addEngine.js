@@ -24,7 +24,7 @@ add_setup(async function () {
 add_task(async function test_usingSearchModeSwitcher() {
   let promiseEngineAdded = SearchTestUtils.promiseEngine("Foo");
   let popup = await SearchbarTestUtils.openSearchModeSwitcher(window);
-  popup.querySelector("menuitem[label*=engine1]").click();
+  popup.querySelector("panel-item[data-engine-name=engine1]").button.click();
   let engine = await promiseEngineAdded;
   Assert.ok(true, "The engine was installed.");
 

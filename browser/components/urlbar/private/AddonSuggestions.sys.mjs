@@ -84,7 +84,7 @@ export class AddonSuggestions extends SuggestProvider {
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
-      isNovaSuggestion: true,
+      isBottomUrlSuggestion: true,
       suggestedIndex: 1,
       richSuggestionIconSize: 24,
       payload: {

@@ -336,7 +336,7 @@ TextInputProcessor::BeginInputTransactionForTests(
     uint8_t aOptionalArgc, bool* aSucceeded) {
   MOZ_RELEASE_ASSERT(aSucceeded, "aSucceeded must not be nullptr");
   MOZ_RELEASE_ASSERT(nsContentUtils::IsCallerChrome());
-  nsITextInputProcessorCallback* callback =
+  nsCOMPtr<nsITextInputProcessorCallback> callback =
       aOptionalArgc >= 1 ? aCallback : nullptr;
   return BeginInputTransactionInternal(aWindow, callback, true, *aSucceeded);
 }
@@ -404,7 +404,8 @@ nsresult TextInputProcessor::BeginInputTransactionInternal(
   // This instance has finished preparing to link to the dispatcher.  Therefore,
   // let's forget the old dispatcher and purpose.
   if (mDispatcher) {
-    mDispatcher->EndInputTransaction(this);
+    OwningNonNull dispatcher = *mDispatcher;
+    dispatcher->EndInputTransaction(this);
     if (NS_WARN_IF(mDispatcher)) {
       // Forcibly initialize the members if we failed to end the input
       // transaction.

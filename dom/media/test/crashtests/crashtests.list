@@ -193,6 +193,7 @@ load 1999307.html
 load 2014845.html
 load dynamics-compressor-extreme-value.html
 load 2014824.html
+load 2014827.html
 load 2014849.html
 load 2014841.html
 load 2014856.html
@@ -215,3 +216,5 @@ pref(media.decoder-doctor.testing,true) load 2024424.html
 skip-if(!winWidget) pref(media.hevc.enabled,true) load 1859400.html
 load 1603271.html
 load 1536243.html
+load 2027160.html
+pref(media.autoplay.default,0) load bug2032944.html

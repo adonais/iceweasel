@@ -7,6 +7,7 @@ package org.mozilla.fenix.settings
 import android.content.SharedPreferences
 import androidx.fragment.app.FragmentActivity
 import androidx.preference.CheckBoxPreference
+import androidx.preference.SwitchPreferenceCompat
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -21,6 +22,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction.ContentRecommendationsAction
+import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.home.pocket.ContentRecommendationsFeatureHelper
 import org.mozilla.fenix.utils.Settings
@@ -116,6 +118,56 @@ internal class HomeSettingsFragmentTest {
         }
     }
 
+    @Test
+    fun `GIVEN the Homepage Sports Widget feature is disabled WHEN accessing settings THEN the World Cup toggle is not visible`() {
+        every { appSettings.enableHomepageSportsWidget } returns false
+
+        activateFragment()
+
+        assertFalse(getSportsWidgetPreference().isVisible)
+    }
+
+    @Test
+    fun `GIVEN the Homepage Sports Widget feature is enabled WHEN accessing settings THEN the World Cup toggle is visible`() {
+        every { appSettings.enableHomepageSportsWidget } returns true
+        every { appSettings.showHomepageSportsWidget } returns true
+
+        activateFragment()
+
+        assertTrue(getSportsWidgetPreference().isVisible)
+        assertTrue(getSportsWidgetPreference().isChecked)
+    }
+
+    @Test
+    fun `WHEN toggling the World Cup setting off THEN the preference is persisted and a VisibilityChanged action is dispatched`() {
+        activateFragment()
+        val result = getSportsWidgetPreference().callChangeListener(false)
+
+        assertTrue(result)
+        verify {
+            appStore.dispatch(SportsWidgetAction.VisibilityChanged(isVisible = false))
+            appPrefsEditor.putBoolean(
+                homeSettingsFragment.getString(R.string.pref_key_show_homepage_sports_widget),
+                false,
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN toggling the World Cup setting on THEN the preference is persisted and a VisibilityChanged action is dispatched`() {
+        activateFragment()
+        val result = getSportsWidgetPreference().callChangeListener(true)
+
+        assertTrue(result)
+        verify {
+            appStore.dispatch(SportsWidgetAction.VisibilityChanged(isVisible = true))
+            appPrefsEditor.putBoolean(
+                homeSettingsFragment.getString(R.string.pref_key_show_homepage_sports_widget),
+                true,
+            )
+        }
+    }
+
     private fun activateFragment() {
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
         homeSettingsFragment = HomeSettingsFragment()
@@ -141,5 +193,10 @@ internal class HomeSettingsFragmentTest {
     private fun getSponsoredStoriesPreference(): CheckBoxPreference =
         homeSettingsFragment.findPreference(
             homeSettingsFragment.getPreferenceKey(R.string.pref_key_pocket_sponsored_stories),
+        )!!
+
+    private fun getSportsWidgetPreference(): SwitchPreferenceCompat =
+        homeSettingsFragment.findPreference(
+            homeSettingsFragment.getPreferenceKey(R.string.pref_key_show_homepage_sports_widget),
         )!!
 }

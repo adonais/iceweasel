@@ -182,9 +182,8 @@ nsresult FormData::AddNameBlobPair(const nsAString& aName, Blob* aBlob) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  RefPtr<File> file;
   ErrorResult rv;
-  file = GetOrCreateFileCalledBlob(*aBlob, rv);
+  RefPtr<File> file = GetOrCreateFileCalledBlob(*aBlob, rv);
   if (NS_WARN_IF(rv.Failed())) {
     return rv.StealNSResult();
   }

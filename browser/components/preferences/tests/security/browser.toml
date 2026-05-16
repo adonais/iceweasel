@@ -1,0 +1,12 @@
+[DEFAULT]
+support-files = [
+  "head.js",
+  "../head.js",
+]
+tags = "os_integration"
+
+["browser_security-1.js"]
+
+["browser_security-2.js"]
+
+["browser_security-3.js"]

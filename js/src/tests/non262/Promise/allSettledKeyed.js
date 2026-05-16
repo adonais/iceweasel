@@ -24,7 +24,7 @@ feature: [Promise.allSettledKeyed]
     drainJobQueue();
     assertEq(Object.getPrototypeOf(result), null);
     assertDeepEq(Object.getOwnPropertyNames(result).sort(), ["a"]);
-    assertEq(Object.getPrototypeOf(result.a), null);
+    assertEq(Object.getPrototypeOf(result.a), Object.prototype);
     assertEq(result.a.status, "fulfilled");
     assertEq(result.a.value, 1);
     assertDeepEq(Object.getOwnPropertyNames(result.a).sort(), ["status", "value"]);
@@ -38,6 +38,7 @@ feature: [Promise.allSettledKeyed]
     });
     drainJobQueue();
     assertEq(Object.getPrototypeOf(result), null);
+    assertEq(Object.getPrototypeOf(result.a), Object.prototype);
     assertEq(result.a.status, "rejected");
     assertEq(result.a.reason, "error");
     assertDeepEq(Object.getOwnPropertyNames(result.a).sort(), ["reason", "status"]);

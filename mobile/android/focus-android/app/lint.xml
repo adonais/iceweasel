@@ -12,6 +12,7 @@
     <issue id="StringFormatCount" severity="ignore" />
     <issue id="TypographyEllipsis" severity="ignore" />
     <issue id="ExtraTranslation" severity="warning" />
+    <issue id="Untranslatable" severity="ignore" />
     <issue id="MissingDefaultResource" severity="ignore" />
     <issue id="BlankString" severity="error">
         <ignore path="**/values/preference_keys.xml" />

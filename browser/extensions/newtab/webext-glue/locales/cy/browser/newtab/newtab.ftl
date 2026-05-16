@@ -146,6 +146,9 @@ newtab-menu-report = Adrodd
 newtab-menu-section-block = Rhwystro
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Dad-ddilyn
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Dad-ddilyn Pwnc
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -312,9 +315,27 @@ newtab-error-fallback-refresh-link = Adnewyddu'r dudalen i geisio eto.
 
 newtab-custom-shortcuts-title = Llwybrau Byr
 newtab-custom-shortcuts-subtitle = Gwefannau rydych yn eu cadw neu'n ymweld â nhw
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Llwybrau Byr
     .description = Gwefannau rydych yn eu cadw neu'n ymweld â nhw
+newtab-custom-shortcuts-nova =
+    .label = Llwybrau Byr
+newtab-custom-row-description =
+    .description = Nifer y rhesi
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [zero] { $num } rhesi
+            [one] { $num } rhes
+            [two] { $num } res
+            [few] { $num } rhes
+            [many] { $num } rhes
+           *[other] { $num } rhes
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -329,9 +350,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Llwybrau byr wedi'u noddi
 newtab-custom-pocket-title = Argymhellir gan  { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Cynnwys eithriadol wedi'i guradu gan { -pocket-brand-name }, rhan o deulu { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Straeon cymeradwy
     .description = Cynnwys eithriadol wedi'i gasglu gan deulu { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Straeon cymeradwy
 newtab-custom-stories-personalized-toggle =
     .label = Straeon
 newtab-custom-stories-personalized-checkbox-label = Straeon personol ar sail eich gweithgaredd
@@ -365,8 +389,12 @@ newtab-custom-settings = Rheoli rhagor o osodiadau
 
 newtab-wallpaper-title = Papurau wal
 newtab-wallpaper-reset = Ailosod i'r rhagosodiad
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Llwytho delwedd
+newtab-wallpaper-add-an-image = Ychwanegu delwedd
 newtab-wallpaper-custom-color = Dewis lliw
+newtab-wallpaper-toggle-title =
+    .label = Papurau wal
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Mae'r ddelwedd yn fwy na'r terfyn maint ffeil { $file_size }MB. Ceisiwch lwytho ffeil lai.
@@ -389,7 +417,9 @@ newtab-wallpaper-light-fox-anniversary = Llwynog mewn cae glaswelltog gyda thirl
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Lliwiau solet
+newtab-wallpaper-colors = Lliwiau
 newtab-wallpaper-blue = Glas
 newtab-wallpaper-light-blue = Glas golau
 newtab-wallpaper-light-purple = Porffor golau
@@ -495,7 +525,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Newid i Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Newid i Celsius
-newtab-weather-menu-hide-weather-v2 = Cuddio'r tywydd
 newtab-weather-menu-hide-weather = Cuddio'r tywydd ar Dab Newydd
 newtab-weather-menu-learn-more = Rhagor
 newtab-weather-menu-detect-my-location = Canfod fy lleoliad
@@ -506,8 +535,18 @@ newtab-weather-opt-in-not-now =
     .label = Nid nawr
 newtab-weather-opt-in-yes =
     .label = Iawn
+newtab-weather-opt-in-headline = Cael eich rhagolygon tywydd lleol
+newtab-weather-opt-in-use-location =
+    .label = Defnyddio'r lleoliad
+newtab-weather-opt-in-choose-location = Dewis lleoliad
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Dinas Efrog Newydd
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Uchel
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Isel
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -581,6 +620,7 @@ newtab-section-confirm-block-topic-p2 = Ni fydd pynciau sydd wedi'u rhwystro yn 
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Rhwystro { $topic }
+newtab-section-block-cancel-button = Diddymu
 
 ## Strings for custom wallpaper highlight
 
@@ -644,6 +684,18 @@ newtab-toast-thanks-for-reporting =
     .message = Diolch am adrodd am hyn.
 newtab-toast-widgets-hidden =
     .message = Dewiswch yr eicon pensil i adfer teclynnau unrhyw bryd.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Rydych nawr yn dilyn { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Dydych chi nawr ddim yn dilyn { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Fyddwch chi ddim yn gweld straeon am { $topic } bellach.
 
 ## Strings for task / to-do list productivity widget
 
@@ -663,7 +715,6 @@ newtab-widget-lists-menu-edit = Golygu enw'r rhestr
 newtab-widget-lists-menu-create = Creu rhestr newydd
 newtab-widget-lists-menu-delete = Dileu'r rhestr hon
 newtab-widget-lists-menu-copy = Copïo'r rhestr i'r clipfwrdd
-newtab-widget-lists-menu-hide = Cuddio pob rhestr
 newtab-widget-lists-menu-learn-more = Dysgu rhagor
 newtab-widget-lists-input-add-an-item =
     .placeholder = Ychwanegu eitem
@@ -685,6 +736,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = Rhestr newydd
 newtab-widget-section-title = Teclynnau
 newtab-widget-menu-hide = Cuddio'r teclyn
+newtab-widget-menu-change-size = Newid maint
+newtab-widget-size-small = Bach
+newtab-widget-size-medium = Canolig
+newtab-widget-size-large = Mawr
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Cuddio teclynnau
@@ -716,7 +771,6 @@ newtab-widget-timer-reset =
     .title = Ailosod
 newtab-widget-timer-menu-notifications = Diffodd hysbysiadau
 newtab-widget-timer-menu-notifications-on = Troi hysbysiadau ymlaen
-newtab-widget-timer-menu-hide = Cuddio'r amserydd
 newtab-widget-timer-menu-learn-more = Dysgu rhagor
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Prif Benawdau
@@ -727,6 +781,12 @@ newtab-daily-briefing-card-timestamp = Diweddarwyd { $minutes }m yn ôl
 newtab-widget-message-title = Canolbwyntio gyda rhestrau a'r amserydd mewnol
 # to-dos stands for "things to do".
 newtab-widget-message-copy = O negeseuon atgoffa cyflym i dasgau bob dydd, sesiynau canolbwyntio i egwyliau ymarfer corff — cadwch i'r dasg ac amser.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Gwnewch { -brand-product-name } yn gartrefol
+newtab-promo-card-body-addons = Dewiswch bapur wal o'n casgliad, neu crëwch un eich hun.
+newtab-promo-card-cta-addons = Rhowch gynnig arno nawr
 newtab-promo-card-title = Cefnogi { -brand-product-name }
 newtab-promo-card-body = Mae ein noddwyr yn cefnogi ein cenhadaeth i adeiladu gwe well
 newtab-promo-card-cta = Dysgu rhagor

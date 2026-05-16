@@ -108,6 +108,7 @@ constexpr uint8_t GetTlgInputType(mozilla::MarkerSchema::InputType aInput) {
     case InputType::Uint32:
       return TlgInUINT32;
     case InputType::Uint64:
+    case InputType::Flow:
     case InputType::TimeStamp:
     case InputType::TimeDuration:
       return TlgInUINT64;

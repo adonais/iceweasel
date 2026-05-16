@@ -9,27 +9,21 @@
 //! Linear gradients are rendered via cached render tasks and composited with the image brush.
 
 use euclid::approxeq::ApproxEq;
-use euclid::{point2, vec2, size2};
-use api::{ExtendMode, GradientStop, LineOrientation, PremultipliedColorF, ColorF, ColorU};
+use euclid::{point2, vec2};
+use api::{ExtendMode, GradientStop};
 use api::units::*;
-use crate::gpu_types::{ImageBrushPrimitiveData, LinearGradientBrushData};
 use crate::pattern::gradient::linear_gradient_pattern;
 use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
 use crate::scene_building::IsVisible;
-use crate::frame_builder::FrameBuildingState;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::image_tiling::simplify_repeated_primitive;
-use crate::prim_store::{BrushSegment, GradientTileRange, VECS_PER_SEGMENT};
+use crate::prim_store::BrushSegment;
 use crate::prim_store::{PrimitiveInstanceKind, PrimitiveOpacity};
 use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
-use crate::render_task::{RenderTask, RenderTaskKind};
-use crate::render_task_graph::RenderTaskId;
-use crate::render_task_cache::{RenderTaskCacheKeyKind, RenderTaskCacheKey, RenderTaskParent};
-use crate::renderer::GpuBufferAddress;
 use crate::segment::EdgeMask;
-use super::{stops_and_min_alpha, GradientStopKey, GradientGpuBlockBuilder, apply_gradient_local_clip};
+use super::{stops_and_min_alpha, GradientStopKey, apply_gradient_local_clip};
 use std::ops::{Deref, DerefMut};
 use std::mem::swap;
 
@@ -48,7 +42,6 @@ pub struct LinearGradientKey {
     pub tile_spacing: SizeKey,
     pub stops: Vec<GradientStopKey>,
     pub reverse_stops: bool,
-    pub cached: bool,
     pub nine_patch: Option<Box<NinePatchDescriptor>>,
     pub enable_dithering: bool,
 }
@@ -67,7 +60,6 @@ impl LinearGradientKey {
             tile_spacing: linear_grad.tile_spacing,
             stops: linear_grad.stops,
             reverse_stops: linear_grad.reverse_stops,
-            cached: linear_grad.cached,
             nine_patch: linear_grad.nine_patch,
             enable_dithering: linear_grad.enable_dithering,
         }
@@ -93,9 +85,6 @@ pub struct LinearGradientTemplate {
     pub brush_segments: Vec<BrushSegment>,
     pub border_nine_patch: Option<Box<NinePatchDescriptor>>,
     pub reverse_stops: bool,
-    pub is_fast_path: bool,
-    pub cached: bool,
-    pub src_color: Option<RenderTaskId>,
 }
 
 impl PatternBuilder for LinearGradientTemplate {
@@ -373,7 +362,7 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
 
         let common = PrimTemplateCommonData::with_key_common(item.common);
 
-        let (mut stops, min_alpha) = stops_and_min_alpha(&item.stops);
+        let (stops, min_alpha) = stops_and_min_alpha(&item.stops);
 
         let mut brush_segments = Vec::new();
 
@@ -407,37 +396,6 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
             task_size.width = 1.0;
         }
 
-        // See if we can render the gradient using a special fast-path shader.
-        // The fast path path only works with two gradient stops.
-        let mut is_fast_path = false;
-        if item.cached && stops.len() == 2 && brush_segments.is_empty() {
-            if horizontal
-                && stretch_size.width >= common.prim_size.width
-                && start_point.x.approx_eq(&0.0)
-                && end_point.x.approx_eq(&stretch_size.width) {
-                is_fast_path = true;
-                task_size.width = task_size.width.min(256.0);
-            }
-            if vertical
-                && stretch_size.height >= common.prim_size.height
-                && start_point.y.approx_eq(&0.0)
-                && end_point.y.approx_eq(&stretch_size.height) {
-                is_fast_path = true;
-                task_size.height = task_size.height.min(256.0);
-            }
-
-            if stops[0].color == stops[1].color {
-                is_fast_path = true;
-                task_size = size2(1.0, 1.0);
-            }
-
-            if is_fast_path && item.reverse_stops {
-                // The fast path doesn't use the gradient gpu blocks builder so handle
-                // reversed stops here.
-                stops.swap(0, 1);
-            }
-        }
-
         // Avoid rendering enormous gradients. Linear gradients are mostly made of soft transitions,
         // so it is unlikely that rendering at a higher resolution than 1024 would produce noticeable
         // differences, especially with 8 bits per channel.
@@ -468,136 +426,7 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
             brush_segments,
             border_nine_patch: item.nine_patch,
             reverse_stops: item.reverse_stops,
-            is_fast_path,
-            cached: item.cached,
-            src_color: None,
         }
-    }
-}
-
-impl LinearGradientTemplate {
-    /// Update the GPU cache for a given primitive template. This may be called multiple
-    /// times per frame, by each primitive reference that refers to this interned
-    /// template. The initial request call to the GPU cache ensures that work is only
-    /// done if the cache entry is invalid (due to first use or eviction).
-    pub fn update(
-        &mut self,
-        frame_state: &mut FrameBuildingState,
-    ) {
-        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3 + self.brush_segments.len() * VECS_PER_SEGMENT);
-
-        // Write_prim_gpu_blocks
-        if self.cached {
-            writer.push(&ImageBrushPrimitiveData {
-                color: PremultipliedColorF::WHITE,
-                background_color: PremultipliedColorF::WHITE,
-                stretch_size: self.stretch_size,
-            });
-        } else {
-            // We are using the gradient brush.
-            writer.push(&LinearGradientBrushData {
-                start: self.start_point,
-                end: self.end_point,
-                extend_mode: self.extend_mode,
-                stretch_size: self.stretch_size,
-            });
-        }
-
-        // write_segment_gpu_blocks
-        for segment in &self.brush_segments {
-            segment.write_gpu_blocks(&mut writer);
-        }
-
-        self.common.gpu_buffer_address = writer.finish();
-
-        // Tile spacing is always handled by decomposing into separate draw calls so the
-        // primitive opacity is equivalent to stops opacity. This might change to being
-        // set to non-opaque in the presence of tile spacing if/when tile spacing is handled
-        // in the same way as with the image primitive.
-        self.opacity = self.stops_opacity;
-
-        if !self.cached {
-            return;
-        }
-
-        let task_id = if self.is_fast_path {
-            let orientation = if self.task_size.width > self.task_size.height {
-                LineOrientation::Horizontal
-            } else {
-                LineOrientation::Vertical
-            };
-
-            let gradient = FastLinearGradientTask {
-                color0: self.stops[0].color.into(),
-                color1: self.stops[1].color.into(),
-                orientation,
-            };
-
-            frame_state.resource_cache.request_render_task(
-                Some(RenderTaskCacheKey {
-                    origin: DeviceIntPoint::zero(),
-                    size: self.task_size,
-                    kind: RenderTaskCacheKeyKind::FastLinearGradient(gradient),
-                }),
-                false,
-                RenderTaskParent::Surface,
-                &mut frame_state.frame_gpu_data.f32,
-                frame_state.rg_builder,
-                &mut frame_state.surface_builder,
-                &mut |rg_builder, _| {
-                    rg_builder.add().init(RenderTask::new_dynamic(
-                        self.task_size,
-                        RenderTaskKind::FastLinearGradient(gradient),
-                    ))
-                }
-            )
-        } else {
-            let cache_key = LinearGradientCacheKey {
-                size: self.task_size,
-                start: PointKey { x: self.start_point.x, y: self.start_point.y },
-                end: PointKey { x: self.end_point.x, y: self.end_point.y },
-                scale: PointKey { x: self.scale.x, y: self.scale.y },
-                extend_mode: self.extend_mode,
-                stops: self.stops.iter().map(|stop| (*stop).into()).collect(),
-                reversed_stops: self.reverse_stops,
-            };
-
-            frame_state.resource_cache.request_render_task(
-                Some(RenderTaskCacheKey {
-                    origin: DeviceIntPoint::zero(),
-                    size: self.task_size,
-                    kind: RenderTaskCacheKeyKind::LinearGradient(cache_key),
-                }),
-                false,
-                RenderTaskParent::Surface,
-                &mut frame_state.frame_gpu_data.f32,
-                frame_state.rg_builder,
-                &mut frame_state.surface_builder,
-                &mut |rg_builder, gpu_buffer_builder| {
-                    let stops = Some(GradientGpuBlockBuilder::build(
-                        self.reverse_stops,
-                        gpu_buffer_builder,
-                        &self.stops,
-                    ));
-
-                    rg_builder.add().init(RenderTask::new_dynamic(
-                        self.task_size,
-                        RenderTaskKind::LinearGradient(LinearGradientTask {
-                            // Cached brush gradients are rasteried with 1 layout
-                            // pixel = 1 device pixel (regardless of potential
-                            // scaling factors).
-                            start: self.start_point.cast_unit(),
-                            end: self.end_point.cast_unit(),
-                            scale: self.scale,
-                            extend_mode: self.extend_mode,
-                            stops: stops.unwrap(),
-                        }),
-                    ))
-                }
-            )
-        };
-
-        self.src_color = Some(task_id);
     }
 }
 
@@ -615,7 +444,6 @@ pub struct LinearGradient {
     pub stops: Vec<GradientStopKey>,
     pub reverse_stops: bool,
     pub nine_patch: Option<Box<NinePatchDescriptor>>,
-    pub cached: bool,
     pub edge_aa_mask: EdgeMask,
     pub enable_dithering: bool,
 }
@@ -636,21 +464,12 @@ impl InternablePrimitive for LinearGradient {
     }
 
     fn make_instance_kind(
-        key: LinearGradientKey,
+        _key: LinearGradientKey,
         data_handle: LinearGradientDataHandle,
         _prim_store: &mut PrimitiveStore,
     ) -> PrimitiveInstanceKind {
-        if key.cached {
-            PrimitiveInstanceKind::CachedLinearGradient {
-                data_handle,
-                visible_tiles_range: GradientTileRange::empty(),
-            }
-        } else {
-            PrimitiveInstanceKind::LinearGradient {
-                data_handle,
-                visible_tiles_range: GradientTileRange::empty(),
-                use_legacy_path: true,
-            }
+        PrimitiveInstanceKind::LinearGradient {
+            data_handle,
         }
     }
 }
@@ -661,109 +480,3 @@ impl IsVisible for LinearGradient {
     }
 }
 
-#[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct LinearGradientPrimitive {
-    pub cache_segments: Vec<CachedGradientSegment>,
-    pub visible_tiles_range: GradientTileRange,
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct CachedGradientSegment {
-    pub render_task: RenderTaskId,
-    pub local_rect: LayoutRect,
-}
-
-
-#[derive(Copy, Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct FastLinearGradientTask {
-    pub color0: ColorU,
-    pub color1: ColorU,
-    pub orientation: LineOrientation,
-}
-
-impl FastLinearGradientTask {
-    pub fn to_instance(&self, target_rect: &DeviceIntRect) -> FastLinearGradientInstance {
-        FastLinearGradientInstance {
-            task_rect: target_rect.to_f32(),
-            color0: ColorF::from(self.color0).premultiplied(),
-            color1: ColorF::from(self.color1).premultiplied(),
-            axis_select: match self.orientation {
-                LineOrientation::Horizontal => 0.0,
-                LineOrientation::Vertical => 1.0,
-            },
-        }
-    }
-}
-
-pub type FastLinearGradientCacheKey = FastLinearGradientTask;
-
-/// The per-instance shader input of a fast-path linear gradient render task.
-///
-/// Must match the FAST_LINEAR_GRADIENT instance description in renderer/vertex.rs.
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct FastLinearGradientInstance {
-    pub task_rect: DeviceRect,
-    pub color0: PremultipliedColorF,
-    pub color1: PremultipliedColorF,
-    pub axis_select: f32,
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct LinearGradientTask {
-    pub start: DevicePoint,
-    pub end: DevicePoint,
-    pub scale: DeviceVector2D,
-    pub extend_mode: ExtendMode,
-    pub stops: GpuBufferAddress,
-}
-
-impl LinearGradientTask {
-    pub fn to_instance(&self, target_rect: &DeviceIntRect) -> LinearGradientInstance {
-        LinearGradientInstance {
-            task_rect: target_rect.to_f32(),
-            start: self.start,
-            end: self.end,
-            scale: self.scale,
-            extend_mode: self.extend_mode as i32,
-            gradient_stops_address: self.stops.as_int(),
-        }
-    }
-}
-
-/// The per-instance shader input of a linear gradient render task.
-///
-/// Must match the LINEAR_GRADIENT instance description in renderer/vertex.rs.
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[repr(C)]
-#[derive(Clone, Debug)]
-pub struct LinearGradientInstance {
-    pub task_rect: DeviceRect,
-    pub start: DevicePoint,
-    pub end: DevicePoint,
-    pub scale: DeviceVector2D,
-    pub extend_mode: i32,
-    pub gradient_stops_address: i32,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct LinearGradientCacheKey {
-    pub size: DeviceIntSize,
-    pub start: PointKey,
-    pub end: PointKey,
-    pub scale: PointKey,
-    pub extend_mode: ExtendMode,
-    pub stops: Vec<GradientStopKey>,
-    pub reversed_stops: bool,
-}

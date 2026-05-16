@@ -9,6 +9,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "mozilla/net/UrlClassifierCommon.h"
+#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIChannel.h"
@@ -79,15 +80,33 @@ nsresult ScopedPrefs::GetBoolPrefFallback(const nsIScopedPrefs::Pref aPref,
       *aValue = StaticPrefs::privacy_trackingprotection_enabled() ||
                 (aIsPrivate &&
                  StaticPrefs::privacy_trackingprotection_pbmode_enabled());
-      MOZ_LOG(gScopedPrefsLog, LogLevel::Debug,
-              ("GetBoolPrefFallback: pref=%d, isPrivate=%d, value=%d", aPref,
-               aIsPrivate, *aValue));
-      return NS_OK;
+      break;
+    case nsIScopedPrefs::PRIVACY_TRACKINGPROTECTION_CRYPTOMINING_ENABLED:
+      *aValue = StaticPrefs::privacy_trackingprotection_cryptomining_enabled();
+      break;
+    case nsIScopedPrefs::PRIVACY_TRACKINGPROTECTION_FINGERPRINTING_ENABLED:
+      *aValue =
+          StaticPrefs::privacy_trackingprotection_fingerprinting_enabled();
+      break;
+    case nsIScopedPrefs::PRIVACY_TRACKINGPROTECTION_SOCIALTRACKING_ENABLED:
+      *aValue =
+          StaticPrefs::privacy_trackingprotection_socialtracking_enabled();
+      break;
+    case nsIScopedPrefs::PRIVACY_TRACKINGPROTECTION_EMAILTRACKING_ENABLED:
+      *aValue =
+          StaticPrefs::privacy_trackingprotection_emailtracking_enabled() ||
+          (aIsPrivate &&
+           StaticPrefs::
+               privacy_trackingprotection_emailtracking_pbmode_enabled());
+      break;
     case nsIScopedPrefs::NUM_SCOPED_BOOL_PREFS:
       // not a valid value
       return NS_ERROR_FAILURE;
   }
-  return NS_ERROR_FAILURE;
+  MOZ_LOG(gScopedPrefsLog, LogLevel::Debug,
+          ("GetBoolPrefFallback: pref=%d, isPrivate=%d, value=%d", aPref,
+           aIsPrivate, *aValue));
+  return NS_OK;
 }
 
 // static

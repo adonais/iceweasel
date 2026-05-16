@@ -1187,7 +1187,7 @@ CompositorBridgeParent* WebRenderBridgeParent::GetRootCompositorBridgeParent()
   // ContentCompositorBridgeParent so we have an extra level of
   // indirection to unravel.
   CompositorBridgeParent::LayerTreeState* lts =
-      CompositorBridgeParent::GetIndirectShadowTree(GetLayersId());
+      CompositorBridgeParent::GetLayerTreeState(GetLayersId());
   if (!lts) {
     return nullptr;
   }
@@ -1265,7 +1265,7 @@ void WebRenderBridgeParent::SetAPZSampleTime() {
 
 bool WebRenderBridgeParent::SetDisplayList(
     const LayoutDeviceRect& aRect, ipc::ByteBuf&& aDLItems,
-    ipc::ByteBuf&& aDLCache, ipc::ByteBuf&& aSpatialTreeDL,
+    ipc::ByteBuf&& aSpatialTreeDL,
     const wr::BuiltDisplayListDescriptor& aDLDesc,
     const nsTArray<OpUpdateResource>& aResourceUpdates,
     const nsTArray<RefCountedShmem>& aSmallShmems,
@@ -1276,7 +1276,6 @@ bool WebRenderBridgeParent::SetDisplayList(
       UpdateResources(aResourceUpdates, aSmallShmems, aLargeShmems, aTxn);
 
   wr::Vec<uint8_t> dlItems(std::move(aDLItems));
-  wr::Vec<uint8_t> dlCache(std::move(aDLCache));
   wr::Vec<uint8_t> dlSpatialTreeData(std::move(aSpatialTreeDL));
 
   if (IsRootWebRenderBridgeParent()) {
@@ -1291,7 +1290,7 @@ bool WebRenderBridgeParent::SetDisplayList(
     pipelineId = gfx::GetTemporaryWebRenderPipelineId(pipelineId);
   }
 
-  aTxn.SetDisplayList(aWrEpoch, pipelineId, aDLDesc, dlItems, dlCache,
+  aTxn.SetDisplayList(aWrEpoch, pipelineId, aDLDesc, dlItems,
                       dlSpatialTreeData);
 
   if (aRenderOffscreen) {
@@ -1352,11 +1351,9 @@ bool WebRenderBridgeParent::ProcessDisplayListData(
   success =
       ProcessWebRenderParentCommands(aDisplayList.mCommands, txn) && success;
 
-  if (aDisplayList.mDLItems && aDisplayList.mDLCache &&
-      aDisplayList.mDLSpatialTree) {
+  if (aDisplayList.mDLItems && aDisplayList.mDLSpatialTree) {
     success = SetDisplayList(
                   aDisplayList.mRect, std::move(aDisplayList.mDLItems.ref()),
-                  std::move(aDisplayList.mDLCache.ref()),
                   std::move(aDisplayList.mDLSpatialTree.ref()),
                   aDisplayList.mDLDesc, aDisplayList.mResourceUpdates,
                   aDisplayList.mSmallShmems, aDisplayList.mLargeShmems,
@@ -1795,17 +1792,6 @@ void WebRenderBridgeParent::FlushFramePresentation() {
   // following the same codepath that WebRender takes to render and composite
   // a frame.
   mLateInit->mApi->WaitUntilPresentationFlushed();
-}
-
-void WebRenderBridgeParent::DisableNativeCompositor() {
-  // Make sure that SceneBuilder thread does not have a task.
-  mLateInit->mApi->FlushSceneBuilder();
-  // Disable WebRender's native compositor usage
-  mLateInit->mApi->EnableNativeCompositor(false);
-  // Ensure we generate and render a frame immediately.
-  ScheduleForcedGenerateFrame(wr::RenderReasons::CONFIG_CHANGE);
-
-  mDisablingNativeCompositor = true;
 }
 
 void WebRenderBridgeParent::UpdateQualitySettings() {
@@ -2678,16 +2664,6 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   mLateInit->mApi->SendTransaction(fastTxn);
 
   mMostRecentComposite = TimeStamp::Now();
-
-  // During disabling native compositor, webrender needs to render twice.
-  // Otherwise, browser flashes black.
-  // XXX better fix?
-  if (mDisablingNativeCompositor) {
-    mDisablingNativeCompositor = false;
-
-    // Ensure we generate and render a frame immediately.
-    ScheduleForcedGenerateFrame(aReasons);
-  }
 }
 
 void WebRenderBridgeParent::HoldPendingTransactionId(

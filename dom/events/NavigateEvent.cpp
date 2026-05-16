@@ -465,8 +465,8 @@ static void ScrollToBeginningOfDocument(Document& aDocument) {
   }
 
   RefPtr<Element> rootElement = aDocument.GetRootElement();
-  ScrollAxis vertical(WhereToScroll::Start, WhenToScroll::Always);
-  presShell->ScrollContentIntoView(rootElement, vertical, ScrollAxis(),
+  AxisScrollParams vertical(WhereToScroll::Start, WhenToScroll::Always);
+  presShell->ScrollContentIntoView(rootElement, vertical, AxisScrollParams(),
                                    ScrollFlags::TriggeredByScript);
 }
 

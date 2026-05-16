@@ -1986,6 +1986,11 @@ export const XPIDatabase = {
             );
           }
         }
+
+        // The `location` property in the XPIStates entry data is set to the
+        // string representing the location name, and we are converting it
+        // to the corresponding XPIStateLocation class instance (as expected
+        // by the AddonInternal constructor).
         loadedAddon.location = XPIExports.XPIInternal.XPIStates.getLocation(
           loadedAddon.location
         );

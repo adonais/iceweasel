@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Caută în file</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Introdu termenii de căutare</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Filele deschise vor fi afișate aici.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Aici vor fi afișate filele tale private.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Navigare privată</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Selectează colecția</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Ieși din modul de selecție multiplă</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Salvează în colecție filele selectate</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Preia filele de pe orice dispozitiv</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Oprire</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Extensii</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Ai extensii instalate, dar nu activate</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Gestionează extensiile</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Încearcă o extensie recomandată</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Informații despre cont</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Ajutor</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Ce este nou</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Setări</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Bibliotecă</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Versiune site de desktop</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Deschide într-o filă normală</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Adaugă în ecranul de pornire</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">CU TEHNOLOGIE %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Cu tehnologie %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Mod de lectură</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Deschide în aplicație</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Personalizează modul de citire</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Personalizează vizualizarea Cititor</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Adaugă</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Editează</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Personalizează pagina de start</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Autentificare</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Închide meniul</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigare</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Închide meniul extensiilor</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Închide foaia de meniu salvare</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Închideți foaia de meniu cu instrumente</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Închide foaia de meniu cu filă personalizată</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -368,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Ecran de pornire</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Tradu pagina</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -391,6 +362,58 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Respinge mesajul</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Rezumate de pagini</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">Comenzi AI</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Întotdeauna alegerea e a ta în \u0020%s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Include și dacă se vor utiliza sau nu funcționalități îmbunătățite cu AI. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Include dacă se vor utiliza funcționalități îmbunătățite cu AI.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Află mai multe</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Blochează îmbunătățirile cu AI</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Blocare înseamnă că nu vei vedea îmbunătățiri AI noi sau actuale în %s, și nici pop-up-uri despre ele.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Vezi ce este și ce nu este inclus</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Îmbunătățirile AI noi și actuale sunt blocate implicit. Deblochează funcționalități specifice mai jos.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Funcționalități pe bază de AI</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Traduceri</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Toate traducerile rămân private pe dispozitivul tău.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Mai multe setări pentru traduceri</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Mai multe setări pentru rezumatele paginilor</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Căutare vocală</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Conținutul audio este convertit în text cu Serviciile Google Speech.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Blochezi îmbunătățirile cu AI?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Nu vei mai vedea îmbunătățiri noi sau actuale AI în %1$s, și nici pop-up-uri despre ele. După aceea, poți debloca orice vrei să folosești în continuare.\n\nBlocarea afectează și extensiile care folosesc AI de la %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Ce va fi blocat:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Anulează</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Blochează</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -408,7 +431,11 @@
   <string name="search_scan_button_2">Scanează codul QR</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Setări pentru motorul de căutare</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Completează linkul din clipboard</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Permite</string>
@@ -581,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Continuă</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Ajută-ne să dezvoltăm Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Ajută-ne să dezvoltăm Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Partajează cu partenerii de marketing Mozilla cum ai descoperit Firefox și că îl folosești. Aceste date nu sunt niciodată vândute.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -685,7 +712,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Partajează cu partenerii de marketing Mozilla cum ai descoperit Firefox și că îl folosești. Aceste date nu sunt niciodată vândute. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Partajează cu partenerii de marketing Mozilla cum ai descoperit Firefox și că îl folosești. Aceste date nu sunt niciodată vândute. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Cum utilizăm datele</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -787,6 +814,8 @@
   <string name="preferences_category_about">Despre</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine">Selectează una dintre opțiuni</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Motor de căutare implicit în navigările normale</string>
   <!-- Preference category for settings related to changing the private browsing search engine -->
   <string name="preferences_category_select_private_search_engine">Motor de căutare implicit în navigările private</string>
   <!-- Option to set the private browsing mode to use the normal default search engine -->
@@ -1097,6 +1126,8 @@
   <string name="customize_wallpapers">Imagini de fundal</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Comenzi rapide sponsorizate</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Cupa Mondială</string>
   <!--
     Wallpapers
 
@@ -1378,6 +1409,8 @@
   <string name="toolbar_customize_shortcut_homepage">Pagină de start</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">Înapoi</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">Niciuna</string>
   <!--
     App icon Preferences
 
@@ -1411,9 +1444,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Derulează pentru a ascunde bara de instrumente</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Glisează bara de instrumente pe verticală ca să vezi filele deschise</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Glisează bara de instrumente în sus pentru a deschide filele</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Glisează bara de adrese în lateral ca să treci la altă filă</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Agită pentru un rezumat</string>
   <!--
     Library
 
@@ -1576,6 +1613,15 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">File private deschise: %1$s. Atinge pentru a schimba filele.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d grup de file deschis. Atinge ca să treci la altă filă.</item>
+    <item quantity="few">%1$d grupuri de file deschise. Atinge ca să treci la altă filă.</item>
+    <item quantity="other">%1$d de grupuri de file deschise. Atinge ca să treci la altă filă.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1597,18 +1643,10 @@
   <string name="add_tab">Adaugă fila</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Adaugă filă privată</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privată</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sincronizare</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Caută în file</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Partajează toate filele</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">File închise recent</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Închise recent</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Setările contului</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1623,12 +1661,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Închide filele</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Anulează</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Marchează</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Marchează filele selectate</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Închide</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Închide filele selectate</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1677,6 +1711,10 @@
   <string name="pwa_site_controls_title_private">%1$s (mod privat)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Deschide căutarea de file</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Încearcă grupurile de file pentru mai puțină derulare și mai multă productivitate</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Selectează filele pentru crearea unui grup. Sunt salvate aici. Gata când ești și tu gata.</string>
   <!--
     Tab Group
 
@@ -1686,6 +1724,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Editează grupul</string>
   <string name="create_tab_group_save_button">Salvează</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Grup nou, repliază mânerul de tragere</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Închide Modifică grupul de file</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grup</string>
@@ -1701,6 +1741,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Adaugă în</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Adaugă la un grup de file, repliază mânerul de tragere</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Adaugă la un grup nou de file</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Închide Adaugă în grupul de file</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Grup nou de file</string>
@@ -1713,6 +1757,36 @@
     <item quantity="few">%1$d file</item>
     <item quantity="other">%1$d de file</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Adaugă la %1$s grup de file, %2$d filă, coloarea %3$s</item>
+    <item quantity="few">Adaugă la %1$s grupuri de file, %2$d file, culorile %3$s</item>
+    <item quantity="other">Adaugă la %1$s de grupuri de file, %2$d de file, culorile %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Partajează %1$s grup de file cu %2$d filă.</item>
+    <item quantity="few">Partajează %1$s grupuri de file cu %2$d file.</item>
+    <item quantity="other">Partajează %1$s de grupuri de file cu %2$d de file.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Afișează grupul de file, repliază mânerul de tragere</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s grup de file cu %2$d filă, culoarea %3$s</item>
+    <item quantity="few">%1$s grupuri de file cu %2$d file, culoarea %3$s</item>
+    <item quantity="other">%1$s de grupuri de file cu %2$d de file, culoarea %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Ștergi grupul de file?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1721,6 +1795,38 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Șterge grupul</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Anulează</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Închizi fila și ștergi grupul?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Grupul va fi șters permanent.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Șterge grupul</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Anulează</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Galben</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Portocaliu</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Roșu</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Roz</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Purpuriu</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Violet</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Albastru</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cyan</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Verde</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Gri</string>
   <!--
     History
 
@@ -1857,6 +1963,8 @@
   <string name="download_rename_error_exists_error">Deja există un fișier denumit „%s” în această locație</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Nu poți folosi „/” în denumirea fișierului</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Denumirea pe care ai introdus-o modifică doar literele mari sau mici. Încearcă altă denumire de fișier.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Fișierul nu poate fi redenumit</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2106,6 +2214,12 @@
   <string name="bookmark_sort_menu_a_to_z">Sortează de la A la Z</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Sortează de la Z la A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Importă din fișier</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Nu s-au putut importa marcajele. Încearcă din nou.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Marcaje importate</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2164,8 +2278,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Închide dosarul: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Închide marcajele</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Importă din fișier</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Niciun marcaj încă</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Păstrează-ți toate marcajele preferate la un loc</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Marcaje în dosarul: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2381,8 +2499,6 @@
   <string name="toast_copy_link_to_clipboard">Copiat în clipboard</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Intră în cont pentru sincronizare</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Intră în cont</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Trimite pe toate dispozitivele</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2539,8 +2655,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Șterge datele de navigare la ieșire</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Șterge automat datele de navigare când selectezi „Închide” în meniul principal</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Închide</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Interval de timp pentru ștergere</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2633,6 +2747,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Ești protejat(ă)</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Ajută-ne să prindem elementele de urmărire</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standard (implicit)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2643,10 +2759,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Strictă</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">O protecție mai puternică împotriva urmării și o performanță mai rapidă, dar se poate ca unele site-uri să nu funcționeze bine.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Permite ca %1$s să aplice automat excepțiile necesare pentru a evita întreruperi majore ale site-ului web.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Aplică automat excepții necesare doar pentru remedierea de probleme minore și pentru a face disponibile funcționalități utile.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Remediază problemele majore ale site-urilor (recomandat)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3034,6 +3146,83 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Măștile de e-mail nu sunt disponibile momentan. Încearcă din nou peste câteva minute.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">VPN încorporat</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN încorporat în %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Navighează cu protecție suplimentară ascunzându-ți locația, chiar și în Wi-Fi public.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Află mai multe</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Limită lunară de date</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">Au mai rămas %1$.1f GB din %2$.1f GB</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Resetează la %1$.0f GB la data de întâi în fiecare lună.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Locație</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Recomandate</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Selectează cea mai rapidă locație VPN pentru tine.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Activat</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Dezactivat</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Se conectează…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">În pauză</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Eroare</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Deschide setările VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Ai atins limita de %1$d GB</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Ai folosit toți cei %1$d GB din datele VPN. Accesul se resetează luna viitoare.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label">VPN activat</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description">VPN-ul este activ.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Începe</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Încearcă VPN-ul încorporat din %s</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s prin ascunderea locației, chiar și în rețele publice Wi-Fi. Obține %2$d GB gratuit în fiecare lună.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Navighează cu protecție suplimentară</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Nu acum</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3268,26 +3457,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Verificat de: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Șterge</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Editează</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Sigur dorești să ștergi această parolă?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Șterge</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Anulează</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Opțiuni pentru parolă</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Câmpul de text editabil pentru adresa site-ului web.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Câmpul de text editabil pentru numele de utilizator.\u0020</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Câmpul de text editabil pentru parolă.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Salvează modificările.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Editează parola</string>
   <!-- The page title for adding new password. -->
@@ -3345,6 +3520,10 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">Afișează toate comenzile rapide</string>
+  <!-- Label for the "Add shortcut" button displayed as a tile. -->
+  <string name="homepage_shortcuts_add_shortcut">Adaugă la comenzi rapide</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Introdu adresa URL a unui site web</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Limita de comenzi rapide a fost atinsă</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3458,16 +3637,6 @@
   <string name="experiments_snackbar">Activează telemetria pentru a trimite date.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Mergi la setări</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Atribuim recenziilor fiecărui produs o <b>notă</b> de la A la F.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Evaluarea ajustată</b> se bazează doar pe recenziile pe care le considerăm de încredere.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Recenziile principale</b> provin din %s recenzii din ultimele 80 de zile, pe care le considerăm de încredere.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3593,6 +3762,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Nu tradu niciodată aceste site-uri</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Descarcă limbi</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Traduceri</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Toate traducerile rămân private pe dispozitivul tău.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Află mai multe</string>
   <!--
     Automatic translation preference screen
 
@@ -4279,6 +4454,191 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Poți afla mai multe %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">aici</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title">Urmărește-ți echipa</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">America de Nord</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Africa</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Asia</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Europa</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Oceania</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">America de Sud</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Anglia</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Scoția</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">LIVE</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Campionii Cupei Mondiale din 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Locul 2</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Locul trei</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32">Runda de 32</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16">Optimi de finală</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final">Sferturi de finală</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final">Semifinale</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">Finală</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">Finala de bronz</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Informațiile despre meci nu sunt disponibile acum. Încearcă să reîmprospătezi în câteva minute.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">Conexiune întreruptă — actualizările în timp real sunt trecute în pauză.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Reîmprospătează</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Grupa A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Grupa B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Grupa C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Grupa D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Grupa E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Grupa F</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Grupa G</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Grupa H</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Grupa I</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Grupa J</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Grupa K</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Grupa L</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Afișează rezultatele</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Afișează detaliile meciului</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches">Meciuri asociate</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Eveniment viitor</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Durată integrală)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Durată integrală</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Fii la curent cu Cupa Mondială</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Obține actualizări în timp real ale meciurilor și multe altele.</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Schimbă echipa</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Obține o imagine de fundal personalizată</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">Elimină</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow">Tot mai vrei să urmărești?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">Alege altă echipă ca să ții pasul cu Cupa Mondială.</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team">Urmărește altă echipă</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Numărătoare inversă până la Cupa Mondială</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Vezi programul</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Omite</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Finalul primei reprize</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Prelungiri</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Penalti-uri</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">D</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">H</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Închideți foaia de selectare a echipelor</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">Închide</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Mai multe opțiuni</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">Timp rămas. Zile: %1$d. Ore: %2$d. Minute: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Mergi la site-ul Cupei Mondiale</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">În curând: %1$s față de %2$s, %3$s la %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, joc în direct</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, live</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, pagina %2$d din %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Rezultatele finale ale Cupei Mondiale, pagina %1$d din %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Elimină Cupa Mondială din ecranul de pornire</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Urmărești pe: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Revino pentru informații despre meci pe măsură ce se apropie campionatul.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

@@ -111,8 +111,6 @@ class FenixSearchMiddlewareTest {
 
         assertNotNull(store.state.defaultEngine)
         assertEquals("Engine B", store.state.defaultEngine!!.name)
-        assertTrue(store.state.areShortcutsAvailable)
-        assertFalse(store.state.showSearchShortcuts)
         assertTrue(store.state.searchEngineSource is SearchEngineSource.Default)
         assertNotNull(store.state.searchEngineSource.searchEngine)
         assertEquals("Engine B", store.state.searchEngineSource.searchEngine!!.name)
@@ -492,22 +490,6 @@ class FenixSearchMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN search settings are clicked WHEN handling this THEN open the settings screen and record search ended`() {
-        every { navController.navigate(any<NavDirections>()) } just Runs
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.searchDialogFragment
-        }
-        val (middleware, _) = buildMiddlewareAndAddToSearchStore()
-
-        middleware.handleClickSearchEngineSettings()
-
-        verify { navController.navigate(SearchDialogFragmentDirections.actionGlobalSearchEngineFragment()) }
-        browserActionsCaptor.assertLastAction(EngagementFinished::class) {
-            assertEquals(true, it.abandoned)
-        }
-    }
-
-    @Test
     fun `WHEN a search suggestion is clicked THEN exit search mode and execute the custom actions for it`() {
         var wasSuggestionClickHandled = false
         val customSuggestionClickedAction = { wasSuggestionClickHandled = true }
@@ -630,16 +612,12 @@ class FenixSearchMiddlewareTest {
     private fun buildEmptySearchState(
         searchEngineSource: SearchEngineSource = SearchEngineSource.Default(searchEngine = mockk()),
         defaultEngine: SearchEngine? = mockk(),
-        areShortcutsAvailable: Boolean = true,
-        showSearchShortcutsSetting: Boolean = false,
         showHistorySuggestionsForCurrentEngine: Boolean = true,
         showSponsoredSuggestions: Boolean = true,
         showNonSponsoredSuggestions: Boolean = true,
     ): SearchFragmentState = EMPTY_SEARCH_FRAGMENT_STATE.copy(
         searchEngineSource = searchEngineSource,
         defaultEngine = defaultEngine,
-        showSearchShortcutsSetting = showSearchShortcutsSetting,
-        areShortcutsAvailable = areShortcutsAvailable,
         showSearchTermHistory = true,
         showHistorySuggestionsForCurrentEngine = showHistorySuggestionsForCurrentEngine,
         showSponsoredSuggestions = showSponsoredSuggestions,

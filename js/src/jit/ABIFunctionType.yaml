@@ -189,6 +189,9 @@
   args: [General, General, General, General]
 
 - ret: Int32
+  args: [General, General, General, General, General]
+
+- ret: Int32
   args: [General, General, General, Int32]
 
 - ret: Int32
@@ -317,6 +320,7 @@
   args: [General, Int64, Int32]
 
 # void
+
 - ret: Void
   args: [General, Int32]
 

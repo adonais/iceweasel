@@ -21,18 +21,28 @@ const Template = ({ messageData }) => html`
       background-color: var(--background-color-canvas);
       border: 2px solid var(--card-border-color);
       color: var(--text-color);
-      padding: var(--space-large);
-      border-radius: var(--border-radius-medium);
+      border-radius: var(--border-radius-large);
       margin-block: 0 var(--space-xlarge);
       margin-inline: auto;
       overflow: hidden;
-      max-width: 300px;
+      max-width: 904px;
     }
   </style>
   <div class="asrouter-newtab-message-wrapper">
     <asrouter-newtab-message
       .messageData=${messageData}
       .cssOverride=${cssFile}
+      .handleBlock=${() =>
+        console.warn("handleBlock called — message permanently blocked")}
+      .handleDismiss=${() =>
+        console.warn(
+          "handleDismiss called — DISMISS telemetry sent, message closed"
+        )}
+      .handleClose=${() => console.warn("handleClose called — message closed")}
+      .handleClick=${source =>
+        console.warn(
+          `handleClick called — CLICK telemetry sent, source: ${source}`
+        )}
     ></asrouter-newtab-message>
   </div>
 `;
@@ -102,6 +112,34 @@ DismissOnSecondaryButton.args = {
           dismiss: true,
         },
       },
+    },
+  },
+};
+
+export const BlockOnSecondaryButton = Template.bind({});
+BlockOnSecondaryButton.args = {
+  messageData: {
+    ...BASE_MESSAGE,
+    content: {
+      ...BASE_MESSAGE.content,
+      secondaryButton: {
+        label: "No Thanks",
+        action: {
+          type: "BLOCK_MESSAGE",
+          data: { id: "TEST_ASROUTER_NEWTAB_MESSAGE" },
+        },
+      },
+    },
+  },
+};
+
+export const NoImage = Template.bind({});
+NoImage.args = {
+  messageData: {
+    ...BASE_MESSAGE,
+    content: {
+      ...BASE_MESSAGE.content,
+      imageSrc: "",
     },
   },
 };

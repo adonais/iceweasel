@@ -1,0 +1,17 @@
+{
+  "label": "coopvoce.it",
+  "bugs": {
+    "1955932": {
+      "issue": "broken-scrolling",
+      "matches": ["*://www.coopvoce.it/portale/ricarica.html*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1955932-coopvoce.it-fix-broken-radiobuttons.css"]
+      }
+    }
+  ]
+}

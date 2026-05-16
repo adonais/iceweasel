@@ -98,6 +98,8 @@ skip-if = [
 
 ["test_invalid_version.js"]
 
+["test_key_conversion_abort.js"]
+
 ["test_key_requirements.js"]
 
 ["test_keys.js"]

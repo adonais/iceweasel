@@ -15,10 +15,10 @@ import "chrome://global/content/elements/moz-label.mjs";
  * Helps to integrate moz-button with panel-list.
  */
 class MenuController {
-  /** @type {HTMLElement} */
+  /** @type {MozButton} */
   host;
 
-  /** @type {string} */
+  /** @type {string | null} */
   #menuId;
 
   /** @type {HTMLElement | null} */
@@ -27,6 +27,9 @@ class MenuController {
   /** @type {boolean} */
   #hostIsSplitButton;
 
+  /**
+   * @param {MozButton} host
+   */
   constructor(host) {
     this.host = host;
     host.addController(this);
@@ -37,9 +40,9 @@ class MenuController {
   }
 
   hostDisconnected() {
+    this.removePanelListListeners();
     this.#menuId = null;
     this.#menuEl = null;
-    this.removePanelListListeners();
   }
 
   hostUpdated() {
@@ -123,7 +126,21 @@ class MenuController {
   };
 
   /**
-   * Removes event listeners related to panel-list from the host.
+   * Listener for shown/hidden that keeps the host's open attribute up to date.
+   *
+   * @param {CustomEvent} event
+   *   The shown or hidden event.
+   */
+  #updateOpenAttr = event => {
+    if (event.type == "shown") {
+      this.host.toggleAttribute("open", true);
+    } else if (event.type == "hidden") {
+      this.host.removeAttribute("open");
+    }
+  };
+
+  /**
+   * Removes event listeners related to panel-list.
    */
   removePanelListListeners() {
     if (this.#hostIsSplitButton) {
@@ -139,6 +156,8 @@ class MenuController {
       this.host.removeEventListener("click", this.openPanelList);
       this.host.removeEventListener("mousedown", this.openPanelList);
     }
+    this.#menuEl?.removeEventListener("shown", this.#updateOpenAttr);
+    this.#menuEl?.removeEventListener("hidden", this.#updateOpenAttr);
   }
 
   /**
@@ -156,8 +175,11 @@ class MenuController {
       this.host.addEventListener("click", this.openPanelList);
       this.host.addEventListener("mousedown", this.openPanelList);
     }
+    this.#menuEl.addEventListener("shown", this.#updateOpenAttr);
+    this.#menuEl.addEventListener("hidden", this.#updateOpenAttr);
     this.host.ariaHasPopup = "menu";
-    this.host.ariaExpanded = this.#menuEl?.open ? "true" : "false";
+    this.host.ariaExpanded = this.#menuEl.open ? "true" : "false";
+    this.host.toggleAttribute("open", this.#menuEl.open);
     let triggerEl = this.#hostIsSplitButton
       ? this.host.chevronButtonEl
       : this.host.buttonEl;
@@ -174,6 +196,7 @@ class MenuController {
     this.removePanelListListeners();
     this.host.ariaHasPopup = null;
     this.host.ariaExpanded = null;
+    this.host.removeAttribute("open");
     let triggerEl = this.#hostIsSplitButton
       ? this.host.chevronButtonEl
       : this.host.buttonEl;

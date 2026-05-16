@@ -1,4 +1,3 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -192,7 +191,8 @@ static Win11PinToTaskBarResultStatus IsTaskbarPinningAllowed(
 }
 
 Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
-    bool aCheckOnly, const nsAString& aAppUserModelId) {
+    bool aCheckOnly, const nsAString& aAppUserModelId,
+    const bool aFireAndForget) {
   MOZ_DIAGNOSTIC_ASSERT(!NS_IsMainThread(),
                         "PinCurrentAppToTaskbarWin11 should be called off main "
                         "thread only. It blocks, waiting on things to execute "
@@ -221,8 +221,9 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
   // Everything related to the taskbar and pinning must be done on the main /
   // user interface thread or Windows will cause them to fail.
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "PinCurrentAppToTaskbarWin11", [&event, &hr, &resultStatus, aCheckOnly,
-                                      aumid = nsString(aAppUserModelId)] {
+      "PinCurrentAppToTaskbarWin11",
+      [&event, &hr, &resultStatus, aCheckOnly, aFireAndForget,
+       aumid = nsString(aAppUserModelId)] {
         // We eventualy want to call SetCurrentProcessExplicitAppUserModelID()
         // on the main thread as it is not thread safe and pinning is called
         // numerous times in many different places. This is a hack used
@@ -287,9 +288,9 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
         // references.
         auto isPinnedCallback = Callback<IAsyncOperationCompletedHandler<
             bool>>([taskbar, &event, &resultStatus, &hr,
-                    primaryAumid = nsString(primaryAumid)](
-                       IAsyncOperation<bool>* asyncInfo,
-                       AsyncStatus status) mutable -> HRESULT {
+                    primaryAumid = nsString(primaryAumid),
+                    aFireAndForget](IAsyncOperation<bool>* asyncInfo,
+                                    AsyncStatus status) mutable -> HRESULT {
           auto CompletedOperations =
               [&event, &resultStatus,
                primaryAumid](Win11PinToTaskBarResultStatus status) -> HRESULT {
@@ -343,6 +344,8 @@ Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
                 "HRESULT = 0x%lx",
                 hr);
             return CompletedOperations(Win11PinToTaskBarResultStatus::Failed);
+          } else if (aFireAndForget) {
+            return CompletedOperations(Win11PinToTaskBarResultStatus::Success);
           }
 
           auto pinAppCallback = Callback<IAsyncOperationCompletedHandler<
@@ -548,7 +551,8 @@ Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11(bool aCheckOnly) {
 #else  // MINGW32 implementation below
 
 Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
-    bool aCheckOnly, const nsAString& aAppUserModelId) {
+    bool aCheckOnly, const nsAString& aAppUserModelId,
+    const bool aFireAndForget) {
   return {S_OK, Win11PinToTaskBarResultStatus::NotSupported};
 }
 

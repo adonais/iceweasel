@@ -17,6 +17,8 @@ import kotlinx.coroutines.runBlocking
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.ai.controls.AIFeatureBlock
+import mozilla.components.concept.ai.controls.AIFeatureRegistry
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode
 import mozilla.components.concept.engine.webextension.DisabledFlags
 import mozilla.components.concept.engine.webextension.Metadata
@@ -86,6 +88,8 @@ class FenixApplicationTest {
 
         every { testContext.components.core } returns mockk(relaxed = true)
         every { testContext.components.nimbus } returns mockk(relaxed = true)
+        every { testContext.components.aiControlsFeatureBlock } returns AIFeatureBlock.inMemory()
+        every { testContext.components.aiFeatureRegistry } returns AIFeatureRegistry.inMemory()
         every { testContext.components.distributionIdManager } returns DistributionIdManager(
             packageManager = testContext.packageManagerWrapper,
             browserStoreProvider = DefaultDistributionBrowserStoreProvider(browserStore),
@@ -169,7 +173,6 @@ class FenixApplicationTest {
         every { settings.shouldShowHistorySuggestions } returns true
         every { settings.shouldShowBookmarkSuggestions } returns true
         every { settings.shouldShowClipboardSuggestions } returns true
-        every { settings.shouldShowSearchShortcuts } returns true
         every { settings.openLinksInAPrivateTab } returns true
         every { settings.shouldShowSearchSuggestionsInPrivate } returns true
         every { settings.shouldShowVoiceSearch } returns true
@@ -235,7 +238,6 @@ class FenixApplicationTest {
         assertEquals(true, Preferences.browsingHistorySuggestion.testGetValue())
         assertEquals(true, Preferences.bookmarksSuggestion.testGetValue())
         assertEquals(true, Preferences.clipboardSuggestionsEnabled.testGetValue())
-        assertEquals(true, Preferences.searchShortcutsEnabled.testGetValue())
         assertEquals(true, Preferences.voiceSearchEnabled.testGetValue())
         assertEquals("never", Preferences.openLinksInAppEnabled.testGetValue())
         assertEquals(true, Preferences.signedInSync.testGetValue())

@@ -149,7 +149,7 @@ InternalResponseMetadata InternalResponse::GetMetadata() {
   // efficient, because there's no move-friendly constructor generated.
   nsCOMPtr<nsITransportSecurityInfo> securityInfo(mChannelInfo.SecurityInfo());
   return InternalResponseMetadata(
-      mType, GetUnfilteredURLList(), GetUnfilteredStatus(),
+      mType, GetUnfilteredURLList().Clone(), GetUnfilteredStatus(),
       GetUnfilteredStatusText(), headersGuard, headers, mErrorCode,
       GetAlternativeDataType(), securityInfo, principalInfo, bodyBlobURISpec,
       bodyLocalPath, GetCredentialsMode());

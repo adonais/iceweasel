@@ -46,8 +46,8 @@ interface HTMLButtonElement : HTMLElement {
   [BinaryName=labelsForBindings]
   readonly attribute NodeList labels;
 
-  [Pref="dom.element.commandfor.enabled", BinaryName="commandForElementForBindings", CEReactions] attribute Element? commandForElement;
-  [Pref="dom.element.commandfor.enabled", CEReactions] attribute DOMString command;
+  [BinaryName="commandForElementForBindings", CEReactions] attribute Element? commandForElement;
+  [CEReactions] attribute DOMString command;
 };
 
 HTMLButtonElement includes PopoverInvokerElement;

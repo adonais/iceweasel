@@ -613,9 +613,10 @@ void IProtocol::ActorDisconnected(ActorDestroyReason aWhy) {
 }
 
 void IProtocol::DoomSubtree() {
-  MOZ_ASSERT(
-      mLinkStatus == LinkStatus::Connected || mLinkStatus == LinkStatus::Doomed,
-      "Invalid link status for SetDoomed");
+  // If we're already `Doomed` or `Destroyed`, there's nothing to do.
+  if (mLinkStatus != LinkStatus::Connected) {
+    return;
+  }
   for (ProtocolId id : ManagedProtocolIds()) {
     for (IProtocol* actor : *GetManagedActors(id)) {
       actor->DoomSubtree();
@@ -675,7 +676,7 @@ bool IToplevelProtocol::OpenOnSameThread(IToplevelProtocol* aTarget,
 }
 
 void IToplevelProtocol::NotifyImpendingShutdown() {
-  if (CanRecv()) {
+  if (CanSend()) {
     GetIPCChannel()->NotifyImpendingShutdown();
   }
 }

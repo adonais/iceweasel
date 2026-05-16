@@ -368,7 +368,6 @@ nsresult ImageEncoder::ExtractDataInternal(
                                   aExtractionBehavior, aRandomizationKey,
                                   getter_AddRefs(imgStream));
   } else if (aOffscreenDisplay) {
-    const NS_ConvertUTF16toUTF8 encoderType(aType);
     if (BufferSizeFromDimensions(aSize.width, aSize.height, 4) == 0) {
       return NS_ERROR_INVALID_ARG;
     }
@@ -384,20 +383,35 @@ nsresult ImageEncoder::ExtractDataInternal(
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    {
+    auto size = data->GetSize();
+    if (BufferSizeFromDimensions(size.width, size.height, 4) == 0) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
+    if (aExtractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
+      UniquePtr<uint8_t[]> imageBuffer = gfx::SurfaceToPackedBGRA(data);
+      if (!imageBuffer) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+      aOffscreenDisplay->MaybeRandomizePixels(aExtractionBehavior,
+                                              imageBuffer.get(), size);
+      rv = ImageEncoder::GetInputStream(
+          size.width, size.height, imageBuffer.get(),
+          imgIEncoder::INPUT_FORMAT_HOSTARGB, aEncoder, aOptions,
+          aRandomizationKey, getter_AddRefs(imgStream));
+    } else {
       DataSourceSurface::MappedSurface map;
       if (!data->Map(gfx::DataSourceSurface::MapType::READ, &map)) {
         return NS_ERROR_INVALID_ARG;
       }
-      auto size = data->GetSize();
       rv = aEncoder->InitFromData(map.mData, map.mStride * size.height,
                                   size.width, size.height, map.mStride,
                                   imgIEncoder::INPUT_FORMAT_HOSTARGB, aOptions,
-                                  VoidCString());
+                                  aRandomizationKey);
       data->Unmap();
-    }
-    if (NS_SUCCEEDED(rv)) {
-      imgStream = aEncoder;
+      if (NS_SUCCEEDED(rv)) {
+        imgStream = aEncoder;
+      }
     }
   } else if (aImage) {
     // It is safe to convert PlanarYCbCr format from YUV to RGB off-main-thread.

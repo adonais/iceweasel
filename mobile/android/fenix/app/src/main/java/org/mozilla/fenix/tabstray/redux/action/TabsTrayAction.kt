@@ -44,14 +44,14 @@ sealed interface TabsTrayAction : Action {
     object ExitSelectMode : TabsTrayAction
 
     /**
-     * Added a new [TabsTrayItem] to the selection set.
+     * Added a new [TabsTrayItem.Tab] to the selection set.
      */
-    data class AddSelectTab(val tab: TabsTrayItem) : TabsTrayAction
+    data class AddSelectTab(val tab: TabsTrayItem.Tab) : TabsTrayAction
 
     /**
-     * Removed a [TabsTrayItem] from the selection set.
+     * Removed a [TabsTrayItem.Tab] from the selection set.
      */
-    data class RemoveSelectTab(val tab: TabsTrayItem) : TabsTrayAction
+    data class RemoveSelectTab(val tab: TabsTrayItem.Tab) : TabsTrayAction
 
     /**
      * The active page in the tray that is now in focus.

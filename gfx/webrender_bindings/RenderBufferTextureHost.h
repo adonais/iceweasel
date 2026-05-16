@@ -41,6 +41,8 @@ class RenderBufferTextureHost final : public RenderTextureHostSWGL {
 
   gfx::YUVRangedColorSpace GetYUVColorSpace() const override;
 
+  gfx::TransferFunction GetTransferFunction() const override;
+
   bool MapPlane(RenderCompositor* aCompositor, uint8_t aChannelIndex,
                 PlaneInfo& aPlaneInfo) override;
 

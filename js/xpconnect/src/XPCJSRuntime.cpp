@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -58,6 +56,7 @@
 #include "js/UbiNodeUtils.h"
 #include "js/friend/UsageStatistics.h"  // JSMetric, JS_SetAccumulateTelemetryCallback
 #include "js/friend/WindowProxy.h"  // js::SetWindowProxyClass
+#include "js/friend/Wrapper.h"      // js::NukeCrossCompartmentWrappers
 #include "js/friend/XrayJitInfo.h"  // JS::SetXrayJitInfo
 #include "js/Utility.h"             // JS::UniqueTwoByteChars
 #include "mozilla/dom/AbortSignalBinding.h"
@@ -2588,7 +2587,7 @@ static nsresult JSSizeOfTab(JSObject* obj, size_t* jsObjectsSize,
 static void AccumulateTelemetryCallback(JSMetric id, uint32_t sample) {
   switch (id) {
     case JSMetric::GC_MS:
-      glean::javascript_gc::total_time.AccumulateRawDuration(
+      glean::javascript_gc::total_time.ProcessGet().AccumulateRawDuration(
           TimeDuration::FromMilliseconds(sample));
       break;
     case JSMetric::GC_MINOR_US:
@@ -2628,15 +2627,15 @@ static void AccumulateTelemetryCallback(JSMetric id, uint32_t sample) {
           TimeDuration::FromMilliseconds(sample));
       break;
     case JSMetric::GC_BUDGET_OVERRUN:
-      glean::javascript_gc::budget_overrun.AccumulateRawDuration(
+      glean::javascript_gc::budget_overrun.ProcessGet().AccumulateRawDuration(
           TimeDuration::FromMicroseconds(sample));
       break;
     case JSMetric::GC_ANIMATION_MS:
-      glean::javascript_gc::animation.AccumulateRawDuration(
+      glean::javascript_gc::animation.ProcessGet().AccumulateRawDuration(
           TimeDuration::FromMilliseconds(sample));
       break;
     case JSMetric::GC_MAX_PAUSE_MS_2:
-      glean::javascript_gc::max_pause.AccumulateRawDuration(
+      glean::javascript_gc::max_pause.ProcessGet().AccumulateRawDuration(
           TimeDuration::FromMilliseconds(sample));
       break;
     case JSMetric::GC_MARK_GRAY_MS_2:

@@ -719,9 +719,9 @@ class DownloadsFeatureTest {
         doReturn(consumeDownloadUseCase).`when`(usecases).consumeDownload
         doReturn(cancelDownloadUseCase).`when`(usecases).cancelDownloadRequest
         val downloadManager: DownloadManager = mock()
-        var delegateFilename = ""
-        var delegateContentSize: Long = -1
-        var delegatePositiveActionCallback: (() -> Unit)? = null
+        var delegateFilename: String? = ""
+        var delegateContentSize: Long? = -1
+        var delegatePositiveActionCallback: ((DownloadState) -> Unit)? = null
         var delegateNegativeActionCallback: (() -> Unit)? = null
         grantPermissions()
         doReturn(arrayOf(INTERNET, WRITE_EXTERNAL_STORAGE)).`when`(downloadManager).permissions
@@ -734,9 +734,9 @@ class DownloadsFeatureTest {
                 downloadManager = downloadManager,
                 shouldForwardToThirdParties = { true },
                 downloadFileUtils = fakeDownloadFileUtils,
-                customFirstPartyDownloadDialog = { filename, contentSize, _, positiveActionCallback, negativeActionCallback, _ ->
-                    delegateFilename = filename.value
-                    delegateContentSize = contentSize.value
+                customFirstPartyDownloadDialog = { currentDownloadState, _, positiveActionCallback, negativeActionCallback, _ ->
+                    delegateFilename = currentDownloadState.value.fileName
+                    delegateContentSize = currentDownloadState.value.contentLength
                     delegatePositiveActionCallback = positiveActionCallback.value
                     delegateNegativeActionCallback = negativeActionCallback.value
                 },
@@ -749,9 +749,9 @@ class DownloadsFeatureTest {
         feature.processDownload(tab, download)
 
         assertEquals("file.txt", delegateFilename)
-        assertEquals(0, delegateContentSize)
+        assertEquals(0L, delegateContentSize)
         assertNotNull(delegatePositiveActionCallback)
-        delegatePositiveActionCallback?.invoke()
+        delegatePositiveActionCallback?.invoke(download)
         verify(consumeDownloadUseCase).invoke(tab.id, download.id)
         assertNotNull(delegateNegativeActionCallback)
         delegateNegativeActionCallback?.invoke()
@@ -776,10 +776,10 @@ class DownloadsFeatureTest {
         doReturn(cancelDownloadUseCase).`when`(usecases).cancelDownloadRequest
         doReturn(openAlreadyDownloadedFileUseCase).`when`(usecases).openAlreadyDownloadedFile
         val downloadManager: DownloadManager = mock()
-        var delegateFilename = ""
-        var delegateContentSize: Long = -1
+        var delegateFilename: String? = ""
+        var delegateContentSize: Long? = -1
         var delegateFileNameIsAlreadyDownloaded: String? = null
-        var delegatePositiveActionCallback: (() -> Unit)? = null
+        var delegatePositiveActionCallback: ((DownloadState) -> Unit)? = null
         var delegateNegativeActionCallback: (() -> Unit)? = null
         var delegateOpenFileCallback: (() -> Unit)? = null
         grantPermissions()
@@ -812,9 +812,9 @@ class DownloadsFeatureTest {
                     guessFileName = { _, _, _ -> "file.txt" },
                     fileExists = { _, _ -> true },
                 ),
-                customFirstPartyDownloadDialog = { filename, contentSize, fileNameIfAlreadyDownloaded, positiveActionCallback, negativeActionCallback, openFileAction ->
-                    delegateFilename = filename.value
-                    delegateContentSize = contentSize.value
+                customFirstPartyDownloadDialog = { currentDownloadState, fileNameIfAlreadyDownloaded, positiveActionCallback, negativeActionCallback, openFileAction ->
+                    delegateFilename = currentDownloadState.value.fileName
+                    delegateContentSize = currentDownloadState.value.contentLength
                     delegatePositiveActionCallback = positiveActionCallback.value
                     delegateNegativeActionCallback = negativeActionCallback.value
                     delegateOpenFileCallback = openFileAction.value
@@ -830,10 +830,10 @@ class DownloadsFeatureTest {
         feature.processDownload(tab, download)
 
         assertEquals("file.txt", delegateFilename)
-        assertEquals(0, delegateContentSize)
+        assertEquals(0L, delegateContentSize)
         assertEquals("original.txt", delegateFileNameIsAlreadyDownloaded)
         assertNotNull(delegatePositiveActionCallback)
-        delegatePositiveActionCallback?.invoke()
+        delegatePositiveActionCallback?.invoke(download)
         verify(consumeDownloadUseCase).invoke(tab.id, download.id)
         assertNotNull(delegateNegativeActionCallback)
         delegateNegativeActionCallback?.invoke()
@@ -855,8 +855,8 @@ class DownloadsFeatureTest {
         doReturn(cancelDownloadUseCase).`when`(usecases).cancelDownloadRequest
         doReturn(openAlreadyDownloadedFileUseCase).`when`(usecases).openAlreadyDownloadedFile
         val downloadManager: DownloadManager = mock()
-        var delegateFilename = ""
-        var delegateContentSize: Long = -1
+        var delegateFilename: String? = ""
+        var delegateContentSize: Long? = -1
         var delegateFileNameIsAlreadyDownloaded: String? = null
         grantPermissions()
         doReturn(arrayOf(INTERNET, WRITE_EXTERNAL_STORAGE)).`when`(downloadManager).permissions
@@ -880,9 +880,9 @@ class DownloadsFeatureTest {
                 mainDispatcher = testDispatcher,
                 shouldForwardToThirdParties = { true },
                 downloadFileUtils = fakeDownloadFileUtils,
-                customFirstPartyDownloadDialog = { filename, contentSize, fileNameIfAlreadyDownloaded, positiveActionCallback, negativeActionCallback, openFileAction ->
-                    delegateFilename = filename.value
-                    delegateContentSize = contentSize.value
+                customFirstPartyDownloadDialog = { currentDownloadState, fileNameIfAlreadyDownloaded, positiveActionCallback, negativeActionCallback, openFileAction ->
+                    delegateFilename = currentDownloadState.value.fileName
+                    delegateContentSize = currentDownloadState.value.contentLength
                     delegateFileNameIsAlreadyDownloaded = fileNameIfAlreadyDownloaded.value
                 },
             ),
@@ -893,7 +893,7 @@ class DownloadsFeatureTest {
         feature.processDownload(tab, download)
 
         assertEquals("file.txt", delegateFilename)
-        assertEquals(0, delegateContentSize)
+        assertEquals(0L, delegateContentSize)
         assertNull(delegateFileNameIsAlreadyDownloaded)
     }
 
@@ -1653,8 +1653,8 @@ class DownloadsFeatureTest {
                 store = store,
                 useCases = downloadsUseCases,
                 mainDispatcher = testDispatcher,
-                customFirstPartyDownloadDialog = { _, _, fileName, _, _, openFileAction ->
-                    fileNameIfAlreadyDownloaded = fileName.value
+                customFirstPartyDownloadDialog = { currentDownloadState, _, _, _, openFileAction ->
+                    fileNameIfAlreadyDownloaded = currentDownloadState.value.fileName
                     delegateOpenFileCallback = openFileAction.value
                 },
                 fileSystemHelper = FakeFileSystemHelper(),
@@ -1702,8 +1702,8 @@ class DownloadsFeatureTest {
                 store = store,
                 useCases = downloadsUseCases,
                 mainDispatcher = testDispatcher,
-                customFirstPartyDownloadDialog = { _, _, fileName, _, _, openFileAction ->
-                    fileNameIfAlreadyDownloaded = fileName.value
+                customFirstPartyDownloadDialog = { _, fileNameOfDuplicateIfAlreadyDownloaded, _, _, openFileAction ->
+                    fileNameIfAlreadyDownloaded = fileNameOfDuplicateIfAlreadyDownloaded.value
                 },
                 downloadFileUtils = FakeDownloadFileUtils(),
             ),

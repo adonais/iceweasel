@@ -1328,7 +1328,6 @@ extern "C" {
         num_opaque_rects: usize,
     );
     fn wr_compositor_end_frame(compositor: *mut c_void);
-    fn wr_compositor_enable_native_compositor(compositor: *mut c_void, enable: bool);
     fn wr_compositor_deinit(compositor: *mut c_void);
     fn wr_compositor_get_capabilities(compositor: *mut c_void, caps: *mut CompositorCapabilities);
     fn wr_compositor_get_window_visibility(compositor: *mut c_void, caps: *mut WindowVisibility);
@@ -1500,11 +1499,7 @@ impl Compositor for WrCompositor {
         }
     }
 
-    fn enable_native_compositor(&mut self, _device: &mut Device, enable: bool) {
-        unsafe {
-            wr_compositor_enable_native_compositor(self.0, enable);
-        }
-    }
+    fn enable_native_compositor(&mut self, _device: &mut Device, _enable: bool) {}
 
     fn deinit(&mut self, _device: &mut Device) {
         unsafe {
@@ -2116,12 +2111,6 @@ pub extern "C" fn wr_window_new(
         false
     };
 
-    let precise_linear_gradients = if software {
-        static_prefs::pref!("gfx.webrender.precise-linear-gradients-swgl")
-    } else {
-        static_prefs::pref!("gfx.webrender.precise-linear-gradients")
-    };
-
     let opts = WebRenderOptions {
         enable_aa: true,
         enable_subpixel_aa,
@@ -2177,7 +2166,6 @@ pub extern "C" fn wr_window_new(
         low_quality_pinch_zoom,
         max_shared_surface_size,
         enable_dithering,
-        precise_linear_gradients,
         ..Default::default()
     };
 
@@ -2296,11 +2284,6 @@ pub unsafe extern "C" fn wr_api_clear_all_caches(dh: &mut DocumentHandle) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_api_enable_native_compositor(dh: &mut DocumentHandle, enable: bool) {
-    dh.api.send_debug_cmd(DebugCommand::EnableNativeCompositor(enable));
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn wr_api_set_batching_lookback(dh: &mut DocumentHandle, count: u32) {
     dh.api.send_debug_cmd(DebugCommand::SetBatchingLookback(count));
 }
@@ -2387,12 +2370,10 @@ pub extern "C" fn wr_transaction_set_display_list(
     pipeline_id: WrPipelineId,
     dl_descriptor: BuiltDisplayListDescriptor,
     dl_items_data: &mut WrVecU8,
-    dl_cache_data: &mut WrVecU8,
     dl_spatial_tree_data: &mut WrVecU8,
 ) {
     let payload = DisplayListPayload {
         items_data: dl_items_data.flush_into_vec(),
-        cache_data: dl_cache_data.flush_into_vec(),
         spatial_tree: dl_spatial_tree_data.flush_into_vec(),
     };
 
@@ -4394,31 +4375,6 @@ pub extern "C" fn wr_dp_push_box_shadow(
 }
 
 #[no_mangle]
-pub extern "C" fn wr_dp_start_item_group(state: &mut WrState) {
-    state.frame_builder.dl_builder.start_item_group();
-}
-
-#[no_mangle]
-pub extern "C" fn wr_dp_cancel_item_group(state: &mut WrState, discard: bool) {
-    state.frame_builder.dl_builder.cancel_item_group(discard);
-}
-
-#[no_mangle]
-pub extern "C" fn wr_dp_finish_item_group(state: &mut WrState, key: ItemKey) -> bool {
-    state.frame_builder.dl_builder.finish_item_group(key)
-}
-
-#[no_mangle]
-pub extern "C" fn wr_dp_push_reuse_items(state: &mut WrState, key: ItemKey) {
-    state.frame_builder.dl_builder.push_reuse_items(key);
-}
-
-#[no_mangle]
-pub extern "C" fn wr_dp_set_cache_size(state: &mut WrState, cache_size: usize) {
-    state.frame_builder.dl_builder.set_cache_size(cache_size);
-}
-
-#[no_mangle]
 pub extern "C" fn wr_dump_display_list(
     state: &mut WrState,
     indent: usize,
@@ -4465,13 +4421,11 @@ pub unsafe extern "C" fn wr_api_end_builder(
     state: &mut WrState,
     dl_descriptor: &mut BuiltDisplayListDescriptor,
     dl_items_data: &mut WrVecU8,
-    dl_cache_data: &mut WrVecU8,
     dl_spatial_tree: &mut WrVecU8,
 ) {
     let (_, dl) = state.frame_builder.dl_builder.end();
     let (payload, descriptor) = dl.into_data();
     *dl_items_data = WrVecU8::from_vec(payload.items_data);
-    *dl_cache_data = WrVecU8::from_vec(payload.cache_data);
     *dl_spatial_tree = WrVecU8::from_vec(payload.spatial_tree);
     *dl_descriptor = descriptor;
 }

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2019 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -255,6 +253,56 @@ void wasm::EmitWasmPreBarrierCallIndex(MacroAssembler& masm, Register instance,
   // Restore the original base
   masm.movePtr(scratch2, AsRegister(addr.base));
 }
+
+#ifdef ENABLE_WASM_JSPI
+void wasm::EmitWasmResumeBarrierGuard(MacroAssembler& masm, Register instance,
+                                      Register scratch, Label* enterBarrier) {
+  // If an incremental GC has started, we need the barrier.
+  masm.loadPtr(
+      Address(instance, Instance::offsetOfAddressOfNeedsMarkingBarrier()),
+      scratch);
+  masm.branchTest32(Assembler::NonZero, Address(scratch, 0), Imm32(0x1),
+                    enterBarrier);
+}
+
+void wasm::EmitWasmResumeBarrier(MacroAssembler& masm, Register instance,
+                                 Register cont) {
+  // The builtin thunk will assume that instance is in InstanceReg.
+  MOZ_ASSERT(instance == InstanceReg);
+
+  // Reserve stack space for the call.
+  unsigned argDecrement;
+  {
+    ABIArgGenerator abi(ABIKind::Wasm);
+    ABIArg arg;
+    arg = abi.next(MIRType::Pointer);
+    argDecrement = StackDecrementForCall(
+        WasmStackAlignment, sizeof(wasm::Frame) + masm.framePushed(),
+        abi.stackBytesConsumedSoFar());
+  }
+  masm.reserveStack(argDecrement);
+  masm.assertStackAlignment(WasmStackAlignment);
+
+  // Pass the cont argument.
+  ABIArgGenerator abi(ABIKind::Wasm);
+  ABIArg arg;
+  arg = abi.next(MIRType::Pointer);
+  if (arg.kind() == ABIArg::GPR) {
+    masm.movePtr(cont, arg.gpr());
+  } else {
+    MOZ_ASSERT(arg.kind() == ABIArg::Stack);
+    masm.storePtr(cont,
+                  Address(masm.getStackPointer(), arg.offsetFromArgBase()));
+  }
+
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
+                                     WasmCallerInstanceOffsetBeforeCall));
+
+  masm.call(SymbolicAddress::ResumeBarrier);
+
+  masm.freeStack(argDecrement);
+}
+#endif
 
 void wasm::EmitWasmPostBarrierGuard(MacroAssembler& masm,
                                     const mozilla::Maybe<Register>& object,

@@ -356,6 +356,12 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   BackgroundSessionStorageManager::PropagateManager(Id(), aNewContext->Id());
 
+#ifdef ANDROID
+  // Transfer the app link launch type to the replacement BC (e.g., COOP swap).
+  aNewContext->mAndroidAppLinkLaunchType =
+      std::exchange(mAndroidAppLinkLaunchType, 0);
+#endif
+
   // Transfer the ownership of the priority active status from the old context
   // to the new context.
   aNewContext->mPriorityActive = mPriorityActive;
@@ -585,10 +591,6 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
     entry = mActiveEntry;
   } else {
     entry = new SessionHistoryEntry(aLoadState, aChannel);
-    if (IsTop() &&
-        !nsDocShell::ShouldAddToSessionHistory(aLoadState->URI(), aChannel)) {
-      entry->SetTransient();
-    }
     if (!IsTop() && (mActiveEntry || !mLoadingEntries.IsEmpty())) {
       entry->SetIsSubFrame(true);
     }
@@ -712,14 +714,7 @@ CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad(
       RefPtr<SessionHistoryEntry> loadingEntry = mLoadingEntries[i].mEntry;
       loadingEntry->SetInfo(&newInfo);
 
-      if (IsTop()) {
-        // Only top level pages care about Get/SetTransient.
-        nsCOMPtr<nsIURI> uri;
-        aNewChannel->GetURI(getter_AddRefs(uri));
-        if (!nsDocShell::ShouldAddToSessionHistory(uri, aNewChannel)) {
-          loadingEntry->SetTransient();
-        }
-      } else {
+      if (!IsTop()) {
         loadingEntry->SetIsSubFrame(aInfo->mInfo.IsSubFrame());
       }
       loadingEntry->SetDocshellID(GetHistoryID());

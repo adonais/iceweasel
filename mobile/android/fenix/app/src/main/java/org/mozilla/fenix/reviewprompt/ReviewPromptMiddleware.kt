@@ -27,6 +27,7 @@ private const val REVIEW_PROMPT_SHOWN_NIMBUS_EVENT_ID = "review_prompt_shown"
 /**
  * [Middleware] evaluating the triggers to show a review prompt.
  *
+ * @param continuousOnboardingInProgress If true then the prompt should not be shown.
  * @param shouldUseNewTriggerCriteria If true uses new main and sub-criteria, if false falls back to legacy criteria.
  * @param shouldShowCustomPrompt If true enables showing custom prompt UI, if false falls back to Play Store prompt.
  * @param disableCustomPrompt Update settings to disable the custom prompt UI.
@@ -38,6 +39,7 @@ private const val REVIEW_PROMPT_SHOWN_NIMBUS_EVENT_ID = "review_prompt_shown"
  * @param nimbusEventStore [NimbusEventStore] used to record events evaluated in JEXL expressions.
  */
 class ReviewPromptMiddleware(
+    private val continuousOnboardingInProgress: () -> Boolean = { false },
     private val shouldUseNewTriggerCriteria: () -> Boolean,
     private val shouldShowCustomPrompt: () -> Boolean,
     private val disableCustomPrompt: () -> Unit,
@@ -100,6 +102,11 @@ class ReviewPromptMiddleware(
 
     @Suppress("CognitiveComplexMethod")
     private fun handleReviewPromptCheck(store: Store<AppState, AppAction>) {
+        // We shouldn't show the review prompt if continuous onboarding is in progress.
+        if (continuousOnboardingInProgress()) {
+            return
+        }
+
         if (store.state.reviewPrompt != ReviewPromptState.Unknown) {
             // We only want to try to show it once to avoid unnecessary disk reads.
             return

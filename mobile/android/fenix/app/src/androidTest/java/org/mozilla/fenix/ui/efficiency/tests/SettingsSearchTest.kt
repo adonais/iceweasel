@@ -4,12 +4,14 @@
 
 package org.mozilla.fenix.ui.efficiency.tests
 
+import org.junit.Ignore
 import org.junit.Test
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class SettingsSearchTest : BaseTest() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2203333
+    @Ignore("Covered by verifyNavigationReachability[1: SettingsSearchPage (TBD) — Navigation Reachability]")
     @Test
     fun verifySearchSettingsMenuItemsTest() {
         // Given: App is loaded with default settings

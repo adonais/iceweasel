@@ -391,7 +391,7 @@ bool ChannelMach::ProcessIncomingMessage() {
 
 #ifdef IPC_MESSAGE_DEBUG_EXTRA
   DLOG(INFO) << "received message on channel @" << this << " with type "
-             << m.type();
+             << message->type();
 #endif
 
   if (message->routing_id() == MSG_ROUTING_NONE &&

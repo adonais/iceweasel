@@ -85,22 +85,12 @@ pub use self::motion::{OffsetPath, OffsetPosition, OffsetRotate};
 pub use self::outline::OutlineStyle;
 pub use self::page::{PageName, PageOrientation, PageSize, PageSizeOrientation, PaperSize};
 pub use self::percentage::{NonNegativePercentage, Percentage};
-pub use self::position::AnchorFunction;
-pub use self::position::AnchorName;
-pub use self::position::AnchorNameIdent;
-pub use self::position::AspectRatio;
-pub use self::position::Inset;
-pub use self::position::PositionAnchor;
-pub use self::position::PositionAnchorKeyword;
-pub use self::position::PositionTryFallbacks;
-pub use self::position::PositionTryOrder;
-pub use self::position::PositionVisibility;
-pub use self::position::ScopedName;
-pub use self::position::ScopedNameKeyword;
-pub use self::position::{GridAutoFlow, GridTemplateAreas, Position, PositionOrAuto};
-pub use self::position::{MasonryAutoFlow, MasonryItemOrder, MasonryPlacement};
-pub use self::position::{PositionArea, PositionAreaKeyword};
-pub use self::position::{PositionComponent, ZIndex};
+pub use self::position::{
+    AnchorFunction, AnchorName, AnchorNameIdent, AspectRatio, GridAutoFlow, GridTemplateAreas,
+    Inset, MasonryAutoFlow, MasonryItemOrder, MasonryPlacement, Position, PositionAnchor,
+    PositionAnchorKeyword, PositionArea, PositionAreaKeyword, PositionComponent, PositionOrAuto,
+    PositionTryFallbacks, PositionTryOrder, PositionVisibility, ScopedName, ZIndex,
+};
 pub use self::ratio::Ratio;
 pub use self::rect::NonNegativeLengthOrNumberRect;
 pub use self::resolution::Resolution;
@@ -600,7 +590,6 @@ impl Parse for NonNegativeNumberOrPercentage {
     ToShmem,
     ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub struct Opacity(Number);
 
 impl Parse for Opacity {
@@ -622,9 +611,9 @@ impl ToComputedValue for Opacity {
     #[inline]
     fn to_computed_value(&self, context: &Context) -> CSSFloat {
         let value = self.0.to_computed_value(context);
-        if context.for_smil_animation {
-            // SMIL expects to be able to interpolate between out-of-range
-            // opacity values.
+        if context.for_animation {
+            // Type <number> and <percentage> should be able to interpolate
+            // out-of-range opacity values which benefits additive animation
             value
         } else {
             value.min(1.0).max(0.0)
@@ -643,6 +632,7 @@ impl ToComputedValue for Opacity {
 ///
 /// <https://drafts.csswg.org/css-values/#integers>
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToShmem, ToTyped)]
+#[typed(todo_derive_fields)]
 pub enum Integer {
     /// A literal integer value.
     Literal(CSSInteger),

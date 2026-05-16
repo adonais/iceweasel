@@ -134,6 +134,13 @@ var gPermissionPanel = {
     return (this._xrSharingIcon = document.getElementById("xr-sharing-icon"));
   },
 
+  get _serialSharingIcon() {
+    delete this._serialSharingIcon;
+    return (this._serialSharingIcon = document.getElementById(
+      "serial-sharing-icon"
+    ));
+  },
+
   get _webRTCSharingIcon() {
     delete this._webRTCSharingIcon;
     return (this._webRTCSharingIcon = document.getElementById(
@@ -287,6 +294,7 @@ var gPermissionPanel = {
     this._webRTCSharingIcon.removeAttribute("sharing");
     this._geoSharingIcon.removeAttribute("sharing");
     this._xrSharingIcon.removeAttribute("sharing");
+    this._serialSharingIcon.removeAttribute("sharing");
 
     let hasSharingIcon = false;
 
@@ -326,6 +334,11 @@ var gPermissionPanel = {
 
       if (this._sharingState.xr) {
         this._xrSharingIcon.setAttribute("sharing", this._sharingState.xr);
+        hasSharingIcon = true;
+      }
+
+      if (this._sharingState.serial) {
+        this._serialSharingIcon.setAttribute("sharing", "serial");
         hasSharingIcon = true;
       }
     }
@@ -497,6 +510,20 @@ var gPermissionPanel = {
       } else {
         permissions.push({
           id: "xr",
+          state: SitePermissions.ALLOW,
+          scope: SitePermissions.SCOPE_REQUEST,
+          sharingState: true,
+        });
+      }
+    }
+
+    if (this._sharingState?.serial) {
+      let serialPermission = permissions.find(perm => perm.id === "serial");
+      if (serialPermission) {
+        serialPermission.sharingState = true;
+      } else {
+        permissions.push({
+          id: "serial",
           state: SitePermissions.ALLOW,
           scope: SitePermissions.SCOPE_REQUEST,
           sharingState: true,
@@ -938,6 +965,13 @@ var gPermissionPanel = {
         gBrowser.updateBrowserSharing(browser, { geo: false });
       } else if (idNoSuffix === "xr") {
         gBrowser.updateBrowserSharing(browser, { xr: false });
+      } else if (idNoSuffix === "serial") {
+        gSerialDeviceObserver.resetBrowserCount(browser);
+        gBrowser.updateBrowserSharing(browser, { serial: false });
+        Services.obs.notifyObservers(
+          browser.browsingContext,
+          "serial-permission-revoked"
+        );
       }
 
       clearCallback();

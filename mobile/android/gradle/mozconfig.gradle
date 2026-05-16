@@ -35,8 +35,6 @@ import org.gradle.process.ExecOperations
 def startTime = System.currentTimeMillis()
 logger.debug("mozconfig.gradle> Loading mach environment")
 
-apply from: file('./mach_env.gradle')
-
 if (!ext.hasProperty("topsrcdir")) {
     ext.topsrcdir = file(buildscript.getSourceFile()).getParentFile().getParentFile().getParentFile().getParentFile().absolutePath
 }
@@ -111,6 +109,10 @@ abstract class TopobjdirValueSource implements ValueSource<String, TopobjdirValu
         def result = execOperations.exec { spec ->
             spec.workingDir = new File(topsrcdir)
             spec.commandLine = command
+            def mozconfigEnv = parameters.mozconfigEnv.get()
+            if (mozconfigEnv) {
+                spec.environment('MOZCONFIG', mozconfigEnv)
+            }
             spec.standardOutput = stdout
             spec.errorOutput = stderr
             spec.ignoreExitValue = true
@@ -162,27 +164,41 @@ def readFileContents = { File f ->
     return providers.fileContents(layout.rootDirectory.file(f.absolutePath)).asText.getOrElse("")
 }
 
-def mozconfigEnv = providers.environmentVariable('MOZCONFIG').getOrElse("")
 def mozObjdirEnv = providers.environmentVariable('MOZ_OBJDIR').getOrElse("")
 def mozAutomation = providers.environmentVariable('MOZ_AUTOMATION').getOrElse("")
-
-def mozconfigFile = mozconfigEnv ? (new File(mozconfigEnv).isAbsolute() ? new File(mozconfigEnv) : new File(topsrcdir, mozconfigEnv)) : null
-def mozconfigContents = mozconfigFile ? readFileContents(mozconfigFile) : ""
 
 def dotMozconfigContents = readFileContents(new File(topsrcdir, '.mozconfig'))
 def defaultMozconfigContents = readFileContents(new File(topsrcdir, 'mozconfig'))
 def localPropertiesContents = readFileContents(new File(topsrcdir, 'local.properties'))
 
+def localMozconfigResolvedPath = ""
 def localMozconfigContents = ""
 def localProperties = new Properties()
 if (localPropertiesContents) {
     localProperties.load(new StringReader(localPropertiesContents))
-    def localMozconfigPath = localProperties.getProperty("mozilla-central.mozconfig")
-    if (localMozconfigPath) {
-        def localMozconfigFile = new File(localMozconfigPath).isAbsolute() ? new File(localMozconfigPath) : new File(topsrcdir, localMozconfigPath)
+    def localMozconfigProperty = localProperties.getProperty("mozilla-central.mozconfig")
+    if (localMozconfigProperty) {
+        def localMozconfigFile = new File(localMozconfigProperty).isAbsolute() ? new File(localMozconfigProperty) : new File(topsrcdir, localMozconfigProperty)
+        localMozconfigResolvedPath = localMozconfigFile.absolutePath
         localMozconfigContents = readFileContents(localMozconfigFile)
     }
 }
+
+def mozconfigEnv = providers.environmentVariable('MOZCONFIG').getOrElse("")
+if (mozconfigEnv && !new File(mozconfigEnv).isAbsolute()) {
+    mozconfigEnv = new File(topsrcdir, mozconfigEnv).absolutePath
+}
+if (localMozconfigResolvedPath && (!mozconfigEnv || localMozconfigResolvedPath == mozconfigEnv)) {
+    mozconfigEnv = localMozconfigResolvedPath
+    logger.debug("mozconfig.gradle> Using mozconfig from local.properties: ${localMozconfigResolvedPath}")
+} else if (localMozconfigResolvedPath) {
+    logger.debug("mozconfig.gradle> Preferring mozconfig from environment over local.properties: ${mozconfigEnv}")
+} else {
+    logger.debug("mozconfig.gradle> No mozconfig found in local.properties")
+}
+
+def mozconfigFile = mozconfigEnv ? new File(mozconfigEnv) : null
+def mozconfigContents = mozconfigFile ? readFileContents(mozconfigFile) : ""
 
 // Extract autoPublish paths from local.properties for local substitution builds
 ["autoPublish.application-services.dir", "autoPublish.glean.dir"].each { key ->

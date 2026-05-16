@@ -5,8 +5,6 @@
 #ifndef EditorLineBreak_h
 #define EditorLineBreak_h
 
-#include <fmt/format.h>
-
 #include "EditorDOMPoint.h"
 #include "EditorForwards.h"
 #include "EditorUtils.h"

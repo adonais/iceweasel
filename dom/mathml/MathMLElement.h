@@ -105,6 +105,12 @@ class MathMLElement final : public MathMLElementBase, public Link {
   void AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                     const nsAttrValue* aValue, const nsAttrValue* aOldValue,
                     nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
+
+ private:
+  bool SupportsHrefAttribute() const;
+  bool ElementHasHref() const final {
+    return SupportsHrefAttribute() && Link::ElementHasHref();
+  }
 };
 
 }  // namespace dom

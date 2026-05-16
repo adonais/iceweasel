@@ -3964,6 +3964,10 @@ class HTMLEditor final : public EditorBase,
       DeleteSelectedContent aDeleteSelectedContent,
       const Element& aEditingHost);
 
+  MOZ_CAN_RUN_SCRIPT nsresult InsertURLAsLinkInternal(
+      const nsAString& aURL, const EditorDOMPoint& aPointToInsert,
+      DeleteSelectedContent aDeleteSelectedContent);
+
   static HavePrivateHTMLFlavor DataTransferOrClipboardHasPrivateHTMLFlavor(
       DataTransfer* aDataTransfer, nsIClipboard* clipboard);
 

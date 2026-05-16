@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.tabgroups
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,16 +11,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -30,18 +25,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import org.mozilla.fenix.compose.BottomSheetHandle
+import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.data.createTabGroup
@@ -52,87 +50,67 @@ import org.mozilla.fenix.tabstray.ui.tabpage.TabLayout
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
-private const val BOTTOM_SHEET_HANDLER_ALPHA = 0.4F
-
-// todo-bug 2022914: replace these placeholders when strings are ready
-private const val PLACEHOLDER_BOTTOM_SHEET_HANDLE_TAB_GROUP_CONTENT_DESCRIPTION = "Close expanded tab group"
-private const val PLACEHOLDER_SHARE_TAB_GROUP_CONTENT_DESCRIPTION = "Share tab group"
-
 /**
  * Renders an expanded view of a user's tab group.
- * @param group: [TabsTrayItem.TabGroup] item rendered by the card
- * @param focusedTabId: String id of the tab in focus.  This id may correspond to a tab
- * that is not inside the group.
+ * @param group: [TabsTrayItem.TabGroup] item rendered by the card.
+ * @param onItemClick Invoked when the user clicks on a [TabsTrayItem] in the group.
+ * @param onTabClose Invoked when the user clicks to close a [TabsTrayItem.Tab] in the group.
+ * @param onDeleteTabGroup Invoked when the user clicks on delete tab group.
+ * @param editTabGroupClick Invoked when the user clicks to edit the [group].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpandedTabGroup(group: TabsTrayItem.TabGroup, focusedTabId: String?) {
-    val sheetState = rememberModalBottomSheetState()
-    LaunchedEffect(Unit) {
-        if (!sheetState.isVisible) {
-            sheetState.show()
-        }
-    }
-    ExpandedTabGroup(group = group, focusedTabId = focusedTabId, sheetState = sheetState)
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun ExpandedTabGroup(
+fun ExpandedTabGroup(
     group: TabsTrayItem.TabGroup,
-    focusedTabId: String?,
-    sheetState: SheetState,
+    onItemClick: (TabsTrayItem) -> Unit,
+    onTabClose: (TabsTrayItem.Tab) -> Unit,
+    onDeleteTabGroup: () -> Unit,
+    editTabGroupClick: () -> Unit,
 ) {
-    ModalBottomSheet(
-        modifier = Modifier.testTag(TabsTrayTestTag.TAB_GROUP_BOTTOM_SHEET_ROOT),
-        sheetState = sheetState,
-        onDismissRequest = {},
-        dragHandle = {
-            BottomSheetHandle(
-                modifier = Modifier
-                    .padding(
-                        all = FirefoxTheme.layout.space.static200,
-                    )
-                    .alpha(BOTTOM_SHEET_HANDLER_ALPHA),
-                onRequestDismiss = {
-                    // todo: handle navigation
-                },
-                contentDescription = PLACEHOLDER_BOTTOM_SHEET_HANDLE_TAB_GROUP_CONTENT_DESCRIPTION,
-            )
-        },
-    ) {
-        ViewTabGroupContent(group = group, focusedTabId = focusedTabId)
-    }
-}
-
-@Composable
-private fun ViewTabGroupContent(group: TabsTrayItem.TabGroup, focusedTabId: String?) {
     Column(
-        modifier = Modifier.padding(
-            start = FirefoxTheme.layout.space.dynamic200,
-            end = FirefoxTheme.layout.space.dynamic200,
-        ),
+        modifier = Modifier
+            .testTag(TabsTrayTestTag.TAB_GROUP_BOTTOM_SHEET_ROOT)
+            .padding(
+                start = FirefoxTheme.layout.space.dynamic200,
+                end = FirefoxTheme.layout.space.dynamic200,
+            ),
     ) {
         Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static150))
-        ViewTabGroupHeader(group.title, group.theme.primary)
+
+        ViewTabGroupHeader(
+            title = group.title,
+            groupTheme = group.theme,
+            groupTabsSize = group.tabs.size,
+            onDeleteTabGroup = onDeleteTabGroup,
+            editTabGroupClick = editTabGroupClick,
+        )
+
         TabLayout(
             tabs = group.tabs.toList(),
             displayTabsInGrid = true,
-            selectedTabId = focusedTabId,
+            selectedItemIndex = 0, // updating this in Bug 2030474
             selectionMode = TabsTrayState.Mode.Normal,
             modifier = Modifier,
-            onTabClose = { item -> }, // todo: handle closing tab
-            onItemClick = { item -> }, // todo: handle navigation
+            onTabClose = onTabClose,
+            onItemClick = onItemClick,
             onItemLongClick = { item -> }, // Ignore long click
             onMove = { _, _, _ -> }, // Ignore moves
             onTabDragStart = { }, // Ignore drags
+            onDeleteTabGroup = { }, // Ignore tab group deletes
+            editTabGroupClick = { editTabGroupClick() },
             contentPadding = PaddingValues(0.dp), // TabLayout should not have its own content padding inside this view
         )
     }
 }
 
 @Composable
-private fun ViewTabGroupHeader(title: String, groupColor: Color) {
+private fun ViewTabGroupHeader(
+    title: String,
+    groupTabsSize: Int,
+    groupTheme: TabGroupTheme,
+    onDeleteTabGroup: () -> Unit,
+    editTabGroupClick: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -143,26 +121,38 @@ private fun ViewTabGroupHeader(title: String, groupColor: Color) {
             .wrapContentHeight(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(18.dp)
-                    .clip(CircleShape)
-                    .background(color = groupColor)
-                    .testTag(TabsTrayTestTag.BOTTOM_SHEET_CIRCLE),
+        val headerContentDescription = pluralStringResource(
+            id = R.plurals.expanded_tab_group_header_description,
+            count = groupTabsSize,
+            title,
+            groupTabsSize,
+            groupTheme.contentLabel,
         )
 
-        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
-
-        Text(
-            text = title,
+        Row(
             modifier = Modifier
-                .weight(1f),
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = FirefoxTheme.typography.headline7,
-        )
+                .weight(1f)
+                .semantics(mergeDescendants = true) {
+                    heading()
+                    contentDescription = headerContentDescription
+                },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TabGroupThemeDot(groupTheme)
+
+            Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
+
+            Text(
+                text = title,
+                modifier = Modifier
+                    .weight(1f)
+                    .clearAndSetSemantics { },
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = FirefoxTheme.typography.headline7,
+            )
+        }
 
         Spacer(
             modifier = Modifier.width(
@@ -179,43 +169,69 @@ private fun ViewTabGroupHeader(title: String, groupColor: Color) {
         ) {
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_share_android_24),
-                contentDescription = PLACEHOLDER_SHARE_TAB_GROUP_CONTENT_DESCRIPTION,
+                contentDescription = pluralStringResource(
+                    id = R.plurals.share_tab_group_button_content_description,
+                    count = groupTabsSize,
+                    title,
+                    groupTabsSize,
+                ),
                 tint = MaterialTheme.colorScheme.onSurface,
             )
         }
 
         Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
-        TabGroupMenuButton(includeCloseOption = true)
+        TabGroupMenuButton(
+            includeCloseOption = true,
+            onDeleteTabGroup = onDeleteTabGroup,
+            editTabGroupClick = editTabGroupClick,
+        )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun ExpandedTabGroupPreview(
     @PreviewParameter(ExpandedTabGroupPreviewProvider::class)
     previewState: ExpandedTabGroupPreviewState,
 ) {
+    val sheetState = rememberModalBottomSheetState()
+    LaunchedEffect(Unit) {
+        if (!sheetState.isVisible) {
+            sheetState.show()
+        }
+    }
+
     FirefoxTheme {
         Surface {
-            ExpandedTabGroup(
-                previewState.group,
-                previewState.selectedTabId,
-            )
+            ModalBottomSheet(
+                modifier = Modifier.testTag(TabsTrayTestTag.TAB_GROUP_BOTTOM_SHEET_ROOT),
+                sheetState = sheetState,
+                onDismissRequest = {},
+            ) {
+                ExpandedTabGroup(
+                    group = previewState.group,
+                    onTabClose = {},
+                    onItemClick = {},
+                    onDeleteTabGroup = {},
+                    editTabGroupClick = {},
+                )
+            }
         }
     }
 }
 
 private fun generateFakeTabsList(
     tabCount: Int = 10,
-): HashSet<TabsTrayItem.Tab> = List(tabCount) { index ->
+): MutableList<TabsTrayItem.Tab> = MutableList(tabCount) { index ->
     createTab(
         id = "tab$index",
         title = "Tab $index",
         url = "www.mozilla.com",
         private = false,
     )
-}.toHashSet()
+}
 
 private data class ExpandedTabGroupPreviewState(
     val group: TabsTrayItem.TabGroup,

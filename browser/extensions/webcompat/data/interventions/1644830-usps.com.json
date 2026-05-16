@@ -1,0 +1,17 @@
+{
+  "label": "usps.com",
+  "bugs": {
+    "1891016": {
+      "issue": "broken-interactive-elements",
+      "matches": ["https://*.usps.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "css": ["bug1644830-missingmail.usps.com-checkboxes-not-visible.css"]
+      }
+    }
+  ]
+}

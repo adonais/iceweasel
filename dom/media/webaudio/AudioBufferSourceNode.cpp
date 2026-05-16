@@ -166,6 +166,9 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
       mChannels = aChannels;
       mResampler = speex_resampler_init(mChannels, mBufferSampleRate, aOutRate,
                                         SPEEX_RESAMPLER_QUALITY_MIN, nullptr);
+      if (!mResampler) {
+        return;
+      }
     } else {
       if (mResamplerOutRate == aOutRate) {
         return;
@@ -586,7 +589,7 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
   uint32_t mLoopEnd;
   uint32_t mBufferPosition;
   int32_t mBufferSampleRate;
-  int32_t mResamplerOutRate;
+  int32_t mResamplerOutRate;  // used if mResampler is set or mChannels == 0
   uint32_t mChannels;
   RefPtr<AudioNodeTrack> mDestination;
 

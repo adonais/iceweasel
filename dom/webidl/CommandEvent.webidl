@@ -4,14 +4,12 @@
  */
 
 // https://html.spec.whatwg.org/multipage/interaction.html#the-commandevent-interface
-[Exposed=Window,Func="mozilla::dom::CommandEvent::IsCallerChromeOrCommandForEnabled"]
+[Exposed=Window]
 interface CommandEvent : Event {
-  [Pref="dom.element.commandfor.enabled"]
   constructor(DOMString type, optional CommandEventInit eventInitDict = {});
 
   readonly attribute DOMString command;
 
-  [Pref="dom.element.commandfor.enabled"]
   readonly attribute Element? source;
 };
 

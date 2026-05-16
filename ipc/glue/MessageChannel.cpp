@@ -2073,6 +2073,97 @@ void MessageChannel::OnNotifyMaybeChannelError() {
   NotifyMaybeChannelError(lock);
 }
 
+class MessageChannel::ErrorNotifyBatcher::BatchTask
+    : public CancelableRunnable {
+ public:
+  explicit BatchTask(nsIEventTarget* aEventTarget)
+      : CancelableRunnable("MessageChannel::ErrorNotifyBatcher"),
+        mEventTarget(aEventTarget) {}
+
+  NS_IMETHOD Run() override {
+    // NOTE: This is running all error notify tasks within a single runnable. If
+    // this ends up causing latency issues, we can change this logic to
+    // re-dispatch between tasks.
+    AUTO_PROFILER_LABEL("MessageChannel::ErrorNotifyBatchTask", IPC);
+    for (auto& task : mTasks) {
+      task->Run();
+    }
+    mTasks.Clear();
+    return NS_OK;
+  }
+
+  nsresult Cancel() override {
+    for (auto& task : mTasks) {
+      task->Cancel();
+    }
+    mTasks.Clear();
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIEventTarget> mEventTarget;
+  AutoTArray<RefPtr<CancelableRunnable>, 1> mTasks;
+};
+
+MessageChannel::ErrorNotifyBatcher*
+    MessageChannel::ErrorNotifyBatcher::sCurrent = nullptr;
+
+MessageChannel::ErrorNotifyBatcher::ErrorNotifyBatcher() {
+  AssertIOThread();
+  if (sCurrent == nullptr) {
+    sCurrent = this;
+  }
+}
+
+MessageChannel::ErrorNotifyBatcher::~ErrorNotifyBatcher() {
+  AssertIOThread();
+  if (sCurrent == this) {
+    sCurrent = nullptr;
+  }
+
+  for (auto& task : mToNotify) {
+    nsCOMPtr<nsIEventTarget> target = task->mEventTarget.forget();
+    target->Dispatch(task.forget());
+  }
+}
+
+/* static */
+void MessageChannel::ErrorNotifyBatcher::BatchDispatch(
+    nsIEventTarget* aTarget, already_AddRefed<CancelableRunnable> aRunnable) {
+  RefPtr<CancelableRunnable> runnable(std::move(aRunnable));
+  if (!ErrorNotifyBatcher::TryBatchDispatch(aTarget, runnable)) {
+    aTarget->Dispatch(runnable.forget());
+  }
+}
+
+/* static */
+bool MessageChannel::ErrorNotifyBatcher::TryBatchDispatch(
+    nsIEventTarget* aTarget, RefPtr<CancelableRunnable>& aRunnable) {
+  MessageLoop* curLoop = MessageLoop::current();
+  if (!curLoop || curLoop->type() != MessageLoop::TYPE_IO) {
+    return false;
+  }
+
+  AssertIOThread();
+  if (!ErrorNotifyBatcher::sCurrent) {
+    return false;
+  }
+
+  RefPtr<BatchTask> batchTask;
+  for (auto& task : ErrorNotifyBatcher::sCurrent->mToNotify) {
+    if (task->mEventTarget == aTarget) {
+      batchTask = task;
+      break;
+    }
+  }
+  if (!batchTask) {
+    batchTask = new BatchTask(aTarget);
+    ErrorNotifyBatcher::sCurrent->mToNotify.AppendElement(batchTask);
+  }
+
+  batchTask->mTasks.AppendElement(aRunnable.forget());
+  return true;
+}
+
 void MessageChannel::PostErrorNotifyTask() {
   mMonitor->AssertCurrentThreadOwns();
 
@@ -2084,7 +2175,12 @@ void MessageChannel::PostErrorNotifyTask() {
   mChannelErrorTask = NewNonOwningCancelableRunnableMethod(
       "ipc::MessageChannel::OnNotifyMaybeChannelError", this,
       &MessageChannel::OnNotifyMaybeChannelError);
-  mWorkerThread->Dispatch(do_AddRef(mChannelErrorTask));
+
+  // Check if we have a notify batcher which we want to use. This will only ever
+  // be the case on the IPC I/O thread. If we do, we'll queue up the task to be
+  // notified by it instead of directly dispatching.
+  ErrorNotifyBatcher::BatchDispatch(mWorkerThread,
+                                    do_AddRef(mChannelErrorTask));
 }
 
 // Special async message.

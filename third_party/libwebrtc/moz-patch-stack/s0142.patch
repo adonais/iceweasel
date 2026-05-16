@@ -1,0 +1,55 @@
+From: Michael Froman <mfroman@mozilla.com>
+Date: Mon, 6 Apr 2026 21:43:00 +0000
+Subject: Bug 2027499 - adhere to spec on number of CSRCs in rtp packets. r=bwc
+
+Differential Revision: https://phabricator.services.mozilla.com/D291629
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ccdaaef4f2b19d4a849d5a6f1e4aedba392c0f91
+---
+ modules/rtp_rtcp/source/rtp_packet.cc | 9 ++++++++-
+ modules/rtp_rtcp/source/rtp_packet.h  | 6 ++++++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
+index adbf16854e..294d703af5 100644
+--- a/modules/rtp_rtcp/source/rtp_packet.cc
++++ b/modules/rtp_rtcp/source/rtp_packet.cc
+@@ -230,14 +230,21 @@ void RtpPacket::SetCsrcs(std::span<const uint32_t> csrcs) {
+   RTC_DCHECK_EQ(padding_size_, 0);
+   RTC_DCHECK_LE(csrcs.size(), 0x0fu);
+   RTC_DCHECK_LE(kFixedHeaderSize + 4 * csrcs.size(), capacity());
++
++  if (csrcs.size() > kMaxCsrcs) {
++    RTC_LOG(LS_WARNING) << "Truncating CSRC list to spec length " << kMaxCsrcs
++                        << " from " << csrcs.size();
++    csrcs = csrcs.first(kMaxCsrcs);
++  }
++
+   payload_offset_ = kFixedHeaderSize + 4 * csrcs.size();
++  buffer_.SetSize(payload_offset_);
+   WriteAt(0, (data()[0] & 0xF0) | dchecked_cast<uint8_t>(csrcs.size()));
+   size_t offset = kFixedHeaderSize;
+   for (uint32_t csrc : csrcs) {
+     ByteWriter<uint32_t>::WriteBigEndian(WriteAt(offset), csrc);
+     offset += 4;
+   }
+-  buffer_.SetSize(payload_offset_);
+ }
+ 
+ std::span<uint8_t> RtpPacket::AllocateRawExtension(int id, size_t length) {
+diff --git a/modules/rtp_rtcp/source/rtp_packet.h b/modules/rtp_rtcp/source/rtp_packet.h
+index 1a9f91799b..78cccb347d 100644
+--- a/modules/rtp_rtcp/source/rtp_packet.h
++++ b/modules/rtp_rtcp/source/rtp_packet.h
+@@ -30,6 +30,12 @@ class RtpPacket {
+   using ExtensionType = RTPExtensionType;
+   using ExtensionManager = RtpHeaderExtensionMap;
+ 
++  // Maximum number of CSRCs in an RTP packet as specified in section
++  // "5.1 RTP Fixed Header Fields" of RFC 3550.
++  // Note: This is a different limit than the one that applies to RTCP packets
++  // (which is specified in section 6.1).
++  static constexpr size_t kMaxCsrcs = 15;
++
+   // `extensions` required for SetExtension/ReserveExtension functions during
+   // packet creating and used if available in Parse function.
+   // Adding and getting extensions will fail until `extensions` is

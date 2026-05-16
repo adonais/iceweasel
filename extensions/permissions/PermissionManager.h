@@ -12,6 +12,8 @@
 #include "nsWeakReference.h"
 #include "nsCOMPtr.h"
 #include "nsIURI.h"
+#include "nsITimer.h"
+#include "nsTHashMap.h"
 #include "nsTHashtable.h"
 #include "nsTArray.h"
 #include "nsString.h"
@@ -43,6 +45,7 @@ class OriginAttributesPattern;
 
 namespace dom {
 class ContentChild;
+class ContentParent;
 class WindowContext;
 }  // namespace dom
 
@@ -381,6 +384,17 @@ class PermissionManager final : public nsIPermissionManager,
                DBOperationType aDBOperation,
                const nsACString* aOriginString = nullptr,
                const bool aAllowPersistInPrivateBrowsing = false);
+
+  struct BrowserPermissionEntry {
+    uint32_t mPermission;
+    int64_t mExpireTime;  // absolute timestamp (ms since epoch), 0 = no expiry
+    nsCOMPtr<nsITimer> mTimer;
+    uint32_t mTypeIndex;
+    bool mSiteScoped;
+  };
+
+  using BrowserPermissionMap =
+      nsTHashMap<nsCStringHashKey, BrowserPermissionEntry>;
 
  private:
   ~PermissionManager();
@@ -737,6 +751,56 @@ class PermissionManager final : public nsIPermissionManager,
                               const nsTArray<nsCString>& aExpirableTypes) const
       MOZ_REQUIRES(mMonitor);
   RefPtr<GenericPromise> CleanupOrphanedInteractionRecords();
+
+  // BrowserId -> permission map for browser-scoped (per-tab) permissions.
+  nsTHashMap<nsUint64HashKey, UniquePtr<BrowserPermissionMap>>
+      mBrowserPermissionTable;
+
+  void NotifyBrowserObservers(const nsCOMPtr<nsIPermission>& aPermission,
+                              const nsString& aData);
+
+  void ForwardBrowserPermissionToChild(nsIPrincipal* aPrincipal,
+                                       const nsACString& aType,
+                                       uint32_t aAction, uint64_t aBrowserId,
+                                       bool aIsRemoval);
+
+  void ForwardClearBrowserPermissionsToChild(uint64_t aBrowserId,
+                                             uint32_t aActionFilter);
+
+ public:
+  void TransmitBrowserPermissionsForPrincipal(
+      dom::ContentParent* aContentParent, nsIPrincipal* aPrincipal,
+      uint64_t aBrowserId);
+  // Called from ContentChild IPC handlers. These are thin wrappers around
+  // the internal methods, asserting we are in the content process.
+  void SetBrowserPermissionFromIPC(nsIPrincipal* aPrincipal,
+                                   const nsACString& aType, uint32_t aAction,
+                                   uint64_t aBrowserId, bool aIsRemoval);
+  void ClearBrowserPermissionsFromIPC(uint64_t aBrowserId,
+                                      uint32_t aActionFilter);
+
+ private:
+  // Core browser permission operations. These work in any process and are
+  // shared between the XPCOM (parent-only) and IPC (child-only) entry points.
+  nsresult AddBrowserPermissionInternal(nsIPrincipal* aPrincipal,
+                                        const nsACString& aType,
+                                        uint32_t aPermission,
+                                        uint64_t aBrowserId,
+                                        int64_t aExpireTimeMS);
+  void RemoveBrowserPermissionInternal(nsIPrincipal* aPrincipal,
+                                       const nsACString& aType,
+                                       uint64_t aBrowserId);
+  // Returns true if any entries were removed.
+  bool ClearBrowserPermissionsInternal(uint64_t aBrowserId,
+                                       uint32_t aActionFilter);
+
+  nsCString BrowserCompositeKey(nsIPrincipal* aPrincipal,
+                                const nsACString& aType, bool aSiteScoped);
+
+  nsCOMPtr<nsITimer> ScheduleBrowserPermissionExpiry(
+      uint64_t aBrowserId, const nsACString& aCompositeKey,
+      nsIPrincipal* aPrincipal, const nsACString& aType, uint32_t aPermission,
+      int64_t aExpireMS);
 };
 
 // {4F6B5E00-0C36-11d5-A535-0010A401EB10}

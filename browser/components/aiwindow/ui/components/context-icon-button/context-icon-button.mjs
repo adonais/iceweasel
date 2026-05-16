@@ -12,6 +12,7 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  */
 export class ContextIconButton extends MozLitElement {
   static properties = {
+    active: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
   };
 
@@ -39,6 +40,7 @@ export class ContextIconButton extends MozLitElement {
       />
       <moz-button
         ?disabled=${this.disabled}
+        aria-pressed=${this.active ? "true" : "false"}
         data-l10n-id="smartbar-context-menu-button"
         data-l10n-attrs="tooltiptext,aria-label"
         type="ghost"

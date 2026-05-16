@@ -25,6 +25,10 @@
 //   terminates, which makes it harder to test if the right thing has occurred.
 static void TestCrashyOperation(const char* label, void (*aCrashyOperation)()) {
 #if defined(XP_UNIX) && defined(DEBUG) && !defined(MOZ_ASAN)
+  // The crash reporter is not fork()-safe, so disable it before we fork off
+  // the main process and re-enable it once we're done.
+  mozilla::gtest::DisableCrashReporter();
+
   // We're about to trigger a crash. When it happens don't pause to allow GDB
   // to be attached.
   SAVE_GDB_SLEEP_LOCAL();
@@ -33,11 +37,6 @@ static void TestCrashyOperation(const char* label, void (*aCrashyOperation)()) {
   ASSERT_NE(pid, -1);
 
   if (pid == 0) {
-    // Disable the crashreporter -- writing a crash dump in the child will
-    // prevent the parent from writing a subsequent dump. Crashes here are
-    // expected, so we don't want their stacks to show up in the log anyway.
-    mozilla::gtest::DisableCrashReporter();
-
     // Child: perform the crashy operation.
     FILE* stderr_dup = fdopen(dup(fileno(stderr)), "w");
     // We don't want MOZ_CRASH from the crashy operation to print out its
@@ -47,6 +46,8 @@ static void TestCrashyOperation(const char* label, void (*aCrashyOperation)()) {
     fprintf(stderr_dup, "TestCrashyOperation %s: didn't crash?!\n", label);
     ASSERT_TRUE(false);  // shouldn't reach here
   }
+
+  mozilla::gtest::EnableCrashReporter();
 
   // Parent: check that child crashed as expected.
   int status;

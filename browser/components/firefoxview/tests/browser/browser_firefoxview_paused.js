@@ -30,12 +30,16 @@ async function getElements(document) {
     "view-recentlyclosed"
   );
   await TestUtils.waitForCondition(
-    () => recentBrowsingRecentlyClosedTabsView.fullyUpdated
+    () => recentBrowsingRecentlyClosedTabsView.fullyUpdated,
+    "Waiting for the recent browsing recently closed tabs view to be fully updated"
   );
   let recentBrowsingRecentlyClosedTabsList =
     recentBrowsingRecentlyClosedTabsView?.tabList;
   if (recentlyClosedView.firstUpdateComplete) {
-    await TestUtils.waitForCondition(() => recentlyClosedView.fullyUpdated);
+    await TestUtils.waitForCondition(
+      () => recentlyClosedView.fullyUpdated,
+      "Waiting for the recently closed view to be fully updated"
+    );
   }
   let recentlyClosedList = recentlyClosedView.tabList;
   await openTabsView.openTabsTarget.readyWindowsPromise;
@@ -226,7 +230,8 @@ add_task(async function test_recentbrowsing() {
       content
     );
     await TestUtils.waitForCondition(
-      () => !cardContainer.detailsEl.hasAttribute("open")
+      () => !cardContainer.detailsEl.hasAttribute("open"),
+      "Waiting for the card container details element to be closed"
     );
 
     ok(
@@ -244,8 +249,9 @@ add_task(async function test_recentbrowsing() {
       {},
       content
     );
-    await TestUtils.waitForCondition(() =>
-      cardContainer.detailsEl.hasAttribute("open")
+    await TestUtils.waitForCondition(
+      () => cardContainer.detailsEl.hasAttribute("open"),
+      "Waiting for the card container details element to be open"
     );
 
     ok(
@@ -266,7 +272,8 @@ add_task(async function test_recentbrowsing() {
       content
     );
     await TestUtils.waitForCondition(
-      () => !recentlyClosedCardContainer.detailsEl.hasAttribute("open")
+      () => !recentlyClosedCardContainer.detailsEl.hasAttribute("open"),
+      "Waiting for the recently closed card container details element to be closed"
     );
 
     ok(
@@ -284,8 +291,9 @@ add_task(async function test_recentbrowsing() {
       {},
       content
     );
-    await TestUtils.waitForCondition(() =>
-      recentlyClosedCardContainer.detailsEl.hasAttribute("open")
+    await TestUtils.waitForCondition(
+      () => recentlyClosedCardContainer.detailsEl.hasAttribute("open"),
+      "Waiting for the recently closed card container details element to be open"
     );
 
     ok(
@@ -335,7 +343,8 @@ add_task(async function test_opentabs() {
       content
     );
     await TestUtils.waitForCondition(
-      () => !cardContainer.detailsEl.hasAttribute("open")
+      () => !cardContainer.detailsEl.hasAttribute("open"),
+      "Waiting for the card container details element to be closed"
     );
 
     ok(
@@ -353,8 +362,9 @@ add_task(async function test_opentabs() {
       {},
       content
     );
-    await TestUtils.waitForCondition(() =>
-      cardContainer.detailsEl.hasAttribute("open")
+    await TestUtils.waitForCondition(
+      () => cardContainer.detailsEl.hasAttribute("open"),
+      "Waiting for the card container details element to be open"
     );
 
     ok(

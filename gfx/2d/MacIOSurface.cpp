@@ -24,10 +24,12 @@
 using namespace mozilla;
 
 MacIOSurface::MacIOSurface(CFTypeRefPtr<IOSurfaceRef> aIOSurfaceRef,
-                           bool aHasAlpha, gfx::YUVColorSpace aColorSpace)
+                           bool aHasAlpha, gfx::YUVColorSpace aColorSpace,
+                           gfx::TransferFunction aTransferFunction)
     : mIOSurfaceRef(std::move(aIOSurfaceRef)),
       mHasAlpha(aHasAlpha),
-      mColorSpace(aColorSpace) {
+      mColorSpace(aColorSpace),
+      mTransferFunction(aTransferFunction) {
   IncrementUseCount();
 }
 
@@ -93,8 +95,9 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateIOSurface(int aWidth,
     return nullptr;
   }
 
-  RefPtr<MacIOSurface> ioSurface =
-      new MacIOSurface(std::move(surfaceRef), aHasAlpha);
+  RefPtr<MacIOSurface> ioSurface = new MacIOSurface(
+      std::move(surfaceRef), aHasAlpha, gfx::YUVColorSpace::Identity,
+      gfx::TransferFunction::SRGB);
 
   return ioSurface.forget();
 }
@@ -267,7 +270,8 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateBiPlanarSurface(
   SetIOSurfaceCommonProperties(surfaceRef, aColorSpace, aTransferFunction);
 
   RefPtr<MacIOSurface> ioSurface =
-      new MacIOSurface(std::move(surfaceRef), false, aColorSpace);
+      new MacIOSurface(std::move(surfaceRef), /* hasAlpha */ false, aColorSpace,
+                       aTransferFunction);
 
   return ioSurface.forget();
 }
@@ -311,21 +315,23 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateSinglePlanarSurface(
   SetIOSurfaceCommonProperties(surfaceRef, aColorSpace, aTransferFunction);
 
   RefPtr<MacIOSurface> ioSurface =
-      new MacIOSurface(std::move(surfaceRef), false, aColorSpace);
+      new MacIOSurface(std::move(surfaceRef), /* hasAlpha */ false, aColorSpace,
+                       aTransferFunction);
 
   return ioSurface.forget();
 }
 
 /* static */
 already_AddRefed<MacIOSurface> MacIOSurface::LookupSurface(
-    IOSurfaceID aIOSurfaceID, bool aHasAlpha, gfx::YUVColorSpace aColorSpace) {
+    IOSurfaceID aIOSurfaceID, bool aHasAlpha, gfx::YUVColorSpace aColorSpace,
+    gfx::TransferFunction aTransferFunction) {
   CFTypeRefPtr<IOSurfaceRef> surfaceRef =
       CFTypeRefPtr<IOSurfaceRef>::WrapUnderCreateRule(
           ::IOSurfaceLookup(aIOSurfaceID));
   if (!surfaceRef) return nullptr;
 
-  RefPtr<MacIOSurface> ioSurface =
-      new MacIOSurface(std::move(surfaceRef), aHasAlpha, aColorSpace);
+  RefPtr<MacIOSurface> ioSurface = new MacIOSurface(
+      std::move(surfaceRef), aHasAlpha, aColorSpace, aTransferFunction);
 
   return ioSurface.forget();
 }

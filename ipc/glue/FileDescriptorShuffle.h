@@ -8,7 +8,6 @@
 #include "mozilla/Span.h"
 #include "nsTArray.h"
 
-#include <functional>
 #include <utility>
 
 // This class converts a set of file descriptor mapping, which may

@@ -411,6 +411,7 @@ class gfxUtils {
                                  bool aIsAlphaPremultiplied,
                                  const char* aMimeType,
                                  const nsAString& aEncoderOptions,
+                                 const nsACString& aRandomizationKey,
                                  nsIInputStream** outStream);
 
   static nsresult GetInputStreamWithRandomNoise(

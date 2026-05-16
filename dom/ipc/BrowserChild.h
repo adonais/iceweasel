@@ -293,10 +293,10 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvNormalPriorityRealMouseMoveEvent(
       const mozilla::WidgetMouseEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId);
-  mozilla::ipc::IPCResult RecvRealMouseMoveEventForTests(
+  mozilla::ipc::IPCResult RecvRealMouseMoveEventNoCompress(
       const mozilla::WidgetMouseEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId);
-  mozilla::ipc::IPCResult RecvNormalPriorityRealMouseMoveEventForTests(
+  mozilla::ipc::IPCResult RecvNormalPriorityRealMouseMoveEventNoCompress(
       const mozilla::WidgetMouseEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId);
 
@@ -518,9 +518,9 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
     return GetFrom(docShell);
   }
 
-  mozilla::ipc::IPCResult RecvUIResolutionChanged(const float& aDpi,
-                                                  const int32_t& aRounding,
-                                                  const double& aScale);
+  mozilla::ipc::IPCResult RecvUIResolutionChanged(
+      const float& aDpi, const int32_t& aRounding, const double& aScale,
+      const double& aDesktopToDeviceScale);
 
   mozilla::ipc::IPCResult RecvTransparencyChanged(const bool& aIsTransparent);
 
@@ -816,8 +816,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const MaybeDiscardedBrowsingContext& aBc, const PrintData& aPrintData,
       RefPtr<BrowsingContext>* aCachedBrowsingContext);
 
-  bool CreateRemoteLayerManager(
-      mozilla::layers::PCompositorBridgeChild* aCompositorChild);
+  bool CreateRemoteLayerManager();
 
   nsresult PrepareRequestData(nsIRequest* aRequest, RequestData& aRequestData);
   nsresult PrepareProgressListenerData(nsIWebProgress* aWebProgress,

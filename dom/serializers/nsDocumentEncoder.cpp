@@ -967,7 +967,6 @@ nsresult nsDocumentEncoder::NodeSerializer::SerializeToStringRecursive(
       aNode, GetAllowRangeCrossShadowBoundary(mFlags));
 
   if (shadowRoot) {
-    MOZ_ASSERT(StaticPrefs::dom_shadowdom_selection_across_boundary_enabled());
     // Serialize the ShadowRoot first when the entire node needs to be
     // serialized.
     SerializeToStringRecursive(shadowRoot, aSerializeRoot, aMaxLength);
@@ -1530,7 +1529,7 @@ nsDocumentEncoder::EncodeToStringWithMaxLength(uint32_t aMaxLength,
   bool setOutput = false;
   MOZ_ASSERT(!mCachedBuffer);
   // Try to cache the buffer.
-  if (StringBuffer* outputBuffer = output.GetStringBuffer()) {
+  if (StringBuffer* outputBuffer = output.GetOwnedStringBuffer()) {
     if (outputBuffer->StorageSize() == kStringBufferSizeInBytes &&
         !outputBuffer->IsReadonly()) {
       mCachedBuffer = outputBuffer;

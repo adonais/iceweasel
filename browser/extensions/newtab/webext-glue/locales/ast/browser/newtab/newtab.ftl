@@ -158,9 +158,21 @@ newtab-error-fallback-info = Meca, asocedió daqué malo al cargar esti contení
 
 newtab-custom-shortcuts-title = Atayos
 newtab-custom-shortcuts-subtitle = Sitios que guardes o visites
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Atayos
     .description = Sitios que guardes o visites
+newtab-custom-shortcuts-nova =
+    .label = Atayos
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } filera
+           *[other] { $num } fileres
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =

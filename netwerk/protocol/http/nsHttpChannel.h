@@ -25,7 +25,6 @@
 #include "nsIEarlyHintObserver.h"
 #include "nsIHttpAuthenticableChannel.h"
 #include "nsIProtocolProxyCallback.h"
-#include "nsIRaceCacheWithNetwork.h"
 #include "nsIRequestContext.h"
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableRequest.h"
@@ -72,7 +71,6 @@ class nsHttpChannel final : public HttpBaseChannel,
                             public nsIDNSListener,
                             public nsSupportsWeakReference,
                             public nsICorsPreflightCallback,
-                            public nsIRaceCacheWithNetwork,
                             public nsIRequestTailUnblockCallback,
                             public nsIEarlyHintObserver {
  public:
@@ -90,7 +88,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_DECL_NSITHREADRETARGETABLEREQUEST
   NS_DECL_NSIDNSLISTENER
   NS_INLINE_DECL_STATIC_IID(NS_HTTPCHANNEL_IID)
-  NS_DECL_NSIRACECACHEWITHNETWORK
   NS_DECL_NSIREQUESTTAILUNBLOCKCALLBACK
   NS_DECL_NSIEARLYHINTOBSERVER
 
@@ -519,8 +516,6 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   // Report telemetry for system principal request success rate
   void ReportSystemChannelTelemetry(nsresult status);
-  // Report telemetry and stats to about:networking
-  void ReportRcwnStats(bool isFromNet);
 
   // Create a aggregate set of the current notification callbacks
   // and ensure the transaction is updated to use it.
@@ -637,7 +632,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   mozilla::TimeStamp mOnStartRequestTimestamp;
   // Timestamp of the time the channel was suspended.
   mozilla::TimeStamp mSuspendTimestamp;
-  mozilla::TimeStamp mOnCacheEntryCheckTimestamp;
 
   // Properties used for the profiler markers
   // This keeps the timestamp for the start marker, to be reused for the end
@@ -814,13 +808,6 @@ class nsHttpChannel final : public HttpBaseChannel,
     RefPtr<nsHttpChannel> mChannel;
   };
 
-  // These next members are only used in unit tests to delay the call to
-  // cache->AsyncOpenURI in order to race the cache with the network.
-  nsCOMPtr<nsITimer> mCacheOpenTimer;
-  std::function<void(nsHttpChannel*)> mCacheOpenFunc;
-  uint32_t mCacheOpenDelay = 0;
-  uint32_t mNetworkTriggerDelay = 0;
-
   // We need to remember which is the source of the response we are using.
   enum ResponseSource {
     RESPONSE_PENDING = 0,      // response is pending
@@ -829,16 +816,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   };
   Atomic<ResponseSource, Relaxed> mFirstResponseSource{RESPONSE_PENDING};
 
-  // Determines if it's possible and advisable to race the network request
-  // with the cache fetch, and proceeds to do so.
-  void MaybeRaceCacheWithNetwork();
-
-  // Creates a new cache entry when network wins the race to ensure we have
-  // the latest version of the resource in the cache. Otherwise we might
-  // return an old content when navigating back in history.
-  void MaybeCreateCacheEntryWhenRCWN();
-
-  nsresult TriggerNetworkWithDelay(uint32_t aDelay);
   nsresult TriggerNetwork();
   nsresult OnSuspendTimeout();
   void CancelNetworkRequest(nsresult aStatus);
@@ -851,9 +828,6 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   void MaybeGenerateNELReport();
 
-  // Timer used to delay the network request, or to trigger the network
-  // request if retrieving the cache entry takes too long.
-  nsCOMPtr<nsITimer> mNetworkTriggerTimer;
   // Is true if the network request has been triggered.
   bool mNetworkTriggered = false;
 
@@ -866,18 +840,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mStaleRevalidation = false;
   // Set if this is dictionary-compressed
   bool mIsDictionaryCompressed = false;
-  // Will be true if the onCacheEntryAvailable callback is not called by the
-  // time we send the network request
-  Atomic<bool> mRaceCacheWithNetwork{false};
-  uint32_t mRaceDelay{0};
-  // If true then OnCacheEntryAvailable should ignore the entry, because
-  // SetupTransaction removed conditional headers and decisions made in
-  // OnCacheEntryCheck are no longer valid.
-  bool mIgnoreCacheEntry{false};
-  bool mAllowRCWN{true};
-  // Lock preventing SetupTransaction/MaybeCreateCacheEntryWhenRCWN and
-  // OnCacheEntryCheck being called at the same time.
-  mozilla::Mutex mRCWNLock MOZ_UNANNOTATED{"nsHttpChannel.mRCWNLock"};
 
   // Set to true when OnSuspendTimeout calls SetBypassWriterLock(true)
   // for the cache entry. Gets reset back to false when Resume calls

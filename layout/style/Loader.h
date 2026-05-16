@@ -619,7 +619,7 @@ class Loader final {
   static void MarkLoadTreeFailed(SheetLoadData&,
                                  Loader* aOnlyForLoader = nullptr);
 
-  // A shorthand to mark a possible link preload as used to supress "unused"
+  // A shorthand to mark a possible link preload as used to suppress "unused"
   // warning in the console.
   void MaybeNotifyPreloadUsed(SheetLoadData&);
 

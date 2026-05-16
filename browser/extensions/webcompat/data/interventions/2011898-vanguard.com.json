@@ -1,0 +1,17 @@
+{
+  "label": "vanguard.com",
+  "bugs": {
+    "2011898": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://funds.web.vanguard.com/n/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug2011898-vanguard.com-fix-obscured-inputs.css"]
+      }
+    }
+  ]
+}

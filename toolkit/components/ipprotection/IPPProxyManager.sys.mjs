@@ -5,8 +5,6 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  IPPEnrollAndEntitleManager:
-    "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
   IPPChannelFilter:
     "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs",
   IPPNetworkUtils:
@@ -41,6 +39,7 @@ ChromeUtils.defineLazyGetter(
 export const ERRORS = Object.freeze({
   GENERIC: "generic-error",
   NETWORK: "network-error",
+  CATASTROPHIC: "catastrophic-error",
   TIMEOUT: "timeout-error", // Activation took too long and was aborted
   MISSING_PROMISE: "missing-activation-promise", // Expected promise was not returned
   MISSING_ABORT: "missing-abort-controller", // Expected abort controller was not returned
@@ -106,6 +105,9 @@ export async function scheduleCallback(
 ) {
   const getNow = imports.getNow || (() => Temporal.Now.instant());
   while (getNow().until(timepoint).total("milliseconds") > 0) {
+    if (abortSignal.aborted) {
+      return;
+    }
     const msUntilTrigger = getNow().until(timepoint).total("milliseconds");
     // clamp the timeout to the max allowed by setTimeout
     const clampedMs = Math.min(msUntilTrigger, 2147483647);
@@ -268,10 +270,13 @@ class IPPProxyManagerSingleton extends EventTarget {
    * True if started by user action, false if system action
    * @param {boolean} inPrivateBrowsing
    * True if started from a private browsing window
+   * @param {string} [country]
+   * Optional ISO 3166-1 alpha-2 country code to route through. When
+   * omitted, the recommended (anycast) location is used.
    * @returns {Promise<{started: boolean, error?: string}>}
    * Started is true if successfully connected, error contains the error message if it fails.
    */
-  async start(userAction = true, inPrivateBrowsing = false) {
+  async start(userAction = true, inPrivateBrowsing = false, country) {
     if (this.#state === IPPProxyStates.ACTIVATING) {
       if (!this.#activatingPromise) {
         throw new Error(ERRORS.MISSING_PROMISE);
@@ -311,7 +316,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     );
 
     this.#activatingPromise = Promise.race([
-      this.#startInternal(abortSignal),
+      this.#startInternal(abortSignal, country),
       abortPromise,
     ])
       .then(
@@ -349,7 +354,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     return this.#activatingPromise;
   }
 
-  async #startInternal(abortSignal) {
+  async #startInternal(abortSignal, country) {
     // Check network status before attempting connection
     if (lazy.IPPNetworkUtils.isOffline) {
       throw ERRORS.NETWORK;
@@ -357,15 +362,9 @@ class IPPProxyManagerSingleton extends EventTarget {
 
     await lazy.IPProtectionServerlist.maybeFetchList();
 
-    let enrollAndEntitleData;
-    if (lazy.IPPEnrollAndEntitleManager.isEnrolling) {
-      enrollAndEntitleData =
-        await lazy.IPPEnrollAndEntitleManager.waitForEnrollment();
-    }
-    // If the current account can not be enrolled or is not entitled,
-    // the starting the proxy should fail.
-    if (!lazy.IPPEnrollAndEntitleManager.isEnrolledAndEntitled) {
-      throw enrollAndEntitleData?.error || ERRORS.GENERIC;
+    const notReady = await lazy.IPProtectionService.authProvider.aboutToStart();
+    if (notReady) {
+      throw notReady.error || ERRORS.GENERIC;
     }
 
     // Check if we aborted before starting the channel filter.
@@ -394,7 +393,9 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
     this.#schedulePassRotation(this.#pass);
 
-    const location = lazy.IPProtectionServerlist.getDefaultLocation();
+    const location = country
+      ? lazy.IPProtectionServerlist.getLocation(country)
+      : lazy.IPProtectionServerlist.getRecommendedLocation();
     const server = lazy.IPProtectionServerlist.selectServer(location?.city);
     if (!server) {
       throw ERRORS.SERVER_NOT_FOUND;
@@ -467,6 +468,37 @@ class IPPProxyManagerSingleton extends EventTarget {
     if (userAction && this.#state !== IPPProxyStates.PAUSED) {
       this.refreshUsage();
     }
+  }
+
+  /**
+   * Switch the active proxy connection to a server in a different country.
+   *
+   * @param {string} country - country code
+   * @returns {{switched: boolean, error?: string}}
+   */
+  switch(country) {
+    if (this.#state !== IPPProxyStates.ACTIVE) {
+      return { switched: false };
+    }
+
+    const location = country
+      ? lazy.IPProtectionServerlist.getLocation(country)
+      : lazy.IPProtectionServerlist.getRecommendedLocation();
+    const server = lazy.IPProtectionServerlist.selectServer(location?.city);
+
+    if (!server) {
+      this.#setErrorState(ERRORS.SERVER_NOT_FOUND);
+      return { switched: false, error: ERRORS.SERVER_NOT_FOUND };
+    }
+
+    lazy.logConsole.debug("Switching to server:", server?.hostname);
+
+    this.#connection.uninitialize();
+    this.#connection.initialize(this.#pass.asBearerToken(), server);
+
+    this.networkErrorObserver.addIsolationKey(this.#connection.isolationKey);
+
+    return { switched: true };
   }
 
   /**

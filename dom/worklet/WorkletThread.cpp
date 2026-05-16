@@ -4,6 +4,7 @@
 
 #include "WorkletThread.h"
 
+#include "GeckoProfiler.h"
 #include "XPCSelfHostedShmem.h"
 #include "js/ContextOptions.h"
 #include "js/Exception.h"
@@ -387,7 +388,14 @@ bool ContentSecurityPolicyAllows(
   bool reportViolation = false;
   if (OffThreadCSPContext* ctx = impl->GetCSPContext()) {
     if (aKind == JS::RuntimeCode::JS) {
-      *aOutCanCompileStrings = ctx->IsEvalAllowed(reportViolation);
+      if (ctx->CSPInfo().requireTrustedTypesForDirectiveState() ==
+          RequireTrustedTypesForDirectiveState::ENFORCE) {
+        // The TrustedTypePolicyFactory is not exposed to Worklets, so there is
+        // no way to define a policy that would allow scripts.
+        *aOutCanCompileStrings = false;
+      } else {
+        *aOutCanCompileStrings = ctx->IsEvalAllowed(reportViolation);
+      }
     } else {
       *aOutCanCompileStrings = ctx->IsWasmEvalAllowed(reportViolation);
     }
@@ -415,6 +423,8 @@ void WorkletThread::EnsureCycleCollectedJSContext(
     // TODO: error propagation
     return;
   }
+
+  PROFILER_SET_JS_CONTEXT(context);
 
   JS::ContextOptionsRef(context->Context()) = aOptions;
 
@@ -501,6 +511,7 @@ void WorkletThread::DeleteCycleCollectedJSContext() {
 
   WorkletJSContext* workletjscx = ccjscx->GetAsWorkletJSContext();
   MOZ_ASSERT(workletjscx);
+  PROFILER_CLEAR_JS_CONTEXT();
   delete workletjscx;
 }
 

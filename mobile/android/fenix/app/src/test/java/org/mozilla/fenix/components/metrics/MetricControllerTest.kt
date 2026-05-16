@@ -12,6 +12,7 @@ import io.mockk.verify
 import io.mockk.verifyAll
 import mozilla.components.feature.autofill.facts.AutofillFacts
 import mozilla.components.feature.awesomebar.facts.AwesomeBarFacts
+import mozilla.components.feature.awesomebar.facts.SuggestionCardType
 import mozilla.components.feature.awesomebar.provider.BookmarksStorageSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.ClipboardSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.HistoryStorageSuggestionProvider
@@ -55,7 +56,6 @@ import org.mozilla.fenix.GleanMetrics.SitePermissions
 import org.mozilla.fenix.GleanMetrics.SyncedTabs
 import org.mozilla.fenix.components.metrics.ReleaseMetricController.Companion
 import org.mozilla.fenix.helpers.FenixGleanTestRule
-import org.mozilla.fenix.search.awesomebar.ShortcutsSuggestionProvider
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import mozilla.components.compose.browser.awesomebar.AwesomeBarFacts as ComposeAwesomeBarFacts
@@ -308,22 +308,6 @@ class MetricControllerTest {
         }
 
         assertNotNull(PerfAwesomebar.clipboardSuggestions.testGetValue())
-
-        // Verify shortcut based suggestions
-        metadata = mapOf(
-            ComposeAwesomeBarFacts.MetadataKeys.DURATION_PAIR to Pair(
-                mockk<ShortcutsSuggestionProvider>(),
-                duration,
-            ),
-        )
-        fact = fact.copy(metadata = metadata)
-        assertNull(PerfAwesomebar.shortcutsSuggestions.testGetValue())
-
-        with(controller) {
-            fact.process()
-        }
-
-        assertNotNull(PerfAwesomebar.shortcutsSuggestions.testGetValue())
     }
 
     @Test
@@ -876,6 +860,40 @@ class MetricControllerTest {
         assertNotNull(Awesomebar.recentSearchSuggestionsDisplayed.testGetValue())
         assertNotNull(Awesomebar.recentSearchSuggestionsDisplayed.testGetValue()!![0].extra)
         assertEquals("4", Awesomebar.recentSearchSuggestionsDisplayed.testGetValue()!![0].extra!!["count"])
+
+        // Verify optimized suggestion cards displayed
+        assertNull(Awesomebar.optimizedSuggestionCardDisplayed.testGetValue())
+        fact = Fact(
+            Component.FEATURE_AWESOMEBAR,
+            Action.DISPLAY,
+            AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_DISPLAYED,
+            SuggestionCardType.SPORTS.value,
+        )
+
+        with(controller) {
+            fact.process()
+        }
+
+        assertNotNull(Awesomebar.optimizedSuggestionCardDisplayed.testGetValue())
+        assertNotNull(Awesomebar.optimizedSuggestionCardDisplayed.testGetValue()!![0].extra)
+        assertEquals("sports", Awesomebar.optimizedSuggestionCardDisplayed.testGetValue()!![0].extra!!["card_type"])
+
+        // Verify optimized suggestion cards clicked
+        assertNull(Awesomebar.optimizedSuggestionCardClicked.testGetValue())
+        fact = Fact(
+            Component.FEATURE_AWESOMEBAR,
+            Action.CLICK,
+            AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_CLICKED,
+            SuggestionCardType.STOCKS.value,
+        )
+
+        with(controller) {
+            fact.process()
+        }
+
+        assertNotNull(Awesomebar.optimizedSuggestionCardClicked.testGetValue())
+        assertNotNull(Awesomebar.optimizedSuggestionCardClicked.testGetValue()!![0].extra)
+        assertEquals("stocks", Awesomebar.optimizedSuggestionCardClicked.testGetValue()!![0].extra!!["card_type"])
     }
 
     @Test

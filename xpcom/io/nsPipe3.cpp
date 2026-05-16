@@ -261,7 +261,9 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
         mBlocking(aOther.mBlocking),
         mBlocked(false),
         mReadState(aOther.mReadState),
-        mPriority(nsIRunnablePriority::PRIORITY_NORMAL) {}
+        mPriority(nsIRunnablePriority::PRIORITY_NORMAL) {
+    MOZ_ASSERT(!mReadState.mActiveRead);
+  }
 
   void SetNonBlocking(bool aNonBlocking) { mBlocking = !aNonBlocking; }
 
@@ -664,7 +666,7 @@ nsresult nsPipe::GetReadSegment(nsPipeReadState& aReadState,
   // order to avoid deleting the buffer out from under this lockless read
   // set a flag to indicate a read is active.  This flag is only modified
   // while the lock is held.
-  MOZ_DIAGNOSTIC_ASSERT(!aReadState.mActiveRead);
+  MOZ_RELEASE_ASSERT(!aReadState.mActiveRead);
   aReadState.mActiveRead = true;
 
   aSegment = aReadState.mReadCursor;
@@ -1038,6 +1040,7 @@ void nsPipe::OnPipeException(nsresult aReason, bool aOutputOnly) {
 nsresult nsPipe::CloneInputStream(nsPipeInputStream* aOriginal,
                                   nsIInputStream** aCloneOut) {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+  MOZ_RELEASE_ASSERT(!aOriginal->ReadState().mActiveRead);
   RefPtr<nsPipeInputStream> ref = new nsPipeInputStream(*aOriginal);
   // don't add clones of closed pipes to mInputList.
   ref->Monitor().AssertCurrentThreadIn();

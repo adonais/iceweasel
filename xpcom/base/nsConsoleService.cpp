@@ -376,7 +376,7 @@ nsresult nsConsoleService::LogMessageWithMode(
     }
 
     // Avoid MOG_LOG-ing messages sent from the content process,
-    // where ContentParent will pass SupressLog output mode.
+    // where ContentParent will pass SuppressLog output mode.
     if (aOutputMode == OutputToLog) {
       uint32_t logLevel = 0;
       aMessage->GetLogLevel(&logLevel);

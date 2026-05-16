@@ -434,6 +434,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(XMLHttpRequestMainThread,
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mProgressEventSink)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mUpload)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(XMLHttpRequestMainThread,
@@ -1193,8 +1194,8 @@ bool XMLHttpRequestMainThread::IsSafeHeader(
   const char* kCrossOriginSafeHeaders[] = {
       "cache-control", "content-language", "content-type", "content-length",
       "expires",       "last-modified",    "pragma"};
-  for (uint32_t i = 0; i < std::size(kCrossOriginSafeHeaders); ++i) {
-    if (aHeader.LowerCaseEqualsASCII(kCrossOriginSafeHeaders[i])) {
+  for (auto& kCrossOriginSafeHeader : kCrossOriginSafeHeaders) {
+    if (aHeader.LowerCaseEqualsASCII(kCrossOriginSafeHeader)) {
       return true;
     }
   }

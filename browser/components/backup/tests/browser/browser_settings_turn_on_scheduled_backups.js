@@ -41,9 +41,7 @@ add_task(async function test_turn_on_scheduled_backups_confirm() {
   Services.fog.testResetFOG();
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let settings = browser.contentDocument.querySelector("backup-settings");
-
-    await settings.updateComplete;
+    let settings = await waitForBackupSettings(browser);
 
     let turnOnButton = settings.scheduledBackupsButtonEl;
 
@@ -121,7 +119,7 @@ add_task(async function test_turn_on_custom_location_filepicker() {
 
     // After setting up mocks, start testing components
     /** @type {import("../../content/backup-settings.mjs").default} */
-    let settings = browser.contentDocument.querySelector("backup-settings");
+    let settings = await waitForBackupSettings(browser);
     let turnOnButton = settings.scheduledBackupsButtonEl;
 
     Assert.ok(
@@ -252,9 +250,7 @@ add_task(async function test_turn_on_scheduled_backups_encryption() {
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
-    let settings = browser.contentDocument.querySelector("backup-settings");
-
-    await settings.updateComplete;
+    let settings = await waitForBackupSettings(browser);
 
     let turnOnButton = settings.scheduledBackupsButtonEl;
     Assert.ok(
@@ -359,9 +355,7 @@ add_task(async function test_turn_on_scheduled_backups_encryption() {
 add_task(async function test_turn_on_scheduled_backups_encryption_error() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
-    let settings = browser.contentDocument.querySelector("backup-settings");
-
-    await settings.updateComplete;
+    let settings = await waitForBackupSettings(browser);
 
     let turnOnButton = settings.scheduledBackupsButtonEl;
     Assert.ok(
@@ -459,9 +453,7 @@ add_task(async function test_turn_on_scheduled_backups_encryption_error() {
  */
 add_task(async function test_turn_on_scheduled_backups_encryption_error() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let settings = browser.contentDocument.querySelector("backup-settings");
-
-    await settings.updateComplete;
+    let settings = await waitForBackupSettings(browser);
 
     let turnOnButton = settings.scheduledBackupsButtonEl;
     Assert.ok(
@@ -535,8 +527,7 @@ add_task(async function test_default_location_selected() {
   });
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let settings = browser.contentDocument.querySelector("backup-settings");
-    await settings.updateComplete;
+    let settings = await waitForBackupSettings(browser);
 
     let turnOnButton = settings.scheduledBackupsButtonEl;
     turnOnButton.click();
@@ -587,7 +578,7 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
     let { filePickerShownPromise } =
       await setup_mockFilePicker(mockCustomParentDir);
 
-    let settings = browser.contentDocument.querySelector("backup-settings");
+    let settings = await waitForBackupSettings(browser);
     let turnOnButton = settings.scheduledBackupsButtonEl;
 
     Assert.ok(
@@ -643,8 +634,7 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
   });
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let settings = browser.contentDocument.querySelector("backup-settings");
-    await settings.updateComplete;
+    let settings = await waitForBackupSettings(browser);
 
     Assert.deepEqual(
       settings.backupServiceState.embeddedComponentPersistentData,
@@ -678,7 +668,7 @@ add_task(async function test_create_backup_on_enable() {
       return true;
     });
 
-    let settings = browser.contentDocument.querySelector("backup-settings");
+    let settings = await waitForBackupSettings(browser);
     let turnOnButton = settings.scheduledBackupsButtonEl;
 
     Assert.ok(
@@ -746,7 +736,7 @@ add_task(
         let { filePickerShownPromise } =
           await setup_mockFilePicker(mockCustomParentDir);
 
-        let settings = browser.contentDocument.querySelector("backup-settings");
+        let settings = await waitForBackupSettings(browser);
         let turnOnButton = settings.scheduledBackupsButtonEl;
 
         Assert.ok(

@@ -1,4 +1,3 @@
-/* vim: set ts=2 sw=2 sts=2 et tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1818,45 +1817,94 @@ export class _ASRouter {
   }
 
   /**
-   * Helper for cleanupImpressions - calculate the updated impressions object
-   * for the given items, then store it and return it.
+   * Helper for cleanupImpressions. Performs the following cleanup:
+   * - For deleted/invalid items: Removes impressions older than 6 months (gradual cleanup)
+   * - For groups with custom frequency caps: Removes impressions older than the longest period
+   * - Deletes corrupted or malformed impression data
+   * - Deletes entries with no actual impressions
    *
    * @param {obj} state Reference to ASRouter internal state
-   * @param {Array} items Can be messages, providers or groups that we count impressions for
+   * @param {Array} items Messages or groups that we count impressions for
    * @param {string} impressionsString Key name for entry in state where impressions are stored
+   * @returns {obj} Updated impressions object with cleaned data
    */
   _cleanupImpressionsForItems(state, items, impressionsString) {
     const impressions = { ...state[impressionsString] };
+    const now = Date.now();
     let needsUpdate = false;
-    Object.keys(impressions).forEach(id => {
-      const [item] = items.filter(x => x.id === id);
-      // Don't keep impressions for items that no longer exist
-      if (!item || !item.frequency || !Array.isArray(impressions[id])) {
+    for (const id of Object.keys(impressions)) {
+      if (!Array.isArray(impressions[id]) || !impressions[id].length) {
         lazy.ASRouterPreferences.console.debug(
-          "_cleanupImpressionsForItem: removing impressions for deleted or changed item: ",
-          item
+          `_cleanupImpressionsForItems: removing impressions for item with invalid impressions data: ${id} == ${impressions[id]}`
         );
-        lazy.ASRouterPreferences.console.trace();
         delete impressions[id];
         needsUpdate = true;
-        return;
+        continue;
       }
-      if (!impressions[id].length) {
-        return;
-      }
-      // If we don't want to store impressions older than the longest period
-      if (item.frequency.custom && !item.frequency.lifetime) {
+      const [item] = items.filter(x => x.id === id);
+      // Remove impressions older than six months for items that no longer
+      // exist. A six-month "grace period" is used to avoid abruptly removing
+      // impressions for messages from experiments that have ended. An
+      // experiment can't be analyzed until it has ended, but a successful
+      // experiment will likely be promoted to a rollout. So if the impressions
+      // are removed immediately, they'll be gone when the rollout ships, and
+      // users who already saw the message in the experiment may see it again in
+      // the rollout, which is not ideal.
+      if (!item) {
         lazy.ASRouterPreferences.console.debug(
-          "_cleanupImpressionsForItem: removing impressions older than longest period for item: ",
+          "_cleanupImpressionsForItem: removing impressions for deleted item: ",
           item
         );
-        const now = Date.now();
-        impressions[id] = impressions[id].filter(
-          t => now - t < this.getLongestPeriod(item)
+        const impressionsForItem = impressions[id].filter(
+          t => typeof t === "number" && now - t < SIX_MONTHS_MS
         );
+        if (impressionsForItem.length) {
+          impressions[id] = impressionsForItem;
+        } else {
+          delete impressions[id];
+        }
         needsUpdate = true;
+        continue;
       }
-    });
+      // We don't store group impressions if they lack a frequency cap or are
+      // older than the longest period. This is because they won't be relevant
+      // for frequency capping purposes. Groups usually lack lifetime caps, so
+      // capping is only used to ensure a reasonable time between impressions.
+      // And unlike messages that happen not to have a lifetime cap, groups can
+      // be reasonably expected to never be changed to add a lifetime cap. The
+      // worst case scenario is that the custom cap changes from 1/week to
+      // 1/month, and then we will have unfortunately deleted impressions that
+      // were e.g. 2 weeks old. But that's uncommon enough for groups that it's
+      // an acceptable compromise. Whereas messages change frequencies or reuse
+      // message ids often enough that it's not worth aggressively removing
+      // impressions.
+      if (impressionsString === "groupImpressions") {
+        if (!item.frequency) {
+          lazy.ASRouterPreferences.console.debug(
+            "_cleanupImpressionsForItem: removing impressions for item with no frequency: ",
+            item
+          );
+          delete impressions[id];
+          needsUpdate = true;
+          continue;
+        }
+        if (item.frequency.custom && !item.frequency.lifetime) {
+          lazy.ASRouterPreferences.console.debug(
+            "_cleanupImpressionsForItem: removing impressions older than longest period for item: ",
+            item
+          );
+          let impressionsForItem = impressions[id].filter(
+            t => typeof t === "number" && now - t < this.getLongestPeriod(item)
+          );
+          if (impressionsForItem.length) {
+            impressions[id] = impressionsForItem;
+          } else {
+            delete impressions[id];
+          }
+          needsUpdate = true;
+        }
+      }
+    }
     if (needsUpdate) {
       this._storage.set(impressionsString, impressions);
     }
@@ -1868,8 +1916,8 @@ export class _ASRouter {
    * multi-profile environments where impression data is shared across all user profiles.
    * It performs the following cleanup:
    * - For deleted/invalid items: Removes impressions older than 6 months (gradual cleanup)
-   * - For items with custom frequency caps: Removes impressions older than the longest period
-   * - Handles corrupted or malformed impression data
+   * - Deletes corrupted or malformed impression data
+   * - Deletes rows with no impressions
    * - Updates the shared database after each cleanup operation
    *
    * @param {obj} state Reference to ASRouter internal state
@@ -1880,35 +1928,33 @@ export class _ASRouter {
   _cleanupMultiProfileImpressions(state, items, impressionsString) {
     const impressions = { ...state[impressionsString] };
     const now = Date.now();
-    Object.keys(impressions).forEach(id => {
+    for (const id of Object.keys(impressions)) {
       const [item] = items.filter(x => x.id === id);
+      if (!Array.isArray(impressions[id]) || !impressions[id].length) {
+        lazy.ASRouterPreferences.console.debug(
+          `_cleanupMultiProfileImpressions: removing impressions for item with invalid impressions data: ${id} == ${impressions[id]}`
+        );
+        delete impressions[id];
+        this._storage.setSharedMessageImpressions(id, impressions[id]);
+        continue;
+      }
       // Remove impressions older than six months for items that no longer exist
-      if (!item || !item.frequency || !Array.isArray(impressions[id])) {
+      if (!item) {
         lazy.ASRouterPreferences.console.debug(
           "_cleanupMultiProfileImpressions: removing impressions older than six months for deleted or changed item: ",
           item
         );
-        lazy.ASRouterPreferences.console.trace();
-        impressions[id] = impressions[id].filter(t => now - t < SIX_MONTHS_MS);
-
-        this._storage.setSharedMessageImpressions(id, impressions[id]);
-        return;
-      }
-      if (!impressions[id].length) {
-        return;
-      }
-      // We don't want to store impressions older than the longest period
-      if (item?.frequency?.custom && !item.frequency.lifetime) {
-        lazy.ASRouterPreferences.console.debug(
-          "_cleanupMultiProfileImpressions: removing impressions older than longest period for item: ",
-          item
+        const impressionsForItem = impressions[id].filter(
+          t => typeof t === "number" && now - t < SIX_MONTHS_MS
         );
-        impressions[id] = impressions[id].filter(
-          t => now - t < this.getLongestPeriod(item)
-        );
+        if (impressionsForItem.length) {
+          impressions[id] = impressionsForItem;
+        } else {
+          delete impressions[id];
+        }
         this._storage.setSharedMessageImpressions(id, impressions[id]);
       }
-    });
+    }
     return impressions;
   }
 
@@ -2133,30 +2179,38 @@ export class _ASRouter {
   }
 
   resetGroupsState() {
-    const newGroupImpressions = {};
-    for (let { id } of this.state.groups) {
-      newGroupImpressions[id] = [];
-    }
+    const groupImpressions = {};
     // Update storage
-    this._storage.set("groupImpressions", newGroupImpressions);
-    return this.setState(() => ({
-      groupImpressions: newGroupImpressions,
-    }));
+    this._storage.set("groupImpressions", groupImpressions);
+    return this.setState({
+      groupImpressions,
+    });
   }
 
   resetMessageState() {
-    const newMessageImpressions = {};
-    for (let { id } of this.state.messages) {
-      newMessageImpressions[id] = [];
-      // Update shared storage if needed
-      if (lazy.ASRouterTargeting.Environment.canCreateSelectableProfiles) {
-        this._storage.setSharedMessageImpressions(id, null);
-      }
+    const messageImpressions = {};
+    const groupImpressions = {};
+    const screenImpressions = {};
+    const messageBlockList = [];
+    const multiProfileMessageImpressions = {};
+    const multiProfileMessageBlocklist = [];
+
+    if (lazy.ASRouterTargeting.Environment.canCreateSelectableProfiles) {
+      this._storage.resetSharedMessageStorage();
     }
     // Update storage
-    this._storage.set("messageImpressions", newMessageImpressions);
+    this._storage.set("messageImpressions", messageImpressions);
+    this._storage.set("groupImpressions", groupImpressions);
+    this._storage.set("screenImpressions", screenImpressions);
+    this._storage.set("messageBlockList", messageBlockList);
+
     return this.setState(() => ({
-      messageImpressions: newMessageImpressions,
+      messageImpressions,
+      groupImpressions,
+      screenImpressions,
+      multiProfileMessageImpressions,
+      messageBlockList,
+      multiProfileMessageBlocklist,
     }));
   }
 

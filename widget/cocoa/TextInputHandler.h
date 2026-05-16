@@ -1043,7 +1043,7 @@ class IMEInputHandler : public TextInputHandlerBase {
   void SetASCIICapableOnly(bool aASCIICapableOnly);
 
   /**
-   * True if OSX believes that our view has keyboard focus.
+   * True if macOS believes that our view has keyboard focus.
    */
   bool IsFocused();
 

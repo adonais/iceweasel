@@ -64,6 +64,16 @@ webgl::NotLostData::~NotLostData() {
   }
 }
 
+// Currently WebGL only runs method dispatch on a single thread. Access to
+// context data outside of that thread happens only rarely to collect memory
+// reports, which should be the only possible source of contention. It is
+// sufficient to acquire the global host context lock here since individual
+// contexts can't contend with each other, as the dispatching thread will only
+// be accessing contexts one at a time.
+class LockInProcess {
+  LockedOutstandingContexts locked;
+};
+
 // -
 
 bool webgl::ObjectJS::ValidateForContext(
@@ -215,6 +225,10 @@ ClientWebGLContext::~ClientWebGLContext() {
 }
 
 void ClientWebGLContext::JsWarning(const std::string& utf8) const {
+  if (mDeferJsWarnings) {
+    mDeferJsWarnings->push_back(utf8);
+    return;
+  }
   nsIGlobalObject* global = nullptr;
   if (mCanvasElement) {
     mozilla::dom::Document* doc = mCanvasElement->OwnerDoc();
@@ -434,7 +448,7 @@ void ClientWebGLContext::ThrowEvent_WebGLContextCreationError(
 template <typename MethodT, typename... Args>
 void ClientWebGLContext::Run_WithDestArgTypes(
     std::optional<JS::AutoCheckCannotGC>&& noGc, const MethodT method,
-    const size_t id, const Args&... args) const {
+    const WebGLMethodInfo methodInfo, const Args&... args) const {
   // `AutoCheckCannotGC` must be reset after the GC data is done being used but
   // *before* the `notLost` destructor runs, since the latter can GC.
   const auto cleanup = MakeScopeExit([&]() { noGc.reset(); });
@@ -446,15 +460,37 @@ void ClientWebGLContext::Run_WithDestArgTypes(
 
   const auto& inProcess = notLost->inProcess;
   if (inProcess) {
+    Maybe<LockInProcess> locked;
+    if (methodInfo.flags & WebGLMethodInfo::LOCK_IN_PROCESS) {
+      locked.emplace();
+    }
+
+    if (noGc.has_value()) {
+      // JsWarning may trigger GC, so defer warning till after any args have
+      // been used.
+      std::vector<std::string> warnings;
+      mDeferJsWarnings = &warnings;
+
+      (inProcess.get()->*method)(args...);
+
+      // Flush out any warnings, which may trigger GC.
+      mDeferJsWarnings = nullptr;
+      noGc.reset();
+      for (const auto& warning : warnings) {
+        JsWarning(warning);
+      }
+      return;
+    }
+
     (inProcess.get()->*method)(args...);
     return;
   }
 
   const auto& child = notLost->outOfProcess;
 
-  const auto info = webgl::SerializationInfo(id, args...);
-  const auto maybeDest = child->AllocPendingCmdBytes(info.requiredByteCount,
-                                                     info.alignmentOverhead);
+  const auto cmdInfo = webgl::SerializationInfo(methodInfo.id, args...);
+  const auto maybeDest = child->AllocPendingCmdBytes(cmdInfo.requiredByteCount,
+                                                     cmdInfo.alignmentOverhead);
   if (!maybeDest) {
     noGc.reset();  // Reset early, as GC data will not be used, but JsWarning
                    // can GC.
@@ -463,7 +499,7 @@ void ClientWebGLContext::Run_WithDestArgTypes(
     return;
   }
   const auto& destBytes = *maybeDest;
-  webgl::Serialize(destBytes, id, args...);
+  webgl::Serialize(destBytes, methodInfo.id, args...);
 }
 
 // -
@@ -1418,7 +1454,7 @@ ClientWebGLContext::GetInputStream(
   }
 
   return gfxUtils::GetInputStream(dataSurface, premultAlpha, mimeType,
-                                  encoderOptions, out_stream);
+                                  encoderOptions, randomizationKey, out_stream);
 }
 
 // ------------------------- Client WebGL Objects -------------------------
@@ -1466,6 +1502,7 @@ ClientWebGLContext::CreateOpaqueFramebuffer(
 
   const auto& inProcess = notLost->inProcess;
   if (inProcess) {
+    LockInProcess locked;
     if (!inProcess->CreateOpaqueFramebuffer(ret->mId, options)) {
       ret = nullptr;
     }
@@ -3637,7 +3674,7 @@ void ClientWebGLContext::GetBufferSubData(GLenum target, GLintptr srcByteOffset,
   if (!ValidateNonNegative("srcByteOffset", srcByteOffset)) return;
 
   size_t elemSize = SizeOfViewElem(dstData);
-  dstData.ProcessFixedData([&](const Span<uint8_t>& aData) {
+  dstData.ProcessFixedData<true>([&](const Span<uint8_t>& aData) {
     const auto& destView =
         ValidateArrayBufferView(aData, elemSize, dstElemOffset,
                                 dstElemCountOverride, LOCAL_GL_INVALID_VALUE);
@@ -3720,7 +3757,7 @@ void ClientWebGLContext::BufferData(
   if (!ValidateNonNull("src", maybeSrc)) return;
   const auto& src = maybeSrc.Value();
 
-  src.ProcessFixedData([&](const Span<const uint8_t>& aData) {
+  src.ProcessFixedData<true>([&](const Span<const uint8_t>& aData) {
     Run<RPROC(BufferData)>(target, aData, usage);
   });
 }
@@ -3731,7 +3768,7 @@ void ClientWebGLContext::BufferData(GLenum target,
                                     GLuint srcElemCountOverride) {
   const FuncScope funcScope(*this, "bufferData");
   size_t elemSize = SizeOfViewElem(src);
-  src.ProcessFixedData([&](const Span<uint8_t>& aData) {
+  src.ProcessFixedData<true>([&](const Span<uint8_t>& aData) {
     const auto& range =
         ValidateArrayBufferView(aData, elemSize, srcElemOffset,
                                 srcElemCountOverride, LOCAL_GL_INVALID_VALUE);
@@ -3748,7 +3785,7 @@ void ClientWebGLContext::BufferSubData(GLenum target,
                                        WebGLsizeiptr dstByteOffset,
                                        const dom::ArrayBuffer& src) {
   const FuncScope funcScope(*this, "bufferSubData");
-  src.ProcessFixedData([&](const Span<const uint8_t>& aData) {
+  src.ProcessFixedData<true>([&](const Span<const uint8_t>& aData) {
     Run<RPROC(BufferSubData)>(target, dstByteOffset, aData,
                               /* unsynchronized */ false);
   });
@@ -3761,7 +3798,7 @@ void ClientWebGLContext::BufferSubData(GLenum target,
                                        GLuint srcElemCountOverride) {
   const FuncScope funcScope(*this, "bufferSubData");
   size_t elemSize = SizeOfViewElem(src);
-  src.ProcessFixedData([&](const Span<uint8_t>& aData) {
+  src.ProcessFixedData<true>([&](const Span<uint8_t>& aData) {
     const auto& range =
         ValidateArrayBufferView(aData, elemSize, srcElemOffset,
                                 srcElemCountOverride, LOCAL_GL_INVALID_VALUE);
@@ -4501,7 +4538,7 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
           break;
       }
 
-      return view.ProcessData(
+      return view.ProcessData<true>(
           [&](const Span<uint8_t>& aData,
               JS::AutoCheckCannotGC&& nogc) -> Maybe<webgl::TexUnpackBlobDesc> {
             const auto range = GetRangeFromData(aData, SizeOfViewElem(view),
@@ -4885,8 +4922,8 @@ void ClientWebGLContext::CompressedTexImage(bool sub, uint8_t funcDims,
   }
 
   if (src.mView) {
-    src.mView->ProcessData([&](const Span<uint8_t>& aData,
-                               JS::AutoCheckCannotGC&& aNoGC) {
+    src.mView->ProcessData<true>([&](const Span<uint8_t>& aData,
+                                     JS::AutoCheckCannotGC&& aNoGC) {
       const auto range =
           GetRangeFromData(aData, SizeOfViewElem(*src.mView),
                            src.mViewElemOffset, src.mViewElemLengthOverride);
@@ -5399,7 +5436,7 @@ void ClientWebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
   }
 
   size_t elemSize = SizeOfViewElem(dstData);
-  dstData.ProcessFixedData([&](const Span<uint8_t>& aData) {
+  dstData.ProcessFixedData<true>([&](const Span<uint8_t>& aData) {
     const auto& range = ValidateArrayBufferView(aData, elemSize, dstElemOffset,
                                                 0, LOCAL_GL_INVALID_VALUE);
     if (!range) {
@@ -7277,11 +7314,11 @@ void ImplCycleCollectionUnlink(RefPtr<webgl::NotLostData>& field) {
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(WebGLBufferJS)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebGLFramebufferJS, mAttachments)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebGLProgramJS, mNextLink_Shaders)
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(WebGLQueryJS)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(WebGLQueryJS)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(WebGLRenderbufferJS)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(WebGLSamplerJS)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(WebGLShaderJS)
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(WebGLSyncJS)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(WebGLSyncJS)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(WebGLTextureJS)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebGLTransformFeedbackJS, mAttribBuffers,
                                       mActiveProgram)

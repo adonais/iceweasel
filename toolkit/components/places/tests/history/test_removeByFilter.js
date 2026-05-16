@@ -441,7 +441,7 @@ add_task(async function test_chunking() {
 
   info("Insert many visited pages");
   let pages = [];
-  for (let i = 1; i <= 1500; i++) {
+  for (let i = 1; i <= 550; i++) {
     let visits = [
       {
         date: new Date(Date.now() - (86400 + i) * 1000),

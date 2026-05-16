@@ -1,0 +1,20 @@
+{
+  "label": "museumofpragueai.com",
+  "bugs": {
+    "2018892": {
+      "issue": "unsupported-warning",
+      "matches": ["*://demo.museumofpragueai.com/chatbot/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "pref_check": {
+        "media.webspeech.recognition.enable": false
+      },
+      "content_scripts": {
+        "js": ["bug2018892-museumofpragueai.com-shim-SpeechRecognition.js"]
+      }
+    }
+  ]
+}

@@ -238,6 +238,10 @@ class MediaSendChannelInterface {
   // Called whenever the list of sending SSRCs changes.
   virtual void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) = 0;
+  // Called whenever the parameters change autonomously on the worker thread.
+  // This is used for cache invalidation on the signaling thread.
+  virtual void SetParametersChangedCallback(
+      absl::AnyInvocable<void()> callback) {}
 };
 
 class MediaReceiveChannelInterface {
@@ -262,11 +266,9 @@ class MediaReceiveChannelInterface {
   // Sets the abstract interface class for sending RTP/RTCP data.
   virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
   // Called on the network when an RTP packet is received.
-  virtual void OnPacketReceived(const RtpPacketReceived& packet) = 0;
+  virtual void OnPacketReceived(RtpPacketReceived packet) = 0;
   // Gets the current unsignaled receive stream's SSRC, if there is one.
   virtual std::optional<uint32_t> GetUnsignaledSsrc() const = 0;
-  // Sets the local SSRC for listening to incoming RTCP reports.
-  virtual void ChooseReceiverReportSsrc(const std::set<uint32_t>& choices) = 0;
   // This is currently a workaround because of the demuxer state being managed
   // across two separate threads. Once the state is consistently managed on
   // the same thread (network), this workaround can be removed.
@@ -341,7 +343,7 @@ struct MediaSenderInfo {
     return retval;
   }
   // Returns true if the media has been connected.
-  bool connected() const { return local_stats.size() > 0; }
+  bool connected() const { return !local_stats.empty(); }
   // Utility accessor for clients that make the assumption only one ssrc
   // exists per media.
   // This will eventually go away.
@@ -407,7 +409,7 @@ struct MediaReceiverInfo {
     return retval;
   }
   // Returns true if the media has been connected.
-  bool connected() const { return local_stats.size() > 0; }
+  bool connected() const { return !local_stats.empty(); }
   // Utility accessor for clients that make the assumption only one ssrc
   // exists per media.
   // This will eventually go away.
@@ -595,7 +597,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   std::optional<uint64_t> qp_sum;
   VideoContentType content_type = VideoContentType::UNSPECIFIED;
   // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-psnrsum
-  webrtc::EncodedImage::Psnr psnr_sum;
+  EncodedImage::Psnr psnr_sum;
   uint32_t psnr_measurements = 0;
   uint32_t frames_sent = 0;
   // https://w3c.github.io/webrtc-stats/#dom-rtcvideosenderstats-hugeframessent
@@ -906,6 +908,7 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
   virtual bool GetStats(VoiceMediaSendInfo* stats) = 0;
   virtual bool SenderNackEnabled() const = 0;
   virtual bool SenderNonSenderRttEnabled() const = 0;
+  virtual bool SetOptions(const AudioOptions& options) = 0;
 };
 
 class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
@@ -932,6 +935,7 @@ class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   virtual void SetRtcpMode(enum RtcpMode mode) = 0;
   virtual void SetReceiveNackEnabled(bool enabled) = 0;
   virtual void SetReceiveNonSenderRttEnabled(bool enabled) = 0;
+  virtual bool SetOptions(const AudioOptions& options) = 0;
 };
 
 struct VideoSenderParameters : SenderParameters {
@@ -961,6 +965,7 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   virtual bool SetVideoSend(uint32_t ssrc,
                             const VideoOptions* options,
                             VideoSourceInterface<VideoFrame>* source) = 0;
+  virtual bool SetOptions(const VideoOptions& options) = 0;
   // Cause generation of a keyframe for `ssrc` on a sending channel.
   virtual void GenerateSendKeyFrame(uint32_t ssrc,
                                     const std::vector<std::string>& rids) = 0;

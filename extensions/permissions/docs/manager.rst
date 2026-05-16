@@ -15,11 +15,16 @@ a permission consists of the following:
 For storing arbitrary preferences per origin instead of just permission values,
 the `content pref service
 <https://searchfox.org/mozilla-central/source/dom/interfaces/base/nsIContentPrefService2.idl>`__
-offers a good alternative to the permission manager. There also exists the `site
-permission manager
-<https://searchfox.org/mozilla-central/source/browser/modules/SitePermissions.sys.mjs>`__,
-which builds on top of the regular permission manager, and makes temporary
-permissions that are not stored to disk, and user interfaces easier.
+offers a good alternative to the permission manager.
+
+The permission manager also supports :doc:`browser-scoped (per-tab) temporary
+permissions <browser-scoped>` that are not stored to disk and are automatically
+cleared when their tab is closed.
+
+The `site permission manager
+<https://searchfox.org/mozilla-central/source/browser/modules/SitePermissions.sys.mjs>`__
+builds on top of both regular and browser-scoped permissions, and makes user
+interfaces easier.
 
 Interfacing with the Permission Manager
 ---------------------------------------
@@ -88,6 +93,8 @@ milliseconds.
     Date.now() + 1000 * 60 * 60 * 24
   );
 
+For per-tab temporary permissions, see :doc:`browser-scoped permissions
+<browser-scoped>`.
 
 ``removeFromPrincipal``
 ~~~~~~~~~~~~~~~~~~~~~~~

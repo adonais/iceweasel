@@ -35,7 +35,7 @@ private val EmptyPageWidth = 190.dp
  * UI for displaying the Private Tabs Page in the Tab Manager.
  *
  * @param privateTabs The list of private tabs to display.
- * @param selectedTabId The ID of the currently selected tab.
+ * @param selectedItemIndex The index of the currently selected tab. This will be scrolled to on first-render.
  * @param selectionMode [TabsTrayState.Mode] indicating whether the Tab Manager is in single selection.
  * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
  * @param privateTabsLocked Whether the private browsing mode is currently locked.
@@ -49,7 +49,7 @@ private val EmptyPageWidth = 190.dp
 @Composable
 internal fun PrivateTabsPage(
     privateTabs: List<TabsTrayItem>,
-    selectedTabId: String?,
+    selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     displayTabsInGrid: Boolean,
     privateTabsLocked: Boolean,
@@ -72,7 +72,7 @@ internal fun PrivateTabsPage(
             TabLayout(
                 tabs = privateTabs,
                 displayTabsInGrid = displayTabsInGrid,
-                selectedTabId = selectedTabId,
+                selectedItemIndex = selectedItemIndex,
                 selectionMode = selectionMode,
                 modifier = Modifier.testTag(TabsTrayTestTag.PRIVATE_TABS_LIST),
                 onTabClose = onTabClose,
@@ -82,7 +82,9 @@ internal fun PrivateTabsPage(
                     // Because we don't currently support selection mode for private tabs,
                     // there's no need to exit selection mode when dragging tabs.
                 },
+                onDeleteTabGroup = {},
                 onMove = onMove,
+                editTabGroupClick = {},
             )
         }
     }
@@ -105,7 +107,7 @@ private fun EmptyPrivateTabsPage(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
-                painter = painterResource(id = iconsR.drawable.mozac_ic_private_mode_72),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_private_mode_fill_72),
                 contentDescription = null,
             )
 

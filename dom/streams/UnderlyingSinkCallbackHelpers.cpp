@@ -151,15 +151,16 @@ already_AddRefed<Promise> UnderlyingSinkAlgorithmsWrapper::AbortCallback(
       aRv);
 }
 
-NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(WritableStreamToOutput,
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(WritableStreamToOutputAlgorithms,
                                              UnderlyingSinkAlgorithmsBase,
                                              nsIOutputStreamCallback)
-NS_IMPL_CYCLE_COLLECTION_INHERITED(WritableStreamToOutput,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(WritableStreamToOutputAlgorithms,
                                    UnderlyingSinkAlgorithmsBase, mParent,
                                    mOutput, mPromise)
 
 NS_IMETHODIMP
-WritableStreamToOutput::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
+WritableStreamToOutputAlgorithms::OnOutputStreamReady(
+    nsIAsyncOutputStream* aStream) {
   if (!mData) {
     return NS_OK;
   }
@@ -190,7 +191,7 @@ WritableStreamToOutput::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
   nsCOMPtr<nsIEventTarget> target = mozilla::GetCurrentSerialEventTarget();
   rv = mOutput->AsyncWait(this, 0, 0, target);
   if (NS_FAILED(rv)) {
-    mPromise->MaybeRejectWithUnknownError("error waiting to write data");
+    mPromise->MaybeRejectWithUnknownError("error waiting to write data"_ns);
     ClearData();
     // XXX should we add mErrored and fail future calls immediately?
     // New calls to Write() will fail, note
@@ -201,7 +202,7 @@ WritableStreamToOutput::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
   return NS_OK;
 }
 
-already_AddRefed<Promise> WritableStreamToOutput::WriteCallbackImpl(
+already_AddRefed<Promise> WritableStreamToOutputAlgorithms::WriteCallbackImpl(
     JSContext* aCx, JS::Handle<JS::Value> aChunk,
     WritableStreamDefaultController& aController, ErrorResult& aRv) {
   BufferSource data;
@@ -229,7 +230,7 @@ already_AddRefed<Promise> WritableStreamToOutput::WriteCallbackImpl(
     nsresult rv = mOutput->Write(mozilla::AsChars(dataSpan).Elements(),
                                  dataSpan.Length(), &written);
     if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
-      promise->MaybeRejectWithAbortError("error writing data");
+      promise->MaybeRejectWithAbortError("error writing data"_ns);
       return;
     }
     if (NS_SUCCEEDED(rv)) {
@@ -258,12 +259,12 @@ already_AddRefed<Promise> WritableStreamToOutput::WriteCallbackImpl(
   nsresult rv = mOutput->AsyncWait(this, 0, 0, target);
   if (NS_FAILED(rv)) {
     ClearData();
-    promise->MaybeRejectWithUnknownError("error waiting to write data");
+    promise->MaybeRejectWithUnknownError("error waiting to write data"_ns);
   }
   return promise.forget();
 }
 
-already_AddRefed<Promise> WritableStreamToOutput::AbortCallbackImpl(
+already_AddRefed<Promise> WritableStreamToOutputAlgorithms::AbortCallbackImpl(
     JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
     ErrorResult& aRv) {
   // https://streams.spec.whatwg.org/#writablestream-set-up
@@ -291,4 +292,4 @@ already_AddRefed<Promise> WritableStreamToOutput::AbortCallbackImpl(
   return nullptr;
 }
 
-void WritableStreamToOutput::ReleaseObjects() { mOutput->Close(); }
+void WritableStreamToOutputAlgorithms::ReleaseObjects() { mOutput->Close(); }

@@ -17,6 +17,7 @@
 #include "mozilla/ShortcutKeys.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventBinding.h"
@@ -414,10 +415,22 @@ GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
   return result;
 }
 
+// Checks if aReservedValue is ReservedKey_True and target/doc has keyboard lock
+// enabled
+static bool KeyboardLockEnabledAndIsReservedKey(ReservedKey aReservedValue,
+                                                dom::EventTarget* aTarget) {
+  if (aReservedValue == ReservedKey_True) {
+    nsINode* node = nsINode::FromEventTarget(aTarget);
+    RefPtr<dom::Document> doc = node->AsDocument();
+    return doc && doc->HasFullscreenKeyboardLockEnabled();
+  }
+  return false;
+}
+
 bool GlobalKeyListener::IsReservedKey(WidgetKeyboardEvent* aKeyEvent,
                                       KeyEventHandler* aHandler) {
   // If the event is a reply event, it means that we've already sent the event
-  // to the remote process because of not reserved.
+  // to the remote process.
   if (aKeyEvent->IsHandledInRemoteProcess()) {
     return false;
   }
@@ -427,6 +440,18 @@ bool GlobalKeyListener::IsReservedKey(WidgetKeyboardEvent* aKeyEvent,
   // permissions.
   if (reserved == ReservedKey_False) {
     return false;
+  }
+
+  // When fullscreen keyboard lock is enabled, reserved shortcuts must be
+  // forwarded to content so that web pages can handle them; except the
+  // fullscreen-exit shortcut (View:FullScreen), which must always remain
+  // reserved so users can always exit fullscreen.
+  if (KeyboardLockEnabledAndIsReservedKey(reserved, mTarget)) {
+    nsCOMPtr<dom::Element> handlerElement = aHandler->GetHandlerElement();
+    nsAutoString command;
+    return handlerElement &&
+           handlerElement->GetAttr(nsGkAtoms::command, command) &&
+           command.EqualsLiteral("View:FullScreen");
   }
 
   if (reserved != ReservedKey_True &&

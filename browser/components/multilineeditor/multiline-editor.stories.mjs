@@ -5,7 +5,7 @@
 import { html, LitElement } from "chrome://global/content/vendor/lit.all.mjs";
 import "chrome://browser/content/multilineeditor/multiline-editor.mjs";
 import "chrome://global/content/elements/moz-badge.mjs";
-import "chrome://global/content/elements/panel-list.js";
+import "chrome://global/content/elements/panel-list.mjs";
 import { createMentionsPlugin } from "chrome://browser/content/multilineeditor/plugins/MentionsPlugin.mjs";
 
 export default {

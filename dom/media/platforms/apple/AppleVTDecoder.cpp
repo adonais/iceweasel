@@ -520,7 +520,13 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
             CVPixelBufferGetIOSurface(aImage));
     MOZ_ASSERT(surface, "Decoder didn't return an IOSurface backed buffer");
 
-    RefPtr<MacIOSurface> macSurface = new MacIOSurface(std::move(surface));
+    // Assume the image has alpha. Ideally, we would derive this from the
+    // pixel format, using some lightweight method. For now, it appears to
+    // have no performance impact to mark the surface as having alpha.
+    bool hasAlpha = true;
+
+    RefPtr<MacIOSurface> macSurface = new MacIOSurface(
+        std::move(surface), hasAlpha, mColorSpace, mTransferFunction);
     macSurface->SetYUVColorSpace(mColorSpace);
     macSurface->mColorPrimaries = mColorPrimaries;
 

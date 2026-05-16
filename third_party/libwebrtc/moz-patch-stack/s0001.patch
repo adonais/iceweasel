@@ -399,7 +399,7 @@ index 6ba3292fca..5d3a731864 100644
    RTPHeader();
    RTPHeader(const RTPHeader& other);
 diff --git a/api/rtp_parameters.cc b/api/rtp_parameters.cc
-index 7ca5481bca..a386e9ba81 100644
+index 3a36bfe00a..0e97d1e802 100644
 --- a/api/rtp_parameters.cc
 +++ b/api/rtp_parameters.cc
 @@ -224,7 +224,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
@@ -413,7 +413,7 @@ index 7ca5481bca..a386e9ba81 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 9146441348..aa25942030 100644
+index dd7cbac1ac..71cf09be0b 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -435,7 +435,7 @@ index 9146441348..aa25942030 100644
    deps = [
      ":audio_sender_interface",
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index e7c6c85db7..b1a99c5519 100644
+index ce19d8525e..322f167934 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -236,6 +236,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
@@ -477,25 +477,25 @@ index 50d3e9206e..0e32474543 100644
      // Title of the window or screen in UTF-8 encoding, maybe empty. This field
      // should not be used to identify a source.
 diff --git a/modules/desktop_capture/fake_desktop_capturer.cc b/modules/desktop_capture/fake_desktop_capturer.cc
-index a80d9aa1ff..0e77405fa4 100644
+index ec118ea77e..4c00265d03 100644
 --- a/modules/desktop_capture/fake_desktop_capturer.cc
 +++ b/modules/desktop_capture/fake_desktop_capturer.cc
-@@ -76,8 +76,8 @@ void FakeDesktopCapturer::SetSharedMemoryFactory(
- }
+@@ -77,8 +77,8 @@ void FakeDesktopCapturer::SetSharedMemoryFactory(
  
  bool FakeDesktopCapturer::GetSourceList(DesktopCapturer::SourceList* sources) {
--  sources->push_back({kWindowId, "A-Fake-DesktopCapturer-Window"});
--  sources->push_back({kScreenId});
-+  sources->push_back({kWindowId, 1, "A-Fake-DesktopCapturer-Window"});
-+  sources->push_back({kScreenId, 1});
+   sources->push_back(
+-      {.id = kWindowId, .title = "A-Fake-DesktopCapturer-Window"});
+-  sources->push_back({.id = kScreenId});
++      {.id = kWindowId, .pid = 1, .title = "A-Fake-DesktopCapturer-Window"});
++  sources->push_back({.id = kScreenId, .pid = 1});
    return true;
  }
  
 diff --git a/modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.cc b/modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.cc
-index 732aa4d29d..50a3147b31 100644
+index 72f2716e03..dc96455f99 100644
 --- a/modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.cc
 +++ b/modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.cc
-@@ -39,6 +39,7 @@ namespace {
+@@ -41,6 +41,7 @@ namespace {
  // searches up the list of the windows to find the root child that corresponds
  // to `window`.
  Window GetTopLevelWindow(Display* display, Window window) {
@@ -521,23 +521,23 @@ index 732aa4d29d..50a3147b31 100644
      x_display_->AddEventHandler(xfixes_event_base_ + XFixesCursorNotify, this);
  
 diff --git a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
-index fc66a8e8b6..77529fbc1a 100644
+index c12bc76116..847ae1e784 100644
 --- a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
-@@ -307,7 +307,7 @@ bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
-     char* monitor_title = XGetAtomName(display(), m.name);
+@@ -311,7 +311,7 @@ bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
  
      // Note name is an X11 Atom used to id the monitor.
--    sources->push_back({static_cast<SourceId>(m.name), monitor_title});
-+    sources->push_back({static_cast<SourceId>(m.name), 0, monitor_title});
+     sources->push_back(
+-        {.id = static_cast<SourceId>(m.name), .title = monitor_title});
++        {.id = static_cast<SourceId>(m.name), .pid = 0, .title = monitor_title});
      XFree(monitor_title);
    }
  
 diff --git a/modules/desktop_capture/linux/x11/window_capturer_x11.cc b/modules/desktop_capture/linux/x11/window_capturer_x11.cc
-index fca67dfaec..b4a1de562c 100644
+index fcc4113b42..58eb0616b2 100644
 --- a/modules/desktop_capture/linux/x11/window_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/window_capturer_x11.cc
-@@ -62,6 +62,7 @@ bool WindowCapturerX11::GetSourceList(SourceList* sources) {
+@@ -66,6 +66,7 @@ bool WindowCapturerX11::GetSourceList(SourceList* sources) {
    return GetWindowList(&atom_cache_, [this, sources](::Window window) {
      Source w;
      w.id = window;
@@ -545,7 +545,7 @@ index fca67dfaec..b4a1de562c 100644
      if (this->GetWindowTitle(window, &w.title)) {
        sources->push_back(w);
      }
-@@ -242,6 +243,14 @@ bool WindowCapturerX11::GetWindowTitle(::Window window, std::string* title) {
+@@ -246,6 +247,14 @@ bool WindowCapturerX11::GetWindowTitle(::Window window, std::string* title) {
    return result;
  }
  
@@ -596,10 +596,10 @@ index 28509654c4..1e2ae94c85 100644
        device_names->push_back(ToUtf8(device.DeviceName));
      }
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index 589b387d11..2b936a151e 100644
+index c26d3659a7..3a5c4d94e3 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender.cc
-@@ -181,7 +181,7 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
+@@ -186,7 +186,7 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
      next_time_to_send_rtcp_ = std::nullopt;
    } else if (method_ == RtcpMode::kOff) {
      // When switching on, reschedule the next packet
@@ -609,10 +609,10 @@ index 589b387d11..2b936a151e 100644
    method_ = new_method;
  }
 diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.cc b/modules/rtp_rtcp/source/rtp_header_extensions.cc
-index 83afe0fe6b..c0e46cc918 100644
+index 15884c814a..2218492e94 100644
 --- a/modules/rtp_rtcp/source/rtp_header_extensions.cc
 +++ b/modules/rtp_rtcp/source/rtp_header_extensions.cc
-@@ -422,6 +422,45 @@ bool PlayoutDelayLimits::Write(ArrayView<uint8_t> data,
+@@ -422,6 +422,45 @@ bool PlayoutDelayLimits::Write(std::span<uint8_t> data,
    return true;
  }
  
@@ -659,7 +659,7 @@ index 83afe0fe6b..c0e46cc918 100644
  //
  // E.g. default video or screenshare.
 diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.h b/modules/rtp_rtcp/source/rtp_header_extensions.h
-index 8fb26e5522..3416ce8cf3 100644
+index 03f846a905..b31748b0dc 100644
 --- a/modules/rtp_rtcp/source/rtp_header_extensions.h
 +++ b/modules/rtp_rtcp/source/rtp_header_extensions.h
 @@ -309,6 +309,22 @@ class ColorSpaceExtension {
@@ -686,7 +686,7 @@ index 8fb26e5522..3416ce8cf3 100644
  // Subclasses must defined kId and kUri static constexpr members.
  class BaseRtpStringExtension {
 diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
-index 66147a2ef0..60e582bf29 100644
+index 97f6b54148..e8c2553bb3 100644
 --- a/modules/rtp_rtcp/source/rtp_packet.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet.cc
 @@ -212,6 +212,10 @@ void RtpPacket::ZeroMutableExtensions() {
@@ -701,10 +701,10 @@ index 66147a2ef0..60e582bf29 100644
    }
  }
 diff --git a/modules/rtp_rtcp/source/rtp_packet_unittest.cc b/modules/rtp_rtcp/source/rtp_packet_unittest.cc
-index 06804b6a11..7f58ad6376 100644
+index 37b5f62d66..3445122ee7 100644
 --- a/modules/rtp_rtcp/source/rtp_packet_unittest.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet_unittest.cc
-@@ -140,6 +140,18 @@ constexpr uint8_t kPacketWithMid[] = {
+@@ -141,6 +141,18 @@ constexpr uint8_t kPacketWithMid[] = {
      0xbe, 0xde, 0x00, 0x01,
      0xb2, 'm', 'i', 'd'};
  
@@ -723,7 +723,7 @@ index 06804b6a11..7f58ad6376 100644
  constexpr uint32_t kCsrcs[] = {0x34567890, 0x32435465};
  constexpr uint8_t kPayload[] = {'p', 'a', 'y', 'l', 'o', 'a', 'd'};
  constexpr uint8_t kPacketPaddingSize = 8;
-@@ -419,6 +431,24 @@ TEST(RtpPacketTest, FailsToSetUnregisteredExtension) {
+@@ -420,6 +432,24 @@ TEST(RtpPacketTest, FailsToSetUnregisteredExtension) {
    EXPECT_EQ(packet.GetExtension<TransportSequenceNumber>(), std::nullopt);
  }
  
@@ -769,7 +769,7 @@ index 0b87d6d065..d69ae9420b 100644
  }  // namespace webrtc
  
 diff --git a/modules/rtp_rtcp/source/rtp_sender.cc b/modules/rtp_rtcp/source/rtp_sender.cc
-index ef9d0250f6..7e2e5eb3e2 100644
+index 0e78f982a9..f70abcde93 100644
 --- a/modules/rtp_rtcp/source/rtp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtp_sender.cc
 @@ -139,6 +139,10 @@ bool IsNonVolatile(RTPExtensionType type) {
@@ -784,7 +784,7 @@ index ef9d0250f6..7e2e5eb3e2 100644
    RTC_CHECK_NOTREACHED();
  }
 diff --git a/modules/video_capture/device_info_impl.cc b/modules/video_capture/device_info_impl.cc
-index f96fda0903..2b6a0568e1 100644
+index 5df4cb6a45..f159daf9d8 100644
 --- a/modules/video_capture/device_info_impl.cc
 +++ b/modules/video_capture/device_info_impl.cc
 @@ -71,7 +71,7 @@ int32_t DeviceInfoImpl::GetCapability(const char* deviceUniqueIdUTF8,
@@ -1261,12 +1261,12 @@ index e76af2e0ad..088747c1c8 100644
  
    return 0;
 diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
-index 96a3243973..573532bdad 100644
+index 3b0a981d98..80d961c84c 100644
 --- a/modules/video_capture/video_capture_impl.h
 +++ b/modules/video_capture/video_capture_impl.h
 @@ -65,8 +65,10 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
        VideoSinkInterface<VideoFrame>* dataCallback) override;
-   virtual void RegisterCaptureDataCallback(
+   void RegisterCaptureDataCallback(
        RawVideoSinkInterface* dataCallback) override;
 -  void DeRegisterCaptureDataCallback() override;
 +  void DeRegisterCaptureDataCallback(
@@ -1286,7 +1286,7 @@ index 96a3243973..573532bdad 100644
  
    int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-index 54681fdf80..d0c7f1fc9f 100644
+index 105a6e8215..4e196089fb 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 @@ -285,6 +285,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
@@ -1320,7 +1320,7 @@ index 54681fdf80..d0c7f1fc9f 100644
    // Set input image for use in the callback.
    // This was necessary since you need some information from input_image.
    // You can save only the necessary information (such as timestamp) instead of
-@@ -1299,6 +1309,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
+@@ -1306,6 +1316,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
    return WEBRTC_VIDEO_CODEC_OK;
  }
  
@@ -1392,10 +1392,10 @@ index 133c229ba3..5017d67c1a 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 341fdb21ca..7ae9389189 100644
+index b589a35ec1..48bf6b7046 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -460,6 +460,12 @@ rtc_library("logging") {
+@@ -489,6 +489,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
@@ -1409,7 +1409,7 @@ index 341fdb21ca..7ae9389189 100644
      # Dependency on chromium's logging (in //base).
      deps += [ "//base" ]
 diff --git a/rtc_base/logging.cc b/rtc_base/logging.cc
-index 53faf0eee7..c3a1f94973 100644
+index 90e7a515f9..6eddfac330 100644
 --- a/rtc_base/logging.cc
 +++ b/rtc_base/logging.cc
 @@ -24,6 +24,7 @@
@@ -1482,10 +1482,10 @@ index 0023684501..a04fc4b2ed 100644
  
  //////////////////////////////////////////////////////////////////////
 diff --git a/test/fuzzers/rtp_packet_fuzzer.cc b/test/fuzzers/rtp_packet_fuzzer.cc
-index 2b9c95a5b7..0048dab074 100644
+index aa2f819934..a49bf15938 100644
 --- a/test/fuzzers/rtp_packet_fuzzer.cc
 +++ b/test/fuzzers/rtp_packet_fuzzer.cc
-@@ -183,6 +183,10 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
+@@ -182,6 +182,10 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
          CorruptionDetectionMessage message;
          packet.GetExtension<CorruptionDetectionExtension>(&message);
          break;
@@ -1510,10 +1510,10 @@ index b7933130bd..428fc9615d 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 5c69818f10..fd7e9775b1 100644
+index 6eb16cf188..82d3bafaf2 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
-@@ -110,7 +110,7 @@ declare_args() {
+@@ -106,7 +106,7 @@ declare_args() {
  
    # Selects whether debug dumps for the audio processing module
    # should be generated.

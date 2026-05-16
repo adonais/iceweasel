@@ -46,6 +46,7 @@ void SVGAnimatedClass::SetAnimValue(const nsAString& aValue,
   if (!mAnimVal.IsVoid() && mAnimVal.Equals(aValue)) {
     return;
   }
+  aSVGElement->WillAnimateClass();
   mAnimVal = aValue;
   aSVGElement->SetMayHaveClass();
   aSVGElement->DidAnimateClass();
@@ -75,6 +76,7 @@ SMILValue SVGAnimatedClass::SMILString::GetBaseValue() const {
 
 void SVGAnimatedClass::SMILString::ClearAnimValue() {
   if (!mVal->mAnimVal.IsVoid()) {
+    mSVGElement->WillAnimateClass();
     mVal->mAnimVal = VoidString();
     mSVGElement->DidAnimateClass();
   }

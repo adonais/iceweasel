@@ -95,7 +95,6 @@
   --button-min-height: 24px;
 
   @at-root panel#{&} {
-    --panel-color: var(--fc-color);
     --panel-shadow: none;
     // Extra space around the panel for the shadow to be drawn in. The panel
     // content can't overflow the XUL popup frame, so the frame must be extended.
@@ -363,6 +362,108 @@
             .legal-paragraph {
               .text-link {
                 color: var(--fc-color);
+              }
+            }
+
+            .addons-picker-container {
+              display: flex;
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 8px;
+              align-self: stretch;
+              width: 100%;
+
+              .addon-container {
+                display: flex;
+                border: 1px solid var(--fc-border);
+                border-radius: 4px;
+                margin: -5px auto;
+                text-align: start;
+                flex-direction: column;
+                width: inherit;
+
+                .rtamo-icon {
+                  img {
+                    margin: 6px;
+
+
+                    &.brand-logo {
+                      height: 24px;
+                      padding: 0 4px;
+                    }
+                  }
+                }
+
+                .addon-title {
+                  font-size: 16px;
+                  font-weight: 600;
+                  margin-inline-start: 32px;
+                  margin-block-start: -32px;
+                  padding: 0 4px;
+                }
+
+                .addon-description {
+                  font-size: 12px;
+                  font-weight: 400;
+                  margin-inline-start: 8px;
+                  padding: 10px 6px;
+                }
+
+                .install-button-wrapper {
+                  display: inline-grid;
+                  padding: 0 12px 10px;
+                }
+
+                button {
+                  align-self: center;
+                  padding: 4px;
+                  color: var(--fc-primary-button-color);
+                  background-color: var(--fc-primary-button-background);
+                  border: 1px solid var(--fc-button-border);
+                  border-radius: 4px;
+                  text-decoration: none;
+                  cursor: default;
+
+                  &:hover:not(:disabled),
+                  &[open] {
+                    background-color: var(--fc-primary-button-background-hover);
+                    color: var(--fc-primary-button-color-hover);
+                    border: 1px solid var(--fc-primary-button-border-hover);
+
+                    &:active {
+                      background-color: var(--fc-primary-button-background-active);
+                      color: var(--fc-primary-button-color-active);
+                      border: 1px solid var(--fc-primary-button-border-active);
+                    }
+                  }
+                }
+              }
+
+              .loader {
+                width: 1em;
+                height: 1em;
+                border: 3px solid var(--fc-primary-button-color);
+                border-bottom-color: transparent;
+                border-radius: 50%;
+                box-sizing: border-box;
+                animation: rotation 1s linear infinite;
+                justify-self: center;
+              }
+
+              @keyframes rotation {
+                0% {
+                  transform: rotate(0deg);
+                }
+
+                100% {
+                  transform: rotate(360deg);
+                }
+              }
+
+              .loaderContainer {
+                display: flex;
+                padding: 1.5px 37.5px;
+                margin: auto;
               }
             }
           }

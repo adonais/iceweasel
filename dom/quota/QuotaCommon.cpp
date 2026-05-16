@@ -285,10 +285,67 @@ static constexpr auto kSourceFileRelativePathMap =
         {{"mozilla/dom/LocalStorageCommon.h"_ns,
           "dom/localstorage/LocalStorageCommon.h"_ns}}};
 
+static nsDependentCSubstring StripRelativeComponents(
+    const nsACString& aSourceFilePath) {
+  // Find the first non-dot, non-path-separator param. Note that this
+  // technically would remove a leading dot from ../.foo.h or so, but we don't
+  // expect such filenames here.
+  size_t index = 0;
+  for (char c : Span(aSourceFilePath)) {
+    if (c == '.' || c == '/' || c == '\\') {
+      index++;
+    } else {
+      break;
+    }
+  }
+  return Substring(aSourceFilePath, index);
+}
+
+static nsDependentCSubstring MapDistIncludePathToSource(
+    const nsACString& aDistIncludePath) {
+  // Exported source files don't have to use the same directory structure as
+  // original source files. Check if we have a mapping for the exported
+  // source file.
+  const auto foundIt = std::find_if(kSourceFileRelativePathMap.cbegin(),
+                                    kSourceFileRelativePathMap.cend(),
+                                    [&aDistIncludePath](const auto& entry) {
+                                      return entry.first == aDistIncludePath;
+                                    });
+
+  if (MOZ_UNLIKELY(foundIt != kSourceFileRelativePathMap.cend())) {
+    return Substring(foundIt->second, 0);
+  }
+
+  static constexpr auto mozillaRelativeBase = "mozilla/"_ns;
+  // If we don't have a mapping for it, just remove the mozilla/ prefix
+  // (if there's any).
+  if (StringBeginsWith(aDistIncludePath, mozillaRelativeBase)) [[likely]] {
+    return Substring(aDistIncludePath, mozillaRelativeBase.Length());
+  }
+
+  // At this point, we don't know how to transform the relative path of the
+  // exported source file back to the relative path of the original source
+  // file. This can happen when QM_TRY is used in an exported nsIFoo.h file.
+  // If you really need to use QM_TRY there, consider adding a new mapping
+  // for the exported source file.
+  return nsDependentCSubstring(aDistIncludePath);
+}
+
 nsDependentCSubstring MakeSourceFileRelativePath(
     const nsACString& aSourceFilePath) {
   static constexpr auto error = "ERROR"_ns;
-  static constexpr auto mozillaRelativeBase = "mozilla/"_ns;
+
+  if (StringBeginsWith(aSourceFilePath, "."_ns)) {
+    nsDependentCSubstring stripped = StripRelativeComponents(aSourceFilePath);
+    if (StringBeginsWith(stripped, "dist/include/"_ns)) {
+      return MapDistIncludePathToSource(
+          Substring(stripped, "dist/include/"_ns.Length()));
+    }
+    if (StringBeginsWith(stripped, "checkouts/gecko/"_ns)) {
+      return Substring(stripped, "checkouts/gecko/"_ns.Length());
+    }
+    return stripped;
+  }
 
   static const auto sourceTreeBase = GetSourceTreeBase();
 
@@ -302,35 +359,8 @@ nsDependentCSubstring MakeSourceFileRelativePath(
 
   if (MOZ_LIKELY(
           StringBeginsWith(aSourceFilePath, objdirDistIncludeTreeBase))) {
-    const auto sourceFileRelativePath =
-        Substring(aSourceFilePath, objdirDistIncludeTreeBase.Length() + 1);
-
-    // Exported source files don't have to use the same directory structure as
-    // original source files. Check if we have a mapping for the exported
-    // source file.
-    const auto foundIt = std::find_if(
-        kSourceFileRelativePathMap.cbegin(), kSourceFileRelativePathMap.cend(),
-        [&sourceFileRelativePath](const auto& entry) {
-          return entry.first == sourceFileRelativePath;
-        });
-
-    if (MOZ_UNLIKELY(foundIt != kSourceFileRelativePathMap.cend())) {
-      return Substring(foundIt->second, 0);
-    }
-
-    // If we don't have a mapping for it, just remove the mozilla/ prefix
-    // (if there's any).
-    if (MOZ_LIKELY(
-            StringBeginsWith(sourceFileRelativePath, mozillaRelativeBase))) {
-      return Substring(sourceFileRelativePath, mozillaRelativeBase.Length());
-    }
-
-    // At this point, we don't know how to transform the relative path of the
-    // exported source file back to the relative path of the original source
-    // file. This can happen when QM_TRY is used in an exported nsIFoo.h file.
-    // If you really need to use QM_TRY there, consider adding a new mapping
-    // for the exported source file.
-    return sourceFileRelativePath;
+    return MapDistIncludePathToSource(
+        Substring(aSourceFilePath, objdirDistIncludeTreeBase.Length() + 1));
   }
 
   nsCString::const_iterator begin, end;
@@ -342,8 +372,7 @@ nsDependentCSubstring MakeSourceFileRelativePath(
     return Substring(begin, aSourceFilePath.EndReading(end));
   }
 
-  return nsDependentCSubstring{static_cast<mozilla::Span<const char>>(
-      static_cast<const nsCString&>(error))};
+  return nsDependentCSubstring{Span(static_cast<const nsCString&>(error))};
 }
 
 }  // namespace detail

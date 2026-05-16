@@ -459,6 +459,10 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
                                   const char16_t* aStorageType,
                                   bool aPrivateBrowsing);
 
+  // Called by DocGroup when managing MediaSource URLs.
+  void NoteMediaSourceURL(const nsACString& aURL);
+  void UnnoteMediaSourceURL(const nsACString& aURL);
+
   static void Init();
   static void ShutDown();
   static bool IsCallerChrome();
@@ -742,8 +746,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
             mozilla::ErrorResult& aError);
   void Btoa(const nsAString& aBinaryData, nsAString& aAsciiBase64String,
             mozilla::ErrorResult& aError);
-
-  void MaybeNotifyStorageKeyUsed();
 
   mozilla::dom::Storage* GetSessionStorage(mozilla::ErrorResult& aError);
   mozilla::dom::Storage* GetLocalStorage(mozilla::ErrorResult& aError);
@@ -1433,11 +1435,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   mozilla::Maybe<mozilla::StorageAccess> mStorageAllowedCache;
   uint32_t mStorageAllowedReasonCache;
 
-  // When window associated storage is accessed we need to notify the parent
-  // process. This flag is used to ensure we only do it once per window
-  // lifetime.
-  bool hasNotifiedStorageKeyUsed{false};
-
   RefPtr<mozilla::dom::DebuggerNotificationManager>
       mDebuggerNotificationManager;
 
@@ -1521,6 +1518,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   // Cache the DataTransfer created for a paste event, this will be reset after
   // the event is dispatched.
   RefPtr<mozilla::dom::DataTransfer> mCurrentPasteDataTransfer;
+
+  nsTArray<nsCString> mMediaSourceURLs;
 
   // These fields are used by the inner and outer windows to prevent
   // programatically moving the window while the mouse is down.

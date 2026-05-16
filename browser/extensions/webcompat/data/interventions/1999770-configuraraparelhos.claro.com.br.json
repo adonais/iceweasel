@@ -1,0 +1,17 @@
+{
+  "label": "configuraraparelhos.claro.com.br",
+  "bugs": {
+    "1999770": {
+      "issue": "broken-layout",
+      "matches": ["*://configuraraparelhos.claro.com.br/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "css": ["1999770-configuraraparelhos.claro.com.br-fix-missing-text.css"]
+      }
+    }
+  ]
+}

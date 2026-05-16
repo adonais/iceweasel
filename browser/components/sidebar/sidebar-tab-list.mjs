@@ -34,6 +34,30 @@ export class SidebarTabList extends FxviewTabListBase {
     },
   };
 
+  #dispatchFocusRowEvent = event => {
+    const [row] = event.composedPath();
+    if (row.localName !== "sidebar-tab-row") {
+      return;
+    }
+    this.dispatchEvent(
+      new CustomEvent("focus-row", {
+        bubbles: true,
+        composed: true,
+        detail: { guid: row.guid },
+      })
+    );
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener("focusin", this.#dispatchFocusRowEvent);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener("focusin", this.#dispatchFocusRowEvent);
+  }
+
   /**
    * Only handle vertical navigation in sidebar.
    *
@@ -41,47 +65,52 @@ export class SidebarTabList extends FxviewTabListBase {
    */
   handleFocusElementInRow(e) {
     // Handle vertical navigation.
+    let stayedInList = false;
     if (
       (e.code == "ArrowUp" && this.activeIndex > 0) ||
       (e.code == "ArrowDown" && this.activeIndex < this.rowEls.length - 1)
     ) {
       super.handleFocusElementInRow(e);
+      stayedInList = true;
     } else if (
       (e.code == "ArrowUp" && this.activeIndex == 0) ||
       e.code === "ArrowLeft"
     ) {
-      this.#focusParentHeader(e.target);
+      this.#focusParentHeader(e);
     } else if (
       e.code == "ArrowDown" &&
       this.activeIndex == this.rowEls.length - 1
     ) {
-      this.#focusNextHeader(e.target);
+      this.#focusNextHeader(e);
     }
 
     // Update or clear multi-selection (depending on whether shift key is used).
-    if (this.multiSelect && (e.code === "ArrowUp" || e.code === "ArrowDown")) {
-      this.#updateSelection(e);
+    const accelKeyDown = e.getModifierState("Accel");
+    if (
+      this.multiSelect &&
+      (e.code === "ArrowUp" || e.code === "ArrowDown") &&
+      !accelKeyDown
+    ) {
+      this.#updateSelection(e, stayedInList);
     }
 
     // (Ctrl / Cmd) + A should select all rows.
-    if (
-      e.getModifierState("Accel") &&
-      e.key.toUpperCase() === this.selectAllShortcut
-    ) {
+    if (accelKeyDown && e.key.toUpperCase() === this.selectAllShortcut) {
       e.preventDefault();
-      this.#selectAll();
+      this.selectAll();
     }
   }
 
-  #focusParentHeader(row) {
-    let parentCard = row.getRootNode().host.closest("moz-card");
+  #focusParentHeader(e) {
+    let parentCard = e.target.getRootNode().host.closest("moz-card");
     if (parentCard) {
-      parentCard.summaryEl.focus();
+      e.preventDefault();
+      this.#focusHeader(parentCard);
     }
   }
 
-  #focusNextHeader(row) {
-    let parentCard = row.getRootNode().host.closest("moz-card");
+  #focusNextHeader(e) {
+    let parentCard = e.target.getRootNode().host.closest("moz-card");
     if (
       this.sortOption == "datesite" &&
       parentCard.classList.contains("last-card")
@@ -89,18 +118,37 @@ export class SidebarTabList extends FxviewTabListBase {
       // If we're going down from the last site, then focus the next date.
       const dateCard = parentCard.parentElement;
       const nextDate = dateCard.nextElementSibling;
-      nextDate?.summaryEl.focus();
+      if (nextDate) {
+        e.preventDefault();
+        this.#focusHeader(nextDate);
+      }
+      return;
     }
     let nextCard = parentCard.nextElementSibling;
     if (nextCard && nextCard.localName == "moz-card") {
-      nextCard.summaryEl.focus();
+      e.preventDefault();
+      this.#focusHeader(nextCard);
     }
   }
 
-  #updateSelection(event) {
+  #focusHeader(card) {
+    card.summaryEl.focus({ preventScroll: true });
+    card.summaryEl.scrollIntoView({ block: "nearest" });
+  }
+
+  /**
+   * Update multi-selection state during keyboard navigation.
+   *
+   * Without Shift, clears the selection and resets the anchor to the newly
+   * focused row. With Shift, extends the selection from the current anchor to
+   * the newly focused row.
+   *
+   * @param {KeyboardEvent} event
+   * @param {boolean} stayedInList
+   *   Whether focus remained within this list after the navigation.
+   */
+  #updateSelection(event, stayedInList) {
     if (!event.shiftKey) {
-      // Clear the selection when navigating without shift key.
-      // Dispatch event so that other lists will also clear their selection.
       this.clearSelection();
       this.dispatchEvent(
         new CustomEvent("clear-selection", {
@@ -108,28 +156,40 @@ export class SidebarTabList extends FxviewTabListBase {
           composed: true,
         })
       );
+      if (stayedInList) {
+        const newRow = this.rowEls[this.activeIndex];
+        if (newRow) {
+          this.dispatchEvent(
+            new CustomEvent("set-anchor", {
+              bubbles: true,
+              composed: true,
+              detail: { guid: newRow.guid },
+            })
+          );
+        }
+      }
       return;
     }
 
-    // Select the current row.
-    const row = event.target;
-    const {
-      guid,
-      previousElementSibling: prevRow,
-      nextElementSibling: nextRow,
-    } = row;
-    this.selectedGuids.add(guid);
-
-    // Select the previous or next sibling, depending on which arrow key was used.
-    if (event.code === "ArrowUp" && prevRow) {
-      this.selectedGuids.add(prevRow.guid);
-    } else if (event.code === "ArrowDown" && nextRow) {
-      this.selectedGuids.add(nextRow.guid);
-    } else {
-      this.requestVirtualListUpdate();
+    const newRow = this.rowEls[this.activeIndex];
+    if (newRow) {
+      this.dispatchEvent(
+        new CustomEvent("shift-select", {
+          bubbles: true,
+          composed: true,
+          detail: { row: newRow },
+        })
+      );
     }
+  }
 
-    // Notify the host component.
+  toggleRowSelection(guid) {
+    if (this.selectedGuids.has(guid)) {
+      this.selectedGuids.delete(guid);
+    } else {
+      this.selectedGuids.add(guid);
+    }
+    this.requestVirtualListUpdate();
     this.dispatchEvent(
       new CustomEvent("update-selection", {
         bubbles: true,
@@ -151,7 +211,7 @@ export class SidebarTabList extends FxviewTabListBase {
     return shortcutKey;
   }
 
-  #selectAll() {
+  selectAll() {
     for (const { guid } of this.tabItems) {
       this.selectedGuids.add(guid);
     }
@@ -195,7 +255,7 @@ export class SidebarTabList extends FxviewTabListBase {
         )}
         .secondaryL10nArgs=${ifDefined(tabItem.secondaryL10nArgs)}
         .secondaryL10nId=${tabItem.secondaryL10nId}
-        .selected=${this.selectedGuids.has(tabItem.guid)}
+        .selected=${this.isTabItemSelected(tabItem)}
         .sourceClosedId=${ifDefined(tabItem.sourceClosedId)}
         .sourceWindowId=${ifDefined(tabItem.sourceWindowId)}
         .tabElement=${ifDefined(tabItem.tabElement)}
@@ -206,6 +266,10 @@ export class SidebarTabList extends FxviewTabListBase {
       ></sidebar-tab-row>
     `;
   };
+
+  isTabItemSelected(tabItem) {
+    return this.selectedGuids.has(tabItem.guid);
+  }
 
   stylesheets() {
     return [
@@ -227,12 +291,16 @@ export class SidebarTabRow extends FxviewTabRowBase {
     indicators: { type: Array },
   };
 
+  get tooltipText() {
+    return !this.primaryL10nId ? this.url : null;
+  }
+
   /**
    * Fallback to the native implementation in sidebar. We want to focus the
    * entire row instead of delegating it to link or hover buttons.
    */
-  focus() {
-    HTMLElement.prototype.focus.call(this);
+  focus(options) {
+    HTMLElement.prototype.focus.call(this, options);
   }
 
   #getContainerClasses() {
@@ -307,7 +375,7 @@ export class SidebarTabRow extends FxviewTabRowBase {
         href=${ifDefined(this.url)}
         id="fxview-tab-row-main"
         tabindex="-1"
-        title=${!this.primaryL10nId ? this.url : null}
+        title=${this.tooltipText}
         @click=${this.primaryActionHandler}
         @auxclick=${this.auxActionHandler}
         @keydown=${this.primaryActionHandler}

@@ -320,7 +320,8 @@ RefPtr<IDBRequest> IDBIndex::GetInternal(bool aKeyOnly, JSContext* aCx,
   }
 
   RefPtr<IDBKeyRange> keyRange;
-  IDBKeyRange::FromJSVal(aCx, aKey, &keyRange, aRv);
+  IDBKeyRange::FromJSVal(aCx, aKey, &keyRange, aRv,
+                         &mObjectStore->MutableTransactionRef());
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -397,7 +398,8 @@ RefPtr<IDBRequest> IDBIndex::GetAllInternal(bool aKeysOnly, JSContext* aCx,
   }
 
   RefPtr<IDBKeyRange> keyRange;
-  IDBKeyRange::FromJSVal(aCx, aKey, &keyRange, aRv);
+  IDBKeyRange::FromJSVal(aCx, aKey, &keyRange, aRv,
+                         &mObjectStore->MutableTransactionRef());
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -474,7 +476,8 @@ RefPtr<IDBRequest> IDBIndex::OpenCursorInternal(bool aKeysOnly, JSContext* aCx,
   }
 
   RefPtr<IDBKeyRange> keyRange;
-  IDBKeyRange::FromJSVal(aCx, aRange, &keyRange, aRv);
+  IDBKeyRange::FromJSVal(aCx, aRange, &keyRange, aRv,
+                         &mObjectStore->MutableTransactionRef());
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -558,7 +561,8 @@ RefPtr<IDBRequest> IDBIndex::Count(JSContext* aCx, JS::Handle<JS::Value> aKey,
   }
 
   RefPtr<IDBKeyRange> keyRange;
-  IDBKeyRange::FromJSVal(aCx, aKey, &keyRange, aRv);
+  IDBKeyRange::FromJSVal(aCx, aKey, &keyRange, aRv,
+                         &mObjectStore->MutableTransactionRef());
   if (aRv.Failed()) {
     return nullptr;
   }

@@ -28,7 +28,9 @@ async function test_opensearch(shouldWork) {
   );
 
   let popup = await SearchbarTestUtils.openSearchModeSwitcher(window);
-  let engineElement = popup.querySelector("menuitem[label*=newEngine]");
+  let engineElement = popup.querySelector(
+    "panel-item[data-engine-name=newEngine]"
+  );
 
   if (shouldWork) {
     ok(engineElement, "There should be search engines available to add");
@@ -39,7 +41,7 @@ async function test_opensearch(shouldWork) {
       "There should be no search engines available to add"
     );
   }
-  popup.hidePopup();
+  popup.hide();
   await BrowserTestUtils.removeTab(tab);
 }
 

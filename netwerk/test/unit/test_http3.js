@@ -117,7 +117,10 @@ add_task(
     // Skip this test on Android because the httpOrigin (http://foo.example.com)
     // is on 127.0.0.1, while the http3Server (https://foo.example.com) is
     // on 10.0.2.2. Currently, we can't change the IP mapping dynamically.
-    skip_if: () => mozinfo.os == "android",
+    // Happy Eyeballs doesn't support different alt-svc host for now.
+    skip_if: () =>
+      mozinfo.os == "android" ||
+      Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false),
   },
   async function test_http_alt_svc() {
     setup_h1_server(h3ServerDomain);

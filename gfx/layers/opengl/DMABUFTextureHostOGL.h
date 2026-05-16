@@ -42,6 +42,7 @@ class DMABUFTextureHostOGL : public TextureHost {
 
   gfx::YUVColorSpace GetYUVColorSpace() const override;
   gfx::ColorRange GetColorRange() const override;
+  gfx::TransferFunction GetTransferFunction() const override;
 
   void CreateRenderTexture(
       const wr::ExternalImageId& aExternalImageId) override;

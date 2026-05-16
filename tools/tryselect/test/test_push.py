@@ -218,6 +218,7 @@ def test_get_sys_argv_2():
     ],
 )
 def test_push_to_try_routing(
+    mock_push_to_lando_try,
     url,
     push_to_vcs,
     expect_direct_push,
@@ -233,9 +234,7 @@ def test_push_to_try_routing(
     with ExitStack() as stack:
         stack.enter_context(patch("tryselect.push.vcs", mock_vcs))
         stack.enter_context(patch("tryselect.push.MACH_TRY_REMOTE", url))
-        mock_lando = stack.enter_context(
-            patch("tryselect.push.push_to_lando_try", return_value="job123")
-        )
+        mock_lando = stack.enter_context(mock_push_to_lando_try)
         stack.enter_context(patch("tryselect.push.check_working_directory"))
         stack.enter_context(
             patch(
@@ -247,7 +246,7 @@ def test_push_to_try_routing(
         push._is_hg_try.cache_clear()
 
         is_hg_try = "ssh://hg.mozilla.org/try" in url
-        if push_to_vcs and not is_hg_try:
+        if push_to_vcs or not is_hg_try:
             mock_vcs.try_commit.return_value.__enter__ = MagicMock(
                 return_value="abc123"
             )
@@ -271,7 +270,8 @@ def test_push_to_try_routing(
                 mock_vcs.try_commit.assert_called_once()
                 mock_vcs.push.assert_called_once_with(
                     url,
-                    ref="feature-branch",
+                    ref="abc123",
+                    dest_branch="feature-branch",
                     force=True,
                 )
         else:

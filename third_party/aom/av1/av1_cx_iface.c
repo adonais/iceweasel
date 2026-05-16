@@ -713,12 +713,6 @@ static aom_codec_err_t validate_config(aom_codec_alg_priv_t *ctx,
   RANGE_CHECK_BOOL(extra_cfg, lossless);
   RANGE_CHECK_HI(extra_cfg, aq_mode, AQ_MODE_COUNT - 1);
   RANGE_CHECK_HI(extra_cfg, deltaq_mode, DELTA_Q_MODE_COUNT - 1);
-
-  if (cfg->g_usage != ALLINTRA &&
-      extra_cfg->deltaq_mode == DELTA_Q_VARIANCE_BOOST) {
-    ERROR("Variance Boost (deltaq_mode = 6) can only be set in all intra mode");
-  }
-
   RANGE_CHECK_HI(extra_cfg, deltalf_mode, 1);
   RANGE_CHECK_HI(extra_cfg, frame_periodic_boost, 1);
 #if CONFIG_REALTIME_ONLY
@@ -864,7 +858,7 @@ static aom_codec_err_t validate_config(aom_codec_alg_priv_t *ctx,
   RANGE_CHECK(extra_cfg, transfer_characteristics, AOM_CICP_TC_BT_709,
               AOM_CICP_TC_HLG);
   RANGE_CHECK(extra_cfg, matrix_coefficients, AOM_CICP_MC_IDENTITY,
-              AOM_CICP_MC_ICTCP);
+              AOM_CICP_MC_YCGCO_RO);
   RANGE_CHECK(extra_cfg, color_range, 0, 1);
 
   /* Average corpus complexity is supported only in the case of single pass
@@ -995,6 +989,10 @@ static aom_codec_err_t validate_img(aom_codec_alg_priv_t *ctx,
 
   if (img->d_w != ctx->cfg.g_w || img->d_h != ctx->cfg.g_h)
     ERROR("Image size must match encoder init configuration size");
+  assert(img->fmt & AOM_IMG_FMT_PLANAR);
+  if (!ctx->cfg.monochrome && img->fmt != AOM_IMG_FMT_NV12 &&
+      img->stride[AOM_PLANE_U] != img->stride[AOM_PLANE_V])
+    ERROR("Image U/V strides must match");
 
   // 6.4.2 Color config semantics
   // If matrix_coefficients is equal to MC_IDENTITY, it is a requirement of
@@ -1373,7 +1371,7 @@ static void set_encoder_config(AV1EncoderConfig *oxcf,
   // 608p and 720p. This can be further modified if needed.
   const int is_low_complexity_decode_mode_supported =
       (cfg->g_usage == AOM_USAGE_GOOD_QUALITY) &&
-      (oxcf->speed >= 1 && oxcf->speed <= 3) && (cfg->g_w < cfg->g_h) &&
+      (oxcf->speed >= 1 && oxcf->speed <= 3) &&
       (AOMMIN(cfg->g_w, cfg->g_h) >= 608 && AOMMIN(cfg->g_w, cfg->g_h) <= 1080);
   oxcf->enable_low_complexity_decode =
       extra_cfg->enable_low_complexity_decode &&
@@ -1388,6 +1386,8 @@ static void set_encoder_config(AV1EncoderConfig *oxcf,
 
   // Set Group of frames configuration.
 #if CONFIG_REALTIME_ONLY
+  // When CONFIG_REALTIME_ONLY=1 and mode=REALTIME, then force lag_in_frames
+  // = 0.
   gf_cfg->lag_in_frames = (oxcf->mode == REALTIME)
                               ? 0
                               : clamp(cfg->g_lag_in_frames, 0, MAX_LAG_BUFFERS);
@@ -1898,11 +1898,9 @@ static aom_codec_err_t ctrl_set_arnr_strength(aom_codec_alg_priv_t *ctx,
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
-static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
-                                     struct av1_extracfg *extra_cfg) {
+static aom_codec_err_t handle_tuning(struct av1_extracfg *extra_cfg) {
   if (extra_cfg->tuning == AOM_TUNE_IQ ||
       extra_cfg->tuning == AOM_TUNE_SSIMULACRA2) {
-    if (ctx->cfg.g_usage != AOM_USAGE_ALL_INTRA) return AOM_CODEC_INCAPABLE;
     // Enable QMs as they've been found to be beneficial for images, when used
     // with alternative QM formulas:
     // - aom_get_qmlevel_allintra()
@@ -1911,8 +1909,8 @@ static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
     extra_cfg->enable_qm = 1;
     extra_cfg->qm_min = QM_FIRST_IQ_SSIMULACRA2;
     extra_cfg->qm_max = QM_LAST_IQ_SSIMULACRA2;
-    // We can turn on sharpness, as frames do not have to serve as references to
-    // others.
+    // Sharpness has been found to be beneficial for images (better perceptual
+    // quality).
     extra_cfg->sharpness = 7;
     // Using the QM-PSNR metric was found to be beneficial for images (over the
     // default PSNR metric), as it correlates better with subjective image
@@ -1930,6 +1928,8 @@ static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
     extra_cfg->enable_chroma_deltaq = 1;
     // Enable "Variance Boost" deltaq mode, optimized for images.
     extra_cfg->deltaq_mode = DELTA_Q_VARIANCE_BOOST;
+    // Enable "anti-aliased text and graphics aware" screen detection mode.
+    extra_cfg->screen_detection_mode = AOM_SCREEN_DETECTION_ANTIALIASING_AWARE;
   }
   if (extra_cfg->tuning == AOM_TUNE_IQ) {
     // Enable adaptive sharpness to adjust loop filter levels according to QP.
@@ -1944,7 +1944,7 @@ static aom_codec_err_t ctrl_set_tuning(aom_codec_alg_priv_t *ctx,
                                        va_list args) {
   struct av1_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.tuning = CAST(AOME_SET_TUNING, args);
-  aom_codec_err_t err = handle_tuning(ctx, &extra_cfg);
+  aom_codec_err_t err = handle_tuning(&extra_cfg);
   if (err != AOM_CODEC_OK) return err;
   return update_extra_cfg(ctx, &extra_cfg);
 }
@@ -3055,8 +3055,16 @@ static aom_codec_err_t encoder_init(aom_codec_ctx_t *ctx) {
       set_encoder_config(&priv->oxcf, &priv->cfg, &priv->extra_cfg);
       if (priv->oxcf.pass == AOM_RC_ONE_PASS) {
         // Enable look ahead.
+#if CONFIG_REALTIME_ONLY
+        // When CONFIG_REALTIME_ONLY=1 and mode=REALTIME, then force
+        // lag_in_frames = 0.
+        const int lag_in_frames =
+            (priv->oxcf.mode == REALTIME) ? 0 : (int)priv->cfg.g_lag_in_frames;
+#else
+        const int lag_in_frames = (int)priv->cfg.g_lag_in_frames;
+#endif
         *num_lap_buffers =
-            AOMMIN((int)priv->cfg.g_lag_in_frames,
+            AOMMIN(lag_in_frames,
                    AOMMIN(MAX_LAP_BUFFERS, priv->oxcf.kf_cfg.key_freq_max +
                                                SCENE_CUT_KEY_TEST_INTERVAL));
         if ((int)priv->cfg.g_lag_in_frames - (*num_lap_buffers) >=
@@ -4061,6 +4069,7 @@ static aom_codec_err_t ctrl_set_svc_params(aom_codec_alg_priv_t *ctx,
         ppi->number_spatial_layers * ppi->number_temporal_layers - 1;
     ctx->next_frame_flags |= AOM_EFLAG_FORCE_KF;
     av1_set_svc_seq_params(ppi);
+    av1_free_svc_cyclic_refresh(cpi);
     // Check for valid values for the spatial/temporal_layer_id here, since
     // there has been a dynamic change in the number_spatial/temporal_layers,
     // and if the ctrl_set_layer_id is not used after this call, the
@@ -4327,16 +4336,9 @@ static aom_codec_err_t encoder_set_option(aom_codec_alg_priv_t *ctx,
   size_t len = strlen(name) + strlen(value) + 4;
   char *const err_string = ctx->ppi->error.detail;
 
-#if __STDC_VERSION__ >= 201112L
-  // We use the keyword _Static_assert because clang-cl does not allow the
-  // convenience macro static_assert to be used in function scope. See
-  // https://bugs.llvm.org/show_bug.cgi?id=48904.
-  _Static_assert(sizeof(ctx->ppi->error.detail) >= ARG_ERR_MSG_MAX_LEN,
-                 "The size of the err_msg buffer for arg_match_helper must be "
-                 "at least ARG_ERR_MSG_MAX_LEN");
-#else
-  assert(sizeof(ctx->ppi->error.detail) >= ARG_ERR_MSG_MAX_LEN);
-#endif
+  static_assert(sizeof(ctx->ppi->error.detail) >= ARG_ERR_MSG_MAX_LEN,
+                "The size of the err_msg buffer for arg_match_helper must be "
+                "at least ARG_ERR_MSG_MAX_LEN");
 
   argv[0] = aom_malloc(len * sizeof(argv[1][0]));
   if (!argv[0]) return AOM_CODEC_MEM_ERROR;
@@ -4418,7 +4420,7 @@ static aom_codec_err_t encoder_set_option(aom_codec_alg_priv_t *ctx,
   } else if (arg_match_helper(&arg, &g_av1_codec_arg_defs.tune_metric, argv,
                               err_string)) {
     extra_cfg.tuning = arg_parse_enum_helper(&arg, err_string);
-    err = handle_tuning(ctx, &extra_cfg);
+    err = handle_tuning(&extra_cfg);
   }
 #if CONFIG_TUNE_VMAF
   else if (arg_match_helper(&arg, &g_av1_codec_arg_defs.vmaf_model_path, argv,

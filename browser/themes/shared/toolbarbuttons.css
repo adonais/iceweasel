@@ -33,6 +33,7 @@
   }
 
   /* Smart window properties */
+  --smartwindow-ai-toggle-padding: 4px;
   --smartwindow-ask-btn-gradient: linear-gradient(
     117deg,
     rgba(50, 27, 253, 0.3) -17.87%,
@@ -40,33 +41,82 @@
     rgba(255, 153, 0, 0.3) 89.02%,
     rgba(245, 196, 81, 0.3) 109.44%
   );
-  --smartwindow-ask-btn-gradient-dark: linear-gradient(83deg, #5119dc 0.73%, var(--color-violet-30) 98.05%);
-  --smartwindow-ask-btn-bg-image: var(--smartwindow-ask-btn-gradient);
+  --smartwindow-ask-btn-bg-opened: transparent;
+  --smartwindow-ask-btn-bg-opened-dark: #321342; /* color of the chrome to simulate a transparent background - needed due to gradient borders */
+  --smartwindow-ask-btn-bg-opened-hover: var(--color-violet-20);
+  --smartwindow-ask-btn-bg-opened-hover-dark: linear-gradient(
+    color-mix(in srgb, var(--smartwindow-ask-btn-bg-opened-dark) 85%, white),
+    color-mix(in srgb, var(--smartwindow-ask-btn-bg-opened-dark) 85%, white)
+  );
   --smartwindow-ask-btn-text-color: light-dark(var(--color-violet-80), var(--color-white));
   --smartwindow-ask-btn-text-color-opened: light-dark(var(--color-violet-80), var(--color-violet-10));
   --smartwindow-ask-btn-border-color: light-dark(var(--color-white), transparent);
   --smartwindow-ask-btn-border-color-opened: light-dark(var(--color-violet-80), transparent);
   --smartwindow-ask-btn-border-color-hover: light-dark(var(--color-violet-80), var(--color-white));
-  --smartwindow-ask-btn-checked-bg-image: none;
-  --smartwindow-ask-btn-checked-bg-clip: border-box;
-  --smartwindow-ask-btn-checked-hover-bg-color: var(--color-violet-20);
-  --smartwindow-ask-btn-checked-hover-bg-image: none;
+  --smartwindow-ask-btn-border-color-active: var(--smartwindow-ask-btn-border-color-hover);
+  --smartwindow-ask-btn-border-color-opened-hover: var(--smartwindow-ask-btn-border-color-hover);
+  --smartwindow-ask-btn-bg-opened-clip: border-box;
   --smartwindow-ask-btn-icon-stroke-color: light-dark(#ecbcea, var(--color-violet-40));
+  --smartwindow-ask-btn-bg-color: transparent;
+  --smartwindow-ask-btn-text-color-hover: var(--smartwindow-ask-btn-text-color);
+  --smartwindow-ask-btn-bg-hover: transparent;
+  --smartwindow-ask-btn-text-color-opened-hover: var(--smartwindow-ask-btn-text-color-opened);
+  --smartwindow-ask-btn-bg-opened-image: linear-gradient(var(--smartwindow-ask-btn-bg-opened), var(--smartwindow-ask-btn-bg-opened));
+  --smartwindow-ask-btn-bg-opened-hover-image: none;
+  --smartwindow-ask-btn-bg-image-opened-active: var(--smartwindow-ask-btn-gradient);
+  --smartwindow-ask-btn-text-color-opened-active: var(--smartwindow-ask-btn-text-color);
+  --smartwindow-ask-btn-bg-active: var(--smartwindow-ask-btn-bg-opened);
+  --smartwindow-ask-btn-text-color-active: var(--smartwindow-ask-btn-text-color-opened);
   --smartwindow-ask-btn-icon-height: var(--size-item-small);
   --smartwindow-ask-btn-icon-width: var(--size-item-small);
+  /* could instead use --size-item-small (OS-specific 6, 7, or 8) */
+  --smartwindow-ask-btn-inner-padding-inline: 8px;
+
+  --smartwindow-ask-btn-inline-start-padding: 4px;
+  --smartwindow-ask-btn-text-icon-gap: 6px;
   --smartwindow-toggle-shadow-color: light-dark(
     color-mix(in srgb, var(--color-violet-60) 20%, transparent),
     color-mix(in srgb, var(--color-violet-40) 20%, transparent)
   );
 
   @media (prefers-color-scheme: dark) {
-    --smartwindow-ask-btn-bg-image: var(--smartwindow-ask-btn-gradient-dark);
-    /* Gradient border: inner bg clips to padding, outer gradient to border */
-    --smartwindow-ask-btn-checked-bg-image: linear-gradient(#321342, #321342), var(--smartwindow-ask-btn-gradient-dark);
-    --smartwindow-ask-btn-checked-bg-clip: padding-box, border-box;
-    --smartwindow-ask-btn-checked-hover-bg-color: transparent;
-    --smartwindow-ask-btn-checked-hover-bg-image:
-      linear-gradient(color-mix(in srgb, #321342 85%, white), color-mix(in srgb, #321342 85%, white)), var(--smartwindow-ask-btn-gradient-dark);
+    --smartwindow-ask-btn-gradient: linear-gradient(83deg, #5119dc 0.73%, var(--color-violet-30) 98.05%);
+    --smartwindow-ask-btn-bg-opened-image:
+      linear-gradient(var(--smartwindow-ask-btn-bg-opened-dark), var(--smartwindow-ask-btn-bg-opened-dark)), var(--smartwindow-ask-btn-gradient);
+    --smartwindow-ask-btn-bg-opened-hover-image: var(--smartwindow-ask-btn-bg-opened-hover-dark), var(--smartwindow-ask-btn-gradient);
+    --smartwindow-ask-btn-bg-opened-clip: padding-box, border-box;
+  }
+
+  @media (prefers-contrast) and (not (forced-colors)) {
+    --smartwindow-ask-btn-gradient: none;
+    --smartwindow-ask-btn-border-color: currentColor;
+    --smartwindow-ask-btn-border-color-opened: currentColor;
+  }
+
+  @media (forced-colors) {
+    --smartwindow-ask-btn-gradient: none;
+    --smartwindow-ask-btn-bg-opened-image: none;
+    --smartwindow-ask-btn-bg-opened-hover-image: none;
+    --smartwindow-ask-btn-bg-opened-clip: border-box;
+    --smartwindow-ask-btn-bg-color: var(--button-background-color);
+    --smartwindow-ask-btn-text-color: var(--button-text-color);
+    --smartwindow-ask-btn-text-color-hover: var(--button-text-color-hover);
+    --smartwindow-ask-btn-bg-hover: var(--button-background-color-hover);
+    --smartwindow-ask-btn-text-color-opened: var(--button-text-color-primary);
+    --smartwindow-ask-btn-bg-opened: var(--button-background-color-primary);
+    --smartwindow-ask-btn-bg-opened-dark: var(--button-background-color-primary);
+    --smartwindow-ask-btn-bg-opened-hover: var(--button-background-color-primary-hover);
+    --smartwindow-ask-btn-text-color-opened-hover: var(--button-text-color-primary-hover);
+    --smartwindow-ask-btn-border-color: var(--button-border-color);
+    --smartwindow-ask-btn-border-color-opened: var(--button-border-color-primary);
+    --smartwindow-ask-btn-border-color-hover: var(--border-color-interactive-hover);
+    --smartwindow-ask-btn-border-color-active: var(--border-color-interactive-active);
+    --smartwindow-ask-btn-border-color-opened-hover: var(--button-border-color-primary-hover);
+    --smartwindow-ask-btn-bg-image-opened-active: none;
+    --smartwindow-ask-btn-text-color-opened-active: var(--button-text-color-primary-active);
+    --smartwindow-ask-btn-bg-active: var(--button-background-color-active);
+    --smartwindow-ask-btn-text-color-active: var(--button-text-color-active);
+    --smartwindow-ask-btn-icon-stroke-color: var(--button-text-color);
   }
 }
 
@@ -200,16 +250,6 @@ toolbar .toolbarbutton-1 {
 
   &.avatar-button-background > .toolbarbutton-badge-stack {
     border: 1px solid var(--card-border-color);
-  }
-}
-
-#TabsToolbar .toolbarbutton-1 {
-  margin: 0;
-
-  > .toolbarbutton-icon,
-  > .toolbarbutton-text,
-  > .toolbarbutton-badge-stack {
-    border-radius: var(--tab-border-radius);
   }
 }
 
@@ -682,48 +722,76 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 }
 
 /* IP Protection */
-#ipprotection-button > .toolbarbutton-icon {
+#ipprotection-button {
   --icon-width: 48px;
-  width: calc(2 * var(--toolbarbutton-inner-padding) + var(--icon-width));
-  padding-block: 0;
-}
+  --panel-and-palette-icon-size: var(--icon-width);
 
-toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon {
-  max-height: 16px;
+  > .toolbarbutton-icon {
+    width: calc(2 * var(--toolbarbutton-inner-padding) + var(--icon-width));
+    padding-block: 0;
+  }
+
+  > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+    width: var(--icon-width);
+  }
+
+  toolbarpaletteitem[place="palette"] > & > .toolbarbutton-icon,
+  toolbarpaletteitem[place="palette"] > & > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+    min-height: 16px;
+    max-height: 16px;
+  }
 }
 
 /* Smart Window toolbar ask button */
 #smartwindow-ask-button {
   align-items: center;
-  padding-inline-start: var(--toolbarbutton-outer-padding);
+  padding-inline-start: var(--smartwindow-ask-btn-inline-start-padding);
   padding-inline-end: var(--toolbar-start-end-padding);
 }
 
 #smartwindow-ask-button-inner {
+  -moz-user-focus: normal;
   align-self: center;
-  background-image: var(--smartwindow-ask-btn-bg-image);
+  background-color: var(--smartwindow-ask-btn-bg-color);
+  background-image: var(--smartwindow-ask-btn-gradient);
   background-origin: border-box;
   border: 1px solid var(--smartwindow-ask-btn-border-color);
   border-radius: var(--border-radius-circle);
   color: var(--smartwindow-ask-btn-text-color);
   flex-direction: row-reverse;
   font-weight: var(--font-weight-semibold);
+  gap: var(--smartwindow-ask-btn-text-icon-gap);
   height: var(--size-item-medium);
   --toolbarbutton-outer-padding: var(--space-small);
+  padding-inline: var(--smartwindow-ask-btn-inner-padding-inline);
   --toolbarbutton-hover-outline-color: none;
   --toolbarbutton-hover-background: transparent;
   --toolbarbutton-active-background: transparent;
 
   #smartwindow-ask-button:hover > & {
-    --smartwindow-ask-btn-border-color: var(--smartwindow-ask-btn-border-color-hover);
+    color: var(--smartwindow-ask-btn-text-color-hover);
+    background-color: var(--smartwindow-ask-btn-bg-hover);
+    border-color: var(--smartwindow-ask-btn-border-color-hover);
     > :is(.toolbarbutton-icon, .toolbarbutton-text) {
       background-color: transparent;
       outline-color: transparent;
     }
   }
 
+  #smartwindow-ask-button:hover:active > & {
+    background-clip: var(--smartwindow-ask-btn-bg-opened-clip);
+    background-color: var(--smartwindow-ask-btn-bg-active);
+    background-image: var(--smartwindow-ask-btn-bg-opened-image);
+    color: var(--smartwindow-ask-btn-text-color-active);
+    border-color: var(--smartwindow-ask-btn-border-color-active);
+  }
+
   &:focus-visible {
     outline: var(--focus-outline);
+
+    @media (forced-colors) {
+      outline-offset: var(--focus-outline-offset);
+    }
   }
 
   & > .toolbarbutton-icon {
@@ -746,25 +814,34 @@ toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon
     --toolbarbutton-inner-padding: 0;
   }
 
-  &[checked],
-  #smartwindow-ask-button:hover > &:active:not([checked]) {
-    background-clip: var(--smartwindow-ask-btn-checked-bg-clip);
-    background-image: var(--smartwindow-ask-btn-checked-bg-image);
-    --smartwindow-ask-btn-text-color: var(--smartwindow-ask-btn-text-color-opened);
-    --smartwindow-ask-btn-border-color: var(--smartwindow-ask-btn-border-color-opened);
+  &[checked] {
+    background-clip: var(--smartwindow-ask-btn-bg-opened-clip);
+    background-color: var(--smartwindow-ask-btn-bg-opened);
+    background-image: var(--smartwindow-ask-btn-bg-opened-image);
+    color: var(--smartwindow-ask-btn-text-color-opened);
+    border-color: var(--smartwindow-ask-btn-border-color-opened);
   }
 
   &[checked] {
     #smartwindow-ask-button:hover > & {
-      background-color: var(--smartwindow-ask-btn-checked-hover-bg-color);
-      background-image: var(--smartwindow-ask-btn-checked-hover-bg-image);
+      color: var(--smartwindow-ask-btn-text-color-opened-hover);
+      background-color: var(--smartwindow-ask-btn-bg-opened-hover);
+      background-image: var(--smartwindow-ask-btn-bg-opened-hover-image);
+      border-color: var(--smartwindow-ask-btn-border-color-opened-hover);
 
       &:active {
         background-clip: border-box;
-        background-image: var(--smartwindow-ask-btn-bg-image);
-        --smartwindow-ask-btn-text-color: inherit;
-        --smartwindow-ask-btn-border-color: var(--smartwindow-ask-btn-border-color-hover);
+        background-image: var(--smartwindow-ask-btn-bg-image-opened-active);
+        color: var(--smartwindow-ask-btn-text-color-opened-active);
+        border-color: var(--smartwindow-ask-btn-border-color-active);
       }
+    }
+  }
+
+  @media (prefers-contrast) {
+    > .toolbarbutton-icon,
+    > .toolbarbutton-text {
+      outline: none;
     }
   }
 }

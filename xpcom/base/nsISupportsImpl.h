@@ -778,18 +778,13 @@ class InterfaceNeedsThreadSafeRefCnt : public std::false_type {};
 
 #if !defined(XPCOM_GLUE_AVOID_NSPR)
 class nsISerialEventTarget;
-namespace mozilla {
-// Forward-declare `GetMainThreadSerialEventTarget`, as `nsISupportsImpl.h`
-// cannot include `nsThreadUtils.h`.
-nsISerialEventTarget* GetMainThreadSerialEventTarget();
-
-namespace detail {
+namespace mozilla::detail {
 using DeleteVoidFunction = void(void*);
-void ProxyDeleteVoid(const char* aRunnableName,
-                     nsISerialEventTarget* aEventTarget, void* aSelf,
-                     DeleteVoidFunction* aDeleteFunc);
-}  // namespace detail
-}  // namespace mozilla
+void ProxyDeleteVoid(const char* aName, nsISerialEventTarget* aTarget,
+                     void* aPtr, DeleteVoidFunction* aDeleteFunc);
+void ProxyDeleteMainVoid(const char* aName, void* aPtr,
+                         DeleteVoidFunction* aDeleteFunc);
+}  // namespace mozilla::detail
 
 /**
  * Helper for _WITH_DELETE_ON_EVENT_TARGET threadsafe refcounting macros which
@@ -798,6 +793,15 @@ void ProxyDeleteVoid(const char* aRunnableName,
 #  define NS_PROXY_DELETE_TO_EVENT_TARGET(_class, _target) \
     ::mozilla::detail::ProxyDeleteVoid(                    \
         "ProxyDelete " #_class, _target, this,             \
+        [](void* self) { delete static_cast<_class*>(self); })
+
+/**
+ * Helper for _WITH_DELETE_ON_MAIN_THREAD threadsafe refcounting macros which
+ * provides an implementation of `_destroy`
+ */
+#  define NS_PROXY_DELETE_TO_MAIN_THREAD(_class) \
+    ::mozilla::detail::ProxyDeleteMainVoid(      \
+        "ProxyDelete " #_class, this,            \
         [](void* self) { delete static_cast<_class*>(self); })
 
 /**
@@ -828,8 +832,8 @@ void ProxyDeleteVoid(const char* aRunnableName,
  */
 #  define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD( \
       _class, ...)                                                          \
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(      \
-        _class, ::mozilla::GetMainThreadSerialEventTarget(), __VA_ARGS__)
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(                     \
+        _class, NS_PROXY_DELETE_TO_MAIN_THREAD(_class), __VA_ARGS__)
 #endif
 
 /**

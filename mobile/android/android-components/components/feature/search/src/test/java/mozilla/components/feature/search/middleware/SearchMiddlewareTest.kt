@@ -13,6 +13,7 @@ import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.availableSearchEngines
 import mozilla.components.browser.state.state.searchEngines
+import mozilla.components.browser.state.state.selectedOrDefaultPrivateSearchEngine
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.search.ext.createSearchEngine
@@ -1828,6 +1829,176 @@ class SearchMiddlewareTest {
         assertEquals("Yahoo!オークション", store.state.search.regionSearchEngines[7].name)
 
         assertEquals("Google", store.state.search.selectedOrDefaultSearchEngine!!.name)
+    }
+
+    @Test
+    fun `GIVEN a persisted private search engine selection WHEN the store initializes THEN load the userSelectedPrivateSearchEngineId and name into state`() = runTest(dispatcher) {
+        val storage = SearchMetadataStorage(testContext)
+        storage.setUserSelectedPrivateSearchEngine("private-test-id", "Private Engine")
+
+        val middleware = SearchMiddleware(
+            testContext,
+            ioDispatcher = dispatcher,
+            metadataStorage = storage,
+            customStorage = CustomSearchEngineStorage(testContext, dispatcher),
+        )
+
+        val store = BrowserStore(
+            middleware = listOf(middleware),
+        )
+
+        store.dispatch(
+            SearchAction.SetRegionAction(RegionState.Default),
+        )
+
+        wait(dispatcher)
+
+        assertEquals("private-test-id", store.state.search.userSelectedPrivateSearchEngineId)
+        assertEquals("Private Engine", store.state.search.userSelectedPrivateSearchEngineName)
+    }
+
+    @Test
+    fun `GIVEN no private search engine selection WHEN dispatching SelectPrivateSearchEngineAction THEN persist the selection and restore it in a new store`() {
+        val storage = SearchMetadataStorage(testContext)
+        val id = "private-test-id-${UUID.randomUUID()}"
+
+        run {
+            val store = BrowserStore(
+                middleware = listOf(
+                    SearchMiddleware(
+                        testContext,
+                        ioDispatcher = dispatcher,
+                        metadataStorage = storage,
+                        customStorage = CustomSearchEngineStorage(testContext, dispatcher),
+                    ),
+                ),
+            )
+
+            store.dispatch(
+                SearchAction.SetRegionAction(RegionState.Default),
+            )
+
+            wait(dispatcher)
+
+            assertNull(store.state.search.userSelectedPrivateSearchEngineId)
+
+            store.dispatch(SearchAction.SelectPrivateSearchEngineAction(id, "My Private Engine"))
+
+            wait(dispatcher)
+
+            assertEquals(id, store.state.search.userSelectedPrivateSearchEngineId)
+            assertEquals("My Private Engine", store.state.search.userSelectedPrivateSearchEngineName)
+        }
+
+        run {
+            val store = BrowserStore(
+                middleware = listOf(
+                    SearchMiddleware(
+                        testContext,
+                        ioDispatcher = dispatcher,
+                        metadataStorage = storage,
+                        customStorage = CustomSearchEngineStorage(testContext, dispatcher),
+                    ),
+                ),
+            )
+
+            store.dispatch(
+                SearchAction.SetRegionAction(RegionState.Default),
+            )
+
+            wait(dispatcher)
+
+            assertEquals(id, store.state.search.userSelectedPrivateSearchEngineId)
+            assertEquals("My Private Engine", store.state.search.userSelectedPrivateSearchEngineName)
+        }
+    }
+
+    @Test
+    fun `GIVEN a selected private search engine WHEN dispatching ClearPrivateSearchEngineAction THEN remove the selection from state and persist the removal `() {
+        val storage = SearchMetadataStorage(testContext)
+
+        run {
+            val store = BrowserStore(
+                middleware = listOf(
+                    SearchMiddleware(
+                        testContext,
+                        ioDispatcher = dispatcher,
+                        metadataStorage = storage,
+                        customStorage = CustomSearchEngineStorage(testContext, dispatcher),
+                    ),
+                ),
+            )
+
+            store.dispatch(
+                SearchAction.SetRegionAction(RegionState.Default),
+            )
+
+            wait(dispatcher)
+
+            store.dispatch(SearchAction.SelectPrivateSearchEngineAction("some-id", "Some Engine"))
+
+            wait(dispatcher)
+
+            assertEquals("some-id", store.state.search.userSelectedPrivateSearchEngineId)
+
+            store.dispatch(SearchAction.ClearPrivateSearchEngineAction)
+
+            wait(dispatcher)
+
+            assertNull(store.state.search.userSelectedPrivateSearchEngineId)
+            assertNull(store.state.search.userSelectedPrivateSearchEngineName)
+        }
+
+        run {
+            val store = BrowserStore(
+                middleware = listOf(
+                    SearchMiddleware(
+                        testContext,
+                        ioDispatcher = dispatcher,
+                        metadataStorage = storage,
+                        customStorage = CustomSearchEngineStorage(testContext, dispatcher),
+                    ),
+                ),
+            )
+
+            store.dispatch(
+                SearchAction.SetRegionAction(RegionState.Default),
+            )
+
+            wait(dispatcher)
+
+            assertNull(store.state.search.userSelectedPrivateSearchEngineId)
+            assertNull(store.state.search.userSelectedPrivateSearchEngineName)
+        }
+    }
+
+    @Test
+    fun `GIVEN no userSelectedPrivateSearchEngineId WHEN getting selectedOrDefaultPrivateSearchEngine THEN return the same engine as selectedOrDefaultSearchEngine`() {
+        val storage = SearchMetadataStorage(testContext)
+
+        val store = BrowserStore(
+            middleware = listOf(
+                SearchMiddleware(
+                    testContext,
+                    ioDispatcher = dispatcher,
+                    metadataStorage = storage,
+                    customStorage = CustomSearchEngineStorage(testContext, dispatcher),
+                ),
+            ),
+        )
+
+        store.dispatch(
+            SearchAction.SetRegionAction(RegionState("US", "US")),
+        )
+
+        wait(dispatcher)
+
+        assertNull(store.state.search.userSelectedPrivateSearchEngineId)
+
+        val normalDefault = store.state.search.selectedOrDefaultSearchEngine
+        val privateDefault = store.state.search.selectedOrDefaultPrivateSearchEngine
+        assertNotNull(normalDefault)
+        assertEquals(normalDefault, privateDefault)
     }
 }
 

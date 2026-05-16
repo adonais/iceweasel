@@ -632,9 +632,9 @@ bool DMABufSurface::OpenFileDescriptors(
 }
 
 void DMABufSurface::CloseFileDescriptors() {
-  for (int i = 0; i < DMABUF_BUFFER_PLANES; i++) {
-    if (mDmabufFds[i]) {
-      mDmabufFds[i] = nullptr;
+  for (auto& mDmabufFd : mDmabufFds) {
+    if (mDmabufFd) {
+      mDmabufFd = nullptr;
     }
   }
 }
@@ -2189,9 +2189,7 @@ void DMABufSurfaceYUV::ReleaseTextures() {
   }
 
   mGL->fDeleteTextures(DMABUF_BUFFER_PLANES, mTexture);
-  for (int i = 0; i < DMABUF_BUFFER_PLANES; i++) {
-    mTexture[i] = 0;
-  }
+  std::fill(std::begin(mTexture), std::end(mTexture), 0);
 
   const auto& gle = gl::GLContextEGL::Cast(mGL);
   const auto& egl = gle->mEgl;

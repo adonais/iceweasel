@@ -98,7 +98,7 @@ using struct mozilla::FontRange from "ipc/nsGUIEventIPC.h";
 using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
 using mozilla::dom::EffectsInfo from "mozilla/dom/EffectsInfo.h";
 using mozilla::dom::TabId from "mozilla/dom/ipc/IdType.h";
-using mozilla::ScrollAxis from "mozilla/PresShellForwards.h";
+using mozilla::AxisScrollParams from "mozilla/PresShellForwards.h";
 using mozilla::ScrollFlags from "mozilla/PresShellForwards.h";
 using struct InputFormData from "mozilla/dom/SessionStoreMessageUtils.h";
 using struct CollectedInputDataValue from "mozilla/dom/SessionStoreMessageUtils.h";
@@ -651,8 +651,8 @@ parent:
      */
     async MaybeFireEmbedderLoadEvents(EmbedderElementEventType aFireEventAtEmbeddingElement);
 
-    async ScrollRectIntoView(nsRect aRect, ScrollAxis aVertical,
-                             ScrollAxis aHorizontal, ScrollFlags aScrollFlags,
+    async ScrollRectIntoView(nsRect aRect, AxisScrollParams aVertical,
+                             AxisScrollParams aHorizontal, ScrollFlags aScrollFlags,
                              int32_t aAppUnitsPerDevPixel);
 
     async ShowDynamicToolbar();
@@ -724,19 +724,17 @@ child:
                                            uint64_t aInputBlockId);
 
     /**
-     * But don't compress mousemove events for tests since every event is
-     * important for the test since synthesizing various input events may
-     * be faster than what the user operates same things.  If you need to
-     * test the `Compress`, send mouse move events with setting `isSyntehsized`
-     * of `aEvent` of `EventUtils#syntehsizeMouse*()`.
+     * Don't compress mousemove events but events can still be coalesced.
+     * If you need to test the `Compress`, send mouse move events with setting
+     * `isSynthesized` of `aEvent` of `EventUtils#synthesizeMouse*()`.
      */
     [Priority=input]
-    async RealMouseMoveEventForTests(WidgetMouseEvent event,
-                                     ScrollableLayerGuid aGuid,
-                                     uint64_t aInputBlockId);
-    async NormalPriorityRealMouseMoveEventForTests(WidgetMouseEvent event,
-                                                   ScrollableLayerGuid aGuid,
-                                                   uint64_t aInputBlockId);
+    async RealMouseMoveEventNoCompress(WidgetMouseEvent event,
+                                       ScrollableLayerGuid aGuid,
+                                       uint64_t aInputBlockId);
+    async NormalPriorityRealMouseMoveEventNoCompress(WidgetMouseEvent event,
+                                                     ScrollableLayerGuid aGuid,
+                                                     uint64_t aInputBlockId);
 
     /**
      * Mouse move events with |reason == eSynthesized| are sent via a separate
@@ -936,7 +934,8 @@ child:
      * value (-1) but in the majority of the cases this saves us from two
      * sync requests from the child to the parent.
      */
-    async UIResolutionChanged(float dpi, int32_t rounding, double scale);
+    async UIResolutionChanged(float dpi, int32_t rounding, double scale,
+                              double desktopToDeviceScale);
 
     /**
      * Tell the child that whether it's allowed to render transparent has

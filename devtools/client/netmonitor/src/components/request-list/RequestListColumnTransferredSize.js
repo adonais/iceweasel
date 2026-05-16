@@ -24,6 +24,9 @@ const SIZE_CACHED = L10N.getStr("networkMenu.sizeCached");
 const SIZE_SERVICE_WORKER = L10N.getStr("networkMenu.sizeServiceWorker");
 const SIZE_UNAVAILABLE = L10N.getStr("networkMenu.sizeUnavailable");
 const SIZE_UNAVAILABLE_TITLE = L10N.getStr("networkMenu.sizeUnavailable.title");
+// @backward-compat { version 151 } Once version 151 is on release, isRacing
+// can be removed. It was part of RCWN (Race Cache With Network) which was
+// removed in Bug 2020946.
 const UPDATED_TRANSFERRED_PROPS = [
   "transferredSize",
   "fromCache",
@@ -68,6 +71,9 @@ class RequestListColumnTransferredSize extends Component {
       text = SIZE_SERVICE_WORKER;
     } else if (typeof transferredSize == "number") {
       text = getFormattedSize(transferredSize);
+      // @backward-compat { version 151 } Once version 151 is on release,
+      // isRacing can be removed. It was part of RCWN which was removed in
+      // Bug 2020946.
       if (isRacing && typeof isRacing == "boolean") {
         text = L10N.getFormatStr("networkMenu.raced", text);
       }

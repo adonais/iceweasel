@@ -146,6 +146,9 @@ newtab-menu-report = Rapporter
 newtab-menu-section-block = Blokker
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Slutt å følge
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Slutt å følge emnet
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -310,9 +313,23 @@ newtab-error-fallback-refresh-link = Oppdater siden for å prøve igjen.
 
 newtab-custom-shortcuts-title = Snarveier
 newtab-custom-shortcuts-subtitle = Nettsteder du lagrer eller besøker
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Snarveier
     .description = Nettsteder du lagrer eller besøker
+newtab-custom-shortcuts-nova =
+    .label = Snarveier
+newtab-custom-row-description =
+    .description = Antall rader
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } rad
+           *[other] { $num } rader
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -323,9 +340,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Sponsede snarveier
 newtab-custom-pocket-title = Anbefalt av { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Eksepsjonelt innhold satt sammen av { -pocket-brand-name }, en del av { -brand-product-name }-familien
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Anbefalte artikler
     .description = Enestående innhold kuratert av { -brand-product-name }-familien
+newtab-recommended-stories-toggle =
+    .label = Anbefalte artikler
 newtab-custom-stories-personalized-toggle =
     .label = Artikler
 newtab-custom-stories-personalized-checkbox-label = Personlige artikler basert på aktiviteten din
@@ -359,8 +379,12 @@ newtab-custom-settings = Behandle flere innstillinger
 
 newtab-wallpaper-title = Bakgrunnsbilder
 newtab-wallpaper-reset = Tilbakestill til standard
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Last opp et bilde
+newtab-wallpaper-add-an-image = Legg til et bilde
 newtab-wallpaper-custom-color = Velg en farge
+newtab-wallpaper-toggle-title =
+    .label = Bakgrunnsbilder
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Bildet overskred filstørrelsesgrensen på { $file_size } MB. Prøv å laste opp en mindre fil.
@@ -383,7 +407,9 @@ newtab-wallpaper-light-fox-anniversary = En rev i en gressmark med et tåkete fj
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Ensfarget
+newtab-wallpaper-colors = Farger
 newtab-wallpaper-blue = Blå
 newtab-wallpaper-light-blue = Lyseblå
 newtab-wallpaper-light-purple = Lyselilla
@@ -489,7 +515,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Bytt til Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Bytt til Celsius
-newtab-weather-menu-hide-weather-v2 = Skjul vær
 newtab-weather-menu-hide-weather = Skjul været på ny fane
 newtab-weather-menu-learn-more = Les mer
 newtab-weather-menu-detect-my-location = Oppdag posisjonen min
@@ -500,8 +525,18 @@ newtab-weather-opt-in-not-now =
     .label = Ikke nå
 newtab-weather-opt-in-yes =
     .label = Ja
+newtab-weather-opt-in-headline = Få din lokale værmelding
+newtab-weather-opt-in-use-location =
+    .label = Bruk plassering
+newtab-weather-opt-in-choose-location = Velg plassering
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Høy
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Lav
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -575,6 +610,7 @@ newtab-section-confirm-block-topic-p2 = Blokkerte emner vil ikke lenger vises i 
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Blokker { $topic }
+newtab-section-block-cancel-button = Avbryt
 
 ## Strings for custom wallpaper highlight
 
@@ -638,6 +674,18 @@ newtab-toast-thanks-for-reporting =
     .message = Takk for at du rapporterte dette.
 newtab-toast-widgets-hidden =
     .message = Velg blyantikonet for å legge til widgeter igjen når som helst.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Du følger nå { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Du følger ikke lenger { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Du vil ikke lenger se saker om { $topic }.
 
 ## Strings for task / to-do list productivity widget
 
@@ -657,7 +705,6 @@ newtab-widget-lists-menu-edit = Rediger listenavn
 newtab-widget-lists-menu-create = Opprett en ny liste
 newtab-widget-lists-menu-delete = Slett denne listen
 newtab-widget-lists-menu-copy = Kopier liste til utklippstavlen
-newtab-widget-lists-menu-hide = Skjul alle lister
 newtab-widget-lists-menu-learn-more = Les mer
 newtab-widget-lists-input-add-an-item =
     .placeholder = Legg til et element
@@ -679,6 +726,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = Ny liste
 newtab-widget-section-title = Widgeter
 newtab-widget-menu-hide = Skjul widget
+newtab-widget-menu-change-size = Endre størrelse
+newtab-widget-size-small = Liten
+newtab-widget-size-medium = Mellomstor
+newtab-widget-size-large = Stor
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Skjul widgeter
@@ -710,7 +761,6 @@ newtab-widget-timer-reset =
     .title = Tilbakestill
 newtab-widget-timer-menu-notifications = Slå av varsler
 newtab-widget-timer-menu-notifications-on = Slå på varsler
-newtab-widget-timer-menu-hide = Skjul nedteller
 newtab-widget-timer-menu-learn-more = Les mer
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Toppoverskrifter
@@ -721,6 +771,12 @@ newtab-daily-briefing-card-timestamp = Oppdatert for { $minutes } minutter siden
 newtab-widget-message-title = Hold fokus med lister og en innebygd nedteller
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Fra kjappe påminnelser til daglige gjøremål, fokuserte arbeidsøkter til strekkpauser — hold deg til oppgaven og tidsplanen.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Gjør { -brand-product-name } til ditt eget
+newtab-promo-card-body-addons = Velg et bakgrunnsbilde fra samlingen vår, eller lag ditt eget.
+newtab-promo-card-cta-addons = Prøv det nå
 newtab-promo-card-title = Støtt { -brand-product-name }
 newtab-promo-card-body = Våre sponsorer støtter vårt oppdrag om å bygge et bedre internett
 newtab-promo-card-cta = Les mer

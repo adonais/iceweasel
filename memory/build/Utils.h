@@ -7,6 +7,7 @@
 
 #include <cstring>
 #include <type_traits>
+#include <limits.h>
 
 #ifdef XP_WIN
 #  include <io.h>  // for _write()

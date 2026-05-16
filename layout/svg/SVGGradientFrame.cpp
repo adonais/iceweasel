@@ -140,8 +140,8 @@ gfxMatrix SVGGradientFrame::GetGradientTransform(
     gfxRect bbox = aOverrideBounds
                        ? *aOverrideBounds
                        : SVGUtils::GetBBox(
-                             aSource, SVGUtils::eUseFrameBoundsForOuterSVG |
-                                          SVGUtils::eBBoxIncludeFillGeometry);
+                             aSource, {SVGBBoxFlag::UseFrameBoundsForOuterSVG,
+                                       SVGBBoxFlag::IncludeFillGeometry});
     bboxMatrix =
         gfxMatrix(bbox.Width(), 0, 0, bbox.Height(), bbox.X(), bbox.Y());
   }

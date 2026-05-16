@@ -10,7 +10,6 @@
 #endif
 
 #include <gtk/gtk.h>
-#include <functional>
 
 /*
  * MozContainer

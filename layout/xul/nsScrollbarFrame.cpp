@@ -316,15 +316,15 @@ nsSize nsScrollbarFrame::ScrollbarMinSize() const {
 }
 
 StyleScrollbarWidth nsScrollbarFrame::ScrollbarWidth() const {
-  return nsLayoutUtils::StyleForScrollbar(this)
-      ->StyleUIReset()
-      ->ScrollbarWidth();
+  return nsLayoutUtils::ScrollbarWidthFor(this);
 }
 
 nscoord nsScrollbarFrame::ScrollbarTrackSize() const {
+  auto overlay = nsLayoutUtils::UseOverlayScrollbars(this)
+                     ? nsITheme::Overlay::Yes
+                     : nsITheme::Overlay::No;
+
   nsPresContext* pc = PresContext();
-  auto overlay = pc->UseOverlayScrollbars() ? nsITheme::Overlay::Yes
-                                            : nsITheme::Overlay::No;
   return LayoutDevicePixel::ToAppUnits(
       pc->Theme()->GetScrollbarSize(pc, ScrollbarWidth(), overlay),
       pc->AppUnitsPerDevPixel());

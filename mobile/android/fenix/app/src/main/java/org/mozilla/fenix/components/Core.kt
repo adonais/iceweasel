@@ -11,6 +11,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.domains.autocomplete.BaseDomainAutocompleteProvider
@@ -26,6 +27,7 @@ import mozilla.components.browser.session.storage.SessionStorage
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.engine.middleware.SessionPrioritizationMiddleware
 import mozilla.components.browser.state.engine.middleware.TranslationsMiddleware
+import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesBookmarksStorage
@@ -94,6 +96,7 @@ import mozilla.components.service.mars.NEW_TAB_TILE_1_PLACEMENT_KEY
 import mozilla.components.service.mars.NEW_TAB_TILE_2_PLACEMENT_KEY
 import mozilla.components.service.mars.Placement
 import mozilla.components.service.mars.contile.ContileTopSitesUpdater
+import mozilla.components.service.merino.manifest.MerinoManifestProvider
 import mozilla.components.service.pocket.ContentRecommendationsRequestConfig
 import mozilla.components.service.pocket.PocketStoriesConfig
 import mozilla.components.service.pocket.PocketStoriesService
@@ -127,6 +130,7 @@ import org.mozilla.fenix.gecko.GeckoProvider
 import org.mozilla.fenix.historymetadata.DefaultHistoryMetadataService
 import org.mozilla.fenix.historymetadata.HistoryMetadataMiddleware
 import org.mozilla.fenix.historymetadata.HistoryMetadataService
+import org.mozilla.fenix.longfox.LongFoxFeature
 import org.mozilla.fenix.media.MediaSessionService
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.perf.StrictModeManager
@@ -144,6 +148,8 @@ import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryC
 import org.mozilla.fenix.tabgroups.storage.redux.middleware.TabGroupMiddleware
 import org.mozilla.fenix.tabgroups.storage.repository.DefaultTabGroupRepository
 import org.mozilla.fenix.telemetry.TelemetryMiddleware
+import org.mozilla.fenix.translations.TranslationsEnabledSettings
+import org.mozilla.fenix.utils.Settings.DeleteDownloadBehavior
 import org.mozilla.fenix.utils.getUndoDelay
 import org.mozilla.geckoview.GeckoRuntime
 import java.util.concurrent.TimeUnit
@@ -216,7 +222,8 @@ class Core(
                     DownloadLocationManager(context).defaultLocation
                 },
             ),
-            )
+            useContentBlockingDatabase = context.settings().shouldUseTrackingProtectionDatabase,
+        )
 
         // Apply fingerprinting protection overrides if the feature is enabled in Nimbus
         if (FxNimbus.features.fingerprintingProtection.value().enabled) {
@@ -250,6 +257,19 @@ class Core(
                 FxNimbus.features.safeBrowsingV5.value().enableV5
         }
 
+        // Apply Safe Browsing Real-Time settings if the Nimbus feature is enabled.
+        with(FxNimbus.features.safeBrowsingRealTime.value()) {
+            if (featureEnabled) {
+                defaultSettings.safeBrowsingGlobalCacheEnabled = globalCacheEnabled
+                defaultSettings.safeBrowsingRealTimeEnabled = realTimeEnabled
+                defaultSettings.safeBrowsingRealTimeSimulationEnabled = simulationEnabled
+                defaultSettings.safeBrowsingRealTimeSimulationHitProbability = simulationHitProbability
+                defaultSettings.safeBrowsingRealTimeSimulationCacheTTLSec = simulationCacheTtlSec
+                defaultSettings.safeBrowsingRealTimeSimulationNegativeCacheEnabled = simulationNegativeCacheEnabled
+                defaultSettings.safeBrowsingRealTimeSimulationNegativeCacheTTLSec = simulationNegativeCacheTtlSec
+            }
+        }
+
         GeckoEngine(
             context = context,
             defaultSettings = defaultSettings,
@@ -266,7 +286,12 @@ class Core(
      * NB: This does not need to be lazy as it is initialized
      * with the engine on startup.
      */
-    val requestInterceptor = AppRequestInterceptor(context)
+    val requestInterceptor = AppRequestInterceptor(
+        context = context,
+        isPrivateForSession = { session ->
+            store.state.findTabOrCustomTab(session)?.content?.private ?: true
+        },
+    )
 
     /**
      * [Client] implementation to be used for code depending on `concept-fetch``
@@ -343,7 +368,7 @@ class Core(
                     applicationContext = context,
                     downloadServiceClass = DownloadService::class.java,
                     deleteFileFromStorage = {
-                       context.settings().shouldCleanUpDownloadsAutomatically()
+                        context.settings().deleteDownloadBehavior == DeleteDownloadBehavior.DELETE_FROM_DEVICE
                     },
                     downloadFileUtils = DefaultDownloadFileUtils(
                         context = context.applicationContext,
@@ -383,7 +408,14 @@ class Core(
                 // We are disabling automatically initializing translations so that we can control when
                 // we start this process. For details, see:
                 // https://bugzilla.mozilla.org/show_bug.cgi?id=1958042
-                TranslationsMiddleware(engine, MainScope(), false),
+                TranslationsMiddleware(
+                    engine = engine,
+                    scope = MainScope(),
+                    automaticallyInitialize = false,
+                    isTranslationsEnabled = {
+                        TranslationsEnabledSettings.dataStore(context).isEnabled.first()
+                    },
+                ),
                 StartupMiddleware(
                     applicationContext = context,
                     repository = DefaultHomepageAsANewTabPreferenceRepository(context.settings()),
@@ -487,11 +519,20 @@ class Core(
         ProtectionsStorage(context)
     }
 
+    val merinoManifestProvider by lazyMonitored {
+        MerinoManifestProvider(context.assets)
+    }
+
     /**
      * Icons component for loading, caching and processing website icons.
      */
     val icons by lazyMonitored {
-        BrowserIcons(context, client)
+        BrowserIcons(
+            context = context,
+            httpClient = client,
+            manifestProvider = merinoManifestProvider,
+            useMerinoManifest = context.settings().enableMerinoManifest,
+        )
     }
 
     val metrics by lazyMonitored {
@@ -699,6 +740,8 @@ class Core(
     val summarizationEligibilityChecker: SummarizationEligibilityChecker by lazyMonitored {
         DefaultSummarizationEligibilityChecker()
     }
+
+    val longFoxFeature by lazyMonitored { LongFoxFeature() }
 
     /**
      * Shared Preferences that encrypt/decrypt using Android KeyStore and lib-dataprotect for 23+

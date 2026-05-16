@@ -1418,7 +1418,7 @@ void nsMenuX::Dump(uint32_t aIndent) const {
 
 @end
 
-// OS X Leopard (at least as of 10.5.2) has an obscure bug triggered by some
+// MacOS Leopard (at least as of 10.5.2) has an obscure bug triggered by some
 // behavior that's present in Mozilla.org browsers but not (as best I can
 // tell) in Apple products like Safari.  (It's not yet clear exactly what this
 // behavior is.)

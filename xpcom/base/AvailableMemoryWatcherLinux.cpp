@@ -154,6 +154,10 @@ class nsAvailableMemoryWatcher final
   // Flag to track if SetPSIPathForTesting has been called
   bool mIsTesting MOZ_GUARDED_BY(mMutex);
 
+  // Flag to track if PSI file reading has failed
+  // (e.g., due to AppArmor denial or kernel not supporting PSI)
+  bool mPSIReadFailed MOZ_GUARDED_BY(mMutex);
+
   // Polling interval to check for low memory. In high memory scenarios,
   // default to 5000 ms between each check.
   static const uint32_t kHighMemoryPollingIntervalMS = 5000;
@@ -176,7 +180,8 @@ nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
       mPSIInfo{},
       mLastOOMTime(),
       mPSIPath(kPSIPath),
-      mIsTesting(false) {}
+      mIsTesting(false),
+      mPSIReadFailed(false) {}
 
 nsAvailableMemoryWatcher::~nsAvailableMemoryWatcher() = default;
 
@@ -424,9 +429,16 @@ void nsAvailableMemoryWatcher::UpdatePSIInfo(const MutexAutoLock&)
   }
 #endif
 
+  // Skip reading PSI file if it has failed before (e.g., AppArmor denial)
+  // to avoid spamming syslog with repeated access denials
+  if (mPSIReadFailed) {
+    return;
+  }
+
   nsresult rv = ReadPSIFile(mPSIPath.get(), mPSIInfo);
   if (NS_FAILED(rv)) {
     mPSIInfo = {};
+    mPSIReadFailed = true;
   }
 }
 
@@ -508,6 +520,8 @@ NS_IMETHODIMP nsAvailableMemoryWatcher::SetPSIPathForTesting(
   MutexAutoLock lock(mMutex);
   mPSIPath.Assign(aPSIPath);
   mIsTesting = true;
+  // Reset the failed flag when changing PSI path for testing
+  mPSIReadFailed = false;
   return NS_OK;
 }
 

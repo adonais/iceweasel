@@ -23,7 +23,6 @@ from tempfile import mkstemp
 
 import mozpack.path as mozpath
 from mozbuild import makeutil
-from mozbuild.nodeutil import package_setup
 from mozbuild.preprocessor import Preprocessor
 from mozbuild.util import FileAvoidWrite, ensure_unicode
 from mozpack.chrome.manifest import ManifestEntry, ManifestInterfaces
@@ -370,7 +369,9 @@ class AbsoluteSymlinkFile(File):
         # so we replace with a proper symlink.
         if st and stat.S_ISLNK(st.st_mode):
             link = os.readlink(dest)
-            if link == self.path:
+            if mozpath.strip_extended_length_prefix(
+                link
+            ) == mozpath.strip_extended_length_prefix(self.path):
                 return False
 
             os.remove(dest)
@@ -826,6 +827,8 @@ class MinifiedJavaScript(BaseFile):
 
             if not terser_path.exists():
                 # Automatically set up node_modules if terser is not found
+                from mozbuild.nodeutil import package_setup
+
                 package_setup(str(terser_dir), "terser")
 
                 # Verify that terser is now available after setup

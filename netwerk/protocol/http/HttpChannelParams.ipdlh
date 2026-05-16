@@ -42,7 +42,6 @@ struct HttpChannelOnStartRequestArgs
   uint32_t cacheKey;
   uint32_t? multiPartID;
   bool isFromCache;
-  bool isRacing;
   bool cacheEntryAvailable;
   bool deliveringAltData;
   bool applyConversion;

@@ -207,7 +207,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
       mozilla::dom::PopoverVisibilityState aOldState, Element* aSource);
   MOZ_CAN_RUN_SCRIPT void RunPopoverToggleEventTask(
       mozilla::dom::PopoverToggleEventTask* aTask,
-      mozilla::dom::PopoverVisibilityState aOldState,
       mozilla::dom::Element* aSource);
   MOZ_CAN_RUN_SCRIPT void ShowPopover(
       const mozilla::dom::ShowPopoverOptions& aOptions, ErrorResult& aRv);

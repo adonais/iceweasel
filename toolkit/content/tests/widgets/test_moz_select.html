@@ -15,6 +15,12 @@
       let testHelpers = new InputTestHelpers();
 
       add_setup(async function setup() {
+        if (navigator.platform.startsWith("Mac")) {
+          // This test specifically exercises input methods, which requires non-native menus.
+          await SpecialPowers.pushPrefEnv({
+            set: [["widget.macos.allow-native-select", false]],
+          });
+        }
         await testHelpers.setupLit();
         let templateFn = (attrs, children) => testHelpers.html`
         <moz-select ${attrs}>

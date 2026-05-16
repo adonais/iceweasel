@@ -1176,18 +1176,18 @@ void nsClipboard::SelectionGetEvent(GtkClipboard* aClipboard,
                                                  kJPGImageMime, kGIFImageMime};
     nsCOMPtr<nsISupports> imageItem;
     nsCOMPtr<imgIContainer> image;
-    for (uint32_t i = 0; i < std::size(imageMimeTypes); i++) {
-      rv = trans->GetTransferData(imageMimeTypes[i], getter_AddRefs(imageItem));
+    for (auto imageMimeType : imageMimeTypes) {
+      rv = trans->GetTransferData(imageMimeType, getter_AddRefs(imageItem));
       if (NS_FAILED(rv)) {
         MOZ_CLIPBOARD_LOG("    %s is missing at GetTransferData()\n",
-                          imageMimeTypes[i]);
+                          imageMimeType);
         continue;
       }
 
       image = do_QueryInterface(imageItem);
       if (image) {
         MOZ_CLIPBOARD_LOG("    %s is available at GetTransferData()\n",
-                          imageMimeTypes[i]);
+                          imageMimeType);
         break;
       }
     }

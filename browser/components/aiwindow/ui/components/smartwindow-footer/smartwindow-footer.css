@@ -28,3 +28,35 @@ moz-button.footer-action-button::part(button) {
   flex-direction: column;
   gap: var(--space-small);
 }
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("browser.smartwindow.nova.enabled") {
+  @media not (forced-colors) {
+    moz-button.footer-action-button {
+      --button-background-color-ghost: transparent;
+      --button-text-color-ghost: var(--smartwindow-icon-color-accent-primary-desaturated);
+      /* Active state is using a different text color for a11y contrast */
+      --button-text-color-ghost-active: light-dark(var(--color-violet-90), var(--color-neutral-0, #f6f8ff));
+      --button-text-color-ghost-hover: var(--smartwindow-icon-color-accent-primary-desaturated);
+      --button-background-color-ghost-active: light-dark(
+        color-mix(in srgb, var(--color-violet-60) 30%, transparent),
+        color-mix(in srgb, var(--color-violet-30) 36%, transparent)
+      );
+      --button-background-color-ghost-hover: light-dark(
+        color-mix(in srgb, var(--color-violet-60) 16%, transparent),
+        color-mix(in srgb, var(--color-violet-30) 24%, transparent)
+      );
+      --button-background-color-ghost-selected: light-dark(
+        color-mix(in srgb, var(--color-violet-60) 16%, transparent),
+        color-mix(in srgb, var(--color-violet-30) 24%, transparent)
+      );
+    }
+  }
+
+  moz-button.footer-action-button::part(button) {
+    border-radius: var(--border-radius-large);
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/no-base-design-tokens */
+    min-width: 86px;
+    padding: var(--space-medium);
+  }
+}

@@ -220,6 +220,8 @@ class DRMFormat;
 class DMABufDeviceLock;
 
 class DMABufDevice final {
+  friend class DMABufDeviceLock;
+
  public:
   bool Init();
 
@@ -258,6 +260,8 @@ class MOZ_RAII DMABufDeviceLock final {
  public:
   DMABufDeviceLock();
   ~DMABufDeviceLock();
+
+  static void Shutdown();
 
   gbm_device* GetGBMDevice() {
     sMutex.AssertCurrentThreadOwns();

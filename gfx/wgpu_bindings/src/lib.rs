@@ -278,8 +278,10 @@ enum Message<'a> {
         Cow<'a, [id::TextureId]>,
         Cow<'a, [crate::ExternalTextureSourceId]>,
     ),
-    QueueOnSubmittedWorkDone(id::QueueId),
-
+    QueueOnSubmittedWorkDone {
+        device_id: id::DeviceId,
+        queue_id: id::QueueId,
+    },
     CreateSwapChain {
         device_id: id::DeviceId,
         queue_id: id::QueueId,

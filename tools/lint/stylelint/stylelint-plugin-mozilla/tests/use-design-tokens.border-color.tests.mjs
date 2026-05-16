@@ -220,7 +220,12 @@ testRule({
   reject: [
     {
       code: ".a { border-color: #666; }",
-      message: messages.rejected("#666", ["border-color", "border", "outline"]),
+      message: messages.rejected("#666", [
+        "border-color",
+        "border",
+        "outline-color",
+        "outline",
+      ]),
       description: "#666 should use a border-color design token.",
     },
     {
@@ -228,8 +233,10 @@ testRule({
       message: messages.rejected("2px solid #666", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description: "2px solid #666 should use a border-color design token.",
     },
@@ -238,6 +245,7 @@ testRule({
       message: messages.rejected("oklch(69% 0.19 15)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
       ]),
       description: "oklch(69% 0.19 15) should use a border-color design token.",
@@ -247,8 +255,10 @@ testRule({
       message: messages.rejected("3px dashed oklch(42 42 42)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description:
         "3px dashed oklch(42 42 42) should use a border-color design token.",
@@ -258,6 +268,7 @@ testRule({
       message: messages.rejected("rgba(42 42 42 / 0.15)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
       ]),
       description:
@@ -274,8 +285,10 @@ testRule({
       message: messages.rejected("3px dashed rgba(42 42 42 / 0.15)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description:
         "3px dashed rgba(42 42 42 / 0.15) should use a border-color design token.",
@@ -285,8 +298,10 @@ testRule({
       message: messages.rejected("1px solid #666666", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description: "1px solid #666666 should use a border-color design token.",
     },
@@ -295,6 +310,7 @@ testRule({
       message: messages.rejected("rgb(10 20 30)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
       ]),
       description: "rgb(10 20 30) should use a border-color design token.",
@@ -304,8 +320,10 @@ testRule({
       message: messages.rejected("4px dotted #666", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description: "4px dotted #666 should use a border-color design token.",
     },
@@ -314,6 +332,7 @@ testRule({
       message: messages.rejected("oklch(69% 0.19 15)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
       ]),
       description: "oklch(69% 0.19 15) should use a border-color design token.",
@@ -323,8 +342,10 @@ testRule({
       message: messages.rejected("medium solid color-mix(in srgb, red, blue)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description:
         "color-mix(in srgb, red, blue) should use a border-color design token.",
@@ -334,6 +355,7 @@ testRule({
       message: messages.rejected("oklch(69% 0.19 15)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
       ]),
       description: "oklch(69% 0.19 15) should use a border-color design token.",
@@ -343,8 +365,10 @@ testRule({
       message: messages.rejected("thin double #191919", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description:
         "thin double #989898 should use a border-color design token.",
@@ -354,6 +378,7 @@ testRule({
       message: messages.rejected("oklch(69% 0.19 15)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
       ]),
       description: "oklch(69% 0.19 15) should use a border-color design token.",
@@ -363,8 +388,10 @@ testRule({
       message: messages.rejected("2px solid #666", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description: "2px solid #616263 should use a border-color design token.",
     },
@@ -373,6 +400,7 @@ testRule({
       message: messages.rejected("rgba(0 0 0 / 0.25)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
       ]),
       description: "rgba(0 0 0 / 0.25) should use a border-color design token.",
@@ -382,8 +410,10 @@ testRule({
       message: messages.rejected("1px solid var(--random-token, #666)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description:
         "1px solid var(--random-token, #666) should use a border-color design token.",
@@ -392,7 +422,14 @@ testRule({
       code: ".a { border: 1px solid var(--random-token, var(--color-gray-50)); }",
       message: messages.rejected(
         "1px solid var(--random-token, var(--color-gray-50))",
-        ["border-color", "border", "outline", "border-width"]
+        [
+          "border-color",
+          "border",
+          "outline-color",
+          "outline",
+          "border-width",
+          "outline-width",
+        ]
       ),
       description:
         "1px solid var(--random-token, var(--color-gray-50)) should use a border-color design token.",
@@ -405,6 +442,7 @@ testRule({
       message: messages.rejected("var(--custom-token)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
       ]),
       description:
@@ -418,6 +456,7 @@ testRule({
       message: messages.rejected("var(--random-token, var(--custom-token))", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
       ]),
       description:
@@ -428,8 +467,10 @@ testRule({
       message: messages.rejected("1px solid var(--color-gray-20)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description:
         "1px solid var(--color-gray-20) should use a border-color design token.",
@@ -442,8 +483,10 @@ testRule({
       message: messages.rejected("1px solid var(--custom-token)", [
         "border-color",
         "border",
+        "outline-color",
         "outline",
         "border-width",
+        "outline-width",
       ]),
       description:
         "1px solid var(--custom-token) should use a border-color design token.",
@@ -452,7 +495,7 @@ testRule({
       code: ".a { border-color: FieldText; }",
       message: messages.warning(
         "FieldText",
-        "a border-color, border or outline design token"
+        "a border-color, border, outline-color or outline design token"
       ),
       description: "FieldText should use a border-color design token.",
     },
@@ -466,7 +509,14 @@ testRule({
       code: ".a { border: 1px solid color-mix(in oklch, var(--color-gray-20) 20%, transparent); }",
       message: messages.rejected(
         "1px solid color-mix(in oklch, var(--color-gray-20) 20%, transparent)",
-        ["border-color", "border", "outline", "border-width"]
+        [
+          "border-color",
+          "border",
+          "outline-color",
+          "outline",
+          "border-width",
+          "outline-width",
+        ]
       ),
       description:
         "1px solid color-mix(in oklch, var(--color-gray-20) 20%, transparent) should use a border-color design token.",
@@ -475,7 +525,7 @@ testRule({
       code: ".a { border-color: light-dark(var(--color-gray-20), var(--color-gray-80)); }",
       message: messages.rejected(
         "light-dark(var(--color-gray-20), var(--color-gray-80))",
-        ["border-color", "border", "outline"]
+        ["border-color", "border", "outline-color", "outline"]
       ),
       description:
         "light-dark(var(--color-gray-20), var(--color-gray-80)) should use a border-color design token.",
@@ -484,7 +534,14 @@ testRule({
       code: ".a { border: 1px solid oklch(from var(--color-gray-20) l c h / 20%); }",
       message: messages.rejected(
         "1px solid oklch(from var(--color-gray-20) l c h / 20%)",
-        ["border-color", "border", "outline", "border-width"]
+        [
+          "border-color",
+          "border",
+          "outline-color",
+          "outline",
+          "border-width",
+          "outline-width",
+        ]
       ),
       description:
         "1px solid oklch(from var(--color-gray-20) l c h / 20%) should use a border-color design token.",
@@ -503,7 +560,7 @@ testRule({
       fixed: ".a { border-color: white; }",
       message: messages.rejected(
         "#fff",
-        ["border-color", "border", "outline"],
+        ["border-color", "border", "outline-color", "outline"],
         "white"
       ),
       description: "#fff should be fixed to white",
@@ -513,7 +570,14 @@ testRule({
       fixed: ".a { border: 1px solid white; }",
       message: messages.rejected(
         "1px solid #ffffff",
-        ["border-color", "border", "outline", "border-width"],
+        [
+          "border-color",
+          "border",
+          "outline-color",
+          "outline",
+          "border-width",
+          "outline-width",
+        ],
         "1px solid white"
       ),
       description: "#ffffff should be fixed to white",
@@ -523,7 +587,7 @@ testRule({
       fixed: ".a { outline-color: white; }",
       message: messages.rejected(
         "#FFF",
-        ["border-color", "border", "outline"],
+        ["border-color", "border", "outline-color", "outline"],
         "white"
       ),
       description: "#FFF should be fixed to white",
@@ -533,7 +597,7 @@ testRule({
       fixed: ".a { border-left-color: white; }",
       message: messages.rejected(
         "#FFFFFF",
-        ["border-color", "border", "outline"],
+        ["border-color", "border", "outline-color", "outline"],
         "white"
       ),
       description: "#FFFFFF should be fixed to white",
@@ -543,7 +607,14 @@ testRule({
       fixed: ".a { outline: 1px solid black; }",
       message: messages.rejected(
         "1px solid #000",
-        ["border-color", "border", "outline", "border-width"],
+        [
+          "border-color",
+          "border",
+          "outline-color",
+          "outline",
+          "border-width",
+          "outline-width",
+        ],
         "1px solid black"
       ),
       description: "#000 should be fixed to black",
@@ -553,7 +624,7 @@ testRule({
       fixed: ".a { border-block-end-color: black; }",
       message: messages.rejected(
         "#000000",
-        ["border-color", "border", "outline"],
+        ["border-color", "border", "outline-color", "outline"],
         "black"
       ),
       description: "#000000 should be fixed to black",

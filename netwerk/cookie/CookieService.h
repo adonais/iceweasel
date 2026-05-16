@@ -102,7 +102,7 @@ class CookieService final : public nsICookieService,
 
   nsICookieValidation::ValidationError SetCookiesFromIPC(
       const nsACString& aBaseDomain, const OriginAttributes& aAttrs,
-      nsIURI* aHostURI, bool aFromHttp, bool aIsThirdParty,
+      nsIURI* aHostURI, bool aIsThirdParty,
       const nsTArray<CookieStruct>& aCookies,
       dom::BrowsingContext* aBrowsingContext);
 

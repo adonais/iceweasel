@@ -146,6 +146,9 @@ newtab-menu-report = Jelentés
 newtab-menu-section-block = Tiltás
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Követés megszüntetése
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Téma követésének megszüntetése
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -311,9 +314,23 @@ newtab-error-fallback-refresh-link = Az újrapróbálkozáshoz frissítse az old
 
 newtab-custom-shortcuts-title = Gyorskeresők
 newtab-custom-shortcuts-subtitle = Mentett vagy felkeresett webhelyek
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Gyorskeresők
     .description = Mentett vagy felkeresett webhelyek
+newtab-custom-shortcuts-nova =
+    .label = Gyorskeresők
+newtab-custom-row-description =
+    .description = Sorok száma
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } sor
+           *[other] { $num } sor
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -324,9 +341,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Szponzorált gyorskeresők
 newtab-custom-pocket-title = A { -pocket-brand-name } által ajánlott
 newtab-custom-pocket-subtitle = Kivételes tartalmak a { -pocket-brand-name } válogatásában, amely a { -brand-product-name } család része
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Ajánlott történetek
     .description = Kivételes tartalmak a { -brand-product-name } család válogatásában
+newtab-recommended-stories-toggle =
+    .label = Ajánlott történetek
 newtab-custom-stories-personalized-toggle =
     .label = Történetek
 newtab-custom-stories-personalized-checkbox-label = Személyre szabott történetek a tevékenysége alapján
@@ -360,8 +380,12 @@ newtab-custom-settings = További beállítások kezelése
 
 newtab-wallpaper-title = Háttérképek
 newtab-wallpaper-reset = Visszaállítás az alapértelmezésre
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Kép feltöltése
+newtab-wallpaper-add-an-image = Kép hozzáadása
 newtab-wallpaper-custom-color = Válasszon színt
+newtab-wallpaper-toggle-title =
+    .label = Háttérképek
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = A kép túllépte a { $file_size } MB-os fájlméretkorlátot. Próbáljon meg egy kisebb fájlt feltölteni.
@@ -384,7 +408,9 @@ newtab-wallpaper-light-fox-anniversary = Egy róka egy füves mezőben, ködös 
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Egyszínű színek
+newtab-wallpaper-colors = Színek
 newtab-wallpaper-blue = Kék
 newtab-wallpaper-light-blue = Világoskék
 newtab-wallpaper-light-purple = Világoslila
@@ -490,7 +516,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Váltás Fahrenheitre
 newtab-weather-menu-change-temperature-units-celsius = Váltás Celsiusra
-newtab-weather-menu-hide-weather-v2 = Időjárás elrejtése
 newtab-weather-menu-hide-weather = Időjárás elrejtése az Új lapon
 newtab-weather-menu-learn-more = További tudnivalók
 newtab-weather-menu-detect-my-location = Saját hely észlelése
@@ -501,8 +526,18 @@ newtab-weather-opt-in-not-now =
     .label = Most nem
 newtab-weather-opt-in-yes =
     .label = Igen
+newtab-weather-opt-in-headline = Kapjon helyi időjárás-előrejelzést
+newtab-weather-opt-in-use-location =
+    .label = Hely használata
+newtab-weather-opt-in-choose-location = Válasszon helyet
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Legmagasabb
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Legalacsonyabb
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -576,6 +611,7 @@ newtab-section-confirm-block-topic-p2 = A blokkolt témák többé nem fognak me
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = { $topic } blokkolása
+newtab-section-block-cancel-button = Mégse
 
 ## Strings for custom wallpaper highlight
 
@@ -639,6 +675,18 @@ newtab-toast-thanks-for-reporting =
     .message = Köszönjük, hogy bejelentette.
 newtab-toast-widgets-hidden =
     .message = Válassza a ceruza ikont, hogy bármikor újra kisalkalmazásokat adjon hozzá.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Mostantól követi a következőt: { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Már nem követi a következőt: { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Többé nem fog történeteket látni erről: { $topic }.
 
 ## Strings for task / to-do list productivity widget
 
@@ -658,7 +706,6 @@ newtab-widget-lists-menu-edit = Listanév szerkesztése
 newtab-widget-lists-menu-create = Új lista létrehozása
 newtab-widget-lists-menu-delete = Lista törlése
 newtab-widget-lists-menu-copy = Lista vágólapra másolása
-newtab-widget-lists-menu-hide = Összes lista elrejtése
 newtab-widget-lists-menu-learn-more = További tudnivalók
 newtab-widget-lists-input-add-an-item =
     .placeholder = Elem hozzáadása
@@ -680,6 +727,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = Új lista
 newtab-widget-section-title = Kisalkalmazások
 newtab-widget-menu-hide = Kisalkalmazás elrejtése
+newtab-widget-menu-change-size = Méret módosítása
+newtab-widget-size-small = Kicsi
+newtab-widget-size-medium = Közepes
+newtab-widget-size-large = Nagy
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Kisalkalmazások elrejtése
@@ -711,7 +762,6 @@ newtab-widget-timer-reset =
     .title = Visszaállítás
 newtab-widget-timer-menu-notifications = Értesítések kikapcsolása
 newtab-widget-timer-menu-notifications-on = Értesítések bekapcsolása
-newtab-widget-timer-menu-hide = Időzítő elrejtése
 newtab-widget-timer-menu-learn-more = További tudnivalók
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Legfontosabb szalagcímek
@@ -722,6 +772,12 @@ newtab-daily-briefing-card-timestamp = Frissítve: { $minutes } perce
 newtab-widget-message-title = Maradjon fókuszált a listákkal és a beépített időzítővel
 # to-dos stands for "things to do".
 newtab-widget-message-copy = A gyors emlékeztetőktől a napi tennivalókig, fókuszált munkaszakaszoktól a nyújtó szünetekig — maradjon a feladatnál és időben.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Tegye sajátjává a { -brand-product-name }ot
+newtab-promo-card-body-addons = Válasszon egy háttérképet a gyűjteményünkből, vagy készítse el a sajátját.
+newtab-promo-card-cta-addons = Próbálja ki most
 newtab-promo-card-title = Támogassa a { -brand-product-name }ot
 newtab-promo-card-body = Szponzoraink támogatják a küldetésünket, hogy jobb webet építsünk
 newtab-promo-card-cta = További tudnivalók

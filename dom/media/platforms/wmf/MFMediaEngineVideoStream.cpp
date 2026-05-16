@@ -148,26 +148,7 @@ HRESULT MFMediaEngineVideoStream::CreateMediaType(const TrackInfo& aInfo,
   const auto rotation = ToMFVideoRotationFormat(videoInfo.mRotation);
   RETURN_IF_FAILED(mediaType->SetUINT32(MF_MT_VIDEO_ROTATION, rotation));
 
-  static const auto ToMFVideoTransFunc =
-      [](const Maybe<gfx::YUVColorSpace>& aColorSpace) {
-        using YUVColorSpace = gfx::YUVColorSpace;
-        if (!aColorSpace) {
-          return MFVideoTransFunc_Unknown;
-        }
-        // https://docs.microsoft.com/en-us/windows/win32/api/mfobjects/ne-mfobjects-mfvideotransferfunction
-        switch (*aColorSpace) {
-          case YUVColorSpace::BT601:
-          case YUVColorSpace::BT709:
-            return MFVideoTransFunc_709;
-          case YUVColorSpace::BT2020:
-            return MFVideoTransFunc_2020;
-          case YUVColorSpace::Identity:
-            return MFVideoTransFunc_sRGB;
-          default:
-            return MFVideoTransFunc_Unknown;
-        }
-      };
-  const auto transFunc = ToMFVideoTransFunc(videoInfo.mColorSpace);
+  const auto transFunc = ToMFVideoTransFunc(videoInfo.mTransferFunction);
   RETURN_IF_FAILED(mediaType->SetUINT32(MF_MT_TRANSFER_FUNCTION, transFunc));
 
   static const auto ToMFVideoPrimaries =

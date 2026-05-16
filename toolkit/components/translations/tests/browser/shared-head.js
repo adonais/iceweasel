@@ -87,6 +87,12 @@ const LANGUAGE_PAIRS = [
   { fromLang: "uk", toLang: PIVOT_LANGUAGE },
 ];
 
+const LANGUAGE_PAIRS_WITHOUT_SPANISH = LANGUAGE_PAIRS.filter(
+  // Spanish is intentionally omitted so that "es" may trigger
+  // the unsupported-language message when relevant.
+  ({ fromLang, toLang }) => fromLang !== "es" && toLang !== "es"
+);
+
 const TRANSLATIONS_PERMISSION = "translations";
 const ALWAYS_TRANSLATE_LANGS_PREF =
   "browser.translations.alwaysTranslateLanguages";

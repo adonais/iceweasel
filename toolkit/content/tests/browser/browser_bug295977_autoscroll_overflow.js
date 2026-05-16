@@ -135,6 +135,38 @@ body > div > div {width: 1000px;height: 1000px;}\
         "data:text/html," +
         encodeURIComponent(`
 <!doctype html>
+<textarea id="s" style="width: 100px; height: 100px; vertical-align: top;">
+${"Line\n".repeat(20)}
+</textarea>
+<div style="height: 100vh"></div>
+      `),
+    },
+    {
+      elem: "s",
+      // We expect the textarea to scroll vertically
+      expected: expectScrollVert,
+      middlemousepastepref: false,
+    },
+    {
+      dataUri:
+        "data:text/html," +
+        encodeURIComponent(`
+<!doctype html>
+<iframe id=i height=100 width=100 scrolling="no" srcdoc="<!doctype html><html style='overflow:auto'><div style='height: 200px'>Auto-scrolling should never make me disappear"></iframe>
+<div style="height: 100vh"></div>
+      `),
+    },
+    {
+      elem: "i",
+      // We expect the outer window to scroll vertically, not the iframe's window.
+      expected: expectScrollVert,
+      testwindow: true,
+    },
+    {
+      dataUri:
+        "data:text/html," +
+        encodeURIComponent(`
+<!doctype html>
 <iframe id=i height=100 width=100 scrolling="no" srcdoc="<div style='height: 200px'>Auto-scrolling should never make me disappear"></iframe>
 <div style="height: 100vh"></div>
       `),
@@ -185,6 +217,7 @@ body > div > div {width: 1000px;height: 1000px;}\
 
   for (let test of allTests) {
     if (test.dataUri) {
+      info(`loading: ${test.dataUri}`);
       let loadedPromise = BrowserTestUtils.browserLoaded(
         gBrowser.selectedBrowser
       );

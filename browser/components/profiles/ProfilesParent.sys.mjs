@@ -12,6 +12,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   BackupService: "resource:///modules/backup/BackupService.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   formAutofillStorage: "resource://autofill/FormAutofillStorage.sys.mjs",
@@ -259,6 +260,16 @@ export class ProfilesParent extends JSWindowActorParent {
           gBrowser.addTrustedTab("about:newtab");
         }
         gBrowser.removeTab(this.tab);
+        // Send a trigger to ASRouter on new profile creation
+        if (source === "about:newprofile") {
+          await lazy.ASRouter.waitForInitialized;
+          const browser = gBrowser.selectedBrowser;
+          await lazy.ASRouter.sendTriggerMessage({
+            browser,
+            id: "selectableProfileCreated",
+          });
+        }
+
         break;
       }
     }

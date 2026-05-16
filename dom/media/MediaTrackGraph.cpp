@@ -224,9 +224,17 @@ void MediaTrackGraphImpl::RemoveTrackGraphThread(MediaTrack* aTrack) {
   UnregisterAllAudioOutputs(aTrack);
 
   if (aTrack->IsSuspended()) {
-    mSuspendedTracks.RemoveElement(aTrack);
+    const bool removed = mSuspendedTracks.RemoveElement(aTrack);
+    MOZ_DIAGNOSTIC_ASSERT(removed, "Suspended track not in mSuspendedTracks");
+    if (!removed) {
+      mTracks.RemoveElement(aTrack);
+    }
   } else {
-    mTracks.RemoveElement(aTrack);
+    const bool removed = mTracks.RemoveElement(aTrack);
+    MOZ_DIAGNOSTIC_ASSERT(removed, "Non-suspended track not in mTracks");
+    if (!removed) {
+      mSuspendedTracks.RemoveElement(aTrack);
+    }
   }
 
   LOG(LogLevel::Debug, ("%p: Removed media track %p, count %zu", this, aTrack,
@@ -2186,10 +2194,12 @@ void MediaTrack::IncrementSuspendCount() {
   for (uint32_t i = 0; i < mConsumers.Length(); ++i) {
     mConsumers[i]->Suspended();
   }
-  MOZ_ASSERT(graph->mTracks.Contains(this));
-  graph->mTracks.RemoveElement(this);
-  graph->mSuspendedTracks.AppendElement(this);
-  graph->SetTrackOrderDirty();
+  const bool removed = graph->mTracks.RemoveElement(this);
+  MOZ_DIAGNOSTIC_ASSERT(removed, "Track not in mTracks at suspend transition");
+  if (removed) {
+    graph->mSuspendedTracks.AppendElement(this);
+    graph->SetTrackOrderDirty();
+  }
 }
 
 void MediaTrack::DecrementSuspendCount() {
@@ -2204,10 +2214,13 @@ void MediaTrack::DecrementSuspendCount() {
   for (uint32_t i = 0; i < mConsumers.Length(); ++i) {
     mConsumers[i]->Resumed();
   }
-  MOZ_ASSERT(graph->mSuspendedTracks.Contains(this));
-  graph->mSuspendedTracks.RemoveElement(this);
-  graph->mTracks.AppendElement(this);
-  graph->SetTrackOrderDirty();
+  const bool removed = graph->mSuspendedTracks.RemoveElement(this);
+  MOZ_DIAGNOSTIC_ASSERT(removed,
+                        "Track not in mSuspendedTracks at resume transition");
+  if (removed) {
+    graph->mTracks.AppendElement(this);
+    graph->SetTrackOrderDirty();
+  }
 }
 
 void ProcessedMediaTrack::DecrementSuspendCount() {

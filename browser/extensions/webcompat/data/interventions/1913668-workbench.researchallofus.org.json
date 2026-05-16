@@ -1,0 +1,19 @@
+{
+  "label": "workbench.researchallofus.org",
+  "bugs": {
+    "1913668": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://workbench.researchallofus.org/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": [
+          "bug1913668-workbench.researchallofus.org-hide-browser-warning.css"
+        ]
+      }
+    }
+  ]
+}

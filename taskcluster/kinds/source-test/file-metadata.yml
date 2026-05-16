@@ -139,7 +139,7 @@ test-info-xpcshell-timings-periodic:
         job-name: test-info-xpcshell-timings
     worker:
         docker-image: {in-tree: debian12-amd64-build}
-        max-run-time: 5400
+        max-run-time: 7200
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     run-on-projects: []
@@ -186,7 +186,7 @@ test-info-mochitest-timings-periodic:
         job-name: test-info-mochitest-timings
     worker:
         docker-image: {in-tree: debian12-amd64-build}
-        max-run-time: 5400
+        max-run-time: 7200
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     run-on-projects: []

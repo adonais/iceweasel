@@ -12,7 +12,6 @@ EXTRA_JS_MODULES += [
     "GeckoViewAIFeatures.sys.mjs",
     "GeckoViewAutocomplete.sys.mjs",
     "GeckoViewAutofill.sys.mjs",
-    "GeckoViewChildModule.sys.mjs",
     "GeckoViewClipboardPermission.sys.mjs",
     "GeckoViewConsole.sys.mjs",
     "GeckoViewContent.sys.mjs",
@@ -39,6 +38,7 @@ EXTRA_JS_MODULES += [
     "LoadURIDelegate.sys.mjs",
     "MediaUtils.sys.mjs",
     "Messaging.sys.mjs",
+    "NimbusGeckoViewQATelemetry.sys.mjs",
 ]
 
 XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]

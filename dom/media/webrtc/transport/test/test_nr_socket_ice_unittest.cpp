@@ -37,6 +37,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <atomic>
+
 #include "gtest/gtest.h"
 #include "gtest_utils.h"
 #include "ice_ctx.h"
@@ -270,12 +272,12 @@ class IcePeer {
 
   std::string name_;
 
-  bool ice_checking_;
-  bool ice_connected_;
-  bool ice_disconnected_;
-  bool gather_cb_;
-  bool stream_ready_;
-  bool stream_failed_;
+  std::atomic<bool> ice_checking_;
+  std::atomic<bool> ice_connected_;
+  std::atomic<bool> ice_disconnected_;
+  std::atomic<bool> gather_cb_;
+  std::atomic<bool> stream_ready_;
+  std::atomic<bool> stream_failed_;
 
   nr_ice_ctx* ice_ctx_;
   nr_ice_handler* ice_handler_;

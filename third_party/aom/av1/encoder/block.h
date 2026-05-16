@@ -43,6 +43,9 @@ extern "C" {
 /*! Maximum value taken by transform type probabilities */
 #define MAX_TX_TYPE_PROB 1024
 
+/*! Maximum value of inter transform RD records. */
+#define TOP_INTER_TX_NO_SPLIT_COUNT 4
+
 //! Compute color sensitivity index for given plane
 #define COLOR_SENS_IDX(plane) ((plane) - 1)
 
@@ -873,6 +876,9 @@ typedef struct SetOffsetsLoc {
 
 /*!\endcond */
 
+//! Maximum number of estimated RD Cost records for compound average.
+#define TOP_COMP_AVG_EST_RD_COUNT 5
+
 /*! \brief Encoder's parameters related to the current coding block.
  *
  * This struct contains most of the information the encoder needs to encode the
@@ -1409,6 +1415,10 @@ typedef struct macroblock {
    */
   int palette_pixels;
 
+  /*! \brief Keep records of top no-split RD Costs of transform size search. */
+  int64_t top_inter_tx_no_split_rd[MAX_TX_BLOCKS_IN_MAX_SB]
+                                  [TOP_INTER_TX_NO_SPLIT_COUNT];
+
   /*!\brief Pointer to the structure which stores the statistics used by
    * sb-level multi-pass encoding.
    */
@@ -1418,6 +1428,9 @@ typedef struct macroblock {
    * first-pass when superblock is searched twice consecutively.
    */
   struct SB_FIRST_PASS_STATS *sb_fp_stats;
+
+  /*!\brief Array of best estimated RD Costs of compound average. */
+  int64_t top_comp_avg_est_rd[TOP_COMP_AVG_EST_RD_COUNT];
 
 #if CONFIG_PARTITION_SEARCH_ORDER
   /*!\brief Pointer to RD_STATS structure to be used in

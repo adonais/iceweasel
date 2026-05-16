@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -949,22 +947,11 @@ class EvalScope : public Scope {
   }
 
  public:
-  // Starting a scope, the nearest var scope that a direct eval can
-  // introduce vars on.
-  static Scope* nearestVarScopeForDirectEval(Scope* scope);
-
   uint32_t nextFrameSlot() const { return data().slotInfo.nextFrameSlot; }
 
   bool strict() const { return kind() == ScopeKind::StrictEval; }
 
   bool hasBindings() const { return data().length > 0; }
-
-  bool isNonGlobal() const {
-    if (strict()) {
-      return true;
-    }
-    return !nearestVarScopeForDirectEval(enclosing())->is<GlobalScope>();
-  }
 };
 
 template <>

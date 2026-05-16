@@ -206,7 +206,7 @@ def _generate_report(
     status = command_context.run_process(
         args=cmd,
         ensure_exit_code=False,
-        stderr_line_handler=lambda line: stderr_lines.append(line),
+        stderr_line_handler=stderr_lines.append,
     )
     if status != 0:
         stderr = "".join(stderr_lines)

@@ -9,4 +9,8 @@
 <resources>
   <!-- Description for the button to accept the search suggestion and continue editing the search. -->
   <string name="mozac_browser_awesomebar_edit_suggestion">Accepta i edita el suggeriment</string>
+  <!-- Description for the button to remove the search suggestion from the displayed results. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion">Elimina el suggeriment</string>
+  <!-- Description for the stock suggestion card when the stock is the same. -->
+  <string name="mozac_browser_awesomebar_stock_suggestion_no_change">Sense canvis</string>
 </resources>

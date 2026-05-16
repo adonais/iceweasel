@@ -209,6 +209,9 @@
 // AXBrailleRoleDescription
 - (NSString* _Nullable)moxARIABrailleRoleDescription;
 
+// AXBrailleLabel
+- (NSString* _Nullable)moxARIABrailleLabel;
+
 // Webkit also implements the following:
 // // AXCaretBrowsingEnabled
 // - (NSString* _Nullable)moxCaretBrowsingEnabled;

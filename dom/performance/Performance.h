@@ -166,6 +166,9 @@ class Performance : public DOMEventTargetHelper {
 
   virtual bool IsGlobalObjectWindow() const { return false; };
 
+  virtual void RecordModalFallbackTime() {}
+  virtual DOMHighResTimeStamp GetLastModalFallbackTime() const { return 0; }
+
  protected:
   Performance(nsIGlobalObject* aGlobal);
   Performance(nsPIDOMWindowInner* aWindow);

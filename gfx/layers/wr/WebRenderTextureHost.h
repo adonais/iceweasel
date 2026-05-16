@@ -47,6 +47,7 @@ class WebRenderTextureHost final : public TextureHost {
   gfx::ColorDepth GetColorDepth() const override;
   gfx::YUVColorSpace GetYUVColorSpace() const override;
   gfx::ColorRange GetColorRange() const override;
+  gfx::TransferFunction GetTransferFunction() const override;
 
   bool NeedsYFlip() const override;
 

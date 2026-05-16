@@ -183,6 +183,8 @@ skip-if = [
   "http3",
 ]
 
+["test_group_scroll_position_update.html"]
+
 ["test_group_scroll_snap.html"]
 run-if = [
   "os != 'android'", # wheel events not supported on mobile
@@ -257,6 +259,7 @@ run-if = [
   "os != 'android'", # mouse events not supported on mobile
 ]
 skip-if = [
+  "standalone", # Bug 2026600
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1857059
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && fission && headless", # Bug 1722907
 ]

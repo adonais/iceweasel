@@ -570,7 +570,10 @@
             gBrowser.addToMultiSelectedTabs(this);
             gBrowser.lastMultiSelectedTab = this;
           }
-        } else if (event.altKey) {
+        } else if (
+          event.altKey &&
+          Services.prefs.getBoolPref("browser.tabs.splitView.enabled", false)
+        ) {
           eventMaySelectTab = false;
         } else if (!this.selected && this.multiselected) {
           gBrowser.lockClearMultiSelectionOnce();

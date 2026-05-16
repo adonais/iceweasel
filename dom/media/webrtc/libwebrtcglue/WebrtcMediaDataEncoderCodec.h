@@ -65,6 +65,24 @@ class WebrtcMediaDataEncoder : public RefCountedWebrtcVideoEncoder {
       nullptr;
   MediaResult mError MOZ_GUARDED_BY(mCallbackMutex) = NS_OK;
 
+  // Per-frame metadata captured before passing a frame to the underlying
+  // MediaDataEncoder, used to recover values that aren't derivable from
+  // the encoder output.
+  struct PendingFrame {
+    media::TimeUnit mTime;
+    uint32_t mRtpTimestamp = 0;
+  };
+  // Cap on in-flight metadata. Matches SimulcastEncoderAdapter's own
+  // pending_frames_ cap. When reached, the oldest entry is evicted rather
+  // than refusing new inputs so the encoder is never starved.
+  static constexpr size_t kMaxFramesInFlight = 15;
+  Mutex mPendingMutex;
+  // Ordered by mTime (libwebrtc upstream of Encode() guarantees unique
+  // input timestamps), so the encoder output can be matched and
+  // earlier-skipped inputs reported as drops.
+  AutoTArray<PendingFrame, kMaxFramesInFlight> mPendingFrames
+      MOZ_GUARDED_BY(mPendingMutex);
+
   VideoInfo mInfo;
   webrtc::CodecParameterMap mFormatParams;
   webrtc::CodecSpecificInfo mCodecSpecific;

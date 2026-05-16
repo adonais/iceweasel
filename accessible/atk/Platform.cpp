@@ -263,3 +263,7 @@ bool a11y::ShouldA11yBeEnabled() {
 uint64_t a11y::GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
   return aCacheDomains;
 }
+
+void a11y::GetHumanReadableInstantiatorStr(nsAString& aResult) {
+  aResult.Truncate();
+}

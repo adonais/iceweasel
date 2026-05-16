@@ -99,21 +99,21 @@ class IncrementalTokenizer : public TokenizerBase<char> {
 
 #ifdef DEBUG
   // True when inside the consumer callback, used only for assertions.
-  bool mConsuming;
+  bool mConsuming{false};
 #endif  // DEBUG
   // Modifyable only from the Consumer callback, tells the parser to break,
   // rollback and wait for more input.
-  bool mNeedMoreInput;
+  bool mNeedMoreInput{false};
   // Modifyable only from the Consumer callback, tells the parser to rollback
   // and parse the input again, with (if modified) new settings of the
   // tokenizer.
-  bool mRollback;
+  bool mRollback{false};
   // The input buffer.  Updated with each call to Feed/FinishInput.
   nsCString mInput;
   // Numerical index pointing at the current cursor position.  We don't keep
   // direct reference to the string buffer since the buffer gets often
   // reallocated.
-  nsCString::index_type mInputCursor;
+  nsCString::index_type mInputCursor{0};
   // Refernce to the consumer function.
   Consumer mConsumer;
 };

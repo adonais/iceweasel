@@ -19,6 +19,7 @@
 #include "WebGLTypes.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/dom/BindingUtils.h"
 
 namespace mozilla {

@@ -1,4 +1,3 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -6,6 +5,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/widget/GSettings.h"
 
+#include "nsAppRunner.h"
 #include "nsCOMPtr.h"
 #include "nsGNOMEShellService.h"
 #include "nsShellService.h"
@@ -199,10 +199,10 @@ nsGNOMEShellService::IsDefaultBrowser(bool aForAllTypes,
   nsAutoCString handler;
   nsCOMPtr<nsIGIOMimeApp> gioApp;
 
-  for (unsigned int i = 0; i < std::size(appProtocols); ++i) {
-    if (!appProtocols[i].essential) continue;
+  for (auto appProtocol : appProtocols) {
+    if (!appProtocol.essential) continue;
 
-    if (!IsDefaultForSchemeHelper(nsDependentCString(appProtocols[i].name),
+    if (!IsDefaultForSchemeHelper(nsDependentCString(appProtocol.name),
                                   giovfs)) {
       return NS_OK;
     }
@@ -291,19 +291,17 @@ nsGNOMEShellService::SetDefaultBrowser(bool aForAllUsers) {
     }
 
     // set handler for the protocols
-    for (unsigned int i = 0; i < std::size(appProtocols); ++i) {
-      appInfo->SetAsDefaultForURIScheme(
-          nsDependentCString(appProtocols[i].name));
+    for (auto appProtocol : appProtocols) {
+      appInfo->SetAsDefaultForURIScheme(nsDependentCString(appProtocol.name));
     }
 
     // set handler for .html and xhtml files and MIME types:
     // Add mime types for html, xhtml extension and set app to just created
     // appinfo.
-    for (unsigned int i = 0; i < std::size(appTypes); ++i) {
-      appInfo->SetAsDefaultForMimeType(
-          nsDependentCString(appTypes[i].mimeType));
+    for (auto appType : appTypes) {
+      appInfo->SetAsDefaultForMimeType(nsDependentCString(appType.mimeType));
       appInfo->SetAsDefaultForFileExtensions(
-          nsDependentCString(appTypes[i].extensions));
+          nsDependentCString(appType.extensions));
     }
   }
 
@@ -490,5 +488,10 @@ nsGNOMEShellService::SetGSettingsString(const nsACString& aSchema,
                           PromiseFlatCString(aValue))) {
     return NS_ERROR_FAILURE;
   }
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsGNOMEShellService::GetArgv0(nsACString& output) {
+  output.Assign(gArgc <= 0 ? "" : gArgv[0]);
   return NS_OK;
 }

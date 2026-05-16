@@ -30,9 +30,6 @@ def generatedLocaleListFilename = "LocalesList.kt"
 
 import com.android.build.api.variant.FilterConfiguration
 import com.google.android.gms.oss.licenses.plugin.DependencyTask
-import groovy.json.JsonOutput
-
-import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 android {
     if (project.hasProperty("testBuildType")) {
@@ -657,102 +654,17 @@ if (project.hasProperty("coverage")) {
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-// Task for printing APK information for the requested variant
-// Taskgraph Usage: "./gradlew printVariants
-// -------------------------------------------------------------------------------------------------
-tasks.register('printVariants') {
-    def variants = project.provider { android.applicationVariants.collect { variant -> [
-            apks: variant.outputs.collect { output -> [
-                    abi: output.getFilter(FilterConfiguration.FilterType.ABI.name()),
-                    fileName: output.outputFile.name
-            ]},
-            build_type: variant.buildType.name,
-            name: variant.name,
-    ]}}
-    def outputFile = new File(projectDir, "build/printVariants.json")
-    doLast {
-        // AndroidTest is a special case not included above
-        variants.get().add([
-            apks: [[
-                abi: 'noarch',
-                fileName: 'app-debug-androidTest.apk',
-            ]],
-            build_type: 'androidTest',
-            name: 'androidTest',
-        ])
-        def json = JsonOutput.toJson(variants.get())
-        outputFile.parentFile.mkdirs()
-        outputFile.text = json
-        logger.debug("Wrote variant info to $outputFile")
-    }
-}
-
 // Fix for Gradle 9 strictness: Ensure CleanUp runs before DependencyTask
 tasks.withType(DependencyTask).configureEach { task ->
     // The OSS plugin creates a "LicensesCleanUp" task for every "DependencyTask"
     // e.g., nightlyOssDependencyTask -> nightlyOssLicensesCleanUp
     def cleanUpTaskName = task.name.replace("DependencyTask", "LicensesCleanUp")
-
     // make the dependency task depend on its cleanup task.
     task.dependsOn(tasks.named(cleanUpTaskName))
 }
 
-afterEvaluate {
-
-    // Format test output. Copied from Fenix, which was ported from AC #2401
-    tasks.withType(Test).configureEach {
-        systemProperty "robolectric.logging", "stdout"
-        systemProperty "logging.test-mode", "true"
-
-        testLogging.events = []
-
-        beforeSuite { descriptor ->
-            if (descriptor.getClassName() != null) {
-                println("\nSUITE: " + descriptor.getClassName())
-            }
-        }
-
-        beforeTest { descriptor ->
-            println("  TEST: " + descriptor.getName())
-        }
-
-        onOutput { descriptor, event ->
-            it.logger.lifecycle("    " + event.message.trim())
-        }
-
-        afterTest { descriptor, result ->
-            switch (result.getResultType()) {
-                case ResultType.SUCCESS:
-                    println("  SUCCESS")
-                    break
-
-                case ResultType.FAILURE:
-                    def testId = descriptor.getClassName() + "." + descriptor.getName()
-                    println("  TEST-UNEXPECTED-FAIL | " + testId + " | " + result.getException())
-                    break
-
-                case ResultType.SKIPPED:
-                    println("  SKIPPED")
-                    break
-            }
-            it.logger.lifecycle("")
-        }
-    }
-}
-
-tasks.register("ktlint", Exec) {
-    group = "verification"
-    description = "Check Kotlin code style."
-    workingDir file("${gradle.mozconfig.topsrcdir}")
-    commandLine "./mach", "gradle", "-p", "mobile/android/focus-android", ":ktlint"
-}
-
-tasks.register("ktlintFormat", Exec) {
-    group = "formatting"
-    description = "Fix Kotlin code style deviations."
-    workingDir file("${gradle.mozconfig.topsrcdir}")
-    commandLine "./mach", "gradle", "-p", "mobile/android/focus-android", ":ktlintFormat"
+mozilla {
+    ktlintSourcePaths = ["src/**/*.kt", "!**/build/**/*.kt"]
 }
 
 tasks.register("detekt", Exec) {

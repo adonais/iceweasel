@@ -13,7 +13,7 @@ import org.mozilla.fenix.search.toolbar.ToolbarInteractor
 
 /**
  * Interactor for the search screen
- * Provides implementations for the AwesomeBarView and HomeToolbarView.
+ * Provides implementations for the AwesomeBarView.
  */
 @Suppress("TooManyFunctions")
 class SearchDialogInteractor(
@@ -50,10 +50,6 @@ class SearchDialogInteractor(
 
     override fun onSearchShortcutEngineSelected(searchEngine: SearchEngine) {
         searchController.handleSearchShortcutEngineSelected(searchEngine)
-    }
-
-    override fun onClickSearchEngineSettings() {
-        searchController.handleClickSearchEngineSettings()
     }
 
     override fun onExistingSessionSelected(tabId: String) {

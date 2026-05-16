@@ -8,6 +8,8 @@ XPCSHELL_TESTS_MANIFESTS += [
 ]
 
 MOCHITEST_MANIFESTS += [
+    "mochitest-bug1.toml",
+    "mochitest-bug2.toml",
     "mochitest.toml",
 ]
 

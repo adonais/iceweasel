@@ -1,0 +1,17 @@
+{
+  "label": "www.jal.co.jp",
+  "bugs": {
+    "2000558": {
+      "issue": "broken-layout",
+      "matches": ["*://www.jal.co.jp/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["2000558-www.jal.co.jp-hide-app-recommendation.css"]
+      }
+    }
+  ]
+}

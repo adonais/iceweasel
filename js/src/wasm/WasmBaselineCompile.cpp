@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2016 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -734,11 +732,13 @@ bool BaseCompiler::endFunction() {
                         HasDebugFrameWithLiveRefs::Maybe)) {
       return false;
     }
+
     insertBreakablePoint(CallSiteKind::LeaveFrame);
     if (!createStackMap("debug: leave-frame breakpoint",
                         HasDebugFrameWithLiveRefs::Maybe)) {
       return false;
     }
+
     restoreRegisterReturnValues(resultType);
   }
 
@@ -1651,6 +1651,7 @@ bool BaseCompiler::insertDebugCollapseFrame() {
   if (!compilerEnv_.debugEnabled() || deadCode_) {
     return true;
   }
+
   insertBreakablePoint(CallSiteKind::CollapseFrame);
   return createStackMap("debug: collapse-frame breakpoint",
                         HasDebugFrameWithLiveRefs::Maybe);
@@ -4667,8 +4668,8 @@ bool BaseCompiler::emitTryTable() {
 
     // This is a `catch $t`, load the tag type we're trying to match
     const TagType& tagType = *codeMeta_.tags[tryTableCatch.tagIndex].type;
-    const TagOffsetVector& tagOffsets = tagType.argOffsets();
-    ResultType tagParams = tagType.resultType();
+    const TagOffsetVector& tagOffsets = tagType.exceptionArgOffsets();
+    ResultType tagParams = tagType.argResultType();
 
     // Load the tag for this catch and compare it against the exception's tag.
     // If they don't match, skip to the next catch handler.
@@ -4887,7 +4888,7 @@ bool BaseCompiler::emitCatch() {
   // Extract the arguments in the exception package and push them.
   const SharedTagType& tagType = codeMeta_.tags[tagIndex].type;
   const ValTypeVector& params = tagType->argTypes();
-  const TagOffsetVector& offsets = tagType->argOffsets();
+  const TagOffsetVector& offsets = tagType->exceptionArgOffsets();
 
   // The landing pad uses the block return protocol to communicate the
   // exception object pointer to the catch block.
@@ -5181,8 +5182,8 @@ bool BaseCompiler::emitThrow() {
   }
 
   const TagDesc& tagDesc = codeMeta_.tags[tagIndex];
-  const ResultType& params = tagDesc.type->resultType();
-  const TagOffsetVector& offsets = tagDesc.type->argOffsets();
+  const ResultType& params = tagDesc.type->argResultType();
+  const TagOffsetVector& offsets = tagDesc.type->exceptionArgOffsets();
 
   // Load the tag object
 #ifdef RABALDR_PIN_INSTANCE

@@ -45,6 +45,13 @@ interface nsISystemProxySettings : nsISupports
     readonly attribute boolean systemWPADSetting;
 
     /**
+     * Returns true if the system proxy configuration is effectively "no proxy":
+     * no manual proxy server, no PAC URL, and no WPAD auto-detection. When
+     * true, proxy resolution can skip the per-URL system proxy query entirely.
+     */
+    readonly attribute boolean systemProxyDirect;
+
+    /**
      * Sets the system proxy info. Currently only used on Android.
      */
     void setSystemProxyInfo(in AUTF8String host,

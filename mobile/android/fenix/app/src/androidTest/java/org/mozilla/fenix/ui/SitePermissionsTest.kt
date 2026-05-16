@@ -17,12 +17,14 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MockLocationUpdatesRule
 import org.mozilla.fenix.helpers.RetryTestRule
+import org.mozilla.fenix.helpers.RetryableComposeTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.appContext
@@ -43,19 +45,24 @@ class SitePermissionsTest {
     private val micManager = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
     @get:Rule(order = 0)
+    val retryTestRule = RetryTestRule(3)
+
+    @get:Rule(order = 1)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
-    val composeTestRule = AndroidComposeTestRule(
-        HomeActivityIntentTestRule(
-            isPWAsPromptEnabled = false,
-            isDeleteSitePermissionsEnabled = true,
-        ),
-    ) { it.activity }
+    @get:Rule(order = 2)
+    val retryableComposeTestRule = RetryableComposeTestRule<HomeActivity, HomeActivityTestRule> {
+        AndroidComposeTestRule(
+            HomeActivityTestRule(
+                isPWAsPromptEnabled = false,
+                isDeleteSitePermissionsEnabled = true,
+            ),
+        ) { it.activity }
+    }
 
-    @get:Rule
+    @get:Rule(order = 3)
     val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.CAMERA,
@@ -63,14 +70,11 @@ class SitePermissionsTest {
         Manifest.permission.ACCESS_FINE_LOCATION,
     )
 
-    @get:Rule
+    @get:Rule(order = 4)
     val mockLocationUpdatesRule = MockLocationUpdatesRule()
 
-    @get:Rule
+    @get:Rule(order = 5)
     val memoryLeaksRule = DetectMemoryLeaksRule()
-
-    @get:Rule
-    val retryTestRule = RetryTestRule(3)
 
     @Before
     fun setUp() {
@@ -88,7 +92,7 @@ class SitePermissionsTest {
     fun audioVideoPermissionWithoutRememberingTheDecisionTest() {
         assumeTrue(cameraManager.cameraIdList.isNotEmpty())
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartAudioVideoButton {
@@ -107,7 +111,7 @@ class SitePermissionsTest {
         assumeTrue(cameraManager.cameraIdList.isNotEmpty())
         assumeTrue(micManager.microphones.isNotEmpty())
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartAudioVideoButton {
@@ -119,7 +123,7 @@ class SitePermissionsTest {
         }.clickRefreshButton {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartAudioVideoButton { }
-        browserScreen(composeTestRule) {
+        browserScreen(retryableComposeTestRule.current) {
             verifyPageContent("Camera and Microphone not allowed")
         }
     }
@@ -130,7 +134,7 @@ class SitePermissionsTest {
         assumeTrue(cameraManager.cameraIdList.isNotEmpty())
         assumeTrue(micManager.microphones.isNotEmpty())
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartAudioVideoButton {
@@ -142,7 +146,7 @@ class SitePermissionsTest {
         }.clickRefreshButton {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartAudioVideoButton { }
-        browserScreen(composeTestRule) {
+        browserScreen(retryableComposeTestRule.current) {
             verifyPageContent("Camera and Microphone allowed")
         }
     }
@@ -152,7 +156,7 @@ class SitePermissionsTest {
     fun microphonePermissionWithoutRememberingTheDecisionTest() {
         assumeTrue(micManager.microphones.isNotEmpty())
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartMicrophoneButton {
@@ -170,7 +174,7 @@ class SitePermissionsTest {
     fun blockMicrophonePermissionRememberingTheDecisionTest() {
         assumeTrue(micManager.microphones.isNotEmpty())
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartMicrophoneButton {
@@ -182,7 +186,7 @@ class SitePermissionsTest {
         }.clickRefreshButton {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartMicrophoneButton { }
-        browserScreen(composeTestRule) {
+        browserScreen(retryableComposeTestRule.current) {
             verifyPageContent("Microphone not allowed")
         }
     }
@@ -192,7 +196,7 @@ class SitePermissionsTest {
     fun allowMicrophonePermissionRememberingTheDecisionTest() {
         assumeTrue(micManager.microphones.isNotEmpty())
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartMicrophoneButton {
@@ -204,7 +208,7 @@ class SitePermissionsTest {
         }.clickRefreshButton {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartMicrophoneButton { }
-        browserScreen(composeTestRule) {
+        browserScreen(retryableComposeTestRule.current) {
             verifyPageContent("Microphone allowed")
         }
     }
@@ -214,7 +218,7 @@ class SitePermissionsTest {
     fun cameraPermissionWithoutRememberingDecisionTest() {
         assumeTrue(cameraManager.cameraIdList.isNotEmpty())
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartCameraButton {
@@ -232,7 +236,7 @@ class SitePermissionsTest {
     fun blockCameraPermissionRememberingTheDecisionTest() {
         assumeTrue(cameraManager.cameraIdList.isNotEmpty())
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartCameraButton {
@@ -244,7 +248,7 @@ class SitePermissionsTest {
         }.clickRefreshButton {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartCameraButton { }
-        browserScreen(composeTestRule) {
+        browserScreen(retryableComposeTestRule.current) {
             verifyPageContent("Camera not allowed")
         }
     }
@@ -254,7 +258,7 @@ class SitePermissionsTest {
     fun allowCameraPermissionRememberingTheDecisionTest() {
         assumeTrue(cameraManager.cameraIdList.isNotEmpty())
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartCameraButton {
@@ -266,7 +270,7 @@ class SitePermissionsTest {
         }.clickRefreshButton {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }.clickStartCameraButton { }
-        browserScreen(composeTestRule) {
+        browserScreen(retryableComposeTestRule.current) {
             verifyPageContent("Camera allowed")
         }
     }
@@ -275,7 +279,7 @@ class SitePermissionsTest {
     @SmokeTest
     @Test
     fun blockNotificationsPermissionTest() {
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
         }.clickOpenNotificationButton {
             verifyNotificationsPermissionPrompt(testPageHost)
@@ -292,7 +296,7 @@ class SitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/251380
     @Test
     fun allowNotificationsPermissionTest() {
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
         }.clickOpenNotificationButton {
             verifyNotificationsPermissionPrompt(testPageHost)
@@ -307,7 +311,7 @@ class SitePermissionsTest {
     fun allowLocationPermissionsTest() {
         mockLocationUpdatesRule.setMockLocation()
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
         }.clickGetLocationButton {
             verifyLocationPermissionPrompt(testPageHost)
@@ -320,7 +324,7 @@ class SitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2334075
     @Test
     fun blockLocationPermissionsTest() {
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
         }.clickGetLocationButton {
             verifyLocationPermissionPrompt(testPageHost)
@@ -331,10 +335,10 @@ class SitePermissionsTest {
 
     @Test
     fun doNotAskAgainIsHiddenForLocationPermissionInPrivateMode() {
-        homeScreen(composeTestRule) {
+        homeScreen(retryableComposeTestRule.current) {
         }.togglePrivateBrowsingMode()
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage.toUri()) {
         }.clickGetLocationButton {
             verifyLocationPermissionPrompt(testPageHost)
@@ -349,11 +353,11 @@ class SitePermissionsTest {
         val originHost = "mozilla-mobile.github.io"
         val currentHost = "localhost"
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(genericWebPage.url) {
             waitForPageToLoad()
         }
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testPage) {
             waitForPageToLoad()
         }.clickRequestStorageAccessButton {

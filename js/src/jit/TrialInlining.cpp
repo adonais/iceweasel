@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -8,6 +6,7 @@
 
 #include "mozilla/DebugOnly.h"
 
+#include "gc/Zone.h"
 #include "jit/BaselineCacheIRCompiler.h"
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineIC.h"
@@ -115,6 +114,13 @@ bool DoTrialInlining(JSContext* cx, BaselineFrame* frame) {
   return inliner.tryInlining();
 }
 
+TrialInliner::TrialInliner(JSContext* cx, HandleScript script,
+                           ICScript* icScript)
+    : cx_(cx),
+      script_(script),
+      icScript_(icScript),
+      lock_(cx->zone(), icScript->markingLock()) {}
+
 void TrialInliner::cloneSharedPrefix(ICCacheIRStub* stub,
                                      const uint8_t* endOfPrefix,
                                      CacheIRWriter& writer) {
@@ -133,8 +139,8 @@ bool TrialInliner::replaceICStub(ICEntry& entry, ICFallbackStub* fallback,
   fallback->discardStubs(cx()->zone(), &entry);
 
   // Note: AttachBaselineCacheIRStub never throws an exception.
-  ICAttachResult result = AttachBaselineCacheIRStub(
-      cx(), writer, kind, script_, icScript_, fallback, "TrialInline");
+  ICAttachResult result = AttachBaselineCacheIRStubLocked(
+      cx(), writer, kind, script_, icScript_, fallback, "TrialInline", lock_);
   if (result == ICAttachResult::Attached) {
     MOZ_ASSERT(fallback->trialInliningState() == TrialInliningState::Inlined);
     return true;
@@ -793,7 +799,7 @@ ICScript* TrialInliner::createInlinedICScript(JSScript* targetScript,
   MOZ_ASSERT(result->numICEntries() == targetScript->numICEntries());
 
   if (targetScript->needsFunctionEnvironmentObjects()) {
-    result->ensureEnvAllocSite(root->owningScript());
+    result->ensureEnvAllocSite(root->owningScript(), lock_);
   }
 
   root->addToTotalBytecodeSize(targetScript->length());
@@ -961,7 +967,7 @@ bool TrialInliner::tryInlining() {
     ICEntry& entry = icScript_->icEntry(icIndex);
     ICFallbackStub* fallback = icScript_->fallbackStub(icIndex);
 
-    if (!TryFoldingStubs(cx(), fallback, script_, icScript_)) {
+    if (!TryFoldingStubsLocked(cx(), fallback, script_, icScript_, lock_)) {
       return false;
     }
 

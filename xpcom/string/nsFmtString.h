@@ -31,7 +31,7 @@ class nsTFmtString : public nsTAutoStringN<T, 16> {
  public:
   template <typename... Args>
   explicit nsTFmtString(
-      fmt::basic_format_string<T, type_identity_t<Args>...> aFormatStr,
+      fmt::basic_format_string<T, std::type_identity_t<Args>...> aFormatStr,
       Args&&... aArgs) {
     this->AppendFmt(aFormatStr, std::forward<Args>(aArgs)...);
   }

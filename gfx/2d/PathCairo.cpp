@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PathCairo.h"
-#include <math.h>
 #include "DrawTargetCairo.h"
 #include "Logging.h"
 #include "PathHelpers.h"

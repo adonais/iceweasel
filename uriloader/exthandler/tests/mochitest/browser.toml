@@ -10,11 +10,13 @@ support-files = [
   "download.sjs",
 ]
 skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1776014
 ]
 
 ["browser_auto_close_window_nodialog.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200'", # Bug 2019745
+]
 support-files = [
   "download_page.html",
   "download.bin",

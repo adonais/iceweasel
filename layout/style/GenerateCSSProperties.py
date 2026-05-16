@@ -32,6 +32,7 @@ def props_and_deps():
               "longhands.toml", "shorthands.toml",
               "font_face_descriptors.toml", "counter_style_descriptors.toml",
               "property_descriptors.toml",
+              "view_transition_descriptors.toml",
           ]
         ])
     )

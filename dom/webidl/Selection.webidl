@@ -61,7 +61,6 @@ interface Selection {
   [Throws, BinaryName="RemoveAllRanges"]
   undefined empty();
 
-  [Pref="dom.shadowdom.selection_across_boundary_enabled"]
   sequence<StaticRange> getComposedRanges(optional (ShadowRoot or GetComposedRangesOptions) options = {}, ShadowRoot... shadowRoots);
 
   [Throws, BinaryName="collapseJS"]

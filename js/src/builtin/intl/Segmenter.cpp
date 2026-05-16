@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -533,25 +531,10 @@ class ICU4XLocaleDeleter {
 using UniqueICU4XLocale =
     mozilla::UniquePtr<icu4x::capi::Locale, ICU4XLocaleDeleter>;
 
-static UniqueICU4XLocale CreateICU4XLocale(JSContext* cx,
-                                           Handle<JSString*> str) {
-  auto* linear = str->ensureLinear(cx);
-  if (!linear) {
-    return nullptr;
-  }
-
-  icu4x::capi::icu4x_Locale_from_string_mv1_result result{};
-  {
-    StringAsciiChars chars(linear);
-    if (!chars.init(cx)) {
-      return nullptr;
-    }
-
-    auto span = static_cast<mozilla::Span<const char>>(chars);
-    result =
-        icu4x::capi::icu4x_Locale_from_string_mv1({span.data(), span.size()});
-  }
-
+static UniqueICU4XLocale CreateICU4XLocale(JSContext* cx, LanguageId locale) {
+  auto str = locale.toString();
+  auto result =
+      icu4x::capi::icu4x_Locale_from_string_mv1({str.data(), str.length()});
   if (!result.is_ok) {
     ReportInternalError(cx);
     return nullptr;
@@ -571,8 +554,8 @@ static typename Interface::Segmenter* CreateSegmenter() {
  * Create a new ICU4X segmenter instance, tailored for |locale|.
  */
 template <typename Interface>
-static typename Interface::Segmenter* CreateSegmenter(
-    JSContext* cx, Handle<JSString*> locale) {
+static typename Interface::Segmenter* CreateSegmenter(JSContext* cx,
+                                                      LanguageId locale) {
   auto loc = CreateICU4XLocale(cx, locale);
   if (!loc) {
     return nullptr;
@@ -643,7 +626,11 @@ static bool ResolveLocale(JSContext* cx, Handle<SegmenterObject*> segmenter) {
   }
 
   // Finish initialization by setting the actual locale.
-  segmenter->setLocale(resolved.dataLocale());
+  auto* locale = resolved.toLocale(cx);
+  if (!locale) {
+    return false;
+  }
+  segmenter->setLocale(locale);
 
   MOZ_ASSERT(segmenter->isLocaleResolved(), "locale successfully resolved");
   return true;

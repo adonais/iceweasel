@@ -119,20 +119,31 @@ class NimbusPlugin : Plugin<Project> {
         val mozconfigSubsts = mozconfig?.get("substs") as? Map<String, Any>
 
         if (mozconfigSubsts?.get("MOZ_APPSERVICES_IN_TREE").isTruthy()) {
-            // we assume the binary has been built and `gradle.ext.mozconfig.substs.NIMBUS_FML` tells us where to find it.
-            val nimbusFmlPath = requireNotNull(mozconfigSubsts?.get("NIMBUS_FML") as? String) {
-                "NIMBUS_FML not found in mozconfig substs"
+            // This is subtle.  We capture `NIMBUS_FML` in the configuration cache as a `String`.
+            // If we access `project.gradle...` in the `provider` `Callable` below, we capture the
+            // `Project` in the configuration cache, which is not desirable.
+            //
+            // We can't produce a `File` immediately, because in some configurations, namely
+            // `android-gradle-dependencies` tasks, `NIMBUS_FML` is legitimately unset (`null`).  So
+            // we pass strings around and map to `File` types lazily "by hand".
+            //
+            // Finally: if this process fails, including with an exception, the framework swallows
+            // the details and says something like `MissingValueException`, which can be hard to
+            // interpret.  Hence, this explanation of the details.
+            val nimbusFmlPath = mozconfigSubsts?.get("NIMBUS_FML") as? String
+
+            val fmlBinaryString = project.providers.provider {
+                nimbusFmlPath
             }
-            val fmlBinaryFile = File(nimbusFmlPath)
 
             // Configure the task with proper file type
             validateTask.configure {
-                it.fmlBinary.set(fmlBinaryFile)
+                it.fmlBinary.set(project.layout.file(fmlBinaryString.map({ s -> File(s) })))
             }
 
             setupAndroidVariants(project, validateTask) { generateTask ->
                 generateTask.configure {
-                    it.fmlBinary.set(fmlBinaryFile)
+                    it.fmlBinary.set(project.layout.file(fmlBinaryString.map({ s -> File(s) })))
                     it.dependsOn(validateTask)
                 }
             }

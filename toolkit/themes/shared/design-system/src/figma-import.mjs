@@ -14,10 +14,17 @@ import { join } from "path";
 // eslint-disable-next-line mozilla/reject-import-system-module-from-non-system
 import { ObjectUtils } from "../../../../modules/ObjectUtils.sys.mjs";
 
-function getPath(...args) {
+function joinRelativePath(...args) {
   return join(import.meta.dirname, ...args);
 }
 
+const WIDGETS_PATH = "../../../../content/widgets".split("/");
+const TOKEN_DIRS = [
+  joinRelativePath("tokens", "base"),
+  joinRelativePath("tokens", "components"),
+  joinRelativePath(...WIDGETS_PATH, "moz-badge"),
+  joinRelativePath(...WIDGETS_PATH, "moz-toggle"),
+];
 const FIGMA_VALUE_MAP = {
   Light: "/light",
   Dark: "/dark",
@@ -69,15 +76,18 @@ function transformValue(val, tokenNames) {
   return varName;
 }
 
-function getTokenFiles(groups) {
+function getTokenFiles(globalDirs) {
   let files = {};
-  for (const group of groups) {
-    const tokenFiles = readdirSync(getPath("tokens", group)).filter(path =>
+  for (const group of globalDirs) {
+    const tokenFiles = readdirSync(group).filter(path =>
       path.endsWith(".tokens.json")
     );
     for (const file of tokenFiles) {
-      const path = getPath("tokens", group, file);
-      const [prop, remainder] = file.split(".", 2);
+      const path = join(group, file);
+      let [prop, remainder] = file.split(".", 2);
+      if (prop.startsWith("moz-")) {
+        prop = prop.substring(4);
+      }
       if (remainder.startsWith("nova")) {
         unlinkSync(path);
         continue;
@@ -135,10 +145,9 @@ function normalizeTokens(tokens, path) {
 
 // Main
 const FIGMA_GROUPS = ["Surface", "Primitives", "Colors", "Theme"];
-const TOKEN_GROUPS = ["base", "components"];
-const tokenFiles = getTokenFiles(TOKEN_GROUPS);
+const tokenFiles = getTokenFiles(TOKEN_DIRS);
 const exportData = JSON.parse(
-  readFileSync(getPath("nova-export-clean-variables.json"), "utf8")
+  readFileSync(joinRelativePath("nova-export-clean-variables.json"), "utf8")
 );
 let figmaVars = {};
 let localTokenNames = new Set();

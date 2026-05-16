@@ -100,6 +100,161 @@ add_task(async function engagement_type_dismiss() {
   await cleanupQuickSuggest();
 });
 
+add_task(async function engagement_type_dismiss_adaptive_autofill_origin() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
+      ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
+      ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+    ],
+  });
+
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits({
+      url: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
+    await UrlbarUtils.addToInputHistory("https://example.com/", "exa");
+
+    await openPopup("exa");
+
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+    Assert.equal(
+      details.result.autofill?.type,
+      "adaptive_origin",
+      "Should be adaptive origin autofill"
+    );
+
+    await UrlbarTestUtils.openResultMenuAndClickItem(
+      window,
+      "dismiss_autofill",
+      {
+        resultIndex: 0,
+      }
+    );
+    await UrlbarTestUtils.promiseSearchComplete(window);
+
+    assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function engagement_type_dismiss_adaptive_autofill_url() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
+      ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
+      ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+    ],
+  });
+
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits({
+      url: "https://example.com/test",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
+    await UrlbarUtils.addToInputHistory("https://example.com/test", "exa");
+
+    await openPopup("exa");
+
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+    Assert.equal(
+      details.result.autofill?.type,
+      "adaptive_url",
+      "Should be adaptive url autofill"
+    );
+
+    await UrlbarTestUtils.openResultMenuAndClickItem(
+      window,
+      "dismiss_autofill",
+      {
+        resultIndex: 0,
+      }
+    );
+    await UrlbarTestUtils.promiseSearchComplete(window);
+
+    assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(
+  async function engagement_type_dismiss_adaptive_autofill_url_history() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
+        ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
+        ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+      ],
+    });
+
+    await doTest(async () => {
+      await PlacesTestUtils.addVisits({
+        url: "https://example.com/test",
+        transition: PlacesUtils.history.TRANSITION_TYPED,
+      });
+      await UrlbarUtils.addToInputHistory("https://example.com/test", "exa");
+
+      await openPopup("exa");
+
+      let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+      Assert.equal(
+        details.result.autofill?.type,
+        "adaptive_url",
+        "Should be adaptive autofill"
+      );
+
+      await UrlbarTestUtils.openResultMenuAndClickItem(window, "dismiss", {
+        resultIndex: 0,
+      });
+      await UrlbarTestUtils.promiseSearchComplete(window);
+
+      assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+    });
+
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+add_task(async function engagement_type_dismiss_origin_autofill() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.autoFill.adaptiveHistory.enabled", true]],
+  });
+
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits({
+      url: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
+    await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+
+    await openPopup("exa");
+
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+    Assert.ok(details.result.autofill, "Should be autofill");
+    Assert.equal(
+      details.result.autofill?.type,
+      "origin",
+      "Should be origin autofill"
+    );
+
+    await UrlbarTestUtils.openResultMenuAndClickItem(
+      window,
+      "dismiss_autofill",
+      {
+        resultIndex: 0,
+      }
+    );
+    await UrlbarTestUtils.promiseSearchComplete(window);
+
+    assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function engagement_type_help() {
   const url = "https://example.com/";
   const helpUrl = "https://example.com/help";

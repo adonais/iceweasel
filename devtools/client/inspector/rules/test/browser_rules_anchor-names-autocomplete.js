@@ -8,6 +8,7 @@ const TEST_URL = URL_ROOT + "doc_anchor_names.html";
 add_task(async function () {
   const COMMON_ITEMS = [
     "auto",
+    "normal",
     "none",
     ...InspectorUtils.getCSSWideKeywords(),
   ].sort();

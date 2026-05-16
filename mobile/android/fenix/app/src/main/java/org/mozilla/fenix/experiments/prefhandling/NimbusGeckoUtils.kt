@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.experiments.prefhandling
 
+import androidx.annotation.VisibleForTesting
 import mozilla.components.concept.engine.preferences.Branch
 import mozilla.components.concept.engine.preferences.BrowserPrefType
 import mozilla.components.concept.engine.preferences.SetBrowserPreference
@@ -11,6 +12,8 @@ import mozilla.components.concept.engine.preferences.SetBrowserPreference.Compan
 import mozilla.components.concept.engine.preferences.SetBrowserPreference.Companion.setIntPref
 import mozilla.components.concept.engine.preferences.SetBrowserPreference.Companion.setStringPref
 import mozilla.components.support.base.log.logger.Logger
+import org.json.JSONException
+import org.json.JSONTokener
 import org.mozilla.experiments.nimbus.internal.GeckoPrefState
 import org.mozilla.experiments.nimbus.internal.OriginalGeckoPref
 import org.mozilla.experiments.nimbus.internal.PrefBranch
@@ -53,12 +56,23 @@ fun List<GeckoPrefState>.findByPrefString(prefString: String): GeckoPrefState? {
 }
 
 /**
+ * Helper method to correctly parse experiment preference string values.
+ * @throws JSONException
+ */
+@VisibleForTesting
+internal fun String.fromJsonStringValue(): String {
+    // Using toString, because raw values are also acceptable.
+    return JSONTokener(this).nextValue().toString()
+}
+
+/**
  * Convenience method for converting an [OriginalGeckoPref] into a settable Gecko preference.
  * @param originalGeckoPref An original preference object to convert to a [SetBrowserPreference].
  * @param setType The confirmed Gecko stated preference type.
  * @return A [SetBrowserPreference] object, if possible, else throw.
  * @throws NullPointerException - When there is no original value.
  * @throws NumberFormatException - When an int preference cannot be parsed.
+ * @throws JSONException - When a string value cannot be parsed.
  * @throws IllegalStateException - When the pref doesn't correspond to a known [setType].
  */
 fun createPrefSetter(originalGeckoPref: OriginalGeckoPref, setType: BrowserPrefType?): SetBrowserPreference<*> {
@@ -82,7 +96,7 @@ fun createPrefSetter(originalGeckoPref: OriginalGeckoPref, setType: BrowserPrefT
         BrowserPrefType.STRING -> {
                 setStringPref(
                     originalGeckoPref.pref,
-                    originalValue,
+                    originalValue.fromJsonStringValue(),
                     originalGeckoPref.branch.toBrowserPrefBranch(),
                 )
         }
@@ -102,6 +116,7 @@ fun createPrefSetter(originalGeckoPref: OriginalGeckoPref, setType: BrowserPrefT
  * @param setType The confirmed Gecko stated preference type.
  * @return A [SetBrowserPreference] object, if possible, else throw (related to parsing issues).
  * @throws NullPointerException - When there is no enrollment value.
+ * @throws JSONException - When a string value cannot be parsed.
  * @throws NumberFormatException - When an int preference cannot be parsed.
  * @throws IllegalStateException - When the pref doesn't correspond to a known [setType].
  */
@@ -126,7 +141,7 @@ fun createPrefSetter(geckoPrefState: GeckoPrefState, setType: BrowserPrefType?):
         BrowserPrefType.STRING -> {
                 setStringPref(
                     geckoPrefState.prefString(),
-                    enrollmentValue.prefValue,
+                    enrollmentValue.prefValue.fromJsonStringValue(),
                     geckoPrefState.branch().toBrowserPrefBranch(),
                 )
         }

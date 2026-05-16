@@ -35,14 +35,9 @@ git = "https://github.com/franziskuskiefer/cose-rust"
 rev = "43c22248d136c8b38fe42ea709d08da6355cf04b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/gfx-rs/rspirv?rev=89ce4d0e64c91b0635f617409dc57cb031749a39"]
-git = "https://github.com/gfx-rs/rspirv"
-rev = "89ce4d0e64c91b0635f617409dc57cb031749a39"
-replace-with = "vendored-sources"
-
-[source."git+https://github.com/gfx-rs/wgpu?rev=cdc5ca5ed9e4fe6f4d5f8464e488c3c103d4ce54"]
+[source."git+https://github.com/gfx-rs/wgpu?rev=0b4bdaf9cea213ce614405a834ff049b9dfba103"]
 git = "https://github.com/gfx-rs/wgpu"
-rev = "cdc5ca5ed9e4fe6f4d5f8464e488c3c103d4ce54"
+rev = "0b4bdaf9cea213ce614405a834ff049b9dfba103"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/glandium/allocator-api2?rev=ad5f3d56a5a4519eff52af4ff85293431466ef5c"]
@@ -60,14 +55,9 @@ git = "https://github.com/hsivonen/any_all_workaround"
 rev = "7fb1b7034c9f172aade21ee1c8554e8d8a48af80"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/hsivonen/chardetng?rev=a07d20273ce36146adaf76bd667dd57bd7b3508b"]
-git = "https://github.com/hsivonen/chardetng"
-rev = "a07d20273ce36146adaf76bd667dd57bd7b3508b"
-replace-with = "vendored-sources"
-
-[source."git+https://github.com/hsivonen/chardetng_c?rev=2f0aba284677d098de14f91ffe5a9e5b9a4922c2"]
-git = "https://github.com/hsivonen/chardetng_c"
-rev = "2f0aba284677d098de14f91ffe5a9e5b9a4922c2"
+[source."git+https://github.com/hsivonen/encoding_rs?rev=1236d1bc423e6ba35a06485f74a6304db2d703b5"]
+git = "https://github.com/hsivonen/encoding_rs"
+rev = "1236d1bc423e6ba35a06485f74a6304db2d703b5"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/hsivonen/rust-harfbuzz?rev=9d58a23a98772a197291d04af93f7041b7093d95"]
@@ -85,9 +75,9 @@ git = "https://github.com/kinetiknz/mio"
 rev = "5e8b202db39facecc343170f50a07916640a607c"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/audioipc?rev=0339c4732ceadbc5f54898b77498c33fff0f3f90"]
+[source."git+https://github.com/mozilla/audioipc?rev=b52c33425baf619b6c1278c5b4c7ffa3e92b9b1e"]
 git = "https://github.com/mozilla/audioipc"
-rev = "0339c4732ceadbc5f54898b77498c33fff0f3f90"
+rev = "b52c33425baf619b6c1278c5b4c7ffa3e92b9b1e"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/cubeb-coreaudio-rs?rev=0bb8a45a040e85d313eb18deb36570e87df3a6af"]
@@ -95,14 +85,14 @@ git = "https://github.com/mozilla/cubeb-coreaudio-rs"
 rev = "0bb8a45a040e85d313eb18deb36570e87df3a6af"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/cubeb-pulse-rs?rev=9cebfcceb073e9dd10cfb275a7590bca58d4c251"]
+[source."git+https://github.com/mozilla/cubeb-pulse-rs?rev=3cf4a1af09a1748d0e184297a17132bdcc608874"]
 git = "https://github.com/mozilla/cubeb-pulse-rs"
-rev = "9cebfcceb073e9dd10cfb275a7590bca58d4c251"
+rev = "3cf4a1af09a1748d0e184297a17132bdcc608874"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/happy-eyeballs?tag=v0.2.0"]
+[source."git+https://github.com/mozilla/happy-eyeballs?tag=v0.5.0"]
 git = "https://github.com/mozilla/happy-eyeballs"
-tag = "v0.2.0"
+tag = "v0.5.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/memtest?rev=ad681ba425beb0aeba95f03e671432b4be932174"]
@@ -115,14 +105,14 @@ git = "https://github.com/mozilla/midir.git"
 rev = "54759f681f3b523e120d047adec2bb1a97152017"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/mp4parse-rust?rev=f2d96807b8becf7485f035b393575fcfc76cec4c"]
+[source."git+https://github.com/mozilla/mp4parse-rust?rev=952f5173fd2c33fcbc5e6d3c9de48f4afc0347fc"]
 git = "https://github.com/mozilla/mp4parse-rust"
-rev = "f2d96807b8becf7485f035b393575fcfc76cec4c"
+rev = "952f5173fd2c33fcbc5e6d3c9de48f4afc0347fc"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/neqo?tag=v0.24.2"]
+[source."git+https://github.com/mozilla/neqo?tag=v0.26.1"]
 git = "https://github.com/mozilla/neqo"
-tag = "v0.24.2"
+tag = "v0.26.1"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/rust-lang/rust-bindgen?rev=9366e0af8da529c958b4cd4fcbe492d951c86f5c"]

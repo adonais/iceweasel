@@ -632,7 +632,8 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVideoDecoder(
 
 FFmpegVideoDecoder<LIBAV_VER>::~FFmpegVideoDecoder() {
 #ifdef CUSTOMIZED_BUFFER_ALLOCATION
-  MOZ_DIAGNOSTIC_ASSERT(mAllocatedImages.IsEmpty(),
+  auto lock = mAllocatedImages.Lock();
+  MOZ_DIAGNOSTIC_ASSERT(lock->IsEmpty(),
                         "Should release all shmem buffers before destroy!");
 #endif
 }
@@ -991,7 +992,10 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
   FFMPEG_LOG("Created av buffer, buf=%p, data=%p, image=%p, sz=%d",
              aFrame->buf[0], aFrame->data[0], imageWrapper.get(),
              dataSize.value());
-  mAllocatedImages.Insert(imageWrapper.get());
+  {
+    auto lock = mAllocatedImages.Lock();
+    lock->Insert(imageWrapper.get());
+  }
   mIsUsingShmemBufferForDecode = Some(true);
   return 0;
 }
@@ -2738,6 +2742,8 @@ void FFmpegVideoDecoder<LIBAV_VER>::ReleaseFramesMediaCodec() {
         return aLib->avcodec_find_decoder_by_name("vp9_v4l2m2m");
       case AV_CODEC_ID_HEVC:
         return aLib->avcodec_find_decoder_by_name("hevc_v4l2m2m");
+      case AV_CODEC_ID_AV1:
+        return aLib->avcodec_find_decoder_by_name("av1_v4l2m2m");
       default:
         return nullptr;
     }

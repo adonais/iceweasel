@@ -17,13 +17,12 @@ class BufferTextureData : public TextureData {
   // ShmemAllocator needs to implement IShmemAllocator and IsSameProcess,
   // as done in LayersIPCChannel and ISurfaceAllocator.
   template <typename ShmemAllocator>
-  static BufferTextureData* Create(gfx::IntSize aSize,
-                                   gfx::SurfaceFormat aFormat,
-                                   gfx::BackendType aMoz2DBackend,
-                                   LayersBackend aLayersBackend,
-                                   TextureFlags aFlags,
-                                   TextureAllocationFlags aAllocFlags,
-                                   ShmemAllocator aAllocator);
+  static BufferTextureData* Create(
+      gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+      gfx::ColorSpace2 aColorSpace, gfx::TransferFunction aTransferFunction,
+      gfx::BackendType aMoz2DBackend, LayersBackend aLayersBackend,
+      TextureFlags aFlags, TextureAllocationFlags aAllocFlags,
+      ShmemAllocator aAllocator);
 
   static BufferTextureData* CreateForYCbCr(
       KnowsCompositor* aAllocator, const gfx::IntRect& aDisplay,
@@ -31,6 +30,7 @@ class BufferTextureData : public TextureData {
       const gfx::IntSize& aCbCrSize, uint32_t aCbCrStride,
       StereoMode aStereoMode, gfx::ColorDepth aColorDepth,
       gfx::YUVColorSpace aYUVColorSpace, gfx::ColorRange aColorRange,
+      gfx::TransferFunction aTransferFunction,
       gfx::ChromaSubsampling aSubsampling, TextureFlags aTextureFlags);
 
   bool Lock(OpenMode aMode) override { return true; }
@@ -58,9 +58,13 @@ class BufferTextureData : public TextureData {
 
   Maybe<int32_t> GetCbCrStride() const;
 
+  Maybe<gfx::ColorSpace2> GetColorSpace2() const;
+
   Maybe<gfx::YUVColorSpace> GetYUVColorSpace() const;
 
   Maybe<gfx::ColorDepth> GetColorDepth() const;
+
+  Maybe<gfx::TransferFunction> GetTransferFunction() const;
 
   Maybe<StereoMode> GetStereoMode() const;
 
@@ -79,6 +83,7 @@ class BufferTextureData : public TextureData {
  protected:
   static BufferTextureData* Create(
       gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+      gfx::ColorSpace2 aColorSpace, gfx::TransferFunction aTransferFunction,
       gfx::BackendType aMoz2DBackend, LayersBackend aLayersBackend,
       TextureFlags aFlags, TextureAllocationFlags aAllocFlags,
       LayersIPCChannel* aAllocator, bool aIsSameProcess);
@@ -107,21 +112,24 @@ class BufferTextureData : public TextureData {
 template <typename ShmemAllocator>
 inline BufferTextureData* BufferTextureData::Create(
     gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+    gfx::ColorSpace2 aColorSpace, gfx::TransferFunction aTransferFunction,
     gfx::BackendType aMoz2DBackend, LayersBackend aLayersBackend,
     TextureFlags aFlags, TextureAllocationFlags aAllocFlags,
     ShmemAllocator aAllocator) {
-  return Create(aSize, aFormat, aMoz2DBackend, aLayersBackend, aFlags,
-                aAllocFlags, aAllocator, aAllocator->IsSameProcess());
+  return Create(aSize, aFormat, aColorSpace, aTransferFunction, aMoz2DBackend,
+                aLayersBackend, aFlags, aAllocFlags, aAllocator,
+                aAllocator->IsSameProcess());
 }
 
 // nullptr allocator specialization
 template <>
 inline BufferTextureData* BufferTextureData::Create(
     gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+    gfx::ColorSpace2 aColorSpace, gfx::TransferFunction aTransferFunction,
     gfx::BackendType aMoz2DBackend, LayersBackend aLayersBackend,
     TextureFlags aFlags, TextureAllocationFlags aAllocFlags, std::nullptr_t) {
-  return Create(aSize, aFormat, aMoz2DBackend, aLayersBackend, aFlags,
-                aAllocFlags, nullptr, true);
+  return Create(aSize, aFormat, aColorSpace, aTransferFunction, aMoz2DBackend,
+                aLayersBackend, aFlags, aAllocFlags, nullptr, true);
 }
 
 }  // namespace layers

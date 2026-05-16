@@ -18,6 +18,7 @@ tags
 *.gcov
 *.tsbuildinfo
 compile_commands.json
+ccache.conf
 
 # emacs backup files in any directory.
 # lint-ignore-next-line: syntax-difference
@@ -406,6 +407,10 @@ toolkit/crashreporter/minidump-analyzer/target/
 # Ignore personal preferences files
 CLAUDE.local.md
 .claude/settings.local.json
+
+# Ignore Claude Code worktrees
+.claude/worktrees/
+.worktreeinclude
 
 # Ignore .json.gz (typically profiles) in the root directory
 # lint-ignore-next-line: git-only

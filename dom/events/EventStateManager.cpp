@@ -65,6 +65,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/PerformanceMainThread.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/PopoverData.h"
 #include "mozilla/dom/Record.h"
@@ -4268,6 +4269,19 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         frameSelection->SetDragState(false);
       }
     } break;
+    case eContextMenu: {
+      // If the context menu event was not prevented, a context menu is about
+      // to be shown. Record a fallback time now so that pending event timing
+      // entries (pointerdown, mousedown, etc.) are not inflated by the time
+      // the user spends interacting with the menu.
+      // https://github.com/w3c/event-timing/issues/154
+      if (!aEvent->DefaultPrevented() && aEvent->IsTrusted()) {
+        if (auto* perf = aPresContext->GetPerformanceMainThread()) {
+          perf->RecordModalFallbackTime();
+        }
+      }
+      break;
+    }
     case eWheelOperationEnd: {
       MOZ_ASSERT(aEvent->IsTrusted());
       ScrollbarsForWheel::MayInactivate();
@@ -4728,8 +4742,21 @@ void EventStateManager::SetPresContext(nsPresContext* aPresContext) {
 }
 
 void EventStateManager::ClearFrameRefs(nsIFrame* aFrame) {
-  if (aFrame && aFrame == mCurrentTarget) {
+  if (!aFrame) {
+    return;
+  }
+
+  if (aFrame == mCurrentTarget) {
     mCurrentTargetContent = aFrame->GetContent();
+  }
+
+  // If the element currently shown in the status bar has lost its
+  // frame, clear the status bar.
+  if (aFrame == mLinkOverFrame.GetFrame()) {
+    nsIContent* content = aFrame->GetContent();
+    if (content && content->IsElement()) {
+      content->AsElement()->LeaveLink(mPresContext);
+    }
   }
 }
 
@@ -5888,16 +5915,18 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     //     work only in the automation mode.
     sLastRefPoint = sLastRefPointOfRawUpdate =
         GetWindowClientRectCenter(aWidget);
-    aWidget->SynthesizeNativeMouseMove(
-        sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
 
     // Suppress DnD
     if (dragService) {
       dragService->Suppress();
     }
 
-    // Activate native pointer lock on platforms where it is required (Wayland)
+    // Activate native pointer lock on platforms where it is required.
     aWidget->LockNativePointer();
+
+    // Initialize the pointer position after pointer is locked.
+    aWidget->SynthesizeNativeMouseMove(
+        sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
   } else {
     if (aWidget) {
       // Deactivate native pointer lock on platforms where it is required

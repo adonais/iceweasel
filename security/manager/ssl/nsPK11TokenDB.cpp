@@ -147,16 +147,17 @@ nsPK11Token::IsLoggedIn(bool* _retval) {
 
 NS_IMETHODIMP
 nsPK11Token::Login(bool force) {
-  nsresult rv;
   bool test;
-  rv = this->NeedsLogin(&test);
-  if (NS_FAILED(rv)) return rv;
+  nsresult rv = this->NeedsLogin(&test);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
   if (test && force) {
     rv = this->LogoutSimple();
-    if (NS_FAILED(rv)) return rv;
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
-  rv = setPassword(mSlot.get(), mUIContext);
-  if (NS_FAILED(rv)) return rv;
 
   return mozilla::MapSECStatus(
       PK11_Authenticate(mSlot.get(), true, mUIContext));

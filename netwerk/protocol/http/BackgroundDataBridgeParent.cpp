@@ -9,7 +9,8 @@ namespace mozilla {
 namespace net {
 
 BackgroundDataBridgeParent::BackgroundDataBridgeParent(uint64_t aChannelID)
-    : mChannelID(aChannelID), mBackgroundThread(GetCurrentSerialEventTarget()) {}
+    : mChannelID(aChannelID),
+      mBackgroundThread(GetCurrentSerialEventTarget()) {}
 
 void BackgroundDataBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
   if (SocketProcessChild* child = SocketProcessChild::GetSingleton()) {
@@ -17,10 +18,10 @@ void BackgroundDataBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
   }
 }
 
-already_AddRefed<BackgroundDataBridgeParent>
-BackgroundDataBridgeParent::Create(uint64_t aChannelID) {
+already_AddRefed<BackgroundDataBridgeParent> BackgroundDataBridgeParent::Create(
+    uint64_t aChannelID) {
   RefPtr<BackgroundDataBridgeParent> actor =
-    new BackgroundDataBridgeParent(aChannelID);
+      new BackgroundDataBridgeParent(aChannelID);
   if (SocketProcessChild* child = SocketProcessChild::GetSingleton()) {
     child->AddDataBridgeToMap(aChannelID, actor);
   }

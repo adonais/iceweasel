@@ -1994,8 +1994,8 @@ bool gfxPlatformFontList::InitializeFamily(fontlist::Family* aFamily,
     return aFamily->IsInitialized();
   }
   if (!XRE_IsParentProcess()) {
-    dom::ContentChild::GetSingleton()->SendInitializeFamily(
-        GetGeneration(), index, aLoadCmaps);
+    dom::ContentChild::GetSingleton()->SendInitializeFamily(GetGeneration(),
+                                                            index, aLoadCmaps);
     return aFamily->IsInitialized();
   }
 

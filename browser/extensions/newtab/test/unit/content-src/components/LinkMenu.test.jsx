@@ -281,7 +281,6 @@ describe("<LinkMenu>", () => {
         url: FAKE_SITE.url,
         event_source: "CONTEXT_MENU",
         topic: undefined,
-        firstVisibleTimestamp: undefined,
         tile_id: undefined,
         recommendation_id: undefined,
         scheduled_corpus_item_id: undefined,

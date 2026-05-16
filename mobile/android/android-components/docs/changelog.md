@@ -4,7 +4,11 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 150.0 (In Development)
+# 151.0 (In Development)
+* **browser-engine-gecko**
+  * 🆕 New Engine Settings API - `useContentBlockingDatabase` that allows controlling whether the content blocking database is enabled. [Bug 2030082](https://bugzilla.mozilla.org/show_bug.cgi?id=2030082)
+
+# 150.0
 * **browser-engine-gecko**
   * 🆕 The content blocking log will now inform also of blocked cross-site cookies. [Bug 2020898](https://bugzilla.mozilla.org/show_bug.cgi?id=2020898)
 * **support-utils**

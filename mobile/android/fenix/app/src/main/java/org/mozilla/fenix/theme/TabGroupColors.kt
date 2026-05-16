@@ -40,14 +40,14 @@ data class TabGroupColorPalette(
 ) {
     companion object {
         val lightPalette = TabGroupColorPalette(
-            yellow = TabGroupColors(primary = PhotonColors.Yellow70A77, onPrimary = PhotonColors.LightGrey05),
+            yellow = TabGroupColors(primary = Color(0xFFC15727), onPrimary = PhotonColors.LightGrey05),
             orange = TabGroupColors(primary = PhotonColors.Orange70, onPrimary = PhotonColors.LightGrey05),
             red = TabGroupColors(primary = PhotonColors.Red70, onPrimary = PhotonColors.LightGrey05),
             pink = TabGroupColors(primary = PhotonColors.Pink70, onPrimary = PhotonColors.LightGrey05),
             purple = TabGroupColors(primary = PhotonColors.Purple60, onPrimary = PhotonColors.LightGrey05),
             violet = TabGroupColors(primary = PhotonColors.Violet60, onPrimary = PhotonColors.LightGrey05),
             blue = TabGroupColors(primary = PhotonColors.Blue50, onPrimary = PhotonColors.LightGrey05),
-            cyan = TabGroupColors(primary = PhotonColors.Green70, onPrimary = PhotonColors.LightGrey05),
+            cyan = TabGroupColors(primary = Color(0xFF008383), onPrimary = PhotonColors.LightGrey05),
             green = TabGroupColors(primary = Color(0xFF108307), onPrimary = PhotonColors.LightGrey05),
             grey = TabGroupColors(primary = PhotonColors.DarkGrey10, onPrimary = PhotonColors.LightGrey05),
         )

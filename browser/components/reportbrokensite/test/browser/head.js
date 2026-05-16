@@ -5,11 +5,6 @@ const { CustomizableUITestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/CustomizableUITestUtils.sys.mjs"
 );
 
-const { EnterprisePolicyTesting, PoliciesPrefTracker } =
-  ChromeUtils.importESModule(
-    "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
-  );
-
 const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/UrlClassifierTestUtils.sys.mjs"
 );
@@ -159,35 +154,6 @@ function isSelectedTab(win, tab) {
   is(selectedTab, tab);
 }
 
-async function setupPolicyEngineWithJson(json, customSchema) {
-  PoliciesPrefTracker.restoreDefaultValues();
-  if (typeof json != "object") {
-    let filePath = getTestFilePath(json ? json : "non-existing-file.json");
-    return EnterprisePolicyTesting.setupPolicyEngineWithJson(
-      filePath,
-      customSchema
-    );
-  }
-  return EnterprisePolicyTesting.setupPolicyEngineWithJson(json, customSchema);
-}
-
-async function ensureReportBrokenSiteDisabledByPolicy() {
-  await setupPolicyEngineWithJson({
-    policies: {
-      DisableFeedbackCommands: true,
-    },
-  });
-}
-
-registerCleanupFunction(async function resetPolicies() {
-  if (Services.policies.status != Ci.nsIEnterprisePolicies.INACTIVE) {
-    await setupPolicyEngineWithJson("");
-  }
-  EnterprisePolicyTesting.resetRunOnceState();
-  PoliciesPrefTracker.restoreDefaultValues();
-  PoliciesPrefTracker.stop();
-});
-
 function ensureReportBrokenSitePreffedOn() {
   Services.prefs.setBoolPref(PREFS.DATAREPORTING_ENABLED, true);
   Services.prefs.setBoolPref(PREFS.REPORTER_ENABLED, true);
@@ -216,6 +182,13 @@ function ensureReasonOptional() {
 
 function ensureReasonRequired() {
   Services.prefs.setIntPref(PREFS.REASON, 2);
+}
+
+function ensureProtectionsPanelHidden(test) {
+  const { hidden } = document.getElementById(
+    "tracking-protection-icon-container"
+  );
+  ok(hidden, `Protections panel disabled ${test}`);
 }
 
 function isMenuItemEnabled(menuItem, itemDesc) {
@@ -313,10 +286,7 @@ class ReportBrokenSiteHelper {
   }
 
   async awaitPreviewViewOpened() {
-    await Promise.all([
-      BrowserTestUtils.waitForEvent(this.sentView, "ViewShown"),
-      BrowserTestUtils.waitForEvent(this.okayButton, "focus"),
-    ]);
+    await BrowserTestUtils.waitForEvent(this.previewView, "ViewShown");
   }
 
   async awaitReportSentViewOpened() {

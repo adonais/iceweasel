@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "CFTypeRefPtr.h"
+#include "gfxPlatform.h"
 #include "gfxUtils.h"
 #include "GLBlitHelper.h"
 #ifdef XP_MACOSX
@@ -76,19 +77,8 @@ void NativeLayerRemoteMac::AttachExternalImage(
   bool changedIsDRM = mIsDRM != isDRM;
   mIsDRM = isDRM;
 
-  bool isHDR = false;
   MacIOSurface* macIOSurface = texture->GetSurface();
-  if (macIOSurface->GetYUVColorSpace() == gfx::YUVColorSpace::BT2020 &&
-      StaticPrefs::gfx_color_management_hdr_video_assume_rec2020_uses_pq()) {
-    // BT2020 colorSpace is a signifier of HDR.
-    isHDR = true;
-  }
-
-  if (macIOSurface->GetColorDepth() == gfx::ColorDepth::COLOR_10) {
-    // 10-bit color is a signifier of HDR.
-    isHDR = true;
-  }
-  mIsHDR = isHDR && StaticPrefs::gfx_color_management_hdr_video();
+  mIsHDR = macIOSurface->IsHDRSurface() && gfxPlatform::UseHDR();
 
   mDirtyLayerInfo |= changedDisplayRect;
   mSnapshotLayer.mMutatedFrontSurface = true;

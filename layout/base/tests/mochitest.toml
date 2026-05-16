@@ -269,6 +269,8 @@ support-files = ["file_dynamic_toolbar_max_height.html"]
 
 ["test_emulate_forced_colors.html"]
 
+["test_emulate_prefers_reduced_motion.html"]
+
 ["test_event_target_radius.html"]
 support-files = ["helper_bug1733509.html"]
 skip-if = [
@@ -375,9 +377,6 @@ support-files = [
   "bug613433-ref.html",
   "bug613807-1.html",
   "bug613807-1-ref.html",
-  "bug632215-1.html",
-  "bug632215-2.html",
-  "bug632215-ref.html",
   "bug633044-1.html",
   "bug633044-1-ref.html",
   "bug634406-1.html",

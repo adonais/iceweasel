@@ -264,7 +264,8 @@ bool FilePickerParent::CreateFilePicker() {
     return false;
   }
 
-  return NS_SUCCEEDED(mFilePicker->Init(mBrowsingContext, mTitle, mMode));
+  return NS_SUCCEEDED(
+      mFilePicker->Init(mBrowsingContext, mTitle, mMode, nullptr));
 }
 
 mozilla::ipc::IPCResult FilePickerParent::RecvOpen(

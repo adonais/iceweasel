@@ -1,0 +1,28 @@
+{
+  "label": "tiktok.com (extra scrollbars)",
+  "bugs": {
+    "1945438": {
+      "issue": "extra-scrollbars",
+      "matches": ["*://www.tiktok.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "max_version": 150,
+      "content_scripts": {
+        "css": ["bug1945438-www.tiktok.com-hide-extra-scrollbars.css"]
+      }
+    },
+    {
+      "platforms": ["desktop"],
+      "min_version": 151,
+      "pref_check": {
+        "layout.css.fake-webkit-scrollbar.enabled": false
+      },
+      "content_scripts": {
+        "css": ["bug1945438-www.tiktok.com-hide-extra-scrollbars.css"]
+      }
+    }
+  ]
+}

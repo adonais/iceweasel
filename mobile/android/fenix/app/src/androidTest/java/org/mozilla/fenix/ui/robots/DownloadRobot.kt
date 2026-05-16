@@ -40,7 +40,6 @@ import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -54,19 +53,23 @@ import mozilla.components.feature.downloads.R as downloadsR
 
 class DownloadRobot(private val composeTestRule: ComposeTestRule) {
 
-    fun verifyDownloadPrompt(fileName: String) {
-        itemWithResId("org.mozilla.fenix.debug:id/parentPanel").waitForExists(waitingTime)
+    fun verifyDownloadPrompt(composeTestRule: ComposeTestRule, fileName: String) {
         Log.i(TAG, "verifyDownloadPrompt: Waiting for $waitingTime ms for the \"Download file?\" download prompt to exist")
+        itemWithResId("org.mozilla.fenix.debug:id/parentPanel").waitForExists(waitingTime)
+        Log.i(TAG, "verifyDownloadPrompt: Waited for $waitingTime ms for the \"Download file?\" download prompt to exist")
+        Log.i(TAG, "verifyDownloadPrompt: Trying to verify that the download dialogue is displayed")
+        composeTestRule.downloadDialog().assertIsDisplayed()
+        Log.i(TAG, "verifyDownloadPrompt: Verified that the download dialogue is displayed")
+        Log.i(TAG, "verifyDownloadPrompt: Trying to verify that the cancel button is displayed")
+        composeTestRule.cancelButton().assertIsDisplayed()
+        Log.i(TAG, "verifyDownloadPrompt: Verified that the cancel button is displayed")
+        Log.i(TAG, "verifyDownloadPrompt: Trying to verify that the download button is displayed")
+        composeTestRule.downloadButton().assertIsDisplayed()
+        Log.i(TAG, "verifyDownloadPrompt: Verified that the download button is displayed")
 
-        assertUIObjectExists(
-            itemWithResIdContainingText("org.mozilla.fenix.debug:id/alertTitle", "Download file?"),
-            itemWithResIdContainingText("android:id/message", fileName),
-            cancelButton(),
-            downloadButton(),
-            )
-                browserScreen(this@DownloadRobot.composeTestRule) {
-                }.clickDownloadLink(fileName) {
-                }
+        browserScreen(this@DownloadRobot.composeTestRule) {
+        }.clickDownloadLink(fileName) {
+        }
     }
 
     fun verifyDownloadCompleteSnackbar(fileName: String) =
@@ -134,8 +137,8 @@ class DownloadRobot(private val composeTestRule: ComposeTestRule) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
             assertUIObjectExists(itemContainingText(downloadFile))
         }.clickDownloadLink(downloadFile) {
-            verifyDownloadPrompt(downloadFile)
-        }.clickDownload {
+            verifyDownloadPrompt(composeTestRule, downloadFile)
+        }.clickDownload(composeTestRule) {
         }
     }
 
@@ -238,9 +241,9 @@ class DownloadRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
-        fun clickDownload(interact: DownloadRobot.() -> Unit): Transition {
+        fun clickDownload(composeTestRule: ComposeTestRule, interact: DownloadRobot.() -> Unit): Transition {
             Log.i(TAG, "clickDownload: Trying to click the \"Download\" download prompt button")
-            downloadButton().click()
+            composeTestRule.downloadButton().performClick()
             Log.i(TAG, "clickDownload: Clicked the \"Download\" download prompt button")
 
             DownloadRobot(composeTestRule).interact()
@@ -339,11 +342,11 @@ fun downloadRobot(composeTestRule: ComposeTestRule, interact: DownloadRobot.() -
     return DownloadRobot.Transition(composeTestRule)
 }
 
-private fun downloadButton() =
-    itemWithResIdContainingText("android:id/button1", getStringResource(downloadsR.string.mozac_feature_downloads_dialog_download))
+private fun ComposeTestRule.downloadButton() = onNodeWithText(getStringResource(downloadsR.string.mozac_feature_downloads_dialog_download))
 
-private fun cancelButton() =
-    itemWithResIdContainingText("android:id/button2", "CANCEL")
+private fun ComposeTestRule.cancelButton() = onNodeWithText(getStringResource(downloadsR.string.mozac_feature_downloads_dialog_cancel))
+
+private fun ComposeTestRule.downloadDialog() = onNodeWithText(getStringResource(downloadsR.string.mozac_feature_downloads_dialog_download))
 
 private fun openDownloadButton() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/download_dialog_action_button"))

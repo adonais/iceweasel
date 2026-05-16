@@ -647,9 +647,9 @@ void DarwinGamepadService::SetLightIndicatorColor(
     device = gamepad->Device();
   }
   if (device) {
-    IOReturn success = IOHIDDeviceSetReport(device, kIOHIDReportTypeOutput,
-                                            report[0], report.data(),
-                                            report.size());
+    IOReturn success =
+        IOHIDDeviceSetReport(device, kIOHIDReportTypeOutput, report[0],
+                             report.data(), report.size());
     MOZ_ASSERT(success == kIOReturnSuccess);
     (void)success;
   }

@@ -214,6 +214,9 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   // Returns the auxiliary button pseudo-element like ::-moz-reveal /
   // ::-moz-search-clear-button / ::-moz-number-spin-box.
   Element* GetTextEditorButton() const;
+  // Creates the appropriate button element for this control type, or returns
+  // nullptr if none is needed.
+  already_AddRefed<Element> CreateButton() const;
   // Returns whether the given PseudoStyleType is one of the button pseudos we
   // create for buttons.
   static bool IsButtonPseudoElement(PseudoStyleType);

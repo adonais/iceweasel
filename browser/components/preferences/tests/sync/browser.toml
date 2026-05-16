@@ -1,0 +1,14 @@
+[DEFAULT]
+support-files = [
+  "head.js",
+  "../head.js",
+]
+tags = "os_integration"
+
+["browser_sync_chooseWhatToSync.js"]
+
+["browser_sync_disabled.js"]
+
+["browser_sync_pairing.js"]
+
+["browser_sync_settings_ui.js"]

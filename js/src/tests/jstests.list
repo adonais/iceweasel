@@ -676,6 +676,10 @@ skip script test262/language/statements/with/set-mutable-binding-idref-compound-
 # See https://bugzilla.mozilla.org/show_bug.cgi?id=1983837
 skip script test262/staging/top-level-await/tla-hang-entry.js
 
+# Before Hijri era not implemented in ICU: <https://unicode-org.atlassian.net/browse/ICU-23327>
+# Missing localizations for Before Hijri era: <https://unicode-org.atlassian.net/browse/CLDR-19320>
+skip script test262/intl402/DateTimeFormat/prototype/formatToParts/era.js
+
 
 ###########################################################
 # Tests disabled due to issues in test262 importer script #
@@ -709,19 +713,6 @@ skip script test262/staging/sm/TypedArray/getter-name.js
 # These tests seem incorrect, see https://github.com/tc39/test262/pull/3907
 skip script test262/language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js
 skip script test262/language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js
-
-# https://github.com/rbuckton/ecma262/pull/14
-skip script test262/staging/explicit-resource-management/call-dispose-methods.js
-skip script test262/staging/explicit-resource-management/await-using-in-switch-case-block.js
-
-# https://github.com/tc39/test262/pull/4898
-skip script test262/staging/sm/String/string-upper-lower-mapping.js
-
-# https://github.com/tc39/test262/pull/4910
-skip script test262/staging/Intl402/Temporal/old/datetime-toLocaleString.js
-
-# https://github.com/tc39/test262/pull/4911
-skip script test262/intl402/PluralRules/prototype/selectRange/argument-tonumber-throws.js
 
 
 ##############################################

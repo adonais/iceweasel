@@ -6,6 +6,7 @@ skip-if = [
 ]
 
 support-files = [
+  "mediacapabilities_drm_utils.js",
   "tearsofsteel_1frame_encrypted.mp4",
 ]
 
@@ -16,3 +17,6 @@ support-files = [
 ["test_eme_mfcdm_getstatusforpolicy.html"]
 
 ["test_eme_wideinve_l1_installation.html"]
+
+["test_mediacapabilities_drm_hardware_encryption.html"]
+scheme = "https"

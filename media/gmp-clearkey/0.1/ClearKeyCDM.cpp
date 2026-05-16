@@ -8,10 +8,8 @@
 
 using namespace cdm;
 
-ClearKeyCDM::ClearKeyCDM(Host_11* aHost) {
-  mHost = aHost;
-  mSessionManager = new ClearKeySessionManager(mHost);
-}
+ClearKeyCDM::ClearKeyCDM(Host_11* aHost)
+    : mSessionManager(new ClearKeySessionManager(aHost)), mHost(aHost) {}
 
 void ClearKeyCDM::Initialize(bool aAllowDistinctiveIdentifier,
                              bool aAllowPersistentState,
@@ -98,16 +96,17 @@ Status ClearKeyCDM::InitializeAudioDecoder(
 Status ClearKeyCDM::InitializeVideoDecoder(
     const VideoDecoderConfig_2& aVideoDecoderConfig) {
 #ifdef ENABLE_WMF
-  mVideoDecoder = new VideoDecoder(mHost);
-  return mVideoDecoder->InitDecode(aVideoDecoderConfig);
-#else
-  return Status::kDecodeError;
+  mVideoDecoder = VideoDecoder::Create(mHost, aVideoDecoderConfig);
+  if (mVideoDecoder) {
+    return Status::kSuccess;
+  }
 #endif
+  return Status::kDecodeError;
 }
 
 void ClearKeyCDM::DeinitializeDecoder(StreamType aDecoderType) {
 #ifdef ENABLE_WMF
-  if (aDecoderType == StreamType::kStreamTypeVideo) {
+  if (mVideoDecoder && aDecoderType == StreamType::kStreamTypeVideo) {
     mVideoDecoder->DecodingComplete();
     mVideoDecoder = nullptr;
   }
@@ -116,7 +115,7 @@ void ClearKeyCDM::DeinitializeDecoder(StreamType aDecoderType) {
 
 void ClearKeyCDM::ResetDecoder(StreamType aDecoderType) {
 #ifdef ENABLE_WMF
-  if (aDecoderType == StreamType::kStreamTypeVideo) {
+  if (mVideoDecoder && aDecoderType == StreamType::kStreamTypeVideo) {
     mVideoDecoder->Reset();
   }
 #endif
@@ -131,10 +130,11 @@ Status ClearKeyCDM::DecryptAndDecodeFrame(const InputBuffer_2& aEncryptedBuffer,
     // check using that mechanism.
     mSessionManager->QueryOutputProtectionStatusIfNeeded();
   }
-  return mVideoDecoder->Decode(aEncryptedBuffer, aVideoFrame);
-#else
-  return Status::kDecodeError;
+  if (mVideoDecoder) {
+    return mVideoDecoder->Decode(aEncryptedBuffer, aVideoFrame);
+  }
 #endif
+  return Status::kDecodeError;
 }
 
 Status ClearKeyCDM::DecryptAndDecodeSamples(

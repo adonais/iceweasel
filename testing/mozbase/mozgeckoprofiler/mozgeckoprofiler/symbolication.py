@@ -53,7 +53,8 @@ class OSXSymbolDumper:
             Find the list of architectures present in a Mach-O file.
             """
             return (
-                subprocess.Popen(["lipo", "-info", filename], stdout=subprocess.PIPE)
+                subprocess
+                .Popen(["lipo", "-info", filename], stdout=subprocess.PIPE)
                 .communicate()[0]
                 .split(b":")[2]
                 .strip()

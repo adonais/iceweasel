@@ -56,7 +56,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
-  ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
+  ScreenshotsUtils:
+    "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchSERPTelemetry:
     "moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs",
@@ -1595,7 +1596,7 @@ BrowserGlue.prototype = {
     // Use an increasing number to keep track of the current state of the user's
     // profile, so we can move data around as needed as the browser evolves.
     // Completely unrelated to the current Firefox release number.
-    const APP_DATA_VERSION = 166;
+    const APP_DATA_VERSION = 168;
     const PREF = "browser.migration.version";
 
     let profileDataVersion = Services.prefs.getIntPref(PREF, -1);

@@ -85,6 +85,17 @@ struct ParamTraits<enum RawEnum> // expected-error {{Custom ParamTraits implemen
 {
 };
 
+// Make sure forward declarations are not flagged
+template <> struct ParamTraits<BadEnum>;
+
+struct SomeClass {
+  enum FooBar {};
+  enum class FooBarClass {};
+
+  friend struct ParamTraits<FooBar>;
+  friend struct ParamTraits<FooBarClass>;
+};
+
 template<>
 struct ParamTraits<BadEnum> // expected-error {{Custom ParamTraits implementation for an enum type}} expected-note {{Please use a helper class for example ContiguousEnumSerializer}}
 {

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{AlphaType, ExtendMode, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
+use api::{AlphaType, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
 use euclid::HomogeneousVector;
 use crate::composite::{CompositeFeatures, CompositorClip};
@@ -716,31 +716,6 @@ impl GpuBufferDataF for QuadSegment {
     }
 }
 
-/// Matches LinearGradientBrushData in brush_linear_gradient.glsl
-pub struct LinearGradientBrushData {
-    pub start: LayoutPoint,
-    pub end: LayoutPoint,
-    pub extend_mode: ExtendMode,
-    pub stretch_size: LayoutSize,
-}
-
-impl GpuBufferDataF for LinearGradientBrushData {
-    const NUM_BLOCKS: usize = 2;
-    fn write(&self, writer: &mut GpuBufferWriterF) {
-        writer.push_one([
-            self.start.x,
-            self.start.y,
-            self.end.x,
-            self.end.y,
-        ]);
-        writer.push_one([
-            pack_as_float(self.extend_mode as u32),
-            self.stretch_size.width,
-            self.stretch_size.height,
-            0.0,
-        ]);
-    }
-}
 
 /// The cooridnate space that the clip geometry (the quad rect) is relative to.
 ///

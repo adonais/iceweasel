@@ -5,87 +5,134 @@
 
 /* import-globals-from head.js */
 
-async function doUrlbarNewTabTest({ trigger, assert }) {
-  await doTest(async () => {
-    await openPopup("x");
-
-    await trigger();
-    await assert();
-  });
+async function doSapTest(testFn, { private: isPrivate } = {}) {
+  if (isPrivate) {
+    await doTest(async function () {
+      const win = await BrowserTestUtils.openNewBrowserWindow({
+        private: true,
+      });
+      try {
+        win.gURLBar.controller.engagementEvent.reset();
+        await testFn(win);
+      } finally {
+        await BrowserTestUtils.closeWindow(win);
+      }
+    });
+  } else {
+    await doTest(async function () {
+      await testFn(window);
+    });
+  }
 }
 
-async function doUrlbarTest({ trigger, assert }) {
-  await doTest(async () => {
-    await openPopup("x");
-    await doEnter();
-    await openPopup("y");
-
-    await trigger();
-    await assert();
-  });
+async function doUrlbarNewTabTest({ trigger, assert, private: isPrivate }) {
+  await doSapTest(
+    async function (win) {
+      await openPopup("x", UrlbarTestUtils, win);
+      await trigger(win);
+      await assert();
+    },
+    { private: isPrivate }
+  );
 }
 
-async function doSearchbarTest({ trigger, assert }) {
+async function doUrlbarTest({ trigger, assert, private: isPrivate }) {
+  await doSapTest(
+    async function (win) {
+      await openPopup("x", UrlbarTestUtils, win);
+      await doEnter({}, win);
+      await openPopup("y", UrlbarTestUtils, win);
+      await trigger(win);
+      await assert();
+    },
+    { private: isPrivate }
+  );
+}
+
+async function doSearchbarTest({ trigger, assert, private: isPrivate }) {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.search.widget.new", true]],
   });
-  let cuiTestUtils = new CustomizableUITestUtils(window);
-  await cuiTestUtils.addSearchBar();
 
-  await doTest(async () => {
-    await openPopup("x", SearchbarTestUtils);
-    await doEnter();
-    await openPopup("y", SearchbarTestUtils);
+  await doSapTest(
+    async function (win) {
+      let cuiTestUtils = new CustomizableUITestUtils(win);
+      await cuiTestUtils.addSearchBar();
 
-    await trigger();
-    await assert();
-  });
-  await cuiTestUtils.removeSearchBar();
+      try {
+        await openPopup("x", SearchbarTestUtils, win);
+        await doEnter({}, win);
+        await openPopup("y", SearchbarTestUtils, win);
+        await trigger(win);
+        await assert();
+      } finally {
+        await cuiTestUtils.removeSearchBar();
+      }
+    },
+    { private: isPrivate }
+  );
+
   await SpecialPowers.popPrefEnv();
 }
 
-async function doHandoffTest({ trigger, assert }) {
-  await doTest(async browser => {
-    BrowserTestUtils.startLoadingURIString(browser, "about:newtab");
-    await BrowserTestUtils.browserStopped(browser, "about:newtab");
-    await SpecialPowers.spawn(browser, [], async function () {
-      await ContentTaskUtils.waitForCondition(() =>
-        content.document.querySelector("content-search-handoff-ui")
-      );
-      let handoffUI = content.document.querySelector(
-        "content-search-handoff-ui"
-      );
-      await handoffUI.updateComplete;
-      const searchInput = handoffUI.shadowRoot.querySelector(".fake-editable");
-      searchInput.click();
-    });
-    EventUtils.synthesizeKey("x");
-    await UrlbarTestUtils.promiseSearchComplete(window);
+async function doHandoffTest({ trigger, assert, private: isPrivate }) {
+  await doSapTest(
+    async function (win) {
+      const browser = win.gBrowser.selectedBrowser;
+      const handoffPage = isPrivate ? "about:privatebrowsing" : "about:newtab";
 
-    await trigger();
-    await assert();
-  });
+      BrowserTestUtils.startLoadingURIString(browser, handoffPage);
+      await BrowserTestUtils.browserLoaded(browser, false, handoffPage);
+      // Ensure the urlbar is not focused so setHiddenFocus() calls focus() and
+      // fires a focus event we can wait on.
+      browser.focus();
+      const onFocus = BrowserTestUtils.waitForEvent(
+        win.gURLBar.inputField,
+        "focus"
+      );
+      await SpecialPowers.spawn(browser, [], async function () {
+        await ContentTaskUtils.waitForCondition(() =>
+          content.document.querySelector("content-search-handoff-ui")
+        );
+        let handoffUI = content.document.querySelector(
+          "content-search-handoff-ui"
+        );
+        await handoffUI.updateComplete;
+        handoffUI.shadowRoot.querySelector(".fake-editable").click();
+      });
+      await onFocus;
+      EventUtils.synthesizeKey("x", {}, win);
+      await UrlbarTestUtils.promiseSearchComplete(win);
+      await trigger(win);
+      await assert();
+    },
+    { private: isPrivate }
+  );
 }
 
-async function doUrlbarAddonpageTest({ trigger, assert }) {
+async function doUrlbarAddonpageTest({ trigger, assert, private: isPrivate }) {
   const extensionData = {
     files: {
       "page.html": "<!DOCTYPE html>hello",
     },
+    ...(isPrivate ? { incognitoOverride: "spanning" } : {}),
   };
   const extension = ExtensionTestUtils.loadExtension(extensionData);
   await extension.startup();
   const extensionURL = `moz-extension://${extension.uuid}/page.html`;
 
-  await doTest(async browser => {
-    const onLoad = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, extensionURL);
-    await onLoad;
-    await openPopup("x");
-
-    await trigger();
-    await assert();
-  });
+  await doSapTest(
+    async function (win) {
+      const browser = win.gBrowser.selectedBrowser;
+      const onLoad = BrowserTestUtils.browserLoaded(browser);
+      BrowserTestUtils.startLoadingURIString(browser, extensionURL);
+      await onLoad;
+      await openPopup("x", UrlbarTestUtils, win);
+      await trigger(win);
+      await assert();
+    },
+    { private: isPrivate }
+  );
 
   await extension.unload();
 }

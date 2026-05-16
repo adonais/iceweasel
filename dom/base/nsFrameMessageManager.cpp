@@ -5,7 +5,6 @@
 #include "nsFrameMessageManager.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <new>

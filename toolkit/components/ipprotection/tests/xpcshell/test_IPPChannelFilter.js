@@ -555,40 +555,46 @@ add_task(
 );
 
 add_task(async function test_local_connections() {
+  const makePrincipal = url =>
+    Services.scriptSecurityManager.createContentPrincipal(
+      Services.io.newURI(url),
+      {}
+    );
+
   const tests = [
-    ["http://localhost", true],
-    ["http://looocalhost", false],
-    ["http://something.localhost", true],
-    ["http://localhost.something", false],
-    ["http://localhost6", true],
-    ["http://looocalhost6", false],
-    ["http://something.localhost6", true],
-    ["http://localhost6.something", false],
-    ["http://something.example", true],
-    ["http://example.com", false],
-    ["http://something.invalid", true],
-    ["http://invalid.com", false],
-    ["http://something.test", true],
-    ["http://test.com", false],
+    // True either LAN or Loopback
+    ["http://[::]", true],
+    ["http://[::1]", true],
+    ["http://[::1]:1234", true],
+    ["http://[::ffff:0:0]", true],
     ["http://127.0.0.1", true],
     ["http://127.1.2.3", true],
-    ["http://128.1.2.3", false],
-    ["http://169.254.0.1", true],
-    ["http://169.253.0.1", false],
-    ["http://192.168.0.1", true],
-    ["http://193.168.0.1", false],
     ["http://10.1.2.3", true],
+    ["http://192.168.0.1", true],
+    ["http://169.254.0.1", true],
+    ["http://localhost", true],
+    ["http://something.localhost", true],
+    // False, anything else
+    ["http://something.test", false],
+    ["http://looocalhost", false],
+    ["http://localhost.something", false],
+    ["http://localhost6", false],
+    ["http://looocalhost6", false],
+    ["http://something.localhost6", false],
+    ["http://localhost6.something", false],
+    ["http://something.example", false],
+    ["http://example.com", false],
+    ["http://something.invalid", false],
+    ["http://invalid.com", false],
+    ["http://test.com", false],
+    ["http://128.1.2.3", false],
+    ["http://169.253.0.1", false],
+    ["http://193.168.0.1", false],
     ["http://11.1.2.3", false],
-    ["http://[::]", true],
-    ["http://[::ffff:0:0]", true],
   ];
 
-  for (const [uri, isLocal] of tests) {
-    Assert.equal(
-      IPPChannelFilter.isLocal(Services.io.newURI(uri)),
-      isLocal,
-      uri
-    );
+  for (const [url, isLocal] of tests) {
+    Assert.equal(IPPChannelFilter.isLocal(makePrincipal(url)), isLocal, url);
   }
 });
 
@@ -627,6 +633,132 @@ add_task(async function test_shouldInclude() {
     !emptyFilter.shouldInclude(makeChannel("http://example.com/")),
     "Empty inclusion list should not include any URL"
   );
+});
+
+add_task(async function test_shouldExclude_system_principal() {
+  const filter = IPPChannelFilter.create();
+  filter.proxyInfo = {};
+
+  // A channel loaded with the system principal (like downloads) to a remote
+  // URL should NOT be excluded - the URI principal should be used instead.
+  const systemChannel = NetUtil.newChannel({
+    uri: "http://example.com/download.bin",
+    loadUsingSystemPrincipal: true,
+  });
+  Assert.ok(
+    !filter.shouldExclude(systemChannel),
+    "System-principal channel to remote URL should not be excluded"
+  );
+
+  // A channel with system principal to a local URL should still be excluded.
+  const localChannel = NetUtil.newChannel({
+    uri: "http://localhost/download.bin",
+    loadUsingSystemPrincipal: true,
+  });
+  Assert.ok(
+    filter.shouldExclude(localChannel),
+    "System-principal channel to localhost should be excluded"
+  );
+
+  // A channel with a content loadingPrincipal should use that principal.
+  const contentPrincipal =
+    Services.scriptSecurityManager.createContentPrincipal(
+      Services.io.newURI("http://page.example.com"),
+      {}
+    );
+  const contentChannel = NetUtil.newChannel({
+    uri: "http://cdn.example.com/file.bin",
+    loadingPrincipal: contentPrincipal,
+    securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+  });
+  Assert.ok(
+    !filter.shouldExclude(contentChannel),
+    "Content-principal channel to remote URL should not be excluded"
+  );
+});
+
+add_task(async function test_shouldExclude_ipp_exception() {
+  const { IPPExceptionsManager } = ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
+  );
+
+  const filter = IPPChannelFilter.create();
+  filter.proxyInfo = {};
+
+  const excludedPrincipal =
+    Services.scriptSecurityManager.createContentPrincipal(
+      Services.io.newURI("http://excluded.example.com"),
+      {}
+    );
+  const allowedPrincipal =
+    Services.scriptSecurityManager.createContentPrincipal(
+      Services.io.newURI("http://allowed.example.com"),
+      {}
+    );
+
+  IPPExceptionsManager.addExclusion(excludedPrincipal);
+
+  // Channel with an excluded loadingPrincipal should be excluded.
+  const excludedChannel = NetUtil.newChannel({
+    uri: "http://cdn.example.com/file.bin",
+    loadingPrincipal: excludedPrincipal,
+    securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+  });
+  Assert.ok(
+    filter.shouldExclude(excludedChannel),
+    "Channel with excluded principal should be excluded"
+  );
+
+  // Channel with a non-excluded loadingPrincipal should not be excluded.
+  const allowedChannel = NetUtil.newChannel({
+    uri: "http://cdn.example.com/file.bin",
+    loadingPrincipal: allowedPrincipal,
+    securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+  });
+  Assert.ok(
+    !filter.shouldExclude(allowedChannel),
+    "Channel with non-excluded principal should not be excluded"
+  );
+
+  // System-principal channel to an excluded origin should also be excluded
+  // (URI principal is used as fallback).
+  const systemExcludedChannel = NetUtil.newChannel({
+    uri: "http://excluded.example.com/download.bin",
+    loadUsingSystemPrincipal: true,
+  });
+  Assert.ok(
+    filter.shouldExclude(systemExcludedChannel),
+    "System-principal channel to excluded origin should be excluded"
+  );
+
+  const downloadChannel = NetUtil.newChannel({
+    uri: "http://cdn.example.com/download.bin",
+    loadUsingSystemPrincipal: true,
+    triggeringPrincipal: excludedPrincipal,
+  });
+  Assert.ok(
+    filter.shouldExclude(downloadChannel),
+    "System-principal channel with excluded triggeringPrincipal should be excluded"
+  );
+
+  // After removing the exclusion, the channel should no longer be excluded.
+  IPPExceptionsManager.removeExclusion(excludedPrincipal);
+
+  const afterRemovalChannel = NetUtil.newChannel({
+    uri: "http://cdn.example.com/file.bin",
+    loadingPrincipal: excludedPrincipal,
+    securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+  });
+  Assert.ok(
+    !filter.shouldExclude(afterRemovalChannel),
+    "Channel should not be excluded after removing the exclusion"
+  );
+
+  Services.perms.removeByType("ipp-vpn");
 });
 
 add_task(async function test_shouldProxy() {

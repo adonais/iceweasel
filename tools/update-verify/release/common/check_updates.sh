@@ -1,10 +1,12 @@
 #!/bin/bash
 
-pushd "$(dirname "$0")" &>/dev/null || exit
-MY_DIR=$(pwd)
-popd &>/dev/null || exit
+if [ -z "$UV_SRC" ]; then
+  pushd "$(dirname "$0")" &>/dev/null || exit
+  UV_SRC=$(cd ../.. && pwd)
+  popd &>/dev/null || exit
+fi
 
-. "${MY_DIR}/unpack.sh"
+. "$UV_SRC/release/common/unpack.sh"
 
 check_updates () {
   # called with 10 args - platform, source package, target package, update package, old updater boolean,
@@ -185,7 +187,7 @@ check_updates () {
 
   # This check is disabled because we rely on glob expansion here
   # shellcheck disable=SC2086
-  ${MY_DIR}/../compare-directories.py source/${platform_dirname} target/${platform_dirname} "${channel}" ${ignore_coderesources} > "${diff_file}"
+  ${UV_SRC}/release/compare-directories.py source/${platform_dirname} target/${platform_dirname} "${channel}" ${ignore_coderesources} > "${diff_file}"
   diffErr=$?
   cat "${diff_file}"
   if [ $diffErr == 2 ]

@@ -17,7 +17,7 @@
 using namespace mozilla;
 using namespace mozilla::a11y;
 
-MOZ_RUNINIT static nsTHashMap<nsStringHashKey, nsString> sLocalizedStrings;
+constinit static nsTHashMap<nsStringHashKey, nsString> sLocalizedStrings;
 
 void a11y::PlatformInit() {
   nsresult rv = NS_OK;
@@ -233,4 +233,8 @@ uint64_t a11y::GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
   // XXX: Respond to clients such as TalkBack. For now, be safe and default to
   // caching all domains.
   return CacheDomain::All;
+}
+
+void a11y::GetHumanReadableInstantiatorStr(nsAString& aResult) {
+  aResult.Truncate();
 }

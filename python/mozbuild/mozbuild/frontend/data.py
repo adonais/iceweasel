@@ -548,13 +548,19 @@ class HostSimpleProgram(HostMixin, BaseProgram):
         return []
 
 
-def cargo_output_directory(context, target_var):
+def cargo_output_directory(context, target_var, libname=""):
     # cargo creates several directories and places its build artifacts
     # in those directories.  The directory structure depends not only
     # on the target, but also what sort of build we are doing.
-    rust_build_kind = "release"
-    if context.config.substs.get("MOZ_DEBUG_RUST"):
-        rust_build_kind = "debug"
+    # Megazord libraries use custom profiles that output to different directories.
+    if "megazord" in libname:
+        rust_build_kind = "release-megazord"
+        if context.config.substs.get("MOZ_DEBUG_RUST"):
+            rust_build_kind = "dev-megazord"
+    else:
+        rust_build_kind = "release"
+        if context.config.substs.get("MOZ_DEBUG_RUST"):
+            rust_build_kind = "debug"
     return mozpath.join(context.config.substs[target_var], rust_build_kind)
 
 
@@ -752,7 +758,9 @@ class BaseRustLibrary:
             self._context,
             "!/"
             + mozpath.join(
-                cargo_output_directory(self._context, self.TARGET_SUBST_VAR),
+                cargo_output_directory(
+                    self._context, self.TARGET_SUBST_VAR, self.import_name
+                ),
                 self.import_name,
             ),
         )
@@ -1367,6 +1375,7 @@ class GeneratedFile(ContextDerived):
                 for f in self.outputs
                 if f.endswith((".java", ".kt"))
                 or mozpath.match(f, "**/AndroidManifest*.xml")
+                or mozpath.match(f, "**/webcompat_addon_run.js")
             ]
         else:
             self.required_before_export = False

@@ -133,4 +133,4 @@ LOCAL_INCLUDES += [
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
 
-CXXFLAGS += ["-Werror=switch"]
+COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]

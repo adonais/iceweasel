@@ -1,4 +1,7 @@
 [DEFAULT]
+skip-if = [
+  "true", # eval tests are run manually, not in CI
+]
 subsuite = "aiwindow/models"
 support-files = [
   "head.js",
@@ -8,10 +11,7 @@ support-files = [
 ]
 
 ["browser_eval_basic_quality_gemini25flashlite.js"]
-requesttimeoutfactor = 3
 
 ["browser_eval_basic_quality_gptoss120b.js"]
-requesttimeoutfactor = 3
 
 ["browser_eval_basic_quality_qwen3_235b_a22b_instruct2507.js"]
-requesttimeoutfactor = 3

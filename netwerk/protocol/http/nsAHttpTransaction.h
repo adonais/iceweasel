@@ -109,6 +109,9 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   // called to close the transaction
   virtual void Close(nsresult reason) = 0;
 
+  // called to cancel the transaction; default implementation is a no-op.
+  virtual void Cancel(nsresult aReason) {}
+
   // called to indicate a failure with proxy CONNECT
   virtual void SetProxyConnectFailed() = 0;
 

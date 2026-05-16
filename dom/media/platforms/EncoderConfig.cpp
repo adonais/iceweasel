@@ -118,6 +118,8 @@ const char* TransferFunctionToString(
       return "PQ";
     case gfx::TransferFunction::HLG:
       return "HLG";
+    case gfx::TransferFunction::LINEAR:
+      return "LINEAR";
   }
   MOZ_ASSERT_UNREACHABLE("unknown TransferFunction");
   return "unknown";

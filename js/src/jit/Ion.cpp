@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -20,6 +18,7 @@
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineJIT.h"
 #include "jit/BranchHinting.h"
+#include "jit/BranchPruning.h"
 #include "jit/CodeGenerator.h"
 #include "jit/CompileInfo.h"
 #include "jit/DominatorTree.h"
@@ -27,6 +26,7 @@
 #include "jit/EffectiveAddressAnalysis.h"
 #include "jit/ExecutableAllocator.h"
 #include "jit/FoldLinearArithConstants.h"
+#include "jit/FoldTests.h"
 #include "jit/InlineScriptTree.h"
 #include "jit/InstructionReordering.h"
 #include "jit/Invalidation.h"
@@ -51,11 +51,13 @@
 #include "jit/ScriptFromCalleeToken.h"
 #include "jit/SimpleAllocator.h"
 #include "jit/Sink.h"
+#include "jit/TypeAnalysis.h"
 #include "jit/UnrollLoops.h"
 #include "jit/ValueNumbering.h"
 #include "jit/WarpBuilder.h"
 #include "jit/WarpOracle.h"
 #include "jit/WasmBCE.h"
+#include "jit/WasmRefTypeAnalysis.h"
 #include "js/Printf.h"
 #include "js/UniquePtr.h"
 #include "util/Memory.h"

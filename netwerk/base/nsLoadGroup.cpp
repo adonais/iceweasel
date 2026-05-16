@@ -343,7 +343,7 @@ nsLoadGroup::SetDefaultLoadRequest(nsIRequest* aRequest) {
     // Mask off any bits that are not part of the nsIRequest flags.
     // in particular, nsIChannel::LOAD_DOCUMENT_URI...
     //
-    mLoadFlags &= nsIRequest::LOAD_REQUESTMASK;
+    mLoadFlags &= nsIRequest::LOAD_INHERIT_MASK;
 
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(aRequest);
     mDefaultLoadIsTimed = timedChannel != nullptr;
@@ -414,6 +414,7 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
     // the load group.
     //
     nsCOMPtr<nsIRequestObserver> observer = do_QueryReferent(mObserver);
+    RefPtr<nsLoadGroup> self{this};
     if (observer) {
       LOG(
           ("LOADGROUP [%p]: Firing OnStartRequest for request %p."
@@ -568,6 +569,7 @@ nsresult nsLoadGroup::NotifyRemovalObservers(nsIRequest* request,
   if (foreground || mNotifyObserverAboutBackgroundRequests) {
     // Fire the OnStopRequest out to the observer...
     nsCOMPtr<nsIRequestObserver> observer = do_QueryReferent(mObserver);
+    RefPtr<nsLoadGroup> self{this};
     if (observer) {
       LOG(
           ("LOADGROUP [%p]: Firing OnStopRequest for request %p."

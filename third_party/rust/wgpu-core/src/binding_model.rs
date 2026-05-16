@@ -118,15 +118,20 @@ pub enum BindingError {
         offset: wgt::BufferAddress,
         buffer_size: u64,
     },
+    #[error("Unbinding vertex buffer at slot {slot} expects offset to be 0. However an offset of {offset} was provided.")]
+    UnbindingVertexBufferOffsetNotZero { slot: u32, offset: u64 },
+    #[error("Unbinding vertex buffer at slot {slot} expects size to be 0. However a size of {size} was provided.")]
+    UnbindingVertexBufferSizeNotZero { slot: u32, size: u64 },
 }
 
 impl WebGpuError for BindingError {
     fn webgpu_error_type(&self) -> ErrorType {
         match self {
             Self::DestroyedResource(e) => e.webgpu_error_type(),
-            Self::BindingRangeTooLarge { .. } | Self::BindingOffsetTooLarge { .. } => {
-                ErrorType::Validation
-            }
+            Self::BindingRangeTooLarge { .. }
+            | Self::BindingOffsetTooLarge { .. }
+            | BindingError::UnbindingVertexBufferOffsetNotZero { .. }
+            | BindingError::UnbindingVertexBufferSizeNotZero { .. } => ErrorType::Validation,
         }
     }
 }
@@ -327,6 +332,7 @@ pub enum BindingTypeMaxCountErrorKind {
     UniformBuffers,
     BindingArrayElements,
     BindingArraySamplerElements,
+    BindingArrayAccelerationStructureElements,
     AccelerationStructures,
 }
 
@@ -353,6 +359,9 @@ impl BindingTypeMaxCountErrorKind {
             }
             BindingTypeMaxCountErrorKind::BindingArraySamplerElements => {
                 "max_binding_array_sampler_elements_per_shader_stage"
+            }
+            BindingTypeMaxCountErrorKind::BindingArrayAccelerationStructureElements => {
+                "max_binding_array_acceleration_structure_elements_per_shader_stage"
             }
             BindingTypeMaxCountErrorKind::AccelerationStructures => {
                 "max_acceleration_structures_per_shader_stage"
@@ -433,6 +442,7 @@ pub(crate) struct BindingTypeMaxCountValidator {
     acceleration_structures: PerStageBindingTypeCounter,
     binding_array_elements: PerStageBindingTypeCounter,
     binding_array_sampler_elements: PerStageBindingTypeCounter,
+    binding_array_acceleration_structure_elements: PerStageBindingTypeCounter,
     has_bindless_array: bool,
 }
 
@@ -444,9 +454,16 @@ impl BindingTypeMaxCountValidator {
             self.binding_array_elements.add(binding.visibility, count);
             self.has_bindless_array = true;
 
-            if let wgt::BindingType::Sampler(_) = binding.ty {
-                self.binding_array_sampler_elements
-                    .add(binding.visibility, count);
+            match binding.ty {
+                wgt::BindingType::Sampler(_) => {
+                    self.binding_array_sampler_elements
+                        .add(binding.visibility, count);
+                }
+                wgt::BindingType::AccelerationStructure { .. } => {
+                    self.binding_array_acceleration_structure_elements
+                        .add(binding.visibility, count);
+                }
+                _ => {}
             }
         } else {
             match binding.ty {
@@ -513,6 +530,8 @@ impl BindingTypeMaxCountValidator {
             .merge(&other.binding_array_elements);
         self.binding_array_sampler_elements
             .merge(&other.binding_array_sampler_elements);
+        self.binding_array_acceleration_structure_elements
+            .merge(&other.binding_array_acceleration_structure_elements);
     }
 
     pub(crate) fn validate(&self, limits: &wgt::Limits) -> Result<(), BindingTypeMaxCountError> {
@@ -560,6 +579,11 @@ impl BindingTypeMaxCountValidator {
             limits.max_binding_array_sampler_elements_per_shader_stage,
             BindingTypeMaxCountErrorKind::BindingArraySamplerElements,
         )?;
+        self.binding_array_acceleration_structure_elements
+            .validate(
+                limits.max_binding_array_acceleration_structure_elements_per_shader_stage,
+                BindingTypeMaxCountErrorKind::BindingArrayAccelerationStructureElements,
+            )?;
         self.acceleration_structures.validate(
             limits.max_acceleration_structures_per_shader_stage,
             BindingTypeMaxCountErrorKind::AccelerationStructures,
@@ -600,9 +624,11 @@ pub struct BindGroupEntry<
     [BufferBinding<B>]: ToOwned,
     [S]: ToOwned,
     [TV]: ToOwned,
+    [TLAS]: ToOwned,
     <[BufferBinding<B>] as ToOwned>::Owned: fmt::Debug,
     <[S] as ToOwned>::Owned: fmt::Debug,
     <[TV] as ToOwned>::Owned: fmt::Debug,
+    <[TLAS] as ToOwned>::Owned: fmt::Debug,
 {
     /// Slot for which binding provides resource. Corresponds to an entry of the same
     /// binding index in the [`BindGroupLayoutDescriptor`].
@@ -640,9 +666,11 @@ pub struct BindGroupDescriptor<
     [BufferBinding<B>]: ToOwned,
     [S]: ToOwned,
     [TV]: ToOwned,
+    [TLAS]: ToOwned,
     <[BufferBinding<B>] as ToOwned>::Owned: fmt::Debug,
     <[S] as ToOwned>::Owned: fmt::Debug,
     <[TV] as ToOwned>::Owned: fmt::Debug,
+    <[TLAS] as ToOwned>::Owned: fmt::Debug,
     [BindGroupEntry<'a, B, S, TV, TLAS, ET>]: ToOwned,
     <[BindGroupEntry<'a, B, S, TV, TLAS, ET>] as ToOwned>::Owned: fmt::Debug,
 {
@@ -694,6 +722,18 @@ pub(crate) enum ExclusivePipeline {
     None,
     Render(Weak<RenderPipeline>),
     Compute(Weak<ComputePipeline>),
+}
+
+impl From<&Arc<RenderPipeline>> for ExclusivePipeline {
+    fn from(pipeline: &Arc<RenderPipeline>) -> Self {
+        Self::Render(Arc::downgrade(pipeline))
+    }
+}
+
+impl From<&Arc<ComputePipeline>> for ExclusivePipeline {
+    fn from(pipeline: &Arc<ComputePipeline>) -> Self {
+        Self::Compute(Arc::downgrade(pipeline))
+    }
 }
 
 impl fmt::Display for ExclusivePipeline {
@@ -776,15 +816,13 @@ impl BindGroupLayout {
         }
     }
 
-    fn empty(device: &Arc<Device>) -> Arc<Self> {
-        let exclusive_pipeline = crate::OnceCellOrLock::new();
-        exclusive_pipeline.set(ExclusivePipeline::None).unwrap();
+    fn empty(device: &Arc<Device>, exclusive_pipeline: ExclusivePipeline) -> Arc<Self> {
         Arc::new(Self {
             raw: RawBindGroupLayout::RefDeviceEmptyBGL,
             device: device.clone(),
             entries: bgl::EntryMap::default(),
             origin: bgl::Origin::Derived,
-            exclusive_pipeline,
+            exclusive_pipeline: crate::OnceCellOrLock::from(exclusive_pipeline),
             binding_count_validator: BindingTypeMaxCountValidator::default(),
             label: String::new(),
         })
@@ -948,9 +986,10 @@ impl PipelineLayout {
         self.raw.as_ref()
     }
 
-    pub fn get_bind_group_layout(
+    pub(crate) fn get_bind_group_layout(
         self: &Arc<Self>,
         index: u32,
+        exclusive_pipeline_for_empty_bgl: ExclusivePipeline,
     ) -> Result<Arc<BindGroupLayout>, GetBindGroupLayoutError> {
         let max_bind_groups = self.device.limits.max_bind_groups;
         if index >= max_bind_groups {
@@ -964,7 +1003,9 @@ impl PipelineLayout {
             .get(index as usize)
             .cloned()
             .flatten()
-            .unwrap_or_else(|| BindGroupLayout::empty(&self.device)))
+            .unwrap_or_else(|| {
+                BindGroupLayout::empty(&self.device, exclusive_pipeline_for_empty_bgl)
+            }))
     }
 
     pub(crate) fn get_bgl_entry(
@@ -1053,9 +1094,11 @@ pub enum BindingResource<
     [BufferBinding<B>]: ToOwned,
     [S]: ToOwned,
     [TV]: ToOwned,
+    [TLAS]: ToOwned,
     <[BufferBinding<B>] as ToOwned>::Owned: fmt::Debug,
     <[S] as ToOwned>::Owned: fmt::Debug,
     <[TV] as ToOwned>::Owned: fmt::Debug,
+    <[TLAS] as ToOwned>::Owned: fmt::Debug,
 {
     Buffer(BufferBinding<B>),
     #[cfg_attr(
@@ -1076,6 +1119,11 @@ pub enum BindingResource<
     )]
     TextureViewArray(Cow<'a, [TV]>),
     AccelerationStructure(TLAS),
+    #[cfg_attr(
+        feature = "serde",
+        serde(bound(deserialize = "<[TLAS] as ToOwned>::Owned: Deserialize<'de>"))
+    )]
+    AccelerationStructureArray(Cow<'a, [TLAS]>),
     ExternalTexture(ET),
 }
 

@@ -244,6 +244,22 @@ class TextDrawTarget : public DrawTarget {
     mBuilder.PushRect(rect, ClipRect(), mBackfaceVisible, false, false, color);
   }
 
+  void AppendSelectionRoundRect(const LayoutDeviceRect& aRect,
+                                const DeviceColor& aColor,
+                                const nsRectCornerRadii& aRadii,
+                                int32_t aAppUnitsPerDevPixel) {
+    auto rect = wr::ToLayoutRect(aRect);
+    auto color = wr::ToColorF(aColor);
+    wr::BorderSide side = {color, wr::BorderStyle::Solid};
+    const wr::BorderSide sides[4] = {side, side, side, side};
+    float h = aRect.width * 0.6f;
+    float v = aRect.height * 0.6f;
+    wr::LayoutSideOffsets widths = {v, h, v, h};
+    auto wrRadius = wr::ToBorderRadius(aRadii, aAppUnitsPerDevPixel);
+    mBuilder.PushBorder(rect, ClipRect(), mBackfaceVisible, widths, {sides, 4},
+                        wrRadius);
+  }
+
   // This function is basically designed to slide into the decoration drawing
   // code of nsCSSRendering with minimum disruption, to minimize the
   // chances of implementation drift. As such, it mostly looks like a call

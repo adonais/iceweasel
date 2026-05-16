@@ -4,6 +4,10 @@
 
 #include "ReadableStreamPipeTo.h"
 
+#include "ReadableStreamAbstract.h"
+#include "ReadableStreamDefaultReaderAbstract.h"
+#include "WritableStreamAbstract.h"
+#include "WritableStreamDefaultWriterAbstract.h"
 #include "js/Exception.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
@@ -12,10 +16,6 @@
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
-#include "mozilla/dom/ReadableStream.h"
-#include "mozilla/dom/ReadableStreamDefaultReader.h"
-#include "mozilla/dom/WritableStream.h"
-#include "mozilla/dom/WritableStreamDefaultWriter.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
 

@@ -793,12 +793,17 @@ impl<'a> SceneBuilder<'a> {
             .map(|node_id| clip_tree_builder.get_node(node_id));
         let lca_node = lca_tree_node
             .map(|tree_node| &clip_interner[tree_node.handle]);
+        let lca_clip_rect_origin = lca_tree_node
+            .map(|tree_node| tree_node.clip_rect_origin);
         let pic_node_id = prim_index
             .map(|prim_index| clip_tree_builder.get_leaf(prim_instances[prim_index].clip_leaf_id).node_id)
             .and_then(|node_id| (node_id != ClipNodeId::NONE).then_some(node_id));
-        let pic_node = pic_node_id
-            .map(|node_id| clip_tree_builder.get_node(node_id))
+        let pic_tree_node = pic_node_id
+            .map(|node_id| clip_tree_builder.get_node(node_id));
+        let pic_node = pic_tree_node
             .map(|tree_node| &clip_interner[tree_node.handle]);
+        let pic_clip_rect_origin = pic_tree_node
+            .map(|tree_node| tree_node.clip_rect_origin);
 
         // The logic behind this optimisation is that there's no need to clip
         // the contents of a picture when the crop will be applied anyway as
@@ -831,7 +836,9 @@ impl<'a> SceneBuilder<'a> {
             // clips to be identical and have the same spatial node so it's
             // simplest to just test for ClipItemKey equality (which includes
             // both spatial node and the actual clip).
-            lca_node.key == pic_node.key && !has_blur && direct_parent
+            lca_node.key == pic_node.key &&
+            lca_clip_rect_origin == pic_clip_rect_origin &&
+            !has_blur && direct_parent
         });
 
         if should_set_clip_root {
@@ -953,7 +960,7 @@ impl<'a> SceneBuilder<'a> {
             instance_id,
         );
         self.build_spatial_tree_for_display_list(
-            &root_pipeline.display_list.display_list,
+            &root_pipeline.display_list,
             root_pipeline_id,
             instance_id,
         );
@@ -1338,7 +1345,7 @@ impl<'a> SceneBuilder<'a> {
         self.iframe_size.push(bounds.size());
 
         self.build_spatial_tree_for_display_list(
-            &pipeline.display_list.display_list,
+            &pipeline.display_list,
             iframe_pipeline_id,
             instance_id,
         );
@@ -1954,11 +1961,6 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::PopStackingContext |
             DisplayItem::Iframe(_) => {
                 unreachable!("Handled in `build_all`")
-            }
-
-            DisplayItem::ReuseItems(key) |
-            DisplayItem::RetainedItems(key) => {
-                unreachable!("Iterator logic error: {:?}", key);
             }
 
             DisplayItem::PushShadow(info) => {
@@ -2903,8 +2905,10 @@ impl<'a> SceneBuilder<'a> {
             polygon_handle = Some(handle);
         }
 
+        let clip_rect_origin = snapped_mask_rect.min;
+
         let item = ClipItemKey {
-            kind: ClipItemKeyKind::image_mask(image_mask, snapped_mask_rect, polygon_handle),
+            kind: ClipItemKeyKind::image_mask(image_mask, snapped_mask_rect.size(), polygon_handle),
         };
 
         let handle = self
@@ -2920,6 +2924,7 @@ impl<'a> SceneBuilder<'a> {
             new_node_id,
             handle,
             spatial_node_index,
+            clip_rect_origin,
         );
     }
 
@@ -2937,8 +2942,10 @@ impl<'a> SceneBuilder<'a> {
             spatial_node_index,
         );
 
+        let clip_rect_origin = snapped_clip_rect.min;
+
         let item = ClipItemKey {
-            kind: ClipItemKeyKind::rectangle(snapped_clip_rect, ClipMode::Clip),
+            kind: ClipItemKeyKind::rectangle(snapped_clip_rect.size(), ClipMode::Clip),
         };
         let handle = self
             .interners
@@ -2953,6 +2960,7 @@ impl<'a> SceneBuilder<'a> {
             new_node_id,
             handle,
             spatial_node_index,
+            clip_rect_origin,
         );
     }
 
@@ -2969,9 +2977,11 @@ impl<'a> SceneBuilder<'a> {
             spatial_node_index,
         );
 
+        let clip_rect_origin = snapped_region_rect.min;
+
         let item = ClipItemKey {
             kind: ClipItemKeyKind::rounded_rect(
-                snapped_region_rect,
+                snapped_region_rect.size(),
                 clip.radii,
                 clip.mode,
             ),
@@ -2990,6 +3000,7 @@ impl<'a> SceneBuilder<'a> {
             new_node_id,
             handle,
             spatial_node_index,
+            clip_rect_origin,
         );
     }
 
@@ -3514,7 +3525,6 @@ impl<'a> SceneBuilder<'a> {
             stops,
             reverse_stops,
             nine_patch,
-            cached: false,
             edge_aa_mask,
             enable_dithering: self.config.enable_dithering,
         })

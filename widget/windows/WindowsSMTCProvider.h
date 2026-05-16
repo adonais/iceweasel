@@ -7,7 +7,6 @@
 
 #ifndef __MINGW32__
 
-#  include <functional>
 #  include <Windows.Media.h>
 #  include <wrl.h>
 

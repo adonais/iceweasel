@@ -25,7 +25,7 @@ const RTL_TEST_PAGE = TEST_ROOT + "rtl-test-page.html";
 const SHADOWROOT_TEST_PAGE = TEST_ROOT + "test-page-shadowRoot.html";
 
 const { MAX_CAPTURE_DIMENSION, MAX_CAPTURE_AREA } = ChromeUtils.importESModule(
-  "resource:///modules/ScreenshotsUtils.sys.mjs"
+  "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs"
 );
 
 const gScreenshotUISelectors = {
@@ -750,18 +750,11 @@ class ScreenshotsHelper {
       let {
         innerWidth,
         innerHeight,
-        scrollMaxX,
-        scrollMaxY,
         scrollX,
         scrollY,
         scrollMinX,
         scrollMinY,
       } = content.window;
-
-      let scrollWidth = innerWidth + scrollMaxX - scrollMinX;
-      let scrollHeight = innerHeight + scrollMaxY - scrollMinY;
-      let clientHeight = innerHeight;
-      let clientWidth = innerWidth;
 
       const scrollbarHeight = {};
       const scrollbarWidth = {};
@@ -770,10 +763,13 @@ class ScreenshotsHelper {
         scrollbarWidth,
         scrollbarHeight
       );
-      scrollWidth -= scrollbarWidth.value;
-      scrollHeight -= scrollbarHeight.value;
-      clientWidth -= scrollbarWidth.value;
-      clientHeight -= scrollbarHeight.value;
+
+      let clientHeight = innerHeight - scrollbarHeight.value;
+      let clientWidth = innerWidth - scrollbarWidth.value;
+
+      let docEl = content.document.documentElement;
+      let scrollWidth = Math.max(docEl.scrollWidth, clientWidth);
+      let scrollHeight = Math.max(docEl.scrollHeight, clientHeight);
 
       return {
         clientWidth,
@@ -846,17 +842,7 @@ class ScreenshotsHelper {
       [width, height],
       async (newWidth, newHeight) => {
         await ContentTaskUtils.waitForCondition(() => {
-          let {
-            innerHeight,
-            innerWidth,
-            scrollMaxY,
-            scrollMaxX,
-            scrollMinY,
-            scrollMinX,
-          } = content.window;
-          let scrollWidth = innerWidth + scrollMaxX - scrollMinX;
-          let scrollHeight = innerHeight + scrollMaxY - scrollMinY;
-
+          let { innerHeight, innerWidth } = content.window;
           const scrollbarHeight = {};
           const scrollbarWidth = {};
           content.window.windowUtils.getScrollbarSize(
@@ -864,8 +850,11 @@ class ScreenshotsHelper {
             scrollbarWidth,
             scrollbarHeight
           );
-          scrollWidth -= scrollbarWidth.value;
-          scrollHeight -= scrollbarHeight.value;
+          let clientWidth = innerWidth - scrollbarWidth.value;
+          let clientHeight = innerHeight - scrollbarHeight.value;
+          let docEl = content.document.documentElement;
+          let scrollWidth = Math.max(docEl.scrollWidth, clientWidth);
+          let scrollHeight = Math.max(docEl.scrollHeight, clientHeight);
           info(
             `${scrollHeight}, ${newHeight}, ${scrollWidth}, ${newWidth}, ${content.window.scrollMaxX}`
           );

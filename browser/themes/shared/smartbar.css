@@ -4,32 +4,43 @@
 
 /* TODO (Bug 2008938): Make in-page Smartbar styling not dependent on chrome styles */
 @import url("chrome://browser/skin/urlbar-searchbar.css");
-@import url("chrome://browser/skin/urlbarView.css");
+@import url("chrome://browser/skin/urlbar/view.css");
 
 :host,
 :root {
+  --smartbar-background-color: light-dark(white, var(--color-violet-110));
   --smartbar-border-style-gradient: var(--border-width) solid;
-  --smartbar-border-color-gradient: linear-gradient(172deg, #321bfd -18%, #cf30e2 53%, #ff9900 89%, #f5c451 109%);
+  --smartbar-border-color-gradient: var(--smartwindow-border-color-gradient, linear-gradient(172deg, #321bfd -18%, #cf30e2 53%, #ff9900 89%, #f5c451 109%));
   --smartbar-border-color-gradient-dark: linear-gradient(270deg, var(--color-orange-40) 0%, var(--color-violet-50) 105.15%);
+  --smartbar-box-shadow: var(--smartwindow-shadow, var(--box-shadow-level-2));
   --smartbar-glow-color: color-mix(in srgb, var(--color-violet-40) 30%, transparent);
   --smartbar-max-height: 50vh;
   --smartbar-max-width: calc(var(--size-item-xlarge) * 12);
-  --smartbar-background-color: light-dark(white, var(--color-violet-110));
-  --smartbar-outline-color: light-dark(var(--color-violet-30), var(--color-violet-50));
   --smartbar-outline: var(--focus-outline-width) solid var(--smartbar-outline-color);
+  --smartbar-outline-color: light-dark(var(--color-violet-30), var(--color-violet-50));
+  --smartbar-cta-icon-fill: var(--icon-color);
+  --text-color-deemphasized: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), color-mix(in srgb, var(--color-gray-05) 69%, transparent));
 }
 
 .smartbar {
+  --urlbarView-favicon-margin-start: 0;
+  --urlbarView-favicon-margin-end: var(--space-small);
+  --urlbarview-background-color-hover: light-dark(var(--color-violet-0), var(--button-background-color-hover));
+  --urlbarview-background-color-selected: light-dark(var(--color-violet-10), var(--button-background-color-active));
+  /* This aligns with the hover color assignment. This will likely be refactored once Nova lands */
+  --urlbarview-text-color-selected: var(--toolbar-field-focus-color);
+  --urlbarView-item-inline-padding: var(--space-small);
+  --urlbarView-item-block-padding: var(--space-small);
+  --urlbarView-labeled-row-margin-top: 0;
+  --urlbarView-small-font-size: var(--font-size-small);
+  --urlbarView-secondary-text-color: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), var(--color-violet-desaturated-20));
+  --link-color: light-dark(var(--color-violet-70), var(--color-violet-30));
+
   display: flex;
   flex-direction: column;
   max-height: var(--smartbar-max-height);
   max-width: var(--smartbar-max-width);
   width: 100%;
-  transition: opacity 0.5s ease-out;
-  > .urlbarView {
-    overflow-y: auto;
-  }
-
   &[hidden] {
     display: none;
   }
@@ -38,36 +49,51 @@
     display: block;
   }
 
+  /* Sidebar mode styles */
   &[suggestions-position="top"] > .urlbarView {
     order: -1;
     z-index: 1;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-bottom: var(--border-width) solid var(--urlbarView-separator-color);
+  }
+
+  > .urlbarView {
+    overflow-y: auto;
+    margin-inline: 0;
+    width: 100%;
+  }
+
+  .urlbarView-row[label] {
+    --urlbarView-labeled-row-margin-top: calc(var(--urlbarView-labeled-row-label-top) + 3.25em);
   }
 }
 
-.smartbar > .urlbar-input-container {
-  /**
-   * Setting overflow `auto` or `hidden` causes layout shifts when suggestions
-   * show. Text wrapping is handled by the multiline editor’s overflow,
-   * explicitly setting to the default oveflow value.
-   */
-  overflow: visible;
-  scrollbar-width: none;
-  /**
-   * The search mode switcher won’t be used for the Smartbar. Instead, it is
-   * part of the CTA action panel.
-   */
-  > .searchmode-switcher {
-    display: none;
-  }
-}
-
+/* Background: border, glow */
 .smartbar > .urlbar-background {
-  background-color: white;
-  background-clip: padding-box, border-box;
-  background-image: linear-gradient(var(--smartbar-background-color), var(--smartbar-background-color)), var(--smartbar-border-color-gradient);
-  background-origin: border-box;
+  background: color-mix(in srgb, var(--smartbar-background-color) 60%, transparent);
   border-radius: var(--border-radius-large);
   border: var(--smartbar-border-style-gradient) transparent;
+  outline: none;
+  transition: background-color 0.2s ease-in;
+
+  /* TODO Upgrade to use background-clip instead of mask when bug 1880365 is fixed */
+  /* Gradient border via mask to keep fill semi-transparent */
+  &::after {
+    content: "";
+    position: absolute;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    inset: calc(-1 * var(--border-width));
+    border-radius: inherit;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background: var(--smartbar-border-color-gradient);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    padding: var(--border-width);
+    pointer-events: none;
+  }
 
   /* Pseudo-element for glow effect on hover/focus */
   &::before {
@@ -78,7 +104,7 @@
     filter: blur(30px);
     background-color: var(--smartbar-glow-color);
     opacity: 0;
-    transition: opacity 0.5s ease-out;
+    transition: opacity 0.2s ease-out;
     z-index: -1;
 
     @media (prefers-color-scheme: dark) {
@@ -87,20 +113,46 @@
   }
 }
 
-/* HOVER and FOCUSED states: Show gradient glow */
-.smartbar:hover:not(:focus-within) > .urlbar-background,
-.smartbar:focus-within > .urlbar-background {
-  &::before {
-    opacity: 0.7;
-    transition: opacity 0.2s ease-in;
-  }
+.smartbar:is(:hover, :focus-within, [focused], [open]) > .urlbar-background {
+  outline: none;
+  background-color: var(--smartbar-background-color);
+  transition: background-color 0.2s ease-out;
 }
 
-/* FOCUSED_KEYBOARD_EMPTY: Show outline only for keyboard focus on empty input */
+.smartbar[open] > .urlbar-background {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  box-shadow: var(--smartbar-box-shadow);
+}
+
+/* Show outline on keyboard focus */
 .smartbar:focus-within:not([usertyping]):not([suppress-focus-border]) > .urlbar-background {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   outline: var(--smartbar-outline);
   outline-offset: var(--focus-outline-offset);
+}
+
+/* HOVER and FOCUSED states: Show gradient glow */
+.smartbar:is(:hover, :focus-within) > .urlbar-background::before {
+  opacity: 0.7;
+  transition: opacity 0.2s ease-in;
+}
+
+/* Input container */
+.smartbar > .urlbar-input-container {
+  /**
+   * Setting overflow `auto` or `hidden` causes layout shifts when suggestions
+   * show. Text wrapping is handled by the multiline editor's overflow,
+   * explicitly setting to the default oveflow value.
+   */
+  overflow: visible;
+
+  /**
+   * The search mode switcher won't be used for the Smartbar. Instead, it is
+   * part of the CTA action panel.
+   */
+  > .searchmode-switcher {
+    display: none;
+  }
 }
 
 .smartbar .urlbar-input-box {
@@ -119,24 +171,39 @@
   --multiline-editor-focus-outline: none;
   --multiline-editor-max-height: 8lh;
   --multiline-editor-scrollbar-width: thin;
+  --multiline-editor-selection-color: light-dark(var(--color-violet-0), var(--color-violet-60));
+  font-size: var(--font-size-large);
   padding: var(--space-xsmall);
 }
 
-.smartbar .urlbar-go-button {
+.smartbar .urlbar-go-button,
+.smartbar .search-one-offs {
   display: none;
 }
 
+/* Favicon icon fill */
+.smartbar .urlbarView-favicon {
+  fill: var(--icon-color);
+}
+
+/* Results */
+.smartbar .urlbarView-results {
+  padding-block: var(--space-medium);
+  padding-inline: var(--space-large);
+}
+
+/* Button container */
 .smartbar-button-container {
   padding: 0 var(--space-large) var(--space-medium);
   position: relative;
+  display: flex;
 }
 
 .smartbar-button-container input-cta {
   margin-inline-start: auto;
 }
 
+/* Context chips */
 .smartbar-context-chips-header {
   position: relative;
-  margin-inline: var(--space-medium);
-  margin-top: var(--space-medium);
 }

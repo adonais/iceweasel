@@ -80,6 +80,9 @@ support-files = [
 https_first_disabled = true
 
 ["browser_protectionsUI_state.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 https_first_disabled = true
 
 ["browser_protectionsUI_state_reset.js"]

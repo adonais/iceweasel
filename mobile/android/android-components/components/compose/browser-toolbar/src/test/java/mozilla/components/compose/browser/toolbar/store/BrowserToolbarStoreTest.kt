@@ -22,6 +22,7 @@ import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.random.Random
@@ -73,6 +74,90 @@ class BrowserToolbarStoreTest {
 
         assertEquals(Mode.DISPLAY, store.state.mode)
         assertEquals("", store.state.editState.query.current)
+    }
+
+    @Test
+    fun `WHEN non-prefilled query is updated during edit THEN queryWasPrefilled is not changed`() {
+        val store = BrowserToolbarStore(
+            initialState = BrowserToolbarState(mode = Mode.EDIT),
+        )
+
+        assertFalse(store.state.editState.queryWasPrefilled)
+
+        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery("M"), isQueryPrefilled = false))
+
+        assertFalse(store.state.editState.queryWasPrefilled)
+    }
+
+    @Test
+    fun `WHEN prefilled non-empty query is set THEN queryWasPrefilled becomes true`() {
+        val store = BrowserToolbarStore(
+            initialState = BrowserToolbarState(mode = Mode.EDIT),
+        )
+
+        assertFalse(store.state.editState.queryWasPrefilled)
+
+        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery("https://mozilla.org"), isQueryPrefilled = true))
+
+        assertTrue(store.state.editState.queryWasPrefilled)
+    }
+
+    @Test
+    fun `WHEN prefilled empty query is set THEN queryWasPrefilled is not changed`() {
+        val store = BrowserToolbarStore(
+            initialState = BrowserToolbarState(mode = Mode.EDIT),
+        )
+
+        assertFalse(store.state.editState.queryWasPrefilled)
+
+        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery(""), isQueryPrefilled = true))
+
+        assertFalse(store.state.editState.queryWasPrefilled)
+    }
+
+    @Test
+    fun `GIVEN edit mode entered then URL prefilled WHEN query is cleared THEN queryWasPrefilled remains true`() {
+        val store = BrowserToolbarStore()
+
+        store.dispatch(BrowserToolbarAction.EnterEditMode(false))
+        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery("https://mozilla.org"), isQueryPrefilled = true))
+        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery(""), isQueryPrefilled = false))
+
+        assertTrue(store.state.editState.queryWasPrefilled)
+    }
+
+    @Test
+    fun `GIVEN queryWasPrefilled is true WHEN query is cleared THEN queryWasPrefilled remains true`() {
+        val store = BrowserToolbarStore(
+            initialState = BrowserToolbarState(
+                mode = Mode.EDIT,
+                editState = EditState(
+                    query = BrowserToolbarQuery("Mozilla"),
+                    queryWasPrefilled = true,
+                ),
+            ),
+        )
+
+        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery("")))
+
+        assertTrue(store.state.editState.queryWasPrefilled)
+    }
+
+    @Test
+    fun `WHEN exiting edit mode THEN queryWasPrefilled is reset to false`() {
+        val store = BrowserToolbarStore(
+            initialState = BrowserToolbarState(
+                mode = Mode.EDIT,
+                editState = EditState(
+                    query = BrowserToolbarQuery("Mozilla"),
+                    queryWasPrefilled = true,
+                ),
+            ),
+        )
+
+        store.dispatch(BrowserToolbarAction.ExitEditMode)
+
+        assertFalse(store.state.editState.queryWasPrefilled)
     }
 
     @Test

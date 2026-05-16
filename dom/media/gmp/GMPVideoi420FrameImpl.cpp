@@ -330,7 +330,8 @@ GMPErr GMPVideoi420FrameImpl::MaybeResize(int32_t aNewSize) {
 
   if (mShmemBuffer.IsReadable()) {
     if (new_mem.IsWritable()) {
-      memcpy(new_mem.get<uint8_t>(), mShmemBuffer.get<uint8_t>(), aNewSize);
+      memcpy(new_mem.get<uint8_t>(), mShmemBuffer.get<uint8_t>(),
+             mShmemBuffer.Size<uint8_t>());
     }
     mHost->MgrGiveShmem(GMPSharedMemClass::Decoded, std::move(mShmemBuffer));
   }

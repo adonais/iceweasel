@@ -136,7 +136,7 @@ add_task(async function test_removePagesByTimeframe() {
   rows = await db.execute("SELECT * FROM moz_icons");
   // Debug logging for possible intermittent failure (bug 1358368).
   if (rows.length) {
-    dump_table("moz_icons");
+    await PlacesTestUtils.dumpTable({ db, table: "moz_icons" });
   }
   Assert.equal(rows.length, 0, "There should be no icon entry");
 });

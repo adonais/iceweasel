@@ -11,17 +11,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 
-let XPCOMUtils = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-).XPCOMUtils;
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "maxRowsPref",
-  "browser.firefox-view.max-history-rows",
-  -1
-);
-
 const HISTORY_MAP_L10N_IDS = {
   sidebar: {
     "history-date-today": "sidebar-history-date-today",
@@ -523,7 +512,7 @@ export class HistoryController {
   async #fetchHistory() {
     return this.placesQuery.getHistory({
       daysOld: 60,
-      limit: lazy.maxRowsPref,
+      limit: -1,
       sortBy: this.sortOption,
     });
   }

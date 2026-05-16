@@ -1,0 +1,17 @@
+{
+  "label": "www.lush.com",
+  "bugs": {
+    "1946409": {
+      "issue": "broken-layout",
+      "matches": ["*://www.lush.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "css": ["bug1946409-www.lush.com-fix-cookie-banner.css"]
+      }
+    }
+  ]
+}

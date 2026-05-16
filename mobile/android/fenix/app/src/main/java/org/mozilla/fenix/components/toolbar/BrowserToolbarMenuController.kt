@@ -158,7 +158,6 @@ class DefaultBrowserToolbarMenuController(
                 val getRedirect = appLinksUseCases.appLinkRedirect
                 currentSession?.let {
                     val redirect = getRedirect.invoke(it.content.url)
-                    redirect.appIntent?.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     appLinksUseCases.openAppLink.invoke(redirect.appIntent)
                 }
             }

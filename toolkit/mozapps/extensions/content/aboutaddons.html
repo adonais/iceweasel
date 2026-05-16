@@ -41,6 +41,11 @@
       href="locales-preview/smartWindow-aboutAddons.ftl"
     />
 
+    <!-- Import panel-list explicitly so it's ready before DOMContentLoaded.-->
+    <script
+      type="module"
+      src="chrome://global/content/elements/panel-list.mjs"
+    ></script>
     <!-- Defer scripts so all the templates are loaded by the time they run. -->
     <script
       defer

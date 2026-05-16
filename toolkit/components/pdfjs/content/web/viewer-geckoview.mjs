@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.7.99
- * pdfjsBuild = b72ae81a8
+ * pdfjsVersion = 5.7.195
+ * pdfjsBuild = bc6920662
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -46,7 +46,6 @@
 /******/ })();
 /******/ 
 /************************************************************************/
-var __webpack_exports__ = {};
 
 ;// ./web/ui_utils.js
 const DEFAULT_SCALE_VALUE = "auto";
@@ -667,6 +666,10 @@ const defaultOptions = {
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH
   },
   enableHighlightFloatingButton: {
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
+  enableMerge: {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
@@ -8625,7 +8628,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "5.7.99";
+    const viewerVersion = "5.7.195";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -10673,6 +10676,7 @@ const PDFViewerApplication = {
       background: AppOptions.get("pageColorsBackground"),
       foreground: AppOptions.get("pageColorsForeground")
     } : null;
+    const enableMerge = AppOptions.get("enableMerge");
     const enableSplitMerge = AppOptions.get("enableSplitMerge");
     let altTextManager;
     if (AppOptions.get("enableUpdatedAddImage")) {
@@ -10752,11 +10756,13 @@ const PDFViewerApplication = {
         pageColors,
         abortSignal,
         enableSplitMerge,
+        enableMerge,
         enableNewBadge: AppOptions.get("enableNewBadge"),
         statusBar: viewsManager.viewsManagerStatusBar,
         undoBar: viewsManager.viewsManagerUndoBar,
         manageMenu: viewsManager.manageMenu,
-        addFileButton: viewsManager.viewsManagerAddFileButton
+        waitingBar: viewsManager.viewsManagerWaitingBar,
+        addFileComponent: viewsManager.viewsManagerAddFile
       });
       renderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }
@@ -10850,6 +10856,7 @@ const PDFViewerApplication = {
         elements: appConfig.viewsManager,
         eventBus,
         l10n,
+        enableMerge,
         enableSplitMerge,
         globalAbortSignal: abortSignal
       });
@@ -11175,6 +11182,8 @@ const PDFViewerApplication = {
     } else {
       await (this.pdfDocument?.annotationStorage.size > 0 ? this.save() : this.download());
     }
+    delete this._mergedDocumentNeedsSaving;
+    this.setTitle();
     classList.remove("wait");
   },
   async _documentError(key, moreInfo = null) {
@@ -11507,7 +11516,7 @@ const PDFViewerApplication = {
     }
   },
   _hasChanges() {
-    return this.pdfDocument?.annotationStorage.size > 0 || this.pdfThumbnailViewer?.hasStructuralChanges();
+    return this.pdfDocument?.annotationStorage.size > 0 || this.pdfThumbnailViewer?.hasStructuralChanges() || this._mergedDocumentNeedsSaving === true;
   },
   _initializeAnnotationStorageCallbacks(pdfDocument) {
     if (pdfDocument !== this.pdfDocument) {
@@ -11693,6 +11702,7 @@ const PDFViewerApplication = {
     eventBus._on("setpreference", evt => preferences.set(evt.name, evt.value), opts);
     eventBus._on("pagesedited", this.onPagesEdited.bind(this), opts);
     eventBus._on("saveextractedpages", this.onSavePages.bind(this), opts);
+    eventBus._on("saveandload", this.onSaveAndLoad.bind(this), opts);
   },
   bindWindowEvents() {
     if (this._windowAbortController) {
@@ -11839,6 +11849,23 @@ const PDFViewerApplication = {
       return;
     }
     this.downloadManager.download(modifiedPdfBytes, this._downloadUrl, this._docFilename);
+  },
+  async onSaveAndLoad({
+    data: extractParams
+  }) {
+    if (!this.pdfDocument) {
+      return;
+    }
+    const modifiedPdfBytes = await this.pdfDocument.extractPages(extractParams);
+    if (!modifiedPdfBytes) {
+      console.error("Something wrong happened when saving the edited PDF.\nPlease file a bug.");
+      return;
+    }
+    this._mergedDocumentNeedsSaving = true;
+    this.open({
+      data: modifiedPdfBytes,
+      filename: this._docFilename
+    });
   },
   _accumulateTicks(ticks, prop) {
     if (this[prop] > 0 && ticks < 0 || this[prop] < 0 && ticks > 0) {

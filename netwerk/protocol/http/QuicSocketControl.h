@@ -27,7 +27,9 @@ class QuicSocketControl final : public CommonSocketControl {
   NS_IMETHOD GetSSLVersionOffered(int16_t* aSSLVersionOffered) override;
 
   QuicSocketControl(const nsCString& aHostName, int32_t aPort,
-                    uint32_t aProviderFlags, Http3Session* aHttp3Session);
+                    uint32_t aProviderFlags,
+                    const mozilla::OriginAttributes& aOriginAttributes,
+                    Http3Session* aHttp3Session);
 
   void SetNegotiatedNPN(const nsACString& aValue);
   void SetInfo(uint16_t aCipherSuite, uint16_t aProtocolVersion,

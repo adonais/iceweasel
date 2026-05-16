@@ -120,6 +120,7 @@ button:focus-visible {
 }
 
 #date-picker {
+  flex-grow: 1;
   /* Add some padding so outlines would not overflow our viewport. */
   padding: 0.4rem;
 }
@@ -388,6 +389,7 @@ button.month-year.active {
 #datetime-picker {
   display: flex;
   gap: 1em;
+  justify-content: center;
 }
 
 #date-picker,

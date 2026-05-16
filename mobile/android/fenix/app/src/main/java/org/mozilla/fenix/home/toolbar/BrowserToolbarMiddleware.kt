@@ -386,7 +386,7 @@ class BrowserToolbarMiddleware(
 
                 else -> listOf(
                     BrowserToolbarMenuButton(
-                        icon = DrawableResIcon(iconsR.drawable.mozac_ic_private_mode_24),
+                        icon = DrawableResIcon(iconsR.drawable.mozac_ic_private_mode_fill_24),
                         text = StringResText(tabcounterR.string.mozac_browser_menu_new_private_tab),
                         contentDescription = StringResContentDescription(
                             tabcounterR.string.mozac_browser_menu_new_private_tab,
@@ -445,7 +445,9 @@ class BrowserToolbarMiddleware(
 
     private fun reconcileSelectedEngine(): SearchEngine? =
         appStore.state.searchState.selectedSearchEngine?.searchEngine
-            ?: browserStore.state.search.selectedOrDefaultSearchEngine
+            ?: browserStore.state.search.selectedOrDefaultSearchEngine(
+                private = browsingModeManager.mode.isPrivate,
+            )
 
     @VisibleForTesting
     internal enum class HomeToolbarAction {
@@ -559,6 +561,7 @@ class BrowserToolbarMiddleware(
             ShortcutType.TRANSLATE -> HomeToolbarAction.FakeTranslate
             ShortcutType.HOMEPAGE -> HomeToolbarAction.FakeHomepage
             ShortcutType.BACK -> HomeToolbarAction.FakeBack
+            ShortcutType.NONE -> null
         }
     }
 }

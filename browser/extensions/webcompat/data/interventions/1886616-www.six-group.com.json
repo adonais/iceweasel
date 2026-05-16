@@ -1,0 +1,18 @@
+{
+  "label": "www.six-group.com",
+  "bugs": {
+    "1886616": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://www.six-group.com/*/market-data/etf/etf-explorer.html*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "max_version": 142,
+      "content_scripts": {
+        "css": ["bug1886616-www.six-group.com-select-fix.css"]
+      }
+    }
+  ]
+}

@@ -43,7 +43,7 @@ class GeckoEngineAIFeaturesTest {
         var onSuccessCalled = false
         var onErrorCalled = false
 
-        val features = mapOf("translations" to AIFeature(id = "translations", isEnabled = true, isAllowed = true))
+        val features = mapOf("translations" to AIFeature(id = "translations", isEnabled = true, isAllowed = true, isBlocked = false))
 
         val onSuccess: (Map<String, AIFeature>) -> Unit = { onSuccessCalled = true }
         val onError: (AIFeaturesError) -> Unit = { onErrorCalled = true }
@@ -133,7 +133,7 @@ class GeckoEngineAIFeaturesTest {
     }
 
     @Test
-    fun `WHEN resetFeature is called successfully THEN onSuccess is called`() {
+    fun `WHEN makeFeatureAvailable is called successfully THEN onSuccess is called`() {
         var onSuccessCalled = false
         var onErrorCalled = false
 
@@ -141,7 +141,7 @@ class GeckoEngineAIFeaturesTest {
         val onError: (AIFeaturesError) -> Unit = { onErrorCalled = true }
 
         `when`(
-            aiFeaturesAccessor.resetFeature(
+            aiFeaturesAccessor.makeFeatureAvailable(
                 any(),
                 eq(onSuccess),
                 eq(onError),
@@ -150,15 +150,15 @@ class GeckoEngineAIFeaturesTest {
             onSuccess.invoke()
         }
 
-        engine.aiFeatures.resetFeature(featureId = "translations", onSuccess = onSuccess, onError = onError)
+        engine.aiFeatures.makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
 
-        verify(aiFeaturesAccessor).resetFeature(featureId = "translations", onSuccess = onSuccess, onError = onError)
+        verify(aiFeaturesAccessor).makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
         assertTrue(onSuccessCalled)
         assertFalse(onErrorCalled)
     }
 
     @Test
-    fun `WHEN resetFeature is called AND excepts THEN onError is called`() {
+    fun `WHEN makeFeatureAvailable is called AND excepts THEN onError is called`() {
         var onSuccessCalled = false
         var onErrorCalled = false
 
@@ -166,18 +166,18 @@ class GeckoEngineAIFeaturesTest {
         val onError: (AIFeaturesError) -> Unit = { onErrorCalled = true }
 
         `when`(
-            aiFeaturesAccessor.resetFeature(
+            aiFeaturesAccessor.makeFeatureAvailable(
                 any(),
                 eq(onSuccess),
                 eq(onError),
             ),
         ).thenAnswer {
-            onError.invoke(AIFeaturesError.CouldNotResetError(null))
+            onError.invoke(AIFeaturesError.CouldNotMakeAvailableError(null))
         }
 
-        engine.aiFeatures.resetFeature(featureId = "translations", onSuccess = onSuccess, onError = onError)
+        engine.aiFeatures.makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
 
-        verify(aiFeaturesAccessor).resetFeature(featureId = "translations", onSuccess = onSuccess, onError = onError)
+        verify(aiFeaturesAccessor).makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
         assertFalse(onSuccessCalled)
         assertTrue(onErrorCalled)
     }

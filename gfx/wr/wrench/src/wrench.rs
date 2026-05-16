@@ -280,7 +280,7 @@ impl Wrench {
             clear_caches_with_quads: !window.is_software(),
             compositor_config,
             enable_debugger: true,
-            precise_linear_gradients: true,
+            use_quad_box_shadow: true,
             ..Default::default()
         };
 

@@ -29,13 +29,13 @@ add_task(function test() {
   UrlbarPrefs.set("maxRichResults", 6);
   Assert.deepEqual(UrlbarPrefs.get("maxRichResults"), 6);
 
-  Assert.deepEqual(UrlbarPrefs.get("autoFill.stddevMultiplier"), 0.0);
-  UrlbarPrefs.set("autoFill.stddevMultiplier", 0.01);
+  Assert.deepEqual(UrlbarPrefs.get("intentThreshold"), 0.5);
+  UrlbarPrefs.set("intentThreshold", 0.75);
   // Due to rounding errors, floats are slightly imprecise, so we can't
   // directly compare what we set to what we retrieve.
   Assert.deepEqual(
-    parseFloat(UrlbarPrefs.get("autoFill.stddevMultiplier").toFixed(2)),
-    0.01
+    parseFloat(UrlbarPrefs.get("intentThreshold").toFixed(2)),
+    0.75
   );
 });
 
@@ -231,6 +231,174 @@ const EXPECTED_NOT_SUGGESTIONS_FIRST_GROUPS = {
   ],
 };
 
+const EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS = {
+  children: [
+    // heuristic
+    {
+      maxResultCount: 1,
+      children: [
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_HISTORY_URL },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AI_CHAT },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+      ],
+    },
+    // main group
+    {
+      flexChildren: true,
+      children: [
+        // suggestions
+        {
+          flex: 2,
+          children: [
+            {
+              availableSpan: 2,
+              group: UrlbarUtils.RESULT_GROUP.AI,
+            },
+            {
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+                },
+                {
+                  flex: 99,
+                  group: UrlbarUtils.RESULT_GROUP.RECENT_SEARCH,
+                },
+                {
+                  flex: 4,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                },
+              ],
+            },
+            {
+              group: UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+            },
+          ],
+        },
+        // general
+        {
+          flex: 1,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          children: [
+            {
+              availableSpan: 3,
+              group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            },
+            {
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.GENERAL,
+                  orderBy: "frecency",
+                },
+                {
+                  flex: 1,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_TAB,
+                },
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.ABOUT_PAGES,
+                },
+              ],
+            },
+            {
+              group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+const EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS = {
+  children: [
+    // heuristic
+    {
+      maxResultCount: 1,
+      children: [
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_HISTORY_URL },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AI_CHAT },
+        { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+      ],
+    },
+    // main group
+    {
+      flexChildren: true,
+      children: [
+        // general
+        {
+          flex: 2,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          children: [
+            {
+              availableSpan: 3,
+              group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            },
+            {
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.GENERAL,
+                  orderBy: "frecency",
+                },
+                {
+                  flex: 1,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_TAB,
+                },
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.ABOUT_PAGES,
+                },
+              ],
+            },
+            {
+              group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            },
+          ],
+        },
+        // suggestions
+        {
+          flex: 1,
+          children: [
+            {
+              availableSpan: 2,
+              group: UrlbarUtils.RESULT_GROUP.AI,
+            },
+            {
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+                },
+                {
+                  flex: 99,
+                  group: UrlbarUtils.RESULT_GROUP.RECENT_SEARCH,
+                },
+                {
+                  flex: 4,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                },
+              ],
+            },
+            {
+              group: UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 // Tests interaction between showSearchSuggestionsFirst and resultGroups.
 add_task(function showSearchSuggestionsFirst_resultGroups() {
   // Check initial values.
@@ -283,6 +451,46 @@ add_task(function showSearchSuggestionsFirst_resultGroups() {
     }),
     EXPECTED_SUGGESTIONS_FIRST_GROUPS,
     "resultGroups is updated immediately after clearing showSearchSuggestionsFirst"
+  );
+  Assert.equal(
+    UrlbarPrefs.get("showSearchSuggestionsFirst"),
+    true,
+    "showSearchSuggestionsFirst defaults to true after clearing it"
+  );
+});
+
+// Tests interaction between showSearchSuggestionsFirst and smartbar resultGroups.
+add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
+  Assert.equal(
+    UrlbarPrefs.get("showSearchSuggestionsFirst"),
+    true,
+    "showSearchSuggestionsFirst is true initially"
+  );
+  Assert.deepEqual(
+    UrlbarPrefs.getResultGroups({
+      context: { sapName: "smartbar", searchString: "test" },
+    }),
+    EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS,
+    "smartbar resultGroups has suggestions first when showSearchSuggestionsFirst is true"
+  );
+
+  UrlbarPrefs.set("showSearchSuggestionsFirst", false);
+  Assert.deepEqual(
+    UrlbarPrefs.getResultGroups({
+      context: { sapName: "smartbar", searchString: "test" },
+    }),
+    EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS,
+    "smartbar resultGroups is updated after setting showSearchSuggestionsFirst = false"
+  );
+
+  // Clear showSearchSuggestionsFirst.
+  Services.prefs.clearUserPref("browser.urlbar.showSearchSuggestionsFirst");
+  Assert.deepEqual(
+    UrlbarPrefs.getResultGroups({
+      context: { sapName: "smartbar", searchString: "test" },
+    }),
+    EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS,
+    "smartbar resultGroups is updated immediately after clearing showSearchSuggestionsFirst"
   );
   Assert.equal(
     UrlbarPrefs.get("showSearchSuggestionsFirst"),

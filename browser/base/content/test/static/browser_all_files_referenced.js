@@ -336,6 +336,11 @@ var allowlist = [
   {
     file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
   },
+
+  // Referenced dynamically in newtab components via template literals:
+  // `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`
+  { file: "chrome://global/skin/icons/shaft-arrow-left.svg" },
+  { file: "chrome://global/skin/icons/shaft-arrow-right.svg" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {

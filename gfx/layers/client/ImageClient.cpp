@@ -92,7 +92,8 @@ already_AddRefed<TextureClient> ImageClient::CreateTextureClientForImage(
         aKnowsCompositor, data->mPictureRect, data->YDataSize(), data->mYStride,
         data->CbCrDataSize(), data->mCbCrStride, data->mStereoMode,
         data->mColorDepth, data->mYUVColorSpace, data->mColorRange,
-        data->mChromaSubsampling, TextureFlags::DEFAULT);
+        data->mTransferFunction, data->mChromaSubsampling,
+        TextureFlags::DEFAULT);
     if (!texture) {
       return nullptr;
     }

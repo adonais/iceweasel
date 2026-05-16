@@ -56,10 +56,6 @@ already_AddRefed<BrowserBridgeHost> BrowserBridgeChild::FinishInit(
   return MakeAndAddRef<BrowserBridgeHost>(this);
 }
 
-nsILoadContext* BrowserBridgeChild::GetLoadContext() {
-  return mBrowsingContext;
-}
-
 void BrowserBridgeChild::NavigateByKey(bool aForward,
                                        bool aForDocumentNavigation) {
   (void)SendNavigateByKey(aForward, aForDocumentNavigation);
@@ -156,8 +152,8 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvMaybeFireEmbedderLoadEvents(
 }
 
 mozilla::ipc::IPCResult BrowserBridgeChild::RecvScrollRectIntoView(
-    const nsRect& aRect, const ScrollAxis& aVertical,
-    const ScrollAxis& aHorizontal, const ScrollFlags& aScrollFlags,
+    const nsRect& aRect, const AxisScrollParams& aVertical,
+    const AxisScrollParams& aHorizontal, const ScrollFlags& aScrollFlags,
     const int32_t& aAppUnitsPerDevPixel) {
   RefPtr<Element> owner = mFrameLoader->GetOwnerContent();
   if (!owner) {

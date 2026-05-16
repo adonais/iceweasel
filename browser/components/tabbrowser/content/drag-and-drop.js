@@ -373,8 +373,10 @@
         if (fromTabList) {
           dropIndex = this._getDropIndex(event);
           if (dropIndex && dropIndex > movingTabs[0].elementIndex) {
-            dropIndex--;
             directionForward = true;
+            if (!isSplitViewWrapper(movingTabs[0])) {
+              dropIndex--;
+            }
           }
         } else if (
           draggedTab.currentIndex > tabs[tabs.length - 1].currentIndex
@@ -420,13 +422,19 @@
         let moveTabs = () => {
           if (dropIndex !== undefined) {
             for (let tab of movingTabs) {
-              gBrowser.moveTabTo(
-                tab,
-                { elementIndex: dropIndex },
-                dropMetricsContext
-              );
-              if (!directionForward) {
-                dropIndex++;
+              if (fromTabList && isSplitViewWrapper(tab)) {
+                const dropTarget =
+                  this._tabbrowserTabs.dragAndDropElements[dropIndex];
+                gBrowser.moveTabBefore(tab, dropTarget, dropMetricsContext);
+              } else {
+                gBrowser.moveTabTo(
+                  tab,
+                  { elementIndex: dropIndex },
+                  dropMetricsContext
+                );
+                if (!directionForward) {
+                  dropIndex++;
+                }
               }
             }
           } else if (dropElement && dropBefore) {
@@ -644,10 +652,11 @@
             Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
           ) {
             // Sync dialog cannot be used inside drop event handler.
-            let answer = await OpenInTabsUtils.promiseConfirmOpenInTabs(
-              urls.length,
-              window
-            );
+            let answer =
+              await gBrowser.OpenInTabsUtils.promiseConfirmOpenInTabs(
+                urls.length,
+                window
+              );
             if (!answer) {
               return;
             }

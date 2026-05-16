@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -249,6 +247,7 @@ bool SetContextOptions(JSContext* cx, const OptionParser& op);
 bool SetContextWasmOptions(JSContext* cx, const OptionParser& op);
 bool SetContextJITOptions(JSContext* cx, const OptionParser& op);
 bool SetContextGCOptions(JSContext* cx, const OptionParser& op);
+bool ApplyBenchmarkMode(JSContext* cx, const OptionParser& op);
 bool InitModuleLoader(JSContext* cx, const OptionParser& op);
 
 #ifdef FUZZING_JS_FUZZILLI
@@ -859,6 +858,9 @@ struct MOZ_STACK_CLASS EnvironmentPreparer
 
 const char* shell::selfHostedXDRPath = nullptr;
 bool shell::encodeSelfHostedCode = false;
+enum class BenchmarkMode { Off, Enable, Strict };
+static BenchmarkMode sBenchmarkMode = BenchmarkMode::Off;
+
 bool shell::enableCodeCoverage = false;
 bool shell::enableDisassemblyDumps = false;
 bool shell::offthreadBaselineCompilation = false;
@@ -907,7 +909,7 @@ enum class ShellGlobalKind {
   WindowProxy,
 };
 
-static void SetStandardRealmOptions(JS::RealmOptions& options);
+static void SetStandardRealmOptions(JSContext* cx, JS::RealmOptions& options);
 static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
                                  JSPrincipals* principals, ShellGlobalKind kind,
                                  bool immutablePrototype);
@@ -1196,6 +1198,19 @@ static bool ShellInterruptCallback(JSContext* cx) {
       result = JS_CallFunctionValue(cx, nullptr, sc->interruptFunc,
                                     JS::HandleValueArray::empty(), &rval);
     } else {
+      // A recurring problem when fuzzing the shell is that setInterruptCallback
+      // gives power that our actual interrupt handlers in the browser don't
+      // use. In particular, we insert interrupt checks in potentially
+      // long-running code (eg ArrayJoinKernel) with the expectation that the
+      // interrupt handler will not reach into the interrupted realm and modify
+      // the contents of the array. As a compromise, when fuzzing, we instead
+      // require a string argument, and evaluate that string in a fresh global.
+      // This prevents the interrupt handler from directly mutating the
+      // interrupted code, but still allows it to do interesting things (get a
+      // backtrace, trigger a GC, etc). Clever ways of circumventing this
+      // sandbox are only interesting to the extent that they correspond with
+      // things that happen in real interrupt handlers in the browser.
+
       RootedString str(cx, sc->interruptFunc.toString());
 
       Maybe<AutoReportException> are;
@@ -1203,8 +1218,17 @@ static bool ShellInterruptCallback(JSContext* cx) {
         are.emplace(cx);
       }
 
+      // Disable the Debugger API in the new global and hide this global from
+      // onNewGlobal hooks, to prevent interrupt callbacks from accessing other
+      // globals with --fuzzing-safe.
+      bool wasDebuggerDisabled = sc->disableDebuggerForNewGlobal;
+      sc->disableDebuggerForNewGlobal = true;
+      auto restore = MakeScopeExit(
+          [&]() { sc->disableDebuggerForNewGlobal = wasDebuggerDisabled; });
+
       JS::RealmOptions options;
-      SetStandardRealmOptions(options);
+      SetStandardRealmOptions(cx, options);
+
       RootedObject glob(cx, NewGlobalObject(cx, options, nullptr,
                                             ShellGlobalKind::WindowProxy,
                                             /* immutablePrototype = */ true));
@@ -4084,7 +4108,8 @@ static bool DummyPreserveWrapperCallback(JSContext* cx, HandleObject obj) {
   return true;
 }
 
-static bool DummyHasReleasedWrapperCallback(HandleObject obj) { return true; }
+/* Wrappers stay preserved for dummy DOM objects. */
+static bool DummyHasReleasedWrapperCallback(HandleObject obj) { return false; }
 
 #ifdef FUZZING_JS_FUZZILLI
 static bool fuzzilli_hash(JSContext* cx, unsigned argc, Value* vp) {
@@ -4465,11 +4490,15 @@ static const JSClass sandbox_class = {
     &sandbox_classOps,
 };
 
-static void SetStandardRealmOptions(JS::RealmOptions& options) {
+static void SetStandardRealmOptions(JSContext* cx, JS::RealmOptions& options) {
   options.creationOptions()
       .setSharedMemoryAndAtomicsEnabled(enableSharedMemory)
       .setCoopAndCoepEnabled(false)
       .setToSourceEnabled(enableToSource);
+
+  if (GetShellContext(cx)->disableDebuggerForNewGlobal) {
+    options.creationOptions().setInvisibleToDebugger(true);
+  }
 }
 
 [[nodiscard]] static bool CheckRealmOptions(JSContext* cx,
@@ -4507,7 +4536,7 @@ static void SetStandardRealmOptions(JS::RealmOptions& options) {
 
 static JSObject* NewSandbox(JSContext* cx, bool lazy) {
   JS::RealmOptions options;
-  SetStandardRealmOptions(options);
+  SetStandardRealmOptions(cx, options);
 
   if (defaultToSameCompartment) {
     options.creationOptions().setExistingCompartment(cx->global());
@@ -4692,7 +4721,7 @@ static void WorkerMain(UniquePtr<WorkerInput> input) {
 
   do {
     JS::RealmOptions realmOptions;
-    SetStandardRealmOptions(realmOptions);
+    SetStandardRealmOptions(cx, realmOptions);
 
     RootedObject global(cx, NewGlobalObject(cx, realmOptions, nullptr,
                                             ShellGlobalKind::WindowProxy,
@@ -5694,9 +5723,12 @@ static bool ParseModule(JSContext* cx, unsigned argc, Value* vp) {
         moduleType = JS::ModuleType::JSON;
       } else if (JS_LinearStringEqualsLiteral(linearStr, "bytes")) {
         moduleType = JS::ModuleType::Bytes;
+      } else if (JS_LinearStringEqualsLiteral(linearStr, "text")) {
+        moduleType = JS::ModuleType::Text;
       } else if (!JS_LinearStringEqualsLiteral(linearStr, "js")) {
         JS_ReportErrorASCII(
-            cx, "moduleType string ('js' or 'json' or 'bytes') expected");
+            cx,
+            "moduleType string ('js' or 'json' or 'bytes' or 'text') expected");
         return false;
       }
     }
@@ -5737,19 +5769,27 @@ static bool ParseModule(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     case JS::ModuleType::Bytes: {
-      if (!args[0].isObject() ||
-          !JS::IsArrayBufferObject(&args[0].toObject())) {
+      JSObject* obj = args[0].isObject() ? &args[0].toObject() : nullptr;
+      auto typedArray = JS::TypedArray<JS::Scalar::Uint8>::unwrap(obj);
+      if (!typedArray || !typedArray.isImmutable()) {
         const char* typeName = InformalValueTypeName(args[0]);
-        JS_ReportErrorASCII(cx, "expected ArrayBuffer for bytes module, got %s",
-                            typeName);
+        JS_ReportErrorASCII(
+            cx, "expected immutable Uint8Array for bytes module, got %s",
+            typeName);
         return false;
       }
 
-      /*
-       * NOTE: The spec requires checking that the ArrayBuffer is immutable.
-       * Immutable ArrayBuffers (see bug 1952253) are still only a Stage 2.7
-       * proposal. This check will be added in a future update.
-       */
+      module = JS::CreateDefaultExportSyntheticModule(cx, args[0]);
+      break;
+    }
+
+    case JS::ModuleType::Text: {
+      if (!args[0].isString()) {
+        const char* typeName = InformalValueTypeName(args[0]);
+        JS_ReportErrorASCII(cx, "expected text string, got %s", typeName);
+        return false;
+      }
+
       module = JS::CreateDefaultExportSyntheticModule(cx, args[0]);
       break;
     }
@@ -7339,7 +7379,7 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
   ShellGlobalKind kind = ShellGlobalKind::WindowProxy;
   bool immutablePrototype = true;
 
-  SetStandardRealmOptions(options);
+  SetStandardRealmOptions(cx, options);
 
   // Default to creating the global in the current compartment unless
   // --more-compartments is used.
@@ -7362,7 +7402,7 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
     if (!JS_GetProperty(cx, opts, "invisibleToDebugger", &v)) {
       return false;
     }
-    if (v.isBoolean()) {
+    if (v.isBoolean() && !GetShellContext(cx)->disableDebuggerForNewGlobal) {
       creationOptions.setInvisibleToDebugger(v.toBoolean());
     }
 
@@ -7610,6 +7650,23 @@ static bool GetMaxArgs(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+static bool GetAbstractModuleSource(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  if (JS::Prefs::experimental_source_phase_imports()) {
+    JSObject* obj =
+        GlobalObject::getOrCreateConstructor(cx, JSProto_AbstractModuleSource);
+    if (!obj) {
+      return false;
+    }
+    args.rval().setObject(*obj);
+  } else {
+    args.rval().setUndefined();
+  }
+  return true;
+}
+#endif
+
 static bool IsHTMLDDA_Call(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -7856,7 +7913,7 @@ static void SingleStepCallback(void* arg, jit::Simulator* sim, void* pc) {
     MOZ_ASSERT(i.stackAddress() != nullptr);
 #  ifndef ENABLE_WASM_JSPI
     // The stack addresses are monotonically increasing, except when
-    // suspendable stacks are present (e.g. when JS PI is enabled).
+    // cont stacks are present (e.g. when JS PI is enabled).
     MOZ_ASSERT(lastStackAddress <= i.stackAddress());
 #  endif
     lastStackAddress = i.stackAddress();
@@ -9051,20 +9108,25 @@ class TransplantableDOMProxyHandler final : public ForwardingProxyHandler {
   bool isConstructor(JSObject* obj) const override { return false; }
 
   // Simplified implementation of |DOMProxyHandler::GetAndClearExpandoObject|.
-  static JSObject* GetAndClearExpandoObject(JSObject* obj) {
-    const Value& v = GetProxyPrivate(obj);
+  static JSObject* GetAndClearExpandoObject(
+      JSObject* obj, JS::MutableHandle<JS::Value> restoreToken) {
+    Value v = GetProxyPrivate(obj);
+    restoreToken.set(v);
     if (v.isUndefined()) {
       return nullptr;
     }
 
-    JSObject* expandoObject = &v.toObject();
     SetProxyPrivate(obj, UndefinedValue());
-    return expandoObject;
+    return &v.toObject();
+  }
+
+  static void RestoreExpando(JSObject* obj, const JS::Value& restoreToken) {
+    SetProxyPrivate(obj, restoreToken);
   }
 
   // Simplified implementation of |DOMProxyHandler::EnsureExpandoObject|.
   static JSObject* EnsureExpandoObject(JSContext* cx, JS::HandleObject obj) {
-    const Value& v = GetProxyPrivate(obj);
+    Value v = GetProxyPrivate(obj);
     if (v.isObject()) {
       return &v.toObject();
     }
@@ -9144,11 +9206,21 @@ static bool TransplantObject(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   bool isProxy = IsProxy(source);
-  RootedObject expandoObject(cx);
+  Rooted<JSObject*> expandoObject(cx);
+  Rooted<JS::Value> expandoRollbackToken(cx);
   if (isProxy) {
-    expandoObject =
-        TransplantableDOMProxyHandler::GetAndClearExpandoObject(source);
+    expandoObject = TransplantableDOMProxyHandler::GetAndClearExpandoObject(
+        source, &expandoRollbackToken);
   }
+  auto resetExpando = MakeScopeExit([&]() {
+    // We must clear the expando object from `source`, since otherwise it will
+    // be copied as part of JS_CloneObject. But on an error, it needs to be
+    // restored.
+    if (expandoObject) {
+      TransplantableDOMProxyHandler::RestoreExpando(source,
+                                                    expandoRollbackToken);
+    }
+  });
 
   JSAutoRealm ar(cx, newGlobal);
 
@@ -9184,6 +9256,10 @@ static bool TransplantObject(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  // We've made it far enough to be able to mutate the source. Cleared slots
+  // will not be observed even if a failure occurs after this point.
+  resetExpando.release();
+
   JS::SetReservedSlot(target, DOM_OBJECT_SLOT,
                       JS::GetReservedSlot(source, DOM_OBJECT_SLOT));
   JS::SetReservedSlot(source, DOM_OBJECT_SLOT, JS::PrivateValue(nullptr));
@@ -9194,21 +9270,21 @@ static bool TransplantObject(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   source = JS_TransplantObject(cx, source, target);
-  if (!source) {
-    return false;
-  }
+  MOZ_RELEASE_ASSERT(source, "JS_TransplantObject is infallible");
+
+  AutoEnterOOMUnsafeRegion oomUnsafe;
 
   RootedObject copyTo(cx);
   if (isProxy) {
     copyTo = TransplantableDOMProxyHandler::EnsureExpandoObject(cx, source);
     if (!copyTo) {
-      return false;
+      oomUnsafe.crash("source of transplant is corrupted");
     }
   } else {
     copyTo = source;
   }
   if (!JS_CopyOwnPropertiesAndPrivateFields(cx, copyTo, propertyHolder)) {
-    return false;
+    oomUnsafe.crash("source of transplant is corrupted");
   }
 
   args.rval().setUndefined();
@@ -10186,9 +10262,10 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 "  Sleep for dt seconds."),
 
     JS_FN_HELP("parseModule", ParseModule, 3, 0,
-"parseModule(code, 'filename', 'js' | 'json' | 'bytes')",
-"  Parses source text as a JS module ('js', this is the default) or a JSON"
-" module ('json') or bytes module ('bytes') and returns a ModuleObject wrapper object."),
+"parseModule(code, 'filename', 'js' | 'json' | 'bytes' | 'text')",
+"  Parses source text as a JS module ('js', this is the default),\n"
+"  a JSON module ('json'), a bytes module ('bytes'), or a text module ('text'),\n"
+"  and returns a ModuleObject wrapper object."),
 
     JS_FN_HELP("instantiateModuleStencil", InstantiateModuleStencil, 1, 0,
 "instantiateModuleStencil(stencil, [options])",
@@ -10443,6 +10520,12 @@ JS_FN_HELP("createUserArrayBuffer", CreateUserArrayBuffer, 1, 0,
     JS_FN_HELP("getMaxArgs", GetMaxArgs, 0, 0,
 "getMaxArgs()",
 "  Return the maximum number of supported args for a call."),
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    JS_FN_HELP("getAbstractModuleSource", GetAbstractModuleSource, 0, 0,
+"getAbstractModuleSource()",
+"  Return the %AbstractModuleSource% intrinsic constructor."),
+#endif
 
     JS_FN_HELP("createIsHTMLDDA", CreateIsHTMLDDA, 0, 0,
 "createIsHTMLDDA()",
@@ -11794,8 +11877,10 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
     if (!JS_InitReflectParse(cx, glob)) {
       return nullptr;
     }
-    if (!JS_DefineDebuggerObject(cx, glob)) {
-      return nullptr;
+    if (!GetShellContext(cx)->disableDebuggerForNewGlobal) {
+      if (!JS_DefineDebuggerObject(cx, glob)) {
+        return nullptr;
+      }
     }
     if (!JS_DefineFunctionsWithHelp(cx, glob, shell_functions) ||
         !JS_DefineProfilingFunctions(cx, glob)) {
@@ -12320,7 +12405,7 @@ static int Shell(JSContext* cx, OptionParser* op) {
   int result = EXIT_SUCCESS;
   do {
     JS::RealmOptions options;
-    SetStandardRealmOptions(options);
+    SetStandardRealmOptions(cx, options);
     RootedObject glob(
         cx, NewGlobalObject(cx, options, nullptr, ShellGlobalKind::WindowProxy,
                             /* immutablePrototype = */ true));
@@ -12679,6 +12764,10 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  if (!ApplyBenchmarkMode(cx, op)) {
+    return 1;
+  }
+
   JS_SetTrustedPrincipals(cx, &ShellPrincipals::fullyTrusted);
   JS_SetSecurityCallbacks(cx, &ShellPrincipals::securityCallbacks);
 
@@ -12861,6 +12950,10 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "trace-regexp-parser", "Trace regexp parsing") ||
       !op.addBoolOption('\0', "trace-regexp-assembler",
                         "Trace regexp assembler") ||
+      !op.addBoolOption('\0', "trace-regexp-compiler",
+                        "Trace regexp compiler") ||
+      !op.addBoolOption('\0', "trace-regexp-graph-building",
+                        "Trace regexp graph building") ||
       !op.addBoolOption('\0', "trace-regexp-interpreter",
                         "Trace regexp interpreter") ||
       !op.addBoolOption('\0', "trace-regexp-peephole",
@@ -13089,6 +13182,13 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "more-compartments",
                         "Make newGlobal default to creating a new "
                         "compartment.") ||
+      !op.addBoolOption('\0', "benchmark-mode",
+                        "Configure the shell for realistic benchmarking. "
+                        "Prints warnings for detected issues.") ||
+      !op.addBoolOption('\0', "strict-benchmark-mode",
+                        "Like --benchmark-mode but refuses to run if the "
+                        "build config is wrong or conflicting settings "
+                        "exist.") ||
       !op.addBoolOption('\0', "fuzzing-safe",
                         "Don't expose functions that aren't safe for "
                         "fuzzers to call") ||
@@ -13255,6 +13355,7 @@ bool InitOptionParser(OptionParser& op) {
                         "Disable Explicit Resource Management") ||
       !op.addBoolOption('\0', "enable-temporal", "Enable Temporal") ||
       !op.addBoolOption('\0', "enable-import-bytes", "Enable import bytes") ||
+      !op.addBoolOption('\0', "enable-import-text", "Enable import text") ||
       !op.addBoolOption('\0', "enable-promise-allkeyed",
                         "Enable Promise.allKeyed") ||
       !op.addBoolOption('\0', "enable-arraybuffer-immutable",
@@ -13264,6 +13365,9 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "enable-iterator-join", "Enable Iterator.join") ||
       !op.addBoolOption('\0', "enable-source-phase-imports",
                         "Enable source phase imports") ||
+      !op.addBoolOption(
+          '\0', "enable-source-phase-imports-test262-module-source",
+          "Support <module source> specifier for test262 tests") ||
       !op.addBoolOption('\0', "enable-legacy-regexp",
                         "Enable Legacy RegExp features")) {
     return false;
@@ -13287,12 +13391,24 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
         (getenv("MOZ_FUZZING_SAFE") && getenv("MOZ_FUZZING_SAFE")[0] != '0');
   }
 
+  if (op.getBoolOption("strict-benchmark-mode")) {
+    sBenchmarkMode = BenchmarkMode::Strict;
+  } else if (op.getBoolOption("benchmark-mode")) {
+    sBenchmarkMode = BenchmarkMode::Enable;
+  }
+
   for (MultiStringRange args = op.getMultiStringOption("setpref");
        !args.empty(); args.popFront()) {
     if (!SetPref(args.front())) {
       return false;
     }
   }
+
+#if defined(DEBUG) || defined(NIGHTLY_BUILD) || defined(JS_GC_ZEAL)
+  if (sBenchmarkMode != BenchmarkMode::Off) {
+    JS::Prefs::setAtStartup_extra_gc_poisoning(false);
+  }
+#endif
 
   // Override pref values for prefs that have a custom shell flag.
   // If you're adding a new feature, consider using --setpref instead.
@@ -13335,6 +13451,9 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-import-bytes")) {
     JS::Prefs::setAtStartup_experimental_import_bytes(true);
   }
+  if (op.getBoolOption("enable-import-text")) {
+    JS::Prefs::setAtStartup_experimental_import_text(true);
+  }
   if (op.getBoolOption("enable-promise-allkeyed")) {
     JS::Prefs::setAtStartup_experimental_promise_allkeyed(true);
   }
@@ -13348,6 +13467,11 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
   if (op.getBoolOption("enable-source-phase-imports")) {
     JS::Prefs::setAtStartup_experimental_source_phase_imports(true);
+  }
+  if (op.getBoolOption("enable-source-phase-imports-test262-module-source")) {
+    JS::Prefs::
+        setAtStartup_experimental_source_phase_imports_test262_module_source(
+            true);
   }
 #endif
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
@@ -14100,6 +14224,12 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
   if (op.getBoolOption("trace-regexp-assembler")) {
     jit::JitOptions.trace_regexp_assembler = true;
   }
+  if (op.getBoolOption("trace-regexp-compiler")) {
+    jit::JitOptions.trace_regexp_compiler = true;
+  }
+  if (op.getBoolOption("trace-regexp-graph-building")) {
+    jit::JitOptions.trace_regexp_graph_building = true;
+  }
   if (op.getBoolOption("trace-regexp-interpreter")) {
     jit::JitOptions.trace_regexp_bytecodes = true;
   }
@@ -14352,6 +14482,147 @@ bool SetContextGCOptions(JSContext* cx, const OptionParser& op) {
     cx->runtime()->gc.getZealBits(&gZealBits, &gZealFrequency, &nextScheduled);
   }
 #endif
+
+  return true;
+}
+
+bool ApplyBenchmarkMode(JSContext* cx, const OptionParser& op) {
+  if (sBenchmarkMode == BenchmarkMode::Off) {
+    return true;
+  }
+
+  bool isStrict = (sBenchmarkMode == BenchmarkMode::Strict);
+  bool hasErrors = false;
+
+  auto warn = [](const char* msg) {
+    fprintf(stderr, "--benchmark-mode: WARNING: %s\n", msg);
+  };
+
+  auto issue = [&](const char* msg) {
+    hasErrors = true;
+    if (isStrict) {
+      fprintf(stderr, "--benchmark-mode: ERROR: %s\n", msg);
+    } else {
+      warn(msg);
+    }
+  };
+
+  // Build configuration checks.
+#ifdef JS_DEBUG
+  issue("This is a DEBUG build. Use an optimized, non-debug build.");
+#endif
+#ifdef MOZ_ASAN
+  issue("This is an AddressSanitizer (ASan) build.");
+#endif
+#ifdef MOZ_TSAN
+  issue("This is a ThreadSanitizer (TSan) build.");
+#endif
+#ifdef MOZ_MSAN
+  issue("This is a MemorySanitizer (MSan) build.");
+#endif
+#if defined(JS_SIMULATOR)
+  issue("Running on a CPU simulator.");
+#endif
+#ifdef FUZZING
+  issue("This is a fuzzing build.");
+#endif
+#ifdef JS_GC_ZEAL
+  warn(
+      "Build has GC zeal support (JS_GC_ZEAL). "
+      "This may indicate a non-optimized build.");
+#endif
+
+  // Runtime option checks.
+#ifdef JS_GC_ZEAL
+  if (op.getStringOption("gc-zeal") != nullptr) {
+    issue("--gc-zeal is active.");
+  }
+#endif
+
+  if (op.getBoolOption("code-coverage")) {
+    issue("--code-coverage adds instrumentation overhead.");
+  }
+
+  if (op.getBoolOption("ion-check-range-analysis")) {
+    issue("--ion-check-range-analysis adds runtime checks.");
+  }
+
+  if (op.getBoolOption("ion-extra-checks")) {
+    issue("--ion-extra-checks adds runtime checks.");
+  }
+
+  if (op.getBoolOption("emit-interpreter-entry")) {
+    issue("--emit-interpreter-entry adds overhead.");
+  }
+
+  if (op.getBoolOption("enable-ic-frame-pointers")) {
+    issue("--enable-ic-frame-pointers adds overhead to IC stubs.");
+  }
+
+  if (op.getBoolOption("no-ion")) {
+    issue("IonMonkey JIT is disabled (--no-ion).");
+  }
+
+  if (op.getBoolOption("no-baseline")) {
+    issue("Baseline compiler is disabled (--no-baseline).");
+  }
+
+  if (op.getBoolOption("no-threads")) {
+    issue("Helper threads are disabled (--no-threads).");
+  }
+
+  if (op.getBoolOption("fuzzing-safe")) {
+    issue("--fuzzing-safe is set.");
+  }
+
+#ifdef WASM_SUPPORTS_HUGE_MEMORY
+  // Wasm checks
+  if (JS::Prefs::wasm_disable_huge_memory()) {
+    issue("huge memory disabled");
+  }
+#endif
+
+  if (!JS::ContextOptionsRef(cx).wasmIon() ||
+      !JS::ContextOptionsRef(cx).wasmBaseline()) {
+    issue("missing wasm compiler");
+  }
+  if (JS::Prefs::wasm_test_serialization()) {
+    issue("testing serialization");
+  }
+  if (JS::Prefs::wasm_lazy_tiering_synchronous()) {
+    issue("tiering test configuration");
+  }
+
+  if (jit::JitOptions.spectreIndexMasking ||
+      jit::JitOptions.spectreObjectMitigations ||
+      jit::JitOptions.spectreStringMitigations ||
+      jit::JitOptions.spectreValueMasking ||
+      jit::JitOptions.spectreJitToCxxCalls) {
+    issue("Spectre mitigations are enabled.");
+  }
+
+  // Apply benchmark-mode overrides.
+  jit::JitOptions.spectreIndexMasking = false;
+  jit::JitOptions.spectreObjectMitigations = false;
+  jit::JitOptions.spectreStringMitigations = false;
+  jit::JitOptions.spectreValueMasking = false;
+  jit::JitOptions.spectreJitToCxxCalls = false;
+
+  // See the default set for
+  // javascript.options.content_process_write_protect_code
+#if !defined(XP_OPENBSD)
+  jit::JitOptions.maybeSetWriteProtectCode(false);
+#endif
+
+  JS::ContextOptionsRef(cx).setAsyncStack(false);
+
+  jit::JitOptions.fullDebugChecks = false;
+
+  if (isStrict && hasErrors) {
+    fprintf(stderr,
+            "--benchmark-mode: Refusing to run due to errors listed above.\n");
+    return false;
+  }
 
   return true;
 }

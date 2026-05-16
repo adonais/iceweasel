@@ -83,7 +83,7 @@ if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["CC_TYPE"] not in ("clang", "gcc"):
     LDFLAGS += ["/HEAP:0x40000"]
 
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += ["-Wshadow"]
+    COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Wshadow"]
 
 if CONFIG["MOZ_DEBUG"]:
     WINCONSOLE = True

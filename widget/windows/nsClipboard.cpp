@@ -10,7 +10,6 @@
 // shellapi.h is needed to build with WIN32_LEAN_AND_MEAN
 #include <shellapi.h>
 
-#include <functional>
 #include <thread>
 #include <chrono>
 

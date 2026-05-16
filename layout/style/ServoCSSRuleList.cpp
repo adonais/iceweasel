@@ -31,6 +31,7 @@
 #include "mozilla/dom/CSSStartingStyleRule.h"
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/CSSSupportsRule.h"
+#include "mozilla/dom/CSSViewTransitionRule.h"
 #include "mozilla/dom/Document.h"
 
 using namespace mozilla::dom;
@@ -109,6 +110,7 @@ css::Rule* ServoCSSRuleList::GetRule(uint32_t aIndex) {
       CASE_RULE_LOCKED(PositionTry, PositionTry)
       CASE_RULE_LOCKED(NestedDeclarations, NestedDeclarations)
       CASE_RULE_UNLOCKED(CustomMedia, CustomMedia)
+      CASE_RULE_UNLOCKED(ViewTransition, ViewTransition)
 #undef CASE_RULE_LOCKED
 #undef CASE_RULE_UNLOCKED
 #undef CASE_RULE_WITH_PREFIX
@@ -290,6 +292,7 @@ void ServoCSSRuleList::SetRawContents(RefPtr<StyleLockedCssRules> aNewRules,
       RULE_CASE_LOCKED(PositionTry, PositionTry)
       RULE_CASE_LOCKED(NestedDeclarations, NestedDeclarations)
       RULE_CASE_UNLOCKED(CustomMedia, CustomMedia)
+      RULE_CASE_UNLOCKED(ViewTransition, ViewTransition)
       case StyleCssRuleType::Keyframe:
         MOZ_ASSERT_UNREACHABLE("keyframe rule cannot be here");
         break;

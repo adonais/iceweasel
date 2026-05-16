@@ -109,10 +109,7 @@ impl fmt::Debug for EagerPseudoArray {
 
 // Can't use [None; EAGER_PSEUDO_COUNT] here because it complains
 // about Copy not being implemented for our Arc type.
-#[cfg(feature = "gecko")]
 const EMPTY_PSEUDO_ARRAY: &'static EagerPseudoArrayInner = &[None, None, None, None];
-#[cfg(feature = "servo")]
-const EMPTY_PSEUDO_ARRAY: &'static EagerPseudoArrayInner = &[None, None, None];
 
 impl EagerPseudoStyles {
     /// Returns whether there are any pseudo styles.
@@ -365,6 +362,21 @@ pub enum RestyleKind {
     CascadeOnly,
 }
 
+fn needs_to_match_self(hint: RestyleHint, style: &ComputedValues) -> bool {
+    if hint.intersects(RestyleHint::RESTYLE_SELF) {
+        return true;
+    }
+    if hint.intersects(RestyleHint::RESTYLE_SELF_IF_PSEUDO) && style.is_pseudo_style() {
+        return true;
+    }
+    hint.intersects(
+        RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES
+            | RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER,
+    ) && style
+        .flags
+        .contains(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY)
+}
+
 impl ElementData {
     /// Invalidates style for this element, its descendants, and later siblings,
     /// based on the snapshot of the element that we took when attributes or
@@ -437,6 +449,20 @@ impl ElementData {
         }
     }
 
+    /// Return a copy of the element's primary style as a resolved style with the
+    /// given flags.
+    pub fn clone_style_with_flags(&self, flags: ComputedValueFlags) -> ResolvedStyle {
+        let primary_style = self.styles.primary();
+        // We are only using this pseudo to find the correct pseudo type so it
+        // does not matter it technically belongs to a different style.
+        let pseudo = primary_style.pseudo();
+        ResolvedStyle(
+            primary_style
+                .deref()
+                .clone_with_flags(flags, pseudo.as_ref()),
+        )
+    }
+
     /// Sets a new set of styles, returning the old ones.
     pub fn set_styles(&mut self, new_styles: ResolvedElementStyles) -> ElementStyles {
         self.flags.set(
@@ -463,13 +489,7 @@ impl ElementData {
             return None;
         }
 
-        let needs_to_match_self = hint.intersects(RestyleHint::RESTYLE_SELF)
-            || (hint.intersects(RestyleHint::RESTYLE_SELF_IF_PSEUDO) && style.is_pseudo_style())
-            || (hint.intersects(RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES)
-                && style
-                    .flags
-                    .contains(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY));
-        if needs_to_match_self {
+        if needs_to_match_self(hint, style) {
             return Some(RestyleKind::MatchAndCascade);
         }
 

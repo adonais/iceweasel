@@ -78,6 +78,10 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   return nil;
 }
 
+- (BOOL)hasMozAccessible {
+  return YES;
+}
+
 - (BOOL)isRoot {
   return NO;
 }
@@ -489,6 +493,14 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   NSArray* allChildren = [self moxChildren];
 
   for (MOXAccessibleBase* nativeChild in allChildren) {
+    if ([nativeChild hasRepresentedView]) {
+      // If the child has a represented view, we want to skip it in the
+      // accessibility hierarchy since the represented view will be a native
+      // accessible that represents this child and will be connected to the
+      // native parent directly.
+      continue;
+    }
+
     if ([nativeChild moxIgnoreWithParent:self]) {
       // If this child should be ignored get its unignored children.
       // This will in turn recurse to any unignored descendants if the
@@ -508,6 +520,13 @@ mozilla::LogModule* GetMacAccessibilityLog() {
 }
 
 - (id<mozAccessible>)moxUnignoredParent {
+  if ([self hasRepresentedView]) {
+    // If this accessible has a represented NSView, use it to climb up to the
+    // native parent.
+    return [[self representedView]
+        accessibilityAttributeValue:NSAccessibilityParentAttribute];
+  }
+
   id<mozAccessible> nativeParent = [self moxParent];
   if (!nativeParent) {
     return nil;

@@ -29,7 +29,7 @@ static const char *exec_name;
 
 void usage_exit(void) {
   fprintf(stderr,
-          "Usage: %s <width> <height> <infile> <outfile> "
+          "Usage: %s <codec> <width> <height> <infile> <outfile> "
           "<keyframe-interval> <frames to encode>\n",
           exec_name);
   exit(EXIT_FAILURE);
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
   // "missing-field-initializers" warning in some compilers.
   memset(&info, 0, sizeof(info));
 
-  if (argc != 9) die("Invalid number of arguments");
+  if (argc != 8) die("Invalid number of arguments");
 
   codec_arg = argv[1];
   width_arg = argv[2];
@@ -134,6 +134,7 @@ int main(int argc, char **argv) {
   cfg.g_timebase.num = info.time_base.numerator;
   cfg.g_timebase.den = info.time_base.denominator;
   cfg.rc_target_bitrate = bitrate;
+  cfg.g_lag_in_frames = 35;
 
   writer = aom_video_writer_open(outfile_arg, kContainerIVF, &info);
   if (!writer) die("Failed to open %s for writing.", outfile_arg);

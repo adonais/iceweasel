@@ -396,8 +396,18 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
     // set the targetIpAddressSpace in the transaction object, this might be
     // needed by the channel for determining the kind of LNA permissions and/or
     // LNA telemetry
-    if (!hTrans->AllowedToConnectToIpAddressSpace(
-            peerAddr.GetIpAddressSpace())) {
+    auto addrSpace = peerAddr.GetIpAddressSpace();
+    // h3 always uses TLS via QUIC. When network.lna.defer_https_check is
+    // enabled and the QUIC handshake hasn't yet completed, defer the LNA
+    // check for Private targets to OnConnected() so we don't prompt for
+    // misdirected public hostnames whose certificate would have failed to
+    // validate. Local targets are still checked immediately.
+    bool deferPrivate = addrSpace == nsILoadInfo::IPAddressSpace::Private &&
+                        StaticPrefs::network_lna_defer_https_check() &&
+                        mHttp3Session && !mHttp3Session->IsConnected();
+    if (deferPrivate) {
+      mDeferredLnaTransactions.AppendElement(hTrans);
+    } else if (!hTrans->AllowedToConnectToIpAddressSpace(addrSpace)) {
       // we could probably fail early and avoid recreating the H3 session
       // See Bug 1968908
       CloseTransaction(mHttp3Session, NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
@@ -511,6 +521,37 @@ void HttpConnectionUDP::OnConnected() {
   MOZ_ASSERT(!mConnected, "Called more than once");
 
   mConnected = true;
+
+  // Deferred LNA check: now that the QUIC handshake has succeeded (and the
+  // peer presented a valid certificate for the requested name), check
+  // whether any deferred transactions are permitted to reach this address
+  // space. If denied, tear down the session and close all of them.
+  if (!mDeferredLnaTransactions.IsEmpty()) {
+    nsTArray<RefPtr<nsHttpTransaction>> deferred =
+        std::move(mDeferredLnaTransactions);
+    NetAddr peerAddr;
+    if (NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
+      auto addrSpace = peerAddr.GetIpAddressSpace();
+      bool denied = false;
+      for (const auto& t : deferred) {
+        if (!t->AllowedToConnectToIpAddressSpace(addrSpace)) {
+          denied = true;
+          // We might want to break here, but AllowedToConnectToIpAddressSpace
+          // has a side effect of setting mTargetIpAddressSpace. In practice
+          // the array will usually just contain one transaction.
+        }
+      }
+      if (denied) {
+        DontReuse();
+        CloseTransaction(mHttp3Session, NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+        for (const auto& t : deferred) {
+          t->Close(NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+        }
+        return;
+      }
+    }
+  }
+
   if (mIsInTunnel) {
     return;
   }

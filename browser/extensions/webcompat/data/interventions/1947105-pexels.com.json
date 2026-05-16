@@ -1,0 +1,17 @@
+{
+  "label": "pexels.com",
+  "bugs": {
+    "1947105": {
+      "issue": "broken-layout",
+      "matches": ["*://*.pexels.com/photo/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1947105-pexels.com-nudge-thanks-popup-onscreen.css"]
+      }
+    }
+  ]
+}

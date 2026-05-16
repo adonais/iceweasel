@@ -86,6 +86,9 @@ interface WindowGlobalParent : WindowContext {
 
   readonly attribute long osPid;
 
+  // The remote type of `this.domProcess`.
+  readonly attribute UTF8String? remoteType;
+
   // A WindowGlobalParent is the root in its process if it has no parent, or its
   // embedder is in a different process.
   readonly attribute boolean isProcessRoot;
@@ -179,6 +182,8 @@ interface WindowGlobalParent : WindowContext {
   // has active peer connections.  If this is called for a non-top-level
   // context, it always returns false.
   boolean hasActivePeerConnections();
+
+  undefined updateFullscreenKeyboardLockStatus(FullscreenKeyboardLock status);
 };
 
 [Exposed=Window, ChromeOnly]

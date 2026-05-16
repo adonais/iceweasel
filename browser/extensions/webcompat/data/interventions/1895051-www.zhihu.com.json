@@ -1,0 +1,17 @@
+{
+  "label": "www.zhihu.com",
+  "bugs": {
+    "1895051": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://www.zhihu.com/question/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1895051-www.zhihu.com-broken-button-fix.css"]
+      }
+    }
+  ]
+}

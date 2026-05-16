@@ -34,6 +34,12 @@ Startup and caching
   Cached Guardian location list shared between ``IPProtectionService`` and
   ``GuardianClient``.
 
+``browser.ipProtection.upgradeNotAvailable`` (boolean, default: ``false``)
+  When ``true``, suppresses all upgrade-related messaging (settings link, feature
+  callouts, locations subview promo) regardless of the user's subscription state.
+  Intended to be flipped via Nimbus in regions or configurations where the VPN
+  upgrade path is not offered.
+
 ``browser.ipProtection.cacheDisabled`` (boolean, default: ``false``)
   Turns off all startup caches. Used primarily by xpcshell tests.
 
@@ -60,8 +66,13 @@ UI Features
 ``browser.ipProtection.bandwidth.enabled`` (boolean, default: ``false``)
   Controls whether bandwidth usage information is displayed in the status panel.
 
-``browser.ipProtection.egressLocationEnabled`` (boolean, default: ``false``)
-  Controls whether the VPN egress location is displayed in the status panel.
+``browser.ipProtection.bandwidth.maxInGb`` (integer, default: ``50``)
+  Maximum bandwidth in GB used for messaging. Can be controlled by Nimbus via
+  the ``ipProtection.bandwidthMax`` variable.
+
+``browser.ipProtection.egressLocation`` (string, default: ``""``)
+  A country code of the currently selected VPN egress location,
+  or a empty string for the default location.
 
 Diagnostics
 ~~~~~~~~~~~

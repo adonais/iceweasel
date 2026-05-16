@@ -158,6 +158,13 @@ mochitest-valgrind:
 desktop-screenshot-capture:
     - mochitest-browser-screenshots
 
+artifact-tests:
+    - mochitest-browser-chrome
+    - mochitest-chrome
+    - mochitest-devtools-chrome
+    - mochitest-plain
+    - xpcshell
+
 ### Specific platform test sets
 
 # Linux
@@ -312,11 +319,13 @@ windows11-64-2009-ccov-tests:
     - web-platform-tests-eme
 
 windows11-24h2-tests:
-    - cppunittest
     - crashtest
-    - firefox-ui-functional
-    - gtest
     - jsreftest
+    - reftest
+
+windows11-25h2-tests:
+    - cppunittest
+    - gtest
     - marionette-integration
     - marionette-unittest
     - mochitest-a11y
@@ -335,7 +344,6 @@ windows11-24h2-tests:
     - mochitest-webgl1-ext
     - mochitest-webgl2-core
     - mochitest-webgl2-ext
-    - reftest
     - telemetry-tests-client
     - test-verify
     - test-verify-gpu
@@ -440,7 +448,6 @@ macosx1500-64-tests:
     - test-verify-gpu
     - test-verify-wpt
     - xpcshell
-    - web-platform-tests
     - web-platform-tests-crashtest
     - web-platform-tests-print-reftest
     - web-platform-tests-reftest
@@ -452,6 +459,7 @@ macosx1500-64-tests:
 macosx1500-aarch64-tests:
     - cppunittest
     - mochitest-media
+    - web-platform-tests
 
 macosx1470-64-tests:
     - cppunittest
@@ -482,7 +490,6 @@ macosx1470-64-tests:
     - test-verify
     - test-verify-gpu
     - test-verify-wpt
-    - web-platform-tests
     - web-platform-tests-canvas
     - web-platform-tests-crashtest
     - web-platform-tests-eme
@@ -528,6 +535,7 @@ macosx64-talos:
 
 macosx1500-64-perftests:
     - browsertime-benchmark
+    - browsertime-tp6-essential
 
 # Android
 

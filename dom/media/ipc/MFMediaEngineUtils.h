@@ -8,8 +8,16 @@
 #include "MFMediaEngineExtra.h"
 #include "ipc/EnumSerializer.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/ProfilerMarkerTypes.h"
+#include "mozilla/gfx/Types.h"
 #include "nsPrintfCString.h"
+
+// MFVideoTransFunc_HLG was added in the Windows SDK 10.0.15063. Define it
+// here for older SDK versions.
+#ifndef MFVideoTransFunc_HLG
+#  define MFVideoTransFunc_HLG static_cast<MFVideoTransferFunction>(16)
+#endif
 
 namespace mozilla {
 
@@ -115,6 +123,15 @@ inline constexpr HRESULT DRM_OEM_E_ASD_ACTIVE_DISPLAY_FAIL =
 // or necessary hardware capability (e.g., most VMs).
 inline constexpr HRESULT MSPR_E_NO_DECRYPTOR_AVAILABLE =
     static_cast<HRESULT>(0x8004B895);
+
+// Hardware DRM is not supported on this system (e.g. no TEE, no secure video
+// path). Semantically equivalent to MSPR_E_NO_DECRYPTOR_AVAILABLE — triggers
+// SL3000→SL2000 fallback. mferror.h defines this as a macro on systems where
+// it ships with the SDK; guard against redefinition.
+#  ifndef MF_E_HARDWARE_DRM_UNSUPPORTED
+inline constexpr HRESULT MF_E_HARDWARE_DRM_UNSUPPORTED =
+    static_cast<HRESULT>(0xC00D3706);
+#  endif
 #endif
 
 const char* MediaEventTypeToStr(MediaEventType aType);
@@ -124,6 +141,8 @@ const char* GUIDToStr(GUID aGUID);
 const char* MFVideoRotationFormatToStr(MFVideoRotationFormat aFormat);
 const char* MFVideoTransferFunctionToStr(MFVideoTransferFunction aFunc);
 const char* MFVideoPrimariesToStr(MFVideoPrimaries aPrimaries);
+MFVideoTransferFunction ToMFVideoTransFunc(
+    const Maybe<gfx::TransferFunction>& aTransferFunction);
 void ByteArrayFromGUID(REFGUID aGuidIn, nsTArray<uint8_t>& aByteArrayOut);
 void GUIDFromByteArray(const nsTArray<uint8_t>& aByteArrayIn, GUID& aGuidOut);
 BSTR CreateBSTRFromConstChar(const char* aNarrowStr);

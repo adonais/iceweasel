@@ -9,6 +9,7 @@
 #include <d3d11.h>
 #include <dcomp.h>
 #include <d3d11_1.h>
+#include <d3d11_4.h>
 #include <dxgi1_2.h>
 
 // -
@@ -262,11 +263,8 @@ DCLayerTree::DCLayerTree(gl::GLContext* aGL, EGLConfig aEGLConfig,
   LOG("DCLayerTree::DCLayerTree()");
 
   if (gfx::gfxVars::UseWebRenderCompositor()) {
-    if (StaticPrefs::gfx_webrender_layer_compositor()) {
-      mCompositorKind = Some(WebRenderOsCompositorKind::LayerCompositor);
-    } else {
-      mCompositorKind = Some(WebRenderOsCompositorKind::NativeCompositor);
-    }
+    MOZ_ASSERT(StaticPrefs::gfx_webrender_layer_compositor());
+    mCompositorKind = Some(WebRenderOsCompositorKind::LayerCompositor);
   }
 }
 
@@ -569,18 +567,12 @@ void DCLayerTree::WaitForCommitCompletion() {
 
 bool DCLayerTree::UseCompositor() const { return mCompositorKind.isSome(); }
 
-bool DCLayerTree::UseNativeCompositor() const {
-  return mCompositorKind.isSome() &&
-         mCompositorKind.ref() == WebRenderOsCompositorKind::NativeCompositor;
-}
-
 bool DCLayerTree::UseLayerCompositor() const {
   return mCompositorKind.isSome() &&
          mCompositorKind.ref() == WebRenderOsCompositorKind::LayerCompositor;
 }
 
 void DCLayerTree::DisableNativeCompositor() {
-  MOZ_ASSERT(mCurrentSurface.isNothing());
   MOZ_ASSERT(mCurrentLayers.empty());
 
   mCompositorKind = Nothing();
@@ -668,9 +660,7 @@ void DCLayerTree::CompositorEndFrame() {
   const bool same = mPrevLayers == mCurrentLayers;
 
   if (!same) {
-    // If not, we need to rebuild the visual tree. Note that addition or
-    // removal of tiles no longer needs to rebuild the main visual tree
-    // here, since they are added as children of the surface visual.
+    // If not, we need to rebuild the visual tree.
     mRootVisual->RemoveAllVisuals();
   }
 
@@ -678,8 +668,6 @@ void DCLayerTree::CompositorEndFrame() {
     auto surface_it = mDCSurfaces.find(*it);
     MOZ_RELEASE_ASSERT(surface_it != mDCSurfaces.end());
     const auto surface = surface_it->second.get();
-    // Ensure surface is trimmed to updated tile valid rects
-    surface->UpdateAllocatedRect();
     if (!same) {
       const auto visual = surface->GetRootVisual();
       if (UseLayerCompositor()) {
@@ -770,84 +758,17 @@ void DCLayerTree::PresentSwapChain(wr::NativeSurfaceId aId,
 void DCLayerTree::Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
                        uint32_t* aFboId, wr::DeviceIntRect aDirtyRect,
                        wr::DeviceIntRect aValidRect) {
-  auto surface = GetSurface(aId.surface_id);
-  auto tile = surface->GetTile(aId.x, aId.y);
-  wr::DeviceIntPoint targetOffset{0, 0};
-
-  // If tile owns an IDCompositionSurface we use it, otherwise we're using an
-  // IDCompositionVirtualSurface owned by the DCSurface.
-  RefPtr<IDCompositionSurface> compositionSurface;
-  if (surface->mIsVirtualSurface) {
-    gfx::IntRect validRect(aValidRect.min.x, aValidRect.min.y,
-                           aValidRect.width(), aValidRect.height());
-    if (!tile->mValidRect.IsEqualEdges(validRect)) {
-      tile->mValidRect = validRect;
-      surface->DirtyAllocatedRect();
-    }
-    wr::DeviceIntSize tileSize = surface->GetTileSize();
-    compositionSurface = surface->GetCompositionSurface();
-    wr::DeviceIntPoint virtualOffset = surface->GetVirtualOffset();
-    targetOffset.x = virtualOffset.x + tileSize.width * aId.x;
-    targetOffset.y = virtualOffset.y + tileSize.height * aId.y;
-  } else {
-    compositionSurface = tile->Bind(aValidRect);
-  }
-
-  if (tile->mNeedsFullDraw) {
-    // dcomp requires that the first BeginDraw on a non-virtual surface is the
-    // full size of the pixel buffer.
-    auto tileSize = surface->GetTileSize();
-    aDirtyRect.min.x = 0;
-    aDirtyRect.min.y = 0;
-    aDirtyRect.max.x = tileSize.width;
-    aDirtyRect.max.y = tileSize.height;
-    tile->mNeedsFullDraw = false;
-  }
-
-  *aFboId = CreateEGLSurfaceForCompositionSurface(
-      aDirtyRect, aOffset, compositionSurface, targetOffset);
-  mCurrentSurface = Some(compositionSurface);
+  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
 }
 
 void DCLayerTree::Unbind() {
-  if (mCurrentSurface.isNothing()) {
-    return;
-  }
-
-  RefPtr<IDCompositionSurface> surface = mCurrentSurface.ref();
-  surface->EndDraw();
-
-  DestroyEGLSurface();
-  mCurrentSurface = Nothing();
+  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
 }
 
 void DCLayerTree::CreateSurface(wr::NativeSurfaceId aId,
                                 wr::DeviceIntPoint aVirtualOffset,
                                 wr::DeviceIntSize aTileSize, bool aIsOpaque) {
-  auto it = mDCSurfaces.find(aId);
-  MOZ_RELEASE_ASSERT(it == mDCSurfaces.end());
-  if (it != mDCSurfaces.end()) {
-    // DCSurface already exists.
-    return;
-  }
-
-  // Tile size needs to be positive.
-  if (aTileSize.width <= 0 || aTileSize.height <= 0) {
-    gfxCriticalNote << "TileSize is not positive aId: " << wr::AsUint64(aId)
-                    << " aTileSize(" << aTileSize.width << ","
-                    << aTileSize.height << ")";
-  }
-
-  bool isVirtualSurface =
-      StaticPrefs::gfx_webrender_dcomp_use_virtual_surfaces_AtStartup();
-  auto surface = MakeUnique<DCSurface>(aTileSize, aVirtualOffset,
-                                       isVirtualSurface, aIsOpaque, this);
-  if (!surface->Initialize()) {
-    gfxCriticalNote << "Failed to initialize DCSurface: " << wr::AsUint64(aId);
-    return;
-  }
-
-  mDCSurfaces[aId] = std::move(surface);
+  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
 }
 
 void DCLayerTree::CreateSwapChainSurface(wr::NativeSurfaceId aId,
@@ -930,13 +851,11 @@ void DCLayerTree::DestroySurface(NativeSurfaceId aId) {
 }
 
 void DCLayerTree::CreateTile(wr::NativeSurfaceId aId, int32_t aX, int32_t aY) {
-  auto surface = GetSurface(aId);
-  surface->CreateTile(aX, aY);
+  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
 }
 
 void DCLayerTree::DestroyTile(wr::NativeSurfaceId aId, int32_t aX, int32_t aY) {
-  auto surface = GetSurface(aId);
-  surface->DestroyTile(aX, aY);
+  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
 }
 
 void DCLayerTree::AttachExternalImage(wr::NativeSurfaceId aId,
@@ -1046,48 +965,139 @@ DCSurface* DCExternalSurfaceWrapper::EnsureSurfaceForExternalImage(
         StaticPrefs::gfx_color_management_rec2020_gamma_as_rec709();
 
     auto cspaceDesc = color::ColorspaceDesc{};
+    const auto rangedCspace = texture->GetYUVColorSpace();
+    const auto info = FromYUVRangedColorSpace(rangedCspace);
+    const auto tf = info.transferFunction;
     switch (cspace) {
       case gfx::ColorSpace2::Display:
         return;  // No color management needed!
       case gfx::ColorSpace2::SRGB:
         cspaceDesc.chrom = color::Chromaticities::Srgb();
-        cspaceDesc.tf = color::PiecewiseGammaDesc::Srgb();
+        cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+        switch (tf) {
+          case gfx::TransferFunction::SRGB:
+            cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+            break;
+          case gfx::TransferFunction::BT709:
+            if (rec709GammaAsSrgb) {
+              cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+            } else {
+              cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+            }
+            break;
+          case gfx::TransferFunction::HLG:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+            break;
+          case gfx::TransferFunction::PQ:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+            break;
+          case gfx::TransferFunction::LINEAR:
+            cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+            break;
+        }
         break;
-
       case gfx::ColorSpace2::DISPLAY_P3:
         cspaceDesc.chrom = color::Chromaticities::DisplayP3();
-        cspaceDesc.tf = color::PiecewiseGammaDesc::DisplayP3();
+        cspaceDesc.tf = color::TransferFunctionDesc::DisplayP3();
+        switch (tf) {
+          case gfx::TransferFunction::SRGB:
+            cspaceDesc.tf = color::TransferFunctionDesc::DisplayP3();
+            break;
+          case gfx::TransferFunction::BT709:
+            if (rec709GammaAsSrgb) {
+              cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+            } else {
+              cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+            }
+            break;
+          case gfx::TransferFunction::HLG:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+            break;
+          case gfx::TransferFunction::PQ:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+            break;
+          case gfx::TransferFunction::LINEAR:
+            cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+            break;
+        }
         break;
-
-      case gfx::ColorSpace2::BT601_525:
+      case gfx::ColorSpace2::BT601_525:  // aka smpte170m NTSC
         cspaceDesc.chrom = color::Chromaticities::Rec601_525_Ntsc();
-        if (rec709GammaAsSrgb) {
-          cspaceDesc.tf = color::PiecewiseGammaDesc::Srgb();
-        } else {
-          cspaceDesc.tf = color::PiecewiseGammaDesc::Rec709();
+        cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+        switch (tf) {
+          case gfx::TransferFunction::SRGB:
+            cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+            break;
+          case gfx::TransferFunction::BT709:
+            if (rec709GammaAsSrgb) {
+              cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+            } else {
+              cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+            }
+            break;
+          case gfx::TransferFunction::HLG:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+            break;
+          case gfx::TransferFunction::PQ:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+            break;
+          case gfx::TransferFunction::LINEAR:
+            cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+            break;
         }
         break;
-
-      case gfx::ColorSpace2::BT709:
+      case gfx::ColorSpace2::BT709:  // Same gamut as SRGB, but different gamma.
         cspaceDesc.chrom = color::Chromaticities::Rec709();
-        if (rec709GammaAsSrgb) {
-          cspaceDesc.tf = color::PiecewiseGammaDesc::Srgb();
-        } else {
-          cspaceDesc.tf = color::PiecewiseGammaDesc::Rec709();
+        cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+        switch (tf) {
+          case gfx::TransferFunction::SRGB:
+            cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+            break;
+          case gfx::TransferFunction::BT709:
+            if (rec709GammaAsSrgb) {
+              cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+            } else {
+              cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+            }
+            break;
+          case gfx::TransferFunction::HLG:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+            break;
+          case gfx::TransferFunction::PQ:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+            break;
+          case gfx::TransferFunction::LINEAR:
+            cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+            break;
         }
         break;
-
       case gfx::ColorSpace2::BT2020:
         cspaceDesc.chrom = color::Chromaticities::Rec2020();
-        if (rec2020GammaAsRec709 && rec709GammaAsSrgb) {
-          cspaceDesc.tf = color::PiecewiseGammaDesc::Srgb();
-        } else if (rec2020GammaAsRec709) {
-          cspaceDesc.tf = color::PiecewiseGammaDesc::Rec709();
-        } else {
-          // Just Rec709 with slightly more precision.
-          cspaceDesc.tf = color::PiecewiseGammaDesc::Rec2020_12bit();
+        cspaceDesc.tf = color::TransferFunctionDesc::Rec2020_12bit();
+        switch (tf) {
+          case gfx::TransferFunction::SRGB:
+            cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+            break;
+          case gfx::TransferFunction::BT709:
+            // BT2020 uses a higher precision version of BT709/BT1886 values.
+            if (rec2020GammaAsRec709 && rec709GammaAsSrgb) {
+              cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+            } else if (rec2020GammaAsRec709) {
+              cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+            } else {
+              cspaceDesc.tf = color::TransferFunctionDesc::Rec2020_12bit();
+            }
+            break;
+          case gfx::TransferFunction::HLG:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+            break;
+          case gfx::TransferFunction::PQ:
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+            break;
+          case gfx::TransferFunction::LINEAR:
+            cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+            break;
         }
-        break;
     }
 
     const auto cprofileIn = color::ColorProfileDesc::From(cspaceDesc);
@@ -1096,7 +1106,7 @@ DCSurface* DCExternalSurfaceWrapper::EnsureSurfaceForExternalImage(
     if (pretendSrgb) {
       cprofileOut = color::ColorProfileDesc::From(color::ColorspaceDesc{
           .chrom = color::Chromaticities::Srgb(),
-          .tf = color::PiecewiseGammaDesc::Srgb(),
+          .tf = color::TransferFunctionDesc::Srgb(),
       });
     }
     const auto conversion = color::ColorProfileConversionDesc::From({
@@ -1166,9 +1176,6 @@ void DCLayerTree::AddSurface(wr::NativeSurfaceId aId,
   }
 
   mPendingCommit = true;
-
-  wr::DeviceIntPoint virtualOffset = surface->GetVirtualOffset();
-  transform.PreTranslate(-virtualOffset.x, -virtualOffset.y);
 
   // The DirectComposition API applies clipping *before* any
   // transforms/offset, whereas we want the clip applied after. Right now, we
@@ -1413,15 +1420,8 @@ void DCLayerTree::SetUsedOverlayTypeInFrame(DCompOverlayTypes aTypes) {
   mUsedOverlayTypesInFrame |= aTypes;
 }
 
-DCSurface::DCSurface(wr::DeviceIntSize aTileSize,
-                     wr::DeviceIntPoint aVirtualOffset, bool aIsVirtualSurface,
-                     bool aIsOpaque, DCLayerTree* aDCLayerTree)
-    : mIsVirtualSurface(aIsVirtualSurface),
-      mDCLayerTree(aDCLayerTree),
-      mTileSize(aTileSize),
-      mIsOpaque(aIsOpaque),
-      mAllocatedRectDirty(true),
-      mVirtualOffset(aVirtualOffset) {}
+DCSurface::DCSurface(bool aIsOpaque, DCLayerTree* aDCLayerTree)
+    : mDCLayerTree(aDCLayerTree), mIsOpaque(aIsOpaque) {}
 
 DCSurface::~DCSurface() {}
 
@@ -1444,7 +1444,6 @@ bool DCSurface::IsUpdated(const wr::CompositorSurfaceTransform& aTransform,
 }
 
 bool DCSurface::Initialize() {
-  // Create a visual for tiles to attach to, whether virtual or not.
   HRESULT hr;
   const auto dCompDevice = mDCLayerTree->GetCompositionDevice();
   hr = dCompDevice->CreateVisual(getter_AddRefs(mRootVisual));
@@ -1462,22 +1461,6 @@ bool DCSurface::Initialize() {
   if (FAILED(hr)) {
     gfxCriticalNote << "Failed to create RectangleClip: " << gfx::hexa(hr);
     return false;
-  }
-
-  // If virtual surface is enabled, create and attach to visual, in this case
-  // the tiles won't own visuals or surfaces.
-  if (mIsVirtualSurface) {
-    DXGI_ALPHA_MODE alpha_mode =
-        mIsOpaque ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
-
-    hr = dCompDevice->CreateVirtualSurface(
-        VIRTUAL_SURFACE_SIZE, VIRTUAL_SURFACE_SIZE, DXGI_FORMAT_R8G8B8A8_UNORM,
-        alpha_mode, getter_AddRefs(mVirtualSurface));
-    MOZ_ASSERT(SUCCEEDED(hr));
-
-    // Bind the surface memory to this visual
-    hr = mContentVisual->SetContent(mVirtualSurface);
-    MOZ_ASSERT(SUCCEEDED(hr));
   }
 
   return true;
@@ -1513,75 +1496,6 @@ void DCSurface::SetClip(wr::DeviceIntRect aClipRect,
     mRootVisual->SetBorderMode(DCOMPOSITION_BORDER_MODE_INHERIT);
     mRootVisual->SetClip(nullptr);
   }
-}
-
-void DCSurface::CreateTile(int32_t aX, int32_t aY) {
-  TileKey key(aX, aY);
-  MOZ_RELEASE_ASSERT(mDCTiles.find(key) == mDCTiles.end());
-
-  auto tile = MakeUnique<DCTile>(mDCLayerTree);
-  if (!tile->Initialize(aX, aY, mTileSize, mIsVirtualSurface, mIsOpaque,
-                        mContentVisual)) {
-    gfxCriticalNote << "Failed to initialize DCTile: " << aX << aY;
-    return;
-  }
-
-  if (mIsVirtualSurface) {
-    mAllocatedRectDirty = true;
-  } else {
-    mContentVisual->AddVisual(tile->GetVisual(), false, nullptr);
-  }
-
-  mDCTiles[key] = std::move(tile);
-}
-
-void DCSurface::DestroyTile(int32_t aX, int32_t aY) {
-  TileKey key(aX, aY);
-  if (mIsVirtualSurface) {
-    mAllocatedRectDirty = true;
-  } else {
-    auto tile = GetTile(aX, aY);
-    mContentVisual->RemoveVisual(tile->GetVisual());
-  }
-  mDCTiles.erase(key);
-}
-
-void DCSurface::DirtyAllocatedRect() { mAllocatedRectDirty = true; }
-
-void DCSurface::UpdateAllocatedRect() {
-  if (mAllocatedRectDirty) {
-    if (mVirtualSurface) {
-      // The virtual surface may have holes in it (for example, an empty tile
-      // that has no primitives). Instead of trimming to a single bounding
-      // rect, supply the rect of each valid tile to handle this case.
-      std::vector<RECT> validRects;
-
-      for (auto it = mDCTiles.begin(); it != mDCTiles.end(); ++it) {
-        auto tile = GetTile(it->first.mX, it->first.mY);
-        RECT rect;
-
-        rect.left = (LONG)(mVirtualOffset.x + it->first.mX * mTileSize.width +
-                           tile->mValidRect.x);
-        rect.top = (LONG)(mVirtualOffset.y + it->first.mY * mTileSize.height +
-                          tile->mValidRect.y);
-        rect.right = rect.left + tile->mValidRect.width;
-        rect.bottom = rect.top + tile->mValidRect.height;
-
-        validRects.push_back(rect);
-      }
-
-      mVirtualSurface->Trim(validRects.data(), validRects.size());
-    }
-    // When not using a virtual surface, we still want to reset this
-    mAllocatedRectDirty = false;
-  }
-}
-
-DCTile* DCSurface::GetTile(int32_t aX, int32_t aY) const {
-  TileKey key(aX, aY);
-  auto tile_it = mDCTiles.find(key);
-  MOZ_RELEASE_ASSERT(tile_it != mDCTiles.end());
-  return tile_it->second.get();
 }
 
 DCLayerDCompositionTexture::TextureHolder::TextureHolder(
@@ -2202,8 +2116,7 @@ void DCLayerCompositionSurface::Present(const wr::DeviceIntRect* aDirtyRects,
 
 DCSurfaceDCompositionTextureOverlay::DCSurfaceDCompositionTextureOverlay(
     bool aIsOpaque, DCLayerTree* aDCLayerTree)
-    : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, false, aIsOpaque,
-                aDCLayerTree) {}
+    : DCSurface(aIsOpaque, aDCLayerTree) {}
 
 DCSurfaceDCompositionTextureOverlay::~DCSurfaceDCompositionTextureOverlay() {}
 
@@ -2248,8 +2161,7 @@ void DCSurfaceDCompositionTextureOverlay::Present() {
 }
 
 DCSurfaceVideo::DCSurfaceVideo(bool aIsOpaque, DCLayerTree* aDCLayerTree)
-    : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, false, aIsOpaque,
-                aDCLayerTree),
+    : DCSurface(aIsOpaque, aDCLayerTree),
       mSwapChainBufferCount(
           StaticPrefs::gfx_webrender_dcomp_video_force_triple_buffering() ? 3
                                                                           : 2) {
@@ -2290,7 +2202,11 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
     return;
   }
 
-  // If the content format is HDR, we will want to use more than 8bit.
+  // If the content is HDR, we will want to use more than 8bit. A high bit-depth
+  // pixel format alone is not sufficient — 10-bit SDR content (e.g. BT.2020
+  // with a non-HDR transfer function) must not be treated as HDR, otherwise
+  // the compositor applies HDR tone mapping to SDR content and corrupts the
+  // image. Check both the pixel format and the transfer function.
   mContentIsHDR = false;
   if (texture) {
     const auto format = texture->GetFormat();
@@ -2301,9 +2217,12 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
       case gfx::SurfaceFormat::R10G10B10X2_UINT32:
       case gfx::SurfaceFormat::R16G16B16A16F:
       case gfx::SurfaceFormat::P010:
-      case gfx::SurfaceFormat::P016:
-        mContentIsHDR = true;
+      case gfx::SurfaceFormat::P016: {
+        const auto* dxgiTexture = texture->AsRenderDXGITextureHost();
+        mContentIsHDR = dxgiTexture && gfx::IsHDRTransferFunction(
+                                           dxgiTexture->GetTransferFunction());
         break;
+      }
       default:
         break;
     }
@@ -2392,11 +2311,13 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
                       !contentIsHDR && monitorIsHDR && driverSupportsAutoHDR &&
                       powerIsCharging && !mVpAutoHDRFailed;
 
-  bool useHDR =
-      gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR && monitorIsHDR;
-  // We can't rely on SupportsHardwareOverlayRGB10A2 because DWM may convert for
-  // us, let's hope this works on older GPUs (~2016 GPUs that support HDR for
-  // the whole desktop but may not support MPO overlays that are HDR).
+  bool useHDR = gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR;
+  // We can rely on the Desktop Window Manager (DWM) to handle RGB10A2 format
+  // swapchains with BT2100 PQ color space, even if hardware overlays are not
+  // supported it will convert for us, it also guarantees support for scRGB in
+  // RGBA16F format but that uses twice the bandwidth and VideoProcessor is not
+  // required to implement conversion from YCBCR BT2100 PQ to scRGB RGBA16F, so
+  // some drivers can't do that and we should stick to RGB10A2 where possible.
   bool useHDRRGB10A2 = useHDR;
   bool useHDRRGBA16F = false;
 
@@ -2666,62 +2587,137 @@ bool DCSurfaceVideo::CreateVideoSwapChain(DXGI_FORMAT aSwapChainFormat) {
   return true;
 }
 
-// TODO: Replace with YUVRangedColorSpace
 static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
     const gfx::YUVColorSpace aYUVColorSpace, const gfx::ColorRange aColorRange,
-    const bool aContentIsHDR) {
-  if (aYUVColorSpace == gfx::YUVColorSpace::BT601) {
-    if (aColorRange == gfx::ColorRange::FULL) {
-      return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601);
-    } else {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601);
-    }
-  } else if (aYUVColorSpace == gfx::YUVColorSpace::BT709) {
-    if (aColorRange == gfx::ColorRange::FULL) {
-      return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709);
-    } else {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
-    }
-  } else if (aYUVColorSpace == gfx::YUVColorSpace::BT2020) {
-    // This is a probably-temporary internal workaround for the lack of access
-    // to mTransferFunction - BT2020 seems to always be used with PQ transfer
-    // function defined by BT2100 and STMPE 2084, we've/ been making this same
-    // assumption on macOS for quite some time, so if it was not universally
-    // true, hopefully bugs would have been filed.
-    //
-    // But ideally we'd plumb mTransferFunction through the various structs
-    // instead, which is a more delicate refactor.
-    if (StaticPrefs::gfx_color_management_hdr_video_assume_rec2020_uses_pq() &&
-        StaticPrefs::gfx_color_management_hdr_video()) {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
-    }
-    if (aColorRange == gfx::ColorRange::FULL) {
-      if (aContentIsHDR && StaticPrefs::gfx_color_management_hdr_video()) {
-        // DXGI doesn't have a full range PQ YCbCr format, hopefully we won't
-        // have to deal with this case.
+    const gfx::TransferFunction aTransferFunction) {
+  switch (aYUVColorSpace) {
+    case gfx::YUVColorSpace::BT601:
+      // https://en.wikipedia.org/wiki/Rec._601 - this is the NTSC and SECAM/PAL
+      // color spaces
+      if (aTransferFunction != gfx::TransferFunction::BT709) {
         gfxCriticalNoteOnce
-            << "GetSourceDXGIColorSpace: DXGI has no full range "
-               "BT2020 PQ YCbCr format, using studio range instead";
-        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
-      } else {
-        return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+            << "GetSourceDXGIColorSpace: Unhandled transfer function "
+            << static_cast<int>(aTransferFunction)
+            << " for BT601, treating as BT709 transfer function";
       }
-    } else {
-      if (aContentIsHDR && StaticPrefs::gfx_color_management_hdr_video()) {
-        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
-      } else {
-        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+      switch (aColorRange) {
+        case gfx::ColorRange::FULL:
+          return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601);
+        case gfx::ColorRange::LIMITED:
+          return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601);
       }
-    }
+      gfxCriticalNoteOnce << "GetSourceDXGIColorSpace: Unhandled color range "
+                          << static_cast<int>(aColorRange) << " for BT601";
+      return Nothing();
+    case gfx::YUVColorSpace::Identity:
+      gfxCriticalNoteOnce
+          << "GetSourceDXGIColorSpace: Unhandled YUV color space "
+          << static_cast<int>(aYUVColorSpace)
+          << ", treating as BT709 color space";
+      FMT_FALLTHROUGH;
+    case gfx::YUVColorSpace::BT709:
+      // https://en.wikipedia.org/wiki/Rec._709 - this is the HDTV color space
+      if (aTransferFunction != gfx::TransferFunction::BT709) {
+        gfxCriticalNoteOnce
+            << "GetSourceDXGIColorSpace: Unhandled transfer function "
+            << static_cast<int>(aTransferFunction)
+            << " for BT709, treating as BT709 transfer function";
+      }
+      switch (aColorRange) {
+        case gfx::ColorRange::FULL:
+          return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709);
+        case gfx::ColorRange::LIMITED:
+          return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
+      }
+      gfxCriticalNoteOnce << "GetSourceDXGIColorSpace: Unhandled color range "
+                          << static_cast<int>(aColorRange) << " for BT709";
+      return Nothing();
+    case gfx::YUVColorSpace::BT2020:
+      // https://en.wikipedia.org/wiki/Rec._2020 - this is the UHDTV color space
+      if (!gfxPlatform::UseHDR()) {
+        // This pref being off mimics legacy behavior, it's wrong but it's
+        // precisely what we did before, looks washed out if it's PQ.
+        switch (aColorRange) {
+          case gfx::ColorRange::FULL:
+            return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+          case gfx::ColorRange::LIMITED:
+            return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+        }
+        gfxCriticalNoteOnce << "GetSourceDXGIColorSpace: Unhandled color range "
+                            << static_cast<int>(aColorRange) << " for BT2020";
+        return Nothing();
+      }
+      switch (aTransferFunction) {
+        case gfx::TransferFunction::SRGB:
+        case gfx::TransferFunction::LINEAR:
+          // Almost certainly never used, but cover all switch cases to support
+          // the compiler warning if any are added later.
+          gfxCriticalNoteOnce
+              << "GetSourceDXGIColorSpace: DXGI has no support for "
+              << static_cast<int>(aTransferFunction)
+              << " transfer function for YCBCR content, treating as BT2020 "
+                 "transfer function";
+          FMT_FALLTHROUGH;
+        case gfx::TransferFunction::BT709:
+          // BT2020 defines a transfer function that is almost identical to
+          // BT709 + BT1886, so this refers to BT2020 transfer function.
+          // https://en.wikipedia.org/wiki/Rec._2020
+          switch (aColorRange) {
+            case gfx::ColorRange::FULL:
+              return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+            case gfx::ColorRange::LIMITED:
+              return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+          }
+          gfxCriticalNoteOnce
+              << "GetSourceDXGIColorSpace: Unhandled color range "
+              << static_cast<int>(aColorRange) << " for BT2020";
+          return Nothing();
+        case gfx::TransferFunction::PQ:
+          // This is an HDR video transfer function, needs 10bit (HDR10) to
+          // avoid being lower quality than BT709 over the SDR range.
+          // https://en.wikipedia.org/wiki/Perceptual_quantizer
+          switch (aColorRange) {
+            case gfx::ColorRange::FULL:
+              gfxCriticalNoteOnce
+                  << "GetSourceDXGIColorSpace: DXGI has no support for PQ "
+                     "transfer function with full color range for BT2020 "
+                     "content, treating as studio range";
+              return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
+            case gfx::ColorRange::LIMITED:
+              return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020);
+          }
+          gfxCriticalNoteOnce
+              << "GetSourceDXGIColorSpace: Unhandled color range "
+              << static_cast<int>(aColorRange) << " for BT2020";
+          return Nothing();
+        case gfx::TransferFunction::HLG:
+          // This is an HDR video transfer function, does not strictly require
+          // 10bit but certainly benefits from it.
+          // https://en.wikipedia.org/wiki/Hybrid_log%E2%80%93gamma
+          switch (aColorRange) {
+            case gfx::ColorRange::FULL:
+              return Some(DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020);
+            case gfx::ColorRange::LIMITED:
+              return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020);
+          }
+          gfxCriticalNoteOnce
+              << "GetSourceDXGIColorSpace: Unhandled color range "
+              << static_cast<int>(aColorRange) << " for BT2020";
+          return Nothing();
+      }
+      gfxCriticalNoteOnce
+          << "GetSourceDXGIColorSpace: Unhandled transfer function "
+          << static_cast<int>(aTransferFunction) << " for BT2020";
+      return Nothing();
   }
 
   return Nothing();
 }
 
 static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
-    const gfx::YUVRangedColorSpace aYUVColorSpace, const bool aContentIsHDR) {
+    const gfx::YUVRangedColorSpace aYUVColorSpace) {
   const auto info = FromYUVRangedColorSpace(aYUVColorSpace);
-  return GetSourceDXGIColorSpace(info.space, info.range, aContentIsHDR);
+  return GetSourceDXGIColorSpace(info.space, info.range, info.transferFunction);
 }
 
 static Maybe<DXGI_COLOR_SPACE_TYPE> GetOutputDXGIColorSpace(
@@ -2737,16 +2733,16 @@ static Maybe<DXGI_COLOR_SPACE_TYPE> GetOutputDXGIColorSpace(
     case DXGI_FORMAT_R16G16B16A16_FLOAT:
       return Some(DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709);
     case DXGI_FORMAT_R10G10B10A2_UNORM:
-      if (aInputColorSpace == DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020) {
-        // YCbCr BT2100 PQ HDR video being converted to RGB10A2
-        return Some(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
-      } else if (aInputColorSpace ==
-                     DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020 ||
-                 aInputColorSpace ==
-                     DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020) {
-        return Some(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020);
+      switch (aInputColorSpace) {
+        case DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020:
+          return Some(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+        case DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020:
+          return Some(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+        case DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020:
+          return Some(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+        default:
+          return Some(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020);
       }
-      return Some(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
     case DXGI_FORMAT_R8G8B8A8_UNORM:
     case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
     case DXGI_FORMAT_B8G8R8A8_UNORM:
@@ -2774,7 +2770,7 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
   const auto texture = mRenderTextureHost->AsRenderDXGITextureHost();
 
   Maybe<DXGI_COLOR_SPACE_TYPE> sourceColorSpace =
-      GetSourceDXGIColorSpace(texture->GetYUVColorSpace(), mContentIsHDR);
+      GetSourceDXGIColorSpace(texture->GetYUVColorSpace());
   if (sourceColorSpace.isNothing()) {
     gfxCriticalNote << "Unsupported color space";
     return false;
@@ -2820,16 +2816,17 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
   videoContext1->VideoProcessorSetStreamColorSpace1(videoProcessor, 0,
                                                     inputColorSpace);
 
-  Maybe<DXGI_COLOR_SPACE_TYPE> outputColorSpace =
+  Maybe<DXGI_COLOR_SPACE_TYPE> outputColorSpaceRef =
       GetOutputDXGIColorSpace(mSwapChainFormat, inputColorSpace, mUseVpAutoHDR);
-  if (outputColorSpace.isNothing()) {
+  if (outputColorSpaceRef.isNothing()) {
     gfxCriticalNoteOnce << "Unrecognized DXGI mSwapChainFormat, unsure of "
                            "correct DXGI colorspace: "
                         << gfx::hexa(mSwapChainFormat);
     return false;
   }
+  DXGI_COLOR_SPACE_TYPE outputColorSpace = outputColorSpaceRef.ref();
 
-  hr = swapChain3->SetColorSpace1(outputColorSpace.ref());
+  hr = swapChain3->SetColorSpace1(outputColorSpace);
   if (FAILED(hr)) {
     gfxCriticalNoteOnce << "SetColorSpace1 failed: " << gfx::hexa(hr);
     RenderThread::Get()->NotifyWebRenderError(
@@ -2837,7 +2834,29 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
     return false;
   }
   videoContext1->VideoProcessorSetOutputColorSpace1(videoProcessor,
-                                                    outputColorSpace.ref());
+                                                    outputColorSpace);
+
+  auto hdrMetadata =
+      gfx::DeviceManagerDx::Get()->WindowHDRMetadata(mDCLayerTree->GetHwnd());
+  RefPtr<ID3D11VideoContext2> videoContext2;
+  videoContext->QueryInterface(
+      (ID3D11VideoContext2**)getter_AddRefs(videoContext2));
+  if (hdrMetadata.isSome() && videoContext2) {
+    // If we had to fall back to non-HDR color spaces in VideoProcessorBlt we
+    // should remove the HDR meta data to avoid confusing the
+    // VideoProcessorBlt implementation.  We'll still display as HDR if it was
+    // PQ content but without the metadata being fed to VideoProcessorBlt, so it
+    // may be too bright but at least it should work.
+    if (mFailedVideoProcessorBltYUVHLGToRGBPQ ||
+        mFailedVideoProcessorBltYUVPQtoRGBPQ) {
+      videoContext2->VideoProcessorSetOutputHDRMetaData(
+          videoProcessor, DXGI_HDR_METADATA_TYPE_NONE, 0, NULL);
+    } else {
+      videoContext2->VideoProcessorSetOutputHDRMetaData(
+          videoProcessor, DXGI_HDR_METADATA_TYPE_HDR10,
+          sizeof(DXGI_HDR_METADATA_HDR10), &(hdrMetadata.ref()));
+    }
+  }
 
   D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc = {};
   inputDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
@@ -2945,6 +2964,63 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
 
   hr = videoContext->VideoProcessorBlt(videoProcessor, mOutputView, 0, 1,
                                        &stream);
+  if (hr == E_NOTIMPL &&
+      outputColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) {
+    if (inputColorSpace == DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020 ||
+        inputColorSpace == DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020) {
+      // If YUV BT2100 HLG conversion to RGB BT2100 PQ is not working, we have
+      // to fall back to displaying it as regular RGB BT2020, which is not HDR
+      // but still has the gamut of BT2020.  Once we implement HLG conversion
+      // ourselves (probably using a D3D11 shader instead of VideoProcessorBlt)
+      // we can handle this more gracefully.
+      gfxCriticalNoteOnce
+          << "VideoProcessorBlt failed with BT2100 HLG content with "
+             "error E_NOTIMPL, BT2100 HLG content will be displayed as BT2020 "
+             "(not HDR).  Input color space: "
+          << static_cast<int>(inputColorSpace)
+          << ", output color space: " << static_cast<int>(outputColorSpace)
+          << ", swap chain format: " << static_cast<int>(mSwapChainFormat);
+      mFailedVideoProcessorBltYUVHLGToRGBPQ = true;
+      hr = swapChain3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020);
+      if (FAILED(hr)) {
+        gfxCriticalNoteOnce << "SetColorSpace1 failed: " << gfx::hexa(hr);
+        RenderThread::Get()->NotifyWebRenderError(
+            wr::WebRenderError::VIDEO_OVERLAY);
+        return false;
+      }
+      // Now retry the VideoProcessorBlt with BT709 which should just work.
+      if (inputColorSpace == DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020) {
+        videoContext1->VideoProcessorSetStreamColorSpace1(
+            videoProcessor, 0, DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
+      } else {
+        videoContext1->VideoProcessorSetStreamColorSpace1(
+            videoProcessor, 0, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709);
+      }
+      videoContext1->VideoProcessorSetOutputColorSpace1(
+          videoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020);
+      hr = videoContext->VideoProcessorBlt(videoProcessor, mOutputView, 0, 1,
+                                           &stream);
+    } else {
+      // If YUV BT2100 PQ conversion to RGB BT2100 PQ is not working, we can
+      // just pretend it is BT2020 and the VideoProcessorBlt should succeed,
+      // it's not clear if this causes any color distortion.
+      gfxCriticalNoteOnce
+          << "VideoProcessorBlt failed with BT2100 PQ content with "
+             "error E_NOTIMPL, will retry as BT709 for processing and display "
+             "as BT2100 PQ.  Input color space: "
+          << static_cast<int>(inputColorSpace)
+          << ", output color space: " << static_cast<int>(outputColorSpace)
+          << ", swap chain format: " << static_cast<int>(mSwapChainFormat);
+      mFailedVideoProcessorBltYUVPQtoRGBPQ = true;
+      // Now retry the VideoProcessorBlt with BT709 which should just work.
+      videoContext1->VideoProcessorSetStreamColorSpace1(
+          videoProcessor, 0, DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
+      videoContext1->VideoProcessorSetOutputColorSpace1(
+          videoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+      hr = videoContext->VideoProcessorBlt(videoProcessor, mOutputView, 0, 1,
+                                           &stream);
+    }
+  }
   if (FAILED(hr)) {
     gfxCriticalNote << "VideoProcessorBlt failed: " << gfx::hexa(hr);
     return false;
@@ -2967,8 +3043,7 @@ void DCSurfaceVideo::ReleaseDecodeSwapChainResources() {
 }
 
 DCSurfaceHandle::DCSurfaceHandle(bool aIsOpaque, DCLayerTree* aDCLayerTree)
-    : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, false, aIsOpaque,
-                aDCLayerTree) {}
+    : DCSurface(aIsOpaque, aDCLayerTree) {}
 
 void DCSurfaceHandle::AttachExternalImage(wr::ExternalImageId aExternalImage) {
   RenderTextureHost* texture =
@@ -3025,92 +3100,6 @@ void DCSurfaceHandle::PresentSurfaceHandle() {
   } else {
     mContentVisual->SetContent(nullptr);
   }
-}
-
-DCTile::DCTile(DCLayerTree* aDCLayerTree) : mDCLayerTree(aDCLayerTree) {}
-
-DCTile::~DCTile() {}
-
-bool DCTile::Initialize(int aX, int aY, wr::DeviceIntSize aSize,
-                        bool aIsVirtualSurface, bool aIsOpaque,
-                        RefPtr<IDCompositionVisual2> mSurfaceVisual) {
-  if (aSize.width <= 0 || aSize.height <= 0) {
-    return false;
-  }
-
-  mSize = aSize;
-  mIsOpaque = aIsOpaque;
-  mIsVirtualSurface = aIsVirtualSurface;
-  mNeedsFullDraw = !aIsVirtualSurface;
-
-  if (aIsVirtualSurface) {
-    // Initially, the entire tile is considered valid, unless it is set by
-    // the SetTileProperties method.
-    mValidRect.x = 0;
-    mValidRect.y = 0;
-    mValidRect.width = aSize.width;
-    mValidRect.height = aSize.height;
-  } else {
-    HRESULT hr;
-    const auto dCompDevice = mDCLayerTree->GetCompositionDevice();
-    // Create the visual and put it in the tree under the surface visual
-    hr = dCompDevice->CreateVisual(getter_AddRefs(mVisual));
-    if (FAILED(hr)) {
-      gfxCriticalNote << "Failed to CreateVisual for DCTile: " << gfx::hexa(hr);
-      return false;
-    }
-    mSurfaceVisual->AddVisual(mVisual, false, nullptr);
-    // Position the tile relative to the surface visual
-    mVisual->SetOffsetX(aX * aSize.width);
-    mVisual->SetOffsetY(aY * aSize.height);
-    // Clip the visual so it doesn't show anything until we update it
-    D2D_RECT_F clip = {0, 0, 0, 0};
-    mVisual->SetClip(clip);
-    // Create the underlying pixel buffer.
-    mCompositionSurface = CreateCompositionSurface(aSize, aIsOpaque);
-    if (!mCompositionSurface) {
-      return false;
-    }
-    hr = mVisual->SetContent(mCompositionSurface);
-    if (FAILED(hr)) {
-      gfxCriticalNote << "Failed to SetContent for DCTile: " << gfx::hexa(hr);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-RefPtr<IDCompositionSurface> DCTile::CreateCompositionSurface(
-    wr::DeviceIntSize aSize, bool aIsOpaque) {
-  HRESULT hr;
-  const auto dCompDevice = mDCLayerTree->GetCompositionDevice();
-  const auto alphaMode =
-      aIsOpaque ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
-  RefPtr<IDCompositionSurface> compositionSurface;
-
-  hr = dCompDevice->CreateSurface(aSize.width, aSize.height,
-                                  DXGI_FORMAT_R8G8B8A8_UNORM, alphaMode,
-                                  getter_AddRefs(compositionSurface));
-  if (FAILED(hr)) {
-    gfxCriticalNote << "Failed to CreateSurface for DCTile: " << gfx::hexa(hr);
-    return nullptr;
-  }
-  return compositionSurface;
-}
-
-RefPtr<IDCompositionSurface> DCTile::Bind(wr::DeviceIntRect aValidRect) {
-  if (mVisual != nullptr) {
-    // Tile owns a visual, set the size of the visual to match the portion we
-    // want to be visible.
-    D2D_RECT_F clip_rect;
-    clip_rect.left = aValidRect.min.x;
-    clip_rect.top = aValidRect.min.y;
-    clip_rect.right = aValidRect.max.x;
-    clip_rect.bottom = aValidRect.max.y;
-    mVisual->SetClip(clip_rect);
-  }
-  return mCompositionSurface;
 }
 
 GLuint DCLayerTree::CreateEGLSurfaceForCompositionSurface(
@@ -3237,7 +3226,7 @@ color::ColorProfileDesc QueryOutputColorProfile() {
     }
     const auto MISSING_PROFILE_DEFAULT_SPACE = color::ColorspaceDesc{
         color::Chromaticities::Srgb(),
-        color::PiecewiseGammaDesc::Srgb(),
+        color::TransferFunctionDesc::Srgb(),
     };
     return color::ColorProfileDesc::From(MISSING_PROFILE_DEFAULT_SPACE);
   }();

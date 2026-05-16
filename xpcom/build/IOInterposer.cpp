@@ -122,8 +122,8 @@ class PerThreadData {
     MOZ_ASSERT(observers);
 
     // Inform observers
-    for (auto i = observers->begin(), e = observers->end(); i != e; ++i) {
-      (*i)->Observe(aObservation);
+    for (auto observer : *observers) {
+      observer->Observe(aObservation);
     }
     mIsHandlingObservation = false;
   }

@@ -117,6 +117,7 @@ add_task(async function test_default_telemetry() {
     checkNumber("cores");
     checkNumber("cpu_utilization");
     checkNumber("memory_bytes");
+    checkNumber("system_memory_mb");
 
     Assert.equal(extra.feature_id, "test-feature");
     Assert.equal(extra.engine_id, "default-engine");
@@ -782,6 +783,7 @@ add_task(async function test_run_with_generator_telemetry() {
     checkNumber("cores");
     checkNumber("cpu_utilization");
     checkNumber("memory_bytes");
+    checkNumber("system_memory_mb");
     checkNumber("character_count");
     Assert.ok(!extra.token_count, "Token count is not implemented yet.");
 

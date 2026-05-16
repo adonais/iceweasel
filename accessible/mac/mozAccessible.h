@@ -14,8 +14,6 @@
 
 #import "MOXAccessibleBase.h"
 
-@class mozRootAccessible;
-
 /**
  * All mozAccessibles are either abstract objects (that correspond to XUL
  * widgets, HTML frames, etc) or are attached to a certain view; for example
@@ -91,6 +89,14 @@ enum CheckedState {
 
 - (void)handleAnnouncementEvent:(NSString*)announcement
                        priority:(uint16_t)priority;
+
+// This function is used to construct the announcement text we pass to
+// VoiceOver when firing an AXAnnouncementRequested notification alongside
+// a AXLiveRegionChanged notification.
+// It relies on nsTextEquivUtils::GetTextEquivFromSubtree, falling back to
+// moxLabel if no text content is found. This function is only called on mozAccs
+// backed by local accs.
+- (NSString*)composeAnnouncementMessageFromSubtree;
 
 // internal method to retrieve a child at a given index.
 - (id)childAt:(uint32_t)i;
@@ -228,6 +234,9 @@ enum CheckedState {
 
 // override
 - (NSString*)moxARIABrailleRoleDescription;
+
+// override
+- (NSString*)moxARIABrailleLabel;
 
 // override
 - (NSString*)moxPlaceholderValue;

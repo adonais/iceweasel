@@ -439,8 +439,9 @@ add_task(async function test_restore_from_backup_prefills_prior_valid_backup() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.backup.location", dir]],
   });
-  await BackupService.get().createBackup({ profilePath: TEST_PROFILE_PATH });
-  let path = (await IOUtils.getChildren(dir))[0];
+  let { archivePath: path } = await BackupService.get().createBackup({
+    profilePath: TEST_PROFILE_PATH,
+  });
   await SpecialPowers.popPrefEnv();
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {

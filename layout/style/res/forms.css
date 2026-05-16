@@ -131,27 +131,22 @@ button,
 ::placeholder,
 ::-moz-text-control-editing-root,
 ::-moz-text-control-preview {
-  overflow: auto;
-  border: 0;
-  padding: inherit;
-  margin: 0;
-  text-decoration: inherit;
   display: inline-block;
+  text-decoration: inherit;
   ime-mode: inherit;
-  resize: inherit;
-  scrollbar-width: inherit;
+  inline-size: 100%;
   -moz-control-character-visibility: visible;
+  /* We want to align the first baselines of the elements,
+   * if they are multiline */
+  baseline-source: first;
+}
+
+:-moz-autofill-preview::-moz-text-control-editing-root {
   visibility: hidden;
 }
 
 ::placeholder,
 ::-moz-text-control-preview {
-  /*
-   * Changing resize would display a broken behaviour and will assert.
-   */
-  resize: none;
-  overflow: hidden;
-
   /*
    * The placeholder or preview should be ignored by pointer / selection / etc.
    * Otherwise, we might have some unexpected behavior like the resize handle
@@ -159,6 +154,9 @@ button,
    */
   pointer-events: none;
   user-select: none;
+  display: none;
+  /* Make sure we overlap the text control editor */
+  margin-inline-start: -100%;
 }
 
 ::-moz-text-control-preview {
@@ -170,22 +168,17 @@ button,
   color: color-mix(in srgb, currentColor 54%, transparent);
 }
 
-:not(:-moz-autofill-preview)::-moz-text-control-editing-root,
-:placeholder-shown:not(:autofill)::placeholder,
-:autofill::-moz-text-control-preview {
-  visibility: inherit;
+:placeholder-shown:not(:-moz-autofill-preview)::placeholder,
+:-moz-autofill-preview::-moz-text-control-preview {
+  display: inline-block;
 }
 
 input::placeholder,
 input::-moz-text-control-editing-root,
 input::-moz-text-control-preview {
-  scrollbar-width: none;
-  resize: none;
   word-wrap: normal;
   white-space: pre;
   hyphens: none;
-  /* Make the line-height equal to the available height */
-  line-height: -moz-block-height !important;
 }
 
 input[type="password"] {
@@ -201,13 +194,6 @@ input[type="password"]::-moz-text-control-preview {
    * text is unmasked.
    */
   unicode-bidi: bidi-override;
-}
-
-textarea::-moz-text-control-editing-root {
-  scroll-behavior: inherit;
-  overscroll-behavior: inherit;
-  /* StyleAdjuster makes sure that the overflow value ends up being scrollable */
-  overflow: inherit;
 }
 
 select {
@@ -772,21 +758,25 @@ input[type="number"] {
   -moz-default-appearance: number-input;
 }
 
-input[type="number"]::-moz-number-spin-box {
-  writing-mode: horizontal-tb;
-  display: flex;
-  flex-direction: column;
-  width: max-content;
-  align-self: center;
-  justify-content: center;
-  /* Don't allow the spin buttons to create overflow */
-  max-height: 100%;
-  max-width: 100%;
-  overflow: clip;
+input::-moz-number-spin-box,
+input::-moz-search-clear-button,
+input::-moz-reveal {
+  display: block;
+  cursor: default;
+  -moz-user-focus: none;
+  user-select: none;
 }
 
-input[type="number"]::-moz-number-spin-up,
-input[type="number"]::-moz-number-spin-down {
+input::-moz-number-spin-box {
+  writing-mode: horizontal-tb;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+input::-moz-number-spin-up,
+input::-moz-number-spin-down {
   writing-mode: horizontal-tb;
   appearance: auto;
   -moz-default-appearance: spinner-upbutton;
@@ -795,15 +785,12 @@ input[type="number"]::-moz-number-spin-down {
   cursor: default;
 }
 
-input[type="number"]::-moz-number-spin-down {
+input::-moz-number-spin-down {
   -moz-default-appearance: spinner-downbutton;
 }
 
 input::-moz-search-clear-button,
 input::-moz-reveal {
-  display: block;
-  cursor: default;
-  -moz-user-focus: none;
   width: 1em;
   height: 1em;
   margin-inline: 1px;

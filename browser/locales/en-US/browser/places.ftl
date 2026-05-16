@@ -291,3 +291,7 @@ places-search-downloads =
 ##
 
 places-locked-prompt = The bookmarks and history system will not be functional because one of { -brand-short-name }’s files is in use by another application. Some security software can cause this problem.
+
+# Share is a verb here. Meaning to "Share" the bookmark "Folder"
+places-share-folder =
+  .label = Share Folder

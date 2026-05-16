@@ -185,7 +185,7 @@ export class YelpSuggestions extends SuggestProvider {
     let resultProperties = {
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-      isNovaSuggestion: true,
+      isBottomUrlSuggestion: true,
       isBestMatch: lazy.UrlbarPrefs.get("yelpSuggestPriority"),
     };
 

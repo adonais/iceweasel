@@ -753,12 +753,11 @@ bool mozilla::PrintfTarget::vprint(const char* fmt, va_list ap) {
       c = *fmt++;
     }
 
-    // Examine optional flags.  Note that we do not implement the
-    // '#' flag of sprintf().  The ANSI C spec. of the '#' flag is
-    // somewhat ambiguous and not ideal, which is perhaps why
-    // the various sprintf() implementations are inconsistent
-    // on this feature.
-    while ((c == '-') || (c == '+') || (c == ' ') || (c == '0')) {
+    // Examine optional flags.  Note that we consume but do not implement the
+    // '#' flag of sprintf().  The ANSI C spec. of the '#' flag is somewhat
+    // ambiguous and not ideal, which is perhaps why the various sprintf()
+    // implementations are inconsistent on this feature.
+    while ((c == '-') || (c == '+') || (c == ' ') || (c == '0') || (c == '#')) {
       if (c == '-') {
         flags |= FLAG_LEFT;
       }

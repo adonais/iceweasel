@@ -185,6 +185,8 @@ support-files = [
 
 ["browser_partitionkey_bloburl.js"]
 
+["browser_partitionkey_mediasourceurl.js"]
+
 ["browser_permissionInNormalWindows.js"]
 
 ["browser_permissionInPrivateWindows.js"]

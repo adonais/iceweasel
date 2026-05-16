@@ -2,10 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { openAIEngine, MODEL_FEATURES, parseVersion, FEATURE_MAJOR_VERSIONS } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-  );
+const {
+  openAIEngine,
+  MODEL_FEATURES,
+  parseVersion,
+  FEATURE_MAJOR_VERSIONS,
+  SERVICE_TYPES,
+  PURPOSES,
+  FEATURE_PURPOSES,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+);
 
 function getVersionForFeature(feature) {
   const major = FEATURE_MAJOR_VERSIONS[feature] || 1;
@@ -20,6 +27,8 @@ const PREF_API_KEY = "browser.smartwindow.apiKey";
 const PREF_ENDPOINT = "browser.smartwindow.endpoint";
 const PREF_MODEL = "browser.smartwindow.model";
 const PREF_MODEL_CHOICE = "browser.smartwindow.firstrun.modelChoice";
+const PREF_PROMPT = "browser.smartwindow.customPrompts";
+const CUSTOM_PROMPT = "Hello from custom prompt!";
 
 const API_KEY = "fake-key";
 const ENDPOINT = "https://api.fake-endpoint.com/v1";
@@ -89,6 +98,51 @@ add_task(async function test_loadConfig_basic_with_real_snapshot() {
     Assert.equal(config.version, "2.0", "Should load version 2.0");
   } finally {
     sb.restore();
+  }
+});
+
+add_task(async function test_prompt_override_via_pref() {
+  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+  const CUSTOM_PROMPT_INPUT = JSON.stringify({
+    [MODEL_FEATURES.CHAT]: CUSTOM_PROMPT,
+  });
+  Services.prefs.setStringPref(PREF_PROMPT, CUSTOM_PROMPT_INPUT);
+
+  const sb = sinon.createSandbox();
+  try {
+    const fakeEngine = {
+      runWithGenerator() {
+        throw new Error("not used");
+      },
+    };
+    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+
+    sb.stub(openAIEngine, "getRemoteClient").returns({
+      get: sb.stub().resolves(REAL_REMOTE_SETTINGS_SNAPSHOT),
+    });
+
+    const engine = new openAIEngine();
+
+    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+
+    Assert.equal(
+      engine.feature,
+      MODEL_FEATURES.CHAT,
+      "Feature should be set correctly"
+    );
+    Assert.ok(engine.model, "Model should be loaded from remote settings");
+
+    const config = engine.getConfig(MODEL_FEATURES.CHAT);
+    Assert.ok(config, "Config should be loaded");
+    const prompt = await engine.loadPrompt(MODEL_FEATURES.CHAT);
+    Assert.ok(
+      prompt.startsWith(CUSTOM_PROMPT),
+      "Custom prompt should be loaded from pref"
+    );
+  } finally {
+    sb.restore();
+    Services.prefs.clearUserPref(PREF_PROMPT);
   }
 });
 
@@ -1155,5 +1209,173 @@ add_task(async function test_loadPrompt_conversation_suggestions() {
     Assert.ok(systemPromptConfig, "System prompt should have content");
   } finally {
     sb.restore();
+  }
+});
+
+// Tests for build() pulling serviceType and purpose from remote settings config
+
+add_task(async function test_build_uses_service_type_and_purpose_from_config() {
+  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+
+  const sb = sinon.createSandbox();
+  try {
+    const fakeEngine = {
+      runWithGenerator() {
+        throw new Error("not used");
+      },
+    };
+    const createEngineStub = sb
+      .stub(openAIEngine, "_createEngine")
+      .resolves(fakeEngine);
+
+    const fakeRecords = [
+      {
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+        version: "1.0",
+        model: "test-model",
+        prompts: "Test prompt",
+        is_default: true,
+        service_type: "test-service",
+        purpose: "test-purpose",
+      },
+    ];
+    sb.stub(openAIEngine, "getRemoteClient").returns({
+      get: sb.stub().resolves(fakeRecords),
+    });
+
+    await openAIEngine.build(MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM);
+
+    const opts = createEngineStub.firstCall.args[0];
+    Assert.equal(
+      opts.serviceType,
+      "test-service",
+      "serviceType should come from remote settings config"
+    );
+    Assert.equal(
+      opts.purpose,
+      "test-purpose",
+      "purpose should come from remote settings config"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(
+  async function test_build_falls_back_to_defaults_when_config_fields_absent() {
+    Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+    Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+
+    const sb = sinon.createSandbox();
+    try {
+      const fakeEngine = {
+        runWithGenerator() {
+          throw new Error("not used");
+        },
+      };
+      const createEngineStub = sb
+        .stub(openAIEngine, "_createEngine")
+        .resolves(fakeEngine);
+
+      // Neither service_type nor purpose in the record
+      const fakeRecords = [
+        {
+          feature: MODEL_FEATURES.CHAT,
+          version: getVersionForFeature(MODEL_FEATURES.CHAT),
+          model: "test-model",
+          prompts: "Test prompt",
+          is_default: true,
+        },
+      ];
+      sb.stub(openAIEngine, "getRemoteClient").returns({
+        get: sb.stub().resolves(fakeRecords),
+      });
+
+      await openAIEngine.build(MODEL_FEATURES.CHAT);
+
+      const opts = createEngineStub.firstCall.args[0];
+      Assert.equal(
+        opts.serviceType,
+        SERVICE_TYPES.AI,
+        "serviceType should fall back to getDefaultServiceType for non-memories feature"
+      );
+      Assert.equal(
+        opts.purpose,
+        FEATURE_PURPOSES[MODEL_FEATURES.CHAT],
+        "purpose should fall back to FEATURE_PURPOSES for the feature"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(async function test_custom_prompt_only_overrides_prompts_field() {
+  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+  const customPrompt = "My custom prompt text";
+  Services.prefs.setStringPref(
+    PREF_PROMPT,
+    JSON.stringify({ [MODEL_FEATURES.CHAT]: customPrompt })
+  );
+
+  const sb = sinon.createSandbox();
+  try {
+    const fakeEngine = {
+      runWithGenerator() {
+        throw new Error("not used");
+      },
+    };
+    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+
+    const fakeRecords = [
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: "2.0",
+        model: "rs-model",
+        prompts: "Original remote settings prompt",
+        is_default: true,
+        parameters: JSON.stringify({ temperature: 0.7 }),
+        service_type: SERVICE_TYPES.AI,
+        purpose: PURPOSES.CHAT,
+      },
+    ];
+    sb.stub(openAIEngine, "getRemoteClient").returns({
+      get: sb.stub().resolves(fakeRecords),
+    });
+
+    const engine = new openAIEngine();
+    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+    const config = engine.getConfig(MODEL_FEATURES.CHAT);
+
+    Assert.equal(
+      config.prompts,
+      customPrompt,
+      "prompts should be replaced by the custom pref value"
+    );
+    Assert.equal(
+      config.model,
+      "rs-model",
+      "model should not be affected by custom prompt pref"
+    );
+    Assert.equal(
+      config.version,
+      "2.0",
+      "version should not be affected by custom prompt pref"
+    );
+    Assert.equal(
+      config.service_type,
+      SERVICE_TYPES.AI,
+      "service_type should not be affected by custom prompt pref"
+    );
+    Assert.equal(
+      config.purpose,
+      PURPOSES.CHAT,
+      "purpose should not be affected by custom prompt pref"
+    );
+  } finally {
+    sb.restore();
+    Services.prefs.clearUserPref(PREF_PROMPT);
   }
 });

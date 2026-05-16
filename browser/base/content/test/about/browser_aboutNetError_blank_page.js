@@ -76,24 +76,18 @@ async function test_blankPage(
         const introEl = card.shadowRoot.getElementById("error-intro");
         is(
           introEl?.getAttribute("data-l10n-id"),
-          "fp-neterror-http-error-page-intro",
+          "fp-neterror-http-error-intro",
           "Intro element has correct l10n id"
         );
         const introArgs = JSON.parse(introEl?.getAttribute("data-l10n-args"));
         ok(introArgs?.hostname, "Intro has hostname arg");
-        const responseEl = card.shadowRoot.getElementById(
-          "response-status-label"
-        );
-        const responseArgs = JSON.parse(
-          responseEl?.getAttribute("data-l10n-args")
-        );
         is(
-          responseArgs?.responsestatus,
+          introArgs?.responsestatus,
           expectedStatus,
           "Intro has correct responsestatus"
         );
         is(
-          responseArgs?.responsestatustext,
+          introArgs?.responsestatustext,
           expectedText,
           "Intro has correct responsestatustext"
         );

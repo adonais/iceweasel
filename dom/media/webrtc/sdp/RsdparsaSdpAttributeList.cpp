@@ -18,8 +18,8 @@ namespace mozilla {
 MOZ_GLIBCXX_CONSTINIT const std::string RsdparsaSdpAttributeList::kEmptyString;
 
 RsdparsaSdpAttributeList::~RsdparsaSdpAttributeList() {
-  for (size_t i = 0; i < kNumAttributeTypes; ++i) {
-    delete mAttributes[i];
+  for (auto& mAttribute : mAttributes) {
+    delete mAttribute;
   }
 }
 
@@ -54,8 +54,8 @@ void RsdparsaSdpAttributeList::Clear() {
 
 uint32_t RsdparsaSdpAttributeList::Count() const {
   uint32_t count = 0;
-  for (size_t i = 0; i < kNumAttributeTypes; ++i) {
-    if (mAttributes[i]) {
+  for (auto mAttribute : mAttributes) {
+    if (mAttribute) {
       count++;
     }
   }
@@ -1309,9 +1309,9 @@ bool RsdparsaSdpAttributeList::IsAllowedHere(SdpAttribute::AttributeType type) {
 }
 
 void RsdparsaSdpAttributeList::Serialize(std::ostream& os) const {
-  for (size_t i = 0; i < kNumAttributeTypes; ++i) {
-    if (mAttributes[i]) {
-      os << *mAttributes[i];
+  for (auto mAttribute : mAttributes) {
+    if (mAttribute) {
+      os << *mAttribute;
     }
   }
 }

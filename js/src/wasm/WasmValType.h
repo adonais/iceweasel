@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2021 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -303,7 +301,15 @@ enum class TableRepr { Ref, Func };
 
 // An enum that describes the different type hierarchies.
 
-enum class RefTypeHierarchy { Func, Extern, Exn, Any };
+enum class RefTypeHierarchy {
+  Func,
+  Extern,
+  Exn,
+#ifdef ENABLE_WASM_JSPI
+  Cont,
+#endif
+  Any
+};
 
 // The RefType carries more information about types t for which t.isRefType()
 // is true.
@@ -314,10 +320,16 @@ class RefType {
     Func = uint8_t(TypeCode::FuncRef),
     Extern = uint8_t(TypeCode::ExternRef),
     Exn = uint8_t(TypeCode::ExnRef),
+#ifdef ENABLE_WASM_JSPI
+    Cont = uint8_t(TypeCode::ContRef),
+#endif
     Any = uint8_t(TypeCode::AnyRef),
     NoFunc = uint8_t(TypeCode::NullFuncRef),
     NoExtern = uint8_t(TypeCode::NullExternRef),
     NoExn = uint8_t(TypeCode::NullExnRef),
+#ifdef ENABLE_WASM_JSPI
+    NoCont = uint8_t(TypeCode::NullContRef),
+#endif
     None = uint8_t(TypeCode::NullAnyRef),
     Eq = uint8_t(TypeCode::EqRef),
     I31 = uint8_t(TypeCode::I31Ref),
@@ -378,6 +390,9 @@ class RefType {
       case TypeCode::FuncRef:
       case TypeCode::ExternRef:
       case TypeCode::ExnRef:
+#ifdef ENABLE_WASM_JSPI
+      case TypeCode::ContRef:
+#endif
       case TypeCode::AnyRef:
       case TypeCode::EqRef:
       case TypeCode::I31Ref:
@@ -385,6 +400,9 @@ class RefType {
       case TypeCode::ArrayRef:
       case TypeCode::NullFuncRef:
       case TypeCode::NullExternRef:
+#ifdef ENABLE_WASM_JSPI
+      case TypeCode::NullContRef:
+#endif
       case TypeCode::NullExnRef:
       case TypeCode::NullAnyRef:
       case AbstractTypeRefCode:
@@ -397,10 +415,16 @@ class RefType {
   static RefType func() { return RefType(Func, true); }
   static RefType extern_() { return RefType(Extern, true); }
   static RefType exn() { return RefType(Exn, true); }
+#ifdef ENABLE_WASM_JSPI
+  static RefType cont() { return RefType(Cont, true); }
+#endif
   static RefType any() { return RefType(Any, true); }
   static RefType nofunc() { return RefType(NoFunc, true); }
   static RefType noextern() { return RefType(NoExtern, true); }
   static RefType noexn() { return RefType(NoExn, true); }
+#ifdef ENABLE_WASM_JSPI
+  static RefType nocont() { return RefType(NoCont, true); }
+#endif
   static RefType none() { return RefType(None, true); }
   static RefType eq() { return RefType(Eq, true); }
   static RefType i31() { return RefType(I31, true); }
@@ -409,10 +433,17 @@ class RefType {
 
   bool isFunc() const { return kind() == RefType::Func; }
   bool isExtern() const { return kind() == RefType::Extern; }
+  bool isExn() const { return kind() == RefType::Exn; }
+#ifdef ENABLE_WASM_JSPI
+  bool isCont() const { return kind() == RefType::Cont; }
+#endif
   bool isAny() const { return kind() == RefType::Any; }
   bool isNoFunc() const { return kind() == RefType::NoFunc; }
   bool isNoExtern() const { return kind() == RefType::NoExtern; }
   bool isNoExn() const { return kind() == RefType::NoExn; }
+#ifdef ENABLE_WASM_JSPI
+  bool isNoCont() const { return kind() == RefType::NoCont; }
+#endif
   bool isNone() const { return kind() == RefType::None; }
   bool isEq() const { return kind() == RefType::Eq; }
   bool isI31() const { return kind() == RefType::I31; }
@@ -438,7 +469,17 @@ class RefType {
   inline bool isExternHierarchy() const;
   inline bool isAnyHierarchy() const;
   inline bool isExnHierarchy() const;
+#ifdef ENABLE_WASM_JSPI
+  inline bool isContHierarchy() const;
+#endif
   inline bool isInhabitable() const;
+  inline bool isCastable() const {
+#ifdef ENABLE_WASM_JSPI
+    return hierarchy() != RefTypeHierarchy::Cont;
+#else
+    return true;
+#endif
+  }
   static bool isSubTypeOf(RefType subType, RefType superType);
   static bool castPossible(RefType sourceType, RefType destType);
 
@@ -505,6 +546,10 @@ class StorageTypeTraits {
       case TypeCode::ExternRef:
       case TypeCode::ExnRef:
       case TypeCode::NullExnRef:
+#ifdef ENABLE_WASM_JSPI
+      case TypeCode::ContRef:
+      case TypeCode::NullContRef:
+#endif
       case TypeCode::AnyRef:
       case TypeCode::EqRef:
       case TypeCode::I31Ref:
@@ -596,6 +641,10 @@ class ValTypeTraits {
       case TypeCode::ExternRef:
       case TypeCode::ExnRef:
       case TypeCode::NullExnRef:
+#ifdef ENABLE_WASM_JSPI
+      case TypeCode::ContRef:
+      case TypeCode::NullContRef:
+#endif
       case TypeCode::AnyRef:
       case TypeCode::EqRef:
       case TypeCode::I31Ref:
@@ -767,6 +816,10 @@ class PackedType : public T {
 
   bool isExnRef() const { return tc_.typeCode() == TypeCode::ExnRef; }
 
+#ifdef ENABLE_WASM_JSPI
+  bool isContRef() const { return tc_.typeCode() == TypeCode::ContRef; }
+#endif
+
   bool isAnyRef() const { return tc_.typeCode() == TypeCode::AnyRef; }
 
   bool isNoFunc() const { return tc_.typeCode() == TypeCode::NullFuncRef; }
@@ -774,6 +827,10 @@ class PackedType : public T {
   bool isNoExtern() const { return tc_.typeCode() == TypeCode::NullExternRef; }
 
   bool isNoExn() const { return tc_.typeCode() == TypeCode::NullExnRef; }
+
+#ifdef ENABLE_WASM_JSPI
+  bool isNoCont() const { return tc_.typeCode() == TypeCode::NullContRef; }
+#endif
 
   bool isNone() const { return tc_.typeCode() == TypeCode::NullAnyRef; }
 
@@ -794,11 +851,17 @@ class PackedType : public T {
 
   // Returns whether the type has a representation in JS.
   bool isExposable() const {
-#if defined(ENABLE_WASM_SIMD)
-    return kind() != Kind::V128 && !isExnRef() && !isNoExn();
-#else
-    return !isExnRef() && !isNoExn();
+#ifdef ENABLE_WASM_SIMD
+    if (kind() == Kind::V128) {
+      return false;
+    }
 #endif
+#ifdef ENABLE_WASM_JSPI
+    if (isContRef() || isNoCont()) {
+      return false;
+    }
+#endif
+    return !isExnRef() && !isNoExn();
   }
 
   bool isNullable() const { return tc_.isNullable(); }

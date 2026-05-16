@@ -34,6 +34,6 @@ testWithTypedArrayConstructors(function(TA) {
     sample.lastIndexOf(0, fromIndex), -1,
     "length is checked before ToInteger(fromIndex)"
   );
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

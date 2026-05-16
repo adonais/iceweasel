@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -24,9 +22,14 @@
 using namespace js;
 using namespace js::gc;
 
-Zone* js::gc::GetWeakTargetZone(const Value& value) {
-  MOZ_ASSERT(CanBeHeldWeakly(value));
+static inline Zone* GetWeakTargetZone(const Value& value) {
   return value.toGCThing()->zone();
+}
+
+static inline void CheckTargetValue(const Value& target) {
+  MOZ_ASSERT(CanBeHeldWeakly(target));
+  MOZ_ASSERT_IF(target.isObject(),
+                !IsCrossCompartmentWrapper(&target.toObject()));
 }
 
 /* static */
@@ -301,8 +304,7 @@ bool FinalizationObservers::addRegistry(
 bool GCRuntime::registerWithFinalizationRegistry(
     JSContext* cx, HandleValue target,
     Handle<FinalizationRecordObject*> record) {
-  MOZ_ASSERT_IF(target.isObject(),
-                !IsCrossCompartmentWrapper(&target.toObject()));
+  CheckTargetValue(target);
 
   Zone* zone = GetWeakTargetZone(target);
   if (!zone->ensureFinalizationObservers() ||
@@ -352,26 +354,32 @@ void GCRuntime::traceWeakFinalizationObserverEdges(JSTracer* trc, Zone* zone) {
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(trc->runtime()));
   FinalizationObservers* observers = zone->finalizationObservers();
   if (observers) {
-    observers->traceWeakEdges(trc);
+    observers->traceWeakEdges(trc, zone);
   }
 }
 
-void FinalizationObservers::traceWeakEdges(JSTracer* trc) {
+void FinalizationObservers::traceWeakEdges(JSTracer* trc, JS::Zone* zone) {
   // Removing dead pointers from vectors may reorder live pointers to gray
   // things in the vector. This is OK.
   AutoTouchingGrayThings atgt;
 
   traceWeakWeakRefEdges(trc);
-  traceWeakFinalizationRegistryEdges(trc);
+  traceWeakFinalizationRegistryEdges(trc, zone);
 }
 
-void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
+void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc,
+                                                               JS::Zone* zone) {
   // Sweep finalization registry data and queue finalization records for cleanup
   // for any entries whose target is dying and remove them from the map.
+
+  // Clear cached state and set it again below if required.
+  zone->clearGCFinalizationRegistriesMayHaveSymbolRegistrations();
 
   GCRuntime* gc = &trc->runtime()->gc;
 
   for (auto iter = registries.modIter(); !iter.done(); iter.next()) {
+    MOZ_ASSERT(MaybeForwarded(iter.get().get())->zone() == zone);
+
     auto result =
         TraceWeakEdge(trc, &iter.getMutable(), "FinalizationRegistry");
     if (result.isDead()) {
@@ -385,7 +393,11 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
       iter.remove();
     } else {
       FinalizationRegistryObject* registry = result.finalTarget();
-      registry->traceWeak(trc);
+      bool hasSymbolRegistrations = false;
+      registry->traceWeak(trc, &hasSymbolRegistrations);
+      if (hasSymbolRegistrations) {
+        zone->setGCFinalizationRegistriesMayHaveSymbolRegistrations();
+      }
 
       // Now we know the registry is alive we can queue any records for cleanup
       // if this didn't happen already. See
@@ -436,6 +448,8 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
         }
       }
       iter.remove();
+    } else {
+      CheckTargetValue(iter.get().key());
     }
   }
 }
@@ -492,8 +506,7 @@ void GCRuntime::queueFinalizationRegistryForCleanup(
 // |target| cleared.
 bool GCRuntime::registerWeakRef(JSContext* cx, HandleValue target,
                                 Handle<WeakRefObject*> weakRef) {
-  MOZ_ASSERT_IF(target.isObject(),
-                !IsCrossCompartmentWrapper(&target.toObject()));
+  CheckTargetValue(target);
 
   Zone* zone = GetWeakTargetZone(target);
   if (!zone->ensureFinalizationObservers() ||
@@ -518,7 +531,7 @@ bool FinalizationObservers::addWeakRefTarget(HandleValue target,
 
 void FinalizationObservers::removeWeakRefTarget(
     Handle<Value> target, Handle<WeakRefObject*> weakRef) {
-  MOZ_ASSERT(CanBeHeldWeakly(target));
+  CheckTargetValue(target);
   MOZ_ASSERT(weakRef->target() == target);
 
   MOZ_ASSERT(weakRef->isInList());
@@ -537,6 +550,7 @@ void FinalizationObservers::traceWeakWeakRefEdges(JSTracer* trc) {
     ObserverList& weakRefs = iter.get().value();
     auto result =
         TraceWeakEdge(trc, &iter.get().mutableKey(), "WeakRef target");
+
     if (result.isDead()) {
       // Clear the observer list if the target is dying.
       while (!weakRefs.isEmpty()) {
@@ -544,9 +558,14 @@ void FinalizationObservers::traceWeakWeakRefEdges(JSTracer* trc) {
         weakRef->clearTargetAndUnlink();
       }
       iter.remove();
-    } else if (result.finalTarget() != result.initialTarget()) {
+    } else {
+      Value target = result.finalTarget();
+      CheckTargetValue(target);
+
       // Update WeakRef targets if the target has been moved.
-      traceWeakWeakRefList(trc, weakRefs, result.finalTarget());
+      if (target != result.initialTarget()) {
+        traceWeakWeakRefList(trc, weakRefs, target);
+      }
     }
   }
 }
@@ -596,6 +615,170 @@ void FinalizationObservers::maybeClearWeakRefTargets(
         weakRef->clearTargetAndUnlink();
       }
       iter.remove();
+    }
+  }
+}
+
+bool FinalizationObservers::isTarget(const Value& target) {
+  return weakRefMap.has(target) || recordMap.has(target);
+}
+
+/* static */
+bool GCRuntime::isFinalizationObserverTarget(const Value& target) {
+  Zone* zone = GetWeakTargetZone(target);
+  FinalizationObservers* observers = zone->finalizationObservers();
+  return observers && observers->isTarget(target);
+}
+
+/* static */
+bool GCRuntime::relocateFinalizationObserverTarget(const Value& oldTarget,
+                                                   const Value& newTarget) {
+  CheckTargetValue(oldTarget);
+  CheckTargetValue(newTarget);
+  MOZ_ASSERT(oldTarget != newTarget);
+
+  Zone* oldZone = GetWeakTargetZone(oldTarget);
+  FinalizationObservers* oldObservers = oldZone->finalizationObservers();
+  if (!oldObservers) {
+    return true;
+  }
+
+  ObserverList weakRefList = oldObservers->extractWeakRefObservers(oldTarget);
+  ObserverList recordList = oldObservers->extractRecordObservers(oldTarget);
+  if (weakRefList.isEmpty() && recordList.isEmpty()) {
+    return true;
+  }
+
+  // Update the target stored in each WeakRefObject.
+  for (auto iter = weakRefList.iter(); !iter.done(); iter.next()) {
+    auto* weakRef = &iter.get()->as<WeakRefObject>();
+    MOZ_ASSERT(weakRef->target() == oldTarget);
+    weakRef->setTargetUnbarriered(newTarget);
+  }
+
+  Zone* newZone = GetWeakTargetZone(newTarget);
+  if (!newZone->ensureFinalizationObservers()) {
+    return false;
+  }
+
+  FinalizationObservers* newObservers = newZone->finalizationObservers();
+  if (!weakRefList.isEmpty() &&
+      !newObservers->addWeakRefObservers(newTarget, std::move(weakRefList))) {
+    return false;
+  }
+
+  if (!recordList.isEmpty() &&
+      !newObservers->addRecordObservers(newTarget, std::move(recordList))) {
+    return false;
+  }
+
+  return true;
+}
+
+ObserverList FinalizationObservers::extractWeakRefObservers(
+    const Value& target) {
+  ObserverList list;
+  if (auto ptr = weakRefMap.lookup(target)) {
+    list = std::move(ptr->value());
+    weakRefMap.remove(ptr);
+  }
+
+  return list;
+}
+
+bool FinalizationObservers::addWeakRefObservers(const Value& target,
+                                                ObserverList&& list) {
+  auto ptr = weakRefMap.lookupForAdd(target);
+  if (ptr) {
+    // There's already an entry for this target (unlikely but possible).
+    // Merge the lists by moving elements one by one.
+    ObserverList& existing = ptr->value();
+    while (!list.isEmpty()) {
+      existing.insertFront(list.getFirst());
+    }
+    return true;
+  }
+
+  return weakRefMap.add(ptr, target, std::move(list));
+}
+
+ObserverList FinalizationObservers::extractRecordObservers(
+    const Value& target) {
+  ObserverList list;
+  if (auto ptr = recordMap.lookup(target)) {
+    list = std::move(ptr->value());
+    recordMap.remove(ptr);
+  }
+
+  return list;
+}
+
+bool FinalizationObservers::addRecordObservers(const Value& target,
+                                               ObserverList&& list) {
+  auto ptr = recordMap.lookupForAdd(target);
+  if (ptr) {
+    // There's already an entry for this target (unlikely but possible).
+    // Merge the lists by moving elements one by one.
+    ObserverList& existing = ptr->value();
+    while (!list.isEmpty()) {
+      existing.insertFront(list.getFirst());
+    }
+    return true;
+  }
+
+  return recordMap.add(ptr, target, std::move(list));
+}
+
+/* static */
+void GCRuntime::clearWeakRefTargets(Compartment* source, const Value& target) {
+  Zone* zone = target.toGCThing()->zone();
+  FinalizationObservers* observers = zone->finalizationObservers();
+  if (observers) {
+    observers->clearWeakRefTargets(source, target);
+  }
+}
+
+void FinalizationObservers::clearWeakRefTargets(Compartment* source,
+                                                const Value& target) {
+  if (auto ptr = weakRefMap.lookup(target)) {
+    ObserverList& weakRefs = ptr->value();
+    for (auto iter = weakRefs.iter(); !iter.done(); iter.next()) {
+      auto* weakRef = &iter->as<WeakRefObject>();
+      if (weakRef->compartment() == source) {
+        weakRef->clearTargetAndUnlink();
+      }
+    }
+    if (weakRefs.isEmpty()) {
+      weakRefMap.remove(ptr);
+    }
+  }
+}
+
+/* static */
+void GCRuntime::clearWeakRefTargets(const CompartmentFilter& sourceFilter,
+                                    JS::Realm* targetFilter) {
+  Zone* zone = targetFilter->zone();
+  FinalizationObservers* observers = zone->finalizationObservers();
+  if (observers) {
+    observers->clearWeakRefTargets(sourceFilter, targetFilter);
+  }
+}
+
+void FinalizationObservers::clearWeakRefTargets(
+    const CompartmentFilter& sourceFilter, JS::Realm* targetFilter) {
+  for (auto mapIter = weakRefMap.modIter(); !mapIter.done(); mapIter.next()) {
+    Value target = mapIter.get().key();
+    if (target.isObject() && target.toObject().nonCCWRealm() == targetFilter) {
+      ObserverList& weakRefs = mapIter.get().value();
+      for (auto iter = weakRefs.iter(); !iter.done(); iter.next()) {
+        auto* weakRef = &iter->as<WeakRefObject>();
+        if (sourceFilter.match(weakRef->compartment())) {
+          weakRef->clearTargetAndUnlink();
+        }
+      }
+      if (weakRefs.isEmpty()) {
+        mapIter.remove();
+      }
     }
   }
 }

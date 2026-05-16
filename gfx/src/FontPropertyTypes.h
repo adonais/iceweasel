@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <cmath>
 #include <utility>
 
 #include <ctype.h>

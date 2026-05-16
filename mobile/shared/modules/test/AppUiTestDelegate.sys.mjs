@@ -31,18 +31,18 @@ class Delegate {
     //
     // The message is ultimately received and handled by TestRunnerApiEngine at
     // mobile/android/test_runner/src/main/java/org/mozilla/geckoview/test_runner/TestRunnerApiEngine.java
-    const message = {
-      type: "GeckoView:WebExtension:Message",
-      sender: {
-        envType: "addon_child",
-        url: "test-runner-support:///",
-      },
-      data,
-      extensionId: TEST_SUPPORT_EXTENSION_ID,
-      nativeApp: "test-runner-support",
-    };
-
-    return lazy.EventDispatcher.instance.sendRequestForResult(message);
+    return lazy.EventDispatcher.instance.sendRequestForResult(
+      "GeckoView:WebExtension:Message",
+      {
+        sender: {
+          envType: "addon_child",
+          url: "test-runner-support:///",
+        },
+        data,
+        extensionId: TEST_SUPPORT_EXTENSION_ID,
+        nativeApp: "test-runner-support",
+      }
+    );
   }
 
   clickPageAction(window, extensionId) {

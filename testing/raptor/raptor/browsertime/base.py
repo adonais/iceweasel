@@ -187,7 +187,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             ):
                 if self.browser_version:
                     bvers = str(self.browser_version)
-                    chromedriver_version = bvers.split(".")[0]
+                    chromedriver_version = bvers.split(".", 1)[0]
                 else:
                     chromedriver_version = DEFAULT_CHROMEVERSION
 

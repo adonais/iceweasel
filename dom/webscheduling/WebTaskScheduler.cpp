@@ -226,7 +226,8 @@ inline void ImplCycleCollectionTraverse(
   }
 }
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebTaskScheduler, mParent, mWebTaskQueues)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(WebTaskScheduler, mParent,
+                                               mWebTaskQueues)
 
 /* static */
 already_AddRefed<WebTaskSchedulerMainThread>

@@ -11,6 +11,11 @@ BROWSER_CHROME_MANIFESTS += [
 ]
 MOCHITEST_MANIFESTS += ["mochitests/mochitest.toml"]
 
+# mochitests using NodeServer need the cert for HTTPS servers
+TEST_HARNESS_FILES.testing.mochitest.tests.netwerk.test.unit += [
+    "/netwerk/test/unit/http2-ca.pem",
+]
+
 XPCSHELL_TESTS_MANIFESTS += [
     "unit/node_execute/xpcshell.toml",
     "unit/xpcshell.toml",

@@ -10,7 +10,7 @@ info: |
   ...
   4. If IsCallable(predicate) is false, throw a TypeError exception.
   ...
-includes: [testBigIntTypedArray.js]
+includes: [testTypedArray.js]
 features: [BigInt, TypedArray, array-find-from-last]
 ---*/
 
@@ -52,6 +52,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.findLast(/./);
   }, "regexp");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

@@ -181,6 +181,9 @@ skip-if = [
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html"]
 
 ["browser_search_telemetry_private.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html", "serp.css"]
 
 ["browser_search_telemetry_remote_settings_sync.js"]

@@ -5,6 +5,8 @@
 #ifndef mozilla_dom_PermissionObserver_h_
 #define mozilla_dom_PermissionObserver_h_
 
+#include "mozilla/dom/PermissionStatusBinding.h"
+#include "mozilla/dom/PermissionsBinding.h"
 #include "nsIObserver.h"
 #include "nsTArray.h"
 #include "nsWeakReference.h"
@@ -25,6 +27,10 @@ class PermissionObserver final : public nsIObserver,
 
   void AddSink(PermissionStatusSink* aSink);
   void RemoveSink(PermissionStatusSink* aSink);
+
+  static void NotifySystemPermissionChanged(PermissionName aName,
+                                            PermissionState aState);
+  static void EnsureMonitoringInParent(PermissionName aName);
 
  private:
   PermissionObserver();

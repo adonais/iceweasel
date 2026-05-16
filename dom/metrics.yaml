@@ -200,8 +200,12 @@ perf:
         type: quantity
         unit: integer
       android_app_link_launch_type:
-        description:
-          "AppLink launch type, android only. UNKNOWN = 0 COLD = 1, WARM = 2, HOT = 3, see LoadURIOptions.webidl"
+        description: |
+          AppLink launch type, android only.
+            - 0 UNKNOWN: not an applink navigation
+            - 1 COLD: process and activity created from scratch
+            - 2 WARM: process alive but target activity created fresh
+            - 3 HOT: process alive and existing target activity instance reused
         type: quantity
         unit: integer
       android_app_link_to_navigation_start:
@@ -211,8 +215,9 @@ perf:
         unit: ms
       android_isolation_category:
         description: |
-          Process isolation category: shared_web, site_isolated, coop_isolated, or other
-        type: string
+          Process isolation category: 0=other, 1=shared_web, 2=site_isolated, 3=coop_isolated
+        type: quantity
+        unit: integer
     send_in_pings:
       - pageload
   page_load_domain:
@@ -638,7 +643,7 @@ security:
       - https://bugzil.la/1955578
     notification_emails:
       - tschuster@mozilla.com
-    expires: 152
+    expires: 160
     extra_keys:
       name:
         description: >

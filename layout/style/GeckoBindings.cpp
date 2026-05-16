@@ -189,10 +189,8 @@ void Gecko_GetQueryContainerSize(const Element* aElement, nscoord* aOutWidth,
 }
 
 void Gecko_ComputedStyle_Init(ComputedStyle* aStyle,
-                              const ServoComputedData* aValues,
-                              PseudoStyleType aPseudoType) {
-  new (KnownNotNull, aStyle)
-      ComputedStyle(aPseudoType, ServoComputedDataForgotten(aValues));
+                              const ServoComputedData* aValues) {
+  new (KnownNotNull, aStyle) ComputedStyle(ServoComputedDataForgotten(aValues));
 }
 
 ServoComputedData::ServoComputedData(const ServoComputedDataForgotten aValue) {
@@ -1976,7 +1974,7 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
   const auto usesCBWM = AnchorSideUsesCBWM(aAnchorSideKeyword);
   const auto cbwm = containingBlock->GetWritingMode();
   const auto wm =
-      usesCBWM ? aParams->mBaseParams.mFrame->GetWritingMode() : cbwm;
+      usesCBWM ? cbwm : aParams->mBaseParams.mFrame->GetWritingMode();
   const auto [rect, logicalCBSize] = [&] {
     // We need `AnchorPosReferenceData` to compute the anchor offset against
     // the adjusted CB, so make the best attempt to retrieve it.

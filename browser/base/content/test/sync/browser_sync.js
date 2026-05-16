@@ -177,6 +177,27 @@ add_task(async function test_ui_state_signedin() {
   Assert.ok(profile, "Should have a profile now");
 
   const relativeDateAnchor = new Date();
+
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(gSync, "getSendTabTargets").returns([
+    {
+      id: 1,
+      name: "Desktop1",
+      type: "desktop",
+      availableCommands: {
+        "https://identity.mozilla.com/cmd/open-uri": "baz",
+      },
+    },
+    {
+      id: 2,
+      name: "Desktop2",
+      type: "desktop",
+      availableCommands: {
+        "https://identity.mozilla.com/cmd/open-uri": "baz",
+      },
+    },
+  ]);
+
   let state = {
     status: UIState.STATUS_SIGNED_IN,
     syncEnabled: true,
@@ -208,15 +229,20 @@ add_task(async function test_ui_state_signedin() {
     ),
     "expected toolbar to be visible after opening"
   );
-  let sendTabButtonId = PanelMultiView.getViewNode(
+  let sendTabButton = PanelMultiView.getViewNode(
     document,
     "PanelUI-fxa-menu-sendtab-button"
-  ).getAttribute("data-l10n-id");
+  );
+  let sendTabButtonId = sendTabButton.getAttribute("data-l10n-id");
   Assert.equal(
     sendTabButtonId,
     "fxa-menu-send-to-device",
     "'Send to Device' displayed on send tab button"
   );
+  // Ensure that the send tab button has the navigation arrow
+  // to indicate that there are sub menu items.
+  ok(sendTabButton.classList.contains("subviewbutton-nav"));
+
   checkFxaToolbarButtonPanel({
     headerTitle: "Manage account",
     headerDescription: state.displayName,
@@ -268,6 +294,7 @@ add_task(async function test_ui_state_signedin() {
   ok(!profilesButton, "expected profiles button to not be present");
 
   await closeTabAndMainPanel();
+  sandbox.restore();
 });
 
 add_task(async function test_ui_state_syncing_panel_closed() {
@@ -511,6 +538,14 @@ add_task(async function test_ui_state_signedin_mobile_only_send_tab() {
     "fxa-menu-send-to-mobile",
     "'Send to Mobile' displayed on send tab button when all targets are mobile"
   );
+
+  // Ensure that the send tab button has the navigation arrow
+  // to indicate that there are sub menu items.
+  let sendTabButton = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-button"
+  );
+  ok(sendTabButton.classList.contains("subviewbutton-nav"));
 
   await closeFxaPanel();
   sandbox.restore();
@@ -868,17 +903,14 @@ add_task(async function test_new_sync_setup_ui() {
     enabledItems: [
       "PanelUI-fxa-menu-sendtab-button",
       "PanelUI-fxa-menu-account-signout-button",
-      "PanelUI-fxa-menu-connect-device-button",
     ],
     disabledItems: [],
     hiddenItems: [
       "PanelUI-fxa-menu-syncnow-button",
       "PanelUI-fxa-menu-sync-prefs-button",
-    ],
-    visibleItems: [
-      "PanelUI-fxa-menu-setup-sync-container",
       "PanelUI-fxa-menu-connect-device-button",
     ],
+    visibleItems: ["PanelUI-fxa-menu-setup-sync-container"],
   });
 
   await closeFxaPanel();
@@ -1329,3 +1361,191 @@ async function closeTabAndMainPanel() {
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 }
+
+add_task(async function test_ui_state_signed_out_send_tab() {
+  let state = {
+    status: UIState.STATUS_NOT_CONFIGURED,
+    syncEnabled: false,
+    email: "foo@bar.com",
+    displayName: "Foo Bar",
+    avatarURL: "https://foo.bar",
+    lastSync: new Date(),
+    syncing: false,
+  };
+
+  gSync.updateAllUI(state);
+  await openFxaPanel();
+
+  let sendTabButton = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-button"
+  );
+
+  // Check that the navigation arrow is removed from the send tab element
+  // since there aren't any submenu items.
+  ok(!sendTabButton.classList.contains("subviewbutton-nav"));
+
+  Assert.equal(
+    sendTabButton.getAttribute("data-l10n-id"),
+    "fxa-menu-send-to-mobile",
+    "'Send to Mobile' displayed on send tab button when all targets are mobile"
+  );
+
+  await closeFxaPanel();
+});
+
+add_task(async function test_ui_state_sync_disabled_send_tab() {
+  // Setup profiles db
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.profiles.enabled", true]],
+  });
+  await initGroupDatabase();
+  let profile = SelectableProfileService.currentProfile;
+  Assert.ok(profile, "Should have a profile now");
+
+  const relativeDateAnchor = new Date();
+
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(gSync, "getSendTabTargets").returns([]);
+  sandbox.stub(gSync, "isSignedIn").get(() => true);
+  sandbox.stub(gSync, "isSignedInWithSyncDisabled").get(() => true);
+
+  let state = {
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
+    email: "foo@bar.com",
+    displayName: "Foo Bar",
+    avatarURL: "https://foo.bar",
+    lastSync: new Date(),
+    syncing: false,
+  };
+
+  const origRelativeTimeFormat = gSync.relativeTimeFormat;
+  gSync.relativeTimeFormat = {
+    formatBestUnit(date) {
+      return origRelativeTimeFormat.formatBestUnit(date, {
+        now: relativeDateAnchor,
+      });
+    },
+  };
+
+  gSync.updateAllUI(state);
+
+  await openFxaPanel();
+
+  let sendTabButton = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-button"
+  );
+
+  // Ensure that the send tab button has the navigation arrow
+  // to indicate that there are sub menu items.
+  ok(sendTabButton.classList.contains("subviewbutton-nav"));
+
+  Assert.equal(
+    sendTabButton.getAttribute("data-l10n-id"),
+    "fxa-menu-send-to-mobile",
+    "'Send to Mobile' displayed on send tab button"
+  );
+
+  sendTabButton.click();
+
+  let enableSyncView = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-enable-sync"
+  );
+  await BrowserTestUtils.waitForEvent(enableSyncView, "ViewShown");
+
+  let enableSyncButton = enableSyncView.querySelector(
+    "#PanelUI-fxa-menu-sendtab-enable-sync-button"
+  );
+  ok(
+    BrowserTestUtils.isVisible(enableSyncButton),
+    "expected enable sync button to be visible after opening"
+  );
+
+  await closeFxaPanel();
+  sandbox.restore();
+});
+
+add_task(async function test_ui_state_single_device_send_tab() {
+  // Setup profiles db
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.profiles.enabled", true]],
+  });
+  await initGroupDatabase();
+  let profile = SelectableProfileService.currentProfile;
+  Assert.ok(profile, "Should have a profile now");
+
+  const relativeDateAnchor = new Date();
+
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(gSync, "getSendTabTargets").returns([]);
+  sandbox.stub(gSync, "isSignedIn").get(() => true);
+  sandbox.stub(gSync, "hasNoSendTabTargets").get(() => true);
+
+  let state = {
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
+    email: "foo@bar.com",
+    displayName: "Foo Bar",
+    avatarURL: "https://foo.bar",
+    lastSync: new Date(),
+    syncing: false,
+  };
+
+  const origRelativeTimeFormat = gSync.relativeTimeFormat;
+  gSync.relativeTimeFormat = {
+    formatBestUnit(date) {
+      return origRelativeTimeFormat.formatBestUnit(date, {
+        now: relativeDateAnchor,
+      });
+    },
+  };
+
+  gSync.updateAllUI(state);
+
+  await openFxaPanel();
+
+  let sendTabButton = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-button"
+  );
+
+  Assert.equal(
+    sendTabButton.getAttribute("data-l10n-id"),
+    "fxa-menu-send-to-mobile",
+    "'Send to Mobile' displayed on send tab button"
+  );
+
+  // Ensure that the send tab button has the navigation arrow
+  // to indicate that there are sub menu items.
+  ok(sendTabButton.classList.contains("subviewbutton-nav"));
+
+  sendTabButton.click();
+
+  let connectPhoneView = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-connect-phone"
+  );
+  await BrowserTestUtils.waitForEvent(connectPhoneView, "ViewShown");
+
+  let connectPhoneButton = connectPhoneView.querySelector(
+    "#PanelUI-fxa-menu-sendtab-connect-phone-button"
+  );
+  ok(
+    BrowserTestUtils.isVisible(connectPhoneButton),
+    "expected connect phone button to be visible after opening"
+  );
+
+  let noDeviceButton = connectPhoneView.querySelector(
+    "#PanelUI-fxa-menu-sendtab-no-phone-button"
+  );
+  ok(
+    BrowserTestUtils.isVisible(noDeviceButton),
+    "expected no device button to be visible after opening"
+  );
+
+  await closeFxaPanel();
+  sandbox.restore();
+});

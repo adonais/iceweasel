@@ -271,7 +271,10 @@ void SharedScriptCache::Init() {
                                 "privacy.trackingprotection.enabled");
 }
 
-SharedScriptCache::~SharedScriptCache() { UnregisterWeakMemoryReporter(this); }
+SharedScriptCache::~SharedScriptCache() {
+  UnregisterWeakMemoryReporter(this);
+  ClearDiskCacheTimer();
+}
 
 bool SharedScriptCache::ShouldIgnoreMemoryPressure() {
   // During the automated testing, we need to ignore the memory pressure,
@@ -429,14 +432,50 @@ bool SharedScriptCache::MaybeScheduleUpdateDiskCache() {
     return false;
   }
 
-  // TODO: Apply more flexible scheduling (bug 1902951)
-
-  nsCOMPtr<nsIRunnable> updater =
-      NewRunnableMethod("SharedScriptCache::UpdateDiskCache", this,
-                        &SharedScriptCache::UpdateDiskCache);
-  (void)NS_DispatchToCurrentThreadQueue(updater.forget(),
-                                        EventQueuePriority::Idle);
+  SetDiskCacheTimer();
   return true;
+}
+
+void SharedScriptCache::SetDiskCacheTimer() {
+  if (mDiskCacheTimer) {
+    mRetryDiskCacheTimer = true;
+    return;
+  }
+
+  auto result = NS_NewTimerWithFuncCallback(
+      [](nsITimer*, void* aClosure) {
+        auto* self = static_cast<SharedScriptCache*>(aClosure);
+        self->OnDiskCacheTimer();
+      },
+      this, StaticPrefs::dom_script_loader_disk_cache_delay_ms(),
+      nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+      "SharedScriptCache::DiskCacheTimer"_ns);
+
+  if (result.isErr()) {
+    return;
+  }
+
+  mDiskCacheTimer = result.unwrap();
+}
+
+void SharedScriptCache::ClearDiskCacheTimer() {
+  if (!mDiskCacheTimer) {
+    return;
+  }
+
+  mDiskCacheTimer->Cancel();
+  mDiskCacheTimer = nullptr;
+}
+
+void SharedScriptCache::OnDiskCacheTimer() {
+  mDiskCacheTimer = nullptr;
+  if (mRetryDiskCacheTimer) {
+    mRetryDiskCacheTimer = false;
+    SetDiskCacheTimer();
+    return;
+  }
+
+  UpdateDiskCache();
 }
 
 class ScriptEncodeAndCompressionTask : public mozilla::Task {

@@ -263,7 +263,9 @@ class nsHttpConnectionInfo final : public ARefBase {
   const nsCString& GetProxyNPNToken() const { return mProxyNPNToken; }
   const nsCString& GetUsername() { return mUsername; }
 
-  const OriginAttributes& GetOriginAttributes() { return mOriginAttributes; }
+  const OriginAttributes& GetOriginAttributes() const {
+    return mOriginAttributes;
+  }
 
   // Returns true for any kind of proxy (http, socks, https, etc..)
   bool UsingProxy();

@@ -91,15 +91,10 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
 ]
 
+["browser_popupNotification_popupshown_leak.js"]
+
 ["browser_popupNotification_no_anchors.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
-]
-
-["browser_popupNotification_queue.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan",
@@ -119,6 +114,9 @@ skip-if = [
 ]
 
 ["browser_popupNotification_swapBrowser.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_reshow_in_background.js"]
 skip-if = [

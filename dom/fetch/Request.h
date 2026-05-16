@@ -34,7 +34,10 @@ class Request final : public FetchBody<Request>, public nsWrapperCache {
     return Request_Binding::Wrap(aCx, this, aGivenProto);
   }
 
-  void GetUrl(nsACString& aUrl) const { mRequest->GetURL(aUrl); }
+  void GetUrl(nsACString& aUrl) const {
+    nsCOMPtr<nsIURI> uri = mRequest->GetURL();
+    MOZ_ALWAYS_SUCCEEDS(uri->GetSpec(aUrl));
+  }
   void GetMethod(nsCString& aMethod) const { aMethod = mRequest->mMethod; }
 
   RequestMode Mode() const { return mRequest->mMode; }

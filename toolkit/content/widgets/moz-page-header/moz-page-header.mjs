@@ -21,7 +21,7 @@ window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozPageHeader.ftl");
  * @fires navigate-back
  *  Event indicating the backwards navigation should occur.
  */
-export default class MozPageHeader extends MozLitElement {
+export class MozPageHeader extends MozLitElement {
   static properties = {
     heading: { type: String, fluent: true },
     description: { type: String, fluent: true },

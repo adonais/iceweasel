@@ -278,6 +278,7 @@ interface nsITextInputProcessor : nsISupports
    *                        when this returns true.  If this returns false,
    *                        your TIP should wait next chance.
    */
+  [can_run_script]
   boolean beginInputTransaction(in mozIDOMWindow aWindow,
                                 in nsITextInputProcessorCallback aCallback);
 
@@ -288,7 +289,7 @@ interface nsITextInputProcessor : nsISupports
    * Note that aCallback can be null.  If it's null, nsITextInputProcessor
    * implementation will handle them automatically.
    */
-  [optional_argc] boolean
+  [can_run_script, optional_argc] boolean
     beginInputTransactionForTests(
       in mozIDOMWindow aWindow,
       [optional] in nsITextInputProcessorCallback aCallback);

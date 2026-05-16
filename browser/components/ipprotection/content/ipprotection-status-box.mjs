@@ -90,10 +90,6 @@ export default class IPProtectionStatusBox extends MozLitElement {
                     data-l10n-args=${this.descriptionL10nArgs}
                   ></span>`
                 : null}
-              <div id="location">
-                <slot name="location-icon"></slot>
-                <slot name="location"></slot>
-              </div>
             </div>
           </div>
           <div>
@@ -102,6 +98,7 @@ export default class IPProtectionStatusBox extends MozLitElement {
         </div>
 
         <slot name="action"></slot>
+        <slot name="location-action"></slot>
         <slot name="content"></slot>
       </div>
     `;

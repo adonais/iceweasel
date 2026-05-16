@@ -300,15 +300,6 @@ class Optional<OwningNonNull<T>> : public Optional_base<T, OwningNonNull<T>> {
 };
 
 // Specialization for strings.
-// XXXbz we can't pull in FakeString here, because it depends on internal
-// strings.  So we just have to forward-declare it and reimplement its
-// ToAStringPtr.
-
-namespace binding_detail {
-template <typename CharT>
-struct FakeString;
-}  // namespace binding_detail
-
 template <typename CharT>
 class Optional<nsTSubstring<CharT>> {
   using AString = nsTSubstring<CharT>;
@@ -321,13 +312,6 @@ class Optional<nsTSubstring<CharT>> {
   void operator=(const AString* str) {
     MOZ_ASSERT(str);
     mStr = str;
-  }
-
-  // If this code ever goes away, remove the comment pointing to it in the
-  // FakeString class in BindingUtils.h.
-  void operator=(const binding_detail::FakeString<CharT>* str) {
-    MOZ_ASSERT(str);
-    mStr = reinterpret_cast<const nsTString<CharT>*>(str);
   }
 
   const AString& Value() const {

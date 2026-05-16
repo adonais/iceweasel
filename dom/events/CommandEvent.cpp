@@ -30,12 +30,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CommandEvent)
 NS_INTERFACE_MAP_END_INHERITING(Event)
 
-bool CommandEvent::IsCallerChromeOrCommandForEnabled(JSContext* aCx,
-                                                     JSObject* aGlobal) {
-  return nsContentUtils::ThreadsafeIsSystemCaller(aCx) ||
-         StaticPrefs::dom_element_commandfor_enabled();
-}
-
 already_AddRefed<CommandEvent> CommandEvent::Constructor(
     const GlobalObject& aGlobal, const nsAString& aType,
     const CommandEventInit& aEventInitDict) {

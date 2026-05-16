@@ -1483,11 +1483,6 @@ class Marionette:
         :param width: The width to resize the window to.
         :param height: The height to resize the window to.
         """
-        if (x is None and y is None) and (height is None and width is None):
-            raise errors.InvalidArgumentException(
-                "x and y or height and width need values"
-            )
-
         body = {"x": x, "y": y, "height": height, "width": width}
         return self._send_message("WebDriver:SetWindowRect", body)
 

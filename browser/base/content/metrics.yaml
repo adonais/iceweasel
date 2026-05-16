@@ -65,12 +65,13 @@ security.ui.protectionspopup:
       - https://bugzil.la/1920735
       - https://bugzil.la/1958162
       - https://bugzil.la/1989192
+      - https://bugzil.la/2026447
     data_reviews:
       - https://bugzil.la/1920735
     notification_emails:
       - wwen@mozilla.com
       - emz@mozilla.com
-    expires: 152
+    expires: 160
 
   open_protectionspopup_cfr:
     type: event
@@ -304,12 +305,13 @@ security.ui.protectionspopup:
       - https://bugzil.la/1920735
       - https://bugzil.la/1958162
       - https://bugzil.la/1989192
+      - https://bugzil.la/2026447
     data_reviews:
       - https://bugzil.la/1920735
     notification_emails:
       - wwen@mozilla.com
       - emz@mozilla.com
-    expires: 152
+    expires: 160
 
   smartblockembeds_shown:
     type: counter
@@ -319,12 +321,13 @@ security.ui.protectionspopup:
       - https://bugzil.la/1920735
       - https://bugzil.la/1958162
       - https://bugzil.la/1989192
+      - https://bugzil.la/2026447
     data_reviews:
       - https://bugzil.la/1920735
     notification_emails:
       - wwen@mozilla.com
       - emz@mozilla.com
-    expires: 152
+    expires: 160
 
 browser.engagement:
   bookmarks_toolbar_bookmark_added:
@@ -382,6 +385,26 @@ browser.engagement:
       - mconley@mozilla.com
     expires: never
     telemetry_mirror: h#FX_TOTAL_TOP_VISITS
+
+  windows_start_search_activation_count:
+    type: labeled_counter
+    description: >
+      Counts Bing navigations on Windows that match the Windows Search pattern,
+      using the Bing base domain and `/search` path as heuristic signals. This
+      metric is intended as a proxy for Firefox activations originating from
+      Windows Start menu search.
+    bugs:
+      - https://bugzil.la/2026849
+    data_reviews:
+      - https://bugzil.la/2026849
+    notification_emails:
+      - install-update@mozilla.com
+    send_in_pings:
+      - metrics
+    expires: 159
+    labels:
+      - startup
+      - new_tab
 
 networking:
   captive_portal_banner_displayed:

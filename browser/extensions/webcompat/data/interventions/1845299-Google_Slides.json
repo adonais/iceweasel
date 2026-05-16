@@ -1,0 +1,19 @@
+{
+  "label": "Google Slides",
+  "bugs": {
+    "1845299": {
+      "issue": "extra-scrollbars",
+      "matches": ["*://docs.google.com/presentation/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "css": [
+          "bug1845299-docs.google.com-hide-extra-scrollbar-on-speaker-notes.css"
+        ]
+      }
+    }
+  ]
+}

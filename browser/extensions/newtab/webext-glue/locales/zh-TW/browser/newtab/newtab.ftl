@@ -146,6 +146,9 @@ newtab-menu-report = 檢舉
 newtab-menu-section-block = 封鎖
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = 取消關注
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = 取消追蹤主題
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -307,9 +310,23 @@ newtab-error-fallback-refresh-link = 請重新整理頁面再試一次。
 
 newtab-custom-shortcuts-title = 捷徑
 newtab-custom-shortcuts-subtitle = 您儲存或造訪過的網站
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = 捷徑
     .description = 您儲存或造訪過的網站
+newtab-custom-shortcuts-nova =
+    .label = 捷徑
+newtab-custom-row-description =
+    .description = 資料列數
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } 行
+           *[other] { $num } 行
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -320,9 +337,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = 贊助捷徑
 newtab-custom-pocket-title = 由 { -pocket-brand-name } 推薦
 newtab-custom-pocket-subtitle = 由 { -brand-product-name } 的姊妹作 { -pocket-brand-name } 精心策展的內容
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = 推薦的文章
     .description = 由 { -brand-product-name } 產品家族精選的內容文章
+newtab-recommended-stories-toggle =
+    .label = 推薦的文章
 newtab-custom-stories-personalized-toggle =
     .label = 文章
 newtab-custom-stories-personalized-checkbox-label = 依照您的上網行為，提供個人化文章推薦
@@ -356,8 +376,12 @@ newtab-custom-settings = 管理更多設定
 
 newtab-wallpaper-title = 背景圖
 newtab-wallpaper-reset = 還原為預設值
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = 上傳圖片
+newtab-wallpaper-add-an-image = 新增圖片
 newtab-wallpaper-custom-color = 選擇色彩
+newtab-wallpaper-toggle-title =
+    .label = 背景圖
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = 圖片超過 { $file_size }MB 的檔案大小限制。請嘗試上傳小一點的檔案。
@@ -380,7 +404,9 @@ newtab-wallpaper-light-fox-anniversary = 一隻在迷霧山景中的草原上的
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = 純色
+newtab-wallpaper-colors = 色彩
 newtab-wallpaper-blue = 藍色
 newtab-wallpaper-light-blue = 淺藍色
 newtab-wallpaper-light-purple = 淺紫色
@@ -486,7 +512,6 @@ newtab-weather-menu-temperature-option-fahrenheit = 華氏
 newtab-weather-menu-temperature-option-celsius = 攝氏
 newtab-weather-menu-change-temperature-units-fahrenheit = 切換為華氏溫度
 newtab-weather-menu-change-temperature-units-celsius = 切換為攝氏溫度
-newtab-weather-menu-hide-weather-v2 = 隱藏天氣資訊
 newtab-weather-menu-hide-weather = 隱藏新分頁的天氣資訊
 newtab-weather-menu-learn-more = 更多資訊
 newtab-weather-menu-detect-my-location = 偵測我的所在位置
@@ -497,8 +522,18 @@ newtab-weather-opt-in-not-now =
     .label = 現在不要
 newtab-weather-opt-in-yes =
     .label = 好的
+newtab-weather-opt-in-headline = 取得您所在地區的天氣預報
+newtab-weather-opt-in-use-location =
+    .label = 使用位置資訊
+newtab-weather-opt-in-choose-location = 選擇位置
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = 紐約市
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = 高溫
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = 低溫
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -572,6 +607,7 @@ newtab-section-confirm-block-topic-p2 = 將主題封鎖後就不會再顯示於�
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = 封鎖 { $topic }
+newtab-section-block-cancel-button = 取消
 
 ## Strings for custom wallpaper highlight
 
@@ -635,6 +671,18 @@ newtab-toast-thanks-for-reporting =
     .message = 感謝您檢舉此問題。
 newtab-toast-widgets-hidden =
     .message = 選擇鉛筆圖示，即可隨時新增小工具。
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = 您已開始關注 { $topic }。
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = 您已停止關注 { $topic }。
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = 您不會再看到有關 { $topic } 的文章。
 
 ## Strings for task / to-do list productivity widget
 
@@ -654,7 +702,6 @@ newtab-widget-lists-menu-edit = 編輯清單名稱
 newtab-widget-lists-menu-create = 新增清單
 newtab-widget-lists-menu-delete = 刪除此清單
 newtab-widget-lists-menu-copy = 複製清單到剪貼簿
-newtab-widget-lists-menu-hide = 隱藏所有清單
 newtab-widget-lists-menu-learn-more = 更多資訊
 newtab-widget-lists-input-add-an-item =
     .placeholder = 新增項目
@@ -676,6 +723,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = 新增清單
 newtab-widget-section-title = 小工具
 newtab-widget-menu-hide = 隱藏小工具
+newtab-widget-menu-change-size = 更改大小
+newtab-widget-size-small = 小
+newtab-widget-size-medium = 中
+newtab-widget-size-large = 大
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = 隱藏小工具
@@ -707,7 +758,6 @@ newtab-widget-timer-reset =
     .title = 重設
 newtab-widget-timer-menu-notifications = 關閉通知
 newtab-widget-timer-menu-notifications-on = 開啟通知
-newtab-widget-timer-menu-hide = 隱藏計時器
 newtab-widget-timer-menu-learn-more = 更多資訊
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = 頭條新聞
@@ -718,6 +768,12 @@ newtab-daily-briefing-card-timestamp = { $minutes } 分鐘前更新
 newtab-widget-message-title = 使用清單與內建的計時器，讓您保持專注
 # to-dos stands for "things to do".
 newtab-widget-message-copy = 從快速提醒到每日待辦事項，或是在專注時間之後休息一下伸伸懶腰，讓您及時完成工作。
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = 讓 { -brand-product-name } 有您的風格
+newtab-promo-card-body-addons = 從我們的收藏集中挑選一張背景，或自行建立一張。
+newtab-promo-card-cta-addons = 立刻試試
 newtab-promo-card-title = 支持 { -brand-product-name }
 newtab-promo-card-body = 贊助商支持我們打造出一個更好的網路環境的使命
 newtab-promo-card-cta = 更多資訊

@@ -180,6 +180,15 @@ newtab-error-fallback-refresh-link = Agiorna pagina pe provâ torna.
 newtab-custom-shortcuts-title = Scorsaieu
 # Variables
 #   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } riga
+           *[other] { $num } righe
+        }
+# Variables
+#   $num (number) - Number of rows to display
 newtab-custom-row-selector =
     { $num ->
         [one] { $num } riga

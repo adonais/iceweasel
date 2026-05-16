@@ -10,6 +10,11 @@ package mozilla.components.concept.awesomebar.optimizedsuggestions
 enum class SportSuggestionStatusType { PAST, LIVE, SCHEDULED, NONE }
 
 /**
+ * Represents the sports category used by the Sports Suggestion.
+ */
+enum class SportSuggestionCategory { BASEBALL, BASKETBALL, HOCKEY, SOCCER, FOOTBALL, GOLF, RACING, MISC }
+
+/**
  * Represents the sports date used by the Sports Suggestion.
  */
 sealed class SportSuggestionDate {
@@ -91,3 +96,16 @@ sealed class SportSuggestionStatus {
      */
     data object Unknown : SportSuggestionStatus()
 }
+
+/**
+ * Represents the state of a sport suggestion.
+ */
+data class SportSuggestionState(
+    val sport: String,
+    val sportCategory: SportSuggestionCategory,
+    val status: SportSuggestionStatus,
+    val statusType: SportSuggestionStatusType,
+    val date: SportSuggestionDate,
+    val homeTeam: SportSuggestionTeam,
+    val awayTeam: SportSuggestionTeam,
+)

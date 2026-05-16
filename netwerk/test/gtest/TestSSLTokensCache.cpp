@@ -194,3 +194,58 @@ TEST(TestTokensCache, ExpiredTokens)
                                          unused);
   ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
 }
+
+// Verifies that QUIC resumption tokens (used as address validation tokens) are
+// partitioned by first-party context. A token stored under one partition key
+// must not be retrievable using a different partition key, preventing
+// cross-origin tracking across first-party sites.
+TEST(TestTokensCache, QuicTokenPartitioning)
+{
+  mozilla::net::SSLTokensCache::Clear();
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry", 3);
+
+  // Simulate two first-party contexts embedding the same third-party QUIC
+  // server. The peerId format includes the OriginAttributes suffix which
+  // contains the partitionKey.
+  const nsLiteralCString kServerPartitionedUnderA(
+      "quic.example.com:443^partitionKey=%28https%2Ca.example.com%29");
+  const nsLiteralCString kServerPartitionedUnderB(
+      "quic.example.com:443^partitionKey=%28https%2Cb.example.com%29");
+
+  // Store a token in the context of first-party A.
+  putToken(kServerPartitionedUnderA, 100);
+
+  // The token must be retrievable using the same partition key.
+  nsTArray<uint8_t> result;
+  mozilla::net::SessionCacheInfo unused;
+  nsresult rv = mozilla::net::SSLTokensCache::Get(kServerPartitionedUnderA,
+                                                  result, unused);
+  ASSERT_EQ(rv, NS_OK);
+  ASSERT_EQ(result.Length(), (size_t)100);
+
+  // Re-insert the token so it can be tested from the B context below.
+  putToken(kServerPartitionedUnderA, 100);
+
+  // The token must NOT be accessible under a different first-party (B).
+  rv = mozilla::net::SSLTokensCache::Get(kServerPartitionedUnderB, result,
+                                         unused);
+  ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
+
+  // A separate token stored under first-party B must also be isolated.
+  putToken(kServerPartitionedUnderB, 200);
+
+  rv = mozilla::net::SSLTokensCache::Get(kServerPartitionedUnderB, result,
+                                         unused);
+  ASSERT_EQ(rv, NS_OK);
+  ASSERT_EQ(result.Length(), (size_t)200);
+
+  // The B token must not bleed into the A partition.
+  rv = mozilla::net::SSLTokensCache::Get(kServerPartitionedUnderA, result,
+                                         unused);
+  ASSERT_EQ(rv, NS_OK);
+  ASSERT_EQ(result.Length(), (size_t)100);
+
+  rv = mozilla::net::SSLTokensCache::Get(kServerPartitionedUnderA, result,
+                                         unused);
+  ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
+}

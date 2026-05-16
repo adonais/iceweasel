@@ -53,7 +53,7 @@ class BuildConfig:
             mod.__file__ = path
             sys.modules["config.status"] = mod
 
-            with open(path) as fh:
+            with open(path, encoding="utf-8") as fh:
                 source = fh.read()
                 code_cache[path] = (
                     mtime,
@@ -214,7 +214,7 @@ class PartialConfigDict:
     def _load_config_track(self):
         existing_files = set()
         try:
-            with open(self._config_track) as fh:
+            with open(self._config_track, encoding="utf-8") as fh:
                 existing_files.update(fh.read().splitlines())
         except OSError:
             pass

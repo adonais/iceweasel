@@ -113,11 +113,13 @@ decorate_task(
     );
 
     Services.prefs.setBoolPref(OPT_OUT_PREF, false);
+    await optOutCheckbox.updateComplete;
     ok(
       !optOutCheckbox.checked,
       "Disabling the opt-out pref unchecks the opt-out checkbox."
     );
     Services.prefs.setBoolPref(OPT_OUT_PREF, true);
+    await optOutCheckbox.updateComplete;
     ok(
       optOutCheckbox.checked,
       "Enabling the opt-out pref checks the opt-out checkbox."
@@ -128,7 +130,15 @@ decorate_task(
 decorate_task(
   withPrivacyPrefs(),
   async function testViewStudiesLink({ browser }) {
-    browser.contentDocument.getElementById("viewShieldStudies").click();
+    // We intentionally turn off this enabled a11y check for the viewShieldStudies
+    // anchor click below because it reports a failure due to
+    // the anchor being in the shadow root, which the check doesnt seem to expect
+    AccessibilityUtils.setEnv({ mustBeEnabled: false });
+
+    browser.contentDocument
+      .getElementById("viewShieldStudies")
+      .shadowRoot.querySelector("a")
+      .click();
     await BrowserTestUtils.waitForLocationChange(gBrowser);
 
     is(

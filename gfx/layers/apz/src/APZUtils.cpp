@@ -12,14 +12,6 @@ namespace layers {
 
 namespace apz {
 
-bool IsCloseToHorizontal(float aAngle, float aThreshold) {
-  return (aAngle < aThreshold || aAngle > (M_PI - aThreshold));
-}
-
-bool IsCloseToVertical(float aAngle, float aThreshold) {
-  return (fabs(aAngle - (M_PI / 2)) < aThreshold);
-}
-
 bool IsStuckAtBottom(gfxFloat aTranslation,
                      const LayerRectAbsolute& aInnerRange,
                      const LayerRectAbsolute& aOuterRange) {

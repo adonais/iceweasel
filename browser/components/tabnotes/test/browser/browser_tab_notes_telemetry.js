@@ -3,8 +3,9 @@
 
 "use strict";
 
-add_setup(() => {
+add_setup(async () => {
   Services.fog.initializeFOG();
+  await resetTelemetry();
 });
 
 registerCleanupFunction(async () => {

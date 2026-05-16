@@ -259,45 +259,6 @@ struct FeatureImplementationStatus {
   }
 };
 
-double GetLimitDefault(Limit aLimit) {
-  switch (aLimit) {
-      // clang-format off
-      case Limit::MaxTextureDimension1D: return 8192;
-      case Limit::MaxTextureDimension2D: return 8192;
-      case Limit::MaxTextureDimension3D: return 2048;
-      case Limit::MaxTextureArrayLayers: return 256;
-      case Limit::MaxBindGroups: return 4;
-      case Limit::MaxBindGroupsPlusVertexBuffers: return 24;
-      case Limit::MaxBindingsPerBindGroup: return 1000;
-      case Limit::MaxDynamicUniformBuffersPerPipelineLayout: return 8;
-      case Limit::MaxDynamicStorageBuffersPerPipelineLayout: return 4;
-      case Limit::MaxSampledTexturesPerShaderStage: return 16;
-      case Limit::MaxSamplersPerShaderStage: return 16;
-      case Limit::MaxStorageBuffersPerShaderStage: return 8;
-      case Limit::MaxStorageTexturesPerShaderStage: return 4;
-      case Limit::MaxUniformBuffersPerShaderStage: return 12;
-      case Limit::MaxUniformBufferBindingSize: return 65536;
-      case Limit::MaxStorageBufferBindingSize: return 134217728;
-      case Limit::MinUniformBufferOffsetAlignment: return 256;
-      case Limit::MinStorageBufferOffsetAlignment: return 256;
-      case Limit::MaxVertexBuffers: return 8;
-      case Limit::MaxBufferSize: return 268435456;
-      case Limit::MaxVertexAttributes: return 16;
-      case Limit::MaxVertexBufferArrayStride: return 2048;
-      case Limit::MaxInterStageShaderVariables: return 16;
-      case Limit::MaxColorAttachments: return 8;
-      case Limit::MaxColorAttachmentBytesPerSample: return 32;
-      case Limit::MaxComputeWorkgroupStorageSize: return 16384;
-      case Limit::MaxComputeInvocationsPerWorkgroup: return 256;
-      case Limit::MaxComputeWorkgroupSizeX: return 256;
-      case Limit::MaxComputeWorkgroupSizeY: return 256;
-      case Limit::MaxComputeWorkgroupSizeZ: return 64;
-      case Limit::MaxComputeWorkgroupsPerDimension: return 65535;
-      // clang-format on
-  }
-  MOZ_CRASH("Bad Limit");
-}
-
 Adapter::Adapter(Instance* const aParent, WebGPUChild* const aChild,
                  const std::shared_ptr<ffi::WGPUAdapterInformation>& aInfo)
     : ObjectBase(aChild, aInfo->id, ffi::wgpu_client_drop_adapter),
@@ -371,9 +332,7 @@ Adapter::Adapter(Instance* const aParent, WebGPUChild* const aChild,
   // we return the actual limits when only requestAdapter is called.
   // So, we should clamp the limits here too if we should RFP.
   if (GetParentObject()->ShouldResistFingerprinting(RFPTarget::WebGPULimits)) {
-    for (const auto limit : MakeInclusiveEnumeratedRange(Limit::_LAST)) {
-      SetLimit(mLimits->mFfi.get(), limit, GetLimitDefault(limit));
-    }
+    ffi::wgpu_client_fill_default_limits(mLimits->mFfi.get());
   }
 }
 
@@ -411,8 +370,16 @@ static std::string_view ToJsKey(const Limit limit) {
       return "maxSampledTexturesPerShaderStage";
     case Limit::MaxSamplersPerShaderStage:
       return "maxSamplersPerShaderStage";
+    case Limit::MaxStorageBuffersInVertexStage:
+      return "maxStorageBuffersInVertexStage";
+    case Limit::MaxStorageBuffersInFragmentStage:
+      return "maxStorageBuffersInFragmentStage";
     case Limit::MaxStorageBuffersPerShaderStage:
       return "maxStorageBuffersPerShaderStage";
+    case Limit::MaxStorageTexturesInVertexStage:
+      return "maxStorageTexturesInVertexStage";
+    case Limit::MaxStorageTexturesInFragmentStage:
+      return "maxStorageTexturesInFragmentStage";
     case Limit::MaxStorageTexturesPerShaderStage:
       return "maxStorageTexturesPerShaderStage";
     case Limit::MaxUniformBuffersPerShaderStage:
@@ -506,10 +473,8 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     return nullptr;
   }
 
-  ffi::WGPULimits deviceLimits = *mLimits->mFfi;
-  for (const auto limit : MakeInclusiveEnumeratedRange(Limit::_LAST)) {
-    SetLimit(&deviceLimits, limit, GetLimitDefault(limit));
-  }
+  ffi::WGPULimits deviceLimits = {};
+  ffi::wgpu_client_fill_default_limits(&deviceLimits);
 
   // -
 

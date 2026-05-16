@@ -525,6 +525,7 @@ def load_wpt_tests(xul_tester, requested_paths, excluded_paths, update_manifest=
         "testing/mozbase/mozrunner",
         "testing/mozbase/mozversion",
         "testing/web-platform/",
+        "testing/web-platform/tests",
         "testing/web-platform/tests/tools",
         "testing/web-platform/tests/tools/third_party/html5lib",
         "testing/web-platform/tests/tools/third_party/webencodings",

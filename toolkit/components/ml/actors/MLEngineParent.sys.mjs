@@ -338,8 +338,11 @@ export class MLEngineParent extends JSProcessActorParent {
         notificationsCallback,
       });
 
-      // engine will observe ipc:content-shutdown to get notified if the inference process crashes
-      Services.obs.addObserver(engine, "ipc:content-shutdown");
+      // Observe ipc:content-shutdown to detect inference process crashes.
+      // Use a weak reference so this observer doesn't root the engine
+      // and its pending request promises, which may prevent windows
+      // that triggered inference from being cycle-collected.
+      Services.obs.addObserver(engine, "ipc:content-shutdown", true);
 
       const creationTime = ChromeUtils.now() - start;
 
@@ -1136,6 +1139,10 @@ export class MLEngine {
       featureId: pipelineOptions.featureId,
       flowId: pipelineOptions.flowId,
     });
+    this.QueryInterface = ChromeUtils.generateQI([
+      "nsIObserver",
+      "nsISupportsWeakReference",
+    ]);
   }
 
   /**

@@ -30,4 +30,11 @@ export default {
     "<rootDir>/test/jest/**/*.test.js",
     "<rootDir>/test/jest/**/*.test.jsx",
   ],
+  collectCoverageFrom: [
+    "content-src/**/*.jsx",
+    "content-src/**/*.js",
+    "!content-src/**/*.test.*",
+  ],
+  coverageReporters: ["lcov", "text-summary"],
+  coverageDirectory: "logs/jest-coverage",
 };

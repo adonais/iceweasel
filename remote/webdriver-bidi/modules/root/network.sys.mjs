@@ -312,12 +312,26 @@ const InterceptPhase = {
  */
 
 /**
+ * Mapping from nsICookie sameSite constants to network.SameSite values.
+ *
+ * @readonly
+ * @enum {SameSite}
+ */
+const NetworkCookieSameSiteType = {
+  [Ci.nsICookie.SAMESITE_NONE]: "none",
+  [Ci.nsICookie.SAMESITE_LAX]: "lax",
+  [Ci.nsICookie.SAMESITE_STRICT]: "strict",
+  [Ci.nsICookie.SAMESITE_UNSET]: "default",
+};
+
+/**
  * Enum of possible sameSite values.
  *
  * @readonly
  * @enum {SameSite}
  */
 const SameSite = {
+  Default: "default",
   Lax: "lax",
   None: "none",
   Strict: "strict",
@@ -1948,6 +1962,12 @@ class NetworkModule extends RootBiDiModule {
       return;
     }
 
+    const key = `${request.requestId}-${DataType.Request}`;
+    if (this.#collectedNetworkData.has(key)) {
+      // For redirected requests we might already be tracking the body.
+      return;
+    }
+
     const collectedData = {
       bytes: null,
       collectors: new Set(),
@@ -1963,14 +1983,17 @@ class NetworkModule extends RootBiDiModule {
     // The actual cloning is already handled by the DevTools
     // NetworkResponseListener, here we just have to prepare the networkData and
     // add it to the array.
-    this.#collectedNetworkData.set(
-      `${request.requestId}-${DataType.Request}`,
-      collectedData
-    );
+    this.#collectedNetworkData.set(key, collectedData);
   }
 
   #cloneNetworkResponseBody(request) {
     if (!this.#networkCollectors.size) {
+      return;
+    }
+
+    const key = `${request.requestId}-${DataType.Response}`;
+    if (this.#collectedNetworkData.has(key)) {
+      // For redirected requests we might already be tracking the body.
       return;
     }
 
@@ -1993,10 +2016,7 @@ class NetworkModule extends RootBiDiModule {
     // The actual cloning is already handled by the DevTools
     // NetworkResponseListener, here we just have to prepare the networkData and
     // add it to the array.
-    this.#collectedNetworkData.set(
-      `${request.requestId}-${DataType.Response}`,
-      collectedData
-    );
+    this.#collectedNetworkData.set(key, collectedData);
   }
 
   #deserializeHeader(protocolHeader) {
@@ -2125,6 +2145,38 @@ class NetworkModule extends RootBiDiModule {
     return intercepts;
   }
 
+  #getCookiesForRequest(request) {
+    if (!request.host) {
+      return [];
+    }
+
+    const storeCookies = Services.cookies.getCookiesWithOriginAttributes(
+      request.originAttributesString,
+      request.host
+    );
+
+    const headerCookieNames = new Set();
+    for (const [name, value] of request.headers) {
+      if (name.toLowerCase() === "cookie") {
+        for (const part of value.split(";")) {
+          const eq = part.indexOf("=");
+          if (eq !== -1) {
+            headerCookieNames.add(unescape(part.substr(0, eq).trim()));
+          }
+        }
+      }
+    }
+
+    const cookies = [];
+    for (const cookie of storeCookies) {
+      if (headerCookieNames.has(cookie.name)) {
+        cookies.push(this.#serializeNetworkCookie(cookie));
+      }
+    }
+
+    return cookies;
+  }
+
   #getRequestData(request) {
     const requestId = request.requestId;
 
@@ -2136,25 +2188,12 @@ class NetworkModule extends RootBiDiModule {
     const bodySize = request.postDataSize;
     const headersSize = request.headersSize;
     const headers = [];
-    const cookies = [];
 
     for (const [name, value] of request.headers) {
       headers.push(this.#serializeHeader(name, value));
-      if (name.toLowerCase() == "cookie") {
-        // TODO: Retrieve the actual cookies from the cookie store.
-        const headerCookies = value.split(";");
-        for (const cookie of headerCookies) {
-          const equal = cookie.indexOf("=");
-          const cookieName = cookie.substr(0, equal);
-          const cookieValue = cookie.substr(equal + 1);
-          const serializedCookie = this.#serializeHeader(
-            unescape(cookieName.trim()),
-            unescape(cookieValue.trim())
-          );
-          cookies.push(serializedCookie);
-        }
-      }
     }
+
+    const cookies = this.#getCookiesForRequest(request);
 
     const destination = request.destination;
     const initiatorType = request.initiatorType;
@@ -2892,6 +2931,26 @@ class NetworkModule extends RootBiDiModule {
       name,
       value: serializeAsBytesValue(value),
     };
+  }
+
+  #serializeNetworkCookie(cookie) {
+    const serialized = {
+      domain: cookie.host,
+      httpOnly: cookie.isHttpOnly,
+      name: cookie.name,
+      path: cookie.path,
+      sameSite: NetworkCookieSameSiteType[cookie.sameSite],
+      secure: cookie.isSecure,
+      size: cookie.name.length + cookie.value.length,
+      value: serializeAsBytesValue(cookie.value),
+    };
+
+    if (!cookie.isSession) {
+      // expiry is in milliseconds, the spec expects seconds.
+      serialized.expiry = Math.round(cookie.expiry / 1000);
+    }
+
+    return serialized;
   }
 
   #serializeSetCookieHeader(setCookieHeader) {

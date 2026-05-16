@@ -250,92 +250,100 @@ add_task(async function testConnectionWithiphint() {
 
 // Test the case that we failed to use IP Hint address because DNS cache
 // is bypassed.
-add_task(async function testiphintWithFreshDNS() {
-  Services.prefs.setIntPref("network.trr.mode", 3);
-  Services.prefs.setCharPref(
-    "network.trr.uri",
-    `https://foo.example.com:${trrServer.port()}/dns-query`
-  );
-  // To make sure NS_HTTP_REFRESH_DNS not be cleared.
-  Services.prefs.setBoolPref("network.dns.disablePrefetch", true);
+// Happy Eyeballs state machine stores the IP hint address from HTTPS RR,
+// so NS_HTTP_REFRESH_DNS has no effect here.
+add_task(
+  {
+    skip_if: () =>
+      Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false),
+  },
+  async function testiphintWithFreshDNS() {
+    Services.prefs.setIntPref("network.trr.mode", 3);
+    Services.prefs.setCharPref(
+      "network.trr.uri",
+      `https://foo.example.com:${trrServer.port()}/dns-query`
+    );
+    // To make sure NS_HTTP_REFRESH_DNS not be cleared.
+    Services.prefs.setBoolPref("network.dns.disablePrefetch", true);
 
-  await trrServer.registerDoHAnswers("test.iphint.org", "HTTPS", {
-    answers: [
-      {
-        name: "test.iphint.org",
-        ttl: 55,
-        type: "HTTPS",
-        flush: false,
-        data: {
-          priority: 0,
-          name: "svc.iphint.net",
-          values: [],
+    await trrServer.registerDoHAnswers("test.iphint.org", "HTTPS", {
+      answers: [
+        {
+          name: "test.iphint.org",
+          ttl: 55,
+          type: "HTTPS",
+          flush: false,
+          data: {
+            priority: 0,
+            name: "svc.iphint.net",
+            values: [],
+          },
         },
-      },
-    ],
-  });
+      ],
+    });
 
-  await trrServer.registerDoHAnswers("svc.iphint.net", "HTTPS", {
-    answers: [
-      {
-        name: "svc.iphint.net",
-        ttl: 55,
-        type: "HTTPS",
-        flush: false,
-        data: {
-          priority: 1,
+    await trrServer.registerDoHAnswers("svc.iphint.net", "HTTPS", {
+      answers: [
+        {
           name: "svc.iphint.net",
-          values: [
-            { key: "alpn", value: "h2" },
-            { key: "port", value: h2Port },
-            { key: "ipv4hint", value: "127.0.0.1" },
-          ],
+          ttl: 55,
+          type: "HTTPS",
+          flush: false,
+          data: {
+            priority: 1,
+            name: "svc.iphint.net",
+            values: [
+              { key: "alpn", value: "h2" },
+              { key: "port", value: h2Port },
+              { key: "ipv4hint", value: "127.0.0.1" },
+            ],
+          },
         },
-      },
-    ],
-  });
+      ],
+    });
 
-  let { inRecord } = await new TRRDNSListener("test.iphint.org", {
-    type: Ci.nsIDNSService.RESOLVE_TYPE_HTTPSSVC,
-  });
+    let { inRecord } = await new TRRDNSListener("test.iphint.org", {
+      type: Ci.nsIDNSService.RESOLVE_TYPE_HTTPSSVC,
+    });
 
-  let answer = inRecord.QueryInterface(Ci.nsIDNSHTTPSSVCRecord).records;
-  Assert.equal(answer[0].priority, 1);
-  Assert.equal(answer[0].name, "svc.iphint.net");
+    let answer = inRecord.QueryInterface(Ci.nsIDNSHTTPSSVCRecord).records;
+    Assert.equal(answer[0].priority, 1);
+    Assert.equal(answer[0].name, "svc.iphint.net");
 
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    true
-  );
+    certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+      true
+    );
 
-  let chan = makeChan(`https://test.iphint.org/server-timing`);
-  chan.loadFlags |= Ci.nsIRequest.LOAD_FRESH_CONNECTION;
-  let [req] = await channelOpenPromise(
-    chan,
-    CL_EXPECT_FAILURE | CL_ALLOW_UNKNOWN_CL
-  );
-  // Failed because there no A record for "svc.iphint.net".
-  Assert.equal(req.status, Cr.NS_ERROR_UNKNOWN_HOST);
+    let chan = makeChan(`https://test.iphint.org/server-timing`);
+    chan.loadFlags |= Ci.nsIRequest.LOAD_FRESH_CONNECTION;
+    let [req] = await channelOpenPromise(
+      chan,
+      CL_EXPECT_FAILURE | CL_ALLOW_UNKNOWN_CL
+    );
+    // Failed because there no A record for "svc.iphint.net".
+    Assert.equal(req.status, Cr.NS_ERROR_UNKNOWN_HOST);
 
-  await trrServer.registerDoHAnswers("svc.iphint.net", "A", {
-    answers: [
-      {
-        name: "svc.iphint.net",
-        ttl: 55,
-        type: "A",
-        flush: false,
-        data: "127.0.0.1",
-      },
-    ],
-  });
+    await trrServer.registerDoHAnswers("svc.iphint.net", "A", {
+      answers: [
+        {
+          name: "svc.iphint.net",
+          ttl: 55,
+          type: "A",
+          flush: false,
+          data: "127.0.0.1",
+        },
+      ],
+    });
 
-  chan = makeChan(`https://test.iphint.org/server-timing`);
-  chan.loadFlags |= Ci.nsIRequest.LOAD_FRESH_CONNECTION;
-  [req] = await channelOpenPromise(chan);
-  Assert.equal(req.protocolVersion, "h2");
-  let internal = req.QueryInterface(Ci.nsIHttpChannelInternal);
-  Assert.equal(internal.remotePort, h2Port);
+    chan = makeChan(`https://test.iphint.org/server-timing`);
+    chan.loadFlags |= Ci.nsIRequest.LOAD_FRESH_CONNECTION;
+    [req] = await channelOpenPromise(chan);
+    Assert.equal(req.protocolVersion, "h2");
+    let internal = req.QueryInterface(Ci.nsIHttpChannelInternal);
+    Assert.equal(internal.remotePort, h2Port);
 
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    false
-  );
-});
+    certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+      false
+    );
+  }
+);

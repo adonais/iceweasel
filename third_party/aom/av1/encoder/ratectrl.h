@@ -334,11 +334,6 @@ typedef struct {
   int gfu_boost_average;
 
   /*!
-   * Indicate if it is gfu_boost accumulation stage
-   */
-  bool accumulate_stats_stage;
-
-  /*!
    * Stores the determined gf group lengths for a set of gf groups
    */
   int gf_intervals[MAX_NUM_GF_INTERVALS];

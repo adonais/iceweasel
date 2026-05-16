@@ -9,7 +9,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 object HistorySelectors {
     val TOOLBAR_TITLE = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
         value = "History",
         description = "History Toolbar Title",
         groups = listOf("requiredForPage"),
@@ -22,8 +22,16 @@ object HistorySelectors {
         groups = listOf("requiredForPage"),
     )
 
+    val EMPTY_HISTORY_VIEW = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
+        value = "history_empty_view",
+        description = "Empty history view",
+        groups = listOf("emptyHistory"),
+    )
+
     val all = listOf(
         TOOLBAR_TITLE,
         RECENTLY_CLOSED_TABS_BUTTON,
+        EMPTY_HISTORY_VIEW,
     )
 }

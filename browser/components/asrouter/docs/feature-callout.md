@@ -206,6 +206,20 @@ interface FeatureCallout {
           // always) the selected tab. It can be placed at any position in the
           // selector, like other tokens. For example:
           // "#tabbrowser-tabs %triggerTab%[visuallyselected] .tab-icon-image"
+          // This also supports a special ::%shadow% token that allows
+          // traversing into shadow DOM roots. This is required for some
+          // applications, such as anchoring callouts to elements inside
+          // shadow DOM components. It can be chained across multiple shadow
+          // DOM layers. For example:
+          // "#sidebar-main > sidebar-main::%shadow%
+          //  .tools-and-extensions::%shadow%
+          //  moz-button[view='viewReviewCheckerSidebar']"
+          // This also supports a special token ::%document% that allows
+          // traversing into a content document, such as an iframe. It
+          // can be chained with ::%shadow% to cross both document and
+          // shadow DOM boundaries. For example:
+          // "hbox.deck-selected browser::%document%
+          //  ai-window::%shadow%context-icon-button"
           selector: string;
           // An object representing how the callout should be positioned
           // relative to the anchor element.
@@ -286,8 +300,10 @@ interface FeatureCallout {
           // "hasActiveMultiSelect" to disable the button until the user
           // selects something. If your screen has a textarea tile, you can use
           // "hasTextInput" to disable the button while the textarea is empty or
-          // exceeds the character limit.
-          disabled?: boolean | "hasActiveMultiSelect" | "hasTextInput";
+          // exceeds the character limit. If your screen uses a "single-select"
+          // tile, you can use "hasActiveSingleSelect" to disable the primary
+          // button until the user selects an option.
+          disabled?: boolean | "hasActiveMultiSelect" | "hasActiveSingleSelect" | "hasTextInput";
           // Primary buttons can have a "primary" or "secondary" style. This
           // is useful because you can't change the order of the buttons, but
           // you can swap the primary and secondary buttons' styles.

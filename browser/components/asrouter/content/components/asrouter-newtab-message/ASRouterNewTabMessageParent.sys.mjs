@@ -12,11 +12,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 export class ASRouterNewTabMessageParent extends JSWindowActorParent {
   receiveMessage(message) {
-    let { currentWindowGlobal } = this.browsingContext;
     if (
-      !currentWindowGlobal ||
-      this.browsingContext.currentRemoteType !==
-        lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE
+      this.manager.remoteType !== lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE
     ) {
       return null;
     }

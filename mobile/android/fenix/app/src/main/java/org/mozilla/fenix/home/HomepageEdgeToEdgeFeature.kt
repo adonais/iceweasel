@@ -178,7 +178,11 @@ class HomepageEdgeToEdgeFeature(
         return when {
             !shouldShow -> android.graphics.Color.TRANSPARENT
             isPrivateMode -> ContextCompat.getColor(activity, R.color.fx_mobile_private_surface)
-            toolbarState.isShowingResultsScreen && browsingModeManager.mode == BrowsingMode.Normal ->
+            toolbarState.isShowingResultsScreen && browsingModeManager.mode == BrowsingMode.Normal &&
+                (
+                    toolbarState.editState.query.current.isNotEmpty() ||
+                    toolbarState.editState.queryWasPrefilled
+                ) ->
                 MaterialColors.getColor(
                     activity,
                     com.google.android.material.R.attr.colorSurface,

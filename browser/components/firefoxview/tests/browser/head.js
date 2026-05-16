@@ -127,7 +127,7 @@ async function clearAllParentTelemetryEvents() {
       true
     ).parent;
     return !events || !events.length;
-  });
+  }, "Waiting for all telemetry events to be cleared");
 }
 
 function testVisibility(browser, expected) {
@@ -553,14 +553,14 @@ async function waitForRecentlyClosedTabsList(doc) {
   // Check that the tabs list is rendered
   await TestUtils.waitForCondition(() => {
     return recentlyClosedComponent.cardEl;
-  });
+  }, "Waiting for the recently closed component to have a card element");
   let cardContainer = recentlyClosedComponent.cardEl;
   let cardMainSlotNode = Array.from(
     cardContainer?.mainSlot?.assignedNodes()
   )[0];
   await TestUtils.waitForCondition(() => {
     return cardMainSlotNode.rowEls.length;
-  });
+  }, "Waiting for the card main slot node to have row elements");
   return [cardMainSlotNode, cardMainSlotNode.rowEls];
 }
 

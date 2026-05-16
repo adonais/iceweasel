@@ -51,13 +51,6 @@ uint8_t nsMathMLmfracFrame::ScriptIncrement(nsIFrame* aFrame) {
 
 NS_IMETHODIMP
 nsMathMLmfracFrame::TransmitAutomaticData() {
-  // The TeXbook (Ch 17. p.141) says the numerator inherits the compression
-  //  while the denominator is compressed
-  if (!StaticPrefs::mathml_math_shift_enabled()) {
-    UpdatePresentationDataFromChildAt(1, 1, MathMLPresentationFlag::Compressed,
-                                      MathMLPresentationFlag::Compressed);
-  }
-
   // If displaystyle is false, then scriptlevel is incremented, so notify the
   // children of this.
   if (StyleFont()->mMathStyle == StyleMathStyle::Compact) {
@@ -214,7 +207,7 @@ void nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
   if (!StaticPrefs::
           mathml_lspace_rspace_for_child_spacing_during_mrow_layout_enabled() &&
       outermostEmbellished) {
-    const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
+    const bool isRTL = GetWritingMode().IsBidiRTL();
     nsEmbellishData coreData;
     GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
     leftSpace += isRTL ? coreData.trailingSpace : coreData.leadingSpace;

@@ -112,7 +112,11 @@ class IPPStartupCacheSingleton {
     this.#startupCompleted = true;
     this.#stateFromCache = null;
 
-    await lazy.IPProtectionService.initOnStartupCompleted();
+    if (
+      lazy.IPProtectionService.state !== lazy.IPProtectionStates.UNINITIALIZED
+    ) {
+      await lazy.IPProtectionService.initOnStartupCompleted();
+    }
     lazy.IPProtectionService.updateState();
   }
 

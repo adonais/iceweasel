@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -110,7 +108,7 @@ static nsresult GetInstallDirPath(nsIFile* appDir, nsACString& installDirPath) {
   NS_ENSURE_SUCCESS(rv, rv);
   rv = parentDir2->GetNativePath(installDirPath);
   NS_ENSURE_SUCCESS(rv, rv);
-#elif XP_WIN
+#elif defined(XP_WIN)
   nsAutoString installDirPathW;
   rv = appDir->GetPath(installDirPathW);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -254,12 +252,14 @@ static bool IsOlderVersion(nsIFile* versionFile, const char* appVersion) {
   }
 
   char buf[32];
-  const int32_t n = PR_Read(fd, buf, sizeof(buf));
+  const int32_t n = PR_Read(fd, buf, sizeof(buf) - 1);
   PR_Close(fd);
 
-  if (n < 0) {
+  if (n <= 0) {
     return false;
   }
+
+  buf[n] = '\0';
 
   // Trim off the trailing newline
   if (buf[n - 1] == '\n') {

@@ -12,11 +12,24 @@
 #include "nsAHttpConnection.h"
 #include "nsHttpConnection.h"
 #include "nsIAsyncOutputStream.h"
+#include "HappyEyeballsTransaction.h"
 
 class nsIDNSAddrRecord;
+class nsISocketTransport;
 
 namespace mozilla {
 namespace net {
+
+struct DnsMetadata {
+  bool mIsTRR = false;
+  bool mResolvedInSocketProcess = false;
+  double mTrrFetchDuration = 0.0;
+  double mTrrFetchDurationNetworkOnly = 0.0;
+  nsIRequest::TRRMode mEffectiveTRRMode = nsIRequest::TRR_DEFAULT_MODE;
+  nsITRRSkipReason::value mTrrSkipReason = nsITRRSkipReason::TRR_UNSET;
+
+  void Fill(nsIDNSAddrRecord* aRecord);
+};
 
 class ConnectionEstablisher : public nsITransportEventSink,
                               public nsIInterfaceRequestor {
@@ -30,6 +43,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
       std::function<void(Result<RefPtr<HttpConnectionBase>, nsresult>)>;
   using TransportStatusCallback =
       std::function<void(nsITransport*, nsresult, int64_t)>;
+  using LnaCheckCallback = std::function<nsresult(nsISocketTransport*)>;
 
   ConnectionEstablisher(nsHttpConnectionInfo* aConnInfo, const NetAddr& aAddr,
                         uint32_t aCaps);
@@ -41,12 +55,22 @@ class ConnectionEstablisher : public nsITransportEventSink,
   void SetTransportStatusCallback(TransportStatusCallback&& aCallback) {
     mTransportStatusCallback = std::move(aCallback);
   }
+  void SetLnaCheckCallback(LnaCheckCallback&& aCallback) {
+    mLnaCheckCallback = std::move(aCallback);
+  }
+  void SetDnsMetadata(const DnsMetadata& aMetadata) {
+    mDnsMetadata = aMetadata;
+  }
 
   virtual void Close(nsresult aReason) = 0;
   virtual void ResetSpeculativeFlags() = 0;
+  void SetProxyTransaction(HappyEyeballsTransaction* aProxy) {
+    mProxyTransaction = aProxy;
+  }
   const NetAddr& Addr() const { return mAddr; }
   void ClearResultConnection();
   virtual bool IsUDP() const { return false; }
+  bool HasConnected() const { return mHasConnected; }
 
  protected:
   virtual ~ConnectionEstablisher();
@@ -77,9 +101,12 @@ class ConnectionEstablisher : public nsITransportEventSink,
 
   DoneCallback mCallback;
   TransportStatusCallback mTransportStatusCallback;
+  LnaCheckCallback mLnaCheckCallback;
   nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;
   RefPtr<ConnectionHandle> mHandle;
   RefPtr<HttpConnectionBase> mResultConn;
+  RefPtr<HappyEyeballsTransaction> mProxyTransaction;
+  DnsMetadata mDnsMetadata;
 };
 
 class TCPConnectionEstablisher : public ConnectionEstablisher,

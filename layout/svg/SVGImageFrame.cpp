@@ -831,13 +831,13 @@ void SVGImageFrame::NotifySVGChanged(ChangeFlags aFlags) {
 }
 
 SVGBBox SVGImageFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                                           uint32_t aFlags) {
+                                           SVGBBoxFlags aFlags) {
   if (aToBBoxUserspace.IsSingular()) {
     // XXX ReportToConsole
     return {};
   }
 
-  if ((aFlags & SVGUtils::eForGetClientRects) &&
+  if (aFlags.contains(SVGBBoxFlag::ForGetClientRects) &&
       aToBBoxUserspace.PreservesAxisAlignedRectangles()) {
     if (!mRect.IsEmpty()) {
       Rect rect = NSRectToRect(mRect, AppUnitsPerCSSPixel());

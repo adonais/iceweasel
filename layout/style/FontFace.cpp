@@ -249,7 +249,7 @@ Promise* FontFace::Load(ErrorResult& aRv) {
     return nullptr;
   }
 
-  mImpl->Load(aRv);
+  mImpl->Load();
   mImpl->UpdateOwnerKeepAlive();
   return mLoaded;
 }

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -538,6 +536,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadOrGCTaskData<bool> gcUserWeakMapsMayHaveKeyDelegates_;
   js::MainThreadOrGCTaskData<bool> gcWeakMapsMayHaveSymbolKeys_;
 
+  // Cached information about finalization registries in the zone.
+  js::MainThreadOrGCTaskData<bool>
+      gcFinalizationRegistriesMayHaveSymbolRegistrations_;
+
   js::MainThreadOrIonCompileData<JSObject**> preservedWrappers_;
   js::MainThreadOrIonCompileData<size_t> preservedWrappersCount_;
   js::MainThreadOrIonCompileData<size_t> preservedWrappersCapacity_;
@@ -722,6 +724,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     return true;
   }
 
+  bool hasPendingWrapperPreservations() const {
+    return preservedWrappersCount_ != 0;
+  }
+
   void purgePendingWrapperPreservationBuffer() {
     MOZ_RELEASE_ASSERT(preservedWrappersCount_ == 0);
     js_free(preservedWrappers_);
@@ -809,6 +815,13 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void clearGCCachedWeakMapKeyData() {
     gcUserWeakMapsMayHaveKeyDelegates_ = false;
     gcWeakMapsMayHaveSymbolKeys_ = false;
+  }
+
+  void setGCFinalizationRegistriesMayHaveSymbolRegistrations() {
+    gcFinalizationRegistriesMayHaveSymbolRegistrations_ = true;
+  }
+  void clearGCFinalizationRegistriesMayHaveSymbolRegistrations() {
+    gcFinalizationRegistriesMayHaveSymbolRegistrations_ = false;
   }
 
   CompartmentVector& compartments() { return compartments_.ref(); }
@@ -904,6 +917,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     return gcGraphEdges.has(otherZone);
   }
   [[nodiscard]] bool addSweepGroupEdgeTo(Zone* otherZone) {
+    MOZ_ASSERT(isGCMarking());
     MOZ_ASSERT(otherZone->isGCMarking());
     return gcSweepGroupEdges().put(otherZone);
   }

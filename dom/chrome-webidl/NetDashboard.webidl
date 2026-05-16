@@ -137,21 +137,22 @@ dictionary ConnStatusDict {
   DOMString status = "";
 };
 
-dictionary RcwnPerfStats {
-  unsigned long avgShort = 0;
-  unsigned long avgLong = 0;
-  unsigned long stddevLong = 0;
+[GenerateConversionToJS]
+dictionary AltSvcMappingElement {
+  DOMString originHost = "";
+  unsigned long originPort = 0;
+  DOMString alternateHost = "";
+  unsigned long alternatePort = 0;
+  DOMString alpn = "";
+  boolean https = false;
+  boolean validated = false;
+  long ttl = 0;
+  DOMString originAttributesSuffix = "";
 };
 
 [GenerateConversionToJS]
-dictionary RcwnStatus {
-  unsigned long totalNetworkRequests = 0;
-  unsigned long rcwnCacheWonCount = 0;
-  unsigned long rcwnNetWonCount = 0;
-  unsigned long cacheSlowCount = 0;
-  unsigned long cacheNotSlowCount = 0;
-  // Sequence is indexed by CachePerfStats::EDataType
-  sequence<RcwnPerfStats> perfStats;
+dictionary AltSvcCacheDict {
+  sequence<AltSvcMappingElement> entries;
 };
 
 dictionary Http3ConnStats {

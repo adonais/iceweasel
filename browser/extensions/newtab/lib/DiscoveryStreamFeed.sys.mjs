@@ -141,6 +141,25 @@ export class DiscoveryStreamFeed {
     this._impressionId = this.getOrCreateImpressionId();
     // Internal in-memory cache for parsing json prefs.
     this._prefCache = {};
+
+    this.onPocketExperimentUpdated = this.onPocketExperimentUpdated.bind(this);
+  }
+
+  onPocketExperimentUpdated(event, reason) {
+    if (
+      reason !== "feature-experiment-loaded" &&
+      reason !== "feature-rollout-loaded"
+    ) {
+      this.pocketNewTabExperimentChanged();
+    }
+  }
+
+  pocketNewTabExperimentChanged() {
+    this.store.dispatch(
+      ac.OnlyToMain({
+        type: at.INFERRED_PERSONALIZATION_CLEAR_INTEREST_VECTOR,
+      })
+    );
   }
 
   getOrCreateImpressionId() {
@@ -225,8 +244,13 @@ export class DiscoveryStreamFeed {
         state.Prefs.values.inferredPersonalizationConfig
           ?.local_popular_today_rerank ?? LOCAL_POPULAR_RERANK;
 
+      const overridePref =
+        this.store.getState().InferredPersonalization
+          ?.inferredTelemetrySettingsOverrides?.local_popular_today_rerank ??
+        true; // This can be used to turn off local inferred reranking
+
       // we do it if inferred is on and the experiment is on
-      this._doLocalInferredRerank = systemPref && expPref;
+      this._doLocalInferredRerank = systemPref && expPref && overridePref;
     }
     return this._doLocalInferredRerank;
   }
@@ -779,7 +803,6 @@ export class DiscoveryStreamFeed {
     if (layoutData.spocs) {
       url =
         this.store.getState().Prefs.values[PREF_SPOCS_ENDPOINT] ||
-        this.config.spocs_endpoint ||
         layoutData.spocs.url;
 
       const spocsEndpointQuery =
@@ -1183,14 +1206,11 @@ export class DiscoveryStreamFeed {
       if (placements?.length) {
         const headers = new Headers();
         headers.append("content-type", "application/json");
-        const apiKeyPref = this.config.api_key_pref;
-        const apiKey = Services.prefs.getCharPref(apiKeyPref, "");
         const state = this.store.getState();
         let endpoint = state.DiscoveryStream.spocs.spocs_endpoint;
         let body = {
           pocket_id: this._impressionId,
           version: 2,
-          consumer_key: apiKey,
           ...(placements.length ? { placements } : {}),
         };
 
@@ -1337,12 +1357,7 @@ export class DiscoveryStreamFeed {
               const { data: blockedResults } =
                 await this.filterBlocked(capResult);
 
-              const { data: spocsWithFetchTimestamp } = this.addFetchTimestamp(
-                blockedResults,
-                fetchTimestamp
-              );
-
-              let items = spocsWithFetchTimestamp;
+              let items = blockedResults;
 
               // We only need to rank if we don't have contextual ads.
               if (!this.isContextualAds) {
@@ -1554,22 +1569,6 @@ export class DiscoveryStreamFeed {
       return { data: filteredItems };
     }
     return { data };
-  }
-
-  // Add the fetch timestamp property to each spoc returned to communicate how
-  // old the spoc is in telemetry when it is used by the client
-  addFetchTimestamp(spocs, fetchTimestamp) {
-    if (spocs && spocs.length) {
-      return {
-        data: spocs.map(s => {
-          return {
-            ...s,
-            fetchTimestamp,
-          };
-        }),
-      };
-    }
-    return { data: spocs };
   }
 
   // For backwards compatibility, older spoc endpoint don't have flight_id,
@@ -1909,7 +1908,7 @@ export class DiscoveryStreamFeed {
     }
 
     // if surfaceID is availible either through the cache or the response set value in Glean
-    if (prefs[PREF_PRIVATE_PING_ENABLED] && feed.data.surfaceId) {
+    if (prefs[PREF_PRIVATE_PING_ENABLED] && feed?.data?.surfaceId) {
       Glean.newtabContent.surfaceId.set(feed.data.surfaceId);
       this.store.dispatch(ac.SetPref(PREF_SURFACE_ID, feed.data.surfaceId));
     }
@@ -2557,6 +2556,9 @@ export class DiscoveryStreamFeed {
         // 1. Set-up listeners and initialize the redux state for config;
         this.setupConfig(true /* isStartup */);
         this.setupPrefs(true /* isStartup */);
+        lazy.NimbusFeatures.pocketNewtab.onUpdate(
+          this.onPocketExperimentUpdated
+        );
         // 2. If config.enabled is true, start loading data.
         if (this.config.enabled) {
           await this.enable({ updateOpenTabs: true, isStartup: true });
@@ -2622,6 +2624,7 @@ export class DiscoveryStreamFeed {
         this.retryFeed(action.data.feed);
         break;
       case at.DISCOVERY_STREAM_CONFIG_CHANGE:
+      case at.DISCOVERY_STREAM_DEV_REFRESH_CACHE:
         // When the config pref changes, load or unload data as needed.
         await this.onPrefChange();
         break;
@@ -2782,6 +2785,9 @@ export class DiscoveryStreamFeed {
       case at.UNINIT:
         // When this feed is shutting down:
         this.uninitPrefs();
+        lazy.NimbusFeatures.pocketNewtab.offUpdate(
+          this.onPocketExperimentUpdated
+        );
         break;
       case at.BLOCK_URL: {
         // If we block a story that also has a flight_id

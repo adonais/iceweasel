@@ -225,10 +225,10 @@ class DispatchChangeEventCallback final : public GetFilesCallback {
     MOZ_ASSERT(aInputElement);
   }
 
-  virtual void Callback(
-      nsresult aStatus,
-      const FallibleTArray<RefPtr<BlobImpl>>& aBlobImpls) override {
-    if (!mInputElement->GetOwnerGlobal()) {
+  void Callback(nsresult aStatus,
+                const FallibleTArray<RefPtr<BlobImpl>>& aBlobImpls) override {
+    nsCOMPtr<nsIGlobalObject> global = mInputElement->GetOwnerGlobal();
+    if (!global) {
       return;
     }
 
@@ -962,7 +962,7 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
     mode = nsIFilePicker::modeOpen;
   }
 
-  nsresult rv = filePicker->Init(bc, title, mode);
+  nsresult rv = filePicker->Init(bc, title, mode, GetOwnerGlobal());
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!okButtonLabel.IsEmpty()) {
@@ -1957,7 +1957,7 @@ void HTMLInputElement::GetValueAsDate(JSContext* aCx,
         return;
       }
 
-      time.emplace(JS::TimeClip(millisecond));
+      time.emplace(JS::TimeClip(int64_t(millisecond)));
       MOZ_ASSERT(time->toDouble() == millisecond,
                  "HTML times are restricted to the day after the epoch and "
                  "never clip");
@@ -2354,7 +2354,7 @@ void HTMLInputElement::MozSetFileArray(
     return;
   }
 
-  nsCOMPtr<nsIGlobalObject> global = OwnerDoc()->GetScopeObject();
+  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
   MOZ_ASSERT(global);
   if (!global) {
     return;
@@ -2406,12 +2406,10 @@ void HTMLInputElement::MozSetFileNameArray(const Sequence<nsString>& aFileNames,
       continue;  // Not much we can do if the file doesn't exist
     }
 
-    nsCOMPtr<nsIGlobalObject> global = OwnerDoc()->GetScopeObject();
-    if (!global) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return;
+    nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+    if (NS_WARN_IF(!global)) {
+      continue;
     }
-
     RefPtr<File> domFile = File::CreateFromFile(global, file);
     if (NS_WARN_IF(!domFile)) {
       aRv.Throw(NS_ERROR_FAILURE);
@@ -2437,13 +2435,13 @@ void HTMLInputElement::MozSetDirectory(const nsAString& aDirectoryPath,
     return;
   }
 
-  nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
-  if (NS_WARN_IF(!window)) {
+  nsIGlobalObject* global = GetOwnerGlobal();
+  if (NS_WARN_IF(!global)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
 
-  RefPtr<Directory> directory = Directory::Create(window->AsGlobal(), file);
+  RefPtr<Directory> directory = Directory::Create(global, file);
   MOZ_ASSERT(directory);
 
   nsTArray<OwningFileOrDirectory> array;
@@ -5732,7 +5730,7 @@ already_AddRefed<Promise> HTMLInputElement::GetFilesAndDirectories(
     return nullptr;
   }
 
-  nsCOMPtr<nsIGlobalObject> global = OwnerDoc()->GetScopeObject();
+  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
   MOZ_ASSERT(global);
   if (!global) {
     return nullptr;
@@ -7569,7 +7567,7 @@ void HTMLInputElement::UpdateEntries(
     const nsTArray<OwningFileOrDirectory>& aFilesOrDirectories) {
   MOZ_ASSERT(mFileData && mFileData->mEntries.IsEmpty());
 
-  nsCOMPtr<nsIGlobalObject> global = OwnerDoc()->GetScopeObject();
+  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
   MOZ_ASSERT(global);
 
   RefPtr<FileSystem> fs = FileSystem::Create(global);

@@ -953,6 +953,18 @@ pwmgr:
         description: >
           The error message or exception string from the failure.
         type: string
+      has_origin:
+        description: >
+          Whether the login includes an origin
+        type: boolean
+      has_form_action_origin:
+        description: >
+          Whether the login includes a form action origin
+        type: boolean
+      has_http_realm:
+        description: >
+          Whether the login includes a http realm
+        type: boolean
       origin_error:
         description: >
           a string providing more information about an invalid origin, can be "EmptyString", "SurroundingWhitespace", "MissingScheme", "InvalidScheme", "IllegalCharacters", "InvalidPercentEncoding", "InvalidPort" or "UrlParseError"
@@ -1005,6 +1017,42 @@ pwmgr:
         description: >
           Time when login was last used (rounded to month)
         type: string
+
+  rust_origin_failure:
+    type: event
+    description: >
+      Records detailed information when a login origin or form_action_origin
+      fails validation during Rust mirror operations.
+    bugs:
+      - https://bugzil.la/2021252
+    data_reviews:
+      - https://bugzil.la/2021252
+    data_sensitivity:
+      - stored_content
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: 153
+    send_in_pings:
+      - pwmgr-origin-failure
+    extra_keys:
+      metric_version:
+        type: string
+        description: Identifier for rust mirror telemetry version
+      origin:
+        type: string
+        description: Raw origin string of the login entry
+      form_action_origin:
+        type: string
+        description: Raw form_action_origin string of the login entry
+      error_message:
+        type: string
+        description: The error message from the failure
+      time_created:
+        type: string
+        description: Time when login was created (rounded to month)
+      time_last_used:
+        type: string
+        description: Time when login was last used (rounded to month)
 
   saving_enabled:
     type: boolean

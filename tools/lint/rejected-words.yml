@@ -47,6 +47,7 @@ avoid-blacklist-and-whitelist:
         - browser/components/enterprisepolicies/Policies.sys.mjs
         - browser/components/migration/ChromeMigrationUtils.sys.mjs
         - browser/components/migration/ChromeProfileMigrator.sys.mjs
+        - browser/components/preferences/config/privacy.mjs
         - browser/components/preferences/privacy.inc.xhtml
         - browser/components/preferences/privacy.js
         - browser/components/resistfingerprinting/test/mochitest/test_bug1354633_media_error.html
@@ -57,7 +58,7 @@ avoid-blacklist-and-whitelist:
         - browser/components/tabbrowser/test/browser/tabs/browser_tab_drag_drop_perwindow.js
         - browser/components/urlbar/tests/browser/browser_searchSingleWordNotification.js
         - browser/components/urlbar/tests/browser/browser_trust_panel.js
-        - browser/components/urlbar/tests/browser/browser_UrlbarInput_trimURLs.js
+        - browser/components/urlbar/tests/browser-UrlbarInput/browser_trimURLs.js
         - browser/components/urlbar/tests/unit/test_providerHeuristicFallback.js
         - browser/components/urlbar/tests/unit/test_search_suggestions.js
         - browser/components/urlbar/tests/unit/test_tokenizer.js
@@ -307,4 +308,5 @@ avoid-gobbledygook:
         - extensions/spellcheck/locales/en-US/hunspell/dictionary-sources/orig/en_US-custom.dic
         - extensions/spellcheck/locales/en-US/hunspell/dictionary-sources/utf8/en-US-utf8.dic
         - extensions/spellcheck/locales/en-US/hunspell/en-US.dic
+        - taskcluster/test/params
         - tools/lint/rejected-words.yml

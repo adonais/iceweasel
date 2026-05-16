@@ -647,9 +647,9 @@ Result<UniquePtr<TrackInfo>, nsresult> VideoDecoderTraits::CreateTrackInfo(
       }
     }
     if (colorSpace.mTransfer.isSome()) {
-      auto primaries = ToTransferFunction(colorSpace.mTransfer.value());
+      auto transferFunction = ToTransferFunction(colorSpace.mTransfer.value());
       if (vi->mTransferFunction.isSome()) {
-        if (vi->mTransferFunction.value() != primaries) {
+        if (vi->mTransferFunction.value() != transferFunction) {
           LOG("Conflict between decoder config and codec string, keeping codec "
               "string transfer function of %d",
               static_cast<int>(vi->mTransferFunction.value()));

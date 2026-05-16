@@ -113,10 +113,12 @@ static inline void CheckDOMProxy(JSObject* proxy) {
 }
 
 // static
-JSObject* DOMProxyHandler::GetAndClearExpandoObject(JSObject* obj) {
+JSObject* DOMProxyHandler::GetAndClearExpandoObject(
+    JSObject* obj, JS::MutableHandle<JS::Value> rollbackToken) {
   CheckDOMProxy(obj);
 
   JS::Value v = js::GetProxyPrivate(obj);
+  rollbackToken.set(v);
   if (v.isUndefined()) {
     return nullptr;
   }
@@ -136,6 +138,12 @@ JSObject* DOMProxyHandler::GetAndClearExpandoObject(JSObject* obj) {
   CheckExpandoObject(obj, v);
 
   return &v.toObject();
+}
+
+// static
+void DOMProxyHandler::RestoreExpando(JSObject* obj,
+                                     const JS::Value& rollbackToken) {
+  js::SetProxyPrivate(obj, rollbackToken);
 }
 
 // static

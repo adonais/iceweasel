@@ -156,8 +156,8 @@ class DtlsSrtpTransportIntegrationTest : public ::testing::Test {
         GetSrtpKeyAndSaltLengths((selected_crypto_suite), &key_len, &salt_len));
 
     // Extract the keys. The order depends on the role!
-    ZeroOnFreeBuffer<uint8_t> dtls_buffer(key_len * 2 + salt_len * 2);
-    ASSERT_TRUE(server_dtls_transport_->ExportSrtpKeyingMaterial(dtls_buffer));
+    ZeroOnFreeBuffer<uint8_t> dtls_buffer;
+    ASSERT_TRUE(server_dtls_transport_->AppendSrtpKeyingMaterial(dtls_buffer));
 
     ZeroOnFreeBuffer<unsigned char> client_write_key(&dtls_buffer[0], key_len,
                                                      key_len + salt_len);
@@ -175,7 +175,7 @@ class DtlsSrtpTransportIntegrationTest : public ::testing::Test {
   CopyOnWriteBuffer CreateRtpPacket() {
     size_t rtp_len = sizeof(kPcmuFrame);
     size_t packet_size = rtp_len + kRtpAuthTagLen;
-    Buffer rtp_packet_buffer(packet_size);
+    Buffer rtp_packet_buffer = Buffer::CreateUninitializedWithSize(packet_size);
     char* rtp_packet_data = rtp_packet_buffer.data<char>();
     memcpy(rtp_packet_data, kPcmuFrame, rtp_len);
 

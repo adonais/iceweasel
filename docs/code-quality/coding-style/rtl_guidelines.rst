@@ -94,7 +94,7 @@ What to mirror
 -  Icons that imply text direction, like
    `reader-mode.svg <https://searchfox.org/mozilla-central/rev/f9beb753a84aa297713d1565dcd0c5e3c66e4174/browser/themes/shared/icons/reader-mode.svg>`__
 -  Icons that imply location of UI elements in the screen, like
-   `sidebars-right.svg <https://searchfox.org/mozilla-central/rev/74cc0f4dce444fe0757e2a6b8307d19e4d0e0212/browser/themes/shared/icons/sidebars-right.svg>`__,
+   `sidebar-collapsed-right.svg <https://searchfox.org/firefox-main/rev/b9c3ba706c41c42a7a1b4f6e5b5ba878782b3ab2/browser/themes/shared/icons/sidebar-collapsed-right.svg>`__,
    `open-in-new.svg <https://searchfox.org/mozilla-central/rev/f9beb753a84aa297713d1565dcd0c5e3c66e4174/toolkit/themes/shared/icons/open-in-new.svg>`__,
    `default theme's preview.svg <https://searchfox.org/mozilla-central/rev/f9beb753a84aa297713d1565dcd0c5e3c66e4174/toolkit/mozapps/extensions/default-theme/preview.svg>`__
    or

@@ -17,6 +17,7 @@
 \.gcov$
 \.tsbuildinfo$
 (^|/)compile_commands\.json$
+(^|/)ccache\.conf$
 
 # emacs backup files #filename# in any directory.
 # lint-ignore-next-line: syntax-difference
@@ -395,3 +396,7 @@ toolkit/themes/shared/design-system/node_modules/
 # Ignore personal preferences files
 ^CLAUDE\.local\.md
 .claude/settings.local.json
+
+# Ignore Claude Code worktrees
+.claude/worktrees/
+.worktreeinclude

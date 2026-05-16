@@ -62,6 +62,10 @@ bool HTMLSelectListAccessible::UnselectAll() {
              : false;
 }
 
+void HTMLSelectListAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
+  if (aIndex == eAction_Click) aName.AssignLiteral("click");
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // HTMLSelectListAccessible: Widgets
 

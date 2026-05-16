@@ -427,6 +427,12 @@ addAccessibleTask(
 <article id="markup">markup</article>
 <article id="markupWithRole" role="banner">markupWithRole</article>
 <article id="markupWithEmptyRole" role="">markupWithEmptyRole</article>
+<em id="emphasisMarkup">emphasisMarkup</em>
+<em id="emphasisMarkupWithRole" role="note">emphasisMarkupWithRole</em>
+<em id="emphasisMarkupWithEmptyRole" role="">emphasisMarkupWithEmptyRole</em>
+<strong id="strongMarkup">strongMarkup</strong>
+<strong id="strongMarkupWithRole" role="note">strongMarkupWithRole</strong>
+<strong id="strongMarkupWithEmptyRole" role="">strongMarkupWithEmptyRole</strong>
   `,
   async function (browser, docAcc) {
     const knownRole = findAccessibleChildByID(docAcc, "knownRole");
@@ -458,6 +464,30 @@ addAccessibleTask(
       "markupWithEmptyRole"
     );
     testAttrs(markupWithEmptyRole, { "xml-roles": "article" }, true);
+    const emphasis = findAccessibleChildByID(docAcc, "emphasisMarkup");
+    testAttrs(emphasis, { "xml-roles": "emphasis" }, true);
+    const emphasisWithRole = findAccessibleChildByID(
+      docAcc,
+      "emphasisMarkupWithRole"
+    );
+    testAttrs(emphasisWithRole, { "xml-roles": "note" }, true);
+    const emphasisWithEmptyRole = findAccessibleChildByID(
+      docAcc,
+      "emphasisMarkupWithEmptyRole"
+    );
+    testAttrs(emphasisWithEmptyRole, { "xml-roles": "emphasis" }, true);
+    const strong = findAccessibleChildByID(docAcc, "strongMarkup");
+    testAttrs(strong, { "xml-roles": "strong" }, true);
+    const strongWithRole = findAccessibleChildByID(
+      docAcc,
+      "strongMarkupWithRole"
+    );
+    testAttrs(strongWithRole, { "xml-roles": "note" }, true);
+    const strongWithEmptyRole = findAccessibleChildByID(
+      docAcc,
+      "strongMarkupWithEmptyRole"
+    );
+    testAttrs(strongWithEmptyRole, { "xml-roles": "strong" }, true);
   },
   { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
 );

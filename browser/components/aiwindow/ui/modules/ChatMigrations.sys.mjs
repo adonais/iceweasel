@@ -108,9 +108,55 @@ async function applyV6(conn, version) {
   );
 }
 
+// Add memories_toggled to conversation table and populate from last user message
+async function applyV7(conn, version) {
+  if (version >= 7) {
+    return;
+  }
+
+  const columns = await getColumns(conn, "conversation");
+  if (columns.has("memories_toggled")) {
+    return;
+  }
+
+  await conn.execute(
+    "ALTER TABLE conversation ADD COLUMN memories_toggled BOOLEAN"
+  );
+
+  // Populate memories_toggled based on the last user message's memories_enabled flag
+  // Uses a CTE to find the latest user message per conversation in one pass
+  await conn.execute(`
+    UPDATE conversation AS c
+    SET memories_toggled = latest_user_msg_per_conv.memories_enabled
+    FROM (
+      SELECT conv_id, memories_enabled
+      FROM (
+        SELECT
+          m.conv_id,
+          m.memories_enabled,
+          ROW_NUMBER() OVER (
+            PARTITION BY m.conv_id
+            ORDER BY m.ordinal DESC
+          ) AS rn
+        FROM message AS m
+        WHERE m.role = 0
+      )
+      WHERE rn = 1
+    ) AS latest_user_msg_per_conv
+    WHERE latest_user_msg_per_conv.conv_id = c.conv_id;
+  `);
+}
+
 /**
  * Array of migration functions to run in the order they should be run in.
  *
  * @returns {Array<Function>}
  */
-export const migrations = [applyV2, applyV3, applyV4, applyV5, applyV6];
+export const migrations = [
+  applyV2,
+  applyV3,
+  applyV4,
+  applyV5,
+  applyV6,
+  applyV7,
+];

@@ -178,6 +178,14 @@ export class SettingControl extends SettingElement {
     return this.controlRef.value;
   }
 
+  get disabled() {
+    return (
+      this.setting?.disabled ||
+      this.setting?.locked ||
+      this.isDisabledByExtension()
+    );
+  }
+
   async getUpdateComplete() {
     let result = await super.getUpdateComplete();
     await this.controlEl?.updateComplete;
@@ -269,10 +277,7 @@ export class SettingControl extends SettingElement {
     return {
       ...this.getCommonPropertyMapping(config),
       ".parentDisabled": this.parentDisabled,
-      "?disabled":
-        this.setting.disabled ||
-        this.setting.locked ||
-        this.isDisabledByExtension(),
+      "?disabled": this.disabled,
       // Hide moz-message-bar directly to maintain the role=alert functionality.
       // This setting-control will be visually hidden in CSS.
       ".hidden": config.control == "moz-message-bar" && this.hidden,

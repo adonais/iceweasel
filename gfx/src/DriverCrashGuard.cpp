@@ -98,7 +98,7 @@ void DriverCrashGuard::Initialize() {
     // Ask the parent whether or not activating the guard is okay. The parent
     // won't bother if it detected a crash.
     dom::ContentChild* cc = dom::ContentChild::GetSingleton();
-    cc->SendBeginDriverCrashGuard(uint32_t(mType), &mCrashDetected);
+    cc->SendBeginDriverCrashGuard(mType, &mCrashDetected);
     if (mCrashDetected) {
       LogFeatureDisabled();
       return;
@@ -151,7 +151,7 @@ DriverCrashGuard::~DriverCrashGuard() {
       SetStatus(DriverInitStatus::Okay);
     }
   } else {
-    dom::ContentChild::GetSingleton()->SendEndDriverCrashGuard(uint32_t(mType));
+    dom::ContentChild::GetSingleton()->SendEndDriverCrashGuard(mType);
   }
 
   CrashReporter::UnrecordAnnotation(

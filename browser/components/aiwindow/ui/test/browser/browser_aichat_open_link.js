@@ -262,5 +262,149 @@ describe("aichat open link", () => {
         "No tabs should be opened for empty/missing URLs"
       );
     });
+
+    it("should open about:preferences links in a new tab", async () => {
+      const newTabPromise = BrowserTestUtils.waitForNewTab(
+        gBrowser,
+        "about:preferences#manageMemories"
+      );
+
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        content.document.dispatchEvent(
+          new content.CustomEvent("AIChatContent:OpenLink", {
+            bubbles: true,
+            detail: { url: "about:preferences#manageMemories" },
+          })
+        );
+      });
+
+      const newTab = await newTabPromise;
+      Assert.ok(newTab, "A new tab should open for about:preferences URLs");
+      BrowserTestUtils.removeTab(newTab);
+    });
+
+    it("should open about:settings links in a new tab", async () => {
+      const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        content.document.dispatchEvent(
+          new content.CustomEvent("AIChatContent:OpenLink", {
+            bubbles: true,
+            detail: { url: "about:settings" },
+          })
+        );
+      });
+
+      const newTab = await newTabPromise;
+      Assert.ok(newTab, "A new tab should open for about:settings URLs");
+      BrowserTestUtils.removeTab(newTab);
+    });
+
+    it("should switch to an existing about:preferences tab instead of opening a new one", async () => {
+      const prefsTab = await BrowserTestUtils.openNewForegroundTab(
+        gBrowser,
+        "about:preferences"
+      );
+      gBrowser.selectedTab = chatTab;
+      const initialTabCount = gBrowser.tabs.length;
+
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        content.document.dispatchEvent(
+          new content.CustomEvent("AIChatContent:OpenLink", {
+            bubbles: true,
+            detail: { url: "about:preferences" },
+          })
+        );
+      });
+
+      await BrowserTestUtils.waitForCondition(
+        () => gBrowser.selectedTab === prefsTab,
+        "Should switch to existing preferences tab"
+      );
+      Assert.equal(
+        gBrowser.tabs.length,
+        initialTabCount,
+        "No new tab should open when preferences is already open"
+      );
+      BrowserTestUtils.removeTab(prefsTab);
+    });
+
+    it("should block other about: URLs", async () => {
+      const initialTabCount = gBrowser.tabs.length;
+
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        for (const url of ["about:config", "about:blank", "about:newtab"]) {
+          content.document.dispatchEvent(
+            new content.CustomEvent("AIChatContent:OpenLink", {
+              bubbles: true,
+              detail: { url },
+            })
+          );
+        }
+      });
+
+      await new Promise(r => Services.tm.dispatchToMainThread(r));
+
+      Assert.equal(
+        gBrowser.tabs.length,
+        initialTabCount,
+        "No tabs should be opened for non-preferences about: URLs"
+      );
+    });
+  });
+
+  describe("aichat about:preferences link rendering", () => {
+    it("should render about:preferences links as clickable", async () => {
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        await content.customElements.whenDefined("ai-chat-message");
+
+        const el = content.document.createElement("ai-chat-message");
+        content.document.body.appendChild(el);
+
+        const elJS = el.wrappedJSObject || el;
+        elJS.role = "assistant";
+        elJS.trustedUrls = Cu.cloneInto([], content);
+        const md = `Go to [Manage memories](about:preferences#manageMemories)`;
+        elJS.message = md;
+
+        await ContentTaskUtils.waitForCondition(() => {
+          return el.shadowRoot?.querySelector(".message-assistant a[href]");
+        }, "about:preferences link should render with href");
+
+        const link = el.shadowRoot.querySelector(
+          `.message-assistant a[href="about:preferences#manageMemories"]`
+        );
+        Assert.ok(link, "about:preferences link should keep its href");
+        el.remove();
+      });
+    });
+
+    it("should strip other about: URLs from rendered links", async () => {
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        await content.customElements.whenDefined("ai-chat-message");
+
+        const el = content.document.createElement("ai-chat-message");
+        content.document.body.appendChild(el);
+
+        const elJS = el.wrappedJSObject || el;
+        elJS.role = "assistant";
+        elJS.trustedUrls = Cu.cloneInto([], content);
+        elJS.message = `See [config](about:config) for details`;
+
+        await ContentTaskUtils.waitForCondition(() => {
+          const msg = el.shadowRoot?.querySelector(".message-assistant");
+          return msg?.querySelector("a");
+        }, "link element should exist");
+
+        // Give rendering a tick to process links
+        await new Promise(r => content.setTimeout(r, 50));
+
+        const link = el.shadowRoot.querySelector(
+          `.message-assistant a[href="about:config"]`
+        );
+        Assert.ok(!link, "about:config link should have href stripped");
+        el.remove();
+      });
+    });
   });
 });

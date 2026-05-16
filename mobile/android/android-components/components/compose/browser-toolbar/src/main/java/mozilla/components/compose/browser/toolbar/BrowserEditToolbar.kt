@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -35,6 +36,8 @@ import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription.StringResContentDescription
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.Icon.DrawableIcon
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_EDIT_MODE
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_EDIT_MODE_HORIZONTAL_DIVIDER
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
@@ -88,7 +91,10 @@ fun BrowserEditToolbar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .semantics { testTagsAsResourceId = true },
+                .semantics {
+                    testTag = ADDRESSBAR_EDIT_MODE
+                    testTagsAsResourceId = true
+                },
         ) {
             Row(
                 modifier = Modifier
@@ -122,7 +128,11 @@ fun BrowserEditToolbar(
             }
 
             HorizontalDivider(
-                modifier = Modifier.align(
+                modifier = Modifier
+                    .semantics {
+                        testTag = ADDRESSBAR_EDIT_MODE_HORIZONTAL_DIVIDER
+                    }
+                    .align(
                     when (gravity) {
                         Top -> Alignment.BottomCenter
                         Bottom -> Alignment.TopCenter

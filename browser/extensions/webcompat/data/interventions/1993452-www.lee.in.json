@@ -1,0 +1,17 @@
+{
+  "label": "www.lee.in",
+  "bugs": {
+    "1993452": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://www.lee.in/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "css": ["1993452-www.lee.in-fix-product-image-hovering.css"]
+      }
+    }
+  ]
+}

@@ -5,15 +5,6 @@
 #include "nsTDependentString.h"
 
 template <typename T>
-nsTDependentString<T>::nsTDependentString(const char_type* aStart,
-                                          const char_type* aEnd)
-    : string_type(const_cast<char_type*>(aStart), aEnd - aStart,
-                  DataFlags::TERMINATED, ClassFlags(0)) {
-  MOZ_RELEASE_ASSERT(aStart <= aEnd, "Overflow!");
-  this->AssertValidDependentString();
-}
-
-template <typename T>
 void nsTDependentString<T>::Rebind(const string_type& str,
                                    index_type startPos) {
   MOZ_ASSERT(str.GetDataFlags() & DataFlags::TERMINATED,

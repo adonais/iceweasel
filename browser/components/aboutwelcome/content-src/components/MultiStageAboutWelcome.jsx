@@ -365,6 +365,7 @@ export const MultiStageAboutWelcome = props => {
               setScreenMultiSelects={setScreenMultiSelects}
               activeMultiSelect={activeMultiSelects[currentScreen.id]}
               setActiveMultiSelect={setActiveMultiSelect}
+              advanceOnExperimentLoad={currentScreen.advance_on_experiment_load}
               activeSingleSelectSelections={
                 activeSingleSelectSelections[currentScreen.id]
               }
@@ -375,6 +376,7 @@ export const MultiStageAboutWelcome = props => {
               langPackInstallPhase={langPackInstallPhase}
               forceHideStepsIndicator={currentScreen.force_hide_steps_indicator}
               ariaRole={props.ariaRole}
+              requireAction={props.requireAction}
               aboveButtonStepsIndicator={
                 currentScreen.above_button_steps_indicator
               }
@@ -762,6 +764,12 @@ export class WelcomeScreen extends React.PureComponent {
     let actionResult;
     if (["OPEN_URL", "SHOW_FIREFOX_ACCOUNTS"].includes(action.type)) {
       this.handleOpenURL(action, props.flowParams, props.UTMTerm);
+    } else if (action.type === "INSTALL_ADDON_FROM_URL") {
+      const url =
+        props.addonURL && props.isRtamo ? props.addonURL : action.data?.url;
+      // Set add-on url in action.data.url property from JSON
+      action.data = { ...action.data, url };
+      AboutWelcomeUtils.handleUserAction(action);
     } else if (action.type) {
       let actionPromise = AboutWelcomeUtils.handleUserAction(action);
       if (action.needsAwait) {
@@ -774,17 +782,6 @@ export class WelcomeScreen extends React.PureComponent {
           "FXA_SIGNIN_FLOW",
           { writeInMicrosurvey: props.writeInMicrosurvey }
         );
-      }
-
-      if (action.type === "INSTALL_ADDON_FROM_URL") {
-        const url = props.addonURL;
-        if (!action.data) {
-          return;
-        }
-        // Set add-on url in action.data.url property from JSON
-        action.data = { ...action.data, url };
-
-        AboutWelcomeUtils.handleUserAction(action);
       }
       // Wait until migration closes to complete the action
       await this.handleMigrationIfNeeded(action, props);
@@ -1016,8 +1013,10 @@ export class WelcomeScreen extends React.PureComponent {
         isSingleScreen={this.props.isSingleScreen}
         startsWithCorner={this.props.startsWithCorner}
         autoAdvance={this.props.autoAdvance}
+        advanceOnExperimentLoad={this.props.advanceOnExperimentLoad}
         forceHideStepsIndicator={this.props.forceHideStepsIndicator}
         ariaRole={this.props.ariaRole}
+        requireAction={this.props.requireAction}
         aboveButtonStepsIndicator={this.props.aboveButtonStepsIndicator}
         addonId={this.props.addonId}
         addonType={this.props.addonType}
@@ -1025,6 +1024,7 @@ export class WelcomeScreen extends React.PureComponent {
         addonURL={this.props.addonURL}
         addonIconURL={this.props.addonIconURL}
         themeScreenshots={this.props.themeScreenshots}
+        navigate={this.props.navigate}
         isRtamo={this.props.content.isRtamo}
       />
     );

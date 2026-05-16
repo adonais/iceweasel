@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -6726,6 +6724,11 @@ static bool PrepareCIF(JSContext* cx, FunctionInfo* fninfo) {
     case FFI_BAD_TYPEDEF:
       JS_ReportErrorASCII(cx, "Invalid type specification");
       return false;
+#ifdef FFI_BAD_ARGTYPE  // not defined in system libffi < 3.4
+    case FFI_BAD_ARGTYPE:
+      JS_ReportErrorASCII(cx, "Variadic argument has an unsupported type");
+      return false;
+#endif
     default:
       JS_ReportErrorASCII(cx, "Unknown libffi error");
       return false;
@@ -7107,10 +7110,42 @@ bool FunctionType::Call(JSContext* cx, unsigned argc, Value* vp) {
       if (!ConvertArgument(cx, obj, i, arg, type, &values[i], &strings)) {
         return false;
       }
-      fninfo->mFFITypes[i] = CType::GetFFIType(cx, type);
-      if (!fninfo->mFFITypes[i]) {
+      ffi_type* ffiType = CType::GetFFIType(cx, type);
+      if (!ffiType) {
         return false;
       }
+      // Apply C default argument promotions: sub-int integers to int,
+      // float to double. libffi 3.4+ enforces these for variadic arguments.
+      if (ffiType == &ffi_type_sint8) {
+        *static_cast<int32_t*>(values[i].mData) =
+            *static_cast<int8_t*>(values[i].mData);
+        ffiType = &ffi_type_sint32;
+      } else if (ffiType == &ffi_type_uint8) {
+        *static_cast<int32_t*>(values[i].mData) =
+            *static_cast<uint8_t*>(values[i].mData);
+        ffiType = &ffi_type_sint32;
+      } else if (ffiType == &ffi_type_sint16) {
+        *static_cast<int32_t*>(values[i].mData) =
+            *static_cast<int16_t*>(values[i].mData);
+        ffiType = &ffi_type_sint32;
+      } else if (ffiType == &ffi_type_uint16) {
+        *static_cast<int32_t*>(values[i].mData) =
+            *static_cast<uint16_t*>(values[i].mData);
+        ffiType = &ffi_type_sint32;
+      } else if (ffiType == &ffi_type_float) {
+        // SizeToType allocates Align(sizeof(float), sizeof(ffi_arg)) bytes,
+        // which is only 4 bytes on 32-bit. Reallocate to fit a double.
+        double promoted = *static_cast<float*>(values[i].mData);
+        js_free(values[i].mData);
+        values[i].mData = js_malloc(sizeof(double));
+        if (!values[i].mData) {
+          JS_ReportOutOfMemory(cx);
+          return false;
+        }
+        *static_cast<double*>(values[i].mData) = promoted;
+        ffiType = &ffi_type_double;
+      }
+      fninfo->mFFITypes[i] = ffiType;
     }
     if (!PrepareCIF(cx, fninfo)) {
       return false;
@@ -7141,8 +7176,19 @@ bool FunctionType::Call(JSContext* cx, unsigned argc, Value* vp) {
   int savedErrno = errno;
   errno = 0;
 
-  ffi_call(&fninfo->mCIF, FFI_FN(fn), returnValue.mData,
-           reinterpret_cast<void**>(values.begin()));
+  // libffi may modify avalue[i] in-place for large struct args (replacing the
+  // pointer with an alloca'd copy). Use a separate array so AutoValue::mData
+  // pointers remain valid for destruction.
+  Vector<void*, 16, SystemAllocPolicy> avalue;
+  if (!avalue.resize(values.length())) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+  for (size_t i = 0; i < values.length(); ++i) {
+    avalue[i] = values[i].mData;
+  }
+
+  ffi_call(&fninfo->mCIF, FFI_FN(fn), returnValue.mData, avalue.begin());
 
   // Save error value.
   // We need to save it before leaving the scope of |suspend| as destructing

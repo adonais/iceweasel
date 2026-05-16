@@ -8,6 +8,7 @@
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLMediaElement.h"
@@ -123,8 +124,10 @@ void HTMLSourceElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     if (aValue) {
       nsCOMPtr<nsIURI> uri;
       NewURIFromString(srcValue.String(), getter_AddRefs(uri));
-      if (uri && IsMediaSourceURI(uri)) {
-        NS_GetSourceForMediaSourceURI(uri, getter_AddRefs(mSrcMediaSource));
+      if (uri && uri->SchemeIs(BLOBURI_SCHEME)) {
+        if (DocGroup* docGroup = OwnerDoc()->GetDocGroup()) {
+          mSrcMediaSource = docGroup->LookupMediaSourceURL(uri);
+        }
       }
     }
   } else if (aNameSpaceID == kNameSpaceID_None &&

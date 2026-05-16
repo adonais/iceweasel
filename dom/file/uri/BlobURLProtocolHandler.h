@@ -47,9 +47,6 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   static nsresult AddDataEntry(BlobImpl*, nsIPrincipal*,
                                const nsCString& aPartitionKey,
                                nsACString& aUri);
-  static nsresult AddDataEntry(MediaSource*, nsIPrincipal*,
-                               const nsCString& aPartitionKey,
-                               nsACString& aUri);
   // IPC only
   static void AddDataEntry(
       const nsACString& aURI, nsIPrincipal* aPrincipal,
@@ -78,9 +75,6 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
                            uint64_t aInnerWindowId,
                            const nsCString& aPartitionKey,
                            bool aAlsoIfRevoked = false);
-
-  static void Traverse(const nsACString& aUri,
-                       nsCycleCollectionTraversalCallback& aCallback);
 
   // Main-thread only method to invoke a helper function that gets called for
   // every known and recently revoked Blob URL. The helper function should
@@ -111,17 +105,16 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   // by system code and content scripts respectively.
   static bool IsBlobURLBroadcastPrincipal(nsIPrincipal* aPrincipal);
 
+  // If principal is not null, its origin will be used to generate the URI.
+  static nsresult GenerateURIString(nsIPrincipal* aPrincipal, nsACString& aUri);
+
  private:
   ~BlobURLProtocolHandler();
 
   static void Init();
-
-  // If principal is not null, its origin will be used to generate the URI.
-  static nsresult GenerateURIString(nsIPrincipal* aPrincipal, nsACString& aUri);
 };
 
 bool IsBlobURI(nsIURI* aUri);
-bool IsMediaSourceURI(nsIURI* aUri);
 
 }  // namespace dom
 }  // namespace mozilla
@@ -136,8 +129,5 @@ extern nsresult NS_GetBlobForBlobURISpec(const nsACString& aSpec,
 extern nsresult NS_SetChannelContentRangeForBlobURI(nsIChannel* aChannel,
                                                     nsIURI* aURI,
                                                     nsACString& aRangeHeader);
-
-extern nsresult NS_GetSourceForMediaSourceURI(
-    nsIURI* aURI, mozilla::dom::MediaSource** aSource);
 
 #endif /* mozilla_dom_BlobURLProtocolHandler_h */

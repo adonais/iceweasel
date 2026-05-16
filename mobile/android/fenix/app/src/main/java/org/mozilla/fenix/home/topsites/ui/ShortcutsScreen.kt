@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
@@ -99,20 +101,34 @@ private fun ShortcutsScreenContent(
         Shortcuts(
             topSites = state.topSites,
             interactor = interactor,
+            showAddShortcut = state.showAddShortcut,
         )
     }
 }
 
 @Composable
 @FlexibleWindowLightDarkPreview
-private fun ShortcutsScreenPreviews() {
+private fun ShortcutsScreenPreviews(
+    @PreviewParameter(ShortcutsScreenParameterProvider::class) state: ShortcutsState,
+) {
     FirefoxTheme {
         ShortcutsScreen(
-            state = ShortcutsState(
-                topSites = FakeHomepagePreview.topSites(),
-            ),
+            state = state,
             interactor = FakeHomepagePreview.topSitesInteractor,
             onNavigationIconClick = {},
         )
     }
+}
+
+private class ShortcutsScreenParameterProvider : PreviewParameterProvider<ShortcutsState> {
+    override val values: Sequence<ShortcutsState> = sequenceOf(
+        ShortcutsState(
+            topSites = FakeHomepagePreview.topSites(),
+            showAddShortcut = false,
+        ),
+        ShortcutsState(
+            topSites = FakeHomepagePreview.topSites(),
+            showAddShortcut = true,
+        ),
+    )
 }

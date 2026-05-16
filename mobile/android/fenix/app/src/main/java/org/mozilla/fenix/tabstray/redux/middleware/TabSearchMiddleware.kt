@@ -39,7 +39,7 @@ class TabSearchMiddleware(
                     val state = store.state
                     val tabs = when (state.selectedPage) {
                         Page.NormalTabs -> {
-                            state.normalTabs + state.inactiveTabs.tabs
+                            state.normalTabsState.items + state.inactiveTabs.tabs
                         }
                         Page.PrivateTabs -> {
                             state.privateBrowsing.tabs

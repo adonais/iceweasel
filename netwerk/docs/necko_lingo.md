@@ -39,8 +39,6 @@
     - [OnStartRequest/OnDataAvailable/OnStopRequest/](#onstartrequestondataavailableonstoprequest)
 - __Q__
     - [QUIC](#quic)
-- __R__
-    - [RCWN](#rcwn)
 - __S__
     - [Socket Process](#socket-process)
     - [Socket Thread](#socket-thread)
@@ -196,9 +194,6 @@ There has been efforts in the past to move the processing of data to non-main th
 ## QUIC
 An IETF transport protocol [RFC9000](https://datatracker.ietf.org/doc/html/rfc9000) primarily designed to carry HTTP/3, but now also used as a general-purpose Internet transport protocol for other workloads.
 Implemented in RUST and maintained by [neqo](https://github.com/mozilla/neqo).
-
-## RCWN
-Race cache with network. Feature that will send a request to network and cache at the same time and take the first to resolve.
 
 ## Socket Process
 WIP project to move the actions of the socket thread into its own process for the purposes of isolation for security and stability (during crashes).

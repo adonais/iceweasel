@@ -51,6 +51,7 @@
 #include "mozilla/dom/CSSStartingStyleRule.h"
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/CSSSupportsRule.h"
+#include "mozilla/dom/CSSViewTransitionRule.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -556,14 +557,6 @@ ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType) {
   }
 
   UpdateStylistIfNeeded();
-
-  // We always want to skip parent-based display fixup here.  It never makes
-  // sense for non-inheriting anonymous boxes.  (Static assertions in
-  // nsCSSAnonBoxes.cpp ensure that all non-inheriting non-anonymous boxes
-  // are indeed annotated as skipping this fixup.)
-  MOZ_ASSERT(!PseudoStyle::IsNonInheritingAnonBox(PseudoStyleType::MozViewport),
-             "viewport needs fixup to handle blockifying it");
-
   RefPtr<ComputedStyle> computedValues =
       Servo_ComputedValues_GetForAnonymousBox(nullptr, aType, mRawData.get())
           .Consume();
@@ -1028,6 +1021,7 @@ static Maybe<StyleCssRuleRef> ToRuleRef(css::Rule& aRule) {
     CASE_FOR(PositionTry, PositionTry)
     CASE_FOR(NestedDeclarations, NestedDeclarations)
     CASE_FOR(Namespace, Namespace)
+    CASE_FOR(ViewTransition, ViewTransition)
 #undef CASE_FOR
     case StyleCssRuleType::Keyframe:
       // No equivalent.
@@ -1078,6 +1072,7 @@ void ServoStyleSet::RuleChangedInternal(StyleSheet& aSheet, css::Rule& aRule,
     CASE_FOR(AppearanceBase, AppearanceBase)
     CASE_FOR(PositionTry, PositionTry)
     CASE_FOR(NestedDeclarations, NestedDeclarations)
+    CASE_FOR(ViewTransition, ViewTransition)
     // @namespace can only be inserted / removed when there are only other
     // @namespace and @import rules, and can't be mutated.
     case StyleCssRuleType::Namespace:
@@ -1332,6 +1327,12 @@ void ServoStyleSet::AppendFontFaceRules(
   // TODO(emilio): Can we make this so this asserts instead?
   UpdateStylistIfNeeded();
   Servo_StyleSet_GetFontFaceRules(mRawData.get(), &aArray);
+}
+
+already_AddRefed<StyleViewTransitionRule>
+ServoStyleSet::GetLastViewTransitionRule() {
+  UpdateStylistIfNeeded();
+  return Servo_StyleSet_GetLastViewTransitionRule(mRawData.get()).Consume();
 }
 
 const StyleLockedCounterStyleRule* ServoStyleSet::CounterStyleRuleForName(

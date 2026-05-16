@@ -85,5 +85,5 @@ async function expectFocusAfterKey(
 }
 
 registerCleanupFunction(async () => {
-  await SidebarController.initializeUIState({ command: "" });
+  await SidebarController.updateUIState({ command: "" });
 });

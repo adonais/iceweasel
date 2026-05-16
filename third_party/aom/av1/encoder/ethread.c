@@ -834,9 +834,7 @@ void av1_init_lr_mt_buffers(AV1_COMP *cpi) {
   if (lr_sync->sync_range) {
     if (cpi->ppi->gf_group.frame_parallel_level[cpi->gf_frame_index] > 0)
       return;
-    int num_lr_workers =
-        av1_get_num_mod_workers_for_alloc(&cpi->ppi->p_mt_info, MOD_LR);
-    assert(num_lr_workers <= lr_sync->num_workers);
+    int num_lr_workers = lr_sync->num_workers;
     lr_sync->lrworkerdata[num_lr_workers - 1].rst_tmpbuf = cm->rst_tmpbuf;
     lr_sync->lrworkerdata[num_lr_workers - 1].rlbs = cm->rlbs;
   }
@@ -922,12 +920,13 @@ void av1_init_mt_sync(AV1_COMP *cpi, int is_first_pass) {
       int rst_unit_size = cpi->sf.lpf_sf.min_lr_unit_size;
       int num_rows_lr = av1_lr_count_units(rst_unit_size, cm->height);
       int num_lr_workers = av1_get_num_mod_workers_for_alloc(p_mt_info, MOD_LR);
+      const int num_planes = av1_num_planes(cm);
       if (!lr_sync->sync_range || num_rows_lr > lr_sync->rows ||
           num_lr_workers > lr_sync->num_workers ||
-          MAX_MB_PLANE > lr_sync->num_planes) {
+          num_planes > lr_sync->num_planes) {
         av1_loop_restoration_dealloc(lr_sync);
         av1_loop_restoration_alloc(lr_sync, cm, num_lr_workers, num_rows_lr,
-                                   MAX_MB_PLANE, cm->width);
+                                   num_planes, cm->width);
       }
     }
 #endif
@@ -1119,6 +1118,8 @@ void av1_create_workers(AV1_PRIMARY *ppi, int num_workers) {
     }
     winterface->sync(worker);
 
+    // Ensure p_mt_info->num_workers is the number of threads successfuly
+    // created. Important to av1_terminate_workers().
     ++p_mt_info->num_workers;
   }
 }

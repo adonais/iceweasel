@@ -96,7 +96,8 @@ class RemotePrintJobParent final : public PRemotePrintJobParent {
   PRFileDescStream mCurrentPageStream;
   nsresult mStatus;
   bool mIsDoingPrinting = false;
-  bool mInitializeReceived = false; // True after RecvInitializePrint is called.
+  bool mInitializeReceived =
+      false;  // True after RecvInitializePrint is called.
 };
 
 }  // namespace layout

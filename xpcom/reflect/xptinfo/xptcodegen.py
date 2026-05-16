@@ -12,9 +12,6 @@ from collections import OrderedDict
 import buildconfig
 from perfecthash import PerfectHash
 
-# Pick a nice power-of-two size for our intermediate PHF tables.
-PHFSIZE = 512
-
 
 def indented(s):
     return s.replace("\n", "\n  ")
@@ -185,12 +182,12 @@ utility_types = [
 # writes out a file containing the necessary static declarations into fd.
 def link_to_cpp(interfaces, fd, header_fd):
     # Perfect Hash from IID to interface.
-    iid_phf = PerfectHash(interfaces, PHFSIZE, key=lambda i: iid_bytes(i["uuid"]))
+    iid_phf = PerfectHash(interfaces, key=lambda i: iid_bytes(i["uuid"]))
     for idx, iface in enumerate(iid_phf.entries):
         iface["idx"] = idx  # Store the index in iid_phf of the entry.
 
     # Perfect Hash from name to iid_phf index.
-    name_phf = PerfectHash(interfaces, PHFSIZE, key=lambda i: i["name"].encode("ascii"))
+    name_phf = PerfectHash(interfaces, key=lambda i: i["name"].encode("ascii"))
 
     def interface_idx(name):
         entry = name and name_phf.get_entry(name.encode("ascii"))

@@ -1366,6 +1366,22 @@ static int fast_bigdia_search(const FULLPEL_MV start_mv,
                        do_init_search, cost_list, best_mv, best_mv_stats);
 }
 
+static inline void update_best_site(unsigned int sad, const FULLPEL_MV *best_mv,
+                                    const search_site *site, int idx,
+                                    const MV_COST_PARAMS *mv_cost_params,
+                                    unsigned int *bestsad, int *best_site) {
+  if (sad < *bestsad) {
+    const FULLPEL_MV this_mv = { best_mv->row + site[idx].mv.row,
+                                 best_mv->col + site[idx].mv.col };
+    const unsigned int thissad =
+        sad + mvsad_err_cost_(&this_mv, mv_cost_params);
+    if (thissad < *bestsad) {
+      *bestsad = thissad;
+      *best_site = idx;
+    }
+  }
+}
+
 static int diamond_search_sad(FULLPEL_MV start_mv, unsigned int start_mv_sad,
                               const FULLPEL_MOTION_SEARCH_PARAMS *ms_params,
                               const int search_step, int *num00,
@@ -1467,24 +1483,22 @@ static int diamond_search_sad(FULLPEL_MV start_mv, unsigned int start_mv_sad,
           unsigned char const *block_offset[4];
           unsigned int sads[4];
 
-          for (int j = 0; j < 4; j++)
-            block_offset[j] = site[idx + j].offset + best_address;
+          block_offset[0] = site[idx + 0].offset + best_address;
+          block_offset[1] = site[idx + 1].offset + best_address;
+          block_offset[2] = site[idx + 2].offset + best_address;
+          block_offset[3] = site[idx + 3].offset + best_address;
 
           ms_params->sdx4df(src_buf, src_stride, block_offset, ref_stride,
                             sads);
-          for (int j = 0; j < 4; j++) {
-            if (sads[j] < bestsad) {
-              const FULLPEL_MV this_mv = { best_mv->row + site[idx + j].mv.row,
-                                           best_mv->col +
-                                               site[idx + j].mv.col };
-              unsigned int thissad =
-                  sads[j] + mvsad_err_cost_(&this_mv, mv_cost_params);
-              if (thissad < bestsad) {
-                bestsad = thissad;
-                best_site = idx + j;
-              }
-            }
-          }
+
+          update_best_site(sads[0], best_mv, site, idx + 0, mv_cost_params,
+                           &bestsad, &best_site);
+          update_best_site(sads[1], best_mv, site, idx + 1, mv_cost_params,
+                           &bestsad, &best_site);
+          update_best_site(sads[2], best_mv, site, idx + 2, mv_cost_params,
+                           &bestsad, &best_site);
+          update_best_site(sads[3], best_mv, site, idx + 3, mv_cost_params,
+                           &bestsad, &best_site);
         }
       } else {
         for (int idx = 1; idx <= num_searches; idx++) {
@@ -2041,12 +2055,13 @@ int av1_intrabc_hash_search(const AV1_COMP *cpi, const MACROBLOCKD *xd,
 }
 
 int av1_vector_match(const int16_t *ref, const int16_t *src, int bwl,
-                     int search_size, int full_search, int *sad) {
+                     int search_size_top, int search_size_bottom,
+                     int full_search, int *sad) {
   int best_sad = INT_MAX;
   int this_sad;
   int d;
   int center, offset = 0;
-  int bw = search_size << 1;
+  int bw = search_size_top + search_size_bottom;
 
   if (full_search) {
     for (d = 0; d <= bw; d++) {
@@ -2058,7 +2073,7 @@ int av1_vector_match(const int16_t *ref, const int16_t *src, int bwl,
     }
     center = offset;
     *sad = best_sad;
-    return (center - (bw >> 1));
+    return (center - search_size_top);
   }
 
   for (d = 0; d <= bw; d += 16) {
@@ -2117,18 +2132,16 @@ int av1_vector_match(const int16_t *ref, const int16_t *src, int bwl,
     }
   }
   *sad = best_sad;
-  return (center - (bw >> 1));
+  return (center - search_size_top);
 }
 
 // A special fast version of motion search used in rt mode.
 // The search window along columns and row is given by:
 //  +/- me_search_size_col/row.
-unsigned int av1_int_pro_motion_estimation(const AV1_COMP *cpi, MACROBLOCK *x,
-                                           BLOCK_SIZE bsize, int mi_row,
-                                           int mi_col, const MV *ref_mv,
-                                           unsigned int *y_sad_zero,
-                                           int me_search_size_col,
-                                           int me_search_size_row) {
+unsigned int av1_int_pro_motion_estimation(
+    const AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize, int mi_row,
+    int mi_col, const MV *ref_mv, unsigned int *y_sad_zero,
+    int me_search_size_col, int me_search_size_row, int is_var_part) {
   const AV1_COMMON *const cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mi = xd->mi[0];
@@ -2142,15 +2155,44 @@ unsigned int av1_int_pro_motion_estimation(const AV1_COMP *cpi, MACROBLOCK *x,
       is_screen && bsize == cm->seq_params->sb_size;
   // Keep border a multiple of 16.
   const int border = (cpi->oxcf.border_in_pixels >> 4) << 4;
-  int search_size_width = me_search_size_col;
-  int search_size_height = me_search_size_row;
-  // Adjust based on boundary.
-  if (((mi_col << 2) - search_size_width < -border) ||
-      ((mi_col << 2) + search_size_width > cm->width + border))
-    search_size_width = border;
-  if (((mi_row << 2) - search_size_height < -border) ||
-      ((mi_row << 2) + search_size_height > cm->height + border))
-    search_size_height = border;
+  int search_size_width_left = me_search_size_col;
+  int search_size_width_right = me_search_size_col;
+  int search_size_height_top = me_search_size_row;
+  int search_size_height_bottom = me_search_size_row;
+  // Allow for larger search size for column/horizontal screen motion.
+  if (screen_scroll_superblock && is_var_part) {
+    if (((mi_col << 2) - search_size_width_left) < -border)
+      search_size_width_left = (mi_col << 2) + border;
+    if (((mi_col << 2) + search_size_width_right + bw) > cm->width + border)
+      search_size_width_right = cm->width + border - (mi_col << 2) - bw;
+  } else {
+    if (((mi_col << 2) - search_size_width_left < -border) ||
+        ((mi_col << 2) + search_size_width_right + bw > cm->width + border)) {
+      search_size_width_left = AOMMIN(border, (mi_col << 2) + border);
+      search_size_width_right =
+          AOMMIN(border, cm->width + border - (mi_col << 2) - bw);
+    }
+  }
+  // Allow for larger search size for row/vertical screen motion.
+  if (screen_scroll_superblock && is_var_part) {
+    if (((mi_row << 2) - search_size_height_top) < -border)
+      search_size_height_top = (mi_row << 2) + border;
+    if (((mi_row << 2) + search_size_height_bottom + bh) > cm->height + border)
+      search_size_height_bottom = cm->height + border - (mi_row << 2) - bh;
+  } else {
+    if (((mi_row << 2) - search_size_height_top < -border) ||
+        ((mi_row << 2) + search_size_height_bottom + bh >
+         cm->height + border)) {
+      search_size_height_top = AOMMIN(border, (mi_row << 2) + border);
+      search_size_height_bottom =
+          AOMMIN(border, cm->height + border - (mi_row << 2) - bh);
+    }
+  }
+  // Make search_size_width/height_left/right/top/bottom multiple of 16.
+  search_size_width_left &= ~15;
+  search_size_width_right &= ~15;
+  search_size_height_top &= ~15;
+  search_size_height_bottom &= ~15;
   const int src_stride = x->plane[0].src.stride;
   const int ref_stride = xd->plane[0].pre[0].stride;
   uint8_t const *ref_buf, *src_buf;
@@ -2189,8 +2231,10 @@ unsigned int av1_int_pro_motion_estimation(const AV1_COMP *cpi, MACROBLOCK *x,
     }
     return best_sad;
   }
-  const int width_ref_buf = (search_size_width << 1) + bw;
-  const int height_ref_buf = (search_size_height << 1) + bh;
+  const int width_ref_buf =
+      search_size_width_left + search_size_width_right + bw;
+  const int height_ref_buf =
+      search_size_height_top + search_size_height_bottom + bh;
   int16_t *hbuf = (int16_t *)aom_malloc(width_ref_buf * sizeof(*hbuf));
   int16_t *vbuf = (int16_t *)aom_malloc(height_ref_buf * sizeof(*vbuf));
   int16_t *src_hbuf = (int16_t *)aom_malloc(bw * sizeof(*src_hbuf));
@@ -2205,12 +2249,12 @@ unsigned int av1_int_pro_motion_estimation(const AV1_COMP *cpi, MACROBLOCK *x,
   }
 
   // Set up prediction 1-D reference set for rows.
-  ref_buf = xd->plane[0].pre[0].buf - search_size_width;
+  ref_buf = xd->plane[0].pre[0].buf - search_size_width_left;
   aom_int_pro_row(hbuf, ref_buf, ref_stride, width_ref_buf, bh,
                   row_norm_factor);
 
   // Set up prediction 1-D reference set for cols
-  ref_buf = xd->plane[0].pre[0].buf - search_size_height * ref_stride;
+  ref_buf = xd->plane[0].pre[0].buf - search_size_height_top * ref_stride;
   aom_int_pro_col(vbuf, ref_buf, ref_stride, bw, height_ref_buf,
                   col_norm_factor);
 
@@ -2220,12 +2264,12 @@ unsigned int av1_int_pro_motion_estimation(const AV1_COMP *cpi, MACROBLOCK *x,
   aom_int_pro_col(src_vbuf, src_buf, src_stride, bw, bh, col_norm_factor);
 
   // Find the best match per 1-D search
-  best_int_mv->as_fullmv.col =
-      av1_vector_match(hbuf, src_hbuf, mi_size_wide_log2[bsize],
-                       search_size_width, full_search, &best_sad_col);
-  best_int_mv->as_fullmv.row =
-      av1_vector_match(vbuf, src_vbuf, mi_size_high_log2[bsize],
-                       search_size_height, full_search, &best_sad_row);
+  best_int_mv->as_fullmv.col = av1_vector_match(
+      hbuf, src_hbuf, mi_size_wide_log2[bsize], search_size_width_left,
+      search_size_width_right, full_search, &best_sad_col);
+  best_int_mv->as_fullmv.row = av1_vector_match(
+      vbuf, src_vbuf, mi_size_high_log2[bsize], search_size_height_top,
+      search_size_height_bottom, full_search, &best_sad_row);
 
   // For screen: select between horiz or vert motion.
   if (is_screen) {

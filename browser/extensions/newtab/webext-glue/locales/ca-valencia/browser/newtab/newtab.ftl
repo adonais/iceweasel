@@ -237,9 +237,21 @@ newtab-error-fallback-refresh-link = Actualitzeu la pàgina per tornar-ho a prov
 
 newtab-custom-shortcuts-title = Dreceres
 newtab-custom-shortcuts-subtitle = Llocs que guardeu o visiteu
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Dreceres
     .description = Llocs que guardeu o visiteu
+newtab-custom-shortcuts-nova =
+    .label = Dreceres
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } fila
+           *[other] { $num } files
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =

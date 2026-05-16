@@ -76,6 +76,9 @@ skip-if = [
 ] # macos times out, see bug 1857293, Bug 1875877 - frequent fails on linux and windows opt
 
 ["browser_opentabs_search.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 fail-if = [
   "a11y_checks", # Bug 1850591 clicked moz-page-nav-button button is not focusable
 ]

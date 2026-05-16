@@ -202,9 +202,10 @@ bitflags! {
 
 /// An absolutely specified color, using either rgb(), rgba(), lab(), lch(),
 /// oklab(), oklch() or color().
-#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem, ToTyped)]
+#[derive(Copy, Clone, Debug, MallocSizeOf, ToShmem, ToTyped)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 pub struct AbsoluteColor {
     /// The 3 components that make up colors in any color space.
     pub components: ColorComponents,
@@ -212,8 +213,39 @@ pub struct AbsoluteColor {
     pub alpha: f32,
     /// The current color space that the components represent.
     pub color_space: ColorSpace,
-    /// Extra flags used durring serialization of this color.
+    /// Extra flags used during serialization of this color.
     pub flags: ColorFlags,
+}
+
+impl PartialEq for AbsoluteColor {
+    // See https://github.com/w3c/csswg-drafts/issues/13157#issuecomment-4165667681
+    fn eq(&self, other: &Self) -> bool {
+        let none_flags = ColorFlags::C0_IS_NONE
+            | ColorFlags::C1_IS_NONE
+            | ColorFlags::C2_IS_NONE
+            | ColorFlags::ALPHA_IS_NONE;
+        // If both colors have the same color-space, just compare components; note that
+        // any `none` components only match `none` in the other color.
+        if self.color_space == other.color_space {
+            return self.components == other.components
+                && self.alpha == other.alpha
+                && (self.flags & none_flags) == (other.flags & none_flags);
+        }
+        // Otherwise, if any `none` components are present in either color, return false.
+        if self.flags.union(other.flags).intersects(none_flags) {
+            return false;
+        }
+        // Otherwise, convert both colors to Oklab for comparison, and allow EPSILON
+        // difference in component values.
+        // TODO: check value of EPSILON once the spec is updated to cover this.
+        const EPSILON: f32 = 0.0001;
+        let a = self.to_color_space(ColorSpace::Oklab);
+        let b = other.to_color_space(ColorSpace::Oklab);
+        (a.components.0 - b.components.0).abs() <= EPSILON
+            && (a.components.1 - b.components.1).abs() <= EPSILON
+            && (a.components.2 - b.components.2).abs() <= EPSILON
+            && (a.alpha - b.alpha).abs() <= EPSILON
+    }
 }
 
 /// Given an [`AbsoluteColor`], return the 4 float components as the type given,

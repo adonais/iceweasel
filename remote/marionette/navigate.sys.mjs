@@ -181,7 +181,13 @@ navigate.navigateTo = async function (browsingContext, url) {
  */
 navigate.refresh = async function (browsingContext) {
   const flags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
-  browsingContext.reload(flags);
+  // Bug 2026546: As workaround use sessionHistory if available to avoid issues
+  // with frames.
+  if (browsingContext.sessionHistory) {
+    browsingContext.sessionHistory.reload(flags);
+  } else {
+    browsingContext.reload(flags);
+  }
 };
 
 /**

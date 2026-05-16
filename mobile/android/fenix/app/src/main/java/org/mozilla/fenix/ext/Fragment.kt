@@ -356,3 +356,11 @@ fun Fragment.updateMicrosurveyPromptForConfigurationChange(
 fun Fragment.pixelSizeFor(
     @DimenRes resId: Int,
 ) = resources.getDimensionPixelSize(resId)
+
+/**
+ * Opens a [url] in a new tab and navigates to the browser fragment.
+ */
+fun Fragment.openInNewTab(url: String) {
+    requireComponents.useCases.tabsUseCases.addTab(url)
+    findNavController().navigate(R.id.browserFragment)
+}

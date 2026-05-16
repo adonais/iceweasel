@@ -246,7 +246,7 @@ class TrustPanel {
         });
       document
         .getElementById("trustpanel-clear-cookies-button")
-        .addEventListener("click", event =>
+        .addEventListener("command", event =>
           this.#showClearCookiesSubview(event)
         );
       document
@@ -349,12 +349,12 @@ class TrustPanel {
     let icon = document.getElementById("trust-icon-container");
     icon.className = this.#isSecurePage() ? "secure" : "insecure";
 
-    if (this.#isURILoadedFromFile) {
-      icon.classList.add("file");
-    }
-
     if (!this.#trackingProtectionEnabled) {
       icon.classList.add("inactive");
+    }
+
+    if (this.#isAboutNetErrorPage) {
+      icon.classList.add("warning");
     }
 
     icon.setAttribute("tooltiptext", this.#tooltipText());
@@ -431,6 +431,18 @@ class TrustPanel {
       "disabled",
       !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
     );
+
+    try {
+      let baseDomain = SiteDataManager.getBaseDomainFromHost(this.#uri.host);
+      SiteDataManager.hasSiteData(baseDomain).then(hasSiteData => {
+        this.#updateAttribute(
+          document.getElementById("trustpanel-clear-cookies-button"),
+          "disabled",
+          !hasSiteData
+        );
+      });
+    } catch (e) {}
+
     this.#updateAttribute(
       document.getElementById("trustpanel-toggle"),
       "disabled",

@@ -207,6 +207,14 @@ static int combined_motion_search(AV1_COMP *cpi, MACROBLOCK *x,
   int cost_list[5];
   int search_subpel = 1;
 
+  if (av1_is_scaled(get_ref_scale_factors_const(cm, ref))) {
+    const YV12_BUFFER_CONFIG *scaled_ref = av1_get_scaled_ref_frame(cpi, ref);
+    (void)scaled_ref;
+    assert(scaled_ref != NULL);
+    assert(scaled_ref->y_crop_width == cm->width &&
+           scaled_ref->y_crop_height == cm->height);
+  }
+
   start_mv = get_fullmv_from_mv(&ref_mv);
 
   if (!use_base_mv)
@@ -323,7 +331,7 @@ static int search_new_mv(AV1_COMP *cpi, MACROBLOCK *x,
     MV ref_mv = av1_get_ref_mv(x, 0).as_mv;
     tmp_sad = av1_int_pro_motion_estimation(
         cpi, x, bsize, mi_row, mi_col, &ref_mv, &y_sad_zero, me_search_size_col,
-        me_search_size_row);
+        me_search_size_row, 0);
 
     if (tmp_sad > x->pred_mv_sad[LAST_FRAME]) return -1;
 
@@ -2490,6 +2498,26 @@ static AOM_FORCE_INLINE bool skip_inter_mode_nonrd(
       (*this_mode != GLOBALMV || *ref_frame != LAST_FRAME))
     return true;
 
+  // Skip the mode if use reference frame mask flag is not set.
+  if (!search_state->use_ref_frame_mask[*ref_frame]) return true;
+
+  *force_mv_inter_layer = 0;
+  if (cpi->ppi->use_svc && svc->spatial_layer_id > 0 &&
+      ((*ref_frame == LAST_FRAME && svc->skip_mvsearch_last) ||
+       (*ref_frame == GOLDEN_FRAME && svc->skip_mvsearch_gf) ||
+       (*ref_frame == ALTREF_FRAME && svc->skip_mvsearch_altref))) {
+    // Only test mode if NEARESTMV/NEARMV is (svc_mv.mv.col, svc_mv.mv.row),
+    // otherwise set NEWMV to (svc_mv.mv.col, svc_mv.mv.row).
+    // Skip newmv and filter search.
+    *force_mv_inter_layer = 1;
+    if (*this_mode == NEWMV) {
+      search_state->frame_mv[*this_mode][*ref_frame] = svc_mv;
+    } else if (search_state->frame_mv[*this_mode][*ref_frame].as_int !=
+               svc_mv.as_int) {
+      return true;
+    }
+  }
+
   // If the segment reference frame feature is enabled then do nothing if the
   // current ref frame is not allowed.
   if (segfeature_active(seg, segment_id, SEG_LVL_REF_FRAME)) {
@@ -2497,9 +2525,6 @@ static AOM_FORCE_INLINE bool skip_inter_mode_nonrd(
       return true;
     return false;
   }
-
-  // Skip the mode if use reference frame mask flag is not set.
-  if (!search_state->use_ref_frame_mask[*ref_frame]) return true;
 
   // Don't skip non_last references if LAST is not used a reference.
   if (!(cpi->ref_frame_flags & AOM_LAST_FLAG) &&
@@ -2563,23 +2588,6 @@ static AOM_FORCE_INLINE bool skip_inter_mode_nonrd(
           search_state->mode_checked, search_state->vars,
           search_state->uv_dist)) {
     return true;
-  }
-
-  *force_mv_inter_layer = 0;
-  if (cpi->ppi->use_svc && svc->spatial_layer_id > 0 &&
-      ((*ref_frame == LAST_FRAME && svc->skip_mvsearch_last) ||
-       (*ref_frame == GOLDEN_FRAME && svc->skip_mvsearch_gf) ||
-       (*ref_frame == ALTREF_FRAME && svc->skip_mvsearch_altref))) {
-    // Only test mode if NEARESTMV/NEARMV is (svc_mv.mv.col, svc_mv.mv.row),
-    // otherwise set NEWMV to (svc_mv.mv.col, svc_mv.mv.row).
-    // Skip newmv and filter search.
-    *force_mv_inter_layer = 1;
-    if (*this_mode == NEWMV) {
-      search_state->frame_mv[*this_mode][*ref_frame] = svc_mv;
-    } else if (search_state->frame_mv[*this_mode][*ref_frame].as_int !=
-               svc_mv.as_int) {
-      return true;
-    }
   }
 
   // For screen content: skip mode testing based on source_sad.
@@ -3440,6 +3448,7 @@ void av1_nonrd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
       !x->force_zeromv_skip_for_blk &&
       x->content_state_sb.source_sad_nonrd != kZeroSad &&
       x->source_variance == 0 && bsize < cm->seq_params->sb_size &&
+      search_state.use_ref_frame_mask[LAST_FRAME] &&
       search_state.yv12_mb[LAST_FRAME][0].width == cm->width &&
       search_state.yv12_mb[LAST_FRAME][0].height == cm->height) {
     set_block_source_sad(cpi, x, bsize, &search_state.yv12_mb[LAST_FRAME][0]);
@@ -3582,7 +3591,7 @@ void av1_nonrd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
   if (cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN &&
       x->content_state_sb.source_sad_nonrd != kZeroSad &&
       bsize <= BLOCK_16X16) {
-    unsigned int thresh_sse = cpi->rc.high_source_sad ? 15000 : 200000;
+    unsigned int thresh_sse = cpi->rc.high_source_sad ? 15000 : 100000;
     unsigned int thresh_source_var = cpi->rc.high_source_sad ? 50 : 200;
     unsigned int best_sse_inter_motion =
         (unsigned int)(search_state.best_rdc.sse >>
@@ -3613,7 +3622,7 @@ void av1_nonrd_pick_inter_mode_sb(AV1_COMP *cpi, TileDataEnc *tile_data,
                           x->content_state_sb.source_sad_nonrd != kZeroSad &&
                           !cpi->rc.high_source_sad &&
                           (cpi->rc.high_motion_content_screen_rtc ||
-                           cpi->rc.frame_source_sad < 10000);
+                           cpi->rc.frame_source_sad < 1000);
 
   bool try_palette = enable_palette(
       cpi, is_mode_intra(best_pickmode->best_mode), bsize, x->source_variance,

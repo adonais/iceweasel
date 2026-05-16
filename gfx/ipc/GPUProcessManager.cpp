@@ -1252,10 +1252,10 @@ void GPUProcessManager::StopBatteryObserving() {
 }
 
 already_AddRefed<CompositorSession> GPUProcessManager::CreateTopLevelCompositor(
-    nsIWidget* aWidget, WebRenderLayerManager* aLayerManager,
-    CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
-    bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
-    uint64_t aInnerWindowId, bool* aRetryOut) {
+    nsIWidget* aWidget, CSSToLayoutDeviceScale aScale,
+    const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
+    const gfx::IntSize& aSurfaceSize, uint64_t aInnerWindowId,
+    bool* aRetryOut) {
   MOZ_DIAGNOSTIC_ASSERT(IsGPUReady());
   MOZ_ASSERT(aRetryOut);
 
@@ -1267,9 +1267,9 @@ already_AddRefed<CompositorSession> GPUProcessManager::CreateTopLevelCompositor(
   LayersId layerTreeId = AllocateLayerTreeId();
   RefPtr<CompositorSession> session;
   if (mGPUChild) {
-    session = CreateRemoteSession(aWidget, aLayerManager, layerTreeId, aScale,
-                                  aOptions, aUseExternalSurfaceSize,
-                                  aSurfaceSize, aInnerWindowId);
+    session = CreateRemoteSession(aWidget, layerTreeId, aScale, aOptions,
+                                  aUseExternalSurfaceSize, aSurfaceSize,
+                                  aInnerWindowId);
     if (NS_WARN_IF(!session)) {
       // This may have failed for intermittent reasons, or perhaps indicates we
       // are fundamentally unable to use acceleration.
@@ -1283,9 +1283,8 @@ already_AddRefed<CompositorSession> GPUProcessManager::CreateTopLevelCompositor(
     }
   } else {
     session = InProcessCompositorSession::Create(
-        aWidget, aLayerManager, layerTreeId, aScale, aOptions,
-        aUseExternalSurfaceSize, aSurfaceSize, AllocateNamespace(),
-        aInnerWindowId);
+        aWidget, layerTreeId, aScale, aOptions, aUseExternalSurfaceSize,
+        aSurfaceSize, AllocateNamespace(), aInnerWindowId);
   }
 
 #if defined(MOZ_WIDGET_ANDROID)
@@ -1303,17 +1302,17 @@ already_AddRefed<CompositorSession> GPUProcessManager::CreateTopLevelCompositor(
 }
 
 RefPtr<CompositorSession> GPUProcessManager::CreateRemoteSession(
-    nsIWidget* aWidget, WebRenderLayerManager* aLayerManager,
-    const LayersId& aRootLayerTreeId, CSSToLayoutDeviceScale aScale,
-    const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
-    const gfx::IntSize& aSurfaceSize, uint64_t aInnerWindowId) {
+    nsIWidget* aWidget, const LayersId& aRootLayerTreeId,
+    CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
+    bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
+    uint64_t aInnerWindowId) {
 #ifdef MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
   widget::CompositorWidgetInitData initData;
   aWidget->GetCompositorWidgetInitData(&initData);
 
   RefPtr<CompositorBridgeChild> child =
       CompositorManagerChild::CreateWidgetCompositorBridge(
-          mProcessToken, aLayerManager, AllocateNamespace(), aScale, aOptions,
+          mProcessToken, AllocateNamespace(), aScale, aOptions,
           aUseExternalSurfaceSize, aSurfaceSize, aInnerWindowId);
   if (!child) {
     gfxCriticalNote << "Failed to create CompositorBridgeChild";

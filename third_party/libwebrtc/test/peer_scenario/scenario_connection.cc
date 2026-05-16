@@ -11,12 +11,12 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/candidate.h"
 #include "api/environment/environment.h"
 #include "api/jsep.h"
@@ -27,7 +27,6 @@
 #include "api/test/network_emulation_manager.h"
 #include "api/transport/data_channel_transport_interface.h"
 #include "api/transport/enums.h"
-#include "call/payload_type_picker.h"
 #include "call/rtp_demuxer.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "media/base/rtp_utils.h"
@@ -65,8 +64,8 @@ class ScenarioIceConnectionImpl : public ScenarioIceConnection,
                             IceConnectionObserver* observer);
   ~ScenarioIceConnectionImpl() override;
 
-  void SendRtpPacket(ArrayView<const uint8_t> packet_view) override;
-  void SendRtcpPacket(ArrayView<const uint8_t> packet_view) override;
+  void SendRtpPacket(std::span<const uint8_t> packet_view) override;
+  void SendRtcpPacket(std::span<const uint8_t> packet_view) override;
 
   void SetRemoteSdp(SdpType type, const std::string& remote_sdp) override;
   void SetLocalSdp(SdpType type, const std::string& local_sdp) override;
@@ -101,7 +100,6 @@ class ScenarioIceConnectionImpl : public ScenarioIceConnection,
   BasicPacketSocketFactory packet_socket_factory_;
   std::unique_ptr<BasicPortAllocator> port_allocator_
       RTC_GUARDED_BY(network_thread_);
-  PayloadTypePicker payload_type_picker_;
   std::unique_ptr<JsepTransportController> jsep_controller_;
   RtpTransportInternal* rtp_transport_ RTC_GUARDED_BY(network_thread_) =
       nullptr;
@@ -148,7 +146,6 @@ ScenarioIceConnectionImpl::ScenarioIceConnectionImpl(
                                       port_allocator_.get(),
                                       /*async_resolver_factory*/ nullptr,
                                       /*lna_permission_factory*/ nullptr,
-                                      payload_type_picker_,
                                       CreateJsepConfig())) {
   jsep_controller_->SetLocalCertificate(certificate_);
   SendTask(network_thread_, [this] {
@@ -190,7 +187,7 @@ JsepTransportController::Config ScenarioIceConnectionImpl::CreateJsepConfig() {
 }
 
 void ScenarioIceConnectionImpl::SendRtpPacket(
-    ArrayView<const uint8_t> packet_view) {
+    std::span<const uint8_t> packet_view) {
   CopyOnWriteBuffer packet(packet_view.data(), packet_view.size(),
                            kMaxRtpPacketLen);
   network_thread_->PostTask([this, packet = std::move(packet)]() mutable {
@@ -202,7 +199,7 @@ void ScenarioIceConnectionImpl::SendRtpPacket(
 }
 
 void ScenarioIceConnectionImpl::SendRtcpPacket(
-    ArrayView<const uint8_t> packet_view) {
+    std::span<const uint8_t> packet_view) {
   CopyOnWriteBuffer packet(packet_view.data(), packet_view.size(),
                            kMaxRtpPacketLen);
   network_thread_->PostTask([this, packet = std::move(packet)]() mutable {

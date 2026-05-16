@@ -3136,7 +3136,10 @@ export var UpdateChecker = function (
     aReason == AddonManager.UPDATE_WHEN_NEW_APP_INSTALLED;
   this.isUserRequested = aReason == AddonManager.UPDATE_WHEN_USER_REQUESTED;
 
-  let updateURL = aAddon.updateURL;
+  // If bug 2032469 changes the policy behavior, this will need to be updated.
+  let updateURL =
+    Services.policies?.getExtensionSettings(aAddon.id)?.update_url?.href ||
+    aAddon.updateURL;
   if (!updateURL) {
     if (
       aReason == AddonManager.UPDATE_WHEN_PERIODIC_UPDATE &&
@@ -4309,13 +4312,10 @@ export var XPIInstall = {
    *        The XPI file to install the add-on from.
    * @param {XPIStateLocation} location
    *        The install location to install the add-on to.
-   * @param {string?} [oldAppVersion]
-   *        The version of the application last run with this profile or null
-   *        if it is a new profile or the version is unknown
    * @returns {AddonInternal}
    *        The installed Addon object, upon success.
    */
-  async installDistributionAddon(id, file, location, oldAppVersion) {
+  async installDistributionAddon(id, file, location) {
     let addon = await loadManifestFromFile(file, location);
     addon.installTelemetryInfo = { source: "distribution" };
 
@@ -4342,16 +4342,6 @@ export var XPIInstall = {
           e
         );
       }
-    } else if (
-      addon.type === "locale" &&
-      oldAppVersion &&
-      Services.vc.compare(oldAppVersion, "67") < 0
-    ) {
-      /* Distribution language packs didn't get installed due to the signing
-           issues so we need to force them to be reinstalled. */
-      Services.prefs.clearUserPref(
-        XPIExports.XPIInternal.PREF_BRANCH_INSTALLED_ADDON + id
-      );
     } else if (
       Services.prefs.getBoolPref(
         XPIExports.XPIInternal.PREF_BRANCH_INSTALLED_ADDON + id,

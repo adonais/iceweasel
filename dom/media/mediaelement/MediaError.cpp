@@ -8,6 +8,7 @@
 #include "jsapi.h"
 #include "mozilla/Utf8.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/MediaErrorBinding.h"
 #include "nsContentUtils.h"
 #include "nsIScriptError.h"

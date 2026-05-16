@@ -247,7 +247,10 @@ dom.findByXPathAll = function* (document, startNode, expression) {
  */
 dom.findByLinkText = function (startNode, linkText) {
   return filterLinks(startNode, async link => {
-    const visibleText = await lazy.atom.getVisibleText(link, link.ownerGlobal);
+    const visibleText = await lazy.atom.getVisibleText(
+      link,
+      link.ownerDocGlobal
+    );
     return visibleText.trim() === linkText;
   });
 };
@@ -267,7 +270,10 @@ dom.findByLinkText = function (startNode, linkText) {
  */
 dom.findByPartialLinkText = function (startNode, linkText) {
   return filterLinks(startNode, async link => {
-    const visibleText = await lazy.atom.getVisibleText(link, link.ownerGlobal);
+    const visibleText = await lazy.atom.getVisibleText(
+      link,
+      link.ownerDocGlobal
+    );
 
     return visibleText.includes(linkText);
   });
@@ -355,7 +361,7 @@ async function findElement(
       for (const link of links) {
         const visibleText = await lazy.atom.getVisibleText(
           link,
-          link.ownerGlobal
+          link.ownerDocGlobal
         );
         if (visibleText.trim() === selector) {
           return link;
@@ -369,7 +375,7 @@ async function findElement(
       for (const link of links) {
         const visibleText = await lazy.atom.getVisibleText(
           link,
-          link.ownerGlobal
+          link.ownerDocGlobal
         );
         if (visibleText.includes(selector)) {
           return link;
@@ -543,11 +549,6 @@ dom.isDetached = function (shadowRoot) {
  *     True if <var>el</var> is stale, false otherwise.
  */
 dom.isStale = function (el) {
-  if (!el.ownerGlobal) {
-    // Without a valid inner window the document is basically closed.
-    return true;
-  }
-
   return !el.ownerDocument.isActive() || !el.isConnected;
 };
 
@@ -796,7 +797,7 @@ dom.coordinates = function (node, xOffset = undefined, yOffset = undefined) {
  *     True if if <var>el</var> is in viewport, false otherwise.
  */
 dom.inViewport = function (el, x = undefined, y = undefined) {
-  let win = el.ownerGlobal;
+  let win = el.ownerDocGlobal;
   let c = dom.coordinates(el, x, y);
   let vp = {
     top: win.pageYOffset,
@@ -904,8 +905,7 @@ dom.isInView = function (el) {
  *     True if visible, false otherwise.
  */
 dom.isVisible = async function (el, x = undefined, y = undefined) {
-  let win = el.ownerGlobal;
-
+  let win = el.ownerDocGlobal;
   if (!(await lazy.atom.isElementDisplayed(el, win))) {
     return false;
   }
@@ -1009,7 +1009,7 @@ dom.getInViewCentrePoint = function (rect, win) {
  *     Sequence of elements in paint order.
  */
 dom.getPointerInteractablePaintTree = function (el) {
-  const win = el.ownerGlobal;
+  const win = el.ownerDocGlobal;
   const rootNode = el.getRootNode();
 
   // pointer-interactable elements tree, step 1

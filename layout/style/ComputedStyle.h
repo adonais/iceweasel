@@ -29,6 +29,7 @@ void Gecko_ComputedStyle_Destroy(mozilla::ComputedStyle*);
 
 namespace mozilla {
 
+struct CSSPropertyId;
 enum class StylePointerEvents : uint8_t;
 enum class StyleUserSelect : uint8_t;
 
@@ -59,8 +60,7 @@ class ComputedStyle {
   const StyleComputedValueFlags& Flags() const { return mSource.flags; }
 
  public:
-  ComputedStyle(PseudoStyleType aPseudoType,
-                ServoComputedDataForgotten aComputedValues);
+  explicit ComputedStyle(ServoComputedDataForgotten aComputedValues);
 
   // Returns the computed (not resolved) value of the given property.
   void GetComputedPropertyValue(NonCustomCSSPropertyId aId,
@@ -68,10 +68,10 @@ class ComputedStyle {
     Servo_GetComputedValue(this, aId, &aOut);
   }
 
-  // Returns the computed typed value of the given property.
-  bool GetPropertyTypedValue(const nsACString& aProperty,
-                             StylePropertyTypedValue& aOut) const {
-    return Servo_GetComputedTypedValue(this, &aProperty, &aOut);
+  // Returns the computed typed value list of the given property.
+  bool GetPropertyTypedValueList(const CSSPropertyId& aId,
+                                 StylePropertyTypedValueList& aOut) const {
+    return Servo_ComputedValues_GetPropertyTypedValueList(this, &aId, &aOut);
   }
 
   // Return the ComputedStyle whose style data should be used for the R,
@@ -97,28 +97,28 @@ class ComputedStyle {
            !PseudoStyle::IsEagerlyCascadedInServo(GetPseudoType());
   }
 
-  PseudoStyleType GetPseudoType() const { return mPseudoType; }
+  PseudoStyleType GetPseudoType() const { return mSource.pseudo_type; }
 
   bool IsPseudoElement() const {
-    return PseudoStyle::IsPseudoElement(mPseudoType);
+    return PseudoStyle::IsPseudoElement(GetPseudoType());
   }
 
   bool IsInheritingAnonBox() const {
-    return PseudoStyle::IsInheritingAnonBox(mPseudoType);
+    return PseudoStyle::IsInheritingAnonBox(GetPseudoType());
   }
 
   bool IsNonInheritingAnonBox() const {
-    return PseudoStyle::IsNonInheritingAnonBox(mPseudoType);
+    return PseudoStyle::IsNonInheritingAnonBox(GetPseudoType());
   }
 
   bool IsWrapperAnonBox() const {
-    return PseudoStyle::IsWrapperAnonBox(mPseudoType);
+    return PseudoStyle::IsWrapperAnonBox(GetPseudoType());
   }
 
-  bool IsAnonBox() const { return PseudoStyle::IsAnonBox(mPseudoType); }
+  bool IsAnonBox() const { return PseudoStyle::IsAnonBox(GetPseudoType()); }
 
   bool IsPseudoOrAnonBox() const {
-    return mPseudoType != PseudoStyleType::NotPseudo;
+    return GetPseudoType() != PseudoStyleType::NotPseudo;
   }
 
   // Whether there are author-specified rules for border or background
@@ -128,7 +128,7 @@ class ComputedStyle {
     return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND);
   }
 
-  // Whether there are author-specific rules for text color.
+  // Whether there are author-specific rules for text `color`.
   bool HasAuthorSpecifiedTextColor() const {
     return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_TEXT_COLOR);
   }
@@ -386,8 +386,6 @@ class ComputedStyle {
   // For functional pseudo-elements like ::highlight(name), the functional
   // parameter is stored alongside the style in the cache.
   CachedInheritingStyles mCachedInheritingStyles;
-
-  const PseudoStyleType mPseudoType;
 };
 
 }  // namespace mozilla

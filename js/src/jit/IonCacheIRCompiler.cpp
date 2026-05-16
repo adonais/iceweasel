@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -968,7 +966,7 @@ bool IonCacheIRCompiler::emitCallScriptedGetterResult(
   Register callee = allocator.useRegister(masm, calleeId);
   AutoScratchRegister scratch(allocator, masm);
 
-  int32_t nargsAndFlags = int32StubField(nargsAndFlagsOffset);
+  uint32_t nargsAndFlags = int32StubField(nargsAndFlagsOffset);
   size_t nargs = nargsAndFlags >> JSFunction::ArgCountShift;
 
   allocator.discardStack(masm);
@@ -1772,7 +1770,7 @@ bool IonCacheIRCompiler::emitCallScriptedSetter(ObjOperandId receiverId,
   Register callee = allocator.useRegister(masm, calleeId);
   ConstantOrRegister val = allocator.useConstantOrRegister(masm, rhsId);
 
-  int32_t nargsAndFlags = int32StubField(nargsAndFlagsOffset);
+  uint32_t nargsAndFlags = int32StubField(nargsAndFlagsOffset);
   size_t nargs = nargsAndFlags >> JSFunction::ArgCountShift;
 
   AutoScratchRegister scratch(allocator, masm);

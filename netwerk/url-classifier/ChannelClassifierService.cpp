@@ -130,6 +130,14 @@ UrlClassifierBlockedChannel::GetTables(nsACString& aTables) {
 }
 
 NS_IMETHODIMP
+UrlClassifierBlockedChannel::GetChannel(nsIChannel** aChannel) {
+  NS_ENSURE_ARG_POINTER(aChannel);
+  nsCOMPtr<nsIChannel> channel = mChannel;
+  channel.forget(aChannel);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 UrlClassifierBlockedChannel::GetBrowserId(uint64_t* aBrowserId) {
   NS_ENSURE_ARG_POINTER(aBrowserId);
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();

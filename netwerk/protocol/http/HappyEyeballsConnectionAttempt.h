@@ -9,16 +9,19 @@
 #include "nsAHttpConnection.h"
 #include "nsICancelable.h"
 #include "nsIDNSListener.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "nsTHashSet.h"
 #include "happy_eyeballs_glue/HappyEyeballs.h"
 #include "ConnectionEstablisher.h"
+#include "HappyEyeballsTransaction.h"
 
 namespace mozilla {
 namespace net {
 
 class HttpConnectionUDP;
 class nsHttpConnection;
+class PendingTransactionInfo;
 
 class DnsRequestInfo final {
  public:
@@ -61,7 +64,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
                                  bool speculative, bool urgentStart);
 
   nsresult Init(ConnectionEntry* ent) override;
-  void Abandon() override;
+  void Abandon(bool aReenqueueTransaction = false) override;
   double Duration(TimeStamp epoch) override;
   void OnTimeout() override;
   void PrintDiagnostics(nsCString& log) override;
@@ -83,8 +86,9 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   // DNS lookups
   Result<nsIDNSService::DNSFlags, nsresult> SetupDnsFlags(
       happy_eyeballs::DnsRecordType aType);
-  nsresult DNSLookup(happy_eyeballs::DnsRecordType aType,
-                     nsIDNSService::DNSFlags aFlags, uint64_t aId);
+  void DNSLookup(happy_eyeballs::DnsRecordType aType,
+                 Result<nsIDNSService::DNSFlags, nsresult> aFlags, uint64_t aId,
+                 const nsACString& aHostname);
 
   // DNS answers
   nsresult OnARecord(nsIDNSRecord* aRecord, nsresult status, uint64_t aId);
@@ -92,6 +96,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult OnHTTPSRecord(nsIDNSRecord* aRecord, nsresult status, uint64_t aId);
 
   // Connection Attempt
+  void MaybePassHttpTransToEstablisher(ConnectionEstablisher* aEstablisher,
+                                       uint64_t aId);
   nsresult EstablishTCPConnection(NetAddr aAddr, uint16_t aPort,
                                   nsTArray<uint8_t>&& aEchConfig, uint64_t aId);
   void HandleTCPConnectionResult(
@@ -104,12 +110,17 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
       Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
       UDPConnectionEstablisher* aEstablisher, uint64_t aId);
 
+  nsresult CheckLNA(nsISocketTransport* aTransport);
+
   // Timer
   void SetupTimer(uint64_t aTimeout);
 
   void OnSucceeded();
-  void ProcessTCPConn(nsHttpConnection* aConn, ConnectionEntry* aEntry);
-  void ProcessUDPConn(HttpConnectionUDP* aConn, ConnectionEntry* aEntry);
+  void ProcessTCPConn(nsHttpConnection* aConn, ConnectionEntry* aEntry,
+                      bool aTransactionAlreadyOnConn);
+  void ProcessUDPConn(HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
+                      bool aTransactionAlreadyOnConn);
+  void CloseHttpTransaction(happy_eyeballs::FailureReason aReason);
 
   RefPtr<HappyEyeballs> mHappyEyeballs;
 
@@ -121,12 +132,20 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsRefPtrHashtable<nsUint64HashKey, ConnectionEstablisher>
       mConnectionEstablisherTable;
   RefPtr<HttpConnectionBase> mOutputConn;
+  uint64_t mOutputConnId{0};
   uint16_t mAddrFamily{0};
 
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;
   bool mDone = false;
+  nsresult mLastConnectionError = NS_OK;
+  nsresult mLastDnsError = NS_OK;
+  bool mFirstAttempt = true;
+  Maybe<uint64_t> mHttpTransEstablisherId;
+  RefPtr<HappyEyeballsTransaction> mProxyTransaction;
   nsTHashSet<uint32_t> mSentTransportStatuses;
+
+  DnsMetadata mDnsMetadata;
 
   TimeStamp mDomainLookupStart;
   TimeStamp mDomainLookupEnd;

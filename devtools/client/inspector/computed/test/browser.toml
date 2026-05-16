@@ -55,6 +55,9 @@ fail-if = [
 ["browser_computed_keybindings_02.js"]
 
 ["browser_computed_matched-selectors-jump-to-declaration.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2027498
+]
 
 ["browser_computed_matched-selectors-order.js"]
 

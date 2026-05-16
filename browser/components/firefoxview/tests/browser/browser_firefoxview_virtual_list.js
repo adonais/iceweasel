@@ -1,18 +1,6 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-const VIRTUAL_LIST_ENABLED_PREF = "browser.firefox-view.virtual-list.enabled";
-
-add_setup(async () => {
-  await SpecialPowers.pushPrefEnv({
-    set: [[VIRTUAL_LIST_ENABLED_PREF, true]],
-  });
-  registerCleanupFunction(async () => {
-    await SpecialPowers.popPrefEnv();
-    clearHistory();
-  });
-});
-
 add_task(async function test_max_render_count_on_win_resize() {
   const now = new Date();
   await PlacesUtils.history.insertMany([
@@ -33,7 +21,8 @@ add_task(async function test_max_render_count_on_win_resize() {
 
     let historyComponent = document.querySelector("view-history");
     let tabList = await TestUtils.waitForCondition(
-      () => historyComponent.lists[0]
+      () => historyComponent.lists[0],
+      "Waiting for the first list in the history component to be available"
     );
     let rootVirtualList = tabList.rootVirtualListEl;
 

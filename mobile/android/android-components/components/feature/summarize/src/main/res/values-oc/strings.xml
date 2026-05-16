@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <!-- Link text to learn more about downloading Gemini Nano -->
+  <string name="mozac_summarize_learn_more_link">Ne saber mai</string>
+  <!-- Link text to learn more about page summaries in settings -->
+  <string name="mozac_summarize_settings_learn_more">Ne saber mai</string>
+</resources>

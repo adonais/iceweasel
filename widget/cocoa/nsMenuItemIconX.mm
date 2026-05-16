@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
- * Retrieves and displays icons in native menu items on Mac OS X.
+ * Retrieves and displays icons in native menu items on macOS.
  */
 
 #include "MOZIconHelper.h"
@@ -14,7 +14,6 @@
 #include "nsCocoaUtils.h"
 #include "nsComputedDOMStyle.h"
 #include "nsContentUtils.h"
-#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsIContentPolicy.h"
 #include "nsMenuItemX.h"

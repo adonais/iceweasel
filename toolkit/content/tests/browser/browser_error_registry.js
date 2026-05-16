@@ -590,3 +590,89 @@ add_task(async function test_resolve_advanced_config_null() {
   const result = resolveAdvancedConfig(null, {});
   Assert.strictEqual(result, null, "Null advancedConfig should return null");
 });
+
+add_task(async function test_ssl_error_rx_record_too_long_registered() {
+  const { initializeRegistry, getErrorConfig, _testOnlyClearRegistry } =
+    ChromeUtils.importESModule(REGISTRY_URL);
+
+  _testOnlyClearRegistry();
+  initializeRegistry();
+
+  const config = getErrorConfig("SSL_ERROR_RX_RECORD_TOO_LONG");
+  Assert.ok(config, "SSL_ERROR_RX_RECORD_TOO_LONG should be registered");
+  Assert.equal(config.category, "cert", "Should be in the cert category");
+  Assert.equal(
+    config.bodyTitleL10nId,
+    "nssFailure2-title",
+    "Should have the nssFailure2 title for consistency with other SSL errors"
+  );
+  Assert.ok(
+    Array.isArray(config.introContent),
+    "introContent should be an array"
+  );
+  Assert.equal(
+    config.introContent[0].dataL10nId,
+    "cert-error-ssl-connection-error",
+    "First intro content should be the SSL connection error message"
+  );
+  Assert.equal(
+    config.introContent[1].dataL10nId,
+    "ssl-error-rx-record-too-long",
+    "Second intro content should be the specific error message"
+  );
+  Assert.ok(config.buttons.showTryAgain, "Should show try again button");
+  Assert.ok(config.buttons.showAdvanced, "Should show advanced section");
+  Assert.equal(config.hasNoUserFix, true, "Should have no user fix");
+
+  _testOnlyClearRegistry();
+});
+
+add_task(async function test_denied_port_access_intro_content() {
+  const { initializeRegistry, getErrorConfig, _testOnlyClearRegistry } =
+    ChromeUtils.importESModule(REGISTRY_URL);
+
+  _testOnlyClearRegistry();
+  initializeRegistry();
+
+  const config = getErrorConfig("deniedPortAccess");
+  Assert.ok(config, "deniedPortAccess should be registered");
+  Assert.equal(
+    config.introContent.dataL10nId,
+    "fp-neterror-denied-port-access",
+    "Should use the denied port access l10n id, not the offline intro"
+  );
+  Assert.strictEqual(
+    config.introContent.dataL10nArgs,
+    undefined,
+    "Should not have l10n args (no hostname needed)"
+  );
+
+  _testOnlyClearRegistry();
+});
+
+add_task(async function test_clock_skew_errors_have_checkClockSkew() {
+  const { initializeRegistry, getErrorConfig, _testOnlyClearRegistry } =
+    ChromeUtils.importESModule(REGISTRY_URL);
+
+  _testOnlyClearRegistry();
+  initializeRegistry();
+
+  const clockSkewErrorIds = [
+    "SEC_ERROR_EXPIRED_CERTIFICATE",
+    "SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE",
+    "MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE",
+    "MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE",
+  ];
+
+  for (const id of clockSkewErrorIds) {
+    const config = getErrorConfig(id);
+    Assert.ok(config, `${id} should be registered`);
+    Assert.equal(
+      config.checkClockSkew,
+      true,
+      `${id} should have checkClockSkew: true`
+    );
+  }
+
+  _testOnlyClearRegistry();
+});

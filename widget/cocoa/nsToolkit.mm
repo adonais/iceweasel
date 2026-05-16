@@ -24,7 +24,6 @@ extern "C" {
 #include "nsCocoaUtils.h"
 #include "nsObjCExceptions.h"
 
-#include "nsGkAtoms.h"
 #include "nsIRollupListener.h"
 #include "nsIWidget.h"
 #include "nsIWidget.h"
@@ -221,7 +220,7 @@ nsToolkit* nsToolkit::GetToolkit() {
   NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);
 }
 
-// An alternative to [NSObject poseAsClass:] that isn't deprecated on OS X
+// An alternative to [NSObject poseAsClass:] that isn't deprecated on macOS
 // Leopard and is available to 64-bit binaries on Leopard and above.  Based on
 // ideas and code from http://www.cocoadev.com/index.pl?MethodSwizzling.
 // Since the Method type becomes an opaque type as of Objective-C 2.0, we'll

@@ -8,9 +8,11 @@
 #include "FetchService.h"
 #include "InternalRequest.h"
 #include "InternalResponse.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/FetchTypes.h"
 #include "mozilla/dom/PerformanceTimingTypes.h"
+#include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "nsThreadUtils.h"
@@ -50,8 +52,7 @@ NS_IMETHODIMP FetchParent::FetchParentCSPEventListener::OnCSPViolationEvent(
   return NS_OK;
 }
 
-MOZ_RUNINIT nsTHashMap<nsIDHashKey, RefPtr<FetchParent>>
-    FetchParent::sActorTable;
+constinit nsTHashMap<nsIDHashKey, RefPtr<FetchParent>> FetchParent::sActorTable;
 
 /*static*/
 RefPtr<FetchParent> FetchParent::GetActorByID(const nsID& aID) {
@@ -96,6 +97,30 @@ IPCResult FetchParent::RecvFetchOp(FetchOpArgs&& aArgs) {
   MOZ_ASSERT(!mIsDone);
   if (mActorDestroyed) {
     return IPC_OK();
+  }
+
+  auto principalOrErr = PrincipalInfoToPrincipal(aArgs.principalInfo());
+  if (principalOrErr.isErr()) {
+    return IPC_FAIL(this, "RecvFetchOp failed deserializing principalInfo");
+  }
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
+  RefPtr<ThreadsafeContentParentHandle> contentHandle =
+      BackgroundParent::GetContentParentHandle(Manager());
+  if (contentHandle &&
+      StaticPrefs::dom_fetch_validatePrincipalForRemoteType()) {
+    const nsACString& remoteType = contentHandle->GetRemoteType();
+    // The inference process uses ChromeWorkers which have a system principal,
+    // so system principals must be allowed there.
+    EnumSet<ValidatePrincipalOptions> options;
+    if (remoteType == INFERENCE_REMOTE_TYPE) {
+      options += ValidatePrincipalOptions::AllowSystem;
+    }
+    if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(principal, remoteType,
+                                                     options)) {
+      return IPC_FAIL(this,
+                      "RecvFetchOp principal not allowed for remote type");
+    }
   }
 
   mRequest = MakeSafeRefPtr<InternalRequest>(std::move(aArgs.request()));

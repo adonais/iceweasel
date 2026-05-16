@@ -39,6 +39,7 @@
 #include "mozilla/dom/VideoFrame.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 #include "nsGlobalWindowInner.h"
 
 namespace mozilla::webgpu {
@@ -749,7 +750,7 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
                                const dom::GPURenderPipelineDescriptor& aDesc,
                                bool isAsync) {
   // A bunch of stack locals that we can have pointers into
-  nsTArray<ffi::WGPUVertexBufferLayout> vertexBuffers;
+  nsTArray<ffi::WGPUFfiOption_VertexBufferLayout> vertexBuffers;
   nsTArray<ffi::WGPUVertexAttribute> vertexAttributes;
   ffi::WGPURenderPipelineDescriptor desc = {};
   nsCString vsEntry, fsEntry;
@@ -798,8 +799,12 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
     }
 
     for (const auto& vertex_desc : stage.mBuffers) {
-      ffi::WGPUVertexBufferLayout vb_desc = {};
-      if (!vertex_desc.IsNull()) {
+      ffi::WGPUFfiOption_VertexBufferLayout opt_vb_desc = {};
+      if (vertex_desc.IsNull()) {
+        opt_vb_desc.tag =
+            ffi::WGPUFfiOption_VertexBufferLayout_None_VertexBufferLayout;
+      } else {
+        ffi::WGPUVertexBufferLayout vb_desc = {};
         const auto& vd = vertex_desc.Value();
         vb_desc.array_stride = vd.mArrayStride;
         vb_desc.step_mode = ffi::WGPUVertexStepMode(vd.mStepMode);
@@ -812,14 +817,21 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
           ad.shader_location = vat.mShaderLocation;
           vertexAttributes.AppendElement(ad);
         }
+        opt_vb_desc.tag =
+            ffi::WGPUFfiOption_VertexBufferLayout_Some_VertexBufferLayout;
+        opt_vb_desc.some = vb_desc;
       }
-      vertexBuffers.AppendElement(vb_desc);
+      vertexBuffers.AppendElement(opt_vb_desc);
     }
     // Now patch up all the pointers to attribute lists.
     size_t numAttributes = 0;
     for (auto& vb_desc : vertexBuffers) {
-      vb_desc.attributes.data = vertexAttributes.Elements() + numAttributes;
-      numAttributes += vb_desc.attributes.length;
+      if (vb_desc.tag ==
+          ffi::WGPUFfiOption_VertexBufferLayout_Some_VertexBufferLayout) {
+        vb_desc.some.attributes.data =
+            vertexAttributes.Elements() + numAttributes;
+        numAttributes += vb_desc.some.attributes.length;
+      }
     }
 
     vertexState.buffers = {vertexBuffers.Elements(), vertexBuffers.Length()};
@@ -974,7 +986,9 @@ already_AddRefed<Texture> Device::InitSwapChain(
     return nullptr;
   }
 
-  const layers::RGBDescriptor rgbDesc(aCanvasSize, aFormat);
+  const layers::RGBDescriptor rgbDesc(aCanvasSize, aFormat,
+                                      gfx::ColorSpace2::SRGB,
+                                      gfx::TransferFunction::SRGB);
 
   ffi::wgpu_client_create_swap_chain(
       GetClient(), GetId(), mQueue->GetId(), rgbDesc.size().Width(),

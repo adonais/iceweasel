@@ -1,0 +1,18 @@
+{
+  "label": "gamma.app",
+  "bugs": {
+    "1986438": {
+      "issue": "unsupported-warning",
+      "matches": ["*://gamma.app/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "isolated": true,
+        "js": ["1986438-gamma.app-hide-unsupported.js"]
+      }
+    }
+  ]
+}

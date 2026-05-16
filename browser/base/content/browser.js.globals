@@ -58,11 +58,9 @@
   "displaySecurityInfo",
   "gUIDensity",
   "DynamicShortcutTooltip",
-  "hrefAndLinkNodeForClickEvent",
   "contentAreaClick",
   "handleLinkClick",
   "middleMousePaste",
-  "handleDroppedLink",
   "ToolbarContextMenu",
   "BrowserOffline",
   "CanCloseWindow",
@@ -109,7 +107,6 @@
   "NewTabPagePreloading",
   "NewTabUtils",
   "NimbusFeatures",
-  "OpenInTabsUtils",
   "PageActions",
   "PageThumbs",
   "PanelMultiView",
@@ -238,5 +235,6 @@
   "ActionsProviderContextualSearch",
   "ToolbarDropHandler",
   "ProfilesDatastoreService",
-  "gTrustPanelHandler"
+  "gTrustPanelHandler",
+  "ContentSharingUtils"
 ]

@@ -23,6 +23,15 @@ import org.mozilla.experiments.nimbus.internal.PrefEnrollmentData
 class NimbusGeckoUtilsTest {
 
     @Test
+    fun `fromJsonStringValue decodes JSON-encoded string values and allows raw values`() {
+        assertEquals("#000000", "\"#000000\"".fromJsonStringValue())
+        assertEquals("hello \"world\"", "\"hello \\\"world\\\"\"".fromJsonStringValue())
+        assertEquals("some-value", "some-value".fromJsonStringValue())
+        assertEquals("123", "123".fromJsonStringValue())
+        assertEquals("true", "true".fromJsonStringValue())
+    }
+
+    @Test
     fun `createPrefSetter with OriginalGeckoPref returns setter for various types`() {
         val stringPref = OriginalGeckoPref(pref = "string.pref", branch = PrefBranch.USER, value = "some-value")
         val stringResult =
@@ -80,6 +89,7 @@ class NimbusGeckoUtilsTest {
         }
     }
 
+    @Test
     fun `createPrefSetter with OriginalGeckoPref throws for null class`() {
         val pref = OriginalGeckoPref(pref = "some.pref", branch = PrefBranch.USER, value = "some-value")
         try {
@@ -145,6 +155,7 @@ class NimbusGeckoUtilsTest {
         }
     }
 
+    @Test
     fun `createPrefSetter with GeckoPrefState throws for null class`() {
         val pref = OriginalGeckoPref(pref = "some.pref", branch = PrefBranch.USER, value = "some-value")
         try {

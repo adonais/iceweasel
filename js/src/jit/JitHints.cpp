@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -63,7 +61,6 @@ bool JitHintsMap::recordIonCompilation(JSScript* script) {
   auto p = ionHintMap_.lookupForAdd(key);
   IonHint* hint = nullptr;
   if (p) {
-    // Don't modify existing threshold values.
     hint = p->value();
     updateAsRecentlyUsed(hint);
   } else {
@@ -77,7 +74,10 @@ bool JitHintsMap::recordIonCompilation(JSScript* script) {
       script->warmUpCountAtLastICStub(),
       script->jitScript()->hasPretenuredAllocSites());
 
-  hint->initThreshold(threshold);
+  // Don't lower an existing threshold.
+  if (threshold > hint->threshold()) {
+    hint->setThreshold(threshold);
+  }
   return true;
 }
 

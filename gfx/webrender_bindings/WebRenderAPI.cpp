@@ -112,11 +112,9 @@ void TransactionBuilder::RemovePipeline(PipelineId aPipelineId) {
 void TransactionBuilder::SetDisplayList(
     Epoch aEpoch, wr::WrPipelineId pipeline_id,
     wr::BuiltDisplayListDescriptor dl_descriptor,
-    wr::Vec<uint8_t>& dl_items_data, wr::Vec<uint8_t>& dl_cache_data,
-    wr::Vec<uint8_t>& dl_spatial_tree) {
+    wr::Vec<uint8_t>& dl_items_data, wr::Vec<uint8_t>& dl_spatial_tree) {
   wr_transaction_set_display_list(mTxn, aEpoch, pipeline_id, dl_descriptor,
-                                  &dl_items_data.inner, &dl_cache_data.inner,
-                                  &dl_spatial_tree.inner);
+                                  &dl_items_data.inner, &dl_spatial_tree.inner);
 }
 
 void TransactionBuilder::ClearDisplayList(Epoch aEpoch,
@@ -703,10 +701,6 @@ void WebRenderAPI::Readback(const TimeStamp& aStartTime, gfx::IntSize size,
 
 void WebRenderAPI::ClearAllCaches() { wr_api_clear_all_caches(mDocHandle); }
 
-void WebRenderAPI::EnableNativeCompositor(bool aEnable) {
-  wr_api_enable_native_compositor(mDocHandle, aEnable);
-}
-
 void WebRenderAPI::SetBatchingLookback(uint32_t aCount) {
   wr_api_set_batching_lookback(mDocHandle, aCount);
 }
@@ -1182,14 +1176,9 @@ DisplayListBuilder::DisplayListBuilder(PipelineId aId,
     : mCurrentSpaceAndClipChain(wr::RootScrollNodeWithChain()),
       mActiveFixedPosTracker(nullptr),
       mPipelineId(aId),
-      mBackend(aBackend),
-      mDisplayItemCache(nullptr) {
+      mBackend(aBackend) {
   MOZ_COUNT_CTOR(DisplayListBuilder);
   mWrState = wr_state_new(aId);
-
-  if (mDisplayItemCache && mDisplayItemCache->IsEnabled()) {
-    mDisplayItemCache->SetPipelineId(aId);
-  }
 }
 
 DisplayListBuilder::~DisplayListBuilder() {
@@ -1211,7 +1200,7 @@ void DisplayListBuilder::DumpSerializedDisplayList() {
   wr_dump_serialized_display_list(mWrState);
 }
 
-void DisplayListBuilder::Begin(layers::DisplayItemCache* aCache) {
+void DisplayListBuilder::Begin() {
   wr_api_begin_builder(mWrState);
 
   mScrollIds.clear();
@@ -1220,37 +1209,25 @@ void DisplayListBuilder::Begin(layers::DisplayItemCache* aCache) {
   mCachedTextDT = nullptr;
   mCachedContext = nullptr;
   mActiveFixedPosTracker = nullptr;
-  mDisplayItemCache = aCache;
-  mCurrentCacheSlot = Nothing();
 }
 
 void DisplayListBuilder::End(BuiltDisplayList& aOutDisplayList) {
-  wr_api_end_builder(
-      mWrState, &aOutDisplayList.dl_desc, &aOutDisplayList.dl_items.inner,
-      &aOutDisplayList.dl_cache.inner, &aOutDisplayList.dl_spatial_tree.inner);
-
-  mDisplayItemCache = nullptr;
+  wr_api_end_builder(mWrState, &aOutDisplayList.dl_desc,
+                     &aOutDisplayList.dl_items.inner,
+                     &aOutDisplayList.dl_spatial_tree.inner);
 }
 
 void DisplayListBuilder::End(layers::DisplayListData& aOutTransaction) {
-  if (mDisplayItemCache && mDisplayItemCache->IsEnabled()) {
-    wr_dp_set_cache_size(mWrState, mDisplayItemCache->CurrentSize());
-  }
-
-  wr::VecU8 dlItems, dlCache, dlSpatialTree;
+  wr::VecU8 dlItems, dlSpatialTree;
   wr_api_end_builder(mWrState, &aOutTransaction.mDLDesc, &dlItems.inner,
-                     &dlCache.inner, &dlSpatialTree.inner);
+                     &dlSpatialTree.inner);
   aOutTransaction.mDLItems.emplace(dlItems.inner.data, dlItems.inner.length,
                                    dlItems.inner.capacity);
-  aOutTransaction.mDLCache.emplace(dlCache.inner.data, dlCache.inner.length,
-                                   dlCache.inner.capacity);
   aOutTransaction.mDLSpatialTree.emplace(dlSpatialTree.inner.data,
                                          dlSpatialTree.inner.length,
                                          dlSpatialTree.inner.capacity);
   dlItems.inner.capacity = 0;
   dlItems.inner.data = nullptr;
-  dlCache.inner.capacity = 0;
-  dlCache.inner.data = nullptr;
   dlSpatialTree.inner.capacity = 0;
   dlSpatialTree.inner.data = nullptr;
 }
@@ -1280,8 +1257,6 @@ void DisplayListBuilder::PopStackingContext(bool aIsReferenceFrame) {
 
 wr::WrClipChainId DisplayListBuilder::DefineClipChain(
     Span<const wr::WrClipId> aClips, const Maybe<wr::WrClipChainId>& aParent) {
-  CancelGroup();
-
   const uint64_t* parent = aParent ? &aParent->id : nullptr;
   uint64_t clipchainId = wr_dp_define_clipchain(
       mWrState, parent, aClips.Elements(), aClips.Length());
@@ -1302,8 +1277,6 @@ wr::WrClipChainId DisplayListBuilder::DefineClipChain(
 wr::WrClipId DisplayListBuilder::DefineImageMaskClip(
     const wr::ImageMask& aMask, const nsTArray<wr::LayoutPoint>& aPoints,
     wr::FillRule aFillRule) {
-  CancelGroup();
-
   WrClipId clipId = wr_dp_define_image_mask_clip_with_parent_clip_chain(
       mWrState, mCurrentSpaceAndClipChain.space, aMask, aPoints.Elements(),
       aPoints.Length(), aFillRule);
@@ -1313,8 +1286,6 @@ wr::WrClipId DisplayListBuilder::DefineImageMaskClip(
 
 wr::WrClipId DisplayListBuilder::DefineRoundedRectClip(
     Maybe<wr::WrSpatialId> aSpace, const wr::ComplexClipRegion& aComplex) {
-  CancelGroup();
-
   WrClipId clipId;
   if (aSpace) {
     clipId = wr_dp_define_rounded_rect_clip(mWrState, *aSpace, aComplex);
@@ -1328,8 +1299,6 @@ wr::WrClipId DisplayListBuilder::DefineRoundedRectClip(
 
 wr::WrClipId DisplayListBuilder::DefineRectClip(Maybe<wr::WrSpatialId> aSpace,
                                                 wr::LayoutRect aClipRect) {
-  CancelGroup();
-
   WrClipId clipId;
   if (aSpace) {
     clipId = wr_dp_define_rect_clip(mWrState, *aSpace, aClipRect);
@@ -1774,67 +1743,6 @@ void DisplayListBuilder::PushBoxShadow(
 
 void DisplayListBuilder::PushDebug(uint32_t aVal) {
   wr_dp_push_debug(mWrState, aVal);
-}
-
-void DisplayListBuilder::StartGroup(nsPaintedDisplayItem* aItem) {
-  if (!mDisplayItemCache || mDisplayItemCache->IsFull()) {
-    return;
-  }
-
-  MOZ_ASSERT(!mCurrentCacheSlot);
-  mCurrentCacheSlot = mDisplayItemCache->AssignSlot(aItem);
-
-  if (mCurrentCacheSlot) {
-    wr_dp_start_item_group(mWrState);
-  }
-}
-
-void DisplayListBuilder::CancelGroup(const bool aDiscard) {
-  if (!mDisplayItemCache || !mCurrentCacheSlot) {
-    return;
-  }
-
-  wr_dp_cancel_item_group(mWrState, aDiscard);
-  mCurrentCacheSlot = Nothing();
-}
-
-void DisplayListBuilder::FinishGroup() {
-  if (!mDisplayItemCache || !mCurrentCacheSlot) {
-    return;
-  }
-
-  MOZ_ASSERT(mCurrentCacheSlot);
-
-  if (wr_dp_finish_item_group(mWrState, mCurrentCacheSlot.ref())) {
-    mDisplayItemCache->MarkSlotOccupied(mCurrentCacheSlot.ref(),
-                                        CurrentSpaceAndClipChain());
-    mDisplayItemCache->Stats().AddCached();
-  }
-
-  mCurrentCacheSlot = Nothing();
-}
-
-bool DisplayListBuilder::ReuseItem(nsPaintedDisplayItem* aItem) {
-  if (!mDisplayItemCache) {
-    return false;
-  }
-
-  mDisplayItemCache->Stats().AddTotal();
-
-  if (mDisplayItemCache->IsEmpty()) {
-    return false;
-  }
-
-  Maybe<uint16_t> slot =
-      mDisplayItemCache->CanReuseItem(aItem, CurrentSpaceAndClipChain());
-
-  if (slot) {
-    mDisplayItemCache->Stats().AddReused();
-    wr_dp_push_reuse_items(mWrState, slot.ref());
-    return true;
-  }
-
-  return false;
 }
 
 Maybe<layers::ScrollableLayerGuid::ViewID>

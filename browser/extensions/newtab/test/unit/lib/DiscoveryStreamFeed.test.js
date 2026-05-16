@@ -162,11 +162,6 @@ describe("DiscoveryStreamFeed", () => {
 
   describe("#fetchFromEndpoint", () => {
     beforeEach(() => {
-      feed._prefCache = {
-        config: {
-          api_key_pref: "",
-        },
-      };
       fetchStub.resolves({
         json: () => Promise.resolve("hi"),
         ok: true,
@@ -443,16 +438,6 @@ describe("DiscoveryStreamFeed", () => {
         DEFAULT_ROW_COUNT * DEFAULT_COLUMN_COUNT
       );
     });
-    it("should use new spocs endpoint if in the config", async () => {
-      feed.config.spocs_endpoint = "https://spocs.getpocket.com/spocs2";
-
-      await feed.loadLayout(feed.store.dispatch);
-
-      assert.equal(
-        feed.store.getState().DiscoveryStream.spocs.spocs_endpoint,
-        "https://spocs.getpocket.com/spocs2"
-      );
-    });
     it("should use local basic layout with FF pref hardcoded_basic_layout", async () => {
       feed.store = createStore(combineReducers(reducers), {
         Prefs: {
@@ -692,11 +677,6 @@ describe("DiscoveryStreamFeed", () => {
     it("should send feed update events with new feed data", async () => {
       sandbox.stub(feed.cache, "get").returns(Promise.resolve(fakeCache));
       sandbox.spy(feed.store, "dispatch");
-      feed._prefCache = {
-        config: {
-          api_key_pref: "",
-        },
-      };
 
       await feed.loadComponentFeeds(feed.store.dispatch);
 
@@ -789,12 +769,6 @@ describe("DiscoveryStreamFeed", () => {
 
   describe("#loadSpocs", () => {
     beforeEach(() => {
-      feed._prefCache = {
-        config: {
-          api_key_pref: "",
-        },
-      };
-
       sandbox.stub(feed, "getPlacements").returns([{ name: "spocs" }]);
       Object.defineProperty(feed, "showSponsoredStories", { get: () => true });
     });
@@ -890,7 +864,7 @@ describe("DiscoveryStreamFeed", () => {
             title: "",
             sponsor: "",
             sponsored_by_override: undefined,
-            items: [{ id: "data", score: 1, fetchTimestamp: loadTimestamp }],
+            items: [{ id: "data", score: 1 }],
           },
         },
         lastUpdated: loadTimestamp,
@@ -900,7 +874,7 @@ describe("DiscoveryStreamFeed", () => {
 
       assert.deepEqual(
         feed.store.getState().DiscoveryStream.spocs.data.spocs.items[0],
-        { id: "data", score: 1, fetchTimestamp: loadTimestamp }
+        { id: "data", score: 1 }
       );
     });
     it("should normalizeSpocsItems for older spoc data", async () => {
@@ -914,7 +888,7 @@ describe("DiscoveryStreamFeed", () => {
 
       assert.deepEqual(
         feed.store.getState().DiscoveryStream.spocs.data.spocs.items[0],
-        { id: "data", score: 1, fetchTimestamp: 0 }
+        { id: "data", score: 1 }
       );
     });
     it("should return expected data if normalizeSpocsItems returns no spoc data", async () => {
@@ -944,7 +918,7 @@ describe("DiscoveryStreamFeed", () => {
           context: "",
           sponsor: "",
           sponsored_by_override: undefined,
-          items: [{ id: "data", score: 1, fetchTimestamp: 0 }],
+          items: [{ id: "data", score: 1 }],
         },
         placement2: {
           title: "",
@@ -982,7 +956,7 @@ describe("DiscoveryStreamFeed", () => {
           context: "context",
           sponsor: "",
           sponsored_by_override: undefined,
-          items: [{ id: "data", score: 1, fetchTimestamp: 0 }],
+          items: [{ id: "data", score: 1 }],
         },
       });
     });
@@ -1058,7 +1032,6 @@ describe("DiscoveryStreamFeed", () => {
 
       await feed.loadSpocs(feed.store.dispatch);
 
-      console.log(feed.fetchFromEndpoint.firstCall);
       assert.equal(
         feed.fetchFromEndpoint.secondCall.args[0],
         "unifiedAdEndpoint/v1/ads"
@@ -1107,7 +1080,6 @@ describe("DiscoveryStreamFeed", () => {
 
       await feed.loadSpocs(feed.store.dispatch);
 
-      console.log(feed.fetchFromEndpoint.firstCall);
       assert.equal(
         feed.fetchFromEndpoint.secondCall.args[0],
         "unifiedAdEndpoint/v1/ads"
@@ -2467,6 +2439,17 @@ describe("DiscoveryStreamFeed", () => {
         type: at.DISCOVERY_STREAM_DEV_SYNC_RS,
       });
       assert.calledOnce(global.RemoteSettings.pollChanges);
+    });
+  });
+
+  describe("#onAction: DISCOVERY_STREAM_DEV_REFRESH_CACHE", () => {
+    it("should clear the cache with DISCOVERY_STREAM_DEV_REFRESH_CACHE", async () => {
+      sandbox.stub(feed.cache, "set").returns(Promise.resolve());
+
+      sandbox.stub(feed, "resetCache").returns(Promise.resolve());
+      await feed.onAction({ type: at.DISCOVERY_STREAM_DEV_REFRESH_CACHE });
+
+      assert.calledOnce(feed.resetCache);
     });
   });
 

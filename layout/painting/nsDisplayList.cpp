@@ -4068,10 +4068,8 @@ bool nsDisplayBackgroundColor::CreateWebRenderCommands(
     aBuilder.PushRectWithAnimation(r, r, !BackfaceIsHidden(),
                                    wr::ToColorF(ToDeviceColor(color)), &prop);
   } else {
-    aBuilder.StartGroup(this);
     aBuilder.PushRect(r, r, !BackfaceIsHidden(), false, false,
                       wr::ToColorF(ToDeviceColor(color)));
-    aBuilder.FinishGroup();
   }
 
   return true;
@@ -7863,17 +7861,9 @@ bool nsDisplayText::CreateWebRenderCommands(
 
   LCPTextFrameHelper::MaybeUnionTextFrame(f, bounds - ToReferenceFrame());
 
-  aBuilder.StartGroup(this);
-
   RenderToContext(textDrawer, aDisplayListBuilder, mVisibleRect,
                   aBuilder.GetInheritedOpacity(), true);
   const bool result = textDrawer->GetTextDrawer()->Finish();
-
-  if (result) {
-    aBuilder.FinishGroup();
-  } else {
-    aBuilder.CancelGroup(true);
-  }
 
   return result;
 }

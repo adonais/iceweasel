@@ -23,15 +23,10 @@ indent_size = 2
 # Matches printWidth in .prettierrc.js
 max_line_length = 80
 
-[*.{py,py3}]
+[*.{py,py3,configure,build,mozbuild}]
 indent_style = space
 indent_size = 4
 # Matches line-length in pyproject.toml (ruff)
-max_line_length = 88
-
-[moz.build]
-indent_style = space
-indent_size = 4
 max_line_length = 88
 
 [*.rs]
@@ -45,7 +40,7 @@ indent_style = space
 indent_size = 2
 max_line_length = 100
 
-[*.kt]
+[*.{kt,kts}]
 indent_style = space
 indent_size = 4
 max_line_length = 120
@@ -64,14 +59,11 @@ max_line_length = 80
 indent_style = space
 indent_size = 2
 
-[Makefile]
+[{Makefile,Makefile.in,GNUmakefile}]
 indent_style = tab
 
-[*.mk]
+[*.{mk,mak,make}]
 indent_style = tab
 
-[*.make]
-indent_style = tab
-
-[GNUmakefile]
-indent_style = tab
+[*.{diff,patch}]
+trim_trailing_whitespace = false

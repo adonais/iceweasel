@@ -75,11 +75,17 @@ TimeDomainFeatureExtractor::TimeDomainFeatureExtractor(int step_size)
 
 TimeDomainFeatureExtractor::~TimeDomainFeatureExtractor() = default;
 
+void TimeDomainFeatureExtractor::Reset() {
+  for (auto& buffer : input_buffer_) {
+    buffer.clear();
+  }
+}
+
 bool TimeDomainFeatureExtractor::ReadyForInference() const {
   for (const auto model_input_enum : kRequiredModelInputs) {
     const std::vector<float>& input_buffer =
         input_buffer_[static_cast<size_t>(model_input_enum)];
-    if (input_buffer.size() != step_size_) {
+    if (input_buffer.size() < step_size_) {
       return false;
     }
   }
@@ -87,16 +93,16 @@ bool TimeDomainFeatureExtractor::ReadyForInference() const {
 }
 
 void TimeDomainFeatureExtractor::UpdateBuffers(
-    ArrayView<const ArrayView<const float, kBlockSize>> all_frames,
+    ArrayView<const ArrayView<const float, kBlockSize>> all_channels,
     ModelInputEnum input_type) {
   if (!RequiredInput(input_type)) {
     return;
   }
   std::vector<float>& input_buffer =
       input_buffer_[static_cast<size_t>(input_type)];
-  std::array<float, kBlockSize> summed_block = AverageAllChannels(all_frames);
-  input_buffer.insert(input_buffer.end(), summed_block.cbegin(),
-                      summed_block.cend());
+  std::array<float, kBlockSize> summed_block = AverageAllChannels(all_channels);
+  input_buffer.insert(input_buffer.end(), summed_block.begin(),
+                      summed_block.end());
 }
 
 void TimeDomainFeatureExtractor::PrepareModelInput(ArrayView<float> model_input,
@@ -107,9 +113,9 @@ void TimeDomainFeatureExtractor::PrepareModelInput(ArrayView<float> model_input,
   std::vector<float>& input_buffer =
       input_buffer_[static_cast<size_t>(input_type)];
   RTC_CHECK_EQ(input_buffer.size(), step_size_);
-  std::copy(model_input.cbegin() + step_size_, model_input.cend(),
+  std::copy(model_input.begin() + step_size_, model_input.end(),
             model_input.begin());
-  std::copy(input_buffer.cbegin(), input_buffer.cend(),
+  std::copy(input_buffer.begin(), input_buffer.end(),
             model_input.end() - step_size_);
   input_buffer.clear();
 }
@@ -134,6 +140,22 @@ FrequencyDomainFeatureExtractor::FrequencyDomainFeatureExtractor(int step_size)
   }
 }
 
+void FrequencyDomainFeatureExtractor::Reset() {
+  std::memset(spectrum_, 0, sizeof(float) * frame_size_);
+  for (auto& buffers : input_buffer_) {
+    for (auto& buffer : buffers) {
+      buffer.clear();
+    }
+  }
+  for (auto& states : pffft_states_) {
+    for (auto& state : states) {
+      if (state) {
+        std::memset(state->data(), 0, sizeof(float) * frame_size_);
+      }
+    }
+  }
+}
+
 FrequencyDomainFeatureExtractor::~FrequencyDomainFeatureExtractor() {
   pffft_destroy_setup(pffft_setup_);
   pffft_aligned_free(work_);
@@ -144,12 +166,13 @@ bool FrequencyDomainFeatureExtractor::ReadyForInference() const {
   for (const auto model_input_enum : kRequiredModelInputs) {
     const std::vector<std::vector<float>>& input_buffer =
         input_buffer_[static_cast<size_t>(model_input_enum)];
-    if (input_buffer.empty() || input_buffer[0].size() != step_size_) {
+    if (input_buffer.empty() || input_buffer[0].size() < step_size_) {
       return false;
     }
   }
   return true;
 }
+
 void FrequencyDomainFeatureExtractor::ComputeAndAddPowerSpectra(
     ArrayView<const float> frame,
     std::unique_ptr<PffftState>& pffft_state,
@@ -179,19 +202,19 @@ void FrequencyDomainFeatureExtractor::ComputeAndAddPowerSpectra(
 }
 
 void FrequencyDomainFeatureExtractor::UpdateBuffers(
-    ArrayView<const ArrayView<const float, kBlockSize>> all_frames,
+    ArrayView<const ArrayView<const float, kBlockSize>> all_channels,
     ModelInputEnum input_type) {
   if (!RequiredInput(input_type)) {
     return;
   }
   std::vector<std::vector<float>>& input_buffer =
       input_buffer_[static_cast<size_t>(input_type)];
-  input_buffer.resize(all_frames.size());
-  for (size_t ch = 0; ch < all_frames.size(); ++ch) {
-    const ArrayView<const float, kBlockSize>& frame_in = all_frames[ch];
+  input_buffer.resize(all_channels.size());
+  for (size_t ch = 0; ch < all_channels.size(); ++ch) {
+    const ArrayView<const float, kBlockSize>& frame_in = all_channels[ch];
     std::vector<float>& input_buffer_ch = input_buffer[ch];
-    input_buffer_ch.insert(input_buffer_ch.end(), frame_in.cbegin(),
-                           frame_in.cend());
+    input_buffer_ch.insert(input_buffer_ch.end(), frame_in.begin(),
+                           frame_in.end());
   }
 }
 void FrequencyDomainFeatureExtractor::PrepareModelInput(
@@ -209,7 +232,8 @@ void FrequencyDomainFeatureExtractor::PrepareModelInput(
   pffft_states_channels.resize(input_buffer.size());
   for (size_t ch = 0; ch < input_buffer.size(); ++ch) {
     ComputeAndAddPowerSpectra(input_buffer[ch], pffft_states_channels[ch],
-                              input_buffer.size(), model_input);
+                              static_cast<int>(input_buffer.size()),
+                              model_input);
     input_buffer[ch].clear();
   }
 

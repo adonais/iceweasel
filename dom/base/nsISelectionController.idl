@@ -13,7 +13,7 @@ namespace dom {
 class Selection;
 } // namespace dom
 
-struct ScrollAxis;
+struct AxisScrollParams;
 enum class ScrollFlags : uint8_t;
 enum class SelectionScrollMode : uint8_t;
 
@@ -305,7 +305,7 @@ interface nsISelectionController : nsISelectionDisplay
   // can run script depends on the SelectionScrollMode.
   MOZ_CAN_RUN_SCRIPT_BOUNDARY inline nsresult ScrollSelectionIntoView(
     mozilla::SelectionType, SelectionRegion,
-    const mozilla::ScrollAxis& aVertical, const mozilla::ScrollAxis& aHorizontal,
+    const mozilla::AxisScrollParams& aVertical, const mozilla::AxisScrollParams& aHorizontal,
     mozilla::ScrollFlags, mozilla::SelectionScrollMode);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY inline nsresult ScrollSelectionIntoView(
     mozilla::SelectionType, SelectionRegion,

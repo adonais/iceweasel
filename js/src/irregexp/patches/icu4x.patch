@@ -1,40 +1,22 @@
 diff --git a/js/src/irregexp/imported/regexp-parser.cc b/js/src/irregexp/imported/regexp-parser.cc
---- a/js/src/irregexp/imported/regexp-parser.cc
-+++ b/js/src/irregexp/imported/regexp-parser.cc
-@@ -4,16 +4,17 @@
- 
- #include "irregexp/imported/regexp-parser.h"
- 
- #include "irregexp/imported/regexp-ast.h"
- #include "irregexp/imported/regexp-macro-assembler.h"
+--- a/imported/regexp-parser.cc
++++ b/imported/regexp-parser.cc
+@@ -10,6 +10,7 @@
  #include "irregexp/imported/regexp.h"
- 
+
  #ifdef V8_INTL_SUPPORT
 +#include "js/properties_glue.h"
  #include "unicode/uniset.h"
  #include "unicode/unistr.h"
  #include "unicode/usetiter.h"
- #include "unicode/utf16.h"  // For U16_NEXT
- #endif                      // V8_INTL_SUPPORT
- 
- namespace v8 {
- namespace internal {
-@@ -2058,17 +2059,17 @@ bool LookupSpecialPropertyValueName(cons
-   } else if (NameEquals(name, "ASCII")) {
-     result->Add(negate ? CharacterRange::Range(0x80, String::kMaxCodePoint)
-                        : CharacterRange::Range(0x0, 0x7F),
-                 zone);
-   } else if (NameEquals(name, "Assigned")) {
+@@ -2074,7 +2075,9 @@
      return LookupPropertyValueName(UCHAR_GENERAL_CATEGORY, "Unassigned",
                                     !negate, result, nullptr, flags, zone);
    } else {
 -    return false;
-+    return mozilla_properties_glue_add_property_ranges(static_cast<void*>(result), static_cast<void*>(zone), name, negate, IsUnicodeSets(flags) && IsIgnoreCase(flags));
++    return mozilla_properties_glue_add_property_ranges(
++        static_cast<void*>(result), static_cast<void*>(zone), name, negate,
++        IsUnicodeSets(flags) && IsIgnoreCase(flags));
    }
    return true;
  }
- 
- // Explicitly allowlist supported binary properties. The spec forbids supporting
- // properties outside of this set to ensure interoperability.
- bool IsSupportedBinaryProperty(UProperty property, bool unicode_sets) {
-   switch (property) {

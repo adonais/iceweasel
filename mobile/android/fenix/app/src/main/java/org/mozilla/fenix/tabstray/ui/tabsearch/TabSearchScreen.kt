@@ -57,6 +57,7 @@ import mozilla.components.compose.base.searchbar.TopSearchBar
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.TabsTrayTestTag.TAB_SEARCH_BACK_BUTTON
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
@@ -115,6 +116,7 @@ fun TabSearchScreen(
                 },
                 leadingIcon = {
                     IconButton(
+                        modifier = Modifier.testTag(TAB_SEARCH_BACK_BUTTON),
                         onClick = {
                             expanded = false
                             focusManager.clearFocus(force = true)

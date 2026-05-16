@@ -267,3 +267,12 @@ fp-certerror-pkix-not-yet-valid-what-can-you-do-body = Your device’s clock is 
 # Variables:
 #   $hostname (String) - Hostname of the website to which the user was trying to connect.
 fp-certerror-invalid-cert-why-dangerous = The owner of { $hostname } hasn’t set it up properly and a secure connection can’t be created.
+
+# Variables:
+#   $hostname (String) - Hostname of the website to which the user was trying to connect.
+#   $now (Date) - The current datetime, to be formatted as a date
+fp-certerror-clock-skew-intro = Your computer thinks it is { DATETIME($now, dateStyle: "medium") }, which prevents { -brand-short-name } from connecting securely. To visit <strong>{ $hostname }</strong>, update your computer clock in your system settings to the current date, time, and time zone, and then refresh the page.
+# This string appears after the following string: "What can you do about it?" (fp-certerror-what-can-you-do)
+# Variables:
+#   $now (Date) - The current datetime, to be formatted as a date
+fp-certerror-clock-skew-what-can-you-do-body = Update your computer clock in your system settings to the current date, time, and time zone. Your computer thinks it is { DATETIME($now, dateStyle: "medium") }.

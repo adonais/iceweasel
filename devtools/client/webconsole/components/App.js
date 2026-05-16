@@ -83,7 +83,7 @@ loader.lazyGetter(this, "ChromeDebugToolbar", () =>
   )
 );
 
-const l10n = require("resource://devtools/client/webconsole/utils/l10n.js");
+const l10n = require("resource://devtools/shared/webconsole/l10n.js");
 const {
   Utils: WebConsoleUtils,
 } = require("resource://devtools/client/webconsole/utils.js");

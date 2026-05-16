@@ -48,7 +48,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 
 class ProfilerCodeAddressService;
 

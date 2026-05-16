@@ -13,22 +13,24 @@ use crate::updater::CertOverride;
 pub struct FromBuild {
     pub id: String,
     pub installer: String,
-    pub partial_mar: Option<String>,
+    pub updater_package: String,
+    pub partial_mar: Option<PathBuf>,
 }
 
 impl std::str::FromStr for FromBuild {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.splitn(3, '|').collect();
-        if parts.len() < 2 {
+        let parts: Vec<&str> = s.splitn(4, '|').collect();
+        if parts.len() < 3 {
             return Err(format!(
-                "expected 'id|installer or id|installer|partial', got: {s}"
+                "expected 'id|installer|updater_package|partial', got: {s}"
             ));
         }
         Ok(FromBuild {
             id: parts[0].to_string(),
             installer: parts[1].to_string(),
-            partial_mar: parts.get(2).map(|s| s.to_string()),
+            updater_package: parts[2].to_string(),
+            partial_mar: parts.get(3).map(|s| PathBuf::from(s)),
         })
     }
 }
@@ -41,7 +43,7 @@ pub struct Args {
     pub target_platform: String,
     /// Path to the installer of the `to` build. Updated `from` builds are compared against this to
     /// look for differences.
-    pub to_installer: String,
+    pub to_installer: PathBuf,
     /// Complete MAR to test against each `from` build.
     pub complete_mar: PathBuf,
     /// Directory containing any partials referenced in a `--from` argument
@@ -58,6 +60,7 @@ pub struct Args {
     /// Information about a `from` build to test, separated by a `|`:
     /// - A human readable identifier (buildid, app version, anything you want)
     /// - An URL where the installer can be retrieved
+    /// - An URL where a .tar.xz package containing the `updater` to use when applying the MAR.
     /// - A filename of a partial MAR, relative to `--partial-mar-dir`, of a
     ///   partial MAR that applies to this build. Optional.
     #[arg(long, required = true)]
@@ -73,6 +76,8 @@ pub struct Args {
     /// Path to directory that contains mar certs. Required when --cert-override is given.
     #[arg(long)]
     pub cert_dir: Option<PathBuf>,
+    #[arg(short = 'j', long)]
+    pub parallelism: Option<usize>,
 }
 
 impl Args {

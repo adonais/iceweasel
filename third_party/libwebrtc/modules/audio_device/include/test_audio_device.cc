@@ -126,7 +126,7 @@ class WavFileReader final : public TestAudioDeviceModule::Capturer {
             do {
               wav_reader_->Reset();
               size_t delta = wav_reader_->ReadSamples(
-                  data.size() - read, data.subview(read).data());
+                  data.size() - read, data.subspan(read).data());
               RTC_CHECK_GT(delta, 0) << "No new data read from file";
               read += delta;
             } while (read < data.size());
@@ -210,8 +210,8 @@ class BoundedWavFileWriter : public TestAudioDeviceModule::Renderer {
   bool Render(ArrayView<const int16_t> data) override {
     const int16_t kAmplitudeThreshold = 5;
 
-    const int16_t* begin = data.begin();
-    const int16_t* end = data.end();
+    const int16_t* begin = data.data();
+    const int16_t* end = data.data() + data.size();
     if (!started_writing_) {
       // Cut off silence at the beginning.
       while (begin < end) {
@@ -242,7 +242,7 @@ class BoundedWavFileWriter : public TestAudioDeviceModule::Renderer {
         wav_writer_.WriteSamples(begin, end - begin);
       }
       // Save the number of zeros we skipped in case this needs to be restored.
-      trailing_zeros_ += data.end() - end;
+      trailing_zeros_ += (data.data() + data.size()) - end;
     }
     return true;
   }
@@ -310,7 +310,7 @@ class RawFileReader final : public TestAudioDeviceModule::Capturer {
             do {
               input_file_.Rewind();
               size_t delta = input_file_.Read(
-                  read_buffer_view.subview(read).data(), size - read);
+                  read_buffer_view.subspan(read).data(), size - read);
               RTC_CHECK_GT(delta, 0) << "No new data to read from file";
               read += delta;
             } while (read < size);
@@ -363,8 +363,8 @@ class RawFileWriter : public TestAudioDeviceModule::Renderer {
   bool Render(ArrayView<const int16_t> data) override {
     const int16_t kAmplitudeThreshold = 5;
 
-    const int16_t* begin = data.begin();
-    const int16_t* end = data.end();
+    const int16_t* begin = data.data();
+    const int16_t* end = data.data() + data.size();
     if (!started_writing_) {
       // Cut off silence at the beginning.
       while (begin < end) {
@@ -395,7 +395,7 @@ class RawFileWriter : public TestAudioDeviceModule::Renderer {
         WriteInt16(begin, end);
       }
       // Save the number of zeros we skipped in case this needs to be restored.
-      trailing_zeros_ += data.end() - end;
+      trailing_zeros_ += (data.data() + data.size()) - end;
     }
     return true;
   }

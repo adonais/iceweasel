@@ -1084,7 +1084,7 @@ nsStylePosition::nsStylePosition()
       mHeight(StyleSize::Auto()),
       mMinHeight(StyleSize::Auto()),
       mMaxHeight(StyleMaxSize::None()),
-      mPositionAnchor(StylePositionAnchorKeyword::None()),
+      mPositionAnchor(StylePositionAnchorKeyword::Normal()),
       mPositionVisibility(StylePositionVisibility::ANCHORS_VISIBLE),
       mPositionTryFallbacks(StylePositionTryFallbacks()),
       mPositionTryOrder(StylePositionTryOrder::Normal),
@@ -2297,8 +2297,7 @@ nsStyleDisplay::nsStyleDisplay()
       mBaselineSource(StyleBaselineSource::Auto),
       mWebkitLineClamp(0),
       mShapeMargin(LengthPercentage::Zero()),
-      mShapeOutside(StyleShapeOutside::None()),
-      mAnchorScope(StyleScopedNameKeyword::None()) {
+      mShapeOutside(StyleShapeOutside::None()) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
@@ -3299,7 +3298,7 @@ nsStyleUIReset::nsStyleUIReset()
       mIMEMode(StyleImeMode::Auto),
       mWindowDragging(StyleWindowDragging::Default),
       mWindowShadow(StyleWindowShadow::Auto),
-      mWindowOpacity(1.0),
+      mFieldSizing(StyleFieldSizing::Fixed),
       mMozWindowInputRegionMargin(StyleLength::Zero()),
       mTransitions(
           nsStyleAutoArray<StyleTransition>::WITH_SINGLE_INITIAL_ELEMENT),
@@ -3308,6 +3307,7 @@ nsStyleUIReset::nsStyleUIReset()
       mTransitionDelayCount(1),
       mTransitionPropertyCount(1),
       mTransitionBehaviorCount(1),
+      mWindowOpacity(1.0),
       mAnimations(
           nsStyleAutoArray<StyleAnimation>::WITH_SINGLE_INITIAL_ELEMENT),
       mAnimationTimingFunctionCount(1),
@@ -3331,9 +3331,7 @@ nsStyleUIReset::nsStyleUIReset()
       mViewTimelineNameCount(1),
       mViewTimelineAxisCount(1),
       mViewTimelineInsetCount(1),
-      mFieldSizing(StyleFieldSizing::Fixed),
-      mViewTransitionName(StyleViewTransitionNameKeyword::None()),
-      mTimelineScope(StyleScopedNameKeyword::None()) {
+      mViewTransitionName(StyleAtom{nsGkAtoms::none}) {
   MOZ_COUNT_CTOR(nsStyleUIReset);
 }
 
@@ -3345,7 +3343,7 @@ nsStyleUIReset::nsStyleUIReset(const nsStyleUIReset& aSource)
       mIMEMode(aSource.mIMEMode),
       mWindowDragging(aSource.mWindowDragging),
       mWindowShadow(aSource.mWindowShadow),
-      mWindowOpacity(aSource.mWindowOpacity),
+      mFieldSizing(aSource.mFieldSizing),
       mMozWindowInputRegionMargin(aSource.mMozWindowInputRegionMargin),
       mMozWindowTransform(aSource.mMozWindowTransform),
       mTransitions(aSource.mTransitions.Clone()),
@@ -3354,6 +3352,7 @@ nsStyleUIReset::nsStyleUIReset(const nsStyleUIReset& aSource)
       mTransitionDelayCount(aSource.mTransitionDelayCount),
       mTransitionPropertyCount(aSource.mTransitionPropertyCount),
       mTransitionBehaviorCount(aSource.mTransitionBehaviorCount),
+      mWindowOpacity(aSource.mWindowOpacity),
       mAnimations(aSource.mAnimations.Clone()),
       mAnimationTimingFunctionCount(aSource.mAnimationTimingFunctionCount),
       mAnimationDurationCount(aSource.mAnimationDurationCount),
@@ -3374,7 +3373,6 @@ nsStyleUIReset::nsStyleUIReset(const nsStyleUIReset& aSource)
       mViewTimelineNameCount(aSource.mViewTimelineNameCount),
       mViewTimelineAxisCount(aSource.mViewTimelineAxisCount),
       mViewTimelineInsetCount(aSource.mViewTimelineInsetCount),
-      mFieldSizing(aSource.mFieldSizing),
       mViewTransitionName(aSource.mViewTransitionName),
       mViewTransitionClass(aSource.mViewTransitionClass),
       mTimelineScope(aSource.mTimelineScope) {
@@ -3392,7 +3390,7 @@ nsChangeHint nsStyleUIReset::CalcDifference(
     hint |= nsChangeHint_RepaintFrame;
   }
   if (mFieldSizing != aNewData.mFieldSizing) {
-    hint |= nsChangeHint_NeutralChange;
+    hint |= nsChangeHint_AllReflowHints;
   }
   if (mScrollbarWidth != aNewData.mScrollbarWidth) {
     // For scrollbar-width change, we need some special handling similar
@@ -3465,15 +3463,6 @@ nsChangeHint nsStyleUIReset::CalcDifference(
   }
 
   return hint;
-}
-
-StyleScrollbarWidth nsStyleUIReset::ScrollbarWidth() const {
-  if (MOZ_UNLIKELY(StaticPrefs::layout_css_scrollbar_width_thin_disabled())) {
-    if (mScrollbarWidth == StyleScrollbarWidth::Thin) {
-      return StyleScrollbarWidth::Auto;
-    }
-  }
-  return mScrollbarWidth;
 }
 
 //-----------------------

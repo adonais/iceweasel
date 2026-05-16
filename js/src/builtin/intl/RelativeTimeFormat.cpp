@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -352,13 +350,31 @@ static bool ResolveLocale(
   }
   relativeTimeFormat->setLocale(locale);
 
-  auto nu = resolved.extension(UnicodeExtensionKey::NumberingSystem);
-  MOZ_ASSERT(nu, "resolved numbering system is non-null");
-  relativeTimeFormat->setNumberingSystem(nu);
+  if (auto nu = resolved.extension(UnicodeExtensionKey::NumberingSystem)) {
+    relativeTimeFormat->setNumberingSystem(nu);
+  } else {
+    relativeTimeFormat->setNumberingSystem(cx->names().default_);
+  }
 
   MOZ_ASSERT(relativeTimeFormat->isLocaleResolved(),
              "locale successfully resolved");
   return true;
+}
+
+static JSLinearString* ResolveNumberingSystem(
+    JSContext* cx, Handle<RelativeTimeFormatObject*> relativeTimeFormat) {
+  MOZ_ASSERT(relativeTimeFormat->isLocaleResolved());
+
+  auto* numberingSystem = relativeTimeFormat->getNumberingSystem();
+  if (numberingSystem == cx->names().default_) {
+    numberingSystem =
+        DefaultNumberingSystem(cx, relativeTimeFormat->getLocale());
+    if (!numberingSystem) {
+      return nullptr;
+    }
+    relativeTimeFormat->setNumberingSystem(numberingSystem);
+  }
+  return numberingSystem;
 }
 
 /**
@@ -373,10 +389,17 @@ static mozilla::intl::RelativeTimeFormat* NewRelativeTimeFormatter(
   auto rtfOptions = relativeTimeFormat->getOptions();
 
   // ICU expects numberingSystem as a Unicode locale extensions on locale.
+  //
+  // We don't add any Unicode extension keywords when the default values can be
+  // used, because ICU optimizes for this case.
 
   JS::RootedVector<UnicodeExtensionKeyword> keywords(cx);
-  if (!keywords.emplaceBack("nu", relativeTimeFormat->getNumberingSystem())) {
-    return nullptr;
+
+  auto* numberingSystem = relativeTimeFormat->getNumberingSystem();
+  if (numberingSystem != cx->names().default_) {
+    if (!keywords.emplaceBack("nu", numberingSystem)) {
+      return nullptr;
+    }
   }
 
   Rooted<JSLinearString*> localeStr(cx, relativeTimeFormat->getLocale());
@@ -679,9 +702,12 @@ static bool relativeTimeFormat_resolvedOptions(JSContext* cx,
     return false;
   }
 
-  if (!options.emplaceBack(
-          NameToId(cx->names().numberingSystem),
-          StringValue(relativeTimeFormat->getNumberingSystem()))) {
+  auto* numberingSystem = ResolveNumberingSystem(cx, relativeTimeFormat);
+  if (!numberingSystem) {
+    return false;
+  }
+  if (!options.emplaceBack(NameToId(cx->names().numberingSystem),
+                           StringValue(numberingSystem))) {
     return false;
   }
 

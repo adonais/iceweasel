@@ -220,7 +220,7 @@ tasks:
 
     windows:
         description: Runs WebRender CI tests on a Windows worker
-        worker-type: win11-64-24h2-source
+        worker-type: win11-64-25h2-source
         worker:
             max-run-time: 5400
             env:

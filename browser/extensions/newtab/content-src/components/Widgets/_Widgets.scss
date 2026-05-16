@@ -19,9 +19,7 @@
   // Nova layout
   // @nova-cleanup(remove-conditional): Make Nova grid default, remove .nova-enabled selector
   .nova-enabled & {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: subgrid;
+    display: contents;
   }
 }
 
@@ -52,7 +50,12 @@
   .nova-enabled & {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: subgrid;
+    grid-template-columns: repeat(
+      auto-fill,
+      calc(4 * var(--col-width) + 3 * var(--space-medium))
+    );
+    gap: var(--space-medium);
+    justify-content: center;
   }
 
   .widgets-title-container {
@@ -72,11 +75,128 @@
       margin-inline-end: auto;
       position: relative;
     }
+
+    .widgets-title-heading {
+      display: flex;
+      align-items: center;
+      gap: var(--space-medium);
+    }
+
+    .widgets-title-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-medium);
+      position: relative;
+    }
   }
 
   h1 {
     font-size: var(--font-size-large);
     font-weight: var(--font-weight-bold);
+
+    // @nova-cleanup(remove-conditional): Make default, remove .nova-enabled selector
+    .nova-enabled & {
+      font-size: var(--font-size-heading-large);
+      font-weight: var(--font-weight-heading);
+      color: var(--newtab-contextual-text-primary-color);
+
+      @include at-content-cols(12) {
+        font-size: var(--font-size-heading-xlarge);
+      }
+
+      @include wallpaper-contrast-fix;
+    }
+  }
+
+  // @nova-cleanup(remove-conditional): Make default, remove .nova-enabled selector
+  #hide-all-widgets-button,
+  #toggle-widgets-size-button {
+    .nova-enabled & {
+      color: var(--newtab-contextual-text-primary-color);
+
+      @include wallpaper-contrast-fix;
+    }
+  }
+}
+
+
+.widgets-expand-button {
+  appearance: none;
+  align-items: center;
+  background-color: transparent;
+  border: 1px solid var(--newtab-primary-action-background);
+  border-radius: var(--border-radius-circle);
+  color: var(--newtab-primary-action-background);
+  cursor: pointer;
+  display: inline-flex;
+  height: var(--size-item-large);
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  width: var(--size-item-large);
+
+  &::before {
+    background-color: currentColor;
+    content: '';
+    height: var(--size-item-small);
+    mask: url('chrome://global/skin/icons/arrow-down.svg') center / contain no-repeat;
+    transition: transform 160ms ease;
+    width: var(--size-item-small);
+  }
+
+  &.is-maximized::before {
+    transform: rotate(180deg);
+  }
+
+  &:hover {
+    background-color: var(--newtab-element-secondary-hover-color);
+  }
+
+  &:active {
+    background-color: var(--newtab-element-secondary-active-color);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .widgets-expand-button::before {
+    transition: none;
+  }
+}
+
+.widgets-header-context-menu {
+  position: relative;
+
+  @include wallpaper-contrast-fix;
+
+  .widgets-header-context-menu-button {
+    &::part(button) {
+      background-color: transparent;
+    }
+
+    &::part(button):hover {
+      background-color: var(--button-background-color-hover);
+    }
+
+    &::part(button):active {
+      background-color: var(--button-background-color-active);
+    }
+  }
+
+  panel-list {
+    min-width: 256px;
+  }
+
+  panel-item::part(button) {
+    min-block-size: 30px;
   }
 }
 
@@ -108,7 +228,8 @@
   .nova-enabled & {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: subgrid;
+    grid-template-columns: repeat(auto-fill, var(--col-width));
+    grid-auto-rows: var(--row-height);
     gap: var(--space-medium);
   }
 
@@ -140,7 +261,7 @@
       }
     }
 
-    .small-widget {
+    .is-small {
       height: var(--widgets-small-card-height);
     }
   }

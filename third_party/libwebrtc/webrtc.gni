@@ -114,10 +114,6 @@ declare_args() {
   # library that comes with WebRTC (i.e. rtc_build_ssl == 0).
   rtc_ssl_root = ""
 
-  # Enable when an external authentication mechanism is used for performing
-  # packet authentication for RTP packets instead of libsrtp.
-  rtc_enable_external_auth = build_with_chromium
-
   # Selects whether debug dumps for the audio processing module
   # should be generated.
   apm_debug_dump = build_with_mozilla
@@ -154,11 +150,8 @@ declare_args() {
   # See http://clang.llvm.org/docs/SanitizerCoverage.html .
   rtc_sanitize_coverage = ""
 
-  # Selects fixed-point code where possible.
-  rtc_prefer_fixed_point = false
-  if (target_cpu == "arm" || target_cpu == "arm64") {
-    rtc_prefer_fixed_point = true
-  }
+  # When set to true, Plan B will be deprecated.
+  deprecate_plan_b = true
 
   # Determines whether NEON code will be built.
   rtc_build_with_neon =
@@ -545,6 +538,11 @@ template("rtc_test") {
         webrtc_root + "test:native_test_support",
         "//third_party/jni_zero:jni_zero_java",
       ]
+    }
+
+    # TODO: bugs.webrtc.org/467294026 - Support iOS too.
+    if (!defined(invoker.is_xctest) || !invoker.is_xctest) {
+      deps += [ webrtc_root + "test:test_main" ]
     }
 
     # Build //test:google_test_runner_objc when the test is not a real XCTest.

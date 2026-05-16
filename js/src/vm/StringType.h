@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -30,6 +28,7 @@
 #include "js/String.h"         // JS::MaxStringLength
 #include "js/UniquePtr.h"
 #include "util/Text.h"
+#include "vm/StringFlags.h"  // StringFlags
 
 class JSDependentString;
 class JSExtensibleString;
@@ -203,6 +202,7 @@ bool CheckStringIsIndex(const CharT* s, size_t length, uint32_t* indexp);
 class JSString : public js::gc::CellWithLengthAndFlags {
  protected:
   using Base = js::gc::CellWithLengthAndFlags;
+  using StringFlags = js::StringFlags;
 
   static const size_t NUM_INLINE_CHARS_LATIN1 =
       2 * sizeof(void*) / sizeof(JS::Latin1Char);
@@ -293,7 +293,13 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   };
 
  protected:
-  /* Fields only apply to string types commented on the right. */
+  /*
+   * The header word of a JSString stores flags, index, and (on some
+   * platforms) the length. The flags store both the string's type and its
+   * character encoding. See StringFlags for the encoding.
+   */
+
+  // Fields only apply to string types commented on the right.
   struct Data {
     // Note: 32-bit length and flags fields are inherited from
     // CellWithLengthAndFlags.
@@ -326,193 +332,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   } d;
 
  public:
-  /* Flags exposed only for jits */
-
-  /*
-   * Flag Encoding
-   *
-   * The first word of a JSString stores flags, index, and (on some
-   * platforms) the length. The flags store both the string's type and its
-   * character encoding.
-   *
-   * If LATIN1_CHARS_BIT is set, the string's characters are stored as Latin1
-   * instead of TwoByte. This flag can also be set for ropes, if both the
-   * left and right nodes are Latin1. Flattening will result in a Latin1
-   * string in this case. When we flatten a TwoByte rope, we turn child ropes
-   * (including Latin1 ropes) into TwoByte dependent strings. If one of these
-   * strings is also part of another Latin1 rope tree, we can have a Latin1 rope
-   * with a TwoByte descendent.
-   *
-   * The other flags store the string's type. Instead of using a dense index
-   * to represent the most-derived type, string types are encoded to allow
-   * single-op tests for hot queries (isRope, isDependent, isAtom) which, in
-   * view of subtyping, would require slower (isX() || isY() || isZ()).
-   *
-   * The string type encoding can be summarized as follows. The "instance
-   * encoding" entry for a type specifies the flag bits used to create a
-   * string instance of that type. Abstract types have no instances and thus
-   * have no such entry. The "subtype predicate" entry for a type specifies
-   * the predicate used to query whether a JSString instance is subtype
-   * (reflexively) of that type.
-   *
-   *   String         Instance        Subtype
-   *   type           encoding        predicate
-   *   -----------------------------------------
-   *   Rope           0000000 000     xxxxx0x xxx
-   *   Linear         0000010 000     xxxxx1x xxx
-   *   Dependent      0000110 000     xxxx1xx xxx
-   *   AtomRef        1000110 000     1xxxxxx xxx
-   *   External       0100010 000     x100010 xxx
-   *   Extensible     0010010 000     x010010 xxx
-   *   Inline         0001010 000     xxx1xxx xxx
-   *   FatInline      0011010 000     xx11xxx xxx
-   *   JSAtom         -               xxxxxx1 xxx
-   *   NormalAtom     0000011 000     xxx0xx1 xxx
-   *   PermanentAtom  0100011 000     x1xxxx1 xxx
-   *   ThinInlineAtom 0001011 000     xx01xx1 xxx
-   *   FatInlineAtom  0011011 000     xx11xx1 xxx
-   *                                  ||||||| |||
-   *                                  ||||||| ||\- [0] reserved (FORWARD_BIT)
-   *                                  ||||||| |\-- [1] reserved
-   *                                  ||||||| \--- [2] reserved
-   *                                  ||||||\----- [3] IsAtom
-   *                                  |||||\------ [4] IsLinear
-   *                                  ||||\------- [5] IsDependent
-   *                                  |||\-------- [6] IsInline
-   *                                  ||\--------- [7] FatInlineAtom/Extensible
-   *                                  |\---------- [8] External/Permanent
-   *                                  \----------- [9] AtomRef
-   *
-   * Bits 0..2 are reserved for use by the GC (see
-   * gc::CellFlagBitsReservedForGC). In particular, bit 0 is currently used for
-   * FORWARD_BIT for forwarded nursery cells. The other 2 bits are currently
-   * unused.
-   *
-   * Note that the first 4 flag bits 3..6 (from right to left in the previous
-   * table) have the following meaning and can be used for some hot queries:
-   *
-   *   Bit 3: IsAtom (Atom, PermanentAtom)
-   *   Bit 4: IsLinear
-   *   Bit 5: IsDependent
-   *   Bit 6: IsInline (Inline, FatInline, ThinInlineAtom, FatInlineAtom)
-   *
-   * If INDEX_VALUE_BIT is set, bits 16 and up will also hold an integer index.
-   */
-
-  // The low bits of flag word are reserved by GC.
-  static_assert(js::gc::CellFlagBitsReservedForGC <= 3,
-                "JSString::flags must reserve enough bits for Cell");
-
-  static const uint32_t ATOM_BIT = js::Bit(3);
-  static const uint32_t LINEAR_BIT = js::Bit(4);
-  static const uint32_t DEPENDENT_BIT = js::Bit(5);
-  static const uint32_t INLINE_CHARS_BIT = js::Bit(6);
-  // Indicates a dependent string pointing to an atom
-  static const uint32_t ATOM_REF_BIT = js::Bit(9);
-
-  static const uint32_t LINEAR_IS_EXTENSIBLE_BIT = js::Bit(7);
-  static const uint32_t INLINE_IS_FAT_BIT = js::Bit(7);
-
-  static const uint32_t LINEAR_IS_EXTERNAL_BIT = js::Bit(8);
-  static const uint32_t ATOM_IS_PERMANENT_BIT = js::Bit(8);
-
-  static const uint32_t EXTENSIBLE_FLAGS =
-      LINEAR_BIT | LINEAR_IS_EXTENSIBLE_BIT;
-  static const uint32_t EXTERNAL_FLAGS = LINEAR_BIT | LINEAR_IS_EXTERNAL_BIT;
-
-  static const uint32_t FAT_INLINE_MASK = INLINE_CHARS_BIT | INLINE_IS_FAT_BIT;
-
-  /* Initial flags for various types of strings. */
-  static const uint32_t INIT_THIN_INLINE_FLAGS = LINEAR_BIT | INLINE_CHARS_BIT;
-  static const uint32_t INIT_FAT_INLINE_FLAGS = LINEAR_BIT | FAT_INLINE_MASK;
-  static const uint32_t INIT_ROPE_FLAGS = 0;
-  static const uint32_t INIT_LINEAR_FLAGS = LINEAR_BIT;
-  static const uint32_t INIT_DEPENDENT_FLAGS = LINEAR_BIT | DEPENDENT_BIT;
-  static const uint32_t INIT_ATOM_REF_FLAGS =
-      INIT_DEPENDENT_FLAGS | ATOM_REF_BIT;
-
-  static const uint32_t TYPE_FLAGS_MASK = js::BitMask(10) - js::BitMask(3);
-  static_assert((TYPE_FLAGS_MASK & js::gc::HeaderWord::RESERVED_MASK) == 0,
-                "GC reserved bits must not be used for Strings");
-
-  // Whether this atom's characters store an uint32 index value less than or
-  // equal to MAX_ARRAY_INDEX. This bit means something different if the
-  // string is not an atom (see ATOM_REF_BIT)
-  // See JSLinearString::isIndex.
-  static const uint32_t ATOM_IS_INDEX_BIT = js::Bit(9);
-
-  // Linear strings:
-  // - Content and representation are Latin-1 characters.
-  // - Unmodifiable after construction.
-  //
-  // Ropes:
-  // - Content are Latin-1 characters.
-  // - Flag may be cleared when the rope is changed into a dependent string.
-  //
-  // Also see LATIN1_CHARS_BIT description under "Flag Encoding".
-  static const uint32_t LATIN1_CHARS_BIT = js::Bit(10);
-
-  // Linear strings only.
-  static const uint32_t INDEX_VALUE_BIT = js::Bit(11);
-  static const uint32_t INDEX_VALUE_SHIFT = 16;
-
-  // Whether this is a non-inline linear string with a refcounted
-  // mozilla::StringBuffer.
-  //
-  // If set, d.s.u2.nonInlineChars* still points to the string's characters and
-  // the StringBuffer header is stored immediately before the characters. This
-  // allows recovering the StringBuffer from the chars pointer with
-  // StringBuffer::FromData.
-  static const uint32_t HAS_STRING_BUFFER_BIT = js::Bit(12);
-
-  // NON_DEDUP_BIT is used in string deduplication during tenuring. This bit is
-  // shared with both FLATTEN_FINISH_NODE and ATOM_IS_PERMANENT_BIT, since it
-  // only applies to linear non-atoms.
-  static const uint32_t NON_DEDUP_BIT = js::Bit(15);
-
-  // If IN_STRING_TO_ATOM_CACHE is set, this string had an entry in the
-  // StringToAtomCache at some point. Note that GC can purge the cache without
-  // clearing this bit.
-  static const uint32_t IN_STRING_TO_ATOM_CACHE = js::Bit(13);
-
-  // Flags used during rope flattening that indicate what action to perform when
-  // returning to the rope's parent rope.
-  static const uint32_t FLATTEN_VISIT_RIGHT = js::Bit(14);
-  static const uint32_t FLATTEN_FINISH_NODE = js::Bit(15);
-  static const uint32_t FLATTEN_MASK =
-      FLATTEN_VISIT_RIGHT | FLATTEN_FINISH_NODE;
-
-  // Indicates that this string is depended on by another string. A rope should
-  // never be depended on, and this should never be set during flattening, so
-  // we can reuse the FLATTEN_VISIT_RIGHT bit.
-  static const uint32_t DEPENDED_ON_BIT = FLATTEN_VISIT_RIGHT;
-
-  static const uint32_t PINNED_ATOM_BIT = js::Bit(15);
-  static const uint32_t PERMANENT_ATOM_MASK =
-      ATOM_BIT | PINNED_ATOM_BIT | ATOM_IS_PERMANENT_BIT;
-
-  // When doing a placement new or simple flags update to reinitialize a
-  // JSString with a different representation subtype, keep these bits. There
-  // are different bitsets here for which string type we're coming from.
-  //
-  // DEPENDED_ON_BIT - necessary for strings that depend on the current
-  // characters. (Does not apply to ropes.) Prevents future conversion to
-  // AtomRef from discarding depended-on character data.
-  //
-  // IN_STRING_TO_ATOM_CACHE - the string is not being mutated, so if its string
-  // data can be found in the cache, the replace operation won't affect that.
-  //
-  // INDEX_VALUE_BIT and the associated value - keep the index optimization
-  // working.
-  //
-  // Note that this does not include NON_DEDUP bit, which is only used for plain
-  // linear strings (none of the subtypes) and will need to be considered on a
-  // case-by-case basis.
-  static const uint32_t PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE =
-      DEPENDED_ON_BIT | IN_STRING_TO_ATOM_CACHE | INDEX_VALUE_BIT |
-      ~uint32_t(0) << INDEX_VALUE_SHIFT;
-  static const uint32_t PRESERVE_ROPE_BITS_ON_REPLACE = IN_STRING_TO_ATOM_CACHE;
-
   static const uint32_t MAX_LENGTH = JS::MaxStringLength;
 
   static const JS::Latin1Char MAX_LATIN1_CHAR = 0xff;
@@ -584,22 +403,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     static_assert(offsetof(JSString, d.inlineStorageTwoByte) ==
                       offsetof(String, inlineStorageTwoByte),
                   "shadow::String inlineStorage offset must match JSString");
-    static_assert(ATOM_BIT == String::ATOM_BIT,
-                  "shadow::String::ATOM_BIT must match JSString::ATOM_BIT");
-    static_assert(LINEAR_BIT == String::LINEAR_BIT,
-                  "shadow::String::LINEAR_BIT must match JSString::LINEAR_BIT");
-    static_assert(INLINE_CHARS_BIT == String::INLINE_CHARS_BIT,
-                  "shadow::String::INLINE_CHARS_BIT must match "
-                  "JSString::INLINE_CHARS_BIT");
-    static_assert(LATIN1_CHARS_BIT == String::LATIN1_CHARS_BIT,
-                  "shadow::String::LATIN1_CHARS_BIT must match "
-                  "JSString::LATIN1_CHARS_BIT");
-    static_assert(
-        TYPE_FLAGS_MASK == String::TYPE_FLAGS_MASK,
-        "shadow::String::TYPE_FLAGS_MASK must match JSString::TYPE_FLAGS_MASK");
-    static_assert(
-        EXTERNAL_FLAGS == String::EXTERNAL_FLAGS,
-        "shadow::String::EXTERNAL_FLAGS must match JSString::EXTERNAL_FLAGS");
   }
 
   /* Avoid silly compile errors in JSRope::flatten */
@@ -637,15 +440,15 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   inline bool getCodePoint(JSContext* cx, size_t index, char32_t* codePoint);
 
   /* Strings have either Latin1 or TwoByte chars. */
-  bool hasLatin1Chars() const { return flags() & LATIN1_CHARS_BIT; }
-  bool hasTwoByteChars() const { return !(flags() & LATIN1_CHARS_BIT); }
+  bool hasLatin1Chars() const { return StringFlags::hasLatin1Chars(flags()); }
+  bool hasTwoByteChars() const { return StringFlags::hasTwoByteChars(flags()); }
 
   /* Strings might contain cached indexes. */
-  bool hasIndexValue() const { return flags() & INDEX_VALUE_BIT; }
+  bool hasIndexValue() const { return StringFlags::hasIndexValue(flags()); }
   uint32_t getIndexValue() const {
     MOZ_ASSERT(hasIndexValue());
     MOZ_ASSERT(isLinear());
-    return flags() >> INDEX_VALUE_SHIFT;
+    return StringFlags::indexValue(flags());
   }
 
   /*
@@ -659,7 +462,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
    * ref.
    */
   bool isDependedOn() const {
-    bool result = flags() & DEPENDED_ON_BIT;
+    bool result = StringFlags::isDependedOn(flags());
     MOZ_ASSERT_IF(result, !isRope() && !isAtom());
     return result;
   }
@@ -674,7 +477,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     if (isAtom()) {
       return;
     }
-    setFlagBit(DEPENDED_ON_BIT);
+    setFlagBit(StringFlags::DEPENDED_ON_BIT);
   }
 
   inline size_t allocSize() const;
@@ -686,9 +489,9 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   /* Type query and debug-checked casts */
 
   MOZ_ALWAYS_INLINE
-  bool isRope() const { return !(flags() & LINEAR_BIT); }
+  bool isRope() const { return StringFlags::isRope(flags()); }
   MOZ_ALWAYS_INLINE
-  bool isRopeAtomic() const { return !(getFlagsAtomic() & LINEAR_BIT); }
+  bool isRopeAtomic() const { return StringFlags::isRope(getFlagsAtomic()); }
 
   MOZ_ALWAYS_INLINE
   JSRope& asRope() const {
@@ -697,7 +500,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isLinear() const { return flags() & LINEAR_BIT; }
+  bool isLinear() const { return StringFlags::isLinear(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSLinearString& asLinear() const {
@@ -706,12 +509,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isDependent() const { return flags() & DEPENDENT_BIT; }
+  bool isDependent() const { return StringFlags::isDependent(flags()); }
 
   MOZ_ALWAYS_INLINE
-  bool isAtomRef() const {
-    return (flags() & ATOM_REF_BIT) && !(flags() & ATOM_BIT);
-  }
+  bool isAtomRef() const { return StringFlags::isAtomRef(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSDependentString& asDependent() const {
@@ -720,9 +521,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isExtensible() const {
-    return (flags() & TYPE_FLAGS_MASK) == EXTENSIBLE_FLAGS;
-  }
+  bool isExtensible() const { return StringFlags::isExtensible(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSExtensibleString& asExtensible() const {
@@ -731,7 +530,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isInline() const { return flags() & INLINE_CHARS_BIT; }
+  bool isInline() const { return StringFlags::isInline(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSInlineString& asInline() const {
@@ -740,14 +539,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isFatInline() const {
-    return (flags() & FAT_INLINE_MASK) == FAT_INLINE_MASK;
-  }
+  bool isFatInline() const { return StringFlags::isFatInline(flags()); }
 
   /* For hot code, prefer other type queries. */
-  bool isExternal() const {
-    return (flags() & TYPE_FLAGS_MASK) == EXTERNAL_FLAGS;
-  }
+  bool isExternal() const { return StringFlags::isExternal(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSExternalString& asExternal() const {
@@ -756,12 +551,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   }
 
   MOZ_ALWAYS_INLINE
-  bool isAtom() const { return flags() & ATOM_BIT; }
+  bool isAtom() const { return StringFlags::isAtom(flags()); }
 
   MOZ_ALWAYS_INLINE
-  bool isPermanentAtom() const {
-    return (flags() & PERMANENT_ATOM_MASK) == PERMANENT_ATOM_MASK;
-  }
+  bool isPermanentAtom() const { return StringFlags::isPermanentAtom(flags()); }
 
   MOZ_ALWAYS_INLINE
   JSAtom& asAtom() const {
@@ -771,7 +564,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   MOZ_ALWAYS_INLINE
   js::JSOffThreadAtom& asOffThreadAtom() const {
-    MOZ_ASSERT(headerFlagsFieldAtomic() & ATOM_BIT);
+    MOZ_ASSERT(headerFlagsFieldAtomic() & StringFlags::ATOM_BIT);
     return *(js::JSOffThreadAtom*)this;
   }
 
@@ -779,7 +572,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   void setNonDeduplicatable() {
     MOZ_ASSERT(isLinear());
     MOZ_ASSERT(!isAtom());
-    setFlagBit(NON_DEDUP_BIT);
+    setFlagBit(StringFlags::NON_DEDUP_BIT);
   }
 
   // After copying a string from the nursery to the tenured heap, adjust bits
@@ -787,7 +580,8 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   MOZ_ALWAYS_INLINE
   void clearBitsOnTenure() {
     MOZ_ASSERT(!isAtom());
-    clearFlagBit(NON_DEDUP_BIT | IN_STRING_TO_ATOM_CACHE);
+    clearFlagBit(StringFlags::NON_DEDUP_BIT |
+                 StringFlags::IN_STRING_TO_ATOM_CACHE);
   }
 
   // NON_DEDUP_BIT is only valid for linear non-atoms.
@@ -795,14 +589,16 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   bool isDeduplicatable() const {
     MOZ_ASSERT(isLinear());
     MOZ_ASSERT(!isAtom());
-    return !(flags() & NON_DEDUP_BIT);
+    return !(flags() & StringFlags::NON_DEDUP_BIT);
   }
 
   void setInStringToAtomCache() {
     MOZ_ASSERT(!isAtom());
-    setFlagBit(IN_STRING_TO_ATOM_CACHE);
+    setFlagBit(StringFlags::IN_STRING_TO_ATOM_CACHE);
   }
-  bool inStringToAtomCache() const { return flags() & IN_STRING_TO_ATOM_CACHE; }
+  bool inStringToAtomCache() const {
+    return StringFlags::inStringToAtomCache(flags());
+  }
 
   // Fills |array| with various strings that represent the different string
   // kinds and character encodings.
@@ -843,9 +639,9 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   inline bool ownsMallocedChars() const;
 
   bool hasStringBuffer() const {
-    MOZ_ASSERT_IF(flags() & HAS_STRING_BUFFER_BIT,
+    MOZ_ASSERT_IF(StringFlags::hasStringBuffer(flags()),
                   isLinear() && !isInline() && !isDependent() && !isExternal());
-    return flags() & HAS_STRING_BUFFER_BIT;
+    return StringFlags::hasStringBuffer(flags());
   }
 
   /* Encode as many scalar values of the string as UTF-8 as can fit
@@ -1080,7 +876,9 @@ class JSRope : public JSString {
 
   // The process of flattening a rope temporarily overwrites the left pointer of
   // interior nodes in the rope DAG with the parent pointer.
-  bool isBeingFlattened() const { return flags() & FLATTEN_MASK; }
+  bool isBeingFlattened() const {
+    return StringFlags::isBeingFlattened(flags());
+  }
 
   JSString* leftChild() const {
     MOZ_ASSERT(isRope());
@@ -1276,7 +1074,8 @@ class JSLinearString : public JSString {
     MOZ_ASSERT(isIndexSlow(&containedIndex));
     MOZ_ASSERT(index == containedIndex);
 
-    setFlagBit((index << INDEX_VALUE_SHIFT) | INDEX_VALUE_BIT);
+    setFlagBit((index << StringFlags::INDEX_VALUE_SHIFT) |
+               StringFlags::INDEX_VALUE_BIT);
     MOZ_ASSERT(getIndexValue() == index);
   }
 
@@ -1645,14 +1444,14 @@ class JSAtom : public JSLinearString {
   MOZ_ALWAYS_INLINE
   void makePermanent() {
     MOZ_ASSERT(JSString::isAtom());
-    setFlagBit(PERMANENT_ATOM_MASK);
+    setFlagBit(StringFlags::PERMANENT_ATOM_MASK);
   }
 
   MOZ_ALWAYS_INLINE bool isIndex() const {
     MOZ_ASSERT(JSString::isAtom());
     mozilla::DebugOnly<uint32_t> index;
-    MOZ_ASSERT(!!(flags() & ATOM_IS_INDEX_BIT) == isIndexSlow(&index));
-    return flags() & ATOM_IS_INDEX_BIT;
+    MOZ_ASSERT(StringFlags::isIndex(flags()) == isIndexSlow(&index));
+    return StringFlags::isIndex(flags());
   }
   MOZ_ALWAYS_INLINE bool isIndex(uint32_t* index) const {
     MOZ_ASSERT(JSString::isAtom());
@@ -1667,15 +1466,17 @@ class JSAtom : public JSLinearString {
 
   void setIsIndex(uint32_t index) {
     MOZ_ASSERT(JSString::isAtom());
-    setFlagBit(ATOM_IS_INDEX_BIT);
+    setFlagBit(StringFlags::ATOM_IS_INDEX_BIT);
     maybeInitializeIndexValue(index, /* allowAtom = */ true);
   }
 
-  MOZ_ALWAYS_INLINE bool isPinned() const { return flags() & PINNED_ATOM_BIT; }
+  MOZ_ALWAYS_INLINE bool isPinned() const {
+    return StringFlags::isPinned(flags());
+  }
 
   void setPinned() {
     MOZ_ASSERT(!isPinned());
-    setFlagBit(PINNED_ATOM_BIT);
+    setFlagBit(StringFlags::PINNED_ATOM_BIT);
   }
 
   inline js::HashNumber hash() const;
@@ -1870,24 +1671,22 @@ class StringSegmentRange {
 class JSOffThreadAtom : private JSAtom {
  public:
   size_t length() const { return headerLengthFieldAtomic(); }
-  size_t flags() const { return headerFlagsFieldAtomic(); }
+  uint32_t flags() const { return headerFlagsFieldAtomic(); }
 
   bool empty() const { return length() == 0; }
 
-  bool hasLatin1Chars() const { return flags() & LATIN1_CHARS_BIT; }
-  bool hasTwoByteChars() const { return !(flags() & LATIN1_CHARS_BIT); }
+  bool hasLatin1Chars() const { return StringFlags::hasLatin1Chars(flags()); }
+  bool hasTwoByteChars() const { return StringFlags::hasTwoByteChars(flags()); }
 
-  bool isAtom() const { return flags() & ATOM_BIT; }
-  bool isInline() const { return flags() & INLINE_CHARS_BIT; }
-  bool hasIndexValue() const { return flags() & INDEX_VALUE_BIT; }
-  bool isIndex() const { return flags() & ATOM_IS_INDEX_BIT; }
-  bool isFatInline() const {
-    return (flags() & FAT_INLINE_MASK) == FAT_INLINE_MASK;
-  }
+  bool isAtom() const { return StringFlags::isAtom(flags()); }
+  bool isInline() const { return StringFlags::isInline(flags()); }
+  bool hasIndexValue() const { return StringFlags::hasIndexValue(flags()); }
+  bool isIndex() const { return StringFlags::isIndex(flags()); }
+  bool isFatInline() const { return StringFlags::isFatInline(flags()); }
 
   uint32_t getIndexValue() const {
     MOZ_ASSERT(hasIndexValue());
-    return flags() >> INDEX_VALUE_SHIFT;
+    return StringFlags::indexValue(flags());
   }
   bool isIndex(uint32_t* index) const {
     if (!isIndex()) {

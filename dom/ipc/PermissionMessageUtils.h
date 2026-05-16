@@ -6,10 +6,23 @@
 #define mozilla_dom_permission_message_utils_h_
 
 #include "ipc/IPCMessageUtils.h"
+#include "mozilla/dom/BindingIPCUtils.h"
+#include "mozilla/dom/PermissionStatusBinding.h"
+#include "mozilla/dom/PermissionsBinding.h"
 #include "nsCOMPtr.h"
 #include "nsIPrincipal.h"
 
 namespace IPC {
+
+template <>
+struct ParamTraits<mozilla::dom::PermissionState>
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PermissionState> {
+};
+
+template <>
+struct ParamTraits<mozilla::dom::PermissionName>
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::PermissionName> {
+};
 
 template <>
 struct ParamTraits<nsIPrincipal*> {

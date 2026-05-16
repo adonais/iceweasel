@@ -357,6 +357,14 @@ main-context-menu-send-to-mobile-2 =
     .label = Send to Mobile
     .accesskey = n
 
+# Displayed within the send tab submenu to prompt users to sign in, enable sync, or pair a device
+main-context-menu-send-to-mobile-enable-sync =
+    .label = Enable sync to send a tab
+main-context-menu-send-to-mobile-connect-phone =
+    .label = Connect your phone
+main-context-menu-send-to-mobile-device-missing =
+    .label = Don’t see your device?
+
 # Displayed when there are saved passwords and the user clicks inside a username or password field
 main-context-menu-use-saved-password =
     .label = Use Saved Password

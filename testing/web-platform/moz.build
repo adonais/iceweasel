@@ -878,7 +878,7 @@ with Files("tests/wai-aria/**"):
     BUG_COMPONENT = ("Core", "Disability Access APIs")
 
 with Files("tests/wasm/**"):
-    BUG_COMPONENT = ("Core", "Javascript: WebAssembly")
+    BUG_COMPONENT = ("Core", "JavaScript: WebAssembly")
 
 with Files("tests/web-animations/**"):
     BUG_COMPONENT = ("Core", "DOM: Animation")

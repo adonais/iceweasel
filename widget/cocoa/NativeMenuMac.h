@@ -29,7 +29,7 @@ class NativeMenuMac : public NativeMenu,
 
   // NativeMenu
   void ShowMenuAnchored(nsIFrame* aClickedFrame, const CSSIntRect& aRect,
-                        const nsAString& aPosition) override;
+                        int8_t aPosition) override;
   void ShowMenuAtPosition(nsIFrame* aClickedFrame, const CSSIntPoint& aPosition,
                           bool aIsContextMenu) override;
   bool Close() override;

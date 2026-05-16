@@ -253,6 +253,11 @@ already_AddRefed<MediaRawData> ArrayOfRemoteMediaRawData::ElementAt(
       !ReadParam(aReader, &array->mExtraDatas)) {
     return false;
   }
+  if (array->mSamples.Length() != array->mBuffers.Count() ||
+      array->mSamples.Length() != array->mAlphaBuffers.Count() ||
+      array->mSamples.Length() != array->mExtraDatas.Count()) {
+    return false;
+  }
   *aVar = std::move(array);
   return true;
 }

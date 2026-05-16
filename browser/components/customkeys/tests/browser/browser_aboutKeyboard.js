@@ -70,13 +70,13 @@ addAboutKbTask(async function testInit(tab) {
       0,
       "No shortcuts are customized"
     );
-    // Currently, we don't have any unassigned shortcuts. That will probably
-    // change in future, at which point this next assertion will need to be
-    // reconsidered.
+    // Only "Duplicate Tab" has an unassigned shortcut.
+    const unassigned = content.document.querySelectorAll(".key:not(.assigned)");
+    is(unassigned.length, 1, "One key is unassigned");
     is(
-      content.document.querySelectorAll(".assigned").length,
-      numKeys,
-      "All keys are assigned"
+      unassigned[0].dataset.id,
+      "key_duplicateTab",
+      "key_duplicateTab is unassigned"
     );
     is(
       content.document.querySelectorAll(".editing").length,

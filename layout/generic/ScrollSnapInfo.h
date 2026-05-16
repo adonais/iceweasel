@@ -11,6 +11,7 @@
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/WritingModes.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsPoint.h"
 
@@ -36,6 +37,13 @@ struct SnapPoint {
 
   Maybe<nscoord> mX;
   Maybe<nscoord> mY;
+
+  const Maybe<nscoord>& I(WritingMode aWM) const {
+    return aWM.IsVertical() ? mY : mX;
+  }
+  const Maybe<nscoord>& B(WritingMode aWM) const {
+    return aWM.IsVertical() ? mX : mY;
+  }
 };
 
 struct ScrollSnapInfo {
@@ -53,6 +61,13 @@ struct ScrollSnapInfo {
   // The scroll frame's scroll-snap-type.
   StyleScrollSnapStrictness mScrollSnapStrictnessX;
   StyleScrollSnapStrictness mScrollSnapStrictnessY;
+
+  StyleScrollSnapStrictness StrictnessInline(WritingMode aWM) const {
+    return aWM.IsVertical() ? mScrollSnapStrictnessY : mScrollSnapStrictnessX;
+  }
+  StyleScrollSnapStrictness StrictnessBlock(WritingMode aWM) const {
+    return aWM.IsVertical() ? mScrollSnapStrictnessX : mScrollSnapStrictnessY;
+  }
 
   struct SnapTarget {
     // The scroll positions corresponding to scroll-snap-align values.

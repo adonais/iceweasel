@@ -178,6 +178,7 @@ generated_bindings = [
     "JavaExceptions",
     "KeyEvent",
     "MediaCodec",
+    "MessageQueue",
     "MotionEvent",
     "SurfaceTexture",
     "ViewConfiguration",

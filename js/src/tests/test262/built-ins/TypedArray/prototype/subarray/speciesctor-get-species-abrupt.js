@@ -27,8 +27,8 @@ includes: [testTypedArray.js]
 features: [Symbol.species, TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA(2);
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(2));
 
   sample.constructor = {};
 
@@ -41,6 +41,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.throws(Test262Error, function() {
     sample.subarray(0);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

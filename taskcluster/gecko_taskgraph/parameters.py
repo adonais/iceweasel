@@ -105,6 +105,7 @@ gecko_parameters_schema = {
     },
     Required("version"): str,
     Optional("head_git_rev"): str,
+    Optional("pull_request_number"): int,
 }
 
 
@@ -165,3 +166,8 @@ def get_defaults(repo_root=None):
 
 def register_parameters():
     extend_parameters_schema(gecko_parameters_schema, defaults_fn=get_defaults)
+
+
+def get_decision_parameters(graph_config, parameters):
+    if pr_number := os.environ.get("GECKO_PULL_REQUEST_NUMBER", None):
+        parameters["pull_request_number"] = int(pr_number)

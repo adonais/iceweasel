@@ -254,10 +254,10 @@ static void PurgeWRGlyphAtlas() {
   // from the layer manager.
   for (WRUserData* user : gWRUsers) {
     auto* manager = user->mManager;
-    for (size_t i = 0; i < 8; i++) {
-      if (gWRGlyphAtlas[i]) {
-        auto* key = static_cast<wr::ImageKey*>(gWRGlyphAtlas[i]->GetUserData(
-            reinterpret_cast<UserDataKey*>(manager)));
+    for (const auto& gWRGlyphAtla : gWRGlyphAtlas) {
+      if (gWRGlyphAtla) {
+        auto* key = static_cast<wr::ImageKey*>(
+            gWRGlyphAtla->GetUserData(reinterpret_cast<UserDataKey*>(manager)));
         if (key) {
           manager->GetRenderRootStateManager()->AddImageKeyForDiscard(*key);
         }
@@ -270,8 +270,8 @@ static void PurgeWRGlyphAtlas() {
     gWRUsers.popFirst()->Remove();
   }
   // Finally, clear out the atlases.
-  for (size_t i = 0; i < 8; i++) {
-    gWRGlyphAtlas[i] = nullptr;
+  for (auto& gWRGlyphAtla : gWRGlyphAtlas) {
+    gWRGlyphAtla = nullptr;
   }
 }
 
@@ -284,10 +284,9 @@ WRUserData::~WRUserData() {
   // When the layer manager is destroyed, we need go through each
   // atlas and remove any assigned image keys.
   if (isInList()) {
-    for (size_t i = 0; i < 8; i++) {
-      if (gWRGlyphAtlas[i]) {
-        gWRGlyphAtlas[i]->RemoveUserData(
-            reinterpret_cast<UserDataKey*>(mManager));
+    for (const auto& gWRGlyphAtla : gWRGlyphAtlas) {
+      if (gWRGlyphAtla) {
+        gWRGlyphAtla->RemoveUserData(reinterpret_cast<UserDataKey*>(mManager));
       }
     }
   }

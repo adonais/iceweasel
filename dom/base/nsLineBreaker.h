@@ -63,7 +63,7 @@ class nsILineBreakSink {
  */
 class nsLineBreaker {
  public:
-  nsLineBreaker();
+  nsLineBreaker() = default;
   ~nsLineBreaker();
 
   static inline bool IsSpace(char16_t u) {
@@ -258,10 +258,6 @@ class nsLineBreaker {
                              const char16_t* aTextLimit, uint8_t* aBreakState);
 
   inline constexpr bool IsSegmentSpace(char16_t u) const {
-    if (mLegacyBehavior) {
-      return nsLineBreaker::IsSpace(u);
-    }
-
     return u == 0x0020 ||  // SPACE u
            u == 0x0009 ||  // CHARACTER TABULATION
            u == 0x000D;    // CARRIAGE RETURN
@@ -302,8 +298,6 @@ class nsLineBreaker {
   // start using a linebreaker, but it may be set to true if the line-breaker
   // has been explicitly flushed mid-word.
   bool mWordContinuation = false;
-  // True if using old line segmenter.
-  const bool mLegacyBehavior;
 };
 
 #endif /*NSLINEBREAKER_H_*/

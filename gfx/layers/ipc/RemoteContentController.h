@@ -41,7 +41,7 @@ class RemoteContentController : public GeckoContentController,
 
   void RequestContentRepaint(const RepaintRequest& aRequest) override;
 
-  void HandleTap(
+  MOZ_CAN_RUN_SCRIPT void HandleTap(
       TapType aTapType, const LayoutDevicePoint& aPoint, Modifiers aModifiers,
       const ScrollableLayerGuid& aGuid, uint64_t aInputBlockId,
       const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) override;
@@ -98,7 +98,7 @@ class RemoteContentController : public GeckoContentController,
   nsCOMPtr<nsISerialEventTarget> mCompositorThread;
   bool mCanSend;
 
-  void HandleTapOnParentProcessMainThread(
+  MOZ_CAN_RUN_SCRIPT void HandleTapOnParentProcessMainThread(
       TapType aTapType, LayoutDevicePoint aPoint, Modifiers aModifiers,
       ScrollableLayerGuid aGuid, uint64_t aInputBlockId,
       const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics);

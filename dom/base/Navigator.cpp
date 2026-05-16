@@ -15,6 +15,7 @@
 #include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/FetchBinding.h"
 #include "mozilla/dom/File.h"
+#include "mozilla/dom/Serial.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
@@ -142,6 +143,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Navigator)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlugins)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPermissions)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGeolocation)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSerial)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBatteryManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBatteryPromise)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mConnection)
@@ -187,6 +189,11 @@ void Navigator::Invalidate() {
   if (mGeolocation) {
     mGeolocation->Shutdown();
     mGeolocation = nullptr;
+  }
+
+  if (mSerial) {
+    mSerial->Shutdown();
+    mSerial = nullptr;
   }
 
   if (mBatteryManager) {
@@ -1143,6 +1150,20 @@ Geolocation* Navigator::GetGeolocation(ErrorResult& aRv) {
   }
 
   return mGeolocation;
+}
+
+dom::Serial* Navigator::GetSerial(ErrorResult& aRv) {
+  if (mSerial) {
+    return mSerial;
+  }
+
+  if (!mWindow) {
+    aRv.ThrowInvalidStateError("Navigator no longer has an associated window");
+    return nullptr;
+  }
+
+  mSerial = MakeRefPtr<dom::Serial>(mWindow);
+  return mSerial;
 }
 
 class BeaconStreamListener final : public nsIStreamListener {

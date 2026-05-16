@@ -6,8 +6,8 @@
 #include "CustomMatchers.h"
 
 void KungFuDeathGripChecker::registerMatchers(MatchFinder *AstMatcher) {
-  AstMatcher->addMatcher(varDecl(allOf(hasType(isRefPtr()), hasLocalStorage(),
-                                       hasInitializer(anything())),
+  AstMatcher->addMatcher(varDecl(hasType(isRefPtr()), hasLocalStorage(),
+                                       hasInitializer(anything()),
                                  unless(anyOf(isReferenced(), isParameter())))
                              .bind("decl"),
                          this);

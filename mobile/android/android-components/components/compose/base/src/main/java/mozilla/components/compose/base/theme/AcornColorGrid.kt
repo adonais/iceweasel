@@ -37,7 +37,7 @@ private class ColorParameterProvider : PreviewParameterProvider<Pair<AcornColors
 }
 
 @Suppress("LongMethod", "MagicNumber")
-@Preview(widthDp = CONTAINER_STACK_WIDTH * 4 + CONTAINER_GUTTER * 3 + 16, heightDp = 1000)
+@Preview(widthDp = CONTAINER_STACK_WIDTH * 4 + CONTAINER_GUTTER * 3 + 16, heightDp = 1200)
 @Composable
 private fun AcornColorGrid(
     @PreviewParameter(ColorParameterProvider::class) colors: Pair<AcornColors, ColorScheme>,
@@ -286,14 +286,20 @@ private fun AcornColorGrid(
                     modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp),
                 ) {
                     Text(
-                        text = "surfaceDimVariant",
-                        modifier = Modifier.colorGridItemShort(color = colorScheme.surfaceDimVariant),
-                        color = colorScheme.onSurface,
+                        text = "information",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.information),
+                        color = colorScheme.onPrimary,
                     )
 
                     Text(
-                        text = "information",
-                        modifier = Modifier.colorGridItemShort(color = colorScheme.information),
+                        text = "informationContainer",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.informationContainer),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "onInformationContainer",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.onInformationContainer),
                         color = colorScheme.onPrimary,
                     )
 
@@ -301,6 +307,30 @@ private fun AcornColorGrid(
                         text = "success",
                         modifier = Modifier.colorGridItemShort(color = colorScheme.success),
                         color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "warning",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.warning),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "warningContainer",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.warningContainer),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "onWarningContainer",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.onWarningContainer),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "surfaceDimVariant",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.surfaceDimVariant),
+                        color = colorScheme.onSurface,
                     )
                 }
             }

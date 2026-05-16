@@ -139,9 +139,6 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
                                                                                \
   GETTER(bool, IsPreflight, isPreflight, false)                                \
                                                                                \
-  GETTER(bool, ServiceWorkerTaintingSynthesized,                               \
-         serviceWorkerTaintingSynthesized, false)                              \
-                                                                               \
   GETTER(bool, DocumentHasUserInteracted, documentHasUserInteracted, false)    \
   SETTER(bool, DocumentHasUserInteracted)                                      \
                                                                                \
@@ -418,7 +415,8 @@ class LoadInfo final : public nsILoadInfo {
            const Maybe<mozilla::dom::ClientInfo>& aInitialClientInfo,
            const Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController,
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags,
-           nsContentPolicyType aContentPolicyType, LoadTainting aTainting,
+           nsContentPolicyType aContentPolicyType,
+           bool aServiceWorkerTaintingSynthesized, LoadTainting aTainting,
 
 #define DEFINE_PARAMETER(type, name, _n, _d) type a##name,
            LOADINFO_FOR_EACH_FIELD(DEFINE_PARAMETER, LOADINFO_DUMMY_SETTER)
@@ -511,6 +509,7 @@ class LoadInfo final : public nsILoadInfo {
   dom::ReferrerPolicy mFrameReferrerPolicySnapshot =
       dom::ReferrerPolicy::_empty;
   nsContentPolicyType mInternalContentPolicyType;
+  bool mServiceWorkerTaintingSynthesized = false;
   LoadTainting mTainting = LoadTainting::Basic;
 
 #define DEFINE_FIELD(type, name, _, default_init) type m##name = default_init;

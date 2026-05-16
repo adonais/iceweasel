@@ -13,8 +13,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -89,11 +88,9 @@ class WallpaperOnboardingDialogFragment : BottomSheetDialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = ComposeView(requireContext()).apply {
-        this@WallpaperOnboardingDialogFragment.dialog?.setCanceledOnTouchOutside(true)
-
-        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        setContent {
+    ): View {
+        dialog?.setCanceledOnTouchOutside(true)
+        return content {
             FirefoxTheme {
                 val wallpapers = appStore.observeAsComposableState { state ->
                     state.wallpaperState.availableWallpapers.getWallpapersForOnboarding()
@@ -167,8 +164,5 @@ class WallpaperOnboardingDialogFragment : BottomSheetDialogFragment() {
 
         // The desired amount of seasonal wallpapers inside of the selector.
         const val SEASONAL_WALLPAPERS_COUNT = 3
-
-        // The desired amount of seasonal wallpapers inside of the selector.
-        const val CLASSIC_WALLPAPERS_COUNT = 2
     }
 }

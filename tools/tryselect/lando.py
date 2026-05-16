@@ -20,6 +20,7 @@ from dataclasses import (
     field,
 )
 from pathlib import Path
+from random import random
 from typing import Union
 
 import requests
@@ -321,6 +322,7 @@ class LandoAPI:
 
     access_token: str
     api_url: str
+    instance_id: str
     verify_tls: bool = True
 
     @property
@@ -329,8 +331,12 @@ class LandoAPI:
         return f"https://{self.api_url}/try/patches"
 
     def lando_try_status_api_url(self, job_id: int) -> str:
-        """URL of the Lando Try Job Status endpoint."""
+        """URL of the Lando Try Job Status JSON endpoint."""
         return f"https://{self.api_url}/landing_jobs/{job_id}"
+
+    def lando_try_status_url(self, job_id: int) -> str:
+        """URL of the Lando Try Job Status HTML endpoint in new Lando."""
+        return f"https://{self.api_url}/landings/{job_id}"
 
     @property
     def api_headers(self) -> dict[str, str]:
@@ -366,6 +372,7 @@ class LandoAPI:
         return LandoAPI(
             api_url=parser.get(section, "api_domain"),
             access_token=token["access_token"],
+            instance_id=parser.get(section, "instance_id", fallback=section),
             verify_tls=parser.getboolean(section, "verify_tls", fallback=True),
         )
 
@@ -419,9 +426,18 @@ class LandoAPI:
 
 
 def push_to_lando_try(
-    vcs: SupportedVcsRepository, commit_message: str, changed_files: dict, metrics
+    vcs: SupportedVcsRepository,
+    commit_message: str,
+    changed_files: dict,
+    metrics,
+    *,
+    force_old_lando: bool = False,
 ):
     """Push a set of patches to Lando's try endpoint."""
+
+    OLD_LANDO_ENTRY = "lando-prod"
+    NEW_LANDO_ENTRY = "lando-prod-new"
+
     metrics.mach_try.vcs_prep.start()
     # Map `Repository` subclasses to the `patch_format` value Lando expects.
     PATCH_FORMAT_STRING_MAPPING = {
@@ -436,7 +452,24 @@ def push_to_lando_try(
 
     # Use LANDO_TRY_CONFIG so select which configuration section from .lando.ini to use.
     # Default to using `lando-prod`.
-    lando_config_section = os.getenv("LANDO_TRY_CONFIG", "lando-prod")
+
+    default_lando_config_section = OLD_LANDO_ENTRY
+
+    # Bug 1979252: A/B test use of new lando for some pushes to try.
+    new_lando_probability = 1
+
+    if not force_old_lando and random() < new_lando_probability:
+        default_lando_config_section = NEW_LANDO_ENTRY
+
+    lando_config_section = os.getenv("LANDO_TRY_CONFIG", default_lando_config_section)
+
+    if lando_config_section == NEW_LANDO_ENTRY:
+        notification_message = """
+            This Try push uses the new Lando instance.
+            Please report any issue to https://matrix.to/#/#conduit:mozilla.org.
+            If you want to use the old Lando instance, set the environment variable LANDO_TRY_CONFIG to `lando-prod` (section name from '.lando.ini')"
+        """
+        print(notification_message)
 
     # Load Auth0 config from `.lando.ini`.
     lando_ini_path = Path(vcs.path) / ".lando.ini"
@@ -494,4 +527,7 @@ def push_to_lando_try(
     if duration > 30:
         build.notify(success_msg)
 
-    return job_id
+    return {
+        "lando_instance": lando_api.instance_id,
+        "lando_job_id": job_id,
+    }

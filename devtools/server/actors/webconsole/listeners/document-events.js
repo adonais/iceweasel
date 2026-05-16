@@ -63,7 +63,10 @@ class DocumentEventsListener extends EventEmitter {
       // Ignore listening to anything if the page is already fully loaded.
       // This can be the case when opening DevTools against an already loaded page
       // or when doing bfcache navigations.
-      if (this.targetActor.window.document.readyState != "complete") {
+      if (
+        !Cu.isRemoteProxy(this.targetActor.window) &&
+        this.targetActor.window.document.readyState != "complete"
+      ) {
         this.webProgress = this.targetActor.docShell
           .QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(Ci.nsIWebProgress);

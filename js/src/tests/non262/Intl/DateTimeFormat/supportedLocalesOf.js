@@ -15,6 +15,7 @@ const allLocales = [
   "bg",
   "bn",
   "bo",
+  "bqi",
   "br",
   "brx",
   "bs",
@@ -124,6 +125,7 @@ const allLocales = [
 const unsupported = [
   "ach",  // Acoli
   "an",   // Aragonese
+  "bqi",  // Bakhtiari
   "cak",  // Cakchiquel; Kaqchikel
   "gn",   // Guarani
   "hye",  // Armenian (Eastern)

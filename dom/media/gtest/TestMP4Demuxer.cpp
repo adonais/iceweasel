@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BufferMediaResource.h"
+#include "DecoderData.h"
 #include "MP4Demuxer.h"
 #include "MediaDataDemuxer.h"
 #include "MockMediaResource.h"
@@ -730,3 +731,133 @@ TEST(MP4Demuxer, DuplicateTimestampsWithLargeTimescaleFragmented)
 }
 
 #undef DO_FAIL
+
+static Mp4parseTrackVideoInfo MakeVideoInfo(
+    Mp4parseTrackVideoSampleInfo* aSampleInfo) {
+  Mp4parseTrackVideoInfo info{};
+  info.display_width = 1920;
+  info.display_height = 1080;
+  info.sample_info_count = 1;
+  info.sample_info = aSampleInfo;
+  return info;
+}
+
+static Mp4parseTrackVideoSampleInfo MakeSampleInfo(bool aHasColourInfo,
+                                                   uint8_t aCp, uint8_t aTc,
+                                                   uint8_t aMc,
+                                                   bool aFullRange) {
+  Mp4parseTrackVideoSampleInfo si{};
+  si.codec_type = MP4PARSE_CODEC_AV1;
+  si.image_width = 1920;
+  si.image_height = 1080;
+  si.has_colour_info = aHasColourInfo;
+  si.colour_primaries = aCp;
+  si.transfer_characteristics = aTc;
+  si.matrix_coefficients = aMc;
+  si.full_range_flag = aFullRange;
+  return si;
+}
+
+static Mp4parseTrackInfo MakeTrackInfo() {
+  Mp4parseTrackInfo ti{};
+  ti.time_scale = 1000;
+  return ti;
+}
+
+// HDR10: cp=9 (BT.2020), tc=16 (PQ), mc=9, limited range
+TEST(MP4Demuxer, VideoInfoNclxHDR10)
+{
+  auto si = MakeSampleInfo(true, 9, 16, 9, false);
+  auto vi = MakeVideoInfo(&si);
+  auto ti = MakeTrackInfo();
+  MP4VideoInfo info;
+  EXPECT_TRUE(NS_SUCCEEDED(info.Update(&ti, &vi)));
+  EXPECT_EQ(info.mTransferFunction, Some(gfx::TransferFunction::PQ));
+  EXPECT_EQ(info.mColorPrimaries, Some(gfx::ColorSpace2::BT2020));
+  EXPECT_EQ(info.mColorSpace, Some(gfx::YUVColorSpace::BT2020));
+  EXPECT_EQ(info.mColorRange, gfx::ColorRange::LIMITED);
+}
+
+// HDR10 full-range: cp=9, tc=16, mc=9, full range
+TEST(MP4Demuxer, VideoInfoNclxHDR10FullRange)
+{
+  auto si = MakeSampleInfo(true, 9, 16, 9, true);
+  auto vi = MakeVideoInfo(&si);
+  auto ti = MakeTrackInfo();
+  MP4VideoInfo info;
+  EXPECT_TRUE(NS_SUCCEEDED(info.Update(&ti, &vi)));
+  EXPECT_EQ(info.mTransferFunction, Some(gfx::TransferFunction::PQ));
+  EXPECT_EQ(info.mColorPrimaries, Some(gfx::ColorSpace2::BT2020));
+  EXPECT_EQ(info.mColorSpace, Some(gfx::YUVColorSpace::BT2020));
+  EXPECT_EQ(info.mColorRange, gfx::ColorRange::FULL);
+}
+
+// HLG: cp=9, tc=18, mc=9, limited range
+TEST(MP4Demuxer, VideoInfoNclxHLG)
+{
+  auto si = MakeSampleInfo(true, 9, 18, 9, false);
+  auto vi = MakeVideoInfo(&si);
+  auto ti = MakeTrackInfo();
+  MP4VideoInfo info;
+  EXPECT_TRUE(NS_SUCCEEDED(info.Update(&ti, &vi)));
+  EXPECT_EQ(info.mTransferFunction, Some(gfx::TransferFunction::HLG));
+  EXPECT_EQ(info.mColorPrimaries, Some(gfx::ColorSpace2::BT2020));
+  EXPECT_EQ(info.mColorSpace, Some(gfx::YUVColorSpace::BT2020));
+  EXPECT_EQ(info.mColorRange, gfx::ColorRange::LIMITED);
+}
+
+// HLG full-range: cp=9, tc=18, mc=9, full range
+TEST(MP4Demuxer, VideoInfoNclxHLGFullRange)
+{
+  auto si = MakeSampleInfo(true, 9, 18, 9, true);
+  auto vi = MakeVideoInfo(&si);
+  auto ti = MakeTrackInfo();
+  MP4VideoInfo info;
+  EXPECT_TRUE(NS_SUCCEEDED(info.Update(&ti, &vi)));
+  EXPECT_EQ(info.mTransferFunction, Some(gfx::TransferFunction::HLG));
+  EXPECT_EQ(info.mColorPrimaries, Some(gfx::ColorSpace2::BT2020));
+  EXPECT_EQ(info.mColorSpace, Some(gfx::YUVColorSpace::BT2020));
+  EXPECT_EQ(info.mColorRange, gfx::ColorRange::FULL);
+}
+
+// RGB/Identity: cp=1 (BT.709), tc=1, mc=0 (Identity), limited range
+TEST(MP4Demuxer, VideoInfoNclxRGBIdentity)
+{
+  auto si = MakeSampleInfo(true, 1, 1, 0, false);
+  auto vi = MakeVideoInfo(&si);
+  auto ti = MakeTrackInfo();
+  MP4VideoInfo info;
+  EXPECT_TRUE(NS_SUCCEEDED(info.Update(&ti, &vi)));
+  EXPECT_EQ(info.mTransferFunction, Some(gfx::TransferFunction::BT709));
+  EXPECT_EQ(info.mColorPrimaries, Some(gfx::ColorSpace2::BT709));
+  EXPECT_EQ(info.mColorSpace, Some(gfx::YUVColorSpace::Identity));
+  EXPECT_EQ(info.mColorRange, gfx::ColorRange::LIMITED);
+}
+
+// No colr box: has_colour_info=false, colour fields must stay Nothing()
+TEST(MP4Demuxer, VideoInfoNclxAbsent)
+{
+  auto si = MakeSampleInfo(false, 0, 0, 0, false);
+  auto vi = MakeVideoInfo(&si);
+  auto ti = MakeTrackInfo();
+  MP4VideoInfo info;
+  EXPECT_TRUE(NS_SUCCEEDED(info.Update(&ti, &vi)));
+  EXPECT_EQ(info.mTransferFunction, Nothing());
+  EXPECT_EQ(info.mColorPrimaries, Nothing());
+  EXPECT_EQ(info.mColorSpace, Nothing());
+  EXPECT_EQ(info.mColorRange, gfx::ColorRange::LIMITED);
+}
+
+// Unrecognised CICP values: colour fields with no gecko mapping stay Nothing()
+TEST(MP4Demuxer, VideoInfoNclxUnrecognisedCICP)
+{
+  auto si = MakeSampleInfo(true, 22, 22, 22, false);
+  auto vi = MakeVideoInfo(&si);
+  auto ti = MakeTrackInfo();
+  MP4VideoInfo info;
+  EXPECT_TRUE(NS_SUCCEEDED(info.Update(&ti, &vi)));
+  EXPECT_EQ(info.mTransferFunction, Nothing());
+  EXPECT_EQ(info.mColorPrimaries, Nothing());
+  EXPECT_EQ(info.mColorSpace, Nothing());
+  EXPECT_EQ(info.mColorRange, gfx::ColorRange::LIMITED);
+}

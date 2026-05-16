@@ -43,7 +43,9 @@ class TabSearchMiddlewareTest {
                 ),
                 initialState = TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    normalTabs = expectedNormalTabs + otherNormalTabs,
+                    normalTabsState = TabsTrayState.NormalTabsState(
+                        items = expectedNormalTabs + otherNormalTabs,
+                    ),
                     inactiveTabs = TabsTrayState.InactiveTabsState(
                         tabs = expectedInactiveTabs + otherInactiveTabs,
                     ),
@@ -110,7 +112,9 @@ class TabSearchMiddlewareTest {
                 ),
                 initialState = TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    normalTabs = expectedNormalTabs + otherNormalTabs,
+                    normalTabsState = TabsTrayState.NormalTabsState(
+                        items = expectedNormalTabs + otherNormalTabs,
+                    ),
                     inactiveTabs = TabsTrayState.InactiveTabsState(
                         tabs = expectedInactiveTabs + otherInactiveTabs,
                     ),
@@ -172,7 +176,9 @@ class TabSearchMiddlewareTest {
                 ),
                 initialState = TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    normalTabs = expectedNormalTabs + otherNormalTabs,
+                    normalTabsState = TabsTrayState.NormalTabsState(
+                        items = expectedNormalTabs + otherNormalTabs,
+                    ),
                     inactiveTabs = TabsTrayState.InactiveTabsState(tabs = expectedInactiveTabs + otherInactiveTabs),
                 ),
             )
@@ -231,7 +237,9 @@ class TabSearchMiddlewareTest {
                 ),
                 initialState = TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    normalTabs = normalTabs,
+                    normalTabsState = TabsTrayState.NormalTabsState(
+                        items = normalTabs,
+                    ),
                     inactiveTabs = TabsTrayState.InactiveTabsState(
                         tabs = inactiveTabs,
                     ),
@@ -325,11 +333,13 @@ class TabSearchMiddlewareTest {
                 ),
                 initialState = TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    normalTabs = listOf(
-                        aboutHomeOld,
-                        aboutHomeNew,
-                        aboutHomeNewest,
-                    ) + matchingNonHomepage + nonMatching,
+                    normalTabsState = TabsTrayState.NormalTabsState(
+                        items = listOf(
+                            aboutHomeOld,
+                            aboutHomeNew,
+                            aboutHomeNewest,
+                        ) + matchingNonHomepage + nonMatching,
+                    ),
                     inactiveTabs = TabsTrayState.InactiveTabsState(
                         tabs = emptyList(),
                     ),
@@ -359,7 +369,9 @@ class TabSearchMiddlewareTest {
                 ),
                 initialState = TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    normalTabs = listOf(aboutHomeOld, aboutHomeNew) + matchingNonHomepage,
+                    normalTabsState = TabsTrayState.NormalTabsState(
+                        items = listOf(aboutHomeOld, aboutHomeNew) + matchingNonHomepage,
+                    ),
                     inactiveTabs = TabsTrayState.InactiveTabsState(
                         tabs = emptyList(),
                     ),
@@ -388,7 +400,9 @@ class TabSearchMiddlewareTest {
                 ),
                 initialState = TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    normalTabs = listOf(aboutHome) + matchingNonHomepage,
+                    normalTabsState = TabsTrayState.NormalTabsState(
+                        items = listOf(aboutHome) + matchingNonHomepage,
+                    ),
                     inactiveTabs = TabsTrayState.InactiveTabsState(
                         tabs = emptyList(),
                     ),

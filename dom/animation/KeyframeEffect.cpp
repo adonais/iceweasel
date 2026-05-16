@@ -1981,15 +1981,15 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
   if (mAnimation->UsingScrollTimeline()) {
     const ScrollTimeline* scrollTimeline =
         mAnimation->GetTimeline()->AsScrollTimeline();
+    const auto state = scrollTimeline->GetState();
     // We don't send this animation to the compositor if
     // 1. the APZ is disabled entirely or for the source, or
     // 2. the associated scroll-timeline is inactive, or
     // 3. the scrolling direction is not available (i.e. no scroll range).
     // 4. the scroll style of the scroller is overflow:hidden.
-    if (!scrollTimeline->APZIsActiveForSource() ||
-        !scrollTimeline->IsActive() ||
-        !scrollTimeline->ScrollingDirectionIsAvailable() ||
-        scrollTimeline->SourceScrollStyle() == StyleOverflow::Hidden) {
+    if (!state.APZIsActiveForSource() || !state.IsActive() ||
+        !state.ScrollingDirectionIsAvailable() ||
+        state.SourceScrollStyle() == StyleOverflow::Hidden) {
       return KeyframeEffect::MatchForCompositor::No;
     }
 

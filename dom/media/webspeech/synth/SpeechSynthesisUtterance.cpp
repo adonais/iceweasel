@@ -9,7 +9,6 @@
 #include "mozilla/dom/SpeechSynthesisUtteranceBinding.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsGkAtoms.h"
 
 namespace mozilla::dom {
 

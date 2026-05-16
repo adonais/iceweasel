@@ -83,6 +83,9 @@ extern size_t gPageSize;
   (((s) + mozilla::gPageSizeMask) & ~mozilla::gPageSizeMask)
 #define REAL_PAGE_CEILING(s) (((s) + gRealPageSizeMask) & ~gRealPageSizeMask)
 
+// Return the largest pagesize multiple that is <= s.
+#define REAL_PAGE_FLOOR(s) ((s) & ~gRealPageSizeMask)
+
 #define PAGES_PER_REAL_PAGE_CEILING(s) \
   (((s) + gPagesPerRealPage - 1) & ~(gPagesPerRealPage - 1))
 
@@ -121,8 +124,7 @@ void DefineGlobals();
 #define CHUNK_CEILING(s) (((s) + kChunkSizeMask) & ~kChunkSizeMask)
 
 // Return the smallest cacheline multiple that is >= s.
-#define CACHELINE_CEILING(s) \
-  (((s) + (kCacheLineSize - 1)) & ~(kCacheLineSize - 1))
+#define CACHELINE_CEILING(s) (((s) + kCacheLineMask) & ~kCacheLineMask)
 
 // Return the smallest quantum multiple that is >= a.
 #define QUANTUM_CEILING(a) (((a) + (kQuantumMask)) & ~(kQuantumMask))

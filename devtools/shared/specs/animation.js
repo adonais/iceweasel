@@ -17,11 +17,11 @@ const {
 types.addDictType("animationMutationChange", {
   // The type of change ("added" or "removed").
   type: "string",
-  // The changed AnimationPlayerActor.
+  // The changed AnimationActor.
   player: "animationplayer",
 });
 
-const animationPlayerSpec = generateActorSpec({
+const animationSpec = generateActorSpec({
   typeName: "animationplayer",
 
   events: {
@@ -50,7 +50,7 @@ const animationPlayerSpec = generateActorSpec({
   },
 });
 
-exports.animationPlayerSpec = animationPlayerSpec;
+exports.animationSpec = animationSpec;
 
 const animationsSpec = generateActorSpec({
   typeName: "animations",
@@ -97,6 +97,7 @@ const animationsSpec = generateActorSpec({
       },
       response: {},
     },
+    // @backward-compat { version 151 } setPlaybackRates can be removed once 151 is in release
     setPlaybackRates: {
       request: {
         players: Arg(0, "array:animationplayer"),

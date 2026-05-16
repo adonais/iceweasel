@@ -150,11 +150,7 @@ class OutputParser {
   parseCssProperty(name, value, options = {}) {
     options = this.#mergeOptions(options);
 
-    options.expectCubicBezier = this.#cssProperties.supportsType(
-      name,
-      "timing-function"
-    );
-    options.expectLinearEasing = this.#cssProperties.supportsType(
+    options.expectTimingFunction = this.#cssProperties.supportsType(
       name,
       "timing-function"
     );
@@ -498,7 +494,9 @@ class OutputParser {
 
           if (
             isColorTakingFunction ||
-            ANGLE_TAKING_FUNCTIONS.has(lowerCaseFunctionName)
+            ANGLE_TAKING_FUNCTIONS.has(lowerCaseFunctionName) ||
+            lowerCaseFunctionName === "cubic-bezier" ||
+            lowerCaseFunctionName === "linear"
           ) {
             // The function can accept a color or an angle argument, and we know
             // it isn't special in some other way. So, we let it
@@ -625,16 +623,6 @@ class OutputParser {
                   this.#appendTextNode(functionText);
                 }
               } else if (
-                options.expectCubicBezier &&
-                lowerCaseFunctionName === "cubic-bezier"
-              ) {
-                this.#appendCubicBezier(functionText, options);
-              } else if (
-                options.expectLinearEasing &&
-                lowerCaseFunctionName === "linear"
-              ) {
-                this.#appendLinear(functionText, options);
-              } else if (
                 lowerCaseFunctionName === "attr" &&
                 typeof options.getAttributeValue === "function"
               ) {
@@ -669,15 +657,15 @@ class OutputParser {
 
         case "Ident":
           if (
-            options.expectCubicBezier &&
+            options.expectTimingFunction &&
             BEZIER_KEYWORDS.has(lowerCaseTokenText)
           ) {
-            this.#appendCubicBezier(token.text, options);
-          } else if (
-            options.expectLinearEasing &&
-            lowerCaseTokenText == "linear"
-          ) {
-            this.#appendLinear(token.text, options);
+            this.#append(
+              this.#createCubicBezierContainer({
+                children: [token.text],
+                parseOptions: options,
+              }) || token.text
+            );
           } else if (this.#isDisplayFlex(text, token, options)) {
             this.#appendDisplayWithHighlighterToggle(
               token.text,
@@ -784,18 +772,23 @@ class OutputParser {
           );
           break;
 
-        case "CloseParenthesis":
+        case "CloseParenthesis": {
+          // At the moment, when we're parsing a sub-section (e.g with `stopAtCloseParen`),
+          // we might not have any entry in this.#stack. So consider that this
+          // parenthesis will "close" the last stack even if there's none.
+          const isClosingTopStack = this.#stack.length <= 1;
+
+          if (!stopAtCloseParen || !isClosingTopStack) {
+            this.#appendTextNode(")");
+          }
           this.#onCloseParenthesis(options);
 
-          if (stopAtCloseParen && this.#stack.length === 0) {
+          if (stopAtCloseParen && isClosingTopStack) {
             done = true;
-            break;
           }
 
-          this.#appendTextNode(
-            text.substring(token.startOffset, token.endOffset)
-          );
           break;
+        }
 
         case "Comma":
         case "Delim":
@@ -865,104 +858,193 @@ class OutputParser {
       return;
     }
 
-    const stackEntry = this.#stack.at(-1);
+    const stackEntry = this.#stack.pop();
+    let parts = stackEntry.parts;
+    if (stackEntry.lowerCaseFunctionName === "light-dark") {
+      parts = this.#onCloseParenthesisForLightDark(stackEntry, options);
+    } else if (stackEntry.lowerCaseFunctionName === "cubic-bezier") {
+      parts = this.#onCloseParenthesisForCubicBezier(stackEntry, options);
+    } else if (stackEntry.lowerCaseFunctionName === "linear") {
+      parts = this.#onCloseParenthesisForLinear(stackEntry, options);
+    }
+
+    // Put all the parts in the "new" last stack, or the main parsed array if there
+    // is no more entry in the stack
+    this.#getCurrentStackParts().push(...parts);
+  }
+
+  /**
+   * Called when we got the closing bracket for `light-dark()`
+   *
+   * @param {object} stackEntry
+   *        The last item in this.#stack
+   * @param {object} options
+   *        options passed to the parse function. @see #mergeOptions for valid options
+   *        and default values
+   * @returns {Array<string|Element>} The updated parts for the stack entry that is being closed.
+   */
+  #onCloseParenthesisForLightDark(stackEntry, options) {
+    const stackEntryParts = stackEntry.parts;
+
     if (
-      stackEntry.lowerCaseFunctionName === "light-dark" &&
-      typeof options.isDarkColorScheme === "boolean" &&
+      typeof options.isDarkColorScheme !== "boolean" ||
       // light-dark takes exactly two parameters, so if we don't get exactly 1 separator
       // at this point, that means that the value is valid at parse time, but is invalid
       // at computed value time.
       // TODO: We might want to add a class to indicate that this is invalid at computed
       // value time (See Bug 1910845)
-      stackEntry.separatorIndexes.length === 1
+      stackEntry.separatorIndexes.length !== 1
     ) {
-      const stackEntryParts = this.#getCurrentStackParts();
-      const separatorIndex = stackEntry.separatorIndexes[0];
-      let startIndex;
-      let endIndex;
-      if (options.isDarkColorScheme) {
-        // If we're using a dark color scheme, we want to mark the first param as
-        // not used.
+      return stackEntryParts;
+    }
 
-        // The first "part" is `light-dark(`, so we can start after that.
-        // We want to filter out white space character before the first parameter
-        for (startIndex = 1; startIndex < separatorIndex; startIndex++) {
-          const part = stackEntryParts[startIndex];
-          if (typeof part !== "string" || part.trim() !== "") {
-            break;
-          }
-        }
+    const separatorIndex = stackEntry.separatorIndexes[0];
+    let startIndex;
+    let endIndex;
+    if (options.isDarkColorScheme) {
+      // If we're using a dark color scheme, we want to mark the first param as
+      // not used.
 
-        // same for the end of the parameter, we want to filter out whitespaces
-        // after the parameter and before the comma
-        for (
-          endIndex = separatorIndex - 1;
-          endIndex >= startIndex;
-          endIndex--
-        ) {
-          const part = stackEntryParts[endIndex];
-          if (typeof part !== "string" || part.trim() !== "") {
-            // We found a non-whitespace part, we need to include it, so increment the endIndex
-            endIndex++;
-            break;
-          }
-        }
-      } else {
-        // If we're not using a dark color scheme, we want to mark the second param as
-        // not used.
-
-        // We want to filter out white space character after the comma and before the
-        // second parameter
-        for (
-          startIndex = separatorIndex + 1;
-          startIndex < stackEntryParts.length;
-          startIndex++
-        ) {
-          const part = stackEntryParts[startIndex];
-          if (typeof part !== "string" || part.trim() !== "") {
-            break;
-          }
-        }
-
-        // same for the end of the parameter, we want to filter out whitespaces
-        // after the parameter and before the closing parenthesis (which is not yet
-        // included in stackEntryParts)
-        for (
-          endIndex = stackEntryParts.length - 1;
-          endIndex > separatorIndex;
-          endIndex--
-        ) {
-          const part = stackEntryParts[endIndex];
-          if (typeof part !== "string" || part.trim() !== "") {
-            // We found a non-whitespace part, we need to include it, so increment the endIndex
-            endIndex++;
-            break;
-          }
+      // The first "part" is `light-dark(`, so we can start after that.
+      // We want to filter out white space character before the first parameter
+      for (startIndex = 1; startIndex < separatorIndex; startIndex++) {
+        const part = stackEntryParts[startIndex];
+        if (typeof part !== "string" || part.trim() !== "") {
+          break;
         }
       }
 
-      const parts = stackEntryParts.slice(startIndex, endIndex);
+      // same for the end of the parameter, we want to filter out whitespaces
+      // after the parameter and before the comma
+      for (endIndex = separatorIndex - 1; endIndex >= startIndex; endIndex--) {
+        const part = stackEntryParts[endIndex];
+        if (typeof part !== "string" || part.trim() !== "") {
+          // We found a non-whitespace part, we need to include it, so increment the endIndex
+          endIndex++;
+          break;
+        }
+      }
+    } else {
+      // If we're not using a dark color scheme, we want to mark the second param as
+      // not used.
 
-      // If the item we need to mark is already an element (e.g. a parsed color),
-      // just add a class to it.
-      if (parts.length === 1 && Element.isInstance(parts[0])) {
-        parts[0].classList.add(options.unmatchedClass);
-      } else {
-        // Otherwise, we need to wrap our parts into a specific element so we can
-        // style them
-        const node = this.#createNode("span", {
-          class: options.unmatchedClass,
-        });
-        node.append(...parts);
-        stackEntryParts.splice(startIndex, parts.length, node);
+      // We want to filter out white space character after the comma and before the
+      // second parameter
+      for (
+        startIndex = separatorIndex + 1;
+        startIndex < stackEntryParts.length;
+        startIndex++
+      ) {
+        const part = stackEntryParts[startIndex];
+        if (typeof part !== "string" || part.trim() !== "") {
+          break;
+        }
+      }
+
+      // same for the end of the parameter, we want to filter out whitespaces
+      // after the parameter and before the closing parenthesis (which is not yet
+      // included in stackEntryParts)
+      for (
+        // we don't start at the last part, but the one before that, as the last part will
+        // always be the closing bracket for the function, and it shouldn't be included
+        // in the unmatched span.
+        endIndex = stackEntryParts.length - 2;
+        endIndex > separatorIndex;
+        endIndex--
+      ) {
+        const part = stackEntryParts[endIndex];
+        if (typeof part !== "string" || part.trim() !== "") {
+          // We found a non-whitespace part, we need to include it, so increment the endIndex
+          endIndex++;
+          break;
+        }
       }
     }
 
-    // Our job is done here, pop last stack entry
-    const { parts } = this.#stack.pop();
-    // Put all the parts in the "new" last stack, or the main parsed array if there
-    // is no more entry in the stack
-    this.#getCurrentStackParts().push(...parts);
+    const parts = stackEntryParts.slice(startIndex, endIndex);
+
+    // If the item we need to mark is already an element (e.g. a parsed color),
+    // just add a class to it.
+    if (parts.length === 1 && Element.isInstance(parts[0])) {
+      parts[0].classList.add(options.unmatchedClass);
+    } else {
+      // Otherwise, we need to wrap our parts into a specific element so we can
+      // style them
+      const node = this.#createNode("span", {
+        class: options.unmatchedClass,
+      });
+      node.append(...parts);
+      stackEntryParts.splice(startIndex, parts.length, node);
+    }
+
+    return stackEntryParts;
+  }
+
+  /**
+   * Called when we got the closing bracket for `cubic-bezier()`
+   *
+   * @param {object} stackEntry
+   *        The last item in this.#stack
+   * @param {object} options
+   *        options passed to the parse function. @see #mergeOptions for valid options
+   *        and default values
+   * @returns {Array<string|Element>} The updated parts for the stack entry that is being closed.
+   */
+  #onCloseParenthesisForCubicBezier(stackEntry, options) {
+    if (!options.expectTimingFunction) {
+      return stackEntry.parts;
+    }
+
+    const container = this.#createCubicBezierContainer({
+      children: stackEntry.parts,
+      parseOptions: options,
+    });
+
+    return container ? [container] : stackEntry.parts;
+  }
+
+  /**
+   * Called when we got the closing bracket for `linear()`
+   *
+   * @param {object} stackEntry
+   *        The last item in this.#stack
+   * @param {object} options
+   *        options passed to the parse function. @see #mergeOptions for valid options
+   *        and default values
+   * @returns {Array<string|Element>} The updated parts for the stack entry that is being closed.
+   */
+  #onCloseParenthesisForLinear(stackEntry, options) {
+    if (!options.expectTimingFunction) {
+      return stackEntry.parts;
+    }
+
+    const linear = stackEntry.parts.map(p => p.textContent ?? p).join("");
+
+    if (linear.includes("var(")) {
+      // For now, we don't support cubic-bezier with CSS variables (see Bug 2031696)
+      return stackEntry.parts;
+    }
+
+    const container = this.#createNode("span", {
+      "data-linear": linear,
+    });
+
+    if (options.linearEasingSwatchClass) {
+      const swatch = this.#createNode("span", {
+        class: options.linearEasingSwatchClass,
+        tabindex: "0",
+        role: "button",
+        "data-linear": linear,
+      });
+      container.appendChild(swatch);
+    }
+
+    const valueEl = this.#createNode("span", {
+      class: options.linearEasingClass,
+    });
+    valueEl.append(...stackEntry.parts);
+    container.appendChild(valueEl);
+    return [container];
   }
 
   /**
@@ -1020,65 +1102,48 @@ class OutputParser {
   }
 
   /**
-   * Append a cubic-bezier timing function value to the output
+   * Create an element for a cubic-bezier timing function.
+   * Returns null if the element couldn't be created
    *
-   * @param {string} bezier
-   *        The cubic-bezier timing function
    * @param {object} options
+   * @param {Array<string|Node>} options.children
+   *        Children (strings or node) of the container that will be created.
+   * @param {object} options.parseOptions
    *        Options object. For valid options and default values see
    *        #mergeOptions()
+   * @return {Node|null}
    */
-  #appendCubicBezier(bezier, options) {
+  #createCubicBezierContainer({ children, parseOptions }) {
+    let bezier = "";
+    for (const child of children) {
+      bezier += child.textContent ?? child;
+    }
+
+    if (bezier.includes("var(")) {
+      // For now, we don't support cubic-bezier with CSS variables (see Bug 2031695)
+      return null;
+    }
+
     const container = this.#createNode("span", {
       "data-bezier": bezier,
     });
 
-    if (options.bezierSwatchClass) {
+    if (parseOptions.bezierSwatchClass) {
       const swatch = this.#createNode("span", {
-        class: options.bezierSwatchClass,
+        class: parseOptions.bezierSwatchClass,
         tabindex: "0",
         role: "button",
       });
       container.appendChild(swatch);
     }
 
-    const value = this.#createNode(
-      "span",
-      {
-        class: options.bezierClass,
-      },
-      bezier
-    );
-
-    container.appendChild(value);
-    this.#append(container);
-  }
-
-  #appendLinear(text, options) {
-    const container = this.#createNode("span", {
-      "data-linear": text,
+    const valueEl = this.#createNode("span", {
+      class: parseOptions.bezierClass,
     });
+    valueEl.append(...children);
 
-    if (options.linearEasingSwatchClass) {
-      const swatch = this.#createNode("span", {
-        class: options.linearEasingSwatchClass,
-        tabindex: "0",
-        role: "button",
-        "data-linear": text,
-      });
-      container.appendChild(swatch);
-    }
-
-    const value = this.#createNode(
-      "span",
-      {
-        class: options.linearEasingClass,
-      },
-      text
-    );
-
-    container.appendChild(value);
-    this.#append(container);
+    container.appendChild(valueEl);
+    return container;
   }
 
   /**

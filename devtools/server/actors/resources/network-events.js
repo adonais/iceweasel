@@ -394,7 +394,6 @@ class NetworkEventWatcher {
         break;
       case NETWORK_EVENT_TYPES.SECURITY_INFO:
         resourceUpdates.securityState = updateResource.state;
-        resourceUpdates.isRacing = updateResource.isRacing;
         break;
     }
 

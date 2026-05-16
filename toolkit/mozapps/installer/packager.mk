@@ -183,30 +183,9 @@ upload:
 		$(UPLOAD_PATH)
 	$(PYTHON3) -u $(MOZILLA_DIR)/build/upload.py --base-path $(ABS_DIST) $(CHECKSUM_FILE)
 
-# source-package creates a source tarball from the files in MOZ_PKG_SRCDIR,
-# which is either set to a clean checkout or defaults to $topsrcdir
-source-package:
-	@echo 'Generate the sourcestamp file'
-	# Make sure to have repository information available and then generate the
-	# sourcestamp file.
-	$(MAKE) -C $(DEPTH) 'source-repo.h' 'buildid.h'
-	$(MAKE) make-sourcestamp-file
-	@echo 'Packaging source tarball...'
-	# We want to include the sourcestamp file in the source tarball, so copy it
-	# in the root source directory. This is useful to enable telemetry submissions
-	# from builds made from the source package with the correct revision information.
-	# Don't bother removing it as this is only used by automation.
-	@cp $(MOZ_SOURCESTAMP_FILE) '$(MOZ_PKG_SRCDIR)/sourcestamp.txt'
-	$(MKDIR) -p $(DIST)/$(PKG_SRCPACK_PATH)
-	(cd $(MOZ_PKG_SRCDIR) && $(CREATE_SOURCE_TAR) - ./ ) | xz -9e > $(SOURCE_TAR)
-
 hg-bundle:
 	$(MKDIR) -p $(DIST)/$(PKG_SRCPACK_PATH)
 	$(CREATE_HG_BUNDLE_CMD)
-
-source-upload:
-	$(MAKE) upload UPLOAD_FILES='$(SOURCE_UPLOAD_FILES)' CHECKSUM_FILE='$(SOURCE_CHECKSUM_FILE)'
-
 
 ALL_LOCALES = $(if $(filter en-US,$(LOCALES)),$(LOCALES),$(LOCALES) en-US)
 

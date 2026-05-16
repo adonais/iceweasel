@@ -8,7 +8,7 @@
  * Bug 1986438 - hide browser warning on gamma.app
  */
 
-const callback = (mutations, observer) => {
+const callback = () => {
   const search = document.evaluate(
     "//*[text()[contains(., 'works best on Chrome')]]",
     document,
@@ -23,7 +23,6 @@ const callback = (mutations, observer) => {
     } else {
       found.closest(".chakra-stack").remove();
     }
-    observer?.disconnect();
   }
 };
 
@@ -32,3 +31,4 @@ observer.observe(document.documentElement, {
   childList: true,
   subtree: true,
 });
+window.addEventListener("load", () => observer.disconnect(), { once: true });

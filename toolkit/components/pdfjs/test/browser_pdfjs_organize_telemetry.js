@@ -243,3 +243,72 @@ add_task(async function test_page_organization_telemetry() {
     }
   );
 });
+
+add_task(async function test_page_organization_merge_telemetry() {
+  makePDFJSHandler();
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function (browser) {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["pdfjs.enableMerge", true],
+          ["pdfjs.enableSplitMerge", true],
+        ],
+      });
+      await Services.fog.testFlushAllChildren();
+      Services.fog.testResetFOG();
+      await waitForPdfJSAllLayers(
+        browser,
+        TESTROOT + "file_pdfjs_numbered_pages.pdf",
+        [
+          [
+            "annotationEditorLayer",
+            "annotationLayer",
+            "textLayer",
+            "canvasWrapper",
+          ],
+          [
+            "annotationEditorLayer",
+            "annotationLayer",
+            "textLayer",
+            "canvasWrapper",
+          ],
+        ]
+      );
+      await click(browser, "#viewsManagerToggleButton");
+      await waitForSelector(
+        browser,
+        "#thumbnailsView .thumbnail input[type=checkbox]"
+      );
+
+      const telemetryPromise = getPromise("merge");
+      await SpecialPowers.spawn(browser, [], function () {
+        const obj = Cu.cloneInto(
+          {
+            source: null,
+            details: {
+              type: "pageOrganization",
+              data: { action: "merge" },
+            },
+          },
+          content.wrappedJSObject
+        );
+        content.wrappedJSObject.PDFViewerApplication.eventBus.dispatch(
+          "reporttelemetry",
+          obj
+        );
+      });
+      await telemetryPromise;
+      await Services.fog.testFlushAllChildren();
+      Assert.equal(
+        Glean.pdfjsOrganize.action.merge.testGetValue(),
+        1,
+        "merge counter should be 1"
+      );
+
+      await waitForPdfJSClose(browser);
+      await SpecialPowers.popPrefEnv();
+    }
+  );
+});

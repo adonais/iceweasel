@@ -5,8 +5,6 @@
 #ifndef mozilla_ipc_CrashReporterHost_h
 #define mozilla_ipc_CrashReporterHost_h
 
-#include <functional>
-
 #include "base/process.h"
 #include "nsExceptionHandler.h"
 #include "nsIFile.h"

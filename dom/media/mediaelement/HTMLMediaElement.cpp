@@ -70,6 +70,7 @@
 #include "mozilla/dom/AudioTrackList.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/ContentMediaController.h"
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/FeaturePolicyUtils.h"
@@ -5404,14 +5405,9 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       if (aValue) {
         nsCOMPtr<nsIURI> uri;
         NewURIFromString(srcVal.String(), getter_AddRefs(uri));
-        if (uri && IsMediaSourceURI(uri)) {
-          nsresult rv = NS_GetSourceForMediaSourceURI(
-              uri, getter_AddRefs(mSrcMediaSource));
-          if (NS_FAILED(rv)) {
-            nsAutoString spec;
-            GetCurrentSrc(spec);
-            AutoTArray<nsString, 1> params = {spec};
-            ReportLoadError("MediaLoadInvalidURI", params);
+        if (uri && uri->SchemeIs(BLOBURI_SCHEME)) {
+          if (DocGroup* docGroup = OwnerDoc()->GetDocGroup()) {
+            mSrcMediaSource = docGroup->LookupMediaSourceURL(uri);
           }
         }
       }
@@ -5436,6 +5432,7 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       }
     } else if (aName == nsGkAtoms::controls && IsInComposedDoc()) {
       NotifyUAWidgetSetupOrChange();
+      SetCuesDirty();
     }
   }
 
@@ -6274,6 +6271,7 @@ void HTMLMediaElement::SeekCompleted() {
         }));
   }
   MOZ_ASSERT(!mSeekDOMPromise);
+  SetCuesDirty();
 }
 
 void HTMLMediaElement::SeekAborted() {
@@ -7936,7 +7934,6 @@ void HTMLMediaElement::PopulatePendingTextTrackList() {
 TextTrackManager* HTMLMediaElement::GetOrCreateTextTrackManager() {
   if (!mTextTrackManager) {
     mTextTrackManager = new TextTrackManager(this);
-    mTextTrackManager->AddListeners();
   }
   return mTextTrackManager;
 }

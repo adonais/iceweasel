@@ -252,7 +252,7 @@ with only_when(host_is_osx | target_is_osx):
     )
 
     def mac_sdk_min_version():
-        return "26.2"
+        return "26.4"
 
     @depends(
         "--with-macos-sdk",
@@ -695,6 +695,9 @@ def check_compiler(configure_cache, compiler, language, target, android_version)
         # This makes clang define __ANDROID_API__ and use versioned library
         # directories from the NDK.
         toolchain = "%s%d" % (target.toolchain, android_version)
+    elif target.kernel == "WASI" and info.type == "clang" and info.version >= Version("22.1"):
+        # The wasm32-wasi target was renamed to wasm32-wasip1 in LLVM 22.1.
+        toolchain = "wasm32-wasip1"
     else:
         toolchain = target.toolchain
 
@@ -847,7 +850,7 @@ option(env="CCACHE_PREFIX", nargs=1, help="Compiler prefix to use when using cca
 ccache_prefix = depends_if("CCACHE_PREFIX")(lambda prefix: prefix[0])
 set_config("CCACHE_PREFIX", ccache_prefix)
 
-# Distinguish ccache from sccache.
+# Distinguish ccache from sccache and buildcache.
 
 
 @depends_if(ccache)
@@ -855,14 +858,24 @@ def ccache_is_sccache(ccache):
     return check_cmd_output(ccache, "--version").startswith("sccache")
 
 
-@depends(ccache, ccache_is_sccache)
-def using_ccache(ccache, ccache_is_sccache):
-    return ccache and not ccache_is_sccache
+@depends_if(ccache)
+def ccache_is_buildcache(ccache):
+    return check_cmd_output(ccache, "--version").lower().startswith("buildcache")
+
+
+@depends(ccache, ccache_is_sccache, ccache_is_buildcache)
+def using_ccache(ccache, ccache_is_sccache, ccache_is_buildcache):
+    return ccache and not ccache_is_sccache and not ccache_is_buildcache
 
 
 @depends_if(ccache, ccache_is_sccache)
 def using_sccache(ccache, ccache_is_sccache):
     return ccache and ccache_is_sccache
+
+
+@depends_if(ccache, ccache_is_buildcache)
+def using_buildcache(ccache, ccache_is_buildcache):
+    return ccache and ccache_is_buildcache
 
 
 option(env="RUSTC_WRAPPER", nargs=1, help="Wrap rust compilation with given tool")
@@ -903,6 +916,7 @@ def check_sccache_version(ccache, ccache_is_sccache, rustc_wrapper):
 
 set_config("MOZ_USING_CCACHE", using_ccache)
 set_config("MOZ_USING_SCCACHE", using_sccache)
+set_config("MOZ_USING_BUILDCACHE", using_buildcache)
 
 option(env="SCCACHE_VERBOSE_STATS", help="Print verbose sccache stats after build")
 
@@ -2714,9 +2728,10 @@ def security_hardening_cflags(
 
             if (
                 c_compiler.type == "clang"
-                and c_compiler.version >= "11.0.1"
-                and target.os not in ("WINNT", "OSX", "OpenBSD")
-                and target.cpu in ("x86", "x86_64", "ppc64", "s390x")
+                and target.os not in ("WINNT", "OSX", "OpenBSD", "iOS")
+                and ((c_compiler.version >= "11.0.1" and target.cpu in ("x86", "x86_64", "ppc64", "s390x"))
+                    or
+                     (c_compiler.version >= "18.1.0" and target.cpu == "aarch64"))
             ):
                 flags.append("-fstack-clash-protection")
                 ldflags.append("-fstack-clash-protection")

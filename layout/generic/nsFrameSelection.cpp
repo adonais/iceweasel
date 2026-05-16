@@ -583,8 +583,7 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
   RefPtr<PresShell> presShell = mPresShell;
   nsIContent* anchorRoot = anchorContent->GetSelectionRootContent(
       presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
-      static_cast<nsINode::AllowCrossShadowBoundary>(
-          StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()));
+      nsINode::AllowCrossShadowBoundary::Yes);
   NS_ENSURE_TRUE(anchorRoot, NS_ERROR_UNEXPECTED);
 
   //
@@ -596,8 +595,7 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
   if (content) {
     nsIContent* contentRoot = content->GetSelectionRootContent(
         presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
-        static_cast<nsINode::AllowCrossShadowBoundary>(
-            StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()));
+        nsINode::AllowCrossShadowBoundary::Yes);
     NS_ENSURE_TRUE(contentRoot, NS_ERROR_UNEXPECTED);
 
     if (anchorRoot == contentRoot) {
@@ -623,9 +621,7 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
         NS_ENSURE_TRUE(cursorContent, NS_ERROR_FAILURE);
         nsIContent* cursorContentRoot = cursorContent->GetSelectionRootContent(
             presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
-            static_cast<nsINode::AllowCrossShadowBoundary>(
-                StaticPrefs::
-                    dom_shadowdom_selection_across_boundary_enabled()));
+            nsINode::AllowCrossShadowBoundary::Yes);
         NS_ENSURE_TRUE(cursorContentRoot, NS_ERROR_UNEXPECTED);
         if (cursorContentRoot == anchorRoot) {
           *aRetFrame = cursorFrame;
@@ -850,7 +846,7 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
       sel->CollapseInLimiter(node, offset);
     }
     sel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
-                        ScrollAxis(), ScrollAxis(), scrollFlags);
+                        AxisScrollParams(), AxisScrollParams(), scrollFlags);
     return NS_OK;
   }
 
@@ -964,7 +960,8 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
   }
   if (NS_SUCCEEDED(rv)) {
     rv = sel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
-                             ScrollAxis(), ScrollAxis(), scrollFlags);
+                             AxisScrollParams(), AxisScrollParams(),
+                             scrollFlags);
   }
 
   return rv;
@@ -1740,8 +1737,8 @@ nsresult nsFrameSelection::ScrollSelectionIntoView(SelectionType aSelectionType,
 
   // After ScrollSelectionIntoView(), the pending notifications might be
   // flushed and PresShell/PresContext/Frames may be dead. See bug 418470.
-  return sel->ScrollIntoView(aRegion, ScrollAxis(vScroll), ScrollAxis(),
-                             scrollFlags, mode);
+  return sel->ScrollIntoView(aRegion, AxisScrollParams(vScroll),
+                             AxisScrollParams(), scrollFlags, mode);
 }
 
 nsresult nsFrameSelection::RepaintSelection(SelectionType aSelectionType) {

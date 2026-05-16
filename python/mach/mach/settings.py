@@ -115,6 +115,12 @@ class MachSettings:
                     "Do not autodetect artifact mode base on mozconfig. The '--artifact' flag must be used explicitly if artifact try pushes are desired.",
                     False,
                 ),
+                (
+                    "try.pushremote",
+                    "string",
+                    "Remote name or url to push to.",
+                    "ssh://hg.mozilla.org/try",
+                ),
             ]
 
         def taskgraph_config_settings():

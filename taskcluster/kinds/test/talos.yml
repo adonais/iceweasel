@@ -699,6 +699,7 @@ talos-xperf:
     os-groups: [Administrators]
     worker-type:
         by-test-platform:
+            windows11-64-25h2(-shippable)?/opt: win11-64-25h2-privileged
             windows11-64-24h2(-shippable)?/opt: win11-64-24h2-privileged
             default: default
     run-as-administrator:
@@ -784,7 +785,6 @@ talos-pdfpaint:
                     macosx(?!.*shippable).*: []
                     windows(?!.*shippable).*: []
                     default: [trunk]
-    max-run-time: 2100
     mozharness:
         extra-options:
             - --suite=pdfpaint

@@ -146,6 +146,9 @@ newtab-menu-report = Report
 newtab-menu-section-block = Block
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Unfollow
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Unfollow topic
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -311,9 +314,23 @@ newtab-error-fallback-refresh-link = Refresh page to try again.
 
 newtab-custom-shortcuts-title = Shortcuts
 newtab-custom-shortcuts-subtitle = Sites you save or visit
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Shortcuts
     .description = Sites you save or visit
+newtab-custom-shortcuts-nova =
+    .label = Shortcuts
+newtab-custom-row-description =
+    .description = Number of rows
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } row
+           *[other] { $num } rows
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -324,9 +341,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Sponsored shortcuts
 newtab-custom-pocket-title = Recommended by { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Exceptional content curated by { -pocket-brand-name }, part of the { -brand-product-name } family
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Recommended stories
     .description = Exceptional content curated by the { -brand-product-name } family
+newtab-recommended-stories-toggle =
+    .label = Recommended stories
 newtab-custom-stories-personalized-toggle =
     .label = Stories
 newtab-custom-stories-personalized-checkbox-label = Personalised stories based on your activity
@@ -360,8 +380,12 @@ newtab-custom-settings = Manage more settings
 
 newtab-wallpaper-title = Wallpapers
 newtab-wallpaper-reset = Reset to default
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Upload an image
+newtab-wallpaper-add-an-image = Add an image
 newtab-wallpaper-custom-color = Choose a colour
+newtab-wallpaper-toggle-title =
+    .label = Wallpapers
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = The image exceeded the file size limit of { $file_size }MB. Please try uploading a smaller file.
@@ -384,7 +408,9 @@ newtab-wallpaper-light-fox-anniversary = A fox in a grassy field with a misty mo
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Solid colours
+newtab-wallpaper-colors = Colours
 newtab-wallpaper-blue = Blue
 newtab-wallpaper-light-blue = Light blue
 newtab-wallpaper-light-purple = Light purple
@@ -490,7 +516,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Switch to Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Switch to Celsius
-newtab-weather-menu-hide-weather-v2 = Hide weather
 newtab-weather-menu-hide-weather = Hide weather on New Tab
 newtab-weather-menu-learn-more = Learn more
 newtab-weather-menu-detect-my-location = Detect my location
@@ -501,8 +526,18 @@ newtab-weather-opt-in-not-now =
     .label = Not now
 newtab-weather-opt-in-yes =
     .label = Yes
+newtab-weather-opt-in-headline = Get your local weather forecast
+newtab-weather-opt-in-use-location =
+    .label = Use location
+newtab-weather-opt-in-choose-location = Choose location
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = High
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Low
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -576,6 +611,7 @@ newtab-section-confirm-block-topic-p2 = Blocked topics will no longer appear in 
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Block { $topic }
+newtab-section-block-cancel-button = Cancel
 
 ## Strings for custom wallpaper highlight
 
@@ -639,6 +675,18 @@ newtab-toast-thanks-for-reporting =
     .message = Thank you for reporting this.
 newtab-toast-widgets-hidden =
     .message = Select the pencil icon to add widgets back at any time.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = You’re now following { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = You’re no longer following { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = You won’t see stories about { $topic } anymore.
 
 ## Strings for task / to-do list productivity widget
 
@@ -658,7 +706,6 @@ newtab-widget-lists-menu-edit = Edit list name
 newtab-widget-lists-menu-create = Create a new list
 newtab-widget-lists-menu-delete = Delete this list
 newtab-widget-lists-menu-copy = Copy list to clipboard
-newtab-widget-lists-menu-hide = Hide all lists
 newtab-widget-lists-menu-learn-more = Learn more
 newtab-widget-lists-input-add-an-item =
     .placeholder = Add an item
@@ -680,6 +727,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = New list
 newtab-widget-section-title = Widgets
 newtab-widget-menu-hide = Hide widget
+newtab-widget-menu-change-size = Change size
+newtab-widget-size-small = Small
+newtab-widget-size-medium = Medium
+newtab-widget-size-large = Large
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Hide widgets
@@ -711,7 +762,6 @@ newtab-widget-timer-reset =
     .title = Reset
 newtab-widget-timer-menu-notifications = Turn off notifications
 newtab-widget-timer-menu-notifications-on = Turn on notifications
-newtab-widget-timer-menu-hide = Hide timer
 newtab-widget-timer-menu-learn-more = Learn more
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Top Headlines
@@ -722,6 +772,12 @@ newtab-daily-briefing-card-timestamp = Updated { $minutes }m ago
 newtab-widget-message-title = Stay focused with lists and a built-in timer
 # to-dos stands for "things to do".
 newtab-widget-message-copy = From quick reminders to daily to-dos, focus sessions to stretch breaks — stay on task and on time.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Make { -brand-product-name } yours
+newtab-promo-card-body-addons = Pick a wallpaper from our collection, or create your own.
+newtab-promo-card-cta-addons = Try it now
 newtab-promo-card-title = Support { -brand-product-name }
 newtab-promo-card-body = Our sponsors support our mission to build a better web
 newtab-promo-card-cta = Learn more

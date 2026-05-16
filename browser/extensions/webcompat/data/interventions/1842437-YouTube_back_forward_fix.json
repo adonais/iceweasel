@@ -1,0 +1,21 @@
+{
+  "label": "YouTube back/forward fix",
+  "bugs": {
+    "1842437": {
+      "issue": "user-interface-frustration",
+      "matches": ["*://www.youtube.com/*"]
+    },
+    "1964603": {
+      "issue": "user-interface-frustration",
+      "matches": ["*://m.youtube.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "js": ["bug1842437-www.youtube.com-performance-now-precision.js"]
+      }
+    }
+  ]
+}

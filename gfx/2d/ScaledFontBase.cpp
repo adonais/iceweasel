@@ -14,7 +14,6 @@
 #endif
 
 #include <vector>
-#include <cmath>
 
 namespace mozilla {
 namespace gfx {

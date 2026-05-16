@@ -132,7 +132,7 @@ function InterestPicker({ title, subtitle, interests, receivedFeedRank }) {
         ref={focusRef}
       >
         {interests
-          .filter(interest => interest.followable)
+          .filter(interest => interest.followable !== false)
           .map((interest, index) => {
             const checked =
               sectionPersonalization[interest.sectionId]?.isFollowed;

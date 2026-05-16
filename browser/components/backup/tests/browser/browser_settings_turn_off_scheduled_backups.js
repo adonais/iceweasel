@@ -15,8 +15,7 @@ const SCHEDULED_BACKUPS_ENABLED_PREF = "browser.backup.scheduled.enabled";
  *  A function that is run once all default checks are done.
  */
 async function turnOffScheduledBackupsHelper(browser, taskFn) {
-  let settings = browser.contentDocument.querySelector("backup-settings");
-  await settings.updateComplete;
+  let settings = await waitForBackupSettings(browser);
   let turnOffButton = settings.scheduledBackupsButtonEl;
 
   Assert.ok(

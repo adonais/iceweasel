@@ -1000,7 +1000,7 @@ class BrowserToolbarMiddlewareTest {
 
                 false -> listOf(
                     BrowserToolbarMenuButton(
-                        icon = DrawableResIcon(iconsR.drawable.mozac_ic_private_mode_24),
+                        icon = DrawableResIcon(iconsR.drawable.mozac_ic_private_mode_fill_24),
                         text = StringResText(tabcounterR.string.mozac_browser_menu_new_private_tab),
                         contentDescription = StringResContentDescription(tabcounterR.string.mozac_browser_menu_new_private_tab),
                         onClick = AddNewPrivateTab(source),

@@ -12,26 +12,9 @@
 #include "RootAccessible.h"
 
 namespace mozilla {
-
-class PresShell;
-
 namespace a11y {
 
-/**
- * Mac specific functionality for the node at a root of the accessibility
- * tree: see the RootAccessible superclass for further details.
- */
-class RootAccessibleWrap : public RootAccessible {
- public:
-  RootAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
-  virtual ~RootAccessibleWrap();
-
-  Class GetNativeType();
-
-  // let's our native accessible get in touch with the
-  // native cocoa view that is our accessible parent.
-  void GetNativeWidget(void** aOutView);
-};
+typedef RootAccessible RootAccessibleWrap;
 
 }  // namespace a11y
 }  // namespace mozilla

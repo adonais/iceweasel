@@ -672,7 +672,7 @@ export var PageThumbsStorage = {
   // If two thumbnails with the same URL and revision are in cache at the
   // same time, the image loader may pick the stale thumbnail in some cases.
   // Therefore _revisionRange must be large enough to prevent this, e.g.
-  // in the pathological case image.cache.size (5MB by default) could fill
+  // in the pathological case image.cache.size (20MB by default) could fill
   // with (abnormally small) 10KB thumbnail images if the browser session
   // runs long enough (though this is unlikely as thumbnails are usually
   // only updated every MAX_THUMBNAIL_AGE_SECS).

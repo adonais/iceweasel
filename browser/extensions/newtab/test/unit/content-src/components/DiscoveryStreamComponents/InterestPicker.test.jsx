@@ -55,6 +55,26 @@ describe("<InterestPicker />", () => {
     assert.equal(wrapper.find(".topic-item-label").length, 2);
   });
 
+  it("should render interests when followable is undefined", () => {
+    const wrapper = mount(
+      <WrapWithProvider>
+        <InterestPicker
+          {...DEFAULT_PROPS}
+          interests={[
+            {
+              sectionId: "section-1",
+              title: "Technology",
+              followable: undefined,
+            },
+            { sectionId: "section-2", title: "Sports", followable: undefined },
+          ]}
+        />
+      </WrapWithProvider>
+    );
+
+    assert.equal(wrapper.find(".topic-item-label").length, 2);
+  });
+
   it("should render no interests when all have followable: false", () => {
     const wrapper = mount(
       <WrapWithProvider>

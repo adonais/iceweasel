@@ -26,4 +26,8 @@
     <!-- Lock slash critical fill colors for mozac_ic_lock_slash_critical_24 -->
     <color name="mozac_ui_lock_slash_bg_fill_critical">#FFFFFF</color>
     <color name="mozac_ui_lock_slash_fill_critical">#C50042</color>
+
+    <!-- Private mode circle fill colors for mozac_ic_private_mode_circle_fill_48 -->
+    <color name="mozac_ic_private_mode_circle_fill_background_color">#FFFFFF</color>
+    <color name="mozac_ic_private_mode_circle_fill_icon_color">#C50042</color>
 </resources>

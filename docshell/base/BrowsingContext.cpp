@@ -125,6 +125,11 @@ struct ParamTraits<mozilla::dom::ForcedColorsOverride>
           mozilla::dom::ForcedColorsOverride> {};
 
 template <>
+struct ParamTraits<mozilla::dom::PrefersReducedMotionOverride>
+    : public mozilla::dom::WebIDLEnumSerializer<
+          mozilla::dom::PrefersReducedMotionOverride> {};
+
+template <>
 struct ParamTraits<mozilla::dom::ExplicitActiveStatus>
     : public ContiguousEnumSerializer<
           mozilla::dom::ExplicitActiveStatus,
@@ -797,7 +802,7 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
     txn.SetEmbeddedInContentDocument(
         aEmbedder->OwnerDoc()->IsContentDocument());
     if (nsCOMPtr<nsPIDOMWindowInner> inner =
-            do_QueryInterface(aEmbedder->GetOwnerGlobal())) {
+            do_QueryInterface(aEmbedder->GetOwnerDocGlobal())) {
       txn.SetEmbedderInnerWindowId(inner->WindowID());
     }
     txn.SetFullscreenAllowedByOwner(OwnerAllowsFullscreen(*aEmbedder));
@@ -2034,6 +2039,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BrowsingContext)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsILoadContext)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
+  NS_INTERFACE_MAP_ENTRY_CONCRETE(BrowsingContext)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(BrowsingContext)
@@ -2348,16 +2354,8 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
       cp->TransmitBlobDataIfBlobURL(aLoadState->URI());
 
 #ifdef ANDROID
-      // Generate a unique android load identifier for this url load
-      // Used to map back to the app link launch type in
-      // ContentParent::RecordAndroidAppLinkTelemetry() so we can avoid
-      // sending the app link launch type to the content process
-      uint64_t androidLoadIdentifier = nsContentUtils::GenerateTabId();
-      MOZ_ALWAYS_SUCCEEDS(
-          SetAndroidAppLinkLoadIdentifier(Some(androidLoadIdentifier)));
-
       uint32_t appLinkLaunchType = aLoadState->GetAppLinkLaunchType();
-      cp->SetAndroidAppLinkLaunchType(androidLoadIdentifier, appLinkLaunchType);
+      Canonical()->SetAndroidAppLinkLaunchType(appLinkLaunchType);
 
       // Record timing for cold app link launches
       constexpr uint32_t APPLINK_COLD = 1;
@@ -3496,6 +3494,22 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ForcedColorsOverride>,
   PresContextAffectingFieldChanged();
 }
 
+void BrowsingContext::DidSet(FieldIndex<IDX_PrefersReducedMotionOverride>,
+                             dom::PrefersReducedMotionOverride aOldValue) {
+  MOZ_ASSERT(IsTop());
+  if (PrefersReducedMotionOverride() == aOldValue) {
+    return;
+  }
+
+  WalkPresContexts([&](nsPresContext* aPc) {
+    aPc->MediaFeatureValuesChanged(
+        {MediaFeatureChangeReason::PreferenceChange},
+        // We're already iterating through sub documents, so we don't need to
+        // propagate the change again.
+        MediaFeatureChangePropagation::JustThisDocument);
+  });
+}
+
 void BrowsingContext::DidSet(FieldIndex<IDX_AnimationsPlayBackRateMultiplier>,
                              double aOldValue) {
   MOZ_ASSERT(IsTop());
@@ -4444,10 +4458,6 @@ void BrowsingContext::SetActiveSessionHistoryEntry(
     const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
     SessionHistoryInfo* aPreviousActiveEntry, uint32_t aLoadType,
     uint32_t aUpdatedCacheKey, bool aUpdateLength) {
-  if (IsTop() &&
-      !nsDocShell::ShouldAddToSessionHistory(aInfo->GetURI(), nullptr)) {
-    aInfo->SetTransient();
-  }
   if (XRE_IsContentProcess()) {
     // XXX Why we update cache key only in content process case?
     if (aUpdatedCacheKey != 0) {

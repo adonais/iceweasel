@@ -21,7 +21,7 @@ info: |
   ...
   3. If IsCallable(predicate) is false, throw a TypeError exception.
   ...
-includes: [testBigIntTypedArray.js]
+includes: [testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
@@ -63,6 +63,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.find(/./);
   }, "regexp");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

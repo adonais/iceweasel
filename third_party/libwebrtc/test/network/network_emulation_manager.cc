@@ -16,11 +16,11 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
 #include "absl/base/nullability.h"
-#include "api/array_view.h"
 #include "api/field_trials_view.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/network_emulation/cross_traffic.h"
@@ -82,7 +82,7 @@ NetworkEmulationManagerImpl::NetworkEmulationManagerImpl(
       next_ip4_address_(kMinIPv4Address),
       task_queue_(env_.task_queue_factory().CreateTaskQueue(
           "NetworkEmulation",
-          TaskQueueFactory::Priority::NORMAL)) {}
+          TaskQueueFactory::Priority::kNormal)) {}
 
 // TODO(srte): Ensure that any pending task that must be run for consistency
 // (such as stats collection tasks) are not cancelled when the task queue is
@@ -329,7 +329,7 @@ NetworkEmulationManagerImpl::CreateEmulatedNetworkManagerInterface(
 }
 
 void NetworkEmulationManagerImpl::GetStats(
-    ArrayView<EmulatedEndpoint* const> endpoints,
+    std::span<EmulatedEndpoint* const> endpoints,
     std::function<void(EmulatedNetworkStats)> stats_callback) {
   task_queue_.PostTask([endpoints, stats_callback, env = env_,
                         stats_gathering_mode = stats_gathering_mode_]() {
@@ -347,7 +347,7 @@ void NetworkEmulationManagerImpl::GetStats(
 }
 
 void NetworkEmulationManagerImpl::GetStats(
-    ArrayView<EmulatedNetworkNode* const> nodes,
+    std::span<EmulatedNetworkNode* const> nodes,
     std::function<void(EmulatedNetworkNodeStats)> stats_callback) {
   task_queue_.PostTask([nodes, stats_callback, env = env_,
                         stats_gathering_mode = stats_gathering_mode_]() {

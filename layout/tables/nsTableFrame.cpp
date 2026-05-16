@@ -36,7 +36,6 @@
 #include "nsError.h"
 #include "nsFrameList.h"
 #include "nsFrameManager.h"
-#include "nsGkAtoms.h"
 #include "nsHTMLParts.h"
 #include "nsIContent.h"
 #include "nsIFrameInlines.h"

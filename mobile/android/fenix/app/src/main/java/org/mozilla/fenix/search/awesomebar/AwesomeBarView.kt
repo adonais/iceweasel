@@ -39,9 +39,7 @@ class AwesomeBarView(
                 DefaultSearchEngineProvider(context.components.core.store),
             ),
             suggestionIconProvider = DefaultSuggestionIconProvider(context),
-            onSearchEngineShortcutSelected = interactor::onSearchShortcutEngineSelected,
             onSearchEngineSuggestionSelected = interactor::onSearchEngineSuggestionSelected,
-            onSearchEngineSettingsClicked = interactor::onClickSearchEngineSettings,
             browsingModeManager = browsingModeManager,
         )
     }
@@ -54,8 +52,8 @@ class AwesomeBarView(
      * new search suggestions will be provided.
      */
     fun update(state: SearchFragmentState) {
-        // Do not make suggestions based on user's current URL unless it's a search shortcut
-        if (state.query.isNotEmpty() && state.query == state.url && !state.showSearchShortcuts) {
+        // Do not make suggestions based on user's current URL
+        if (state.query.isNotEmpty() && state.query == state.url) {
             return
         }
 
@@ -72,11 +70,6 @@ class AwesomeBarView(
         state: SearchFragmentState,
     ) {
         view.removeAllProviders()
-
-        if (state.showSearchShortcuts) {
-            view.addProviders(suggestionsProvidersBuilder.shortcutsEnginePickerProvider)
-            return
-        }
 
         for (provider in suggestionsProvidersBuilder.getProvidersToAdd(state.toSearchProviderState())) {
             view.addProviders(provider)

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="UnusedResources">
+    <!-- Black And White -->
+    <color name="novaWhite">#ffffffff</color>
+    <color name="novaBlack">#ff000000</color>
+
+    <!-- Neutral -->
+    <color name="novaNeutral0">#fff6f8ff</color>
+    <color name="novaNeutral10">#ffeef0fb</color>
+    <color name="novaNeutral20">#ffd7d8e3</color>
+    <color name="novaNeutral30">#ffb1b2bd</color>
+    <color name="novaNeutral40">#ff7e808a</color>
+    <color name="novaNeutral50">#ff4f5059</color>
+    <color name="novaNeutral60">#ff32333b</color>
+    <color name="novaNeutral70">#ff26272f</color>
+    <color name="novaNeutral80">#ff181820</color>
+    <color name="novaNeutral90">#ff101118</color>
+
+    <!-- Violet Desaturated -->
+    <color name="novaVioletDesaturated0">#fff2f0f8</color>
+    <color name="novaVioletDesaturated10">#ffe1dbf1</color>
+    <color name="novaVioletDesaturated20">#ffc9c0e3</color>
+    <color name="novaVioletDesaturated30">#ffaea1d1</color>
+    <color name="novaVioletDesaturated40">#ff9182ba</color>
+    <color name="novaVioletDesaturated50">#ff71629a</color>
+    <color name="novaVioletDesaturated60">#ff534577</color>
+    <color name="novaVioletDesaturated70">#ff382c58</color>
+    <color name="novaVioletDesaturated80">#ff23173e</color>
+    <color name="novaVioletDesaturated90">#ff14092b</color>
+
+    <!-- Purple Desaturated -->
+    <color name="novaPurpleDesaturated0">#fff4f0f7</color>
+    <color name="novaPurpleDesaturated10">#ffe5daef</color>
+    <color name="novaPurpleDesaturated20">#ffd0bddf</color>
+    <color name="novaPurpleDesaturated30">#ffb79ecb</color>
+    <color name="novaPurpleDesaturated40">#ff9c7eb3</color>
+    <color name="novaPurpleDesaturated50">#ff7d5e93</color>
+    <color name="novaPurpleDesaturated60">#ff5d4171</color>
+    <color name="novaPurpleDesaturated70">#ff412853</color>
+    <color name="novaPurpleDesaturated80">#ff2a1439</color>
+    <color name="novaPurpleDesaturated90">#ff1a0726</color>
+
+    <!-- Violet -->
+    <color name="novaViolet0">#fff5ecff</color>
+    <color name="novaViolet10">#ffe7d9ff</color>
+    <color name="novaViolet20">#ffd2bfff</color>
+    <color name="novaViolet30">#ffbba0ff</color>
+    <color name="novaViolet40">#ffa27dff</color>
+    <color name="novaViolet50">#ff854dff</color>
+    <color name="novaViolet60">#ff632fc8</color>
+    <color name="novaViolet70">#ff451793</color>
+    <color name="novaViolet80">#ff2b0664</color>
+    <color name="novaViolet90">#ff19053e</color>
+
+    <!-- Purple -->
+    <color name="novaPurple0">#fffaebff</color>
+    <color name="novaPurple10">#fff4d3ff</color>
+    <color name="novaPurple20">#ffe7b5ff</color>
+    <color name="novaPurple30">#ffd98fff</color>
+    <color name="novaPurple40">#ffcc67fd</color>
+    <color name="novaPurple50">#ffac3dea</color>
+    <color name="novaPurple60">#ff821fb5</color>
+    <color name="novaPurple70">#ff5c0583</color>
+    <color name="novaPurple80">#ff3b0058</color>
+    <color name="novaPurple90">#ff240036</color>
+
+    <!-- Pink -->
+    <color name="novaPink0">#ffffeaf5</color>
+    <color name="novaPink10">#fffeceec</color>
+    <color name="novaPink20">#fffface0</color>
+    <color name="novaPink30">#fffe88d2</color>
+    <color name="novaPink40">#ffef60c4</color>
+    <color name="novaPink50">#ffcb3aa6</color>
+    <color name="novaPink60">#ff9b1b7d</color>
+    <color name="novaPink70">#ff700059</color>
+    <color name="novaPink80">#ff4b003a</color>
+    <color name="novaPink90">#ff300024</color>
+
+    <!-- Red -->
+    <color name="novaRed0">#ffffebe6</color>
+    <color name="novaRed10">#ffffd0ca</color>
+    <color name="novaRed20">#ffffadab</color>
+    <color name="novaRed30">#ffff858e</color>
+    <color name="novaRed40">#fff35a77</color>
+    <color name="novaRed50">#ffcf325e</color>
+    <color name="novaRed60">#ffa01242</color>
+    <color name="novaRed70">#ff76002b</color>
+    <color name="novaRed80">#ff500219</color>
+    <color name="novaRed90">#ff36000d</color>
+
+    <!-- Orange -->
+    <color name="novaOrange0">#ffffede0</color>
+    <color name="novaOrange10">#ffffd3b7</color>
+    <color name="novaOrange20">#ffffb28a</color>
+    <color name="novaOrange30">#ffff8d5b</color>
+    <color name="novaOrange40">#fff26527</color>
+    <color name="novaOrange50">#ffce4008</color>
+    <color name="novaOrange60">#ff9f2304</color>
+    <color name="novaOrange70">#ff730f00</color>
+    <color name="novaOrange80">#ff4e0200</color>
+    <color name="novaOrange90">#ff350000</color>
+
+    <!-- Yellow -->
+    <color name="novaYellow0">#fffff9e2</color>
+    <color name="novaYellow10">#fffbe4ad</color>
+    <color name="novaYellow20">#fff4c470</color>
+    <color name="novaYellow30">#ffea9e1e</color>
+    <color name="novaYellow40">#ffd57800</color>
+    <color name="novaYellow50">#ffae5900</color>
+    <color name="novaYellow60">#ff834004</color>
+    <color name="novaYellow70">#ff5e2900</color>
+    <color name="novaYellow80">#ff401700</color>
+    <color name="novaYellow90">#ff2b0b00</color>
+
+    <!-- Green -->
+    <color name="novaGreen0">#ffe8f7e5</color>
+    <color name="novaGreen10">#ffc6ebbd</color>
+    <color name="novaGreen20">#ff9cd790</color>
+    <color name="novaGreen30">#ff70bf5e</color>
+    <color name="novaGreen40">#ff3da321</color>
+    <color name="novaGreen50">#ff108307</color>
+    <color name="novaGreen60">#ff056204</color>
+    <color name="novaGreen70">#ff004600</color>
+    <color name="novaGreen80">#ff002e00</color>
+    <color name="novaGreen90">#ff011e00</color>
+
+    <!-- Blue -->
+    <color name="novaBlue0">#ffe3f4ff</color>
+    <color name="novaBlue10">#ffc2e5ff</color>
+    <color name="novaBlue20">#ff9cceff</color>
+    <color name="novaBlue30">#ff72b3ff</color>
+    <color name="novaBlue40">#ff4893ff</color>
+    <color name="novaBlue50">#ff2971e7</color>
+    <color name="novaBlue60">#ff0f50b6</color>
+    <color name="novaBlue70">#ff023587</color>
+    <color name="novaBlue80">#ff001d61</color>
+    <color name="novaBlue90">#ff000f42</color>
+
+    <!-- Cyan -->
+    <color name="novaCyan0">#ffe7f4f9</color>
+    <color name="novaCyan10">#ffc0e7f5</color>
+    <color name="novaCyan20">#ff90d3e8</color>
+    <color name="novaCyan30">#ff5abad7</color>
+    <color name="novaCyan40">#ff0f9fc1</color>
+    <color name="novaCyan50">#ff0a7f9f</color>
+    <color name="novaCyan60">#ff055e78</color>
+    <color name="novaCyan70">#ff004257</color>
+    <color name="novaCyan80">#ff002b3b</color>
+    <color name="novaCyan90">#ff001b28</color>
+</resources>

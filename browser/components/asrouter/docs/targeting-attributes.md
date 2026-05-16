@@ -8,104 +8,10 @@ Please note that some targeting attributes require stricter controls on the tele
 
 ## Available attributes
 
-* [activeNotifications](#activenotifications)
-* [addonsInfo](#addonsinfo)
-* [addressesSaved](#addressessaved)
-* [alltabsButtonAreaType](#alltabsButtonAreaType)
-* [archBits](#archbits)
-* [attachedFxAOAuthClients](#attachedfxaoauthclients)
-* [attributionData](#attributiondata)
-* [backgroundTaskName](#backgroundtaskname)
-* [backupsInfo](#backupsinfo)
-* [backupArchiveEnabled](#backuparchiveenabled)
-* [backupRestoreEnabled](#backuprestoreenabled)
-* [blockedCountByType](#blockedcountbytype)
-* [browserIsSelected](#browserisselected)
-* [browserSettings](#browsersettings)
-* [buildId](#buildId)
-* [canCreateSelectableProfiles](#cancreateselectableprofiles)
-* [creditCardsSaved](#creditcardssaved)
-* [currentDate](#currentdate)
-* [currentTabGroups](#currenttabgroups)
-* [currentTabInstalledAsWebApp](#currenttabinstalledaswebapp)
-* [currentProfileId](#currentprofileid)
-* [profileGroupProfileCount](#profileGroupProfileCount)
-* [defaultPDFHandler](#defaultpdfhandler)
-* [devToolsOpenedCount](#devtoolsopenedcount)
-* [distributionId](#distributionid)
-* [doesAppNeedPin](#doesappneedpin)
-* [doesAppNeedPinUncached](#doesappneedpinuncached)
-* [doesAppNeedPrivatePin](#doesappneedprivatepin)
-* [firefoxVersion](#firefoxversion)
-* [fxViewButtonAreaType](#fxviewbuttonareatype)
-* [hasAccessedFxAPanel](#hasaccessedfxapanel)
-* [hasActiveEnterprisePolicies](#hasactiveenterprisepolicies)
-* [hasMigratedBookmarks](#hasmigratedbookmarks)
-* [hasMigratedCSVPasswords](#hasmigratedcsvpasswords)
-* [hasMigratedHistory](#hasmigratedhistory)
-* [hasMigratedPasswords](#hasmigratedpasswords)
-* [hasPinnedTabs](#haspinnedtabs)
-* [hasSelectableProfiles](#hasselectableprofiles)
-* [homePageSettings](#homepagesettings)
-* [isBackgroundTaskMode](#isbackgroundtaskmode)
-* [isAIWindow](#isaiwindow)
-* [isChinaRepack](#ischinarepack)
-* [isDefaultBrowser](#isdefaultbrowser)
-* [isDefaultBrowserUncached](#isdefaultbrowseruncached)
-* [isDefaultHandler](#isdefaulthandler)
-* [isDeviceMigration](#isdevicemigration)
-* [isEncryptedBackup](#isEncryptedBackup)
-* [isFirstRun](#isfirstrun)
-* [isFirstStartup](#isfirststartup)
-* [isFxAEnabled](#isfxaenabled)
-* [isFxASignedIn](#isfxasignedin)
-* [isMajorUpgrade](#ismajorupgrade)
-* [isMSIX](#ismsix)
-* [isPrivateWindow](#isprivatewindow)
-* [isRTAMO](#isrtamo)
-* [isSmartWindowOnboarding](#issmartwindowonboarding)
-* [unhandledCampaignAction](#unhandledCampaignAction)
-* [launchOnLoginEnabled](#launchonloginenabled)
-* [locale](#locale)
-* [localeLanguageCode](#localelanguagecode)
-* [memoryMB](#memorymb)
-* [messageImpressions](#messageimpressions)
-* [needsUpdate](#needsupdate)
-* [newtabAddonVersion](#newtabaddonversion)
-* [newtabSettings](#newtabsettings)
-* [packageFamilyName](#packagefamilyname)
-* [pinnedSites](#pinnedsites)
-* [platformName](#platformname)
-* [previousSessionEnd](#previoussessionend)
-* [primaryResolution](#primaryresolution)
-* [profileAgeCreated](#profileagecreated)
-* [profileAgeReset](#profileagereset)
-* [profileGroupId](#profilegroupid)
-* [profileRestartCount](#profilerestartcount)
-* [providerCohorts](#providercohorts)
-* [recentBookmarks](#recentbookmarks)
-* [region](#region)
-* [savedTabGroups](#savedtabgroups)
-* [screenImpressions](#screenimpressions)
-* [searchEngines](#searchengines)
-* [sync](#sync)
-* [systemArch](#systemarch)
-* [tabNotesCount](#tabnotescount)
-* [topFrecentSites](#topfrecentsites)
-* [totalBlockedCount](#totalblockedcount)
-* [totalBookmarksCount](#totalbookmarkscount)
-* [userActiveDaysWithHundredPlusSites](#userActiveDaysWithHundredPlusSites)
-* [userId](#userid)
-* [userMonthlyActivity](#usermonthlyactivity)
-* [userPrefersReducedMotion](#userprefersreducedmotion)
-* [useEmbeddedMigrationWizard](#useembeddedmigrationwizard)
-* [userPrefs](#userprefs)
-* [userWeekdaysActiveInLastMonth](#userWeekdaysActiveInLastMonth)
-* [usesFirefoxSync](#usesfirefoxsync)
-* [xpinstallEnabled](#xpinstallenabled)
-* [totalSearches](#totalsearches)
-
-## Detailed usage
+```{contents}
+:local:
+:depth: 1
+```
 
 ### `addonsInfo`
 Provides information about the add-ons the user has installed.
@@ -844,6 +750,75 @@ declare const attachedFxAOAuthClients: Promise<OAuthClient[]>
 }
 ```
 
+### `relayProfileInfo`
+
+Firefox Relay profile information including subscription tier and mask count.
+Returns null if the user is not signed into Firefox, has no Relay account, or if an error occurs.
+
+This attribute fetches data from the Relay API, including both profile information (subscription tier) and the total number of email masks created.
+
+#### Definition
+
+```
+interface RelayProfileInfo {
+  has_premium: boolean;  // true if user has premium subscription
+  has_phone: boolean;    // true if user has phone masking
+  has_vpn: boolean;      // true if user has VPN bundled
+  masksCount: number;    // total number of email masks created
+}
+
+declare const relayProfileInfo: Promise<RelayProfileInfo | null>
+```
+
+#### Examples
+```javascript
+// Check if user has premium
+relayProfileInfo.has_premium
+
+// Get mask count from profile
+relayProfileInfo.masksCount > 1
+```
+
+### `relayEmailMasksCount`
+
+Number of Firefox Relay email masks created by the signed-in user.
+Returns 0 if the user is not signed into Firefox, has no Relay account, or if an error occurs.
+
+#### Definition
+
+```
+declare const relayEmailMasksCount: Promise<number>
+```
+
+#### Examples
+```javascript
+// Show to users with more than 1 mask
+relayEmailMasksCount > 1
+
+// Show to users with at least 5 masks
+relayEmailMasksCount >= 5
+```
+
+### `isRelayFreeTier`
+
+Boolean indicating if the signed-in user has a FREE tier Relay subscription (not premium).
+Returns false if the user is not signed into Firefox, has no Relay account, or if an error occurs.
+
+#### Definition
+
+```
+declare const isRelayFreeTier: Promise<boolean>
+```
+
+#### Examples
+```javascript
+// Show only to FREE tier Relay users
+isRelayFreeTier
+
+// Show only to premium Relay users
+!isRelayFreeTier && relayEmailMasksCount > 0
+```
+
 ### `platformName`
 
 [Platform information](https://searchfox.org/mozilla-central/rev/c5c002f81f08a73e04868e0c2bf0eb113f200b03/toolkit/modules/AppConstants.sys.mjs#153).
@@ -1213,7 +1188,23 @@ A boolean. `true` when [RTAMO](first-run.md#return-to-amo-rtamo) has been used t
 
 ### `isPrivateWindow`
 
-A boolean. `true` when the current active content window is in Private Browsing Mode; `false` otherwise.
+A boolean. `true` when the top window is in Private Browsing Mode; `false` otherwise.
+
+### `isTaskbarTabWindow`
+
+A boolean. `true` when the top window is a taskbar tab; `false` otherwise.
+
+### `canRestoreLastSession`
+
+A boolean. `true` when the user has a previous session saved that can be
+restored; `false` otherwise. Typically false when the previous session has
+already been restored, when the user has configured the browser to not save
+sessions, or on first run.
+
+### `autoRestoreSessionEnabled`
+
+A boolean. `true` when the user has configured the browser to automatically
+restore the previous session on startup; `false` otherwise.
 
 ### `canCreateSelectableProfiles`
 
@@ -1355,3 +1346,32 @@ declare const isFirstStartup: boolean;
 ```
 
 [Source](https://searchfox.org/mozilla-central/source/toolkit/components/nimbus/lib/ExperimentManager.sys.mjs#233)
+
+### `isNonStubFirstRun`
+
+`true` during the first Nimbus `updateRecipes` pass on a new profile, `false`
+on all subsequent passes. The `nimbus.firstUpdateComplete` pref is set to `true`
+after the first `updateRecipes` pass completes; this attribute reads from that
+pref.
+
+This is the cross-platform equivalent of `isFirstStartup` for platforms where
+`isFirstStartup` is always `false` (Mac, Linux, and MSIX). On Windows stub
+installer builds, both `isFirstStartup` and `isNonStubFirstRun` will be `true`
+during first-run enrollment.
+
+> **NOTE:** This targeting attribute is only available for the JEXL expressions
+> of experiments' advanced targeting configs, which are defined in the
+> [experimenter repository](https://experimenter.info). Targeting expressions for
+> messages do not have access to this attribute.
+
+#### Definition
+
+```ts
+declare const isNonStubFirstRun: boolean;
+```
+
+[Source](https://searchfox.org/mozilla-central/source/toolkit/components/nimbus/lib/ExperimentManager.sys.mjs#235)
+
+### `experimentsLoaded`
+
+Boolean that's true once Nimbus has loaded remote experiments from Remote Settings at least once. Returns true if experiments are disabled. This generally shouldn't be used outside of the splash screen.

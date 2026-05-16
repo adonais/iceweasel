@@ -2,12 +2,19 @@
   @include newtab-card-style;
 
   border-radius: var(--border-radius-medium);
-  box-shadow: var(--card-box-shadow);
+  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+  box-shadow: var(--card-box-shadow, var(--box-shadow-card));
   padding: var(--space-large);
   display: flex;
   flex-direction: column;
   gap: var(--space-medium);
   position: relative;
+
+  // @nova-cleanup: override the :not(.nova-enabled) styles for the briefing card
+  &:not(.nova-enabled *) {
+    padding: var(--space-large);
+    gap: var(--space-medium);
+  }
 
   moz-button {
     position: absolute;
@@ -25,6 +32,10 @@
   &:has(panel-list[open]) moz-button {
     opacity: 1;
   }
+
+  @media (forced-colors: active) {
+    border: var(--border-width) solid var(--card-border-color);
+  }
 }
 
 .briefing-card-header {
@@ -36,7 +47,8 @@
 
 .briefing-card-title {
   font-size: var(--font-size-root);
-  font-weight: var(--font-weight-heading);
+  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+  font-weight: var(--font-weight-heading, var(--heading-font-weight));
   color: var(--text-color);
   margin: 0;
   margin-block-start: var(--space-xxsmall);
@@ -101,7 +113,8 @@ hr {
 
 .briefing-card-headline-title {
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-heading);
+  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+  font-weight: var(--font-weight-heading, var(--heading-font-weight));
   color: var(--text-color);
   -webkit-line-clamp: 2;
   overflow: hidden;
@@ -129,4 +142,14 @@ hr {
   overflow: hidden;
   text-overflow: ellipsis;
   padding-inline-end: var(--space-xxlarge);
+}
+
+// @nova-cleanup(remove-conditional): Remove once .nova-enabled is no longer used as base rules can once again take effect
+.nova-enabled .ds-section-grid.ds-card-grid .briefing-card {
+  padding: var(--space-large);
+  gap: var(--space-medium);
+
+  .briefing-card-headlines {
+    gap: var(--space-xlarge);
+  }
 }

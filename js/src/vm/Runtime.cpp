@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -8,14 +6,8 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
-#if JS_HAS_INTL_API
-#  include "mozilla/intl/Locale.h"
-#endif
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ThreadLocal.h"
-
-#include <locale.h>
-#include <string.h>
 
 #include "jsfriendapi.h"
 
@@ -36,6 +28,7 @@
 #include "js/Stack.h"  // JS::NativeStackLimitMin
 #include "js/Wrapper.h"
 #include "js/WrapperCallbacks.h"
+#include "util/DefaultLocale.h"
 #include "util/RandomSeed.h"
 #include "vm/DateTime.h"
 #include "vm/JSFunction.h"
@@ -98,9 +91,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
       reportStreamErrorCallback(nullptr),
       hadOutOfMemory(false),
       allowRelazificationForTesting(false),
-      destroyCompartmentCallback(nullptr),
       sizeOfIncludingThisCompartmentCallback(nullptr),
-      destroyRealmCallback(nullptr),
       realmNameCallback(nullptr),
       securityCallbacks(&NullSecurityCallbacks),
       DOMcallbacks(nullptr),
@@ -119,7 +110,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
       numDebuggeeRealms_(0),
       numDebuggeeRealmsObservingCoverage_(0),
       localeCallbacks(nullptr),
-      defaultLocale(nullptr),
+      defaultLocale(LanguageId::und()),
       profilingScripts(false),
       scriptAndCountsVector(nullptr),
       watchtowerTestingLog(nullptr),
@@ -271,7 +262,6 @@ void JSRuntime::destroyRuntime() {
   }
   cleanupClosures.ref().clear();
 
-  defaultLocale = nullptr;
   js_delete(jitRuntime_.ref());
 
 #ifdef DEBUG
@@ -517,69 +507,42 @@ void JSContext::clearPendingInterrupt(js::InterruptReason reason) {
   interruptBits_ &= ~uint32_t(reason);
 }
 
+void JSRuntime::setDefaultLocale(LanguageId locale) {
+  // Replace "und" with "und-Zzzz-ZZ" to mark the locale as resolved.
+  //
+  // "und-Zzzz-ZZ" is an undetermined language with unknown script and region.
+  if (locale == LanguageId::und()) {
+    locale = LanguageId::fromValidBcp49("und-Zzzz-ZZ");
+  }
+
+#if JS_HAS_INTL_API
+  if (!LocaleHasDefaultCaseMapping(locale)) {
+    runtimeFuses.ref().defaultLocaleHasDefaultCaseMappingFuse.popFuse(
+        mainContextFromOwnThread());
+  }
+#endif
+
+  defaultLocale = locale;
+}
+
 bool JSRuntime::setDefaultLocale(const char* locale) {
   if (!locale) {
     return false;
   }
 
-  UniqueChars newLocale = DuplicateString(mainContextFromOwnThread(), locale);
-  if (!newLocale) {
-    return false;
-  }
-
-#if JS_HAS_INTL_API
-  if (!LocaleHasDefaultCaseMapping(newLocale.get())) {
-    runtimeFuses.ref().defaultLocaleHasDefaultCaseMappingFuse.popFuse(
-        mainContextFromOwnThread());
-  }
-#endif
-
-  defaultLocale.ref() = std::move(newLocale);
+  setDefaultLocale(DefaultLocaleFrom(locale));
   return true;
 }
 
-void JSRuntime::resetDefaultLocale() { defaultLocale = nullptr; }
+void JSRuntime::resetDefaultLocale() { defaultLocale = LanguageId::und(); }
 
-const char* JSRuntime::getDefaultLocale() {
-  if (defaultLocale.ref()) {
-    return defaultLocale.ref().get();
+LanguageId JSRuntime::getDefaultLocale() {
+  auto locale = defaultLocale.ref();
+  if (locale == LanguageId::und()) {
+    locale = SystemDefaultLocale();
+    setDefaultLocale(locale);
   }
-
-  // Use ICU if available to retrieve the default locale, this ensures ICU's
-  // default locale matches our default locale.
-#if JS_HAS_INTL_API
-  const char* locale = mozilla::intl::Locale::GetDefaultLocale();
-#else
-  const char* locale = setlocale(LC_ALL, nullptr);
-#endif
-
-  // convert to a well-formed BCP 47 language tag
-  if (!locale || !strcmp(locale, "C")) {
-    locale = "und";
-  }
-
-  UniqueChars lang = DuplicateString(mainContextFromOwnThread(), locale);
-  if (!lang) {
-    return nullptr;
-  }
-
-  char* p;
-  if ((p = strchr(lang.get(), '.'))) {
-    *p = '\0';
-  }
-  while ((p = strchr(lang.get(), '_'))) {
-    *p = '-';
-  }
-
-#if JS_HAS_INTL_API
-  if (!LocaleHasDefaultCaseMapping(lang.get())) {
-    runtimeFuses.ref().defaultLocaleHasDefaultCaseMappingFuse.popFuse(
-        mainContextFromOwnThread());
-  }
-#endif
-
-  defaultLocale.ref() = std::move(lang);
-  return defaultLocale.ref().get();
+  return locale;
 }
 
 #ifdef JS_HAS_INTL_API
@@ -663,11 +626,6 @@ mozilla::non_crypto::XorShift128PlusRNG& JSRuntime::randomKeyGenerator() {
     randomKeyGenerator_.emplace(seed[0], seed[1]);
   }
   return randomKeyGenerator_.ref();
-}
-
-mozilla::HashCodeScrambler JSRuntime::randomHashCodeScrambler() {
-  auto& rng = randomKeyGenerator();
-  return mozilla::HashCodeScrambler(rng.next(), rng.next());
 }
 
 mozilla::non_crypto::XorShift128PlusRNG JSRuntime::forkRandomKeyGenerator() {
@@ -766,6 +724,10 @@ void JSRuntime::commitPendingWrapperPreservations(JS::Zone* zone) {
     bool success = preserveWrapperCallback(mainContextFromOwnThread(), rooted);
     MOZ_RELEASE_ASSERT(success);
   }
+
+  // The callback must not cause more wrappers to be preserved or they will
+  // overwrite the buffer we're processing in the loop above.
+  MOZ_ASSERT(!zone->hasPendingWrapperPreservations());
 }
 
 void JSRuntime::incrementNumDebuggeeRealms() {
@@ -847,7 +809,7 @@ JS_PUBLIC_API void JS::DisableRecordingAllocations(JSContext* cx) {
 
 JS_PUBLIC_API void JS::shadow::RegisterWeakCache(
     JSRuntime* rt, detail::WeakCacheBase* cachep) {
-  rt->registerWeakCache(cachep);
+  rt->gc.registerWeakCache(cachep);
 }
 
 void JSRuntime::startRecordingAllocations(

@@ -60,6 +60,10 @@ void AnimationTimelinesController::UpdateHiddenByContentVisibility() {
 void AnimationTimelinesController::TrySampleScrollTimelines() {
   for (ScrollTimeline* timeline : mScrollTimelines) {
     timeline->UpdateCachedCurrentTime();
+
+    // FIXME: We probably need to do this only if the timeline data or range is
+    // changed. For now we always call the procedure per spec.
+    timeline->AutoAlignStartTime();
   }
 }
 

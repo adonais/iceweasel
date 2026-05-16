@@ -7,8 +7,9 @@ use std::{
 };
 
 use happy_eyeballs::{
-    CONNECTION_ATTEMPT_DELAY, ConnectionAttemptHttpVersions, DnsRecordType, DnsResult, Endpoint,
-    HappyEyeballs, HttpVersion, Id, Input, NetworkConfig, Output, RESOLUTION_DELAY, ServiceInfo,
+    CONNECTION_ATTEMPT_DELAY, ConnectionAttemptHttpVersions, ConnectionResult, DnsRecordType,
+    DnsResult, EchConfig, Endpoint, HappyEyeballs, HttpVersion, Id, Input, NetworkConfig, Output,
+    RESOLUTION_DELAY, ServiceInfo,
 };
 
 pub const HOSTNAME: &str = "example.com";
@@ -20,7 +21,11 @@ pub const V6_ADDR_2: Ipv6Addr = Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 2);
 pub const V6_ADDR_3: Ipv6Addr = Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 3);
 pub const V4_ADDR: Ipv4Addr = Ipv4Addr::new(192, 0, 2, 1);
 pub const V4_ADDR_2: Ipv4Addr = Ipv4Addr::new(192, 0, 2, 2);
-pub const ECH_CONFIG: &[u8] = &[1, 2, 3, 4, 5];
+pub const ECH_CONFIG_BYTES: &[u8] = &[1, 2, 3, 4, 5];
+
+pub fn ech_config() -> EchConfig {
+    EchConfig::new(ECH_CONFIG_BYTES.to_vec())
+}
 
 pub trait HappyEyeballsExt {
     fn expect(&mut self, input_output: Vec<(Option<Input>, Option<Output>)>, now: Instant);
@@ -69,6 +74,21 @@ pub fn in_dns_https_positive(id: Id) -> Input {
     }
 }
 
+pub fn in_dns_https_positive_ech(id: Id) -> Input {
+    Input::DnsResult {
+        id,
+        result: DnsResult::Https(Ok(vec![ServiceInfo {
+            priority: 1,
+            target_name: HOSTNAME.into(),
+            alpn_http_versions: HashSet::from([HttpVersion::H3, HttpVersion::H2]),
+            ipv6_hints: vec![],
+            ipv4_hints: vec![],
+            ech_config: Some(ech_config()),
+            port: None,
+        }])),
+    }
+}
+
 pub fn in_dns_https_positive_no_alpn(id: Id) -> Input {
     Input::DnsResult {
         id,
@@ -84,19 +104,31 @@ pub fn in_dns_https_positive_no_alpn(id: Id) -> Input {
     }
 }
 
-pub fn in_dns_https_positive_v6_hints(id: Id) -> Input {
+fn in_dns_https_with_hints(id: Id, ipv4_hints: Vec<Ipv4Addr>, ipv6_hints: Vec<Ipv6Addr>) -> Input {
     Input::DnsResult {
         id,
         result: DnsResult::Https(Ok(vec![ServiceInfo {
             priority: 1,
             target_name: HOSTNAME.into(),
             alpn_http_versions: HashSet::from([HttpVersion::H3, HttpVersion::H2]),
-            ipv6_hints: vec![V6_ADDR],
-            ipv4_hints: vec![],
+            ipv4_hints,
+            ipv6_hints,
             ech_config: None,
             port: None,
         }])),
     }
+}
+
+pub fn in_dns_https_positive_v6_hints(id: Id) -> Input {
+    in_dns_https_with_hints(id, vec![], vec![V6_ADDR])
+}
+
+pub fn in_dns_https_positive_v4_hints(id: Id) -> Input {
+    in_dns_https_with_hints(id, vec![V4_ADDR], vec![])
+}
+
+pub fn in_dns_https_positive_v4_and_v6_hints(id: Id) -> Input {
+    in_dns_https_with_hints(id, vec![V4_ADDR], vec![V6_ADDR])
 }
 
 pub fn in_dns_https_positive_svc1(id: Id) -> Input {
@@ -150,13 +182,23 @@ pub fn in_dns_a_negative(id: Id) -> Input {
 }
 
 pub fn in_connection_result_positive(id: Id) -> Input {
-    Input::ConnectionResult { id, result: Ok(()) }
+    Input::ConnectionResult {
+        id,
+        result: ConnectionResult::Success,
+    }
 }
 
 pub fn in_connection_result_negative(id: Id) -> Input {
     Input::ConnectionResult {
         id,
-        result: Err("connection refused".to_string()),
+        result: ConnectionResult::Failure("connection refused".to_string()),
+    }
+}
+
+pub fn in_connection_result_ech_retry(id: Id) -> Input {
+    Input::ConnectionResult {
+        id,
+        result: ConnectionResult::EchRetry(ech_config()),
     }
 }
 

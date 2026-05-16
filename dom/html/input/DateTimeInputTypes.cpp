@@ -9,7 +9,9 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/intl/AppDateTimeFormat.h"
 #include "nsDOMTokenList.h"
+#include "prtime.h"
 
 namespace mozilla::dom {
 
@@ -107,9 +109,37 @@ bool DateTimeInputTypeBase::HasBadInput() const {
   return !allEmpty && IsValueEmpty();
 }
 
+// Format PRExplodedTime according to current locale
+static bool FormatDateTime(
+    const PRExplodedTime& aTime,
+    const intl::DateTimeFormat::ComponentsBag& aComponents,
+    nsAString& aFormatted) {
+  // AppDateTimeFormat is not thread-safe.
+  MOZ_ASSERT(NS_IsMainThread(), "Should only be called from main thread");
+  return NS_SUCCEEDED(
+      intl::AppDateTimeFormat::Format(aComponents, &aTime, aFormatted));
+}
+
+// Format timestamp according to current locale
+static bool FormatDateTime(
+    double aValue, const intl::DateTimeFormat::ComponentsBag& aComponents,
+    nsAString& aFormatted) {
+  PRExplodedTime exploded;
+  PRTime time = static_cast<PRTime>(aValue * PR_USEC_PER_MSEC);
+  PR_ExplodeTime(
+      time,
+      [](auto) {
+        // Set timezone = UTC so that AppDateTimeFormat::Format doesn't adjust
+        // the output to the timezone.
+        return PRTimeParameters{0, 0};
+      },
+      &exploded);
+  return FormatDateTime(exploded, aComponents, aFormatted);
+}
+
 nsresult DateTimeInputTypeBase::GetRangeOverflowMessage(nsAString& aMessage) {
   nsAutoString maxStr;
-  mInputElement->GetAttr(nsGkAtoms::max, maxStr);
+  ConvertNumberToString(mInputElement->GetMaximum(), Localized::Yes, maxStr);
 
   return nsContentUtils::FormatMaybeLocalizedString(
       aMessage, PropertiesFile::DOM_PROPERTIES,
@@ -118,7 +148,7 @@ nsresult DateTimeInputTypeBase::GetRangeOverflowMessage(nsAString& aMessage) {
 
 nsresult DateTimeInputTypeBase::GetRangeUnderflowMessage(nsAString& aMessage) {
   nsAutoString minStr;
-  mInputElement->GetAttr(nsGkAtoms::min, minStr);
+  ConvertNumberToString(mInputElement->GetMinimum(), Localized::Yes, minStr);
 
   return nsContentUtils::FormatMaybeLocalizedString(
       aMessage, PropertiesFile::DOM_PROPERTIES,
@@ -179,7 +209,7 @@ auto DateInputType::ConvertStringToNumber(const nsAString& aValue,
   return {Decimal::fromDouble(time.toDouble())};
 }
 
-bool DateInputType::ConvertNumberToString(Decimal aValue, Localized,
+bool DateInputType::ConvertNumberToString(Decimal aValue, Localized aLocalized,
                                           nsAString& aResultString) const {
   MOZ_ASSERT(aValue.isFinite(), "aValue must be a valid non-Infinite number.");
 
@@ -196,6 +226,13 @@ bool DateInputType::ConvertNumberToString(Decimal aValue, Localized,
     return false;
   }
 
+  if (aLocalized == Localized::Yes) {
+    intl::DateTimeFormat::ComponentsBag components;
+    components.year = Some(intl::DateTimeFormat::Numeric::Numeric);
+    components.month = Some(intl::DateTimeFormat::Month::TwoDigit);
+    components.day = Some(intl::DateTimeFormat::Numeric::TwoDigit);
+    return FormatDateTime(aValue.toDouble(), components, aResultString);
+  }
   aResultString.AppendPrintf("%04.0f-%02.0f-%02.0f", year, month + 1, day);
   return true;
 }
@@ -218,7 +255,7 @@ auto TimeInputType::ConvertStringToNumber(const nsAString& aValue,
   return {Decimal(int32_t(milliseconds))};
 }
 
-bool TimeInputType::ConvertNumberToString(Decimal aValue, Localized,
+bool TimeInputType::ConvertNumberToString(Decimal aValue, Localized aLocalized,
                                           nsAString& aResultString) const {
   MOZ_ASSERT(aValue.isFinite(), "aValue must be a valid non-Infinite number.");
 
@@ -237,6 +274,16 @@ bool TimeInputType::ConvertNumberToString(Decimal aValue, Localized,
   uint16_t milliseconds, seconds, minutes, hours;
   if (!GetTimeFromMs(value, &hours, &minutes, &seconds, &milliseconds)) {
     return false;
+  }
+  if (aLocalized == Localized::Yes) {
+    intl::DateTimeFormat::ComponentsBag components;
+    components.hour = Some(intl::DateTimeFormat::Numeric::TwoDigit);
+    components.minute = Some(intl::DateTimeFormat::Numeric::TwoDigit);
+    components.second = seconds || milliseconds
+                            ? Some(intl::DateTimeFormat::Numeric::TwoDigit)
+                            : Nothing();
+    components.fractionalSecondDigits = milliseconds ? Some(3) : Nothing();
+    return FormatDateTime(value, components, aResultString);
   }
 
   if (milliseconds != 0) {
@@ -295,10 +342,10 @@ bool TimeInputType::IsRangeUnderflow() const {
 nsresult TimeInputType::GetReversedRangeUnderflowAndOverflowMessage(
     nsAString& aMessage) {
   nsAutoString maxStr;
-  mInputElement->GetAttr(nsGkAtoms::max, maxStr);
+  ConvertNumberToString(mInputElement->GetMaximum(), Localized::Yes, maxStr);
 
   nsAutoString minStr;
-  mInputElement->GetAttr(nsGkAtoms::min, minStr);
+  ConvertNumberToString(mInputElement->GetMinimum(), Localized::Yes, minStr);
 
   return nsContentUtils::FormatMaybeLocalizedString(
       aMessage, PropertiesFile::DOM_PROPERTIES,
@@ -344,7 +391,7 @@ auto WeekInputType::ConvertStringToNumber(const nsAString& aValue,
   return {Decimal::fromDouble(days * kMsPerDay)};
 }
 
-bool WeekInputType::ConvertNumberToString(Decimal aValue, Localized,
+bool WeekInputType::ConvertNumberToString(Decimal aValue, Localized aLocalized,
                                           nsAString& aResultString) const {
   MOZ_ASSERT(aValue.isFinite(), "aValue must be a valid non-Infinite number.");
 
@@ -391,6 +438,15 @@ bool WeekInputType::ConvertNumberToString(Decimal aValue, Localized,
     week = 1;
   }
 
+  if (aLocalized == Localized::Yes) {
+    // TODO: This should probably show a date range, or match the week input UI
+    // when it is implemented.
+    intl::DateTimeFormat::ComponentsBag components;
+    components.year = Some(intl::DateTimeFormat::Numeric::Numeric);
+    components.month = Some(intl::DateTimeFormat::Month::TwoDigit);
+    components.day = Some(intl::DateTimeFormat::Numeric::TwoDigit);
+    return FormatDateTime(aValue.toDouble(), components, aResultString);
+  }
   aResultString.AppendPrintf("%04.0f-W%02d", year, week);
   return true;
 }
@@ -424,7 +480,7 @@ auto MonthInputType::ConvertStringToNumber(const nsAString& aValue,
   return {Decimal(int32_t(months))};
 }
 
-bool MonthInputType::ConvertNumberToString(Decimal aValue, Localized,
+bool MonthInputType::ConvertNumberToString(Decimal aValue, Localized aLocalized,
                                            nsAString& aResultString) const {
   MOZ_ASSERT(aValue.isFinite(), "aValue must be a valid non-Infinite number.");
 
@@ -446,6 +502,17 @@ bool MonthInputType::ConvertNumberToString(Decimal aValue, Localized,
     return false;
   }
 
+  if (aLocalized == Localized::Yes) {
+    intl::DateTimeFormat::ComponentsBag components;
+    components.year = Some(intl::DateTimeFormat::Numeric::Numeric);
+    components.month = Some(intl::DateTimeFormat::Month::TwoDigit);
+    PRExplodedTime time = {
+        .tm_mday = 1,
+        .tm_month = static_cast<PRInt32>(month),
+        .tm_year = static_cast<PRInt16>(year),
+    };
+    return FormatDateTime(time, components, aResultString);
+  }
   aResultString.AppendPrintf("%04.0f-%02.0f", year, month + 1);
   return true;
 }
@@ -474,7 +541,7 @@ auto DateTimeLocalInputType::ConvertStringToNumber(const nsAString& aValue,
 }
 
 bool DateTimeLocalInputType::ConvertNumberToString(
-    Decimal aValue, Localized, nsAString& aResultString) const {
+    Decimal aValue, Localized aLocalized, nsAString& aResultString) const {
   MOZ_ASSERT(aValue.isFinite(), "aValue must be a valid non-Infinite number.");
 
   aResultString.Truncate();
@@ -499,6 +566,19 @@ bool DateTimeLocalInputType::ConvertNumberToString(
     return false;
   }
 
+  if (aLocalized == Localized::Yes) {
+    intl::DateTimeFormat::ComponentsBag components;
+    components.year = Some(intl::DateTimeFormat::Numeric::Numeric);
+    components.month = Some(intl::DateTimeFormat::Month::TwoDigit);
+    components.day = Some(intl::DateTimeFormat::Numeric::TwoDigit);
+    components.hour = Some(intl::DateTimeFormat::Numeric::TwoDigit);
+    components.minute = Some(intl::DateTimeFormat::Numeric::TwoDigit);
+    components.second = seconds || milliseconds
+                            ? Some(intl::DateTimeFormat::Numeric::TwoDigit)
+                            : Nothing();
+    components.fractionalSecondDigits = milliseconds ? Some(3) : Nothing();
+    return FormatDateTime(value, components, aResultString);
+  }
   if (milliseconds != 0) {
     aResultString.AppendPrintf("%04.0f-%02.0f-%02.0fT%02d:%02d:%02d.%03d", year,
                                month + 1, day, hours, minutes, seconds,

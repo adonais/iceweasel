@@ -12,6 +12,9 @@
 
   "compilerOptions": {
     "checkJs": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
 
     "plugins": [
       {

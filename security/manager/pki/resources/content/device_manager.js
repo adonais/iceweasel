@@ -407,7 +407,7 @@ function changePassword() {
   objects.appendElement(selected_slot.getToken());
   params.objects = objects;
   window.browsingContext.topChromeWindow.openDialog(
-    "changepassword.xhtml",
+    "chrome://pippki/content/changepassword.xhtml",
     "",
     "chrome,centerscreen,modal",
     params

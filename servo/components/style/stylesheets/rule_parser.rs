@@ -31,7 +31,7 @@ use crate::stylesheets::{
     CustomMediaCondition, CustomMediaRule, DocumentRule, FontFeatureValuesRule,
     FontPaletteValuesRule, KeyframesRule, MarginRule, MarginRuleType, MediaRule, NamespaceRule,
     NestedDeclarationsRule, PageRule, PageSelectors, PositionTryRule, RulesMutateError,
-    StartingStyleRule, StyleRule, StylesheetLoader, SupportsRule,
+    StartingStyleRule, StyleRule, StylesheetLoader, SupportsRule, ViewTransitionRule,
 };
 use crate::values::computed::font::FamilyName;
 use crate::values::{CssUrl, CustomIdent, DashedIdent, KeyframesName};
@@ -44,6 +44,7 @@ use cssparser::{
 use selectors::parser::{ParseRelative, SelectorList};
 use servo_arc::Arc;
 use style_traits::{ParseError, StyleParseErrorKind};
+use style_traits::arc_slice::ArcSlice;
 
 /// The information we need particularly to do CSSOM insertRule stuff.
 pub struct InsertRuleContext<'a> {
@@ -258,7 +259,7 @@ pub enum AtRulePrelude {
     /// A @media rule prelude, with its media queries.
     Media(Arc<Locked<MediaList>>),
     /// A @container rule prelude.
-    Container(Arc<ContainerCondition>),
+    Container(ArcSlice<ContainerCondition>),
     /// An @supports rule, with its conditional
     Supports(SupportsCondition),
     /// A @keyframes rule, with its animation name and vendor prefix if exists.
@@ -292,6 +293,8 @@ pub enum AtRulePrelude {
     PositionTry(DashedIdent),
     /// A @custom-media prelude.
     CustomMedia(DashedIdent, CustomMediaCondition),
+    /// A @view-transition prelude.
+    ViewTransition,
 }
 
 impl AtRulePrelude {
@@ -317,6 +320,7 @@ impl AtRulePrelude {
             Self::StartingStyle => "starting-style",
             Self::AppearanceBase => "appearance-base",
             Self::PositionTry(..) => "position-try",
+            Self::ViewTransition => "view-transition",
         }
     }
 }
@@ -544,7 +548,8 @@ impl<'a, 'i> NestedRuleParser<'a, 'i> {
             | AtRulePrelude::Page(..)
             | AtRulePrelude::Property(..)
             | AtRulePrelude::Import(..)
-            | AtRulePrelude::PositionTry(..) => !self.in_style_or_page_rule(),
+            | AtRulePrelude::PositionTry(..)
+            | AtRulePrelude::ViewTransition => !self.in_style_or_page_rule(),
             AtRulePrelude::Margin(..) => self.in_page_rule(),
         }
     }
@@ -715,8 +720,13 @@ impl<'a, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'i> {
                 AtRulePrelude::FontFace
             },
             "container" if cfg!(feature = "gecko") => {
-                let condition = Arc::new(ContainerCondition::parse(&self.context, input)?);
-                AtRulePrelude::Container(condition)
+                let conditions = input.parse_comma_separated(|input| {
+                    ContainerCondition::parse(&self.context, input)
+                })?;
+                // Container rules must have at least one condition.
+                debug_assert!(!conditions.is_empty());
+                let conditions = ArcSlice::from_iter(conditions.into_iter());
+                AtRulePrelude::Container(conditions)
             },
             "layer" => {
                 let names = input.try_parse(|input| {
@@ -794,6 +804,9 @@ impl<'a, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'i> {
                     )))
                 });
                 AtRulePrelude::CustomMedia(name, condition)
+            },
+            "view-transition" if static_prefs::pref!("dom.viewTransitions.cross-document.enabled") => {
+                AtRulePrelude::ViewTransition
             },
             _ => {
                 if static_prefs::pref!("layout.css.margin-rules.enabled") {
@@ -913,10 +926,10 @@ impl<'a, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'i> {
                     source_location,
                 }))
             },
-            AtRulePrelude::Container(condition) => {
+            AtRulePrelude::Container(conditions) => {
                 let source_location = start.source_location();
                 CssRule::Container(Arc::new(ContainerRule {
-                    conditions: ContainerConditions(smallvec::smallvec![condition]),
+                    conditions: ContainerConditions(conditions),
                     rules: self.parse_nested_rules(input, CssRuleType::Container),
                     source_location,
                 }))
@@ -973,6 +986,13 @@ impl<'a, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'i> {
                     source_location,
                 })))
             },
+            AtRulePrelude::ViewTransition => self.nest_for_rule(CssRuleType::ViewTransition, |p| {
+                CssRule::ViewTransition(Arc::new(ViewTransitionRule::parse(
+                    &p.context,
+                    input,
+                    source_location,
+                )))
+            }),
         };
         self.rules.push(rule);
         Ok(())

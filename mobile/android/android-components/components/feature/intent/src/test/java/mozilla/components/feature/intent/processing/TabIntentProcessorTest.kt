@@ -20,6 +20,7 @@ import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags.Companion.APP_LINK_LAUNCH_TYPE_COLD
@@ -37,6 +38,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -487,5 +489,103 @@ class TabIntentProcessorTest {
         val expected = EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.external().value)
 
         assertEquals(expected.value, store.state.tabs[0].engineState.initialLoadFlags.value)
+    }
+
+    @Test
+    fun `getHostForDnsWarmup returns app link host when DoH is disabled`() {
+        val settings = DefaultSettings(dohSettingsMode = Engine.DohSettingsMode.DEFAULT)
+        whenever(engine.settings).thenReturn(settings)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+
+        val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
+
+        assertEquals("mozilla.org", result)
+    }
+
+    @Test
+    fun `getHostForDnsWarmup returns app link host when DoH is OFF`() {
+        val settings = DefaultSettings(dohSettingsMode = Engine.DohSettingsMode.OFF)
+        whenever(engine.settings).thenReturn(settings)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+
+        val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
+
+        assertEquals("mozilla.org", result)
+    }
+
+    @Test
+    fun `getHostForDnsWarmup returns DoH provider host when DoH is INCREASED`() {
+        val settings = DefaultSettings(
+            dohSettingsMode = Engine.DohSettingsMode.INCREASED,
+            dohProviderUrl = "https://cloudflare-dns.com/dns-query",
+        )
+        whenever(engine.settings).thenReturn(settings)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+
+        val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
+
+        assertEquals("cloudflare-dns.com", result)
+    }
+
+    @Test
+    fun `getHostForDnsWarmup returns DoH provider host when DoH is MAX`() {
+        val settings = DefaultSettings(
+            dohSettingsMode = Engine.DohSettingsMode.MAX,
+            dohProviderUrl = "https://dns.nextdns.io/abc123",
+        )
+        whenever(engine.settings).thenReturn(settings)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+
+        val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
+
+        assertEquals("dns.nextdns.io", result)
+    }
+
+    @Test
+    fun `getHostForDnsWarmup returns null when DoH is enabled but provider URL is empty`() {
+        val settings = DefaultSettings(
+            dohSettingsMode = Engine.DohSettingsMode.INCREASED,
+            dohProviderUrl = "",
+        )
+        whenever(engine.settings).thenReturn(settings)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+
+        val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `getHostForDnsWarmup returns app link host when engine is null`() {
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = null)
+
+        val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
+
+        assertEquals("mozilla.org", result)
+    }
+
+    @Test
+    fun `getHostForDnsWarmup returns null for malformed app link URL`() {
+        val settings = DefaultSettings(dohSettingsMode = Engine.DohSettingsMode.OFF)
+        whenever(engine.settings).thenReturn(settings)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+
+        val result = handler.getHostForDnsWarmup("not a valid url")
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `getHostForDnsWarmup returns null for malformed DoH provider URL`() {
+        val settings = DefaultSettings(
+            dohSettingsMode = Engine.DohSettingsMode.INCREASED,
+            dohProviderUrl = "not a valid url",
+        )
+        whenever(engine.settings).thenReturn(settings)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+
+        val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
+
+        assertNull(result)
     }
 }

@@ -1,0 +1,17 @@
+[DEFAULT]
+support-files = [
+  "../browser/head-common.js",
+  "head.js",
+]
+
+["browser_commands.js"]
+
+["browser_devtools.js"]
+
+["browser_general.js"]
+
+["browser_screenshot.js"]
+
+["browser_tab_refocus.js"]
+
+["browser_translate.js"]

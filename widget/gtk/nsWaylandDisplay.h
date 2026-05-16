@@ -131,6 +131,9 @@ class nsWaylandDisplay {
   bool HasDMABufFeedback() const { return mDmabufIsFeedback; }
   void EnsureDMABufFormats();
 
+  void SetFixes(wl_fixes* aFixes);
+  wl_fixes* GetFixes() const { return mFixes; }
+
   static void AsyncRoundtripCallback(void* aData, wl_callback* aCallback,
                                      uint32_t aTime);
   void RequestAsyncRoundtrip();
@@ -158,6 +161,7 @@ class nsWaylandDisplay {
  private:
   PRThread* mThreadId = nullptr;
   wl_registry* mRegistry = nullptr;
+  wl_fixes* mFixes = nullptr;
   wl_display* mDisplay = nullptr;
   wl_compositor* mCompositor = nullptr;
   wl_subcompositor* mSubcompositor = nullptr;

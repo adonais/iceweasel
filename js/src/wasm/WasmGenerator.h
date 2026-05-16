@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2015 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -270,6 +268,9 @@ class MOZ_STACK_CLASS ModuleGenerator {
   uint32_t debugStubCodeOffset_;
   uint32_t requestTierUpStubCodeOffset_;
   uint32_t updateCallRefMetricsStubCodeOffset_;
+#ifdef ENABLE_WASM_JSPI
+  uint32_t contBaseFrameOffset_;
+#endif
   CallFarJumpVector callFarJumps_;
   CallSiteTargetVector callSiteTargets_;
   FuncIonPerfSpewerVector funcIonSpewers_;

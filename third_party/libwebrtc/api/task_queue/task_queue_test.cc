@@ -15,8 +15,13 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
+
+#if defined(WEBRTC_WIN)
+#include <windows.h>
+#endif
 
 #include "absl/cleanup/cleanup.h"
 #ifdef BUILD_EXPERIMENTAL_TASK_QUEUE_COROUTINE_TESTS
@@ -25,16 +30,22 @@
 #include "absl/strings/string_view.h"
 #include "api/make_ref_counted.h"
 #include "api/ref_count.h"
+#if defined(WEBRTC_WIN)
+#include "api/task_queue/default_task_queue_factory.h"
+#endif
 #include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/event.h"
 #include "rtc_base/ref_counter.h"
 #include "rtc_base/time_utils.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace {
+
+using ::testing::ElementsAre;
 
 // Avoids a dependency to system_wrappers.
 void SleepFor(TimeDelta duration) {
@@ -46,7 +57,7 @@ void SleepFor(TimeDelta duration) {
 std::unique_ptr<TaskQueueBase, TaskQueueDeleter> CreateTaskQueue(
     const std::unique_ptr<TaskQueueFactory>& factory,
     absl::string_view task_queue_name,
-    TaskQueueFactory::Priority priority = TaskQueueFactory::Priority::NORMAL) {
+    TaskQueueFactory::Priority priority = TaskQueueFactory::Priority::kNormal) {
   return factory->CreateTaskQueue(task_queue_name, priority);
 }
 
@@ -72,6 +83,29 @@ TEST_P(TaskQueueTest, PostAndCheckCurrent) {
     event.Set();
   });
   EXPECT_TRUE(event.Wait(TimeDelta::Seconds(1)));
+}
+
+// Verifies that a task can post a new task from within the task
+// and that the new one eventually runs.
+TEST_P(TaskQueueTest, TaskCanPostContinuationTask) {
+  std::unique_ptr<TaskQueueFactory> factory = GetParam()(nullptr);
+  auto queue = CreateTaskQueue(factory, "TaskCanPostContinuationTask");
+
+  std::vector<std::string> events;
+  Event done;
+
+  queue->PostTask([&events, &done, queue = queue.get()] {
+    events.push_back("Start");
+    queue->PostTask([&events, &done] {
+      events.push_back("Continue");
+      done.Set();
+    });
+    events.push_back("FirstDone");
+  });
+
+  EXPECT_TRUE(done.Wait(TimeDelta::Seconds(1)));
+
+  EXPECT_THAT(events, ElementsAre("Start", "FirstDone", "Continue"));
 }
 
 TEST_P(TaskQueueTest, PostCustomTask) {
@@ -115,8 +149,8 @@ TEST_P(TaskQueueTest, PostFromQueue) {
 TEST_P(TaskQueueTest, PostDelayed) {
   std::unique_ptr<TaskQueueFactory> factory = GetParam()(nullptr);
   Event event;
-  auto queue =
-      CreateTaskQueue(factory, "PostDelayed", TaskQueueFactory::Priority::HIGH);
+  auto queue = CreateTaskQueue(factory, "PostDelayed",
+                               TaskQueueFactory::Priority::kHigh);
 
   int64_t start = TimeMillis();
   queue->PostDelayedTask(
@@ -358,6 +392,30 @@ TEST_P(TaskQueueTest, PostTwoWithSharedUnprotectedState) {
   });
   EXPECT_TRUE(done.Wait(TimeDelta::Seconds(1)));
 }
+
+#if !defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_WIN)
+void CALLBACK ApcProc(ULONG_PTR data) {
+  reinterpret_cast<Event*>(data)->Set();
+}
+
+// This works for TaskQueueWin, but not for the Thread backed
+// implementation or TaskQueueStdlib.
+// Change this to `TEST_P(TaskQueueTest, QueueUserAPC)` when all
+// implementations support this and use GetParam() instead of
+// CreateDefaultTaskQueueFactory().
+TEST(TaskQueueTest, QueueUserAPC) {
+  std::unique_ptr<TaskQueueFactory> factory =
+      CreateDefaultTaskQueueFactory(nullptr);
+
+  auto queue = CreateTaskQueue(factory, "ApcCompat");
+  Event done;
+  queue->PostTask([&done] {
+    QueueUserAPC(&ApcProc, GetCurrentThread(),
+                 reinterpret_cast<ULONG_PTR>(&done));
+  });
+  EXPECT_TRUE(done.Wait(TimeDelta::Seconds(1)));
+}
+#endif  // !defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_WIN)
 
 #ifdef BUILD_EXPERIMENTAL_TASK_QUEUE_COROUTINE_TESTS
 

@@ -766,31 +766,21 @@ int32_t WidgetPointerHelper::GetValidTiltValue(int32_t aTilt) {
 
 // static
 double WidgetPointerHelper::GetValidAltitudeAngle(double aAltitudeAngle) {
-  if (MOZ_LIKELY(aAltitudeAngle >= 0.0 && aAltitudeAngle <= kHalfPi)) {
-    return aAltitudeAngle;
+  if (!std::isfinite(aAltitudeAngle)) {
+    return 0.0;
   }
-  while (aAltitudeAngle > kHalfPi) {
-    aAltitudeAngle -= kHalfPi;
-  }
-  while (aAltitudeAngle < 0.0) {
-    aAltitudeAngle += kHalfPi;
-  }
-  MOZ_ASSERT(aAltitudeAngle >= 0.0 && aAltitudeAngle <= kHalfPi);
-  return aAltitudeAngle;
+  return std::clamp(aAltitudeAngle, 0.0, kHalfPi);
 }
 
 // static
 double WidgetPointerHelper::GetValidAzimuthAngle(double aAzimuthAngle) {
-  if (MOZ_LIKELY(aAzimuthAngle >= 0.0 && aAzimuthAngle <= kDoublePi)) {
-    return aAzimuthAngle;
+  if (!std::isfinite(aAzimuthAngle)) {
+    return 0.0;
   }
-  while (aAzimuthAngle > kDoublePi) {
-    aAzimuthAngle -= kDoublePi;
-  }
-  while (aAzimuthAngle < 0.0) {
+  aAzimuthAngle = std::fmod(aAzimuthAngle, kDoublePi);
+  if (aAzimuthAngle < 0.0) {
     aAzimuthAngle += kDoublePi;
   }
-  MOZ_ASSERT(aAzimuthAngle >= 0.0 && aAzimuthAngle <= kDoublePi);
   return aAzimuthAngle;
 }
 
@@ -1477,19 +1467,19 @@ void WidgetKeyboardEvent::GetAccessKeyCandidates(
     }
     aCandidates.AppendElement(ch);
   }
-  for (uint32_t i = 0; i < mAlternativeCharCodes.Length(); ++i) {
-    uint32_t ch[2] = {mAlternativeCharCodes[i].mUnshiftedCharCode,
-                      mAlternativeCharCodes[i].mShiftedCharCode};
-    for (uint32_t j = 0; j < 2; ++j) {
-      if (!ch[j]) {
+  for (const auto& alternativeCharCode : mAlternativeCharCodes) {
+    uint32_t ch[2] = {alternativeCharCode.mUnshiftedCharCode,
+                      alternativeCharCode.mShiftedCharCode};
+    for (unsigned int& c : ch) {
+      if (!c) {
         continue;
       }
-      if (IS_IN_BMP(ch[j])) {
-        ch[j] = ToLowerCase(static_cast<char16_t>(ch[j]));
+      if (IS_IN_BMP(c)) {
+        c = ToLowerCase(static_cast<char16_t>(c));
       }
       // Don't append the charcode that was already appended.
-      if (aCandidates.IndexOf(ch[j]) == aCandidates.NoIndex) {
-        aCandidates.AppendElement(ch[j]);
+      if (aCandidates.IndexOf(c) == aCandidates.NoIndex) {
+        aCandidates.AppendElement(c);
       }
     }
   }

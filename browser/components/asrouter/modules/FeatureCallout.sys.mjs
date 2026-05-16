@@ -1598,8 +1598,7 @@ export class FeatureCallout {
     const handleActorMessage =
       lazy.AboutWelcomeParent.prototype.onContentMessage.bind({});
     const getActionHandler = name => data =>
-      handleActorMessage(`AWPage:${name}`, data, this.doc);
-
+      handleActorMessage(`AWPage:${name}`, data, this.browser);
     const telemetryMessageHandler = getActionHandler("TELEMETRY_EVENT");
     const AWSendEventTelemetry = data => {
       if (this.config?.metrics !== "block") {
@@ -1611,6 +1610,7 @@ export class FeatureCallout {
       AWGetFeatureConfig: () => this.config,
       AWGetSelectedTheme: getActionHandler("GET_SELECTED_THEME"),
       AWGetInstalledAddons: getActionHandler("GET_INSTALLED_ADDONS"),
+      AWEnsureAddonInstalled: getActionHandler("ENSURE_ADDON_INSTALLED"),
       // Do not send telemetry if message config sets metrics as 'block'.
       AWSendEventTelemetry,
       AWSendToDeviceEmailsSupported: getActionHandler(
@@ -2523,13 +2523,13 @@ export class FeatureCallout {
     chrome: {
       all: {
         // Use a gradient because it's possible (due to custom themes) that the
-        // arrowpanel-background will be semi-transparent, causing the arrow to
+        // panel-background will be semi-transparent, causing the arrow to
         // show through the callout background. Put the Menu color behind the
-        // arrowpanel-background.
+        // panel-background.
         background:
-          "Menu linear-gradient(var(--arrowpanel-background), var(--arrowpanel-background))",
-        color: "var(--arrowpanel-color)",
-        border: "var(--arrowpanel-border-color)",
+          "Menu linear-gradient(var(--panel-background), var(--panel-background))",
+        color: "var(--panel-color)",
+        border: "var(--panel-border-color)",
         "accent-color": "var(--focus-outline-color)",
         // Button Background
         "button-background": "var(--button-background-color)",
@@ -2575,15 +2575,15 @@ export class FeatureCallout {
         "icon-success-color": "var(--color-accent-attention)",
         // Dismiss Button
         "dismiss-button-background":
-          "Menu linear-gradient(var(--arrowpanel-background), var(--arrowpanel-background))",
+          "Menu linear-gradient(var(--panel-background), var(--panel-background))",
         "dismiss-button-background-hover":
-          "Menu linear-gradient(color-mix(in srgb, currentColor 14%, var(--arrowpanel-background)))",
+          "Menu linear-gradient(color-mix(in srgb, currentColor 14%, var(--panel-background)))",
         "dismiss-button-background-active":
-          "Menu linear-gradient(color-mix(in srgb, currentColor 21%, var(--arrowpanel-background)))",
+          "Menu linear-gradient(color-mix(in srgb, currentColor 21%, var(--panel-background)))",
       },
       hcm: {
-        background: "var(--arrowpanel-background)",
-        "dismiss-button-background": "var(--arrowpanel-background)",
+        background: "var(--panel-background)",
+        "dismiss-button-background": "var(--panel-background)",
         "dismiss-button-background-hover":
           "color-mix(in srgb, currentColor 14%, SelectedItem)",
         "dismiss-button-background-active":

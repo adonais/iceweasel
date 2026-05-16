@@ -735,6 +735,31 @@ TEST(MoofParser, overflow_tfdt)
   EXPECT_FALSE(parser.Moofs().IsEmpty());
 }
 
+// Bug 2027038: AAC encoder delay is encoded as 2^64-N
+// in tfdt.baseMediaDecodeTime; the matching edit list has mediaTime=-N.
+// After the static_cast fix: decodeTime(-N) - mMediaStart(-N) = 0, so the
+// first sample's presentation timestamp must be exactly 0.
+TEST(MoofParser, overflow_tfdt_aac_encoder_delay)
+{
+  static const char* kTestFilename = "test_case_aac_encoder_delay_tfdt.mp4";
+  nsTArray<uint8_t> buffer = ReadTestFile(kTestFilename);
+
+  ASSERT_FALSE(buffer.IsEmpty());
+  RefPtr<ByteStream> stream =
+      new TestStream(buffer.Elements(), buffer.Length());
+
+  // Audio track (ID=1), mdhd timescale=48000, tfdt=2^64-2048 (0xFFFFF800),
+  // elst mediaTime=-2048. After fix: decodeTime=-2048, -2048-(-2048)=0.
+  const uint32_t audioTrackId = 1;
+  MoofParser parser(stream, AsVariant(audioTrackId), true);
+  const MediaByteRangeSet byteRanges(
+      MediaByteRange(0, int64_t(buffer.Length())));
+  EXPECT_TRUE(parser.RebuildFragmentedIndex(byteRanges));
+  ASSERT_FALSE(parser.Moofs().IsEmpty());
+  ASSERT_FALSE(parser.Moofs()[0].mIndex.IsEmpty());
+  EXPECT_EQ(parser.Moofs()[0].mIndex[0].mDecodeTime.ToMicroseconds(), 0LL);
+}
+
 // 1833896.mp4 has mdhd timescale 0xF800001E (4,160,749,598 as uint32_t).
 // This exceeds INT32_MAX. ISO 14496-12 defines mdhd timescale as unsigned
 // int(32), so values > INT32_MAX are spec-compliant and not clamped.

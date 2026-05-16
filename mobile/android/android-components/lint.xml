@@ -5,6 +5,7 @@
 <lint>
     <issue id="MissingQuantity" severity="ignore" />
     <issue id="ImpliedQuantity" severity="ignore" />
+    <issue id="Untranslatable" severity="ignore" />
     <issue id="BrandUsage" severity="error">
         <ignore path="**/values-*/strings.xml" />
     </issue>

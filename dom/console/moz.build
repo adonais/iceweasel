@@ -22,6 +22,7 @@ EXPORTS.mozilla += [
 EXPORTS.mozilla.dom += [
     "Console.h",
     "ConsoleInstance.h",
+    "ConsoleReportIPCUtils.h",
     "ConsoleUtils.h",
 ]
 

@@ -1,4 +1,3 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -64,6 +63,7 @@ NS_IMETHODIMP NetworkLinkObserver::Observe(nsISupports* aSubject,
     MutexAutoLock lock(mWrapper->mMutex);
     mWrapper->mConnCacheValid = false;
     mWrapper->mCacheValid = false;
+    mWrapper->mAtomicFlags = UINT32_MAX;
   }
   return NS_OK;
 }
@@ -102,6 +102,7 @@ void WindowsInternetFunctionsWrapper::Init() {
                self.get()));
           MutexAutoLock lock(self->mMutex);
           self->mCacheValid = false;
+          self->mAtomicFlags = UINT32_MAX;
         });
   }
 
@@ -161,6 +162,7 @@ nsresult WindowsInternetFunctionsWrapper::ReadAllOptionsLocked(
   }
 
   mCachedFlags = options[0].Value.dwValue;
+  mAtomicFlags = mCachedFlags;
   LOG(("ReadAllOptionsLocked: flags=0x%x", mCachedFlags));
 
   auto assignAndFree = [](nsString& aDest, WCHAR* aSrc, const char* aName) {

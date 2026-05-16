@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstdint>
 
+#include "IDBTransaction.h"
 #include "ReportInternalError.h"
 #include "js/Array.h"  // JS::NewArrayObject
 #include "js/ArrayBuffer.h"  // JS::{IsArrayBufferObject,NewArrayBuffer{,WithContents}}
@@ -25,6 +26,7 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/indexedDB/IDBResult.h"
 #include "mozilla/dom/indexedDB/Key.h"
@@ -996,7 +998,8 @@ nsresult Key::SetFromValueArray(mozIStorageValueArray* aValues,
 }
 
 IDBResult<Ok, IDBSpecialValue::Invalid> Key::SetFromJSVal(
-    JSContext* aCx, JS::Handle<JS::Value> aVal) {
+    JSContext* aCx, JS::Handle<JS::Value> aVal,
+    mozilla::dom::IDBTransaction* aTransaction) {
   mBuffer.Truncate();
 
   if (aVal.isNull() || aVal.isUndefined()) {
@@ -1004,11 +1007,26 @@ IDBResult<Ok, IDBSpecialValue::Invalid> Key::SetFromJSVal(
     return Ok();
   }
 
+  const bool shouldInactivate = aTransaction && aTransaction->IsActive();
+  if (shouldInactivate) {
+    aTransaction->TransitionToInactive();
+  }
+  auto guard = MakeScopeExit([&]() {
+    if (shouldInactivate && !aTransaction->IsAborted()) {
+      aTransaction->TransitionToActive();
+    }
+  });
+
   auto result = EncodeJSVal(aCx, aVal, 0);
   if (result.isErr()) {
     Unset();
     return result;
   }
+
+  if (aTransaction && aTransaction->IsAborted()) {
+    return Err(IDBException(NS_ERROR_DOM_INDEXEDDB_ABORT_ERR));
+  }
+
   TrimBuffer();
   return Ok();
 }

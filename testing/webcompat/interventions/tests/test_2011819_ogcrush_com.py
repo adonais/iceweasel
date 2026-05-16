@@ -26,13 +26,23 @@ async def slick_slide_fits_content(client):
     )
 
 
+@pytest.mark.only_firefox_versions(max=150)
 @pytest.mark.asyncio
 @pytest.mark.with_interventions
 async def test_enabled(client):
     assert await slick_slide_fits_content(client)
 
 
+@pytest.mark.only_firefox_versions(max=150)
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
 async def test_disabled(client):
     assert not await slick_slide_fits_content(client)
+
+
+@pytest.mark.only_firefox_versions(min=151)
+@pytest.mark.without_interventions
+@pytest.mark.asyncio
+@pytest.mark.with_interventions
+async def test_regression(client):
+    assert await slick_slide_fits_content(client)

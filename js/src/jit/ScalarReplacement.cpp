@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -285,22 +283,16 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
         break;
 
       case MDefinition::Opcode::Slots: {
-#ifdef DEBUG
-        // Assert that MSlots are only used by MStoreDynamicSlot and
-        // MLoadDynamicSlot.
-        MSlots* ins = def->toSlots();
-        MOZ_ASSERT(ins->object() != 0);
-        for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
-          // toDefinition should normally never fail, since they don't get
-          // captured by resume points.
+        // Ensure MSlots is only used by MStoreDynamicSlot and MLoadDynamicSlot.
+        MSlots* slots = def->toSlots();
+        for (MUseIterator i(slots->usesBegin()); i != slots->usesEnd(); i++) {
           MDefinition* def = (*i)->consumer()->toDefinition();
-          MOZ_ASSERT(
-              def->op() == MDefinition::Opcode::StoreDynamicSlot ||
-              def->op() == MDefinition::Opcode::LoadDynamicSlot ||
-              def->op() == MDefinition::Opcode::StoreDynamicSlotFromOffset ||
-              def->op() == MDefinition::Opcode::LoadDynamicSlotFromOffset);
+          if (!def->isLoadDynamicSlot() && !def->isStoreDynamicSlot()) {
+            JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
+            return true;
+          }
+          MOZ_ASSERT(def->indexOf(*i) == 0);
         }
-#endif
         break;
       }
 
@@ -3954,7 +3946,6 @@ class ObjectKeysReplacer : public GenericArrayReplacer {
 
   MObjectKeys* objectKeys() const { return arr_->toObjectKeys(); }
 
-  MDefinition* objectKeysLength(MInstruction* ins);
   void visitLength(MInstruction* ins, MDefinition* elements);
 
   void visitLoadElement(MLoadElement* ins);

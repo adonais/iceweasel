@@ -284,6 +284,11 @@ add_task(async function test_aiwindow_html_mode_detection() {
       "fullpage",
       `Mode should be detected as fullpage, got: ${aiWindowElement.mode}`
     );
+
+    Assert.ok(
+      !aiWindowElement.hasAttribute("classic-mode"),
+      "classic-mode attribute should not be set on a Smart Window"
+    );
   });
 
   await BrowserTestUtils.closeWindow(newAIWindow);

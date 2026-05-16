@@ -10,7 +10,9 @@
 
 #include "LayoutLogging.h"
 #include "TextOverflow.h"
-#include "fmt/format.h"
+#ifdef DEBUG
+#  include "fmt/base.h"
+#endif
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_layout.h"

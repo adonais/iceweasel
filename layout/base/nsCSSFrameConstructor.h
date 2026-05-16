@@ -367,9 +367,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                        nsIFrame* aPrevPageFrame,
                                        nsCanvasFrame*& aCanvasFrame);
 
+  enum class AllowCounters : bool { No, Yes };
+
   void InitAndRestoreFrame(const nsFrameConstructorState& aState,
                            nsIContent* aContent, nsContainerFrame* aParentFrame,
-                           nsIFrame* aNewFrame, bool aAllowCounters = true);
+                           nsIFrame* aNewFrame,
+                           AllowCounters = AllowCounters::Yes);
 
   already_AddRefed<ComputedStyle> ResolveComputedStyle(nsIContent* aContent);
 
@@ -1365,6 +1368,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                         const nsStyleDisplay* aStyleDisplay,
                                         nsFrameList& aFrameList);
 
+  nsIFrame* ConstructTextControl(nsFrameConstructorState& aState,
+                                 FrameConstructionItem& aItem,
+                                 nsContainerFrame* aParentFrame,
+                                 const nsStyleDisplay* aStyleDisplay,
+                                 nsFrameList& aFrameList);
+
   // Creates a block frame wrapping an anonymous ruby frame.
   nsIFrame* ConstructBlockRubyFrame(nsFrameConstructorState& aState,
                                     FrameConstructionItem& aItem,
@@ -1554,6 +1563,13 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                         const nsStyleDisplay* aDisplay,
                                         nsFrameList& aFrameList);
 
+  // Construct a scrollable block with an already created subclass of
+  // ScrollContainerFrame, or nullptr for a plain ScrollContainerFrame.
+  void ConstructScrollableBlockWithScrollContainer(
+      nsFrameConstructorState& aState, FrameConstructionItem& aItem,
+      nsContainerFrame* aParentFrame, const nsStyleDisplay* aDisplay,
+      nsFrameList& aFrameList, nsContainerFrame*&);
+
   /**
    * This adds FrameConstructionItem objects to aItemsToConstruct for the
    * anonymous content returned by an nsIAnonymousContentCreator::
@@ -1658,8 +1674,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   already_AddRefed<ComputedStyle> BeginBuildingScrollContainerFrame(
       nsFrameConstructorState& aState, nsIContent* aContent,
       ComputedStyle* aContentStyle, nsContainerFrame* aParentFrame,
-      mozilla::PseudoStyleType aScrolledPseudo, bool aIsRoot,
-      nsContainerFrame*& aNewFrame);
+      bool aIsRoot, nsContainerFrame*& aNewFrame);
 
   // Completes the building of the scroll container frame.
   // Creates a view for the scrolledframe and makes it the child of the

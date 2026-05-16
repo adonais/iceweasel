@@ -1,4 +1,3 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -48,6 +47,14 @@ export class AutoScrollChild extends JSWindowActorChild {
       }
 
       // Or if we're pasting into an input field of sorts.
+      if (
+        content.HTMLInputElement.isInstance(node) ||
+        content.HTMLTextAreaElement.isInstance(node)
+      ) {
+        return true;
+      }
+
+      // Gotta check also the internal nodes.
       let containingHost = node.getRootNode().host;
       if (
         containingHost &&
@@ -78,6 +85,10 @@ export class AutoScrollChild extends JSWindowActorChild {
   }
 
   isScrollableElement(aNode) {
+    if (aNode == aNode.ownerDocument?.scrollingElement) {
+      // We'll consider the window as scrollable instead.
+      return false;
+    }
     let content = aNode.ownerGlobal;
     if (content.HTMLElement.isInstance(aNode)) {
       return !content.HTMLSelectElement.isInstance(aNode) || aNode.multiple;
@@ -106,8 +117,10 @@ export class AutoScrollChild extends JSWindowActorChild {
 
     let global = node.ownerGlobal;
 
-    // this is a list of overflow property values that allow scrolling
-    const scrollingAllowed = ["scroll", "auto"];
+    // This is a list of overflow property values that don't allow scrolling.
+    // Note that some elements (like <select multiple> or <textarea>) are
+    // scrollable even if they don't have scrollable overflow values.
+    const scrollingDisallowed = ["hidden", "clip"];
 
     let cs = global.getComputedStyle(node);
     let overflowx = cs.getPropertyValue("overflow-x");
@@ -116,16 +129,13 @@ export class AutoScrollChild extends JSWindowActorChild {
     // scroll for multiline ones directly without checking for a
     // overflow property
     let scrollVert =
-      node.scrollTopMax &&
-      (global.HTMLSelectElement.isInstance(node) ||
-        scrollingAllowed.includes(overflowy));
+      node.scrollTopMax && !scrollingDisallowed.includes(overflowy);
 
     // do not allow horizontal scrolling for select elements, it leads
     // to visual artifacts and is not the expected behavior anyway
     if (
-      !global.HTMLSelectElement.isInstance(node) &&
       node.scrollLeftMin != node.scrollLeftMax &&
-      scrollingAllowed.includes(overflowx)
+      !scrollingDisallowed.includes(overflowx)
     ) {
       return scrollVert ? "NSEW" : "EW";
     }

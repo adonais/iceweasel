@@ -23,8 +23,19 @@ import { SubmenuButton } from "./SubmenuButton";
 const DEFAULT_AUTO_ADVANCE_MS = 20000;
 
 export const MultiStageProtonScreen = props => {
-  const { autoAdvance, handleAction, order } = props;
+  const {
+    autoAdvance,
+    advanceOnExperimentLoad,
+    handleAction,
+    messageId,
+    navigate,
+    order,
+  } = props;
   useEffect(() => {
+    if (!autoAdvance && !advanceOnExperimentLoad) {
+      return () => {};
+    }
+
     if (autoAdvance) {
       const value = autoAdvance?.actionEl ?? autoAdvance;
       const timeout = autoAdvance?.actionTimeMS ?? DEFAULT_AUTO_ADVANCE_MS;
@@ -39,8 +50,99 @@ export const MultiStageProtonScreen = props => {
       }, timeout);
       return () => clearTimeout(timer);
     }
-    return () => {};
-  }, [autoAdvance, handleAction, order]);
+
+    // If not doing a standard auto advance, handle auto advancing when experiments load.
+
+    // Defaults for when advance_on_experiment_load is true.
+    const minMsDefault = 3000;
+    const maxMsDefault = 8000;
+
+    let minMs = advanceOnExperimentLoad?.minDisplayMs ?? minMsDefault;
+    let maxMs = advanceOnExperimentLoad?.maxDisplayMs ?? maxMsDefault;
+
+    // Ensure max ≥ min.
+    if (maxMs < minMs) {
+      maxMs = minMs;
+    }
+
+    const startTime = performance.now();
+    let cancelled = false;
+    let advanced = false;
+    let minDone = false;
+    let experimentsDone = false;
+    let nimbusResult = null;
+    let maxTimeoutFired = false;
+
+    const doAdvance = () => {
+      if (cancelled || advanced) {
+        return;
+      }
+      advanced = true;
+
+      const screen_duration = Math.round(performance.now() - startTime);
+      let reason;
+      if (maxTimeoutFired) {
+        reason = "max_display_timeout";
+      } else if (nimbusResult === "error") {
+        reason = "nimbus_error";
+      } else if (nimbusResult === "timeout") {
+        reason = "nimbus_timeout";
+      } else {
+        reason = "nimbus_ready";
+      }
+      AboutWelcomeUtils.sendActionTelemetry(
+        messageId,
+        "advance_on_experiment_load",
+        "SPLASH_DISMISSED",
+        { reason, screen_duration }
+      );
+
+      navigate(false);
+    };
+
+    const maybeAdvance = () => {
+      if (minDone && experimentsDone) {
+        doAdvance();
+      }
+    };
+
+    const minTimerId = window.setTimeout(() => {
+      minDone = true;
+      maybeAdvance();
+    }, minMs);
+
+    const maxTimerId = window.setTimeout(() => {
+      maxTimeoutFired = true;
+      doAdvance();
+    }, maxMs);
+
+    // Use an IIFE to keep the effect itself synchronous
+    (async () => {
+      try {
+        if (typeof window.AWWaitForNimbus === "function") {
+          nimbusResult = await window.AWWaitForNimbus();
+        }
+        // If AWWaitForNimbus is missing, treat as "done" immediately.
+      } catch (e) {
+      } finally {
+        experimentsDone = true;
+        maybeAdvance();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(minTimerId);
+      window.clearTimeout(maxTimerId);
+    };
+  }, [
+    autoAdvance,
+    advanceOnExperimentLoad,
+    handleAction,
+    messageId,
+    order,
+    navigate,
+  ]);
 
   // Set narrow on an outer element to allow for use of SCSS outer selector and
   // consolidation of styles for small screen widths with those for messages
@@ -110,6 +212,7 @@ export const MultiStageProtonScreen = props => {
       forceHideStepsIndicator={props.forceHideStepsIndicator}
       ariaRole={props.ariaRole}
       aboveButtonStepsIndicator={props.aboveButtonStepsIndicator}
+      requireAction={props.requireAction}
       isWideScreen={isWideScreen}
     />
   );
@@ -123,6 +226,7 @@ export const ProtonScreenActionButtons = props => {
     addonType,
     addonName,
     activeMultiSelect,
+    activeSingleSelectSelections,
     textInputs,
     installedAddons,
   } = props;
@@ -168,6 +272,16 @@ export const ProtonScreenActionButtons = props => {
         }
       }
       return true;
+    }
+    // Only disables the primary button until at least one single-select
+    // option is chosen.
+    if (disabledValue === "hasActiveSingleSelect") {
+      if (!activeSingleSelectSelections) {
+        return true;
+      }
+      return !Object.values(activeSingleSelectSelections).some(
+        val => val && val !== "none"
+      );
     }
     if (disabledValue === "hasTextInput") {
       // For text input, we check if the user has entered any text in the
@@ -268,7 +382,15 @@ export class ProtonScreen extends React.PureComponent {
     if (this.props.content?.position === "callout") {
       return;
     }
-    this.mainContentHeader.focus();
+
+    // For requireAction screens, focus the title heading instead of the
+    // alertdialog container.
+    // Prevents Orca from misreading tab navigated elements.
+    if (this.props.requireAction && this.titleHeader) {
+      this.titleHeader.focus();
+    } else {
+      this.mainContentHeader.focus();
+    }
   }
 
   getScreenClassName(includeNoodles, isVideoOnboarding, isAddonsPicker) {
@@ -291,6 +413,11 @@ export class ProtonScreen extends React.PureComponent {
   }
 
   renderTitle({ title, title_logo }) {
+    const titleRef = this.props.requireAction
+      ? input => {
+          this.titleHeader = input;
+        }
+      : null;
     if (title_logo) {
       const { alignment, ...rest } = title_logo;
       return (
@@ -300,14 +427,22 @@ export class ProtonScreen extends React.PureComponent {
         >
           {this.renderPicture({ ...rest })}
           <Localized text={title}>
-            <h1 id="mainContentHeader" />
+            <h1
+              id="mainContentHeader"
+              tabIndex={this.props.requireAction ? -1 : undefined}
+              ref={titleRef}
+            />
           </Localized>
         </div>
       );
     }
     return (
       <Localized text={title}>
-        <h1 id="mainContentHeader" />
+        <h1
+          id="mainContentHeader"
+          tabIndex={this.props.requireAction ? -1 : undefined}
+          ref={titleRef}
+        />
       </Localized>
     );
   }
@@ -322,6 +457,7 @@ export class ProtonScreen extends React.PureComponent {
     height,
     marginBlock,
     marginInline,
+    style,
     className = "logo-container",
   }) {
     function getLoadingStrategy() {
@@ -338,8 +474,14 @@ export class ProtonScreen extends React.PureComponent {
       return "eager";
     }
 
+    const pictureStyle = {
+      marginInline,
+      marginBlock,
+      ...style,
+    };
+
     return (
-      <picture className={className} style={{ marginInline, marginBlock }}>
+      <picture className={className} style={pictureStyle}>
         {darkModeReducedMotionImageURL ? (
           <source
             srcset={darkModeReducedMotionImageURL}
@@ -647,6 +789,7 @@ export class ProtonScreen extends React.PureComponent {
         addonType={this.props.addonType}
         handleAction={this.props.handleAction}
         activeMultiSelect={this.props.activeMultiSelect}
+        activeSingleSelectSelections={this.props.activeSingleSelectSelections}
         textInputs={this.props.textInputs}
       />
     ) : null;
@@ -707,7 +850,8 @@ export class ProtonScreen extends React.PureComponent {
         layout={content.layout}
         pos={content.position || "center"}
         tabIndex="-1"
-        aria-labelledby="mainContentHeader"
+        aria-labelledby={`mainContentHeader${content.subtitle ? " mainContentSubheader" : ""}`}
+        aria-describedby="mainContentInner"
         ref={input => {
           this.mainContentHeader = input;
         }}
@@ -774,7 +918,11 @@ export class ProtonScreen extends React.PureComponent {
                   this.props.addonIconURL
                 )
               : null}
-            <div className="main-content-inner" style={combinedStyles}>
+            <div
+              className="main-content-inner"
+              id="mainContentInner"
+              style={combinedStyles}
+            >
               {content.logo && content.fullscreen
                 ? this.renderPicture(content.logo)
                 : null}

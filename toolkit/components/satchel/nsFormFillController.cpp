@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -71,7 +69,7 @@ nsFormFillController::nsFormFillController()
     : mControlledElement(nullptr),
       mRestartAfterAttributeChangeTask(nullptr),
       mListNode(nullptr),
-      // The amount of time a context menu event supresses showing a
+      // The amount of time a context menu event suppresses showing a
       // popup from a focus event in ms. This matches the threshold in
       // toolkit/components/passwordmgr/LoginManagerChild.sys.mjs.
       mFocusAfterRightClickThreshold(400),
@@ -343,8 +341,8 @@ nsFormFillController::SetPopupOpen(bool aPopupOpen) {
       NS_ENSURE_STATE(presShell);
       presShell->ScrollContentIntoView(
           content,
-          ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
-          ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
+          AxisScrollParams(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
+          AxisScrollParams(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
           ScrollFlags::ScrollOverflowHidden);
       // mFocusedPopup can be destroyed after ScrollContentIntoView, see bug
       // 420089

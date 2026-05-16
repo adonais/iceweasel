@@ -238,11 +238,10 @@ add_task(async function tabNoSearchStringSearchMode() {
   let unifiedSearchButtonPopupHidden =
     UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
 
-  let historyItem =
-    unifiedSearchButtonPopup.querySelector("menuitem[label=history]") ??
-    unifiedSearchButtonPopup.querySelector("menuitem[label=History]");
-
-  historyItem.click();
+  let historyItem = unifiedSearchButtonPopup.querySelector(
+    'panel-item[data-restrict="^"]'
+  );
+  historyItem.button.click();
   await unifiedSearchButtonPopupHidden;
 
   await UrlbarTestUtils.assertSearchMode(window, {
@@ -332,8 +331,7 @@ async function expectTabThroughResults(options = { reverse: false }) {
   for (let i = initiallySelectedIndex + 1; i < resultCount; i++) {
     EventUtils.synthesizeKey("KEY_Tab", { shiftKey: options.reverse });
     if (
-      document.activeElement ==
-      document.querySelector("toolbarbutton#urlbar-searchmode-switcher")
+      document.activeElement == document.querySelector(".searchmode-switcher")
     ) {
       EventUtils.synthesizeKey("KEY_Tab", { shiftKey: options.reverse });
     }
@@ -381,8 +379,7 @@ async function expectTabThroughToolbar(options = { reverse: false }) {
 
     // Skip over unified search button.
     if (
-      document.activeElement ==
-      document.querySelector("toolbarbutton#urlbar-searchmode-switcher")
+      document.activeElement == document.querySelector(".searchmode-switcher")
     ) {
       EventUtils.synthesizeKey("KEY_Tab", { shiftKey: options.reverse });
     }

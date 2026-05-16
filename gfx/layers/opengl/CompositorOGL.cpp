@@ -417,8 +417,7 @@ bool CompositorOGL::Initialize(nsCString* const out_failureReason) {
     mGLContext->fGenFramebuffers(1, &testFBO);
     GLuint testTexture = 0;
 
-    for (uint32_t i = 0; i < std::size(textureTargets); i++) {
-      GLenum target = textureTargets[i];
+    for (unsigned int target : textureTargets) {
       if (!target) continue;
 
       mGLContext->fGenTextures(1, &testTexture);

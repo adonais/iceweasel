@@ -320,6 +320,9 @@ skip-if = [
 ]
 
 ["browser_sizemodeBeforeMinimized.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_speculative_connect.js"]
 
@@ -378,6 +381,9 @@ skip-if = [
 
 ["browser_tab_groups_undo.js"]
 
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
+]
 ["browser_tab_label_during_restore.js"]
 https_first_disabled = true
 

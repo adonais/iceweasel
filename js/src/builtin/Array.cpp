@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -3542,14 +3540,7 @@ static bool array_toSpliced(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  // Step 13. Let A be ? ArrayCreate(𝔽(newLen)).
-  Rooted<ArrayObject*> arr(cx,
-                           NewDensePartlyAllocatedArray(cx, uint32_t(newLen)));
-  if (!arr) {
-    return false;
-  }
-
-  // Steps 14-19 optimized for dense elements.
+  // Steps 13-19 optimized for dense elements.
   if (CanOptimizeForDenseStorage<ArrayAccess::Read>(obj, len)) {
     MOZ_ASSERT(len <= UINT32_MAX);
     MOZ_ASSERT(actualDeleteCount <= UINT32_MAX,
@@ -3647,6 +3638,13 @@ static bool array_toSpliced(JSContext* cx, unsigned argc, Value* vp) {
 
     args.rval().setObject(*arr);
     return true;
+  }
+
+  // Step 13. Let A be ? ArrayCreate(𝔽(newLen)).
+  Rooted<ArrayObject*> arr(cx,
+                           NewDensePartlyAllocatedArray(cx, uint32_t(newLen)));
+  if (!arr) {
+    return false;
   }
 
   // Copy everything before start

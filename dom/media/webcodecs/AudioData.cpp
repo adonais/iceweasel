@@ -585,8 +585,7 @@ DataSpanType GetDataSpan(Span<uint8_t> aSpan, const AudioSampleFormat aFormat) {
 }
 
 void CopySamples(DataSpanType& aSource, DataSpanType& aDest,
-                 uint32_t aSourceChannelCount,
-                 uint32_t aSourceFramesPerChannel,
+                 uint32_t aSourceChannelCount, uint32_t aSourceFramesPerChannel,
                  const AudioSampleFormat aSourceFormat,
                  const CopyToSpec& aCopyToSpec) {
   aSource.match([&](auto& src) {

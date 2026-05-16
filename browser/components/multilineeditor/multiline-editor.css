@@ -8,6 +8,8 @@
   --multiline-editor-border: var(--border-width) solid var(--multiline-editor-border-color);
   --multiline-editor-color: var(--text-color);
   --multiline-editor-focus-outline: var(--focus-outline);
+  --multiline-editor-selection-color: var(--color-accent-primary);
+  --multiline-editor-mention-placeholder-border-color: var(--color-violet-0);
 
   display: inline-flex;
   width: 100%;
@@ -42,6 +44,10 @@
   padding: 0;
 }
 
+.multiline-editor .ProseMirror ::selection {
+  background-color: var(--multiline-editor-selection-color);
+}
+
 /* Force empty paragraphs to not collapse */
 .multiline-editor .ProseMirror p BR.ProseMirror-trailingBreak,
 .multiline-editor .ProseMirror p br.ProseMirror-trailingBreak {
@@ -53,6 +59,19 @@
   position: absolute;
   pointer-events: none;
   color: var(--text-color-deemphasized);
+  user-select: none;
+}
+
+:host([data-mention-placeholder]) .ProseMirror .ProseMirror-suggestion {
+  border: var(--border-width) solid var(--multiline-editor-mention-placeholder-border-color);
+  border-radius: var(--border-radius-medium);
+  color: var(--text-color-deemphasized);
+  padding: var(--space-xsmall);
+}
+
+:host([data-mention-placeholder]) .ProseMirror .ProseMirror-suggestion::after {
+  content: var(--multiline-editor-mention-placeholder, "");
+  pointer-events: none;
   user-select: none;
 }
 

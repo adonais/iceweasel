@@ -562,6 +562,9 @@ const TEST_GLOBAL = {
     return Promise.resolve({ value: "complete" });
   },
   AboutNewTab: {},
+  AWWaitForNimbus() {
+    return Promise.resolve("skipped");
+  },
   Glean: {
     newtab: {
       opened: {

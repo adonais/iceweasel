@@ -1,0 +1,55 @@
+# HG changeset patch
+# User Jan-Ivar Bruaroey <jib@mozilla.com>
+
+Bug 2029443 - Calculate for multiple SVC spatial layers.
+
+diff --git a/vp9/encoder/vp9_encoder.c b/vp9/encoder/vp9_encoder.c
+--- a/vp9/encoder/vp9_encoder.c
++++ b/vp9/encoder/vp9_encoder.c
+@@ -2177,15 +2177,24 @@ void vp9_change_config(struct VP9_COMP *
+     update_frame_size(cpi);
+
+   if (last_w != cpi->oxcf.width || last_h != cpi->oxcf.height) {
++    int svc_alloc_mi_area = cm->mi_rows * cm->mi_cols;
++    if (cpi->svc.number_spatial_layers > 1 && cpi->initial_width > 0 &&
++        cpi->initial_height > 0) {
++      int init_mi_rows, init_mi_cols, init_mi_stride;
++      vp9_set_mi_size(&init_mi_rows, &init_mi_cols, &init_mi_stride,
++                       cpi->initial_width, cpi->initial_height);
++      svc_alloc_mi_area = VPXMAX(svc_alloc_mi_area, init_mi_rows * init_mi_cols);
++    }
++
+     vpx_free(cpi->consec_zero_mv);
+     CHECK_MEM_ERROR(
+         &cm->error, cpi->consec_zero_mv,
+-        vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(*cpi->consec_zero_mv)));
++        vpx_calloc(svc_alloc_mi_area, sizeof(*cpi->consec_zero_mv)));
+
+     vpx_free(cpi->skin_map);
+     CHECK_MEM_ERROR(
+         &cm->error, cpi->skin_map,
+-        vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(*cpi->skin_map)));
++        vpx_calloc(svc_alloc_mi_area, sizeof(*cpi->skin_map)));
+
+     if (cpi->svc.number_spatial_layers > 1) {
+ #if CONFIG_VP9_TEMPORAL_DENOISING
+@@ -2207,15 +2216,15 @@ void vp9_change_config(struct VP9_COMP *
+           vpx_free(lc->map);
+           CHECK_MEM_ERROR(
+               &cm->error, lc->map,
+-              vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(*lc->map)));
++              vpx_calloc(svc_alloc_mi_area, sizeof(*lc->map)));
+           vpx_free(lc->last_coded_q_map);
+           CHECK_MEM_ERROR(&cm->error, lc->last_coded_q_map,
+-                          vpx_malloc(cm->mi_rows * cm->mi_cols *
++                          vpx_malloc(svc_alloc_mi_area *
+                                      sizeof(*lc->last_coded_q_map)));
+-          memset(lc->last_coded_q_map, MAXQ, cm->mi_rows * cm->mi_cols);
++          memset(lc->last_coded_q_map, MAXQ, svc_alloc_mi_area);
+           vpx_free(lc->consec_zero_mv);
+           CHECK_MEM_ERROR(&cm->error, lc->consec_zero_mv,
+-                          vpx_calloc(cm->mi_rows * cm->mi_cols,
++                          vpx_calloc(svc_alloc_mi_area,
+                                      sizeof(*lc->consec_zero_mv)));
+         }
+         cpi->refresh_golden_frame = 1;

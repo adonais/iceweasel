@@ -114,7 +114,7 @@ class ApiLintPlugin : Plugin<Project> {
                         val apiFile = apiFileProvider.get().asFile
                         val currentApiFile = currentApiFileProvider.get().asFile
 
-                        task.args("--existing", currentApiFile, "--local", apiFile, "--command", extension.helpCommand.get()(name).toString())
+                        task.args("--existing", currentApiFile, "--local", apiFile, "--command", extension.helpCommand.get()(name))
                     }
                 }
 
@@ -187,7 +187,7 @@ class ApiLintPlugin : Plugin<Project> {
                     task.dependsOn(apiGenerate)
                     task.from(apiFileProvider)
                     task.into(currentApiFileProvider.map { it.asFile.parentFile })
-                    task.rename { extension.apiOutputFileName.get() }
+                    task.rename { currentApiFileProvider.get().asFile.name }
                 }
             }
         }

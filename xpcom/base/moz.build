@@ -289,7 +289,6 @@ FINAL_LIBRARY = "xul"
 
 LOCAL_INCLUDES += [
     "../build",
-    "/dom/base",
     "/mfbt",
     "/netwerk/base",
     "/xpcom/ds",
@@ -306,6 +305,12 @@ if CONFIG["MOZ_PHC"]:
     DEFINES["MOZ_PHC"] = 1
 
     UNIFIED_SOURCES += ["PHCManager.cpp"]
+
+with Files("nsCycleCollect*"):
+    BUG_COMPONENT = ("Core", "Cycle Collector")
+
+with Files("*CycleCollector*"):
+    BUG_COMPONENT = ("Core", "Cycle Collector")
 
 with Files("PHCManager.*"):
     BUG_COMPONENT = ("Core", "Memory Allocator")

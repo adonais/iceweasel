@@ -178,6 +178,7 @@ function setup_http_server() {
 
   registerCleanupFunction(function () {
     server.stop(serverStopListener);
+    Services.prefs.clearUserPref("network.http.happy_eyeballs_enabled");
   });
 }
 
@@ -192,6 +193,8 @@ function run_test() {
   // Set "network.http.active_tab_priority" to false, so we can expect to
   // receive http requests with higher priority first.
   Services.prefs.setBoolPref("network.http.active_tab_priority", false);
+  // With HEv3 enabled, connection establishment order is non-deterministic.
+  Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", false);
 
   setup_http_server();
   setup_dummyHttpRequests();

@@ -196,6 +196,8 @@ skip-if = [
 
 ["browser_inplace-editor_autocomplete_css_variable.js"]
 
+["browser_inplace-editor_autocomplete_gradient_functions.js"]
+
 ["browser_inplace-editor_autocomplete_offset.js"]
 
 ["browser_inplace-editor_focus_closest_editor.js"]

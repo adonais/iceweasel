@@ -28,6 +28,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.sort(comparefn);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

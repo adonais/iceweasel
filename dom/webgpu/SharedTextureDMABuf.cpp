@@ -97,11 +97,14 @@ SharedTextureDMABuf::SharedTextureDMABuf(
 SharedTextureDMABuf::~SharedTextureDMABuf() = default;
 
 void SharedTextureDMABuf::CleanForRecycling() {
+  SharedTexture::CleanForRecycling();
   mSemaphoreFds.Clear();
   mVkSemaphoreHandles.Clear();
 }
 
 Maybe<layers::SurfaceDescriptor> SharedTextureDMABuf::ToSurfaceDescriptor() {
+  MOZ_ASSERT(mSubmissionIndex > 0);
+
   layers::SurfaceDescriptor sd;
   if (!mSurface->Serialize(sd)) {
     return Nothing();
@@ -162,6 +165,7 @@ const ffi::WGPUVkImageHandle* SharedTextureDMABuf::GetHandle() {
 }
 
 void SharedTextureDMABuf::onBeforeQueueSubmit(RawId aQueueId) {
+  SharedTexture::onBeforeQueueSubmit(aQueueId);
   if (!mParent) {
     return;
   }

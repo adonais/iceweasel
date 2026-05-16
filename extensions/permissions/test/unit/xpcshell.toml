@@ -1,6 +1,8 @@
 [DEFAULT]
 head = "head.js"
 
+["test_permmanager_browser_scoped.js"]
+
 ["test_permmanager_cleardata.js"]
 
 ["test_permmanager_default_pref.js"]

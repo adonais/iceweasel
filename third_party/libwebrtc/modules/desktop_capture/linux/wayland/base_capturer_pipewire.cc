@@ -56,7 +56,10 @@ bool BaseCapturerPipeWire::IsSupported() {
 BaseCapturerPipeWire::BaseCapturerPipeWire(const DesktopCaptureOptions& options,
                                            CaptureType type)
     : BaseCapturerPipeWire(options,
-                           std::make_unique<ScreenCastPortal>(type, this)) {
+                           std::make_unique<ScreenCastPortal>(
+                               type,
+                               this,
+                               options.prefer_cursor_embedded())) {
   is_screencast_portal_ = true;
 }
 
@@ -72,6 +75,10 @@ BaseCapturerPipeWire::BaseCapturerPipeWire(
 }
 
 BaseCapturerPipeWire::~BaseCapturerPipeWire() {
+  // Destroy the portal first. Its destructor may block until in-flight
+  // GDBus callbacks finish, and those callbacks access other members
+  // (options_, callback_) through the notifier_ pointer.
+  portal_.reset();
   options_.screencast_stream()->StopScreenCastStream();
 }
 
@@ -197,7 +204,7 @@ bool BaseCapturerPipeWire::GetSourceList(SourceList* sources) {
   // is often treated as a null/placeholder id, so we shouldn't use that.
   // TODO(https://crbug.com/1297671): Reconsider type of ID when plumbing
   // token that will enable stream re-use.
-  sources->push_back({source_id_});
+  sources->push_back({.id = source_id_});
   return true;
 }
 

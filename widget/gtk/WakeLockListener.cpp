@@ -188,7 +188,7 @@ class WakeLockTopic {
       }
     }
 
-    if (GetWakeLockType() == Initial) {
+    if (GetGlobalWakeLockType() == Initial) {
       InitializeWakeLockType();
     }
   }
@@ -288,13 +288,17 @@ class WakeLockTopic {
   int mUninhibitAttempts = 5;
 #endif
 
+  // Track which wake lock type was used for the current inhibit,
+  // so we uninhibit with the same type even if the global type changed.
+  int mWakeLockType = Initial;
+
   std::queue<WakeLockState> mStateQueue;
 
-  int GetWakeLockType() {
+  int GetGlobalWakeLockType() {
     return mLockOnBackground ? sBackgroundWakeLockType
                              : sForegroundWakeLockType;
   }
-  void SetWakeLockType(int aWakeLockType) {
+  void SetGlobalWakeLockType(int aWakeLockType) {
     if (mLockOnBackground) {
       sBackgroundWakeLockType = aWakeLockType;
     } else {
@@ -355,7 +359,7 @@ void WakeLockTopic::DBusUninhibitFailed() {
   // We're in inhibited state and we can't switch back.
   // Let's try again but there isn't much to do.
   if (--mUninhibitAttempts == 0) {
-    SetWakeLockType(Unsupported);
+    SetGlobalWakeLockType(Unsupported);
   }
 }
 
@@ -808,9 +812,11 @@ bool WakeLockTopic::UninhibitWaylandIdle() {
 
 bool WakeLockTopic::SendInhibit() {
   WAKE_LOCK_LOG("WakeLockTopic::SendInhibit() WakeLockType %s",
-                WakeLockTypeNames[GetWakeLockType()]);
-  MOZ_ASSERT(GetWakeLockType() != Initial);
-  switch (GetWakeLockType()) {
+                WakeLockTypeNames[GetGlobalWakeLockType()]);
+  MOZ_ASSERT(GetGlobalWakeLockType() != Initial);
+  mWakeLockType = GetGlobalWakeLockType();
+
+  switch (mWakeLockType) {
 #if defined(MOZ_ENABLE_DBUS)
     case FreeDesktopPortal:
       InhibitFreeDesktopPortal();
@@ -841,9 +847,9 @@ bool WakeLockTopic::SendInhibit() {
 
 bool WakeLockTopic::SendUninhibit() {
   WAKE_LOCK_LOG("WakeLockTopic::SendUninhibit() WakeLockType %s",
-                WakeLockTypeNames[GetWakeLockType()]);
-  MOZ_ASSERT(GetWakeLockType() != Initial);
-  switch (GetWakeLockType()) {
+                WakeLockTypeNames[mWakeLockType]);
+  MOZ_ASSERT(mWakeLockType != Initial);
+  switch (mWakeLockType) {
 #if defined(MOZ_ENABLE_DBUS)
     case FreeDesktopPortal:
       UninhibitFreeDesktopPortal();
@@ -876,7 +882,7 @@ nsresult WakeLockTopic::InhibitScreensaver() {
   WAKE_LOCK_LOG("WakeLockTopic::InhibitScreensaver() state %s",
                 GetInhibitStateName(mState));
   // We're broken, don't even try
-  if (GetWakeLockType() == Unsupported) {
+  if (mWakeLockType == Unsupported) {
     return NS_ERROR_FAILURE;
   }
   mStateQueue.push(Inhibited);
@@ -889,8 +895,7 @@ nsresult WakeLockTopic::InhibitScreensaver() {
 nsresult WakeLockTopic::UninhibitScreensaver() {
   WAKE_LOCK_LOG("WakeLockTopic::UnInhibitScreensaver() state %s",
                 GetInhibitStateName(mState));
-  // We're broken, don't even try
-  if (GetWakeLockType() == Unsupported) {
+  if (mWakeLockType == Unsupported) {
     return NS_ERROR_FAILURE;
   }
   mStateQueue.push(Uninhibited);
@@ -939,6 +944,10 @@ void WakeLockTopic::Shutdown() {
                 GetInhibitStateName(mState));
 #if defined(MOZ_ENABLE_DBUS)
   if (mCancellable) {
+    if (!g_cancellable_is_cancelled(mCancellable)) {
+      WAKE_LOCK_LOG(
+          "WakeLockTopic::Shutdown() terminating live DBus connection!");
+    }
     g_cancellable_cancel(mCancellable);
     mCancellable = nullptr;
   }
@@ -1010,7 +1019,7 @@ void WakeLockTopic::InitializeWakeLockType() {
     if (lock != Initial) {
       WAKE_LOCK_LOG("MOZ_WAKE_LOCK_TYPE set: %s", WakeLockTypeNames[lock]);
       if (IsWakeLockTypeAvailable(lock)) {
-        SetWakeLockType(lock);
+        SetGlobalWakeLockType(lock);
         return;
       }
       WAKE_LOCK_LOG(
@@ -1024,42 +1033,54 @@ void WakeLockTopic::InitializeWakeLockType() {
 }
 
 bool WakeLockTopic::SwitchToNextWakeLockType() {
-  WAKE_LOCK_LOG("WakeLockTopic::SwitchToNextWakeLockType() WakeLockType %s",
-                WakeLockTypeNames[GetWakeLockType()]);
+  WAKE_LOCK_LOG(
+      "WakeLockTopic::SwitchToNextWakeLockType() recent WakeLockType %s",
+      WakeLockTypeNames[mWakeLockType]);
 
-  if (GetWakeLockType() == Unsupported) {
+  if (GetGlobalWakeLockType() == Unsupported) {
     return false;
   }
 
 #ifdef MOZ_LOGGING
   auto printWakeLocktype = MakeScopeExit([&] {
     WAKE_LOCK_LOG("  switched to WakeLockType %s",
-                  WakeLockTypeNames[GetWakeLockType()]);
+                  WakeLockTypeNames[GetGlobalWakeLockType()]);
   });
 #endif
 
 #if defined(MOZ_ENABLE_DBUS)
-  if (IsDBusWakeLock(GetWakeLockType())) {
+  // Cancel recent wake lock somehow
+  if (IsDBusWakeLock(mWakeLockType)) {
     mState = Uninhibited;
     mCancellable = nullptr;
     ClearDBusInhibitToken();
   }
 #endif
 
-  while (GetWakeLockType() != Unsupported) {
-    SetWakeLockType(GetWakeLockType() + 1);
-    if (IsWakeLockTypeAvailable(GetWakeLockType())) {
+  // Global wake lock changed so try to use it right away.
+  if (mWakeLockType != GetGlobalWakeLockType() &&
+      IsWakeLockTypeAvailable(GetGlobalWakeLockType())) {
+    return true;
+  }
+
+  // Flip global wake lock type to a new one.
+  while (GetGlobalWakeLockType() != Unsupported) {
+    SetGlobalWakeLockType(GetGlobalWakeLockType() + 1);
+    if (IsWakeLockTypeAvailable(GetGlobalWakeLockType())) {
       return true;
     }
     WAKE_LOCK_LOG("  WakeLockType %s is not available",
-                  WakeLockTypeNames[GetWakeLockType()]);
+                  WakeLockTypeNames[GetGlobalWakeLockType()]);
   }
   return false;
 }
 
-WakeLockListener::WakeLockListener() = default;
+WakeLockListener::WakeLockListener() {
+  WAKE_LOCK_LOG("WakeLockListener::WakeLockListener()");
+}
 
 WakeLockListener::~WakeLockListener() {
+  WAKE_LOCK_LOG("WakeLockListener::~WakeLockListener()");
   for (const auto& topic : mForegroundTopics.Values()) {
     topic->Shutdown();
   }

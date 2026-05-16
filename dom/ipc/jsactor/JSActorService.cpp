@@ -341,6 +341,14 @@ bool JSActorProtocol::RemoteTypePrefixMatches(const nsACString& aRemoteType) {
   }
 
   nsDependentCSubstring remoteTypePrefix(RemoteTypePrefix(aRemoteType));
+
+  // The actual remote type for the parent process is the empty string, so
+  // change it to something we can actually match.
+  MOZ_ASSERT(!StringBeginsWith(remoteTypePrefix, "parent"_ns));
+  if (aRemoteType == NOT_REMOTE_TYPE) {
+    remoteTypePrefix.AssignLiteral("parent");
+  }
+
   for (auto& remoteType : mRemoteTypes) {
     // TODO: Maybe this should use glob-style matching instead. See bug 2006165.
     if (StringBeginsWith(remoteTypePrefix, remoteType)) {

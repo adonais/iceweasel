@@ -5,20 +5,28 @@
 #include "mozilla/dom/HTMLSelectElement.h"
 
 #include "ButtonControlFrame.h"
-#include "mozAutoDocUpdate.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/Casting.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MouseEvents.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
+#include "mozilla/StaticPrefs_ui.h"
+#include "mozilla/TextEvents.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/HTMLOptGroupElement.h"
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElementBinding.h"
+#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WindowGlobalChild.h"
+#include "nsComboboxControlFrame.h"
+#include "nsComputedDOMStyle.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsContentList.h"
 #include "nsContentUtils.h"
@@ -27,13 +35,48 @@
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsListControlFrame.h"
-#include "nsTextNode.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
 #endif
 
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Select)
+
+static bool IsOptionInteractivelySelectable(
+    const mozilla::dom::HTMLSelectElement& aSelect,
+    mozilla::dom::HTMLOptionElement& aOption) {
+  if (aSelect.IsOptionDisabled(&aOption)) {
+    return false;
+  }
+  if (!aSelect.IsCombobox()) {
+    return aOption.GetPrimaryFrame();
+  }
+  for (mozilla::dom::Element* el = &aOption; el && el != &aSelect;
+       el = el->GetParentElement()) {
+    RefPtr style = nsComputedDOMStyle::GetComputedStyleNoFlush(el);
+    if (!style) {
+      return false;
+    }
+    auto display = style->StyleDisplay()->mDisplay;
+    if (display == mozilla::StyleDisplay::None) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static mozilla::StaticAutoPtr<nsString> sIncrementalString;
+static mozilla::TimeStamp gLastKeyTime;
+static uintptr_t sLastSelectKeyHandler = 0;
+
+static nsString& GetIncrementalString() {
+  MOZ_ASSERT(sLastSelectKeyHandler != 0);
+  if (!sIncrementalString) {
+    sIncrementalString = new nsString();
+    mozilla::ClearOnShutdown(&sIncrementalString);
+  }
+  return *sIncrementalString;
+}
 
 namespace mozilla::dom {
 
@@ -112,12 +155,7 @@ HTMLSelectElement::HTMLSelectElement(
       mAutocompleteAttrState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mAutocompleteInfoState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mIsDoneAddingChildren(!aFromParser),
-      mDisabledChanged(false),
-      mMutating(false),
       mInhibitStateRestoration(!!(aFromParser & FROM_PARSER_FRAGMENT)),
-      mUserInteracted(false),
-      mDefaultSelectionSet(false),
-      mIsOpenInParentProcess(false),
       mNonOptionChildren(0),
       mOptGroupCount(0),
       mSelectedIndex(-1) {
@@ -995,7 +1033,7 @@ bool HTMLSelectElement::IsOptionDisabled(HTMLOptionElement* aOption) const {
   return false;
 }
 
-void HTMLSelectElement::GetValue(DOMString& aValue) const {
+void HTMLSelectElement::GetValue(nsAString& aValue) const {
   int32_t selectedIndex = SelectedIndex();
   if (selectedIndex < 0) {
     return;
@@ -1732,6 +1770,599 @@ void HTMLSelectElement::ContentInserted(nsIContent* aChild,
 JSObject* HTMLSelectElement::WrapNode(JSContext* aCx,
                                       JS::Handle<JSObject*> aGivenProto) {
   return HTMLSelectElement_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+HTMLSelectElement::~HTMLSelectElement() {
+  if (sLastSelectKeyHandler == uintptr_t(this)) {
+    sLastSelectKeyHandler = 0;
+  }
+}
+
+static constexpr int32_t kNothingSelected = -1;
+static const uint32_t kMaxDropdownRows = 20;
+
+class MOZ_RAII AutoIncrementalSearchResetter {
+ public:
+  explicit AutoIncrementalSearchResetter(HTMLSelectElement& aElement) {
+    if (sLastSelectKeyHandler != uintptr_t(&aElement)) {
+      sLastSelectKeyHandler = uintptr_t(&aElement);
+      GetIncrementalString().Truncate();
+      gLastKeyTime = TimeStamp::Now() -
+                     TimeDuration::FromMilliseconds(
+                         StaticPrefs::ui_menu_incremental_search_timeout() * 2);
+    }
+  }
+  ~AutoIncrementalSearchResetter() {
+    if (!mResettingCancelled) {
+      GetIncrementalString().Truncate();
+    }
+  }
+  void CancelResetting() { mResettingCancelled = true; }
+
+ private:
+  bool mResettingCancelled = false;
+};
+
+int32_t HTMLSelectElement::GetEndSelectionIndex() const {
+  if (nsListControlFrame* lf = do_QueryFrame(GetPrimaryFrame())) {
+    return lf->GetEndSelectionIndex();
+  }
+  return SelectedIndex();
+}
+
+bool HTMLSelectElement::IsOptionInteractivelySelectable(uint32_t aIndex) const {
+  HTMLOptionElement* option = Item(aIndex);
+  return option && ::IsOptionInteractivelySelectable(*this, *option);
+}
+
+int32_t HTMLSelectElement::ItemsPerPage() const {
+  uint32_t size = [&] {
+    if (IsCombobox()) {
+      return kMaxDropdownRows;
+    }
+    if (nsListControlFrame* lf = do_QueryFrame(GetPrimaryFrame())) {
+      return lf->GetNumDisplayRows();
+    }
+    return Size();
+  }();
+  if (size <= 1) {
+    return 1;
+  }
+  if (MOZ_UNLIKELY(size > INT32_MAX)) {
+    return INT32_MAX - 1;
+  }
+  return AssertedCast<int32_t>(size - 1u);
+}
+
+void HTMLSelectElement::AdjustIndexForDisabledOpt(int32_t aStartIndex,
+                                                  int32_t& aNewIndex,
+                                                  int32_t aNumOptions,
+                                                  int32_t aDoAdjustInc,
+                                                  int32_t aDoAdjustIncNext) {
+  if (aNumOptions == 0) {
+    aNewIndex = kNothingSelected;
+    return;
+  }
+
+  bool doingReverse = false;
+  int32_t bottom = 0;
+  int32_t top = aNumOptions;
+
+  int32_t startIndex = aStartIndex;
+  if (startIndex < bottom) {
+    startIndex = SelectedIndex();
+  }
+  int32_t newIndex = startIndex + aDoAdjustInc;
+
+  if (newIndex < bottom) {
+    newIndex = 0;
+  } else if (newIndex >= top) {
+    newIndex = aNumOptions - 1;
+  }
+
+  while (true) {
+    if (IsOptionInteractivelySelectable(newIndex)) {
+      break;
+    }
+
+    newIndex += aDoAdjustIncNext;
+
+    if (newIndex < bottom) {
+      if (doingReverse) {
+        return;
+      }
+      newIndex = bottom;
+      aDoAdjustIncNext = 1;
+      doingReverse = true;
+      top = startIndex;
+    } else if (newIndex >= top) {
+      if (doingReverse) {
+        return;
+      }
+      newIndex = top - 1;
+      aDoAdjustIncNext = -1;
+      doingReverse = true;
+      bottom = startIndex;
+    }
+  }
+
+  aNewIndex = newIndex;
+}
+
+HTMLOptionElement* HTMLSelectElement::GetCurrentOption() const {
+  int32_t endIndex = GetEndSelectionIndex();
+  int32_t focusedIndex =
+      endIndex == kNothingSelected ? SelectedIndex() : endIndex;
+  if (focusedIndex != kNothingSelected) {
+    return Item(AssertedCast<uint32_t>(focusedIndex));
+  }
+  return GetNonDisabledOptionFrom(0);
+}
+
+HTMLOptionElement* HTMLSelectElement::GetNonDisabledOptionFrom(
+    int32_t aFromIndex, int32_t* aFoundIndex) const {
+  const uint32_t length = Length();
+  for (uint32_t i = std::max(aFromIndex, 0); i < length; ++i) {
+    if (IsOptionInteractivelySelectable(i)) {
+      if (aFoundIndex) {
+        *aFoundIndex = i;
+      }
+      return Item(i);
+    }
+  }
+  return nullptr;
+}
+
+void HTMLSelectElement::FireDropDownEvent(bool aShow,
+                                          bool aIsSourceTouchEvent) {
+  const auto eventName = [&] {
+    if (aShow) {
+      return aIsSourceTouchEvent ? u"mozshowdropdown-sourcetouch"_ns
+                                 : u"mozshowdropdown"_ns;
+    }
+    return u"mozhidedropdown"_ns;
+  }();
+  nsContentUtils::DispatchChromeEvent(OwnerDoc(), this, eventName,
+                                      CanBubble::eYes, Cancelable::eNo);
+}
+
+void HTMLSelectElement::PostHandleKeyEvent(int32_t aNewIndex,
+                                           uint32_t aCharCode, bool aIsShift,
+                                           bool aIsControlOrMeta) {
+  if (aNewIndex == kNothingSelected) {
+    int32_t endIndex = GetEndSelectionIndex();
+    int32_t focusedIndex =
+        endIndex == kNothingSelected ? SelectedIndex() : endIndex;
+    if (focusedIndex != kNothingSelected) {
+      return;
+    }
+    if (!GetNonDisabledOptionFrom(0, &aNewIndex)) {
+      return;
+    }
+  }
+
+  if (IsCombobox()) {
+    RefPtr<HTMLOptionElement> newOption = Item(aNewIndex);
+    MOZ_ASSERT(newOption);
+    if (newOption->Selected()) {
+      return;
+    }
+    newOption->SetSelected(true);
+    UserFinishedInteracting(/* aChanged = */ true);
+    return;
+  }
+  if (nsListControlFrame* lf = GetListBoxFrame()) {
+    lf->UpdateSelectionAfterKeyEvent(aNewIndex, aCharCode, aIsShift,
+                                     aIsControlOrMeta, mControlSelectMode);
+  }
+}
+
+nsresult HTMLSelectElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
+  if (aVisitor.mEventStatus == nsEventStatus_eConsumeNoDefault) {
+    return NS_OK;
+  }
+
+  WidgetEvent* event = aVisitor.mEvent;
+  if (!event->IsTrusted()) {
+    return NS_OK;
+  }
+
+  switch (event->mMessage) {
+    case eKeyDown:
+      return HandleKeyDown(aVisitor);
+    case eKeyPress:
+      return HandleKeyPress(aVisitor);
+    case eMouseDown:
+      if (event->DefaultPrevented()) {
+        return NS_OK;
+      }
+      return HandleMouseDown(aVisitor);
+    case eMouseUp:
+      // Don't try to honor defaultPrevented here - it's not web compatible.
+      // (bug 1194733)
+      return HandleMouseUp(aVisitor);
+    case eMouseMove:
+      return HandleMouseMove(aVisitor);
+    default:
+      break;
+  }
+  return NS_OK;
+}
+
+nsresult HTMLSelectElement::HandleMouseDown(EventChainPostVisitor& aVisitor) {
+  if (IsDisabled()) {
+    return NS_OK;
+  }
+
+  WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
+  if (!mouseEvent) {
+    return NS_OK;
+  }
+
+  const bool isLeftButton = mouseEvent->mButton == MouseButton::ePrimary;
+  if (!isLeftButton) {
+    return NS_OK;
+  }
+
+  if (IsCombobox()) {
+    uint16_t inputSource = mouseEvent->mInputSource;
+    if (OpenInParentProcess()) {
+      nsCOMPtr<nsIContent> target =
+          nsIContent::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
+      if (target && target->IsHTMLElement(nsGkAtoms::option)) {
+        return NS_OK;
+      }
+    }
+    const bool isSourceTouchEvent =
+        inputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+    FireDropDownEvent(!OpenInParentProcess(), isSourceTouchEvent);
+    return NS_OK;
+  }
+
+  if (nsListControlFrame* list = GetListBoxFrame()) {
+    mButtonDown = true;
+    return list->HandleLeftButtonMouseDown(*mouseEvent);
+  }
+  return NS_OK;
+}
+
+nsresult HTMLSelectElement::HandleMouseUp(EventChainPostVisitor& aVisitor) {
+  mButtonDown = false;
+
+  if (IsDisabled()) {
+    return NS_OK;
+  }
+
+  if (nsListControlFrame* lf = GetListBoxFrame()) {
+    lf->CaptureMouseEvents(false);
+  }
+
+  WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
+  if (!mouseEvent) {
+    return NS_OK;
+  }
+
+  const bool isLeftButton = mouseEvent->mButton == MouseButton::ePrimary;
+  if (!isLeftButton) {
+    return NS_OK;
+  }
+
+  if (nsListControlFrame* lf = GetListBoxFrame()) {
+    return lf->HandleLeftButtonMouseUp();
+  }
+
+  return NS_OK;
+}
+
+nsresult HTMLSelectElement::HandleMouseMove(EventChainPostVisitor& aVisitor) {
+  if (!mButtonDown) {
+    return NS_OK;
+  }
+
+  WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
+  if (!mouseEvent) {
+    return NS_OK;
+  }
+
+  if (nsListControlFrame* lf = GetListBoxFrame()) {
+    return lf->DragMove(*mouseEvent);
+  }
+
+  return NS_OK;
+}
+
+nsresult HTMLSelectElement::HandleKeyPress(EventChainPostVisitor& aVisitor) {
+  if (IsDisabled()) {
+    return NS_OK;
+  }
+
+  AutoIncrementalSearchResetter incrementalHandler(*this);
+
+  const WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
+  MOZ_ASSERT(keyEvent,
+             "DOM event must have WidgetKeyboardEvent for its internal event");
+
+  if (keyEvent->DefaultPrevented()) {
+    return NS_OK;
+  }
+
+  if (keyEvent->IsAlt()) {
+    return NS_OK;
+  }
+
+  // With some keyboard layout, space key causes non-ASCII space.
+  // So, the check in keydown event handler isn't enough, we need to check it
+  // again with keypress event.
+  if (keyEvent->mCharCode != ' ') {
+    mControlSelectMode = false;
+  }
+
+  const bool isCombobox = IsCombobox();
+  const bool isControlOrMeta = keyEvent->IsControl()
+#if !defined(XP_WIN) && !defined(MOZ_WIDGET_GTK)
+                               || keyEvent->IsMeta()
+#endif
+      ;
+  if (isControlOrMeta && keyEvent->mCharCode != ' ') {
+    AutoShortcutKeyCandidateArray candidates;
+    keyEvent->GetShortcutKeyCandidates(candidates);
+    const bool isSelectAll =
+        Multiple() && !isCombobox &&
+        std::any_of(candidates.begin(), candidates.end(),
+                    [](const ShortcutKeyCandidate& c) {
+                      return c.mCharCode == 'a' || c.mCharCode == 'A';
+                    });
+    if (isSelectAll) {
+      using OptionFlag = HTMLSelectElement::OptionFlag;
+      uint32_t numOptions = Length();
+      if (numOptions) {
+        HTMLSelectElement::OptionFlags mask = {
+            OptionFlag::IsSelected, OptionFlag::ClearAll, OptionFlag::Notify};
+        const bool wasChanged = SetOptionsSelectedByIndex(
+            0, AssertedCast<int32_t>(numOptions - 1), mask);
+        if (wasChanged) {
+          UserFinishedInteracting(/* aChanged = */ true);
+        }
+      }
+      aVisitor.mEvent->PreventDefault();
+    }
+    return NS_OK;
+  }
+
+  if (!keyEvent->mCharCode) {
+    if (keyEvent->mKeyCode == NS_VK_BACK) {
+      incrementalHandler.CancelResetting();
+      if (!GetIncrementalString().IsEmpty()) {
+        GetIncrementalString().Truncate(GetIncrementalString().Length() - 1);
+      }
+      aVisitor.mEvent->PreventDefault();
+    }
+    return NS_OK;
+  }
+
+  incrementalHandler.CancelResetting();
+
+  aVisitor.mEvent->PreventDefault();
+
+  if ((keyEvent->mTimeStamp - gLastKeyTime).ToMilliseconds() >
+      StaticPrefs::ui_menu_incremental_search_timeout()) {
+    if (keyEvent->mCharCode == ' ') {
+      PostHandleKeyEvent(GetEndSelectionIndex(), keyEvent->mCharCode,
+                         keyEvent->IsShift(), isControlOrMeta);
+      return NS_OK;
+    }
+    GetIncrementalString().Truncate();
+  }
+
+  gLastKeyTime = keyEvent->mTimeStamp;
+
+  char16_t uniChar = ToLowerCase(static_cast<char16_t>(keyEvent->mCharCode));
+  GetIncrementalString().Append(uniChar);
+
+  nsAutoString incrementalString(GetIncrementalString());
+  uint32_t charIndex = 1, stringLength = incrementalString.Length();
+  while (charIndex < stringLength &&
+         incrementalString[charIndex] == incrementalString[charIndex - 1]) {
+    charIndex++;
+  }
+  if (charIndex == stringLength) {
+    incrementalString.Truncate(1);
+    stringLength = 1;
+  }
+
+  int32_t startIndex = SelectedIndex();
+  if (startIndex == kNothingSelected) {
+    startIndex = 0;
+  } else if (stringLength == 1) {
+    startIndex++;
+  }
+
+  RefPtr<HTMLOptionsCollection> options = Options();
+  uint32_t numOptions = options->Length();
+
+  for (uint32_t i = 0; i < numOptions; ++i) {
+    uint32_t index = (i + startIndex) % numOptions;
+    RefPtr<HTMLOptionElement> optionElement = options->ItemAsOption(index);
+    if (!optionElement ||
+        !::IsOptionInteractivelySelectable(*this, *optionElement)) {
+      continue;
+    }
+
+    nsAutoString text;
+    optionElement->GetRenderedLabel(text);
+    if (!StringBeginsWith(
+            nsContentUtils::TrimWhitespace<
+                nsContentUtils::IsHTMLWhitespaceOrNBSP>(text, false),
+            incrementalString, nsCaseInsensitiveStringComparator)) {
+      continue;
+    }
+
+    if (isCombobox) {
+      if (optionElement->Selected()) {
+        return NS_OK;
+      }
+      optionElement->SetSelected(true);
+      UserFinishedInteracting(/* aChanged = */ true);
+      return NS_OK;
+    }
+
+    if (nsListControlFrame* lf = GetListBoxFrame()) {
+      bool wasChanged =
+          lf->PerformSelection(index, keyEvent->IsShift(), isControlOrMeta);
+      if (!wasChanged) {
+        return NS_OK;
+      }
+      UserFinishedInteracting(/* aChanged = */ true);
+    }
+    break;
+  }
+
+  return NS_OK;
+}
+
+nsresult HTMLSelectElement::HandleKeyDown(EventChainPostVisitor& aVisitor) {
+  if (IsDisabled()) {
+    return NS_OK;
+  }
+
+  AutoIncrementalSearchResetter incrementalHandler(*this);
+
+  if (aVisitor.mEvent->DefaultPrevented()) {
+    return NS_OK;
+  }
+
+  const WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
+  MOZ_ASSERT(keyEvent,
+             "DOM event must have WidgetKeyboardEvent for its internal event");
+
+  const bool isCombobox = IsCombobox();
+  bool dropDownMenuOnUpDown;
+  bool dropDownMenuOnSpace;
+#ifdef XP_MACOSX
+  dropDownMenuOnUpDown = isCombobox && !OpenInParentProcess();
+  dropDownMenuOnSpace = isCombobox && !keyEvent->IsAlt() &&
+                        !keyEvent->IsControl() && !keyEvent->IsMeta();
+#else
+  dropDownMenuOnUpDown = isCombobox && keyEvent->IsAlt();
+  dropDownMenuOnSpace = isCombobox && !OpenInParentProcess();
+#endif
+  bool withinIncrementalSearchTime =
+      (keyEvent->mTimeStamp - gLastKeyTime).ToMilliseconds() <=
+      StaticPrefs::ui_menu_incremental_search_timeout();
+  if ((dropDownMenuOnUpDown &&
+       (keyEvent->mKeyCode == NS_VK_UP || keyEvent->mKeyCode == NS_VK_DOWN)) ||
+      (dropDownMenuOnSpace && keyEvent->mKeyCode == NS_VK_SPACE &&
+       !withinIncrementalSearchTime)) {
+    FireDropDownEvent(!OpenInParentProcess(), false);
+    aVisitor.mEvent->PreventDefault();
+    return NS_OK;
+  }
+  if (keyEvent->IsAlt()) {
+    return NS_OK;
+  }
+
+  // We should not change the selection if the popup is "opened in the parent
+  // process" (even when we're in single-process mode).
+  const bool shouldSelect = !isCombobox || !OpenInParentProcess();
+
+  RefPtr<HTMLOptionsCollection> options = Options();
+  uint32_t numOptions = options->Length();
+
+  int32_t newIndex = kNothingSelected;
+
+  bool isControlOrMeta = keyEvent->IsControl()
+#if !defined(XP_WIN) && !defined(MOZ_WIDGET_GTK)
+                         || keyEvent->IsMeta()
+#endif
+      ;
+  if (isControlOrMeta && !Multiple() &&
+      (keyEvent->mKeyCode == NS_VK_PAGE_UP ||
+       keyEvent->mKeyCode == NS_VK_PAGE_DOWN)) {
+    return NS_OK;
+  }
+  if (isControlOrMeta &&
+      (keyEvent->mKeyCode == NS_VK_UP || keyEvent->mKeyCode == NS_VK_LEFT ||
+       keyEvent->mKeyCode == NS_VK_DOWN || keyEvent->mKeyCode == NS_VK_RIGHT ||
+       keyEvent->mKeyCode == NS_VK_HOME || keyEvent->mKeyCode == NS_VK_END)) {
+    isControlOrMeta = mControlSelectMode = Multiple();
+  } else if (keyEvent->mKeyCode != NS_VK_SPACE) {
+    mControlSelectMode = false;
+  }
+
+  auto isVerticalRL = [this]() -> bool {
+    if (nsIFrame* f = GetPrimaryFrame()) {
+      return f->GetWritingMode().IsVerticalRL();
+    }
+    return false;
+  };
+
+  switch (keyEvent->mKeyCode) {
+    case NS_VK_UP:
+      if (shouldSelect) {
+        AdjustIndexForDisabledOpt(GetEndSelectionIndex(), newIndex,
+                                  int32_t(numOptions), -1, -1);
+      }
+      break;
+    case NS_VK_LEFT:
+      if (shouldSelect) {
+        int dir = isVerticalRL() ? 1 : -1;
+        AdjustIndexForDisabledOpt(GetEndSelectionIndex(), newIndex,
+                                  int32_t(numOptions), dir, dir);
+      }
+      break;
+    case NS_VK_DOWN:
+      if (shouldSelect) {
+        AdjustIndexForDisabledOpt(GetEndSelectionIndex(), newIndex,
+                                  int32_t(numOptions), 1, 1);
+      }
+      break;
+    case NS_VK_RIGHT:
+      if (shouldSelect) {
+        int dir = isVerticalRL() ? -1 : 1;
+        AdjustIndexForDisabledOpt(GetEndSelectionIndex(), newIndex,
+                                  int32_t(numOptions), dir, dir);
+      }
+      break;
+    case NS_VK_RETURN:
+      if (!Multiple()) {
+        return NS_OK;
+      }
+      newIndex = GetEndSelectionIndex();
+      break;
+    case NS_VK_PAGE_UP: {
+      if (shouldSelect) {
+        AdjustIndexForDisabledOpt(GetEndSelectionIndex(), newIndex,
+                                  int32_t(numOptions), -ItemsPerPage(), -1);
+      }
+      break;
+    }
+    case NS_VK_PAGE_DOWN: {
+      if (shouldSelect) {
+        AdjustIndexForDisabledOpt(GetEndSelectionIndex(), newIndex,
+                                  int32_t(numOptions), ItemsPerPage(), 1);
+      }
+      break;
+    }
+    case NS_VK_HOME:
+      if (shouldSelect) {
+        AdjustIndexForDisabledOpt(0, newIndex, int32_t(numOptions), 0, 1);
+      }
+      break;
+    case NS_VK_END:
+      if (shouldSelect) {
+        AdjustIndexForDisabledOpt(int32_t(numOptions) - 1, newIndex,
+                                  int32_t(numOptions), 0, -1);
+      }
+      break;
+    default:
+      incrementalHandler.CancelResetting();
+      return NS_OK;
+  }
+
+  aVisitor.mEvent->PreventDefault();
+
+  PostHandleKeyEvent(newIndex, 0, keyEvent->IsShift(), isControlOrMeta);
+  return NS_OK;
 }
 
 }  // namespace mozilla::dom

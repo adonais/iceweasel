@@ -87,12 +87,12 @@ class nsAutoreleasePool {
 
 @interface NSApplication (Undocumented)
 
-// Present in all versions of OS X from (at least) 10.2.8 through 10.5.
+// Present in all versions of macOS from (at least) 10.2.8 through 10.5.
 - (BOOL)_isRunningModal;
 - (BOOL)_isRunningAppModal;
 
 // Send an event to the current Cocoa app-modal session.  Present in all
-// versions of OS X from (at least) 10.2.8 through 10.5.
+// versions of macOS from (at least) 10.2.8 through 10.5.
 - (void)_modalSession:(NSModalSession)aSession sendEvent:(NSEvent*)theEvent;
 
 @end

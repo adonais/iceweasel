@@ -175,24 +175,16 @@ add_task(async function test_navigateResults() {
 });
 
 add_task(async function test_searchModeSwitcher() {
-  let popup = await SearchbarTestUtils.openSearchModeSwitcher(window, () => {
+  await SearchbarTestUtils.openSearchModeSwitcher(window, () => {
     searchbar.focus();
     EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
     EventUtils.synthesizeKey("KEY_ArrowDown");
   });
   Assert.ok(true, "Search mode switcher opens on arrow down");
 
-  if (
-    AppConstants.platform == "macosx" &&
-    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
-  ) {
-    // Native menus do not support synthesizing key events.
-    popup.activateItem(popup.querySelector('[label="engine2"]'));
-  } else {
-    EventUtils.synthesizeKey("KEY_ArrowDown");
-    EventUtils.synthesizeKey("KEY_ArrowDown");
-    EventUtils.synthesizeKey("KEY_Enter");
-  }
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  EventUtils.synthesizeKey("KEY_Enter");
+
   await SearchbarTestUtils.searchModeSwitcherPopupClosed(window);
   Assert.ok(true, "Selecting an engine closes the popup");
 

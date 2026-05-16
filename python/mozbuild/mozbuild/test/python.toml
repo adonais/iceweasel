@@ -123,6 +123,8 @@ subsuite = "mozbuild"
 
 ["test_util.py"]
 
+["test_toolchains.py"]
+
 ["test_util_fileavoidwrite.py"]
 
 ["test_vendor.py"]

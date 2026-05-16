@@ -28,7 +28,6 @@
 #include "api/video/encoded_image.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
-#include "api/video/video_frame_type.h"
 #include "api/video/video_timing.h"
 #include "api/video_codecs/video_decoder.h"
 #include "common_video/include/corruption_score_calculator.h"
@@ -238,9 +237,9 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
       "WebRTC.Video.GenericDecoder.DecodeDelay",
       timing_frame_info.decode_finish_ms - timing_frame_info.decode_start_ms);
   timing_->SetTimingFrameInfo(timing_frame_info);
-
   decodedImage.set_timestamp_us(
       frame_info->render_time ? frame_info->render_time->us() : -1);
+  decodedImage.set_content_type(frame_info->content_type);
   receive_callback_->OnFrameToRender({.video_frame = decodedImage,
                                       .qp = qp,
                                       .decode_time = decode_time,
@@ -348,13 +347,13 @@ int32_t VCMGenericDecoder::Decode(
   // Set correctly only for key frames. Thus, use latest key frame
   // content type. If the corresponding key frame was lost, decode will fail
   // and content type will be ignored.
-  if (frame.FrameType() == VideoFrameType::kVideoFrameKey) {
+  if (frame.IsKey()) {
     frame_info.content_type = frame.contentType();
     last_keyframe_content_type_ = frame.contentType();
   } else {
     frame_info.content_type = last_keyframe_content_type_;
   }
-  frame_info.frame_type = frame.FrameType();
+  frame_info.frame_type = frame.frame_type();
   callback_->Map(std::move(frame_info));
 
   int32_t ret = decoder_->Decode(frame, render_time_ms);

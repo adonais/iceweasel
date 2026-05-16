@@ -7,10 +7,14 @@ use api::{
     LineOrientation, LineStyle, PremultipliedColorF, Shadow,
 };
 use api::units::*;
+use euclid::Scale;
 use crate::gpu_types::ImageBrushPrimitiveData;
+use crate::render_task::{RenderTask, RenderTaskKind};
+use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent};
+use crate::render_task_graph::RenderTaskId;
 use crate::renderer::GpuBufferWriterF;
 use crate::scene_building::{CreateShadow, IsVisible};
-use crate::frame_builder::FrameBuildingState;
+use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
@@ -18,6 +22,9 @@ use crate::prim_store::{
     InternablePrimitive, PrimitiveStore,
 };
 use crate::prim_store::PrimitiveInstanceKind;
+use crate::scratch_buffer::ScratchHandle;
+use crate::spatial_tree::SpatialNodeIndex;
+use crate::util::clamp_to_scale_factor;
 
 /// Maximum resolution in device pixels at which line decorations are rasterized.
 pub const MAX_LINE_DECORATION_RESOLUTION: u32 = 4096;
@@ -84,6 +91,83 @@ impl LineDecorationData {
         common.gpu_buffer_address = writer.finish();
     }
 
+    pub fn prepare_render_task(
+        &mut self,
+        prim_spatial_node_index: SpatialNodeIndex,
+        frame_context: &FrameBuildingContext,
+        frame_state: &mut FrameBuildingState,
+    ) -> RenderTaskId {
+        // If we have a cache key, it's a wavy / dashed / dotted line. Otherwise, it's
+        // a simple solid line.
+        let Some(cache_key) = self.cache_key.as_ref() else {
+            return RenderTaskId::INVALID;
+        };
+
+        // TODO(gw): These scale factors don't do a great job if the world transform
+        //           contains perspective
+        let scale = frame_context
+            .spatial_tree
+            .get_world_transform(prim_spatial_node_index)
+            .scale_factors();
+
+        // Scale factors are normalized to a power of 2 to reduce the number of
+        // resolution changes.
+        // For frames with a changing scale transform round scale factors up to
+        // nearest power-of-2 boundary so that we don't keep having to redraw
+        // the content as it scales up and down. Rounding up to nearest
+        // power-of-2 boundary ensures we never scale up, only down --- avoiding
+        // jaggies. It also ensures we never scale down by more than a factor of
+        // 2, avoiding bad downscaling quality.
+        let scale_width = clamp_to_scale_factor(scale.0, false);
+        let scale_height = clamp_to_scale_factor(scale.1, false);
+        // Pick the maximum dimension as scale
+        let scale_factor = LayoutToDeviceScale::new(scale_width.max(scale_height));
+
+        let task_size_f = (LayoutSize::from_au(cache_key.size) * scale_factor).ceil();
+        let mut task_size = if task_size_f.width > MAX_LINE_DECORATION_RESOLUTION as f32 ||
+            task_size_f.height > MAX_LINE_DECORATION_RESOLUTION as f32 {
+                let max_extent = task_size_f.width.max(task_size_f.height);
+                let task_scale_factor = Scale::new(MAX_LINE_DECORATION_RESOLUTION as f32 / max_extent);
+                let task_size = (LayoutSize::from_au(cache_key.size) * scale_factor * task_scale_factor)
+                            .ceil().to_i32();
+            task_size
+        } else {
+            task_size_f.to_i32()
+        };
+
+        // It's plausible, due to float accuracy issues that the line decoration may be considered
+        // visible even if the scale factors are ~0. However, the render task allocation below requires
+        // that the size of the task is > 0. To work around this, ensure that the task size is at least
+        // 1x1 pixels
+        task_size.width = task_size.width.max(1);
+        task_size.height = task_size.height.max(1);
+
+        // Request a pre-rendered image task.
+        frame_state.resource_cache.request_render_task(
+            Some(RenderTaskCacheKey {
+                origin: DeviceIntPoint::zero(),
+                size: task_size,
+                kind: RenderTaskCacheKeyKind::LineDecoration(cache_key.clone()),
+            }),
+            false,
+            RenderTaskParent::Surface,
+            &mut frame_state.frame_gpu_data.f32,
+            frame_state.rg_builder,
+            &mut frame_state.surface_builder,
+            &mut |rg_builder, _| {
+                rg_builder.add().init(RenderTask::new_dynamic(
+                    task_size,
+                    RenderTaskKind::new_line_decoration(
+                        cache_key.style,
+                        cache_key.orientation,
+                        cache_key.wavy_line_thickness.to_f32_px(),
+                        LayoutSize::from_au(cache_key.size),
+                    ),
+                ))
+            }
+        )
+    }
+
     fn write_prim_gpu_blocks(
         &self,
         writer: &mut GpuBufferWriterF
@@ -148,7 +232,7 @@ impl InternablePrimitive for LineDecoration {
     ) -> PrimitiveInstanceKind {
         PrimitiveInstanceKind::LineDecoration {
             data_handle,
-            render_task: None,
+            scratch_handle: ScratchHandle::INVALID,
         }
     }
 }

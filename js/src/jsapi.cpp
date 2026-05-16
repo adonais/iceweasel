@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -35,6 +33,7 @@
 #include "frontend/FrontendContext.h"  // AutoReportFrontendContext
 #include "gc/GC.h"
 #include "gc/GCContext.h"
+#include "gc/GCRuntime.h"
 #include "gc/Marking.h"
 #include "gc/PublicIterators.h"
 #include "jit/JitSpewer.h"
@@ -441,12 +440,12 @@ JS_PUBLIC_API const char* JS_GetImplementationVersion(void) {
 
 JS_PUBLIC_API void JS_SetDestroyZoneCallback(JSContext* cx,
                                              JSDestroyZoneCallback callback) {
-  cx->runtime()->destroyZoneCallback = callback;
+  cx->runtime()->gc.setDestroyZoneCallback(callback);
 }
 
 JS_PUBLIC_API void JS_SetDestroyCompartmentCallback(
     JSContext* cx, JSDestroyCompartmentCallback callback) {
-  cx->runtime()->destroyCompartmentCallback = callback;
+  cx->runtime()->gc.setDestroyCompartmentCallback(callback);
 }
 
 JS_PUBLIC_API void JS_SetSizeOfIncludingThisCompartmentCallback(
@@ -584,6 +583,8 @@ static void ReleaseAssertObjectHasNoWrappers(JSContext* cx,
       MOZ_CRASH("wrapper found for target object");
     }
   }
+  MOZ_RELEASE_ASSERT(
+      !gc::GCRuntime::isFinalizationObserverTarget(ObjectValue(*target)));
 }
 
 /*
@@ -712,6 +713,13 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
 
   // Lastly, update the original object to point to the new one.
   if (origobj->compartment() != destination) {
+    // If origobj is a weak ref or finalization registry target, relocate the
+    // map entries to newIdentity before the swap turns origobj into a CCW.
+    if (!gc::GCRuntime::relocateFinalizationObserverTarget(
+            ObjectValue(*origobj), ObjectValue(*newIdentity))) {
+      oomUnsafe.crash("JS_TransplantObject finalization observer relocation");
+    }
+
     RootedObject newIdentityWrapper(cx, newIdentity);
     AutoRealm ar(cx, origobj);
     if (!JS_WrapObject(cx, &newIdentityWrapper)) {
@@ -4042,11 +4050,9 @@ JS_PUBLIC_API bool JS_SetDefaultLocale(JSRuntime* rt, const char* locale) {
 
 JS_PUBLIC_API UniqueChars JS_GetDefaultLocale(JSContext* cx) {
   AssertHeapIsIdle();
-  if (const char* locale = cx->runtime()->getDefaultLocale()) {
-    return DuplicateString(cx, locale);
-  }
 
-  return nullptr;
+  auto locale = cx->runtime()->getDefaultLocale().toString();
+  return DuplicateString(cx, locale.data(), locale.length());
 }
 
 JS_PUBLIC_API void JS_ResetDefaultLocale(JSRuntime* rt) {

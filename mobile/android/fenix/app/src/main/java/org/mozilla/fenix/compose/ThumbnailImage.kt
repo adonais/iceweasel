@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.theme.information
+import mozilla.components.compose.base.utils.LocalUnderTest
 import mozilla.components.compose.base.utils.inComposePreview
 import mozilla.components.concept.base.images.ImageLoadRequest
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
@@ -101,7 +102,7 @@ fun ThumbnailImage(
     alignment: Alignment = Alignment.Center,
     fallbackContent: @Composable () -> Unit,
 ) {
-    if (inComposePreview) {
+    if (inComposePreview || LocalUnderTest.current) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
             Image(
                 painter = painterResource(id = R.drawable.ic_japan_onboarding_favicon),

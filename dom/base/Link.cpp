@@ -392,9 +392,6 @@ void Link::BindToTree(const BindContext& aContext) {
 
 void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   // If we have an href, we should register with the history.
-  //
-  // FIXME(emilio): Do we really want to allow all MathML elements to be
-  // :visited? That seems not great.
   mNeedsRegistration = aHasHref;
 
   // If we've cached the URI, reset always invalidates it.

@@ -3,6 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 preferences-ai-controls-block-confirmation-smart-window = Smart Window
+smart-window-block-title = Block Smart Window?
+smart-window-block-description-both = This will delete your Smart Window chats and memories.
+smart-window-block-description-chats = This will delete your Smart Window chats.
+smart-window-block-description-memories = This will delete your Smart Window memories.
 
 ai-window-features-group =
     .label = Smart Window
@@ -33,16 +37,17 @@ smart-window-model-learn-link = Learn about models
 
 ## Variables:
 ##   $modelName (String) - The name of the AI model
+##   $ownerName (String) - The name of owner of the AI model
 
 smart-window-model-fast =
     .label = Fast: Answers quickly
-    .description = { $modelName }
+    .description = Model { $modelName } by { $ownerName }
 smart-window-model-flexible =
     .label = Flexible: Solid fit for most needs
-    .description = { $modelName }
+    .description = Model { $modelName } by { $ownerName }
 smart-window-model-personal =
     .label = Personal: Most tailored answers
-    .description = { $modelName }
+    .description = Model { $modelName } by { $ownerName }
 smart-window-model-custom =
     .label = Custom: Use your own LLM
 smart-window-model-custom-name =

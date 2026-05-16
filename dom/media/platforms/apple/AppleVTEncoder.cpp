@@ -212,6 +212,8 @@ static Maybe<CFStringRef> MapTransferFunction(
       return Some(kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ);
     case gfx::TransferFunction::HLG:
       return Some(kCVImageBufferTransferFunction_ITU_R_2100_HLG);
+    case gfx::TransferFunction::LINEAR:
+      return Some(kCVImageBufferTransferFunction_Linear);
   }
 
   MOZ_ASSERT_UNREACHABLE("Unsupported transfer function");

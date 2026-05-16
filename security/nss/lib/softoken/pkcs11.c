@@ -28,6 +28,7 @@
 #include "secder.h"
 #include "secport.h"
 #include "secrng.h"
+#include "prlock.h"
 #include "prtypes.h"
 #include "nspr.h"
 #include "softkver.h"
@@ -1110,11 +1111,11 @@ static CK_RV
 sftk_handlePublicKeyObject(SFTKSession *session, SFTKObject *object,
                            CK_KEY_TYPE key_type)
 {
-    CK_BBOOL encrypt = CK_TRUE;
-    CK_BBOOL recover = CK_TRUE;
-    CK_BBOOL wrap = CK_TRUE;
+    CK_BBOOL encrypt = CK_FALSE;
+    CK_BBOOL recover = CK_FALSE;
+    CK_BBOOL wrap = CK_FALSE;
     CK_BBOOL derive = CK_FALSE;
-    CK_BBOOL verify = CK_TRUE;
+    CK_BBOOL verify = CK_FALSE;
     CK_BBOOL encapsulate = CK_FALSE;
     CK_ULONG paramSet = 0;
     CK_RV crv;
@@ -1130,6 +1131,10 @@ sftk_handlePublicKeyObject(SFTKSession *session, SFTKObject *object,
             if (crv != CKR_OK) {
                 return crv;
             }
+            encrypt = CK_TRUE;
+            recover = CK_TRUE;
+            wrap = CK_TRUE;
+            verify = CK_TRUE;
             break;
         case CKK_DSA:
             crv = sftk_ConstrainAttribute(object, CKA_SUBPRIME,
@@ -1150,9 +1155,7 @@ sftk_handlePublicKeyObject(SFTKSession *session, SFTKObject *object,
             if (crv != CKR_OK) {
                 return crv;
             }
-            encrypt = CK_FALSE;
-            recover = CK_FALSE;
-            wrap = CK_FALSE;
+            verify = CK_TRUE;
             break;
         case CKK_DH:
             crv = sftk_ConstrainAttribute(object, CKA_PRIME,
@@ -1168,11 +1171,7 @@ sftk_handlePublicKeyObject(SFTKSession *session, SFTKObject *object,
             if (crv != CKR_OK) {
                 return crv;
             }
-            verify = CK_FALSE;
             derive = CK_TRUE;
-            encrypt = CK_FALSE;
-            recover = CK_FALSE;
-            wrap = CK_FALSE;
             break;
         case CKK_EC_MONTGOMERY:
         case CKK_EC_EDWARDS:
@@ -1186,9 +1185,6 @@ sftk_handlePublicKeyObject(SFTKSession *session, SFTKObject *object,
             /* for ECDSA and EDDSA. Change if the structure of any of them is modified. */
             derive = (key_type == CKK_EC_EDWARDS) ? CK_FALSE : CK_TRUE;    /* CK_TRUE for ECDH */
             verify = (key_type == CKK_EC_MONTGOMERY) ? CK_FALSE : CK_TRUE; /* for ECDSA and EDDSA */
-            encrypt = CK_FALSE;
-            recover = CK_FALSE;
-            wrap = CK_FALSE;
             break;
 #ifndef NSS_DISABLE_KYBER
         case CKK_NSS_KYBER:
@@ -1200,11 +1196,6 @@ sftk_handlePublicKeyObject(SFTKSession *session, SFTKObject *object,
                     return CKR_TEMPLATE_INCOMPLETE;
                 }
             }
-            derive = CK_FALSE;
-            verify = CK_FALSE;
-            encrypt = CK_FALSE;
-            recover = CK_FALSE;
-            wrap = CK_FALSE;
             encapsulate = CK_TRUE;
             break;
         case CKK_ML_DSA:
@@ -1219,12 +1210,7 @@ sftk_handlePublicKeyObject(SFTKSession *session, SFTKObject *object,
             if (sftk_MLDSAGetSigLen(paramSet) == 0) {
                 return CKR_ATTRIBUTE_VALUE_INVALID;
             }
-            derive = CK_FALSE;
             verify = CK_TRUE;
-            encrypt = CK_FALSE;
-            recover = CK_FALSE;
-            wrap = CK_FALSE;
-            encapsulate = CK_FALSE;
             break;
         default:
             return CKR_ATTRIBUTE_VALUE_INVALID;
@@ -1300,11 +1286,11 @@ static CK_RV
 sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYPE key_type)
 {
     CK_BBOOL cktrue = CK_TRUE;
-    CK_BBOOL encrypt = CK_TRUE;
+    CK_BBOOL encrypt = CK_FALSE;
     CK_BBOOL sign = CK_FALSE;
-    CK_BBOOL recover = CK_TRUE;
-    CK_BBOOL wrap = CK_TRUE;
-    CK_BBOOL derive = CK_TRUE;
+    CK_BBOOL recover = CK_FALSE;
+    CK_BBOOL wrap = CK_FALSE;
+    CK_BBOOL derive = CK_FALSE;
     CK_BBOOL decapsulate = CK_FALSE;
     CK_BBOOL ckfalse = CK_FALSE;
     CK_ULONG paramSet = 0;
@@ -1376,15 +1362,24 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
                 return crv;
 
             sign = CK_TRUE;
-            derive = CK_FALSE;
+            wrap = CK_TRUE;
+            encrypt = CK_TRUE;
             break;
         case CKK_DSA:
             if (!sftk_hasAttribute(object, CKA_SUBPRIME)) {
                 return CKR_TEMPLATE_INCOMPLETE;
             }
+            if (!sftk_hasAttribute(object, CKA_PRIME)) {
+                return CKR_TEMPLATE_INCOMPLETE;
+            }
+            if (!sftk_hasAttribute(object, CKA_BASE)) {
+                return CKR_TEMPLATE_INCOMPLETE;
+            }
+            if (!sftk_hasAttribute(object, CKA_VALUE)) {
+                return CKR_TEMPLATE_INCOMPLETE;
+            }
             sign = CK_TRUE;
-            derive = CK_FALSE;
-        /* fall through */
+            break;
         case CKK_DH:
             if (!sftk_hasAttribute(object, CKA_PRIME)) {
                 return CKR_TEMPLATE_INCOMPLETE;
@@ -1400,9 +1395,7 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
             if (crv != CKR_OK) {
                 return crv;
             }
-            encrypt = CK_FALSE;
-            recover = CK_FALSE;
-            wrap = CK_FALSE;
+            derive = CK_TRUE;
             break;
         case CKK_EC:
         case CKK_EC_EDWARDS:
@@ -1416,9 +1409,6 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
             /* for ECDSA and EDDSA. Change if the structure of any of them is modified. */
             derive = (key_type == CKK_EC_EDWARDS) ? CK_FALSE : CK_TRUE;  /* CK_TRUE for ECDH */
             sign = (key_type == CKK_EC_MONTGOMERY) ? CK_FALSE : CK_TRUE; /* for ECDSA and EDDSA */
-            encrypt = CK_FALSE;
-            recover = CK_FALSE;
-            wrap = CK_FALSE;
             break;
         case CKK_NSS_JPAKE_ROUND1:
             if (!sftk_hasAttribute(object, CKA_PRIME) ||
@@ -1430,7 +1420,6 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
         case CKK_NSS_JPAKE_ROUND2:
             /* CKA_NSS_JPAKE_SIGNERID and CKA_NSS_JPAKE_PEERID are checked in
                the J-PAKE code. */
-            encrypt = sign = recover = wrap = CK_FALSE;
             derive = CK_TRUE;
             createObjectInfo = PR_FALSE;
             break;
@@ -1442,19 +1431,89 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
             if (!sftk_hasAttribute(object, CKA_KEY_TYPE)) {
                 return CKR_TEMPLATE_INCOMPLETE;
             }
+            if (!sftk_hasAttribute(object, CKA_VALUE) &&
+                !sftk_hasAttribute(object, CKA_SEED)) {
+                return CKR_TEMPLATE_INCOMPLETE;
+            }
+            crv = sftk_GetULongAttribute(object, CKA_PARAMETER_SET,
+                                         &paramSet);
+            if (crv != CKR_OK) {
+                crv = sftk_GetULongAttribute(object, CKA_NSS_PARAMETER_SET,
+                                             &paramSet);
+                if (crv != CKR_OK) {
+                    return crv;
+                }
+            }
+
+            KyberParams kyberParams = sftk_kyber_PK11ParamToInternal(paramSet);
+            if (kyberParams == params_kyber_invalid) {
+                return CKR_ATTRIBUTE_VALUE_INVALID;
+            }
+            /*
+             * if we have a seedm deal with making sure CKA_SEED and
+             * CKA_VALUE are consistant. We skip this step if the CKA_SEED and
+             * CKA_VALUE were generated together by us. */
+            if (sftk_hasAttribute(object, CKA_SEED)) {
+                PRBool seedOK = sftk_hasAttribute(object, CKA_NSS_SEED_OK);
+                SFTKAttribute *seedAttribute = sftk_FindAttribute(object,
+                                                                  CKA_SEED);
+                PORT_Assert(seedAttribute);
+                crv = CKR_OK;
+                if (seedAttribute->attrib.ulValueLen != 0) {
+                    SFTKAttribute *valueAttribute =
+                        sftk_FindAttribute(object, CKA_VALUE);
+                    CK_ULONG valueLen = valueAttribute ? valueAttribute->attrib.ulValueLen : 0;
+                    if (!seedOK || valueLen == 0) {
+                        SECItem privKey = { siBuffer, NULL, 0 };
+                        SECItem pubKey = { siBuffer, NULL, 0 };
+                        SECItem seed = { siBuffer, NULL, 0 };
+
+                        seed.data = seedAttribute->attrib.pValue;
+                        seed.len = (int)seedAttribute->attrib.ulValueLen;
+
+                        if (!sftk_kyber_AllocPrivKeyItem(kyberParams, &privKey)) {
+                            crv = CKR_HOST_MEMORY;
+                            goto kyber_loser;
+                        }
+                        if (!sftk_kyber_AllocPubKeyItem(kyberParams, &pubKey)) {
+                            crv = CKR_HOST_MEMORY;
+                            goto kyber_loser;
+                        }
+                        rv = Kyber_NewKey(kyberParams, &seed, &privKey, &pubKey);
+                        if (rv != SECSuccess) {
+                            crv = CKR_ATTRIBUTE_VALUE_INVALID;
+                        } else if (valueLen == 0) {
+                            crv = sftk_forceAttribute(object, CKA_VALUE,
+                                                      privKey.data,
+                                                      privKey.len);
+                        } else {
+                            /* we have the value, so we must verify it */
+                            PORT_Assert(!seedOK);
+                            if ((privKey.len != valueLen) ||
+                                (PORT_Memcmp(valueAttribute->attrib.pValue,
+                                             privKey.data, valueLen) != 0)) {
+                                crv = CKR_ATTRIBUTE_VALUE_INVALID;
+                            }
+                        }
+                    kyber_loser:
+                        SECITEM_ZfreeItem(&privKey, PR_FALSE);
+                        SECITEM_ZfreeItem(&pubKey, PR_FALSE);
+                        /* seed is cleared when we free seedAttribute */
+                    }
+                    if (valueAttribute)
+                        sftk_FreeAttribute(valueAttribute);
+                }
+                sftk_FreeAttribute(seedAttribute);
+                if (crv != CKR_OK) {
+                    return crv;
+                }
+            }
+            sftk_DeleteAttributeType(object, CKA_NSS_SEED_OK);
+            /* if we got this far, we should have a CKA_VALUE, either by
+             * one given to us, or by it being generated above */
             if (!sftk_hasAttribute(object, CKA_VALUE)) {
                 return CKR_TEMPLATE_INCOMPLETE;
             }
-            if (!sftk_hasAttribute(object, CKA_PARAMETER_SET)) {
-                if (!sftk_hasAttribute(object, CKA_NSS_PARAMETER_SET)) {
-                    return CKR_TEMPLATE_INCOMPLETE;
-                }
-            }
-            derive = CK_FALSE;
-            sign = CK_FALSE;
-            encrypt = CK_FALSE;
-            recover = CK_FALSE;
-            wrap = CK_FALSE;
             decapsulate = CK_TRUE;
             break;
         case CKK_ML_DSA:
@@ -1487,7 +1546,7 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
                 if (seedAttribute->attrib.ulValueLen != 0) {
                     SFTKAttribute *valueAttribute =
                         sftk_FindAttribute(object, CKA_VALUE);
-                    unsigned int valueLen = valueAttribute ? valueAttribute->attrib.ulValueLen : 0;
+                    CK_ULONG valueLen = valueAttribute ? valueAttribute->attrib.ulValueLen : 0;
                     if (!seedOK || valueLen == 0) {
                         MLDSAPrivateKey privKey;
                         MLDSAPublicKey pubKey;
@@ -1530,7 +1589,6 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
             if (!sftk_hasAttribute(object, CKA_VALUE)) {
                 return CKR_TEMPLATE_INCOMPLETE;
             }
-            encrypt = decapsulate = recover = wrap = CK_FALSE;
             sign = CK_TRUE;
             break;
 
@@ -2088,6 +2146,7 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
 {
     NSSLOWKEYPublicKey *pubKey;
     PLArenaPool *arena;
+    CK_ULONG paramSet;
     CK_RV crv;
 
     if (object->objclass != CKO_PUBLIC_KEY) {
@@ -2125,6 +2184,9 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
     switch (key_type) {
         case CKK_RSA:
             pubKey->keyType = NSSLOWKEYRSAKey;
+            /* if we claim the object is FIPS, then make sure it's verified
+             * before we do an OAEP operation */
+            pubKey->u.rsa.needVerify = sftk_hasFIPS(object);
             crv = sftk_Attribute2SSecItem(arena, &pubKey->u.rsa.modulus,
                                           object, CKA_MODULUS);
             if (crv != CKR_OK)
@@ -2249,7 +2311,24 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
 #endif
         case CKK_NSS_ML_KEM:
         case CKK_ML_KEM:
-            crv = CKR_OK;
+            pubKey->keyType = NSSLOWKEYMLKEMKey;
+            crv = sftk_GetULongAttribute(object, CKA_PARAMETER_SET,
+                                         &paramSet);
+            if (crv != CKR_OK) {
+                crv = sftk_GetULongAttribute(object, CKA_NSS_PARAMETER_SET,
+                                             &paramSet);
+                if (crv != CKR_OK) {
+                    break;
+                }
+            }
+            pubKey->u.mlkem.mlkemParams = sftk_kyber_PK11ParamToInternal(paramSet);
+            if (pubKey->u.mlkem.mlkemParams == params_kyber_invalid) {
+                crv = CKR_PARAMETER_SET_NOT_SUPPORTED;
+                break;
+            }
+
+            crv = sftk_Attribute2SSecItem(arena, &pubKey->u.mlkem.key,
+                                          object, CKA_VALUE);
             break;
         case CKK_ML_DSA:
             pubKey->keyType = NSSLOWKEYMLDSAKey;
@@ -2289,6 +2368,7 @@ sftk_mkPrivKey(SFTKObject *object, CK_KEY_TYPE key_type, CK_RV *crvp)
     PLArenaPool *arena;
     CK_RV crv = CKR_OK;
     SECStatus rv;
+    CK_ULONG paramSet;
 
     arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
@@ -2435,6 +2515,36 @@ sftk_mkPrivKey(SFTKObject *object, CK_KEY_TYPE key_type, CK_RV *crvp)
 #endif
         case CKK_NSS_ML_KEM:
         case CKK_ML_KEM:
+            privKey->keyType = NSSLOWKEYMLKEMKey;
+            crv = sftk_GetULongAttribute(object, CKA_PARAMETER_SET,
+                                         &paramSet);
+            if (crv != CKR_OK) {
+                crv = sftk_GetULongAttribute(object, CKA_NSS_PARAMETER_SET,
+                                             &paramSet);
+                if (crv != CKR_OK) {
+                    break;
+                }
+            }
+            privKey->u.mlkem.mlkemParams = sftk_kyber_PK11ParamToInternal(paramSet);
+            if (privKey->u.mlkem.mlkemParams == params_kyber_invalid) {
+                crv = CKR_PARAMETER_SET_NOT_SUPPORTED;
+                break;
+            }
+
+            crv = sftk_Attribute2SSecItem(arena, &privKey->u.mlkem.key,
+                                          object, CKA_VALUE);
+            if (crv != CKR_OK) {
+                break;
+            }
+            crv = sftk_Attribute2SSecItem(arena, &privKey->u.mlkem.seed,
+                                          object, CKA_SEED);
+            if (crv != CKR_OK) {
+                /* we don't need the seed to function, if we don't have
+                 * it, just don't include it */
+                privKey->u.mlkem.seed.data = NULL;
+                privKey->u.mlkem.seed.len = 0;
+                crv = CKR_OK;
+            }
             break;
 
         case CKK_ML_DSA:
@@ -2670,6 +2780,7 @@ sftk_PutPubKey(SFTKObject *publicKey, SFTKObject *privateKey, CK_KEY_TYPE keyTyp
     CK_OBJECT_CLASS classType = CKO_PUBLIC_KEY;
     CK_BBOOL cktrue = CK_TRUE;
     CK_RV crv = CKR_OK;
+    CK_ULONG paramSet = CKP_INVALID_ID;
     sftk_DeleteAttributeType(publicKey, CKA_CLASS);
     sftk_DeleteAttributeType(publicKey, CKA_KEY_TYPE);
     sftk_DeleteAttributeType(publicKey, CKA_VALUE);
@@ -2709,6 +2820,24 @@ sftk_PutPubKey(SFTKObject *publicKey, SFTKObject *privateKey, CK_KEY_TYPE keyTyp
             }
             crv = sftk_AddAttributeType(publicKey, CKA_VALUE,
                                         sftk_item_expand(&pubKey->u.dsa.publicValue));
+            break;
+        case CKK_NSS_ML_KEM:
+        case CKK_ML_KEM:
+            sftk_DeleteAttributeType(publicKey, CKA_VALUE);
+            sftk_DeleteAttributeType(publicKey, CKA_PARAMETER_SET);
+            crv = sftk_AddAttributeType(publicKey, CKA_VALUE,
+                                        sftk_item_expand(&pubKey->u.mlkem.key));
+            if (crv != CKR_OK) {
+                break;
+            }
+            paramSet = sftk_kyber_InternalToPK11Param(pubKey->u.mlkem.mlkemParams);
+            if (paramSet == CKP_INVALID_ID) {
+                crv = CKR_PUBLIC_KEY_INVALID;
+                break;
+            }
+            crv = sftk_AddAttributeType(publicKey, CKA_PARAMETER_SET,
+                                        (unsigned char *)&paramSet,
+                                        sizeof(paramSet));
             break;
         case CKK_ML_DSA:
             sftk_DeleteAttributeType(publicKey, CKA_VALUE);
@@ -4855,7 +4984,10 @@ NSC_Login(CK_SESSION_HANDLE hSession, CK_USER_TYPE userType,
     if (!needLogin) {
         return ulPinLen ? CKR_PIN_INCORRECT : CKR_OK;
     }
+
+    PR_Lock(slot->slotLock);
     slot->ssoLoggedIn = PR_FALSE;
+    PR_Unlock(slot->slotLock);
 
     if (ulPinLen > SFTK_MAX_PIN)
         return CKR_PIN_LEN_RANGE;
@@ -4970,8 +5102,12 @@ NSC_Logout(CK_SESSION_HANDLE hSession)
     sftk_FreeSession(session);
     session = NULL;
 
-    if (!slot->isLoggedIn)
+    PR_Lock(slot->slotLock);
+    PRBool isLoggedIn = slot->isLoggedIn;
+    PR_Unlock(slot->slotLock);
+    if (!isLoggedIn) {
         return CKR_USER_NOT_LOGGED_IN;
+    }
 
     handle = sftk_getKeyDB(slot);
     PR_Lock(slot->slotLock);

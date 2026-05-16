@@ -169,7 +169,10 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {
-        val handled = showCustomEditTextPreferenceDialog(preference)
+        val handled = showCustomEditTextPreferenceDialog(
+            preference = preference,
+            errorMessage = { value -> R.string.empty_device_name_error.takeIf { value.isBlank() } },
+        )
 
         if (!handled) {
             super.onDisplayPreferenceDialog(preference)

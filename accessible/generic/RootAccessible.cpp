@@ -524,7 +524,9 @@ void RootAccessible::HandlePopupShownEvent(LocalAccessible* aAccessible) {
     if (combobox->IsCombobox()) {
       RefPtr<AccEvent> event =
           new AccStateChangeEvent(combobox, states::EXPANDED, true);
-      nsEventShell::FireEvent(event);
+      if (DocAccessible* doc = event->Document()) {
+        doc->FireDelayedEvent(event);
+      }
     }
 
     // If aria-activedescendant is present, redirect focus.

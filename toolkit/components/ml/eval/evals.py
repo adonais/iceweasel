@@ -279,8 +279,6 @@ class TranslationsLlmJudge(_LlmJudge):
     ]
     """
 
-    requirements = []
-
     def run(self, payloads: list[dict[str, Any]]) -> dict:
         results: list[dict[str, Any]] = []
         for payload in payloads:

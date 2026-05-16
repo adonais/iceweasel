@@ -39,7 +39,7 @@ async function ensureTabOrder(order, win = window) {
   return true;
 }
 
-async function ensureExpectedTabOrder(
+async function ensureExpectedTabOrderMainPanel(
   expectBackButton,
   expectReason,
   expectSendMoreInfo
@@ -74,6 +74,24 @@ async function ensureExpectedTabOrder(
   return ensureTabOrder(order);
 }
 
+async function ensureExpectedTabOrderPreviewPanel(rbs) {
+  // the number of summary elements can vary (on Windows there may be security details)
+  const numSummaryElements = rbs.previewView.querySelectorAll("summary").length;
+
+  const order = [
+    ".subviewbutton-back",
+    ...Array(numSummaryElements).fill("summary"),
+    [
+      // moz-button-groups swap the order of buttons to follow
+      // platform conventions, so the order of send/cancel will vary.
+      "#report-broken-site-popup-preview-cancel-button",
+      "#report-broken-site-popup-preview-send-button",
+    ],
+  ];
+
+  return ensureTabOrder(order);
+}
+
 async function testTabOrder(menu) {
   ensureReasonDisabled();
   ensureSendMoreInfoDisabled();
@@ -81,45 +99,50 @@ async function testTabOrder(menu) {
   const { showsBackButton } = menu;
 
   let rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrder(showsBackButton, false, false);
+  await ensureExpectedTabOrderMainPanel(showsBackButton, false, false);
   await rbs.close();
 
   ensureSendMoreInfoEnabled();
   rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrder(showsBackButton, false, true);
+  await ensureExpectedTabOrderMainPanel(showsBackButton, false, true);
   await rbs.close();
 
   ensureReasonOptional();
   rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrder(showsBackButton, true, true);
+  await ensureExpectedTabOrderMainPanel(showsBackButton, true, true);
   await rbs.close();
 
   ensureReasonRequired();
   rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrder(showsBackButton, true, true);
+  await ensureExpectedTabOrderMainPanel(showsBackButton, true, true);
   await rbs.close();
   rbs = await menu.openReportBrokenSite();
   rbs.chooseReason("slow");
-  await ensureExpectedTabOrder(showsBackButton, true, true);
+  await ensureExpectedTabOrderMainPanel(showsBackButton, true, true);
   await rbs.clickCancel();
 
   ensureSendMoreInfoDisabled();
   rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrder(showsBackButton, true, false);
+  await ensureExpectedTabOrderMainPanel(showsBackButton, true, false);
   await rbs.close();
   rbs = await menu.openReportBrokenSite();
   rbs.chooseReason("slow");
-  await ensureExpectedTabOrder(showsBackButton, true, false);
+  await ensureExpectedTabOrderMainPanel(showsBackButton, true, false);
   await rbs.clickCancel();
 
   ensureReasonOptional();
   rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrder(showsBackButton, true, false);
+  await ensureExpectedTabOrderMainPanel(showsBackButton, true, false);
   await rbs.close();
 
   ensureReasonDisabled();
   rbs = await menu.openReportBrokenSite();
-  await ensureExpectedTabOrder(showsBackButton, false, false);
+  await ensureExpectedTabOrderMainPanel(showsBackButton, false, false);
+
+  await tabTo("#report-broken-site-popup-preview-button");
+  await pressKeyAndAwait(rbs.awaitPreviewViewOpened(), "KEY_Enter");
+  await ensureExpectedTabOrderPreviewPanel(rbs);
+
   await rbs.close();
 }
 

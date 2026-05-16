@@ -25,7 +25,8 @@
 #include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/StaticPtr.h"  // for StaticAutoPtr
 #include "mozilla/TimeStamp.h"  // for TimeStamp
-#include "nsTHashMap.h"         // for nsTHashMap
+#include "mozilla/WritingModes.h"
+#include "nsTHashMap.h"  // for nsTHashMap
 #include "nsString.h"
 #include "PLDHashTable.h"  // for PLDHashNumber
 
@@ -828,7 +829,8 @@ struct ScrollMetadata {
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
            mOverflow == aOther.mOverflow &&
-           mScrollUpdates == aOther.mScrollUpdates;
+           mScrollUpdates == aOther.mScrollUpdates &&
+           mWritingMode == aOther.mWritingMode;
   }
 
   bool operator!=(const ScrollMetadata& aOther) const {
@@ -941,6 +943,11 @@ struct ScrollMetadata {
     return mScrollUpdates;
   }
 
+  void SetWritingMode(const WritingMode aWritingMode) {
+    mWritingMode = aWritingMode;
+  }
+  const WritingMode GetWritingMode() const { return mWritingMode; }
+
   void UpdatePendingScrollInfo(nsTArray<ScrollPositionUpdate>&& aUpdates) {
     MOZ_ASSERT(!aUpdates.IsEmpty());
     mMetrics.UpdatePendingScrollInfo(aUpdates.LastElement());
@@ -1045,6 +1052,9 @@ struct ScrollMetadata {
   // The ordered list of scroll position updates for this scroll frame since
   // the last transaction.
   CopyableTArray<ScrollPositionUpdate> mScrollUpdates;
+
+  // The writing-mode of this scroll container.
+  WritingMode mWritingMode;
 
   // WARNING!!!!
   //

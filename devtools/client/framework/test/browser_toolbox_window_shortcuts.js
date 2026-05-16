@@ -17,7 +17,7 @@ var gToolbox,
 async function test() {
   addTab("about:blank").then(async function () {
     toolIDs = [];
-    for (const [id, definition] of gDevTools._tools) {
+    for (const [id, definition] of gDevTools.tools) {
       const shortcut = Startup.KeyShortcuts.filter(s => s.toolId == id)[0];
       if (!shortcut) {
         continue;

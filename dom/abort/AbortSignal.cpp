@@ -101,6 +101,7 @@ void AbortSignalImpl::Traverse(AbortSignalImpl* aSignal,
 void AbortSignalImpl::Unlink(AbortSignalImpl* aSignal) {
   aSignal->mReason.setUndefined();
   aSignal->UnlinkFollowers();
+  aSignal->DetachWeakPtr();
 }
 
 void AbortSignalImpl::MaybeAssignAbortError(JSContext* aCx) {

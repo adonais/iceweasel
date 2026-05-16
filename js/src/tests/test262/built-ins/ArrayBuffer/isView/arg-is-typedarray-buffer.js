@@ -19,6 +19,6 @@ testWithTypedArrayConstructors(function(ctor) {
   var sample = new ctor().buffer;
 
   assert.sameValue(ArrayBuffer.isView(sample), false);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

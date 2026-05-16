@@ -40,9 +40,9 @@ const RECV_BUF_SIZE: usize = u16::MAX as usize;
 /// - Linux/Android: use segmentation offloading via GRO
 /// - Windows: use segmentation offloading via URO (caveat see <https://github.com/quinn-rs/quinn/issues/2041>)
 /// - Apple: no segmentation offloading available, use multiple buffers
-#[cfg(not(all(apple, feature = "fast-apple-datapath")))]
+#[cfg(not(apple))]
 const NUM_BUFS: usize = 1;
-#[cfg(all(apple, feature = "fast-apple-datapath"))]
+#[cfg(apple)]
 // Value approximated based on neqo-bin "Download" benchmark only.
 const NUM_BUFS: usize = 16;
 
@@ -229,10 +229,26 @@ pub struct Socket<S> {
 impl<S: SocketRef> Socket<S> {
     /// Create a new [`Socket`] given a raw file descriptor managed externally.
     pub fn new(socket: S) -> Result<Self, io::Error> {
+        let state = UdpSocketState::new((&socket).into())?;
         Ok(Self {
-            state: UdpSocketState::new((&socket).into())?,
+            state,
             inner: socket,
         })
+    }
+
+    /// Enable the Apple fast UDP datapath (`sendmsg_x`/`recvmsg_x`) for this
+    /// socket.
+    ///
+    /// # Safety
+    ///
+    /// `sendmsg_x` and `recvmsg_x` are private Apple APIs. Quinn-udp resolves
+    /// them at runtime via `dlsym` and falls back to standard `sendmsg`/`recvmsg`
+    /// if they are unavailable, so this will not crash on unsupported OS versions.
+    /// The `unsafe` contract is inherited from [`quinn_udp::UdpSocketState::set_apple_fast_path`].
+    #[cfg(apple)]
+    pub unsafe fn enable_apple_fast_path(&self) {
+        // SAFETY: Caller ensures the APIs are available on this OS version.
+        unsafe { self.state.set_apple_fast_path() }
     }
 
     /// Send a [`datagram::Batch`] on the given [`Socket`].
@@ -490,6 +506,44 @@ mod tests {
             normal_datagram.data()
         );
 
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(apple)]
+    fn apple_fast_path() -> Result<(), io::Error> {
+        let socket = socket()?;
+        // SAFETY: Tests run on Apple OS versions that support sendmsg_x/recvmsg_x.
+        unsafe {
+            socket.enable_apple_fast_path();
+        }
+        assert!(socket.max_gso_segments() > 1);
+        Ok(())
+    }
+
+    #[test]
+    fn may_fragment_returns_bool() -> Result<(), io::Error> {
+        let s = socket()?;
+        // On platforms that set DONTFRAG (Linux, macOS), this should be false.
+        // On other platforms it may be true. Either way it must not panic.
+        let frag = s.may_fragment();
+        // On Linux and macOS, fragmentation is disabled via socket options.
+        #[cfg(apple)]
+        assert!(!frag, "may_fragment should be false on this platform");
+        #[cfg(target_os = "linux")]
+        assert!(!frag, "may_fragment should be false on Linux");
+        #[cfg(not(any(apple, target_os = "linux")))]
+        let _: bool = frag;
+        Ok(())
+    }
+
+    #[test]
+    fn max_gso_segments_is_consistent() -> Result<(), io::Error> {
+        let s = socket()?;
+        let a = s.max_gso_segments();
+        let b = s.max_gso_segments();
+        assert_eq!(a, b, "max_gso_segments should be deterministic");
+        assert!(a >= 1);
         Ok(())
     }
 }

@@ -6,6 +6,7 @@
 #include "PLDHashTable.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/AutoMemMap.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/IOBuffers.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/MemUtils.h"

@@ -13,11 +13,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <string>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/candidate.h"
 #include "api/datagram_connection.h"
 #include "api/environment/environment.h"
@@ -29,6 +29,7 @@
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/transport_description.h"
+#include "p2p/dtls/dtls_transport_internal.h"
 #include "pc/dtls_srtp_transport.h"
 #include "pc/dtls_transport.h"
 #include "rtc_base/checks.h"
@@ -52,6 +53,7 @@ class RTC_EXPORT DatagramConnectionInternal : public DatagramConnection,
                              WireProtocol wire_protocol,
                              std::unique_ptr<IceTransportInternal>
                                  custom_ice_transport_internal = nullptr);
+  ~DatagramConnectionInternal() override;
 
   void SetRemoteIceParameters(const IceParameters& ice_parameters) override;
   void AddRemoteCandidate(const Candidate& candidate) override;
@@ -60,7 +62,7 @@ class RTC_EXPORT DatagramConnectionInternal : public DatagramConnection,
                                const uint8_t* digest,
                                size_t digest_len,
                                SSLRole ssl_role) override;
-  void SendPackets(ArrayView<PacketSendParameters> packets) override;
+  void SendPackets(std::span<PacketSendParameters> packets) override;
 
   void Terminate(
       absl::AnyInvocable<void()> terminate_complete_callback) override;
@@ -107,6 +109,7 @@ class RTC_EXPORT DatagramConnectionInternal : public DatagramConnection,
   // Note the destruction order of these transport objects must be preserved.
   const std::unique_ptr<PortAllocator> port_allocator_;
   const std::unique_ptr<IceTransportInternal> transport_channel_;
+  const std::unique_ptr<DtlsTransportInternal> internal_transport_;
   const scoped_refptr<DtlsTransport> dtls_transport_;
   const std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport_;
 

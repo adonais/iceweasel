@@ -207,8 +207,9 @@ export const AIWindowUI = {
    * Close the AI Window sidebar.
    *
    * @param {Window} win
+   * @param {string} source
    */
-  closeSidebar(win) {
+  closeSidebar(win, source = null) {
     if (!this.isSidebarOpen(win)) {
       return;
     }
@@ -224,6 +225,7 @@ export const AIWindowUI = {
         detail: {
           tab: win.gBrowser?.selectedTab,
           isOpen: false,
+          ...(source && { source }),
         },
       })
     );
@@ -242,36 +244,16 @@ export const AIWindowUI = {
    * @returns {boolean} true if now open, false if now closed
    */
   toggleSidebar(win) {
+    if (this.isSidebarOpen(win)) {
+      this.closeSidebar(win, "toggle");
+      return false;
+    }
+
     const nodes = this._getSidebarElements(win);
     if (!nodes) {
       return false;
     }
     const { chromeDoc, box, splitter } = nodes;
-
-    if (!box.collapsed) {
-      box.collapsed = true;
-      splitter.collapsed = true;
-      this._updateAskButtonChecked(win, false);
-
-      // Dispatch event to notify tab state manager that sidebar was toggled
-      win.dispatchEvent(
-        new win.CustomEvent("ai-window:sidebar-toggle", {
-          detail: {
-            tab: win.gBrowser?.selectedTab,
-            isOpen: false,
-            source: "toggle",
-          },
-        })
-      );
-
-      const { chatId, messageSeq } = this._getConversationFromSidebar(win);
-      Glean.smartWindow.sidebarClose.record({
-        chat_id: chatId,
-        message_seq: messageSeq,
-      });
-
-      return false;
-    }
 
     this.ensureBrowserIsAppended(chromeDoc, box);
     this._showSidebarElements(box, splitter);
@@ -287,12 +269,6 @@ export const AIWindowUI = {
         },
       })
     );
-
-    const { chatId, messageSeq } = this._getConversationFromSidebar(win);
-    Glean.smartWindow.sidebarOpen.record({
-      chat_id: chatId,
-      message_seq: messageSeq,
-    });
 
     return true;
   },
@@ -384,18 +360,23 @@ export const AIWindowUI = {
   },
 
   /**
-   * Triggers updating the starter prompts in the sidebar window if it
-   * is already opened.
+   * Triggers updating the starter prompts on the active ai-window
+   * for the given chrome window. The target is resolved by mode:
+   * sidebar uses the chrome window's sidebar ai-window, fullpage
+   * uses the ai-window inside the owning tab's browser.
    *
    * @param {Window} win
+   * @param {boolean} [clear=true] Clear current starter prompts first
+   * @param {"sidebar"|"fullpage"} [mode="sidebar"]
+   * @param {MozTabbrowserTab|null} [tab=null] Owner tab for fullpage mode
    */
-  updateStarterPrompts(win) {
-    const sidebarAiWindow = this._getSidebarAiWindow(win);
-    if (!sidebarAiWindow) {
+  updateStarterPrompts(win, clear = true, mode = "sidebar", tab = null) {
+    const aiWindow = this._getActiveAiWindow(win, mode, tab);
+    if (!aiWindow) {
       return;
     }
 
-    sidebarAiWindow.loadStarterPrompts(true, win.gBrowser.selectedTab);
+    aiWindow.loadStarterPrompts(clear, win.gBrowser.selectedTab);
   },
 
   /**
@@ -412,6 +393,31 @@ export const AIWindowUI = {
 
     const aiWindowBrowser = win.document.getElementById(this.BROWSER_ID);
     return aiWindowBrowser?.contentDocument?.querySelector("ai-window:defined");
+  },
+
+  /**
+   * Resolves the ai-window instance relevant to a dispatched event,
+   * routed by mode. Sidebar and fullpage are mutually exclusive for
+   * a given tab — an AIWINDOW_URL tab always closes the sidebar.
+   *
+   * @param {Window} win
+   * @param {"sidebar"|"fullpage"} mode
+   * @param {MozTabbrowserTab|null} tab Owner tab for fullpage mode
+   *
+   * @private
+   */
+  _getActiveAiWindow(win, mode, tab) {
+    if (mode === "sidebar") {
+      return this._getSidebarAiWindow(win);
+    }
+
+    if (mode === "fullpage" && tab) {
+      return tab.linkedBrowser.contentDocument.querySelector(
+        "ai-window:defined"
+      );
+    }
+
+    return null;
   },
 
   _getFadeTarget(win) {

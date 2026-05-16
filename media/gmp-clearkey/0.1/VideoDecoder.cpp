@@ -26,35 +26,36 @@
 
 using namespace wmf;
 
-VideoDecoder::VideoDecoder(cdm::Host_11* aHost)
-    : mHost(aHost), mHasShutdown(false) {
+VideoDecoder::VideoDecoder(cdm::Host_11* aHost, wmf::WMFH264Decoder* aDecoder)
+    : mHost(aHost), mDecoder(aDecoder) {
   CK_LOGD("VideoDecoder created");
 
   // We drop the ref in DecodingComplete().
   AddRef();
-
-  mDecoder = new WMFH264Decoder();
-
-  uint32_t cores = std::max(1u, std::thread::hardware_concurrency());
-
-  HRESULT hr = mDecoder->Init(cores);
-  if (FAILED(hr)) {
-    CK_LOGE("Failed to initialize mDecoder!");
-  }
 }
 
 VideoDecoder::~VideoDecoder() { CK_LOGD("VideoDecoder destroyed"); }
 
-cdm::Status VideoDecoder::InitDecode(const cdm::VideoDecoderConfig_2& aConfig) {
-  CK_LOGD("VideoDecoder::InitDecode");
+/* static */ VideoDecoder* VideoDecoder::Create(
+    cdm::Host_11* aHost, const cdm::VideoDecoderConfig_2& aConfig) {
+  CK_LOGD("VideoDecoder::Create");
 
-  if (!mDecoder) {
-    CK_LOGD("VideoDecoder::InitDecode failed to init WMFH264Decoder");
-
-    return cdm::Status::kDecodeError;
+  if (aConfig.codec != cdm::VideoCodec::kCodecH264) {
+    CK_LOGE("Unsupported codec type!");
+    return nullptr;
   }
 
-  return cdm::Status::kSuccess;
+  uint32_t cores = std::max(1u, std::thread::hardware_concurrency());
+
+  auto* decoder = new WMFH264Decoder();
+  HRESULT hr = decoder->Init(cores);
+  if (FAILED(hr)) {
+    CK_LOGE("Failed to initialize mDecoder!");
+    delete decoder;
+    return nullptr;
+  }
+
+  return new VideoDecoder(aHost, decoder);
 }
 
 cdm::Status VideoDecoder::Decode(const cdm::InputBuffer_2& aInputBuffer,

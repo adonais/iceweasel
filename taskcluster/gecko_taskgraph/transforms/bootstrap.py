@@ -3,30 +3,35 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import LegacySchema
-from voluptuous import Any, Optional, Required
+from typing import Optional, Union
 
-from gecko_taskgraph.transforms.task import task_description_schema
+from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.schema import Schema
+
+from gecko_taskgraph.transforms.task import TaskDescriptionSchema
 
 transforms = TransformSequence()
 
-bootstrap_schema = LegacySchema({
+
+class InTreeImageSchema(Schema):
+    in_tree: str
+
+
+class BootstrapSchema(Schema, kw_only=True):
     # Name of the bootstrap task.
-    Required("name"): str,
+    name: str
     # Name of the docker image. Ideally, we'd also have tasks for mac and windows,
     # but we unfortunately don't have workers barebones enough for such testing
     # to be satisfactory.
-    Required("image"): Any(str, {"in-tree": str}),
+    image: Union[str, InTreeImageSchema]
     # Initialization commands.
-    Required("pre-commands"): [str],
+    pre_commands: list[str]
     # relative path (from config.path) to the file task was defined in
-    Optional("task-from"): str,
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-})
+    task_from: Optional[str] = None
+    run_on_repo_type: TaskDescriptionSchema.__annotations__["run_on_repo_type"] = None
 
 
-transforms.add_validate(bootstrap_schema)
+transforms.add_validate(BootstrapSchema)
 
 
 @transforms.add

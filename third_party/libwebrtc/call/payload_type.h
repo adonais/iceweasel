@@ -11,40 +11,15 @@
 #ifndef CALL_PAYLOAD_TYPE_H_
 #define CALL_PAYLOAD_TYPE_H_
 
-#include <cstdint>
-#include <string>
 
 #include "absl/strings/string_view.h"
+#include "api/payload_type.h"
 #include "api/rtc_error.h"
 #include "media/base/codec.h"
-#include "rtc_base/strong_alias.h"
 
 namespace webrtc {
 
-class PayloadType : public StrongAlias<class PayloadTypeTag, uint8_t> {
- public:
-  // Non-explicit conversions from and to ints are to be deprecated and
-  // removed once calling code is upgraded.
-  PayloadType(uint8_t pt) { value_ = pt; }                // NOLINT: explicit
-  constexpr operator uint8_t() const& { return value_; }  // NOLINT: Explicit
-  static bool IsValid(PayloadType id, bool rtcp_mux) {
-    // A payload type is a 7-bit value in the RTP header, so max = 127.
-    // If RTCP multiplexing is used, the numbers from 64 to 95 are reserved
-    // for RTCP packets.
-    if (rtcp_mux && (id > 63 && id < 96)) {
-      return false;
-    }
-#if defined(WEBRTC_MOZILLA_BUILD)
-    return id <= 127; // id is unsigned, therefor always >= 0
-#else
-    return id >= 0 && id <= 127;
-#endif
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& sink, const PayloadType pt) {
-    absl::Format(&sink, "%d", pt.value_);
-  }
-};
+class PayloadTypePicker;
 
 class PayloadTypeSuggester {
  public:

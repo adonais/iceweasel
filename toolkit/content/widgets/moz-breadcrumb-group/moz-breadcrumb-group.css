@@ -26,8 +26,8 @@ li {
   &:not(:last-child)::after {
     content: url("chrome://global/skin/icons/arrow-right-12.svg");
     display: inline-flex;
-    width: auto;
-    height: var(--breadcrumb-icon-size);
+    width: var(--breadcrumb-icon-size);
+    aspect-ratio: 1;
     -moz-context-properties: fill;
     fill: currentColor;
   }

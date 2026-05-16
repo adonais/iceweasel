@@ -29,7 +29,6 @@
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/system/file_wrapper.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -99,6 +98,12 @@ class FrameDumpingEncoder : public VideoEncoder, public EncodedImageCallback {
   void OnDroppedFrame(DropReason reason) override {
     callback_->OnDroppedFrame(reason);
   }
+  void OnFrameDropped(uint32_t rtp_timestamp,
+                      int spatial_id,
+                      bool is_end_of_temporal_unit) override {
+    callback_->OnFrameDropped(rtp_timestamp, spatial_id,
+                              is_end_of_temporal_unit);
+  }
 
  private:
   std::string FilenameFromSimulcastIndex(int index)
@@ -116,9 +121,8 @@ class FrameDumpingEncoder : public VideoEncoder, public EncodedImageCallback {
     if (it != writers_by_simulcast_index_.end()) {
       return *it->second;
     }
-    auto writer = IvfFileWriter::Wrap(
-        FileWrapper::OpenWriteOnly(FilenameFromSimulcastIndex(index)),
-        /*byte_limit=*/100'000'000);
+    auto writer = IvfFileWriter::Wrap(FilenameFromSimulcastIndex(index),
+                                      /*byte_limit=*/100'000'000);
     auto* writer_ptr = writer.get();
     writers_by_simulcast_index_.insert(
         std::make_pair(index, std::move(writer)));

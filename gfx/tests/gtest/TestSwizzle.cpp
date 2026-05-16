@@ -6,6 +6,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "Orientation.h"
+#include <bit>
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -288,13 +289,13 @@ TEST(Moz2D, SwizzleData)
 
   const uint8_t* uint32_argb;
 
-#if MOZ_BIG_ENDIAN()
-  EXPECT_EQ(SurfaceFormat::A8R8G8B8_UINT32, SurfaceFormat::A8R8G8B8);
-  uint32_argb = check_argb;
-#else
-  EXPECT_EQ(SurfaceFormat::A8R8G8B8_UINT32, SurfaceFormat::B8G8R8A8);
-  uint32_argb = check_bgra;
-#endif
+  if constexpr (std::endian::native == std::endian::big) {
+    EXPECT_EQ(SurfaceFormat::A8R8G8B8_UINT32, SurfaceFormat::A8R8G8B8);
+    uint32_argb = check_argb;
+  } else {
+    EXPECT_EQ(SurfaceFormat::A8R8G8B8_UINT32, SurfaceFormat::B8G8R8A8);
+    uint32_argb = check_bgra;
+  }
 
   SwizzleData(uint32_argb, sizeof(in_bgra), SurfaceFormat::A8R8G8B8_UINT32,
               reinterpret_cast<uint8_t*>(out16), sizeof(out16),

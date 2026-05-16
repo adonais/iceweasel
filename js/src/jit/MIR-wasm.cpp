@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -526,11 +524,11 @@ MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
     // will be overwritten by the subsequent shuffle analysis.
     int8_t shuffleMask[16];
     memcpy(shuffleMask, rhs()->toWasmFloatConstant()->toSimd128().bytes(), 16);
-    for (int i = 0; i < 16; i++) {
+    for (signed char& i : shuffleMask) {
       // Out-of-bounds lanes reference the zero vector; in many cases, the zero
       // vector is removed by subsequent optimizations.
-      if (shuffleMask[i] < 0 || shuffleMask[i] > 15) {
-        shuffleMask[i] = 16;
+      if (i < 0 || i > 15) {
+        i = 16;
       }
     }
     MWasmFloatConstant* zero =
@@ -860,6 +858,32 @@ MWasmReturnCall* MWasmReturnCall::New(TempAllocator& alloc,
 
   return call;
 }
+
+#ifdef ENABLE_WASM_JSPI
+bool MWasmResume::init(MBasicBlock* fallthroughBlock, MBasicBlock* prePadBlock,
+                       size_t numHandlers) {
+  MOZ_ASSERT(hasTryNote() == !!prePadBlock);
+
+  size_t numSuccessors = 1 + (hasTryNote() ? 1 : 0) + numHandlers;
+  if (!successors_.resize(numSuccessors)) {
+    return false;
+  }
+  successors_[FallthroughBranchIndex] = fallthroughBlock;
+  if (hasTryNote()) {
+    successors_[prePadBranchIndex()] = prePadBlock;
+  }
+
+  return handlers_.resize(numHandlers);
+}
+
+bool MWasmResume::initHandler(size_t index, uint32_t tagInstanceDataOffset,
+                              uint32_t resultsAreaOffset, MBasicBlock* target) {
+  successors_[handlerBranchIndex(index)] = target;
+  handlers_[index].tagInstanceDataOffset = tagInstanceDataOffset;
+  handlers_[index].resultsAreaOffset = resultsAreaOffset;
+  return true;
+}
+#endif  // ENABLE_WASM_JSPI
 
 MIonToWasmCall* MIonToWasmCall::New(TempAllocator& alloc,
                                     WasmInstanceObject* instanceObj,

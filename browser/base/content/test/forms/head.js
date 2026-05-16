@@ -38,7 +38,15 @@ function hideSelectPopup(mode = "enter", win = window) {
     return ContentTaskUtils.waitForCondition(() => !SelectContentHelper.open);
   });
 
-  if (mode == "escape") {
+  if (
+    AppConstants.platform == "macosx" &&
+    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
+    Services.prefs.getBoolPref("widget.macos.allow-native-select", false)
+  ) {
+    // Synthesized events are not available with native menus
+    let popup = win.document.getElementById("ContentSelectDropdown").menupopup;
+    popup.hidePopup();
+  } else if (mode == "escape") {
     EventUtils.synthesizeKey("KEY_Escape", {}, win);
   } else if (mode == "enter") {
     EventUtils.synthesizeKey("KEY_Enter", {}, win);

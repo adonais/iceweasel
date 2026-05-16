@@ -93,7 +93,6 @@
 #  include "WinUtils.h"
 #endif
 
-#include "nsGkAtoms.h"
 #include "gfxPlatformFontList.h"
 #include "gfxContext.h"
 #include "gfxImageSurface.h"
@@ -1239,6 +1238,19 @@ bool gfxPlatform::IsHeadless() {
 /* static */
 bool gfxPlatform::UseRemoteCanvas() {
   return XRE_IsContentProcess() && gfx::gfxVars::UseAcceleratedCanvas2D();
+}
+
+/* static */
+bool gfxPlatform::UseHDR() {
+  // If the user set gfx.color_management.hdr.force_enabled then we want to
+  // honor that, if gfx.color_management.hdr is false or the GPU vendor is
+  // blocklisted then we want to do what we did before with HDR video - which
+  // did not look good, but we'll be implementing workarounds for driver
+  // limitations in future so that this will be less common.
+  //
+  // This parallels the logic in Gecko_MediaFeatures_VideoDynamicRange().
+  return (StaticPrefs::gfx_color_management_hdr() && gfxVars::VideoHDR()) ||
+         StaticPrefs::gfx_color_management_hdr_force_enabled();
 }
 
 /* static */
@@ -3073,6 +3085,19 @@ void gfxPlatform::InitHardwareVideoConfig() {
                             "FEATURE_FAILURE_SANITY_TEST_FAILED"_ns);
   }
 
+  FeatureState& featureHdr = gfxConfig::GetFeature(Feature::VIDEO_HDR);
+  featureHdr.Reset();
+  featureHdr.EnableByDefault();
+  if (NS_FAILED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_VIDEO_HDR,
+                                          failureId, &status))) {
+    featureHdr.Disable(FeatureStatus::BlockedNoGfxInfo, "gfxInfo is broken",
+                       "FEATURE_FAILURE_NO_GFX_INFO"_ns);
+  } else if (status != nsIGfxInfo::FEATURE_ALLOW_ALWAYS) {
+    featureHdr.Disable(FeatureStatus::Blocklisted, "Blocklisted by gfxInfo",
+                       failureId);
+  }
+  gfxVars::SetVideoHDR(featureHdr.IsEnabled());
+
   InitPlatformHardwareVideoConfig();
   InitPlatformHardwarDRMConfig();
 
@@ -3291,6 +3316,9 @@ void gfxPlatform::InitWebGPUConfig() {
     return;
   }
 
+  nsCString message;
+  nsCString failureId;
+
   FeatureState& featureWebGPU = gfxConfig::GetFeature(Feature::WEBGPU);
   featureWebGPU.EnableByDefault();
 
@@ -3299,17 +3327,16 @@ void gfxPlatform::InitWebGPUConfig() {
     featureWebGPU.Disable(FeatureStatus::UnavailableNoGpuProcess,
                           "Disabled without GPU process",
                           "FEATURE_WEBGPU_NO_GPU_PROCESS"_ns);
-  }
-
-  nsCString message;
-  nsCString failureId;
-  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_WEBGPU, &message, failureId)) {
+  } else if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_WEBGPU, &message,
+                                  failureId)) {
     if (StaticPrefs::gfx_webgpu_ignore_blocklist_AtStartup()) {
       featureWebGPU.UserForceEnable(
           "Ignoring blocklist entry because gfx.webgpu.ignore-blocklist is "
           "true.");
+    } else {
+      featureWebGPU.Disable(FeatureStatus::Blocklisted, message.get(),
+                            failureId);
     }
-    featureWebGPU.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   }
 
   gfxVars::SetAllowWebGPU(featureWebGPU.IsEnabled());
@@ -3782,10 +3809,10 @@ void gfxPlatform::GetDisplayInfo(mozilla::widget::InfoObject& aObj) {
   size_t i = 0;
   for (auto& screen : screens) {
     const LayoutDeviceIntRect rect = screen->GetRect();
-    nsPrintfCString value("%dx%d@%dHz scales:%f|%f", rect.width, rect.height,
-                          screen->GetRefreshRate(),
-                          screen->GetContentsScaleFactor(),
-                          screen->GetDefaultCSSScaleFactor());
+    nsPrintfCString value(
+        "%dx%d@%dHz scales:%f|%f %s", rect.width, rect.height,
+        screen->GetRefreshRate(), screen->GetContentsScaleFactor(),
+        screen->GetDefaultCSSScaleFactor(), screen->GetIsHDR() ? "HDR" : "SDR");
 
     aObj.DefineProperty(nsPrintfCString("Display%zu", i++).get(),
                         NS_ConvertUTF8toUTF16(value));

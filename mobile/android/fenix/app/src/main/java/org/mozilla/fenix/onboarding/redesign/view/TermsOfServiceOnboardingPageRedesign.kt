@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -121,6 +122,7 @@ fun TermsOfServiceOnboardingPageRedesign(
                 text = pageState.primaryButton.text,
                 modifier = Modifier
                     .width(width = FirefoxTheme.layout.size.maxWidth.small)
+                    .defaultMinSize(minHeight = FirefoxTheme.layout.size.static600)
                     .semantics {
                         testTag = pageState.title + "onboarding_card_redesign.positive_button"
                     },

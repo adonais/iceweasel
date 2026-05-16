@@ -21,6 +21,7 @@ import mozilla.components.compose.base.theme.layout.AcornWindowSize
  * A top-level Composable wrapper used to access Acorn Theming tokens.
  *
  * @param colors The [AcornColors] theme to use.
+ * @param colorScheme The [ColorScheme] to use.
  * @param content The children composables to be laid out.
  */
 @Composable
@@ -34,6 +35,7 @@ fun AcornTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
+            shapes = AcornShapes,
             content = content,
         )
     }

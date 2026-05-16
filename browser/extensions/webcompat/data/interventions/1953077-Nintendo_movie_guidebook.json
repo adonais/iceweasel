@@ -1,0 +1,17 @@
+{
+  "label": "Nintendo movie guidebook",
+  "bugs": {
+    "1953077": {
+      "issue": "broken-layout",
+      "matches": ["*://*.nintendo.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1953077-nintendo.com-fix-blank-movie-guidebook.css"]
+      }
+    }
+  ]
+}

@@ -37,6 +37,7 @@
 #include "nsIWebProgressListener.h"
 #include "nsNetUtil.h"
 #include "ThirdPartyUtil.h"
+#include "xpcpublic.h"
 
 using namespace mozilla::dom;
 
@@ -342,6 +343,10 @@ CookieService::Observe(nsISupports* /*aSubject*/, const char* aTopic,
 
 NS_IMETHODIMP
 CookieService::TestCloseCookieDB() {
+  if (!xpc::IsInAutomation()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   CloseCookieStorages();
   return NS_OK;
 }
@@ -1704,7 +1709,7 @@ CookieStorage* CookieService::PickStorage(
 
 nsICookieValidation::ValidationError CookieService::SetCookiesFromIPC(
     const nsACString& aBaseDomain, const OriginAttributes& aAttrs,
-    nsIURI* aHostURI, bool aFromHttp, bool aIsThirdParty,
+    nsIURI* aHostURI, bool aIsThirdParty,
     const nsTArray<CookieStruct>& aCookies, BrowsingContext* aBrowsingContext) {
   if (!IsInitialized()) {
     // If we are probably shutting down, we can ignore this cookie.
@@ -1716,7 +1721,7 @@ nsICookieValidation::ValidationError CookieService::SetCookiesFromIPC(
 
   for (const CookieStruct& cookieData : aCookies) {
     RefPtr<CookieValidation> validation = CookieValidation::ValidateForHost(
-        cookieData, aHostURI, aBaseDomain, false, aFromHttp);
+        cookieData, aHostURI, aBaseDomain, false, false);
     MOZ_ASSERT(validation);
 
     if (validation->Result() != nsICookieValidation::eOK) {
@@ -1735,8 +1740,7 @@ nsICookieValidation::ValidationError CookieService::SetCookiesFromIPC(
     cookie->SetUpdateTimeInUSec(cookie->CreationTimeInUSec());
 
     storage->AddCookie(nullptr, aBaseDomain, aAttrs, cookie, currentTimeInUsec,
-                       aHostURI, ""_ns, aFromHttp, aIsThirdParty,
-                       aBrowsingContext);
+                       aHostURI, ""_ns, false, aIsThirdParty, aBrowsingContext);
   }
 
   return nsICookieValidation::eOK;

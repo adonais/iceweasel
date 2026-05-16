@@ -8,6 +8,9 @@ skip-if = [
 ]
 
 ["browser_parent_has_pip_flag.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 
 ["browser_pip_closes_once.js"]
 
@@ -22,6 +25,9 @@ tags = "vertical-tabs" # Might collapse tabs toolbar, changing outer size
 ["browser_pip_throttling.js"]
 
 ["browser_pip_ui.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]
 tags = "vertical-tabs" # Could change visibility of browser UI elements
 
 ["browser_return_to_opener.js"]

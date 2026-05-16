@@ -25,9 +25,12 @@ function waitOptionsBrowserInserted() {
   });
 }
 
-add_task(async function enableHtmlViews() {
+add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
-    set: [["extensions.htmlaboutaddons.inline-options.enabled", true]],
+    set: [
+      ["extensions.htmlaboutaddons.inline-options.enabled", true],
+      ["widget.macos.allow-native-select", false],
+    ],
   });
 });
 

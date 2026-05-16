@@ -206,10 +206,11 @@ class GooglePlayIntegrityClient(
      * This method is safe to call multiple times and will only attempt
      * provider creation once unless the provider is refreshed.
      */
-    suspend fun warmUp() {
+    suspend fun warmUp(): Boolean {
         if (tokenProvider == null) {
             refreshTokenProvider()
         }
+        return tokenProvider?.isSuccess == true
     }
 
     /**
@@ -222,25 +223,19 @@ class GooglePlayIntegrityClient(
      * @return A [Result] containing an [IntegrityToken] on success, or a
      * failure if the request could not be fulfilled.
      */
-    override suspend fun request(): Result<IntegrityToken> {
+    override suspend fun request(): Result<IntegrityToken> = runCatching {
         warmUp()
 
-        val result = tokenProvider?.fold(
-            onSuccess = { it.request(requestHashProvider) },
-            onFailure = { Result.failure(it) },
-        ) ?: Result.failure(MissingTokenProvider())
+        val provider = checkNotNull(tokenProvider) {
+            "GooglePlayIntegrityClient is missing a token provider"
+        }.getOrThrow()
 
-        return result.fold(
-            onSuccess = { Result.success(it) },
-            onFailure = { throwable ->
-                if (throwable.tokenHasExpired) {
-                    refreshTokenProvider()
-                    return request()
-                }
-
-                Result.failure(throwable)
-            },
-        )
+        return provider.request(requestHashProvider).onFailure {
+            if (it.tokenHasExpired) {
+                refreshTokenProvider()
+                return request()
+            }
+        }
     }
 
     private suspend fun refreshTokenProvider() {
@@ -253,13 +248,6 @@ class GooglePlayIntegrityClient(
  */
 class InvalidProjectNumber :
     IllegalStateException("GoogleProjectNumber is Invalid.")
-
-/**
- * Thrown when a token request is attempted without an initialized
- * [TokenProvider].
- */
-class MissingTokenProvider :
-    IllegalStateException("GooglePlayIntegrityClient is missing a token provider")
 
 private val Throwable.tokenHasExpired: Boolean
     get() = (this as? StandardIntegrityException)?.tokenProviderHasExpired ?: false

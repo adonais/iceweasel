@@ -625,7 +625,7 @@ add_task(async function test_batched_webrequest_listeners() {
 
     let blocked = false;
     try {
-      fetch(
+      await content.wrappedJSObject.fetch(
         "https://example.com/browser/browser/base/content/test/general/download_page.html"
       );
     } catch (_) {
@@ -650,7 +650,7 @@ add_task(async function test_batched_webrequest_listeners() {
 
     let blocked = false;
     try {
-      fetch(
+      await content.wrappedJSObject.fetch(
         "https://example.com/browser/browser/base/content/test/static/download_page.html"
       );
     } catch (_) {
@@ -675,7 +675,7 @@ add_task(async function test_batched_webrequest_listeners() {
 
     let blocked = true;
     try {
-      fetch(
+      await content.wrappedJSObject.fetch(
         "https://example.net/browser/browser/base/content/test/about/download_page.html"
       );
       blocked = false;
@@ -699,7 +699,7 @@ add_task(async function test_batched_webrequest_listeners() {
 
     let blocked = false;
     try {
-      fetch(
+      await content.wrappedJSObject.fetch(
         "https://www.example.com/browser/browser/base/content/test/about/download_page.html"
       );
     } catch (_) {
@@ -715,4 +715,83 @@ add_task(async function test_batched_webrequest_listeners() {
     "test10",
     "test11",
   ]);
+});
+
+add_task(async function test_exclusions() {
+  const config12 = getConfig(
+    "test12",
+    [
+      {
+        ua_string: ["change_Gecko_to_like_Gecko"],
+        js: ["lib/ua_helpers.js"],
+      },
+    ],
+    {
+      blocks: ["*://example.com/*/general/download*"],
+      exclude_blocks: ["*://example.com/*/general/download_page_2.txt"],
+      matches: ["*://example.com/*/general/*"],
+      exclude_matches: ["*://example.com/*/general/clipboard*"],
+    }
+  );
+
+  await WebCompatExtension.interventionsSettled();
+  const configs = await WebCompatExtension.updateInterventions([config12]);
+  Assert.deepEqual(
+    configs.map(c => c.active),
+    [true],
+    "The intervention was activated"
+  );
+  Assert.deepEqual(
+    configs.map(c => c.interventions.map(i => i.enabled)),
+    [[true]],
+    "The intervention was enabled"
+  );
+
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening:
+      "https://example.com/browser/browser/base/content/test/general/dummy_page.html",
+    waitForLoad: true,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    const ua = content.navigator.userAgent;
+    ok(ua.includes("like Gecko"), "Intended UA override was applied");
+    ok(content.wrappedJSObject.UAHelpers, "Content script was injected");
+
+    let blocked = false;
+    try {
+      await content.wrappedJSObject.fetch(
+        "https://example.com/browser/browser/base/content/test/general/download_page_1.txt"
+      );
+    } catch (_) {
+      blocked = true;
+    }
+    ok(blocked, "blocked as expected");
+
+    blocked = false;
+    try {
+      await content.wrappedJSObject.fetch(
+        "https://example.com/browser/browser/base/content/test/general/download_page_2.txt"
+      );
+    } catch (_) {
+      blocked = true;
+    }
+    ok(!blocked, "not blocked, as expected");
+  });
+  await BrowserTestUtils.removeTab(tab);
+
+  tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening:
+      "https://example.com/browser/browser/base/content/test/general/clipboard_pastefile.html",
+    waitForLoad: true,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    const ua = content.navigator.userAgent;
+    ok(!ua.includes("like Gecko"), "Unintended UA override was not applied");
+    ok(!content.wrappedJSObject.UAHelpers, "Content script was not injected");
+  });
+  await BrowserTestUtils.removeTab(tab);
+
+  await WebCompatExtension.disableInterventions(["test12"]);
 });

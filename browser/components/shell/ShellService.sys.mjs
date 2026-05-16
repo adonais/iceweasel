@@ -10,6 +10,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
+  Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
   WindowsVersionInfo:
     "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
 });
@@ -546,11 +547,14 @@ let ShellServiceInternal = {
   /**
    * Pin Firefox app to the OS "taskbar."
    */
-  async pinToTaskbar(privateBrowsing = false) {
+  async pinToTaskbar(privateBrowsing = false, fireAndForget = false) {
     if (await this.doesAppNeedPin(privateBrowsing)) {
       try {
         if (AppConstants.platform == "win") {
-          await this.shellService.pinCurrentAppToTaskbarAsync(privateBrowsing);
+          await this.shellService.pinCurrentAppToTaskbarAsync(
+            privateBrowsing,
+            fireAndForget
+          );
         } else if (AppConstants.platform == "macosx") {
           this.macDockSupport.ensureAppIsPinnedToDock();
         }
@@ -736,8 +740,8 @@ let ShellServiceInternal = {
     ini.setString("Desktop Entry", "Name", title);
     ini.setString("Desktop Entry", "Icon", iconPath);
 
-    // Require using the Firefox executable for now.
-    argv.unshift(Services.dirsvc.get("XREExeF", Ci.nsIFile).path);
+    // All desktop files made with this must run the Firefox executable.
+    argv.unshift(await ShellService._findStartupCommand());
 
     // https://specifications.freedesktop.org/desktop-entry/latest/exec-variables
     // (\x60 = backtick, \x24 = dollar sign, \x22 = double quote, and
@@ -754,6 +758,101 @@ let ShellServiceInternal = {
       ShellService._getLinuxDesktopEntryPath(appId),
       ini.writeToString()
     );
+  },
+
+  /**
+   * Tries to find a command that will reliably start this installation,
+   * using the information in argv[0] if possible.
+   *
+   * For example, on NixOS the installation directory changes each update, so
+   * we should use '/run/current-system/sw/bin/firefox', and that itself points
+   * to a script which configures LD_LIBRARY_PATH so all of the dependencies
+   * can be found. See bug 2021897. If we referred to the executable directly,
+   * it'd point to a stale version and might be missing libraries
+   *
+   * Note that this won't handle cases where the script redirects over, like:
+   *     #!/bin/sh
+   *     exec ./firefox-bin "$@"
+   * since there's no good way to tell that this runs the current installation.
+   *
+   * To find the best command, we look at how the browser was run initially. If
+   * argv[0] is provided, the return value will either be
+   *   - argv[0] itself;
+   *   - the absolute path of argv[0]; or
+   *   - the absolute path of a symlink _to_ argv[0] (e.g. 'firefox' or
+   *     'firefox-esr').
+   *
+   * If argv[0] is not provided, the return value will be
+   *   - the absolute path of the executable; or
+   *   - the absolute path of a symlink _to_ the executable (e.g. 'firefox' or
+   *     'firefox-nightly').
+   *
+   * This can't be perfect, but the goal is to get the best command possible.
+   *
+   * @returns {string} A path that, when run, should reliably start the
+   * browser.
+   */
+  async _findStartupCommand() {
+    let executableFile = Services.dirsvc.get("XREExeF", Ci.nsIFile);
+
+    let wanted = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    let argv0 = ShellService.getArgv0();
+    try {
+      wanted.initWithPath(argv0);
+    } catch (e) {
+      if (argv0.includes("/")) {
+        wanted.setRelativePath(
+          Services.dirsvc.get("CurWorkD", Ci.nsIFile),
+          argv0
+        );
+      } else {
+        if (argv0 !== "") {
+          // argv[0] doesn't seem to be a path to anything, so assume it's just
+          // a command itself. If it seems to be present in the PATH, roll with
+          // it, otherwise fall back to the executable.
+          try {
+            await lazy.Subprocess.pathSearch(argv0);
+            return argv0; // if it doesn't throw
+          } catch (inner) {}
+        }
+
+        // If that didn't work, or it's empty, just refer to the executable
+        // directly.
+        wanted.initWithFile(executableFile);
+      }
+    }
+
+    let candidates = [
+      wanted.leafName,
+      // e.g. 'firefox-nightly'
+      AppConstants.MOZ_APP_NAME + "-" + AppConstants.MOZ_UPDATE_CHANNEL,
+      // e.g. 'firefox'
+      AppConstants.MOZ_APP_NAME,
+    ];
+
+    let lookupPromises = candidates.map(cmd => lazy.Subprocess.pathSearch(cmd));
+    let results = await Promise.allSettled(lookupPromises);
+
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    for (const { value } of results.filter(got => got.status === "fulfilled")) {
+      // See if it's a symlink to this installation.
+      file.initWithPath(value);
+
+      try {
+        // TODO: I think this is main thread I/O, but it looks like there's
+        // no good way around it...?
+        file.initWithPath(file.target);
+      } catch (e) {
+        // If that fails, look at the file itself (e.g. if the installation
+        // directory is in $PATH).
+      }
+
+      if (file.equals(wanted)) {
+        return PathUtils.filename(value);
+      }
+    }
+
+    return wanted.path;
   },
 
   /**

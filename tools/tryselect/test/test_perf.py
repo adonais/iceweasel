@@ -1160,17 +1160,19 @@ def test_full_run(options, call_counts, log_ind, expected_log_message):
                 "here once the tests are complete (the autodetected framework "
                 "selection may not show all of your tests):\n"
                 " https://perf.compare/compare-lando-results?"
-                "baseLando=13&newLando=14&"
+                "baseLando=42&newLando=43&"
                 "baseRepo=try&newRepo=try&framework=1\n"
             ),
         ),
     ],
 )
 @pytest.mark.skipif(os.name == "nt", reason="fzf not installed on host")
-def test_full_run_lando(options, call_counts, log_ind, expected_log_message):
-    with mock.patch("tryselect.selectors.perf.push_to_try") as ptt, mock.patch(
-        "tryselect.selectors.perf.run_fzf"
-    ) as fzf, mock.patch(
+def test_full_run_lando(
+    mock_push_to_lando_try, options, call_counts, log_ind, expected_log_message
+):
+    with mock_push_to_lando_try as ptt_lando, mock.patch(
+        "tryselect.selectors.perf.push_to_try"
+    ) as ptt, mock.patch("tryselect.selectors.perf.run_fzf") as fzf, mock.patch(
         "tryselect.selectors.perf.get_repository_object", new=mock.MagicMock()
     ), mock.patch(
         "tryselect.selectors.perf.LogProcessor.revision",
@@ -1208,6 +1210,7 @@ def test_full_run_lando(options, call_counts, log_ind, expected_log_message):
                     "description": "",
                 },
             }
+
             fzf.side_effect = [
                 ["", ["test 1 windows firefox"]],
                 ["", TASKS],
@@ -1231,7 +1234,12 @@ def test_full_run_lando(options, call_counts, log_ind, expected_log_message):
         get_mock.json.return_value = {"tasks": ["task 1", "task 2"]}
         requests_mock.get.return_value = get_mock
 
-        ptt.side_effect = ["13", "14"]
+        # Get the Lando return data from the fixture, and use it to build the return
+        # values for the subsequent calls to PTT
+        ptt_lando_job = ptt_lando.return_value
+        ptt_lando_job2 = ptt_lando_job.copy()
+        ptt_lando_job2["lando_job_id"] += 1
+        ptt.side_effect = [ptt_lando_job, ptt_lando_job2]
 
         fzf_side_effects = [
             ["", ["Benchmarks linux"]],

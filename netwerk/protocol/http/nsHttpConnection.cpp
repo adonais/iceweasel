@@ -433,13 +433,15 @@ void nsHttpConnection::PostProcessNPNSetup(bool handshakeSucceeded,
 
   // this is happening after the bootstrap was originally written to. so update
   // it.
-  if (mTransaction && mTransaction->QueryNullTransaction() &&
-      (mBootstrappedTimings.secureConnectionStart.IsNull() ||
-       mBootstrappedTimings.tcpConnectEnd.IsNull())) {
-    mBootstrappedTimings.secureConnectionStart =
-        mTransaction->QueryNullTransaction()->GetSecureConnectionStart();
-    mBootstrappedTimings.tcpConnectEnd =
-        mTransaction->QueryNullTransaction()->GetTcpConnectEnd();
+  if (mTransaction && mTransaction->QueryNullTransaction()) {
+    if (mBootstrappedTimings.secureConnectionStart.IsNull()) {
+      mBootstrappedTimings.secureConnectionStart =
+          mTransaction->QueryNullTransaction()->GetSecureConnectionStart();
+    }
+    if (mBootstrappedTimings.tcpConnectEnd.IsNull()) {
+      mBootstrappedTimings.tcpConnectEnd =
+          mTransaction->QueryNullTransaction()->GetTcpConnectEnd();
+    }
   }
 
   if (hasSecurityInfo) {
@@ -570,8 +572,17 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
   if (httpTrans && httpTrans->Connection() && !mConnInfo->UsingProxy()) {
     NetAddr peerAddr;
     httpTrans->Connection()->GetPeerAddr(&peerAddr);
-    if (!httpTrans->AllowedToConnectToIpAddressSpace(
-            peerAddr.GetIpAddressSpace())) {
+    auto addrSpace = peerAddr.GetIpAddressSpace();
+    // Local addresses are always checked here. Private addresses are only
+    // checked here for plaintext HTTP (no TLS handshake to defer to), or
+    // when network.lna.defer_https_check is disabled.
+    bool deferPrivate = mConnInfo->FirstHopSSL() &&
+                        StaticPrefs::network_lna_defer_https_check() &&
+                        !mTlsHandshaker->NPNComplete();
+    bool checkNow =
+        addrSpace == nsILoadInfo::IPAddressSpace::Local ||
+        (addrSpace == nsILoadInfo::IPAddressSpace::Private && !deferPrivate);
+    if (checkNow && !httpTrans->AllowedToConnectToIpAddressSpace(addrSpace)) {
       mSocketOutCondition = NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED;
       CloseTransaction(mTransaction, mSocketOutCondition);
       return mSocketOutCondition;
@@ -2516,6 +2527,35 @@ void nsHttpConnection::HandshakeDoneInternal() {
       mTransaction->Close(NS_ERROR_NET_RESET);
     }
     return;
+  }
+
+  // Deferred LNA check for HTTPS: when network.lna.defer_https_check is set,
+  // we let the TLS handshake proceed for Private targets and only deny here,
+  // after the peer has presented a valid, trusted certificate. Bailing out
+  // before StartSpdy keeps us from spinning up an Http2Session (and its
+  // static HPACK tables) just to tear it down. Local targets are handled
+  // pre-TLS; plaintext HTTP is handled in Activate.
+  if (mTransaction && mConnInfo->FirstHopSSL() && !mConnInfo->UsingProxy() &&
+      StaticPrefs::network_lna_blocking() &&
+      StaticPrefs::network_lna_defer_https_check()) {
+    nsHttpTransaction* httpTrans = mTransaction->QueryHttpTransaction();
+    if (httpTrans) {
+      NetAddr peerAddr;
+      if (NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
+        auto addrSpace = peerAddr.GetIpAddressSpace();
+        if (addrSpace == nsILoadInfo::IPAddressSpace::Private &&
+            !httpTrans->AllowedToConnectToIpAddressSpace(addrSpace)) {
+          DontReuse();
+          mTransaction->Close(NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+          // Drop the transaction reference before FinishNPNSetup so the
+          // PostProcessNPNSetup path doesn't touch it (e.g. Finish0RTT)
+          // after Close.
+          mTransaction = nullptr;
+          mTlsHandshaker->FinishNPNSetup(true, true);
+          return;
+        }
+      }
+    }
   }
 
   bool earlyDataAccepted = false;

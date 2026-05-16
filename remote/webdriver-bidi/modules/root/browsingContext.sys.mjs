@@ -1571,12 +1571,18 @@ class BrowsingContextModule extends RootBiDiModule {
 
     // webProgress will be stable even if the context navigates, retrieve it
     // immediately before doing any asynchronous call.
-    const webProgress = context.webProgress;
-
+    const { webProgress } = context;
     return this.#awaitNavigation(
       webProgress,
       () => {
-        context.reload(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+        const flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+        // Bug 2026546: As workaround use sessionHistory if available to avoid
+        // issues with frames.
+        if (context.sessionHistory) {
+          context.sessionHistory.reload(flags);
+        } else {
+          context.reload(flags);
+        }
       },
       { wait }
     );
@@ -2567,6 +2573,10 @@ class BrowsingContextModule extends RootBiDiModule {
         { retryOnAbort: true }
       );
     }
+  }
+
+  static get supportedCommandsFromContent() {
+    return ["_onConfigurationComplete"];
   }
 
   static get supportedEvents() {

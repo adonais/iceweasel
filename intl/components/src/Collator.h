@@ -54,6 +54,13 @@ class Collator final {
     mozilla_collator_glue_collator_free(reinterpret_cast<Collator*>(aCollator));
   }
 
+  /**
+   * Returns the resolved options of this collator.
+   */
+  CollatorOptions ResolvedOptions() {
+    return mozilla_collator_glue_collator_resolved_options(this);
+  }
+
   // If you have UTF-8, it's trivial to add `CompareUTF-8` that calls the
   // `compare_utf8` on the Rust collator. Do not convert from UTF-8 to UTF-16
   // and call this method!
@@ -130,18 +137,6 @@ class Collator final {
                             mozilla_collator_glue_locale_list_new,
                             mozilla_collator_glue_locale_list_free>();
   }
-
-#if DEBUG
-  static bool LocaleIsUpperFirst(mozilla::Span<const char> aLocale) {
-    return mozilla_collator_glue_locale_is_upper_first(aLocale.Elements(),
-                                                       aLocale.Length());
-  }
-
-  static bool LocaleIgnoresPunctuation(mozilla::Span<const char> aLocale) {
-    return mozilla_collator_glue_locale_ignores_punctuation(aLocale.Elements(),
-                                                            aLocale.Length());
-  }
-#endif
 
   Collator() = delete;
   Collator(const Collator&) = delete;

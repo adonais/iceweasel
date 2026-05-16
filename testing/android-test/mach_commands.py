@@ -16,7 +16,8 @@ def classname_for_test(test, test_path):
     # test_path = src/test/java
     # returns   = mozilla.components.feature.addons.ui.PermissionsDialogFragmentTest
     return (
-        os.path.normpath(test)
+        os.path
+        .normpath(test)
         .split(os.path.normpath(test_path))[-1]
         .removeprefix(os.path.sep)
         .replace(os.path.sep, ".")
@@ -32,7 +33,8 @@ def project_for_test(test, prefix):
     # prefix    = mobile/android
     # returns   = android-components
     return (
-        os.path.normpath(test)
+        os.path
+        .normpath(test)
         .split(os.path.normpath(prefix))[-1]
         .removeprefix(os.path.sep)
         .split(os.path.sep)[0]
@@ -47,7 +49,8 @@ def project_for_ac(test, prefix, test_path):
     # test_path = src/test/java
     # returns   = feature-addons
     return (
-        os.path.normpath(test)
+        os.path
+        .normpath(test)
         .split(os.path.normpath(prefix))[-1]
         .split(os.path.normpath(test_path))[0]
         .removeprefix(os.path.sep)

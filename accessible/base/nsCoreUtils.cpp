@@ -232,15 +232,15 @@ bool nsCoreUtils::IsAncestorOf(nsINode* aPossibleAncestorNode,
 
 nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
                                         uint32_t aScrollType) {
-  ScrollAxis vertical, horizontal;
+  AxisScrollParams vertical, horizontal;
   ConvertScrollTypeToPercents(aScrollType, &vertical, &horizontal);
 
   return ScrollSubstringTo(aFrame, aRange, vertical, horizontal);
 }
 
 nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
-                                        ScrollAxis aVertical,
-                                        ScrollAxis aHorizontal) {
+                                        AxisScrollParams aVertical,
+                                        AxisScrollParams aHorizontal) {
   if (!aFrame || !aRange) {
     return NS_ERROR_FAILURE;
   }
@@ -288,8 +288,8 @@ void nsCoreUtils::ScrollFrameToPoint(nsIFrame* aScrollContainerFrame,
 }
 
 void nsCoreUtils::ConvertScrollTypeToPercents(uint32_t aScrollType,
-                                              ScrollAxis* aVertical,
-                                              ScrollAxis* aHorizontal) {
+                                              AxisScrollParams* aVertical,
+                                              AxisScrollParams* aHorizontal) {
   WhereToScroll whereY, whereX;
   WhenToScroll whenY, whenX;
   switch (aScrollType) {
@@ -335,8 +335,8 @@ void nsCoreUtils::ConvertScrollTypeToPercents(uint32_t aScrollType,
       whereX = WhereToScroll::Center;
       whenX = WhenToScroll::IfNotFullyVisible;
   }
-  *aVertical = ScrollAxis(whereY, whenY);
-  *aHorizontal = ScrollAxis(whereX, whenX);
+  *aVertical = AxisScrollParams(whereY, whenY);
+  *aHorizontal = AxisScrollParams(whereX, whenX);
 }
 
 already_AddRefed<nsIDocShell> nsCoreUtils::GetDocShellFor(nsINode* aNode) {
@@ -540,7 +540,7 @@ bool nsCoreUtils::IsColumnHidden(nsTreeColumn* aColumn) {
 
 void nsCoreUtils::ScrollTo(PresShell* aPresShell, nsIContent* aContent,
                            uint32_t aScrollType) {
-  ScrollAxis vertical, horizontal;
+  AxisScrollParams vertical, horizontal;
   ConvertScrollTypeToPercents(aScrollType, &vertical, &horizontal);
   aPresShell->ScrollContentIntoView(aContent, vertical, horizontal,
                                     ScrollFlags::ScrollOverflowHidden);

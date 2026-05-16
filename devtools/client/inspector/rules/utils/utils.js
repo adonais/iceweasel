@@ -138,11 +138,15 @@ function getNodeInfo(node, elementStyle) {
   ) {
     type = VIEW_NODE_INACTIVE_CSS;
     value = declaration.getInactiveCssData();
-  } else if (node.closest(".container-query-declaration")) {
+  } else if (node.closest(".container-condition")) {
     type = VIEW_NODE_CSS_QUERY_CONTAINER;
-    const containerQueryEl = node.closest(".container-query");
     value = {
-      ancestorIndex: containerQueryEl.getAttribute("data-ancestor-index"),
+      ancestorIndex: node
+        .closest("[data-ancestor-index]")
+        .getAttribute("data-ancestor-index"),
+      conditionIndex: node
+        .closest("[data-condition-index]")
+        .getAttribute("data-condition-index"),
       rule,
     };
   } else if (node.classList.contains("ruleview-selector-warnings")) {

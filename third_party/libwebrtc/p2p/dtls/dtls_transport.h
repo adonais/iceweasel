@@ -31,6 +31,7 @@
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
+#include "api/units/timestamp.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/dtls/dtls_stun_piggyback_controller.h"
@@ -52,6 +53,15 @@
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
+
+// Used by histograms. Values of entries should not be changed, except for kMax.
+enum class HistogramDtlsVersion {
+  kUnknown = 0,
+  kDtls10 = 1,
+  kDtls12 = 2,
+  kDtls13 = 3,
+  kMax = 4
+};
 
 // A bridge between a packet-oriented/transport-type interface on
 // the bottom and a StreamInterface on the top.
@@ -127,6 +137,11 @@ class StreamInterfaceChannel : public StreamInterface {
 // as the constructor.
 class DtlsTransportInternalImpl : public DtlsTransportInternal {
  public:
+  // See https://datatracker.ietf.org/doc/html/rfc9147#section-5.8.2,
+  // the RFC specifies 400ms...but in ComputeRetransmissionTimeout
+  // the RTT estimate is multiplied by 2, so the first timeout will be 400 ms.
+  static constexpr int kDefaultHandshakeEstimateRttMs = 200;
+
   // For testing purposes only.
   using SslStreamFactory = std::function<std::unique_ptr<SSLStreamAdapter>(
       std::unique_ptr<StreamInterface>,
@@ -221,7 +236,9 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   // Once DTLS has established (i.e., this ice_transport is writable), this
   // method extracts the keys negotiated during the DTLS handshake, for use in
   // external encryption. DTLS-SRTP uses this to extract the needed SRTP keys.
-  bool ExportSrtpKeyingMaterial(
+  [[deprecated]] bool ExportSrtpKeyingMaterial(
+      ZeroOnFreeBuffer<uint8_t>& keying_material) override;
+  bool AppendSrtpKeyingMaterial(
       ZeroOnFreeBuffer<uint8_t>& keying_material) override;
 
   IceTransportInternal* ice_transport() override;
@@ -259,6 +276,7 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   // Two methods for testing.
   bool IsDtlsPiggybackSupportedByPeer();
   bool WasDtlsCompletedByPiggybacking();
+  void SetFakeIceLite() { fake_ice_lite_ = true; }
 
  private:
   void ConnectToIceTransport();
@@ -278,11 +296,14 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   bool HandleDtlsPacket(ArrayView<const uint8_t> payload);
   void OnDtlsHandshakeError(SSLHandshakeError error);
   void ConfigureHandshakeTimeout();
+  void UpdateHandshakeTimeout();
 
   void set_receiving(bool receiving);
   void set_writable(bool writable);
   // Sets the DTLS state, signaling if necessary.
   void set_dtls_state(DtlsTransportState state);
+
+  void CompleteDtlsInStun(bool success);
   void SetPiggybackDtlsDataCallback(
       absl::AnyInvocable<void(PacketTransportInternal* transport,
                               const ReceivedIpPacket& packet)> callback);
@@ -301,6 +322,8 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
 
   const int component_;
   DtlsTransportState dtls_state_ = DtlsTransportState::kNew;
+  Timestamp connecting_state_timestamp_ = Timestamp::Micros(0);
+
   // Underlying ice_transport.
   const scoped_refptr<IceTransportInterface> ice_transport_;
   std::unique_ptr<SSLStreamAdapter> dtls_;  // The DTLS stream
@@ -334,6 +357,9 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   // (so that we return PIGGYBACK_ACK to client if we get STUN_BINDING_REQUEST
   // directly). Maybe disabled in SetupDtls has been called.
   bool dtls_in_stun_ = false;
+  // Has DtlsInStun Complete been run?
+  // This variable is used to prevent reinitializing after dtls-restart.
+  bool dtls_in_stun_complete_ = false;
 
   // A controller for piggybacking DTLS in STUN.
   DtlsStunPiggybackController dtls_stun_piggyback_controller_;
@@ -347,6 +373,9 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   // DtlsTransportInternalImpl has a "hack" to periodically retransmit.
   bool pending_periodic_retransmit_dtls_packet_ = false;
   ScopedTaskSafetyDetached safety_flag_;
+
+  // We reuse this class also in tests that pretend to be ice-lite.
+  bool fake_ice_lite_ = false;
 };
 
 }  // namespace webrtc

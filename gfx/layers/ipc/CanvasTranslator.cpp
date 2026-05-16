@@ -49,7 +49,8 @@ UniquePtr<TextureData> CanvasTranslator::CreateTextureData(
   switch (mTextureType) {
     case TextureType::Unknown:
       textureData = BufferTextureData::Create(
-          aSize, aFormat, gfx::BackendType::SKIA, LayersBackend::LAYERS_WR,
+          aSize, aFormat, gfx::ColorSpace2::SRGB, gfx::TransferFunction::SRGB,
+          gfx::BackendType::SKIA, LayersBackend::LAYERS_WR,
           TextureFlags::DEALLOCATE_CLIENT | TextureFlags::REMOTE_TEXTURE,
           allocFlags, nullptr);
       break;

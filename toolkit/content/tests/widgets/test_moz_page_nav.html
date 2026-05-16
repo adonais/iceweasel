@@ -490,6 +490,64 @@
 
         container.remove();
       });
+
+      /**
+       * Tests that allowNoSelection prevents auto-selecting the first button
+       * when currentView doesn't match any button.
+       */
+      add_task(async function test_allow_no_selection() {
+        const container = document.createElement("div");
+        document.body.append(container);
+
+        const nav = document.createElement("moz-page-nav");
+        nav.allowNoSelection = true;
+        container.append(nav);
+
+        const btn1 = document.createElement("moz-page-nav-button");
+        btn1.setAttribute("view", "view-one");
+        const btn2 = document.createElement("moz-page-nav-button");
+        btn2.setAttribute("view", "view-two");
+        nav.append(btn1, btn2);
+        await nav.updateComplete;
+
+        // With allowNoSelection, the first button should still be
+        // auto-selected on initial render (currentView is unset).
+        is(
+          nav.currentView,
+          "view-one",
+          "First button is auto-selected when currentView is initially unset"
+        );
+
+        // Set currentView to a non-matching value — should NOT auto-select.
+        nav.currentView = "non-existent-view";
+        await nav.updateComplete;
+
+        is(
+          nav.currentView,
+          "non-existent-view",
+          "Non-matching currentView persists when allowNoSelection is true"
+        );
+        ok(
+          nav.pageNavButtons.every(b => !b.selected),
+          "No button is selected when currentView doesn't match any view"
+        );
+
+        // Disable allowNoSelection — should auto-select the first button.
+        // Needs two awaits: the first render calls activate() which sets
+        // currentView, scheduling a second render that sets selected.
+        nav.allowNoSelection = false;
+        await nav.updateComplete;
+        await nav.updateComplete;
+
+        is(
+          nav.currentView,
+          "view-one",
+          "First button is auto-selected after allowNoSelection is turned off"
+        );
+        ok(nav.pageNavButtons[0].selected, "First button has selected=true");
+
+        container.remove();
+      });
     </script>
   </body>
 </html>

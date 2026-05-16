@@ -39,6 +39,16 @@ NimbusTestUtils.init(this);
 
 const kDefaultWait = 2000;
 
+// Synthesized events are not available with native menus
+const nativeSelectEnabled = () =>
+  AppConstants.platform == "macosx" &&
+  Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
+  Services.prefs.getBoolPref("widget.macos.allow-native-select", false);
+
+const SRD_PREF_VALUE = Services.prefs.getBoolPref(
+  "browser.settings-redesign.enabled"
+);
+
 function is_element_visible(aElement, aMsg) {
   isnot(aElement, null, "Element should not be null, when checking visibility");
   ok(!BrowserTestUtils.isHidden(aElement), aMsg);
@@ -289,381 +299,6 @@ async function waitForAndAssertPrefState(pref, expectedValue, message) {
 }
 
 /**
- * The Relay promo is not shown for distributions with a custom FxA instance,
- * since Relay requires an account on our own server. These prefs are set to a
- * dummy address by the test harness, filling the prefs with a "user value."
- * This temporarily sets the default value equal to the dummy value, so that
- * Firefox thinks we've configured the correct FxA server.
- *
- * @returns {Promise<MockFxAUtilityFunctions>} { mock, unmock }
- */
-async function mockDefaultFxAInstance() {
-  /**
-   * @typedef {object} MockFxAUtilityFunctions
-   * @property {function():void} mock - Makes the dummy values default, creating
-   *                             the illusion of a production FxA instance.
-   * @property {function():void} unmock - Restores the true defaults, creating
-   *                             the illusion of a custom FxA instance.
-   */
-
-  const defaultPrefs = Services.prefs.getDefaultBranch("");
-  const userPrefs = Services.prefs.getBranch("");
-  const realAuth = defaultPrefs.getCharPref("identity.fxaccounts.auth.uri");
-  const realRoot = defaultPrefs.getCharPref("identity.fxaccounts.remote.root");
-  const mockAuth = userPrefs.getCharPref("identity.fxaccounts.auth.uri");
-  const mockRoot = userPrefs.getCharPref("identity.fxaccounts.remote.root");
-  const mock = () => {
-    defaultPrefs.setCharPref("identity.fxaccounts.auth.uri", mockAuth);
-    defaultPrefs.setCharPref("identity.fxaccounts.remote.root", mockRoot);
-    userPrefs.clearUserPref("identity.fxaccounts.auth.uri");
-    userPrefs.clearUserPref("identity.fxaccounts.remote.root");
-  };
-  const unmock = () => {
-    defaultPrefs.setCharPref("identity.fxaccounts.auth.uri", realAuth);
-    defaultPrefs.setCharPref("identity.fxaccounts.remote.root", realRoot);
-    userPrefs.setCharPref("identity.fxaccounts.auth.uri", mockAuth);
-    userPrefs.setCharPref("identity.fxaccounts.remote.root", mockRoot);
-  };
-
-  mock();
-  registerCleanupFunction(unmock);
-
-  return { mock, unmock };
-}
-
-/**
- * Runs a test that checks the visibility of the Firefox Suggest preferences UI.
- * An initial Suggest enabled status is set and visibility is checked. Then a
- * Nimbus experiment is installed that enables or disables Suggest and
- * visibility is checked again. Finally the page is reopened and visibility is
- * checked again.
- *
- * @param {boolean} initialSuggestEnabled
- *   Whether Suggest should be enabled initially.
- * @param {object} initialExpected
- *   The expected visibility after setting the initial enabled status. It should
- *   be an object that can be passed to `assertSuggestVisibility()`.
- * @param {object} nimbusVariables
- *   An object mapping Nimbus variable names to values.
- * @param {object} newExpected
- *   The expected visibility after installing the Nimbus experiment. It should
- *   be an object that can be passed to `assertSuggestVisibility()`.
- * @param {string} pane
- *   The pref pane to open.
- */
-async function doSuggestVisibilityTest({
-  initialSuggestEnabled,
-  initialExpected,
-  nimbusVariables,
-  newExpected = initialExpected,
-  pane = "search",
-}) {
-  info(
-    "Running Suggest visibility test: " +
-      JSON.stringify(
-        {
-          initialSuggestEnabled,
-          initialExpected,
-          nimbusVariables,
-          newExpected,
-        },
-        null,
-        2
-      )
-  );
-
-  // Set the initial enabled status.
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.quicksuggest.enabled", initialSuggestEnabled]],
-  });
-
-  // Open prefs and check the initial visibility.
-  await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
-  await assertSuggestVisibility(initialExpected);
-
-  // Install a Nimbus experiment.
-  await QuickSuggestTestUtils.withExperiment({
-    valueOverrides: nimbusVariables,
-    callback: async () => {
-      // Check visibility again.
-      await assertSuggestVisibility(newExpected);
-
-      // To make sure visibility is properly updated on load, close the tab,
-      // open the prefs again, and check visibility.
-      gBrowser.removeCurrentTab();
-      await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
-      await assertSuggestVisibility(newExpected);
-    },
-  });
-
-  gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-}
-
-/**
- * Checks the visibility of the Suggest UI.
- *
- * @param {object} expectedByElementId
- *   An object that maps IDs of elements in the current tab to objects with the
- *   following properties:
- *
- *   {bool} isVisible
- *     Whether the element is expected to be visible.
- *   {string} l10nId
- *     The expected l10n ID of the element. Optional.
- */
-async function assertSuggestVisibility(expectedByElementId) {
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  for (let [elementId, { isVisible, l10nId }] of Object.entries(
-    expectedByElementId
-  )) {
-    let element = doc.getElementById(elementId);
-    await TestUtils.waitForCondition(
-      () => BrowserTestUtils.isVisible(element) == isVisible,
-      "Waiting for element visbility: " +
-        JSON.stringify({ elementId, isVisible })
-    );
-    Assert.strictEqual(
-      BrowserTestUtils.isVisible(element),
-      isVisible,
-      "Element should have expected visibility: " + elementId
-    );
-    if (l10nId) {
-      Assert.equal(
-        element.dataset.l10nId,
-        l10nId,
-        "The l10n ID should be correct for element: " + elementId
-      );
-    }
-  }
-}
-
-const DEFAULT_LABS_RECIPES = [
-  NimbusTestUtils.factories.recipe("nimbus-qa-1", {
-    targeting: "true",
-    isRollout: true,
-    isFirefoxLabsOptIn: true,
-    firefoxLabsTitle: "experimental-features-ime-search",
-    firefoxLabsDescription: "experimental-features-ime-search-description",
-    firefoxLabsDescriptionLinks: null,
-    firefoxLabsGroup: "experimental-features-group-customize-browsing",
-    requiresRestart: false,
-    branches: [
-      {
-        slug: "control",
-        ratio: 1,
-        features: [
-          {
-            featureId: "nimbus-qa-1",
-            value: {
-              value: "recipe-value-1",
-            },
-          },
-        ],
-      },
-    ],
-  }),
-
-  NimbusTestUtils.factories.recipe("nimbus-qa-2", {
-    targeting: "true",
-    isRollout: true,
-    isFirefoxLabsOptIn: true,
-    firefoxLabsTitle: "experimental-features-media-jxl",
-    firefoxLabsDescription: "experimental-features-media-jxl-description",
-    firefoxLabsDescriptionLinks: {
-      bugzilla: "https://example.com",
-    },
-    firefoxLabsGroup: "experimental-features-group-webpage-display",
-    branches: [
-      {
-        slug: "control",
-        ratio: 1,
-        features: [
-          {
-            featureId: "nimbus-qa-2",
-            value: {
-              value: "recipe-value-2",
-            },
-          },
-        ],
-      },
-    ],
-  }),
-
-  NimbusTestUtils.factories.recipe("targeting-false", {
-    targeting: "false",
-    isRollout: true,
-    isFirefoxLabsOptIn: true,
-    firefoxLabsTitle: "experimental-features-ime-search",
-    firefoxLabsDescription: "experimental-features-ime-search-description",
-    firefoxLabsDescriptionLinks: null,
-    firefoxLabsGroup: "experimental-features-group-developer-tools",
-    requiresRestart: false,
-  }),
-
-  NimbusTestUtils.factories.recipe("bucketing-false", {
-    bucketConfig: {
-      ...NimbusTestUtils.factories.recipe.bucketConfig,
-      count: 0,
-    },
-    isRollout: true,
-    targeting: "true",
-    isFirefoxLabsOptIn: true,
-    firefoxLabsTitle: "experimental-features-ime-search",
-    firefoxLabsDescription: "experimental-features-ime-search-description",
-    firefoxLabsDescriptionLinks: null,
-    firefoxLabsGroup: "experimental-features-group-developer-tools",
-    requiresRestart: false,
-  }),
-];
-
-async function setupLabsTest(recipes) {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["app.normandy.run_interval_seconds", 0],
-      ["app.shield.optoutstudies.enabled", true],
-      ["datareporting.healthreport.uploadEnabled", true],
-      ["messaging-system.log", "debug"],
-    ],
-    clear: [
-      ["browser.preferences.experimental"],
-      ["browser.preferences.experimental.hidden"],
-    ],
-  });
-  // Initialize Nimbus and wait for the RemoteSettingsExperimentLoader to finish
-  // updating (with no recipes).
-  await ExperimentAPI.ready();
-  await ExperimentAPI._rsLoader.finishedUpdating();
-
-  // Inject some recipes into the Remote Settings client and call
-  // updateRecipes() so that we have available opt-ins.
-  await ExperimentAPI._rsLoader.remoteSettingsClients.experiments.db.importChanges(
-    {},
-    Date.now(),
-    recipes ?? DEFAULT_LABS_RECIPES,
-    { clear: true }
-  );
-  await ExperimentAPI._rsLoader.remoteSettingsClients.secureExperiments.db.importChanges(
-    {},
-    Date.now(),
-    [],
-    { clear: true }
-  );
-
-  await ExperimentAPI._rsLoader.updateRecipes("test");
-
-  return async function cleanup() {
-    await NimbusTestUtils.removeStore(ExperimentAPI.manager.store);
-    await SpecialPowers.popPrefEnv();
-  };
-}
-
-function promiseNimbusStoreUpdate(wantedSlug, wantedActive) {
-  const deferred = Promise.withResolvers();
-  const listener = (_event, { slug, active }) => {
-    info(
-      `promiseNimbusStoreUpdate: received update for ${slug} active=${active}`
-    );
-    if (slug === wantedSlug && active === wantedActive) {
-      ExperimentAPI._manager.store.off("update", listener);
-      deferred.resolve();
-    }
-  };
-
-  ExperimentAPI._manager.store.on("update", listener);
-  return deferred.promise;
-}
-
-function enrollByClick(el, wantedActive) {
-  const slug = el.dataset.nimbusSlug;
-
-  info(`Enrolling in ${slug}:${el.dataset.nimbusBranchSlug}...`);
-
-  const promise = promiseNimbusStoreUpdate(slug, wantedActive);
-  EventUtils.synthesizeMouseAtCenter(el.inputEl, {}, gBrowser.contentWindow);
-  return promise;
-}
-
-/**
- * Clicks a checkbox and waits for the associated preference to change to the expected value.
- *
- * @param {Document} doc - The content document.
- * @param {string} checkboxId - The checkbox element id.
- * @param {string} prefName - The preference name.
- * @param {boolean} expectedValue - The expected value after click.
- * @returns {Promise<HTMLInputElement>}
- */
-async function clickCheckboxAndWaitForPrefChange(
-  doc,
-  checkboxId,
-  prefName,
-  expectedValue
-) {
-  let checkbox = doc.getElementById(checkboxId);
-  let prefChange = waitForAndAssertPrefState(prefName, expectedValue);
-
-  checkbox.click();
-
-  await prefChange;
-  is(
-    checkbox.checked,
-    expectedValue,
-    `The checkbox #${checkboxId} should be in the expected state after being clicked.`
-  );
-  return checkbox;
-}
-
-/**
- * Clicks a checkbox that triggers a confirmation dialog and handles the dialog response.
- *
- * @param {Document} doc - The document containing the checkbox.
- * @param {string} checkboxId - The ID of the checkbox to click.
- * @param {string} prefName - The name of the preference that should change.
- * @param {boolean} expectedValue - The expected value after handling the dialog.
- * @param {number} buttonNumClick - The button to click in the dialog (0 = cancel, 1 = OK).
- * @returns {Promise<HTMLInputElement>}
- */
-async function clickCheckboxWithConfirmDialog(
-  doc,
-  checkboxId,
-  prefName,
-  expectedValue,
-  buttonNumClick
-) {
-  let checkbox = doc.getElementById(checkboxId);
-
-  let promptPromise = PromptTestUtils.handleNextPrompt(
-    gBrowser.selectedBrowser,
-    { modalType: Services.prompt.MODAL_TYPE_CONTENT },
-    { buttonNumClick }
-  );
-
-  let prefChangePromise = null;
-  if (buttonNumClick === 1) {
-    // Only wait for the final preference change to the expected value
-    // The baseline checkbox handler sets the checkbox state directly and
-    // the preference binding handles the actual preference change
-    prefChangePromise = waitForAndAssertPrefState(prefName, expectedValue);
-  }
-
-  checkbox.click();
-
-  await promptPromise;
-
-  if (prefChangePromise) {
-    await prefChangePromise;
-  }
-
-  is(
-    checkbox.checked,
-    expectedValue,
-    `The checkbox #${checkboxId} should be in the expected state after dialog interaction.`
-  );
-
-  return checkbox;
-}
-
-/**
  * Select the given history mode via dropdown in the privacy pane.
  *
  * @param {Window} win - The preferences window which contains the
@@ -708,7 +343,11 @@ async function selectHistoryMode(win, value) {
 
   let popupHiddenPromise = BrowserTestUtils.waitForPopupEvent(popup, "hidden");
 
-  EventUtils.synthesizeMouseAtCenter(targetItem, {}, targetItem.ownerGlobal);
+  if (nativeSelectEnabled()) {
+    popup.activateItem(targetItem);
+  } else {
+    EventUtils.synthesizeMouseAtCenter(targetItem, {}, targetItem.ownerGlobal);
+  }
 
   await popupHiddenPromise;
 }
@@ -809,7 +448,7 @@ async function waitForSettingControlChange(control) {
  */
 async function waitForPaneChange(
   paneId,
-  win = gBrowser.selectedBrowser.ownerGlobal
+  win = gBrowser.selectedBrowser.contentWindow
 ) {
   let event = await BrowserTestUtils.waitForEvent(win.document, "paneshown");
   let expectId = paneId.startsWith("pane")
@@ -827,15 +466,9 @@ async function waitForPaneChange(
  */
 function getSettingControl(
   settingId,
-  win = gBrowser.selectedBrowser.ownerGlobal
+  win = gBrowser.selectedBrowser.contentWindow
 ) {
   return win.document.getElementById(`setting-control-${settingId}`);
-}
-
-function getControl(doc, id) {
-  let control = doc.getElementById(id);
-  ok(control, `Control ${id} exists`);
-  return control;
 }
 
 function synthesizeClick(el) {
@@ -844,86 +477,12 @@ function synthesizeClick(el) {
   EventUtils.synthesizeMouseAtCenter(target, {}, target.ownerGlobal);
 }
 
-function getControlWrapper(doc, id) {
-  return getControl(doc, id).closest("setting-control");
-}
-
-async function openEtpPage() {
-  await openPreferencesViaOpenPreferencesAPI("etp", { leaveOpen: true });
-  let doc = gBrowser.contentDocument;
-  await BrowserTestUtils.waitForCondition(
-    () => doc.getElementById("contentBlockingCategoryRadioGroup"),
-    "Wait for the ETP advanced radio group to render"
-  );
-  return {
-    win: gBrowser.contentWindow,
-    doc,
-    tab: gBrowser.selectedTab,
-  };
-}
-
-async function openEtpCustomizePage() {
-  await openPreferencesViaOpenPreferencesAPI("etpCustomize", {
-    leaveOpen: true,
-  });
-  let doc = gBrowser.contentDocument;
-  await BrowserTestUtils.waitForCondition(
-    () => doc.getElementById("etpAllowListBaselineEnabledCustom"),
-    "Wait for the ETP customize controls to render"
-  );
-  return {
-    win: gBrowser.contentWindow,
-    doc,
-  };
-}
-
 async function changeMozSelectValue(selectEl, value) {
   let control = selectEl.control;
   let changePromise = waitForSettingControlChange(control);
   selectEl.value = value;
   selectEl.dispatchEvent(new Event("change", { bubbles: true }));
   await changePromise;
-}
-
-async function clickEtpBaselineCheckboxWithConfirm(
-  doc,
-  controlId,
-  prefName,
-  expectedValue,
-  buttonNumClick
-) {
-  let checkbox = getControl(doc, controlId);
-
-  let promptPromise = PromptTestUtils.handleNextPrompt(
-    gBrowser.selectedBrowser,
-    { modalType: Services.prompt.MODAL_TYPE_CONTENT },
-    { buttonNumClick }
-  );
-
-  let prefChangePromise = null;
-  if (buttonNumClick === 1) {
-    prefChangePromise = waitForAndAssertPrefState(
-      prefName,
-      expectedValue,
-      `${prefName} updated`
-    );
-  }
-
-  synthesizeClick(checkbox);
-
-  await promptPromise;
-
-  if (prefChangePromise) {
-    await prefChangePromise;
-  }
-
-  is(
-    checkbox.checked,
-    expectedValue,
-    `Checkbox ${controlId} should be ${expectedValue}`
-  );
-
-  return checkbox;
 }
 
 // Ensure each test leaves the sidebar in its initial state when it completes
@@ -936,114 +495,9 @@ registerCleanupFunction(async function () {
     !ObjectUtils.deepEqual(SidebarController.getUIState(), initialSidebarState)
   ) {
     info("Restoring to initial sidebar state");
-    await SidebarController.initializeUIState(initialSidebarState);
+    await SidebarController.updateUIState(initialSidebarState);
   }
 });
-let { Region } = ChromeUtils.importESModule(
-  "resource://gre/modules/Region.sys.mjs"
-);
-
-const initialHomeRegion = Region.home;
-const initialCurrentRegion = Region.current;
-
-function setupRegions(home, current) {
-  Region._setHomeRegion(home || "");
-  Region._setCurrentRegion(current || "");
-}
-
-function setLocale(language) {
-  Services.locale.availableLocales = [language];
-  Services.locale.requestedLocales = [language];
-}
-
-async function clearPolicies() {
-  await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
-}
-
-async function getPromoCards() {
-  await openPreferencesViaOpenPreferencesAPI("paneMoreFromMozilla", {
-    leaveOpen: true,
-  });
-
-  let doc = gBrowser.contentDocument;
-  let vpnPromoCard = doc.getElementById("mozilla-vpn");
-  let monitorPromoCard = doc.getElementById("mozilla-monitor");
-  let mobileCard = doc.getElementById("firefox-mobile");
-  let relayPromoCard = doc.getElementById("firefox-relay");
-
-  return {
-    vpnPromoCard,
-    monitorPromoCard,
-    mobileCard,
-    relayPromoCard,
-  };
-}
-
-// Home Settings test helpers
-/**
- * Opens the Home preferences page and waits for it to fully render.
- *
- * @returns {Promise<object>} Object containing the window, document, and tab references.
- */
-async function openHomePreferences() {
-  await openPreferencesViaOpenPreferencesAPI("home", { leaveOpen: true });
-  let doc = gBrowser.contentDocument;
-  await BrowserTestUtils.waitForCondition(
-    () => doc.querySelector('setting-group[groupid="home"]'),
-    "Wait for the Firefox Home setting group to render"
-  );
-
-  // Wait for the setting-group web component to finish rendering
-  let homeGroup = doc.querySelector('setting-group[groupid="home"]');
-  if (homeGroup.updateComplete) {
-    await homeGroup.updateComplete;
-  }
-
-  return {
-    win: gBrowser.contentWindow,
-    doc,
-    tab: gBrowser.selectedTab,
-  };
-}
-
-/**
- * Opens the custom homepage subpage directly and waits for it to fully render.
- *
- * @returns {Promise<object>} Object containing win, doc, and tab references.
- */
-async function openCustomHomepageSubpage() {
-  await openPreferencesViaOpenPreferencesAPI("customHomepage", {
-    leaveOpen: true,
-  });
-  let doc = gBrowser.contentDocument;
-
-  await BrowserTestUtils.waitForCondition(
-    () => doc.querySelector("#setting-control-customHomepageAddUrlInput"),
-    "Wait for custom homepage subpage to fully render"
-  );
-
-  return { win: gBrowser.contentWindow, doc, tab: gBrowser.selectedTab };
-}
-
-/**
- * Waits for a setting control to render and complete any async updates.
- *
- * @param {string} settingId - The setting identifier.
- * @param {Window} [win] - Optional window, defaults to current browser window.
- * @returns {Promise<Element>} The rendered setting control element.
- */
-async function settingControlRenders(settingId, win) {
-  await BrowserTestUtils.waitForCondition(
-    () => getSettingControl(settingId, win),
-    `Wait for ${settingId} control to render`
-  );
-  let control = getSettingControl(settingId, win);
-  if (control?.updateComplete) {
-    await control.updateComplete;
-  }
-  return control;
-}
-
 /**
  * Waits for a boolean preference to change to the expected value.
  *
@@ -1056,49 +510,4 @@ async function waitForPrefChange(prefName, expectedValue) {
     () => Services.prefs.getBoolPref(prefName) === expectedValue,
     `Waiting for ${prefName} to be ${expectedValue}`
   );
-}
-
-/**
- * Waits for a moz-toggle element's pressed state to change to the expected value.
- *
- * @param {Element} toggle - The moz-toggle element.
- * @param {boolean} expectedValue - The expected pressed state.
- * @returns {Promise} Promise that resolves when the toggle reaches the expected state.
- */
-async function waitForToggleState(toggle, expectedValue) {
-  return TestUtils.waitForCondition(
-    () => toggle.pressed === expectedValue,
-    `Waiting for toggle pressed to be ${expectedValue}`
-  );
-}
-
-/**
- * Waits for a checkbox element's checked state to change to the expected value.
- *
- * @param {Element} checkbox - The checkbox element.
- * @param {boolean} expectedValue - The expected checked state.
- * @returns {Promise} Promise that resolves when the checkbox reaches the expected state.
- */
-async function waitForCheckboxState(checkbox, expectedValue) {
-  return TestUtils.waitForCondition(
-    () => checkbox.checked === expectedValue,
-    `Waiting for checkbox checked to be ${expectedValue}`
-  );
-}
-
-/**
- * Opens a preferences pane, passes the document to the test function,
- * and ensures the tab is cleaned up afterwards
- *
- * @param {string} pane - The preferences pane to open
- * @param {Function} testFn - Async function receiving the pane's document
- */
-async function withPrefsPane(pane, testFn) {
-  await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  try {
-    await testFn(doc);
-  } finally {
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  }
 }

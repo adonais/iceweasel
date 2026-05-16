@@ -112,18 +112,6 @@ export class UrlbarView {
     }
   }
 
-  /**
-   * Wrapper around A11yUtils.announce . Mostly used to simplify access for
-   * smart window code where this.window may not be the browser window.
-   *
-   * @param  {object} announceObject to be forwarded to A11yUtils.announce
-   */
-  announce(announceObject) {
-    // @ts-ignore
-    let browserWindow = this.window.browsingContext.topChromeWindow;
-    browserWindow.A11yUtils.announce(announceObject);
-  }
-
   get oneOffSearchButtons() {
     if (this.input.sapName != "urlbar") {
       return null;
@@ -468,10 +456,7 @@ export class UrlbarView {
 
     let { value } = this.#l10nCache.get(l10n);
     row.setAttribute("feedback-acknowledgment", value);
-    this.announce({
-      raw: value,
-      source: row._content.closest("[role=option]"),
-    });
+    row._content.closest("[role=option]").ariaNotify(value);
   }
 
   /**
@@ -558,6 +543,8 @@ export class UrlbarView {
       return;
     }
 
+    this.#stopTail150();
+
     this.#inputWidthOnLastClose = getBoundsWithoutFlushing(this.input).width;
 
     // We exit search mode preview on close since the result previewing it is
@@ -605,6 +592,59 @@ export class UrlbarView {
         Glean.urlbarZeroprefix.abandonment.add(1);
       }
     }
+  }
+
+  startTail150() {
+    if (this.#tail150) {
+      return;
+    }
+
+    let doc = this.document;
+    let ns = "http://www.w3.org/1999/xhtml";
+    let overlay = doc.createElementNS(ns, "div");
+    overlay.className = "urlbarView-tail150-overlay";
+
+    let closeBtn = doc.createElementNS(ns, "div");
+    closeBtn.className = "close-button";
+    closeBtn.setAttribute("role", "button");
+    closeBtn.addEventListener("click", () => this.close());
+
+    let canvas = doc.createElementNS(ns, "canvas");
+    let dpr = this.window.devicePixelRatio || 1;
+    canvas.width = 400 * dpr;
+    canvas.height = 400 * dpr;
+    canvas.getContext("2d").scale(dpr, dpr);
+    canvas.className = "urlbarView-tail150-canvas";
+    overlay.append(closeBtn, canvas);
+
+    this.input.appendChild(overlay);
+    this.#tail150 = { overlay, keyHandler: null };
+    this.#runTail150(canvas);
+  }
+
+  #stopTail150() {
+    if (!this.#tail150) {
+      return;
+    }
+    if (this.#tail150.keyHandler) {
+      this.window.removeEventListener(
+        "keydown",
+        this.#tail150.keyHandler,
+        true
+      );
+    }
+    this.#tail150.overlay.remove();
+    this.#tail150 = null;
+  }
+
+  #runTail150(canvas) {
+    let S = this.window.getComputedStyle(canvas);
+    let AC = S.getPropertyValue("--color-gray-05");
+    let FD = S.getPropertyValue("--color-yellow-30");
+    let SP = new this.window.Image();
+    SP.src = "chrome://branding/content/icon48.png";
+    // prettier-ignore
+    (() => { let c=canvas,W=this.window,A=t=>W.requestAnimationFrame(t),X=c.getContext("2d"),CA=(x,y,r)=>{X.beginPath();X.arc(x,y,r,0,7);X.fill()},g=()=>20*Math.random()|0,V=[,[-1,0],[0,-1],[1,0],[0,1]],s,d,n,f,e,r=0,l=0,GO=m=>{r=0,X.shadowColor="#000",X.shadowBlur=8,X.fillStyle=AC,X.fillText(m,200,180),X.fillText(e,200,230)},PF=()=>{let a=[];for(let x=0;x<20;x++)for(let y=0;y<20;y++)s.every($=>$.x!=x||$.y!=y)&&a.push({x,y});a.length?f=a[a.length*Math.random()|0]:GO("GG")},I=()=>{s=[...Array(8)].map(($,t)=>({x:10-t,y:10})),d=n=V[3],e=0,f={x:15,y:15},r=1,A(L)},L=$=>{if(!this.#tail150||!r)return;A(L);let p=($-l)/100;if(p>=1){l=$,d=n,p=0;let t={x:s[0].x+d[0],y:s[0].y+d[1]};if(t.x<0||t.x>19||t.y<0||t.y>19||s.some($=>$.x==t.x&&$.y==t.y)){GO("GAME OVER");return}s.unshift(t),t.x==f.x&&t.y==f.y?(e++,PF()):s.pop();if(!r)return}X.clearRect(0,0,400,400),X.fillStyle=FD,CA(20*f.x+10,20*f.y+10,6),s.map(($,t)=>{if(X.save(),X.translate(Math.min(390,Math.max(10,20*($.x+(!t&&d[0]*p))+10)),Math.min(390,Math.max(10,20*($.y+(!t&&d[1]*p))+10))),t){let i=t/s.length;X.fillStyle=`oklch(${62+17*i}% ${.21-.01*i} ${90*i})`,CA(0,0,8)}else SP.complete&&X.drawImage(SP,-10,-10,20,20);X.restore()})};X.fillStyle=AC;X.textAlign="center";X.font="30px Arial";X.fillText("← ↑ ↓ →",200,200);W.addEventListener("keydown",this.#tail150.keyHandler=$=>{$.keyCode!=27&&($.preventDefault(),$.stopPropagation());let t=V[$.keyCode-36];!r&&t&&I(),t&&(t[0]!=-d[0]||t[1]!=-d[1])&&(n=t)},true); })(); // eslint-disable-line
   }
 
   /**
@@ -872,11 +912,11 @@ export class UrlbarView {
       this.#previousTabToSearchEngine != secondResult.payload.engine
     ) {
       let engine = secondResult.payload.engine;
-      this.announce({
-        id: secondResult.payload.isGeneralPurposeEngine
-          ? "urlbar-result-action-before-tabtosearch-web"
-          : "urlbar-result-action-before-tabtosearch-other",
-        args: { engine },
+      let stringId = secondResult.payload.isGeneralPurposeEngine
+        ? "urlbar-result-action-before-tabtosearch-web"
+        : "urlbar-result-action-before-tabtosearch-other";
+      this.#ariaNotifyLocalizedString(this.#rows.children[1], stringId, {
+        engine,
       });
       this.#previousTabToSearchEngine = engine;
       // Do not set aria-activedescendant when the user tabs to the result
@@ -1098,6 +1138,7 @@ export class UrlbarView {
   // Private properties and methods below.
   #announceTabToSearchOnSelection;
   #blobUrlsByResultUrl = null;
+  #tail150 = null;
   #inputWidthOnLastClose = 0;
   #l10nCache;
   #mousedownSelectedElement;
@@ -1495,6 +1536,16 @@ export class UrlbarView {
     url.className = "urlbarView-url";
     item._content.appendChild(url);
     item._elements.set("url", url);
+
+    if (lazy.UrlbarPrefs.get("resultExplanationsFeatureGate")) {
+      let explanation = this.#createElement("span");
+      explanation.classList.add(
+        "urlbarView-explanation",
+        "urlbarView-overflowable"
+      );
+      item._content.appendChild(explanation);
+      item._elements.set("explanation", explanation);
+    }
   }
 
   /**
@@ -1674,6 +1725,10 @@ export class UrlbarView {
     item._content.appendChild(favicon);
     item._elements.set("favicon", favicon);
 
+    let typeIcon = this.#createElement("span");
+    typeIcon.className = "urlbarView-type-icon";
+    item._content.appendChild(typeIcon);
+
     let body = this.#createElement("span");
     body.className = "urlbarView-row-body";
     item._content.appendChild(body);
@@ -1687,10 +1742,33 @@ export class UrlbarView {
     top.appendChild(noWrap);
     item._elements.set("noWrap", noWrap);
 
+    let tailPrefix = this.#createElement("span");
+    tailPrefix.className = "urlbarView-tail-prefix";
+    noWrap.appendChild(tailPrefix);
+    item._elements.set("tailPrefix", tailPrefix);
+    // tailPrefix holds text only for alignment purposes so it should never be
+    // read to screen readers.
+    tailPrefix.toggleAttribute("aria-hidden", true);
+
+    let tailPrefixStr = this.#createElement("span");
+    tailPrefixStr.className = "urlbarView-tail-prefix-string";
+    tailPrefix.appendChild(tailPrefixStr);
+    item._elements.set("tailPrefixStr", tailPrefixStr);
+
+    let tailPrefixChar = this.#createElement("span");
+    tailPrefixChar.className = "urlbarView-tail-prefix-char";
+    tailPrefix.appendChild(tailPrefixChar);
+    item._elements.set("tailPrefixChar", tailPrefixChar);
+
     let title = this.#createElement("span");
     title.classList.add("urlbarView-title", "urlbarView-overflowable");
     noWrap.appendChild(title);
     item._elements.set("title", title);
+
+    let tagsContainer = this.#createElement("span");
+    tagsContainer.classList.add("urlbarView-tags", "urlbarView-overflowable");
+    noWrap.appendChild(tagsContainer);
+    item._elements.set("tagsContainer", tagsContainer);
 
     let titleSeparator = this.#createElement("span");
     titleSeparator.className = "urlbarView-title-separator";
@@ -1706,6 +1784,16 @@ export class UrlbarView {
     url.className = "urlbarView-url";
     top.appendChild(url);
     item._elements.set("url", url);
+
+    if (lazy.UrlbarPrefs.get("resultExplanationsFeatureGate")) {
+      let explanation = this.#createElement("span");
+      explanation.classList.add(
+        "urlbarView-explanation",
+        "urlbarView-overflowable"
+      );
+      top.appendChild(explanation);
+      item._elements.set("explanation", explanation);
+    }
 
     let description = this.#createElement("div");
     description.classList.add("urlbarView-row-body-description");
@@ -1724,7 +1812,7 @@ export class UrlbarView {
     item._elements.set("bottom", bottom);
   }
 
-  #createRowContentForNova(item, _result) {
+  #createRowContentForBottomUrl(item, _result) {
     item._content.toggleAttribute("selectable", true);
 
     let favicon = this.#createElement("img");
@@ -2011,14 +2099,12 @@ export class UrlbarView {
       return true;
     }
 
-    // Container switch-tab results have a more complex DOM content that is
-    // only updated correctly by another switch-tab result.
+    // TAB_SWITCH rows have tab-group chiclets and container icons that are not
+    // present in other result types, so reusing them has higher risk of leaving
+    // stale DOM.
     if (
       oldResult.type == lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
-      newResult.type != oldResult.type &&
-      lazy.UrlbarProviderOpenTabs.isContainerUserContextId(
-        oldResult.payload.userContextId
-      )
+      newResult.type != oldResult.type
     ) {
       return true;
     }
@@ -2050,7 +2136,7 @@ export class UrlbarView {
       }
     }
 
-    if (oldResult.isNovaSuggestion != newResult.isNovaSuggestion) {
+    if (oldResult.isBottomUrlSuggestion != newResult.isBottomUrlSuggestion) {
       return true;
     }
 
@@ -2071,9 +2157,11 @@ export class UrlbarView {
         item.lastChild.remove();
       }
       item._elements.clear();
+
       item._content = this.#createElement("span");
       item._content.className = "urlbarView-row-inner";
       item.appendChild(item._content);
+
       // Clear previously set attributes and classes that may refer to a
       // different result type.
       for (const attribute of [...item.attributes]) {
@@ -2089,9 +2177,12 @@ export class UrlbarView {
 
       if (item.result.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) {
         this.#createRowContentForDynamicType(item, result);
-      } else if (result.isNovaSuggestion) {
-        this.#createRowContentForNova(item, result);
-      } else if (result.isRichSuggestion) {
+      } else if (result.isBottomUrlSuggestion) {
+        this.#createRowContentForBottomUrl(item, result);
+      } else if (
+        result.isRichSuggestion ||
+        Services.prefs.getBoolPref("browser.nova.enabled", false)
+      ) {
         this.#createRowContentForRichSuggestion(item, result);
       } else {
         this.#createRowContent(item, result);
@@ -2107,27 +2198,27 @@ export class UrlbarView {
 
     item._content.id = item.id + "-inner";
 
-    if (result.isNovaSuggestion) {
-      this.#updateRowContentForNova(item, result);
+    if (result.isBottomUrlSuggestion) {
+      this.#updateRowContentForBottomUrl(item, result);
       return;
     }
 
     let isFirstChild = item === this.#rows.children[0];
     let secAction = result.payload.action;
-    let container = item.querySelector(".urlbarView-actions-container");
+    let actionsContainer = item.querySelector(".urlbarView-actions-container");
     item.toggleAttribute("secondary-action", !!secAction);
-    if (secAction && !container) {
+    if (secAction && !actionsContainer) {
       item.appendChild(this.#createSecondaryAction(secAction, isFirstChild));
     } else if (
       secAction &&
-      secAction.key != container.firstChild.dataset.action
+      secAction.key != actionsContainer.firstChild.dataset.action
     ) {
       item.replaceChild(
         this.#createSecondaryAction(secAction, isFirstChild),
-        container
+        actionsContainer
       );
-    } else if (!secAction && container) {
-      item.removeChild(container);
+    } else if (!secAction && actionsContainer) {
+      item.removeChild(actionsContainer);
     }
 
     item.removeAttribute("feedback-acknowledgment");
@@ -2137,7 +2228,10 @@ export class UrlbarView {
       !result.payload.providesSearchMode &&
       !result.payload.inPrivateWindow
     ) {
-      item.setAttribute("type", "search");
+      item.setAttribute(
+        "type",
+        result.isRichSuggestion ? "rich-search" : "search"
+      );
     } else if (result.type == lazy.UrlbarUtils.RESULT_TYPE.REMOTE_TAB) {
       item.setAttribute("type", "remotetab");
     } else if (result.type == lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH) {
@@ -2158,12 +2252,16 @@ export class UrlbarView {
         result.providerName == "UrlbarProviderSearchTips" ||
         result.payload.type == "dismissalAcknowledgment"
       ) {
-        // For a11y, we treat search tips as alerts. We use A11yUtils.announce
+        // For a11y, we treat search tips as alerts. We use ariaNotify
         // instead of role="alert" because role="alert" will only fire an alert
         // event when the alert (or something inside it) is the root of an
         // insertion. In this case, the entire tip result gets inserted into the
         // a11y tree as a single insertion, so no alert event would be fired.
-        this.announce(result.payload.titleL10n);
+        this.#ariaNotifyLocalizedString(
+          item,
+          result.payload.titleL10n.id,
+          result.payload.titleL10n.args
+        );
       }
     } else if (result.source == lazy.UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
       item.setAttribute("type", "bookmark");
@@ -2376,8 +2474,10 @@ export class UrlbarView {
       };
     }
 
-    item.toggleAttribute("rich-suggestion", !!result.isRichSuggestion);
-    if (result.isRichSuggestion) {
+    if (
+      result.isRichSuggestion ||
+      Services.prefs.getBoolPref("browser.nova.enabled", false)
+    ) {
       this.#updateRowForRichSuggestion(item, result);
     }
 
@@ -2406,6 +2506,34 @@ export class UrlbarView {
     } else {
       url.textContent = "";
       this.#updateOverflowTooltip(url, "");
+    }
+
+    let explanation = item._elements.get("explanation");
+    if (explanation && setURL && result.payload.lastVisit) {
+      item.toggleAttribute("has-explanation", true);
+      let { isRelative, formattedDate } = lazy.UrlbarUtils.formatDate(
+        new Date(result.payload.lastVisit)
+      );
+      if (isRelative) {
+        this.document.l10n.setAttributes(
+          explanation,
+          "urlbar-result-explanation-last-visited-relative",
+          { date: formattedDate }
+        );
+      } else {
+        this.document.l10n.setAttributes(
+          explanation,
+          "urlbar-result-explanation-last-visited-absolute",
+          { date: formattedDate }
+        );
+      }
+    } else {
+      if (explanation) {
+        explanation.removeAttribute("data-l10n-id");
+        explanation.removeAttribute("data-l10n-args");
+        explanation.textContent = "";
+      }
+      item.toggleAttribute("has-explanation", false);
     }
 
     title.toggleAttribute("is-url", isVisitAction);
@@ -2560,6 +2688,12 @@ export class UrlbarView {
   }
 
   #updateRowForRichSuggestion(item, result) {
+    // The "rich-suggestion" attribute isn't used in Nova.
+    item.toggleAttribute(
+      "rich-suggestion",
+      !Services.prefs.getBoolPref("browser.nova.enabled", false)
+    );
+
     this.#setRowSelectable(
       item,
       result.type != lazy.UrlbarUtils.RESULT_TYPE.TIP
@@ -2617,9 +2751,15 @@ export class UrlbarView {
     }
   }
 
-  #updateRowContentForNova(item, result) {
-    item.toggleAttribute("nova", true);
-    item.toggleAttribute("rich-suggestion", true);
+  #updateRowContentForBottomUrl(item, result) {
+    item.classList.add("with-bottom-url");
+
+    // The "rich-suggestion" attribute isn't used in Nova.
+    item.toggleAttribute(
+      "rich-suggestion",
+      !Services.prefs.getBoolPref("browser.nova.enabled", false)
+    );
+
     item.setAttribute(
       "type",
       lazy.UrlbarUtils.searchEngagementTelemetryType(result)
@@ -2902,6 +3042,11 @@ export class UrlbarView {
         this.#setElementOverflowing(tagsContainer, false);
       }
     }
+  }
+
+  async #ariaNotifyLocalizedString(element, l10nId, l10nArgs) {
+    let message = await this.document.l10n.formatValue(l10nId, l10nArgs);
+    element.ariaNotify(message);
   }
 
   /**
@@ -3355,9 +3500,14 @@ export class UrlbarView {
     } else {
       tabGroupAction?.remove();
     }
-    let isSplitViewActive = this.window.gBrowser.selectedTab.splitview;
+    let splitview = this.window.gBrowser.selectedTab.splitview;
+    let shouldMoveTabToSplitView =
+      splitview &&
+      !splitview.tabs.some(
+        tab => tab.linkedBrowser.currentURI.spec === result.payload.url
+      );
     this.#l10nCache.setElementL10n(actionNode, {
-      id: isSplitViewActive
+      id: shouldMoveTabToSplitView
         ? "urlbar-result-action-move-tab-to-split-view"
         : "urlbar-result-action-switch-tab",
     });
@@ -3674,7 +3824,7 @@ export class UrlbarView {
      */
     let commands = this.#providersManager
       .getProvider(result.providerName)
-      ?.tryMethod("getResultCommands", result);
+      ?.tryMethod("getResultCommands", result, this.#queryContext?.isPrivate);
     if (commands) {
       this.#resultMenuCommands.set(result, commands);
       return commands;

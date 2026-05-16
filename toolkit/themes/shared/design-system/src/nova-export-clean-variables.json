@@ -444,10 +444,8 @@
           "Dark": "rgba(0, 0, 0, 0)",
           "HCM": "{Canvas}",
           "Private": "rgba(0, 0, 0, 0)",
-          "Smart (WIP)": "rgba(0, 0, 0, 0)"
-        },
-        "filled": {
-          "color": {
+          "Smart (WIP)": "rgba(0, 0, 0, 0)",
+          "filled": {
             "Light": "{color/green/50}",
             "Dark": "{color/green/20}",
             "HCM": "{AccentColor}",
@@ -462,15 +460,36 @@
           "Dark": "rgba(251, 251, 254, 0.4000000059604645)",
           "HCM": "{CanvasText}",
           "Private": "rgba(251, 251, 254, 0.4000000059604645)",
-          "Smart (WIP)": "rgba(21, 20, 26, 0.4000000059604645)"
-        },
-        "filled": {
-          "color": {
+          "Smart (WIP)": "rgba(21, 20, 26, 0.4000000059604645)",
+          "filled": {
             "Light": "rgba(251, 251, 254, 0.4000000059604645)",
             "Dark": "rgba(21, 20, 26, 0.4000000059604645)",
             "HCM": "{CanvasText}",
             "Private": "rgba(21, 20, 26, 0.4000000059604645)",
             "Smart (WIP)": "rgba(251, 251, 254, 0.4000000059604645)"
+          }
+        },
+        "radius": {
+          "Light": "{border/radius/circle}",
+          "Dark": "{border/radius/circle}",
+          "HCM": "{border/radius/circle}",
+          "Private": "{border/radius/circle}",
+          "Smart (WIP)": "{border/radius/circle}"
+        }
+      },
+      "text": {
+        "color": {
+          "Light": "{text/color}",
+          "Dark": "{text/color}",
+          "HCM": "{text/color}",
+          "Private": "{text/color}",
+          "Smart (WIP)": "{text/color}",
+          "filled": {
+            "Light": "{button/text/color/primary}",
+            "Dark": "{button/text/color/primary}",
+            "HCM": "{button/text/color/primary}",
+            "Private": "{button/text/color/primary}",
+            "Smart (WIP)": "{button/text/color/primary}"
           }
         }
       }

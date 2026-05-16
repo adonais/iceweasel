@@ -16,13 +16,13 @@ info: |
   ...
   4. If len is zero, return the empty String.
   ...
-includes: [testBigIntTypedArray.js]
+includes: [testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA();
   assert.sameValue(sample.toLocaleString(), "");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

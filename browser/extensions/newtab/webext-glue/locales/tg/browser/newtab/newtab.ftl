@@ -146,6 +146,9 @@ newtab-menu-report = Гузориш додан
 newtab-menu-section-block = Манъ кардан
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Бекор кардани обуна
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Бекор кардани обуна аз мавзуъ
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -309,9 +312,23 @@ newtab-error-fallback-refresh-link = Барои аз нав кӯшиш кард�
 
 newtab-custom-shortcuts-title = Миёнбурҳо
 newtab-custom-shortcuts-subtitle = Сомонаҳое, ки шумо нигоҳ медоред ё ба онҳо ворид мешавед
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Миёнбурҳо
     .description = Сомонаҳое, ки шумо нигоҳ медоред ё ба онҳо ворид мешавед
+newtab-custom-shortcuts-nova =
+    .label = Миёнбурҳо
+newtab-custom-row-description =
+    .description = Шумораи сатрҳо
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } сатр
+           *[other] { $num } сатр
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -322,9 +339,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Миёнбурҳои сарпарастӣ
 newtab-custom-pocket-title = Аз тарафи { -pocket-brand-name } тавсия дода мешавад
 newtab-custom-pocket-subtitle = Муҳтавои мустасно аз тарафи { -pocket-brand-name }, қисми оилаи { -brand-product-name } дастгирӣ карда мешавад
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Ҳикояҳои тавсияшуда
     .description = Маводҳои истисноӣ, ки аз ҷониби оилаи «{ -brand-product-name }» таҳия шудааст
+newtab-recommended-stories-toggle =
+    .label = Ҳикояҳои тавсияшуда
 newtab-custom-stories-personalized-toggle =
     .label = Ҳикояҳо
 newtab-custom-stories-personalized-checkbox-label = Ҳикояҳои фардӣ дар асоси фаъолияти шумо
@@ -358,8 +378,11 @@ newtab-custom-settings = Идоракунии танзимоти бештар
 
 newtab-wallpaper-title = Тасвирҳои замина
 newtab-wallpaper-reset = Ба ҳолати пешфарз барқарор кунед
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Бор кардани тасвир
 newtab-wallpaper-custom-color = Рангеро интихоб кунед
+newtab-wallpaper-toggle-title =
+    .label = Тасвирҳои замина
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Андозаи тасвир зиёда аз маҳдудияти андозаи файли { $file_size } МБ мебошад. Лутфан, кӯшиш кунед, ки файлеро бо андозаи хурдтар бор намоед.
@@ -382,6 +405,7 @@ newtab-wallpaper-light-fox-anniversary = Рӯбоҳи ҷилодор дар са
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Рангҳои яклухт
 newtab-wallpaper-blue = Кабуд
 newtab-wallpaper-light-blue = Кабуди равшан
@@ -488,7 +512,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Фаренгейт
 newtab-weather-menu-temperature-option-celsius = Селсий
 newtab-weather-menu-change-temperature-units-fahrenheit = Гузариш ба Фаренгейт
 newtab-weather-menu-change-temperature-units-celsius = Гузариш ба Селсий
-newtab-weather-menu-hide-weather-v2 = Пинҳон кардани маълумоти обу ҳаво
 newtab-weather-menu-hide-weather = Нинҳон кардани обу ҳаво дар варақаи нав
 newtab-weather-menu-learn-more = Маълумоти бештар
 newtab-weather-menu-detect-my-location = Ҷойгиршавии маро муайян кунед
@@ -501,6 +524,12 @@ newtab-weather-opt-in-yes =
     .label = Ҳа
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Шаҳри Ню-Йорк
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Баланд
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Паст
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -574,6 +603,7 @@ newtab-section-confirm-block-topic-p2 = Мавзуъҳои манъшуда ди
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Манъ кардани { $topic }
+newtab-section-block-cancel-button = Бекор кардан
 
 ## Strings for custom wallpaper highlight
 
@@ -654,7 +684,6 @@ newtab-widget-lists-menu-edit = Таҳрир кардани номи рӯйха�
 newtab-widget-lists-menu-create = Эҷод кардани рӯйхати нав
 newtab-widget-lists-menu-delete = Нест кардани ин рӯйхат
 newtab-widget-lists-menu-copy = Нусха бардоштани рӯйхат ба ҳофизаи муваққатӣ
-newtab-widget-lists-menu-hide = Пинҳон кардани ҳамаи варақаҳо
 newtab-widget-lists-menu-learn-more = Маълумоти бештар
 newtab-widget-lists-input-add-an-item =
     .placeholder = Илова кардани унсур
@@ -675,6 +704,11 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Рӯйхати нав
 newtab-widget-section-title = Виҷетҳо
+newtab-widget-menu-hide = Пинҳон кардани виҷет
+newtab-widget-menu-change-size = Иваз кардани андоза
+newtab-widget-size-small = Хурд
+newtab-widget-size-medium = Миёна
+newtab-widget-size-large = Калон
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Пинҳон кардани виҷетҳо
@@ -705,7 +739,6 @@ newtab-widget-timer-reset =
     .title = Аз нав танзим кардан
 newtab-widget-timer-menu-notifications = Хомӯш кардани огоҳномаҳо
 newtab-widget-timer-menu-notifications-on = Фаъол кардани огоҳномаҳо
-newtab-widget-timer-menu-hide = Пинҳон кардани вақтсанҷ
 newtab-widget-timer-menu-learn-more = Маълумоти бештар
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Сарлавҳаҳои хабарҳои асосӣ
@@ -716,6 +749,7 @@ newtab-daily-briefing-card-timestamp = { $minutes } дақиқа пеш навс
 newtab-widget-message-title = Бо истифода аз рӯйхатҳо ва вақтсанҷи дарунсохт диққати худро нигоҳ доред
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Аз ёдовариҳои фаврӣ то вазифаҳои ҳаррӯза ва аз ҷаласаҳои бодиққат то танаффусҳои бардавом — ҳар гуна вазифаҳоро дар сари вақт иҷро намоед.
+newtab-promo-card-cta-addons = Ҳозир онро кӯшиш кунед
 newtab-promo-card-title = Дастгирӣ кардани «{ -brand-product-name }»
 newtab-promo-card-body = Сарпарастони мо рисолати моро барои ташкили таҷрибаи беҳтарини Интернет дастгирӣ менамоянд
 newtab-promo-card-cta = Маълумоти бештар

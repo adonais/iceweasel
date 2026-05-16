@@ -213,6 +213,8 @@ void CookieServiceChild::RemoveSingleCookie(const CookieStruct& aCookie,
     return;
   }
 
+  uint32_t targetHash =
+      Cookie::ComputeKeyHash(aCookie.name(), aCookie.host(), aCookie.path());
   for (uint32_t i = 0; i < cookiesList->Length(); i++) {
     RefPtr<Cookie> cookie = cookiesList->ElementAt(i);
     // bug 1858366: In the case that we are updating a stale cookie
@@ -221,7 +223,8 @@ void CookieServiceChild::RemoveSingleCookie(const CookieStruct& aCookie,
     // When received by the content process we should not remove
     // the new cookie since we have already updated the content
     // process cookies. So we also check the expiry here.
-    if (cookie->Name().Equals(aCookie.name()) &&
+    if (cookie->KeyHash() == targetHash &&
+        cookie->Name().Equals(aCookie.name()) &&
         cookie->Host().Equals(aCookie.host()) &&
         cookie->Path().Equals(aCookie.path()) &&
         cookie->ExpiryInMSec() <= aCookie.expiryInMSec()) {
@@ -340,7 +343,8 @@ CookieServiceChild::RecordDocumentCookie(Cookie* aCookie,
 
   for (uint32_t i = 0; i < cookiesList->Length(); i++) {
     Cookie* cookie = cookiesList->ElementAt(i);
-    if (cookie->Name().Equals(aCookie->Name()) &&
+    if (cookie->KeyHash() == aCookie->KeyHash() &&
+        cookie->Name().Equals(aCookie->Name()) &&
         cookie->Host().Equals(aCookie->Host()) &&
         cookie->Path().Equals(aCookie->Path())) {
       if (cookie->Value().Equals(aCookie->Value()) &&
@@ -448,7 +452,8 @@ void CookieServiceChild::AddCookieFromDocument(
 
     for (uint32_t i = 0; i < cookies->Length(); ++i) {
       RefPtr<Cookie> existingCookie = cookies->ElementAt(i);
-      if (existingCookie->Name().Equals(aCookie.Name()) &&
+      if (existingCookie->KeyHash() == aCookie.KeyHash() &&
+          existingCookie->Name().Equals(aCookie.Name()) &&
           existingCookie->Host().Equals(aCookie.Host()) &&
           existingCookie->Path().Equals(aCookie.Path())) {
         // Can't overwrite an httponly cookie from a script context.
@@ -479,14 +484,13 @@ void CookieServiceChild::AddCookieFromDocument(
 
     // If there is no WindowGlobalChild fall back to PCookieService SetCookies.
     if (NS_WARN_IF(!windowGlobalChild)) {
-      SendSetCookies(aBaseDomain, aOriginAttributes, aDocumentURI, false,
-                     aThirdParty, cookiesToSend);
+      SendSetCookies(aBaseDomain, aOriginAttributes, aDocumentURI, aThirdParty,
+                     cookiesToSend);
       return;
     }
 
     windowGlobalChild->SendSetCookies(aBaseDomain, aOriginAttributes,
-                                      aDocumentURI, false, aThirdParty,
-                                      cookiesToSend);
+                                      aDocumentURI, aThirdParty, cookiesToSend);
   }
 }
 

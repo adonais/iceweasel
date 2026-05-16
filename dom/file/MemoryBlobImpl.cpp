@@ -105,8 +105,8 @@ class MemoryBlobImplDataOwnerMemoryReporter final : public nsIMemoryReporter {
         sha1.finish(digest);
 
         nsAutoCString digestString;
-        for (size_t i = 0; i < sizeof(digest); i++) {
-          digestString.AppendPrintf("%02x", digest[i]);
+        for (unsigned char i : digest) {
+          digestString.AppendPrintf("%02x", i);
         }
 
         aHandleReport->Callback(

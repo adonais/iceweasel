@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -356,13 +354,19 @@ bool CrossCompartmentWrapper::boxedValue_unbox(JSContext* cx,
 
 const CrossCompartmentWrapper CrossCompartmentWrapper::singleton(0u);
 
-JS_PUBLIC_API void js::NukeCrossCompartmentWrapper(JSContext* cx,
-                                                   JSObject* wrapper) {
+void js::NukeCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper) {
+  MOZ_ASSERT(IsCrossCompartmentWrapper(wrapper));
+
   JS::Compartment* comp = wrapper->compartment();
   auto ptr = comp->lookupWrapper(Wrapper::wrappedObject(wrapper));
   if (ptr) {
     comp->removeWrapper(ptr);
   }
+
+  JSObject* target = UncheckedUnwrapWithoutExpose(wrapper);
+  MOZ_ASSERT(target);
+  gc::GCRuntime::clearWeakRefTargets(comp, ObjectValue(*target));
+
   NukeRemovedCrossCompartmentWrapper(cx, wrapper);
 }
 
@@ -467,6 +471,11 @@ JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
     }
   }
 
+  // Clear WeakRef targets that match the filters otherwise we would still be
+  // able to see into the target realm. WeakRefs are cross compartment weak
+  // edges but are not implemented with CCWs.
+  gc::GCRuntime::clearWeakRefTargets(sourceFilter, target);
+
   return true;
 }
 
@@ -555,6 +564,7 @@ void js::RemapDeadWrapper(JSContext* cx, HandleObject wobj,
   MOZ_ASSERT(!newTarget->is<FinalizationRecordObject>());
 
   AutoDisableProxyCheck adpc;
+  AutoTouchingGrayThings atgt;
 
   // Suppress GC while we manipulate the wrapper map so that it can't observe
   // intervening state.

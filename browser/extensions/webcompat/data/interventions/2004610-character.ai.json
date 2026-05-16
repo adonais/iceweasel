@@ -1,0 +1,17 @@
+{
+  "label": "character.ai",
+  "bugs": {
+    "2004610": {
+      "issue": "broken-font",
+      "matches": ["*://character.ai/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug2004610-character.ai-fix-broken-italics.css"]
+      }
+    }
+  ]
+}

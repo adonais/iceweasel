@@ -57,14 +57,13 @@ class StorageAccessPermissionStatusSink final : public PermissionStatusSink {
       nsPIDOMWindowInner* aInnerWindow) override {
     NS_ENSURE_TRUE(aInnerWindow, false);
 
-    if (!mPermissionStatus) {
-      return false;
-    }
-
     nsCOMPtr<nsPIDOMWindowInner> ownerWindow;
 
     if (mSerialEventTarget->IsOnCurrentThread()) {
-      ownerWindow = mPermissionStatus->GetOwnerWindow();
+      if (!GetPermissionStatus()) {
+        return false;
+      }
+      ownerWindow = GetPermissionStatus()->GetOwnerWindow();
     } else {
       MutexAutoLock lock(mWorkerRefMutex);
 
@@ -87,12 +86,12 @@ class StorageAccessPermissionStatusSink final : public PermissionStatusSink {
 
   RefPtr<PermissionStatePromise> ComputeStateOnMainThread() override {
     if (mSerialEventTarget->IsOnCurrentThread()) {
-      if (!mPermissionStatus) {
+      if (!GetPermissionStatus()) {
         return PermissionStatePromise::CreateAndReject(NS_ERROR_FAILURE,
                                                        __func__);
       }
 
-      nsGlobalWindowInner* window = mPermissionStatus->GetOwnerWindow();
+      nsGlobalWindowInner* window = GetPermissionStatus()->GetOwnerWindow();
       if (NS_WARN_IF(!window)) {
         return PermissionStatePromise::CreateAndReject(NS_ERROR_FAILURE,
                                                        __func__);
@@ -129,7 +128,7 @@ class StorageAccessPermissionStatusSink final : public PermissionStatusSink {
 
     // For workers we already have the correct value in workerPrivate.
     return InvokeAsync(mSerialEventTarget, __func__, [self = RefPtr(this)] {
-      if (!self->mPermissionStatus) {
+      if (!self->GetPermissionStatus()) {
         return PermissionStatePromise::CreateAndReject(NS_ERROR_FAILURE,
                                                        __func__);
       }

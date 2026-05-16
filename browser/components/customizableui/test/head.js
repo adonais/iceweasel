@@ -21,6 +21,14 @@ registerCleanupFunction(() =>
   Services.prefs.clearUserPref("browser.uiCustomization.skipSourceNodeCheck")
 );
 
+ChromeUtils.defineLazyGetter(this, "SidebarTestUtils", () => {
+  const { SidebarTestUtils: utils } = ChromeUtils.importESModule(
+    "resource://testing-common/SidebarTestUtils.sys.mjs"
+  );
+  utils.init(this);
+  return utils;
+});
+
 var { synthesizeDrop, synthesizeMouseAtCenter } = EventUtils;
 
 // As of bug 1960002, this width no longer technically forces overflow.
@@ -245,16 +253,20 @@ function endCustomizing(aWindow = window) {
   return afterCustomizationPromise;
 }
 
-function startCustomizing(aWindow = window) {
+async function startCustomizing(aWindow = window) {
   if (aWindow.document.documentElement.hasAttribute("customizing")) {
-    return null;
+    return;
   }
   let customizationReadyPromise = BrowserTestUtils.waitForEvent(
     aWindow.gNavToolbox,
     "customizationready"
   );
   aWindow.gCustomizeMode.enter();
-  return customizationReadyPromise;
+  await customizationReadyPromise;
+
+  if (document.hasPendingL10nMutations) {
+    await BrowserTestUtils.waitForEvent(document, "L10nMutationsFinished");
+  }
 }
 
 function promiseObserverNotified(aTopic) {

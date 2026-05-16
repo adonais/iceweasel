@@ -27,6 +27,15 @@ const { EmbeddingsGenerator } = ChromeUtils.importESModule(
 const { sanitizeUntrustedContent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs"
 );
+const { AIWindow } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs"
+);
+const { AIWindowAccountAuth } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs"
+);
+const { EveryWindow } = ChromeUtils.importESModule(
+  "resource:///modules/EveryWindow.sys.mjs"
+);
 /**
  * Constants for test memories
  */
@@ -1316,5 +1325,47 @@ add_task(async function test_conversationGeneration_skips_when_chats_empty() {
     );
   } finally {
     sb.restore();
+  }
+});
+
+/**
+ * Tests that shouldEnableMemoriesFromSchedulers returns false when the
+ * browser.smartwindow.firstrun.hasCompleted pref is false, even if every
+ * other gate (AI Window enabled, source pref, ToS consent, active window)
+ * is satisfied.
+ */
+add_task(async function test_shouldEnableMemoriesFromSchedulers_firstrunGate() {
+  const PREF_GENERATE_MEMORIES_FROM_HISTORY =
+    "browser.smartwindow.memories.generateFromHistory";
+  const PREF_FIRSTRUN_HAS_COMPLETED =
+    "browser.smartwindow.firstrun.hasCompleted";
+
+  const sb = sinon.createSandbox();
+
+  try {
+    sb.stub(AIWindow, "isAIWindowEnabled").returns(true);
+    sb.stub(AIWindow, "isAIWindowActive").returns(true);
+    sb.stub(AIWindowAccountAuth, "hasToSConsent").get(() => true);
+    sb.stub(EveryWindow, "readyWindows").get(() => [{}]);
+
+    Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES_FROM_HISTORY, true);
+
+    Services.prefs.setBoolPref(PREF_FIRSTRUN_HAS_COMPLETED, false);
+    Assert.equal(
+      MemoriesManager.shouldEnableMemoriesFromSchedulers(SOURCE_HISTORY),
+      false,
+      "Should be false when firstrun has not completed"
+    );
+
+    Services.prefs.setBoolPref(PREF_FIRSTRUN_HAS_COMPLETED, true);
+    Assert.equal(
+      MemoriesManager.shouldEnableMemoriesFromSchedulers(SOURCE_HISTORY),
+      true,
+      "Should be true when all gates pass (including firstrun completed)"
+    );
+  } finally {
+    sb.restore();
+    Services.prefs.clearUserPref(PREF_GENERATE_MEMORIES_FROM_HISTORY);
+    Services.prefs.clearUserPref(PREF_FIRSTRUN_HAS_COMPLETED);
   }
 });

@@ -57,7 +57,7 @@ use winapi::{
     ctypes::c_int,
     shared::ws2def::{AF_INET, AF_INET6},
 };
-use xpcom::{interfaces::nsISocketProvider, AtomicRefcnt, RefCounted, RefPtr};
+use xpcom::{AtomicRefcnt, RefCounted, RefPtr};
 use zlib_rs::{decompress_slice, InflateConfig, ReturnCode};
 
 std::thread_local! {
@@ -350,7 +350,6 @@ impl NeqoHttp3Conn {
         version_negotiation: bool,
         webtransport: bool,
         qlog_dir: &nsACString,
-        provider_flags: u32,
         idle_timeout: u32,
         fast_pto: u32,
         pmtud_enabled: bool,
@@ -498,8 +497,6 @@ impl NeqoHttp3Conn {
         ));
         if static_prefs::pref!("security.tls.enable_kyber")
             && static_prefs::pref!("network.http.http3.enable_kyber")
-            && (provider_flags & nsISocketProvider::IS_RETRY) == 0
-            && (provider_flags & nsISocketProvider::BE_CONSERVATIVE) == 0
         {
             // These operations are infallible when conn.state == State::Init.
             conn.set_groups(&[
@@ -582,7 +579,7 @@ impl NeqoHttp3Conn {
     fn record_stats_in_glean(&self) {
         use firefox_on_glean::metrics::networking as glean;
         use neqo_common::Ecn;
-        use neqo_transport::{ecn, CongestionEvent, SlowStartExitReason};
+        use neqo_transport::{ecn, SlowStartExitReason};
         use std::cmp::Ordering;
 
         /// The biggest initial congestion window that can be set in neqo. Needs to be kept in sync with neqo.
@@ -815,10 +812,8 @@ impl NeqoHttp3Conn {
             }
 
             glean::http_3_congestion_event_count.accumulate_single_sample_signed(
-                (stats.cc.congestion_events[CongestionEvent::Ecn]
-                    + stats.cc.congestion_events[CongestionEvent::Loss])
-                    .saturating_sub(stats.cc.congestion_events[CongestionEvent::Spurious])
-                    as i64,
+                (stats.cc.congestion_events.ecn + stats.cc.congestion_events.loss)
+                    .saturating_sub(stats.cc.congestion_events.spurious) as i64,
             );
 
             if let Some(peer_max) = stats.pmtud_peer_max_udp_payload {
@@ -829,10 +824,10 @@ impl NeqoHttp3Conn {
         }
 
         // Ignore connections that never had loss induced congestion events (and prevent dividing by zero).
-        if stats.cc.congestion_events[CongestionEvent::Loss] != 0 {
+        if stats.cc.congestion_events.loss != 0 {
             if let Ok(spurious) = i64::try_from(
-                (stats.cc.congestion_events[CongestionEvent::Spurious] * PRECISION_FACTOR_USIZE)
-                    / stats.cc.congestion_events[CongestionEvent::Loss],
+                (stats.cc.congestion_events.spurious * PRECISION_FACTOR_USIZE)
+                    / stats.cc.congestion_events.loss,
             ) {
                 glean::http_3_spurious_congestion_event_ratio
                     .accumulate_single_sample_signed(spurious);
@@ -844,7 +839,7 @@ impl NeqoHttp3Conn {
         }
 
         // Collect congestion event reason metric
-        if let Ok(ce_loss) = i32::try_from(stats.cc.congestion_events[CongestionEvent::Loss]) {
+        if let Ok(ce_loss) = i32::try_from(stats.cc.congestion_events.loss) {
             glean::http_3_congestion_event_reason
                 .get("loss")
                 .add(ce_loss);
@@ -853,7 +848,7 @@ impl NeqoHttp3Conn {
             qwarn!("{msg}");
             debug_assert!(false, "{msg}");
         }
-        if let Ok(ce_ecn) = i32::try_from(stats.cc.congestion_events[CongestionEvent::Ecn]) {
+        if let Ok(ce_ecn) = i32::try_from(stats.cc.congestion_events.ecn) {
             glean::http_3_congestion_event_reason
                 .get("ecn-ce")
                 .add(ce_ecn);
@@ -926,7 +921,6 @@ pub extern "C" fn neqo_http3conn_new(
     version_negotiation: bool,
     webtransport: bool,
     qlog_dir: &nsACString,
-    provider_flags: u32,
     idle_timeout: u32,
     fast_pto: u32,
     socket: i64,
@@ -947,7 +941,6 @@ pub extern "C" fn neqo_http3conn_new(
         version_negotiation,
         webtransport,
         qlog_dir,
-        provider_flags,
         idle_timeout,
         fast_pto,
         pmtud_enabled,
@@ -975,7 +968,6 @@ pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
     version_negotiation: bool,
     webtransport: bool,
     qlog_dir: &nsACString,
-    provider_flags: u32,
     idle_timeout: u32,
     fast_pto: u32,
     result: &mut *const NeqoHttp3Conn,
@@ -994,7 +986,6 @@ pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
         version_negotiation,
         webtransport,
         qlog_dir,
-        provider_flags,
         idle_timeout,
         fast_pto,
         false,

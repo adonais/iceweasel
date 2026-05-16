@@ -4,8 +4,6 @@
 
 #include "base/rand_util.h"
 
-#include <math.h>
-
 #include "base/basictypes.h"
 #include "base/logging.h"
 #include "mozilla/RandomNum.h"

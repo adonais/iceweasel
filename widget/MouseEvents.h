@@ -6,7 +6,6 @@
 #define mozilla_MouseEvents_h_
 
 #include <stdint.h>
-#include <math.h>
 
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventForwards.h"
@@ -451,6 +450,13 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
    */
   Maybe<uint64_t> mCallbackId;
 
+  /**
+   * Movement raw delta. Set by the platform widget. When set,
+   * MouseEvent::movementX/Y use this value instead of computing a delta from
+   * mRefPoint/mLastRefPoint.
+   */
+  Maybe<LayoutDeviceIntPoint> mMovement;
+
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets,
                             bool aCopyCoalescedEvents = true) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
@@ -474,6 +480,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     mTriggerEvent = aEvent.mTriggerEvent;
     // NOTE: Intentionally not copying mCallbackId, it should only be tracked by
     //       the original event or propagated to the cross-process event.
+    mMovement = aEvent.mMovement;
   }
 
   /**

@@ -124,6 +124,14 @@ async function runPopupPositionTest(parentDocumentFileName, oop) {
   BrowserTestUtils.removeTab(tab);
 }
 
+add_setup(async () => {
+  if (AppConstants.platform == "macosx") {
+    await SpecialPowers.pushPrefEnv({
+      set: [["widget.macos.allow-native-select", false]],
+    });
+  }
+});
+
 add_task(async function test_popup_transformed_in_parent_same_origin() {
   await runPopupPositionTest(
     "helper_test_select_popup_position_transformed_in_parent.html",

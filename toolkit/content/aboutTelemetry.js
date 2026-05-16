@@ -171,8 +171,7 @@ var Settings = {
             var { EventDispatcher } = ChromeUtils.importESModule(
               "resource://gre/modules/Messaging.sys.mjs"
             );
-            EventDispatcher.instance.sendRequest({
-              type: "Settings:Show",
+            EventDispatcher.instance.sendRequest("Settings:Show", {
               resource: "preferences_privacy",
             });
           } else {

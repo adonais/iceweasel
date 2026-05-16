@@ -180,7 +180,7 @@ class AppLinksFeatureTest {
         feature.handleAppIntent(tab, intentUrl, mock(), null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
-        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), any())
+        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
     }
 
     @Test
@@ -241,7 +241,7 @@ class AppLinksFeatureTest {
         feature.handleAppIntent(tab, intentUrl, appIntent, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
-        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), any())
+        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
     }
 
     @Test
@@ -278,7 +278,7 @@ class AppLinksFeatureTest {
         feature.handleAppIntent(tab, intentUrl, appIntent, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
-        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), any())
+        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
     }
 
     @Test
@@ -302,7 +302,7 @@ class AppLinksFeatureTest {
         feature.handleAppIntent(tab, intentUrl, mock(), null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
-        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), any())
+        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
     }
 
     @Test
@@ -327,7 +327,7 @@ class AppLinksFeatureTest {
         feature.handleAppIntent(tab, intentUrl, mock(), null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
-        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), any())
+        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
     }
 
     @Test
@@ -397,7 +397,7 @@ class AppLinksFeatureTest {
         feature.handleAppIntent(tab, walletUrl, appIntent, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
-        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), any())
+        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
     }
 
     @Test
@@ -428,7 +428,7 @@ class AppLinksFeatureTest {
         feature.handleAppIntent(tab, nonWalletUrl, appIntent, null, null)
 
         verify(mockDialog).showNow(eq(mockFragmentManager), anyString())
-        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), any())
+        verify(mockOpenRedirect, never()).invoke(any(), anyBoolean(), anyBoolean(), any())
     }
 
     @Test

@@ -303,9 +303,21 @@ newtab-error-fallback-refresh-link = Actualice a páxina para tentalo de novo.
 
 newtab-custom-shortcuts-title = Atallos
 newtab-custom-shortcuts-subtitle = Sitios gardados ou visitados
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Atallos
     .description = Sitios gardados ou visitados
+newtab-custom-shortcuts-nova =
+    .label = Atallos
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } fila
+           *[other] { $num } filas
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -316,9 +328,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Atallos patrocinados
 newtab-custom-pocket-title = Recomendado por { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Contido excepcional patrocinado por { -pocket-brand-name }, parte da familia { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Historias recomendadas
     .description = Contido excepcional seleccionado pola familia de { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Historias recomendadas
 newtab-custom-stories-personalized-toggle =
     .label = Historias
 newtab-custom-pocket-sponsored = Historias patrocinadas
@@ -345,8 +360,11 @@ newtab-custom-settings = Xestionar máis axustes
 
 newtab-wallpaper-title = Fondos de pantalla
 newtab-wallpaper-reset = Restablecer os valores predeterminados
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Subir unha imaxe
 newtab-wallpaper-custom-color = Escolle unha cor
+newtab-wallpaper-toggle-title =
+    .label = Fondos de pantalla
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = A imaxe superou o límite de tamaño do ficheiro de { $file_size }MB. Proba a subir un ficheiro máis pequeno.
@@ -368,6 +386,7 @@ newtab-wallpaper-light-fox-anniversary = Un raposo nun campo herboso cunha paisa
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Cores sólidas
 newtab-wallpaper-blue = Azul
 newtab-wallpaper-light-blue = Azul claro
@@ -616,7 +635,6 @@ newtab-widget-lists-menu-edit = Editar o nome da lista
 newtab-widget-lists-menu-create = Crea unha nova lista
 newtab-widget-lists-menu-delete = Eliminar esta lista
 newtab-widget-lists-menu-copy = Copiar a lista no portapapeis
-newtab-widget-lists-menu-hide = Ocultar todas as listas
 newtab-widget-lists-menu-learn-more = Máis información
 newtab-widget-lists-input-add-an-item =
     .placeholder = Engadir un elemento
@@ -629,7 +647,6 @@ newtab-widget-timer-label-play =
 newtab-widget-timer-label-pause =
     .label = Pausar
 newtab-widget-timer-menu-notifications-on = Activar as notificacións
-newtab-widget-timer-menu-hide = Ocultar o temporizador
 newtab-widget-timer-menu-learn-more = Máis información
 newtab-widget-message-title = Mantente concentrado con listas e un temporizador incorporado
 newtab-promo-card-title = Apoiar a { -brand-product-name }

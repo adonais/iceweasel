@@ -25,7 +25,7 @@ object ToolbarSelectors {
     )
 
     val TOOLBAR_URL_BOX = Selector(
-        strategy = SelectorStrategy.COMPOSE_ON_ALL_NODES_BY_TAG_ON_LAST,
+        strategy = SelectorStrategy.COMPOSE_ON_ALL_NODES_BY_TAG_ON_FIRST,
         value = ADDRESSBAR_URL_BOX,
         description = "URL box",
         groups = listOf("requiredForPage"),

@@ -29,13 +29,13 @@
 #include "libwebrtcglue/VideoConduit.h"
 #include "libwebrtcglue/WebrtcCallWrapper.h"
 #include "libwebrtcglue/WebrtcEnvironmentWrapper.h"
+#include "mozilla/IceServerParser.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/glean/DomMediaWebrtcMetrics.h"
 #include "mozilla/media/MediaUtils.h"
 #include "nsEffectiveTLDService.h"
-#include "nsFmtString.h"
 #include "nsILoadContext.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
@@ -548,7 +548,7 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
 
   if (XRE_IsContentProcess()) {
     mStunAddrsRequest =
-        new net::StunAddrsRequestChild(new StunAddrsHandler(this));
+        net::StunAddrsRequestChild::Create(new StunAddrsHandler(this));
   }
 
   // Initialize the media object.
@@ -1758,23 +1758,19 @@ already_AddRefed<dom::Promise> PeerConnectionImpl::GetStats(
     MOZ_CRASH("Failed to create a promise!");
   }
 
-  if (!IsClosed()) {
-    GetStats(aSelector, false)
-        ->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [promise, window = mWindow](
-                UniquePtr<dom::RTCStatsReportInternal>&& aReport) {
-              RefPtr<RTCStatsReport> report(new RTCStatsReport(window));
-              report->Incorporate(*aReport);
-              promise->MaybeResolve(std::move(report));
-            },
-            [promise, window = mWindow](nsresult aError) {
-              RefPtr<RTCStatsReport> report(new RTCStatsReport(window));
-              promise->MaybeResolve(std::move(report));
-            });
-  } else {
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-  }
+  GetStats(aSelector, false)
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [promise,
+           window = mWindow](UniquePtr<dom::RTCStatsReportInternal>&& aReport) {
+            RefPtr<RTCStatsReport> report(new RTCStatsReport(window));
+            report->Incorporate(*aReport);
+            promise->MaybeResolve(std::move(report));
+          },
+          [promise, window = mWindow](nsresult aError) {
+            RefPtr<RTCStatsReport> report(new RTCStatsReport(window));
+            promise->MaybeResolve(std::move(report));
+          });
 
   return promise.forget();
 }
@@ -2554,6 +2550,23 @@ void PeerConnectionImpl::InvalidateLastReturnedParameters() {
   for (const auto& transceiver : mTransceivers) {
     transceiver->Sender()->InvalidateLastReturnedParameters();
   }
+}
+
+void PeerConnectionImpl::ParseIceServers(
+    const nsTArray<dom::RTCIceServer>& aIceServers, ErrorResult& aRv) {
+  auto result = IceServerParser::Parse(aIceServers);
+  if (result.isErr()) {
+    aRv = result.unwrapErr();
+  }
+}
+
+void PeerConnectionImpl::SetConfiguration(
+    const RTCConfiguration& aConfiguration, ErrorResult& aRv) {
+  ParseIceServers(aConfiguration.mIceServers, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+  aRv = SetConfiguration(aConfiguration);
 }
 
 nsresult PeerConnectionImpl::SetConfiguration(

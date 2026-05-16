@@ -136,7 +136,7 @@ def install_mobile_android_sdk_or_ndk(url: str, path: Path):
         else:
             raise
 
-    file_name = url.split("/")[-1]
+    file_name = url.rsplit("/", 1)[-1]
     download_file_path = download_path / file_name
     download(url, download_file_path)
 
@@ -679,7 +679,7 @@ def ensure_android_packages(
         e = subprocess.CalledProcessError(retcode, cmd)
         raise e
     if list_packages:
-        subprocess.check_call([str(sdkmanager_tool), "--list"])
+        subprocess.check_call([str(sdkmanager_tool), "--list"], env=env)
 
     suggest_platform_tools_path(packages, sdk_path)
 
@@ -898,6 +898,8 @@ def ensure_java(os_name: str, os_arch: str):
             f"OpenJDK{JAVA_VERSION_MAJOR}U-jdk_{arch}_{os_tag}_hotspot_{JAVA_VERSION_MAJOR}.{JAVA_VERSION_MINOR}_{JAVA_VERSION_PATCH}.{ext}"
         )
         install_mobile_android_sdk_or_ndk(java_url, MOZBUILD_PATH / "jdk")
+
+    return java_path
 
 
 def get_java_bin_path(os_name: str, toolchain_path: Path):

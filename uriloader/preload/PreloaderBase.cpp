@@ -334,11 +334,10 @@ nsresult PreloaderBase::AsyncConsume(nsIStreamListener* aListener) {
 
 // PreloaderBase::RedirectRecord
 
-nsCString PreloaderBase::RedirectRecord::Spec() const {
+already_AddRefed<nsIURI> PreloaderBase::RedirectRecord::URINoFragment() const {
   nsCOMPtr<nsIURI> noFragment;
-  NS_GetURIWithoutRef(mURI, getter_AddRefs(noFragment));
-  MOZ_ASSERT(noFragment);
-  return noFragment->GetSpecOrDefault();
+  MOZ_ALWAYS_SUCCEEDS(NS_GetURIWithoutRef(mURI, getter_AddRefs(noFragment)));
+  return noFragment.forget();
 }
 
 nsCString PreloaderBase::RedirectRecord::Fragment() const {

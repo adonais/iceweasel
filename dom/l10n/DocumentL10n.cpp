@@ -64,6 +64,7 @@ DocumentL10n::DocumentL10n(Document* aDocument, bool aSync)
       mDocument(aDocument),
       mState(DocumentL10nState::Constructed) {
   mContentSink = do_QueryInterface(aDocument->GetCurrentContentSink());
+  mIsDocumentL10n = true;
 }
 
 DocumentL10n::DocumentL10n(Document* aDocument, bool aSync,

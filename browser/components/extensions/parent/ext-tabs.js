@@ -1,5 +1,3 @@
-/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim: set sts=2 sw=2 et tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -653,6 +651,10 @@ this.tabs = class extends ExtensionAPIPersistent {
       });
     }
 
+    function getNativeTabsOrSplitViews(nativeTabs) {
+      return Array.from(new Set(nativeTabs.map(t => t.splitview ?? t)));
+    }
+
     function updateNativeTabAfterAdopt(nativeTabs, oldTab, newTab) {
       for (let i = 0; i < nativeTabs.length; ++i) {
         if (nativeTabs[i] === oldTab) {
@@ -1249,12 +1251,18 @@ this.tabs = class extends ExtensionAPIPersistent {
               } else if (tabsToMove.includes(otherTabInSplit)) {
                 // Order was explicitly specified, other tabs are in between.
                 // Unsplit tab to prepare for moving other tabs in between.
-                gBrowser.unsplitTabs(splitview);
+                splitview.unsplitTabs();
                 splitview = splitviewTabs = null;
               } else if (isSameWindow) {
                 // Other tab in split was not specified, but the index points
                 // to the same split view. Reverse if needed:
                 wantReversedSplit = otherTabInSplit._tPos === insertionPoint;
+              }
+              if (wantReversedSplit) {
+                // Split views move as one unit, but if the API call describes
+                // a destination within a split view, reverse the tabs within.
+                splitview.reverseTabs();
+                splitviewTabs = splitview.tabs;
               }
             }
             if (isSameWindow) {
@@ -1288,11 +1296,6 @@ this.tabs = class extends ExtensionAPIPersistent {
               splitview ? splitviewTabs.at(-1)._tPos : nativeTab._tPos
             );
             if (splitview) {
-              if (wantReversedSplit) {
-                // Split views move as one unit, but if the API call describes
-                // a destination within a split view, reverse the tabs within.
-                splitview.reverseTabs();
-              }
               for (const tab of splitviewTabs) {
                 let tabIsInTabsToMove = tab === nativeTab;
                 let i = 0;
@@ -1835,7 +1838,10 @@ this.tabs = class extends ExtensionAPIPersistent {
             const tabInWin = nativeTabs.find(t => t.ownerGlobal === window);
             let insertBefore = tabInWin;
             if (tabInWin?.group) {
-              if (tabInWin.group.tabs[0] === tabInWin) {
+              // When any of the tabs in a split view are grouped, the whole
+              // split view is grouped, so check the split view's first tab.
+              const maybeFirstTab = tabInWin.splitview?.tabs[0] || tabInWin;
+              if (tabInWin.group.tabs[0] === maybeFirstTab) {
                 // When tabInWin is at the front of a tab group, insert before
                 // the tab group (instead of after it).
                 insertBefore = tabInWin.group;
@@ -1844,7 +1850,10 @@ this.tabs = class extends ExtensionAPIPersistent {
               }
             }
             unpinTabsBeforeGrouping();
-            group = window.gBrowser.addTabGroup(nativeTabs, { insertBefore });
+            group = window.gBrowser.addTabGroup(
+              getNativeTabsOrSplitViews(nativeTabs),
+              { insertBefore: insertBefore?.splitview ?? insertBefore }
+            );
             // Note: group is never null, because the only condition for which
             // it could be null is when all tabs are pinned, and we are already
             // explicitly unpinning them before moving.
@@ -1872,10 +1881,13 @@ this.tabs = class extends ExtensionAPIPersistent {
               }
             }
             if (tabsBefore.length) {
-              window.gBrowser.moveTabsBefore(tabsBefore, firstTabInGroup);
+              window.gBrowser.moveTabsBefore(
+                getNativeTabsOrSplitViews(tabsBefore),
+                firstTabInGroup.splitview ?? firstTabInGroup
+              );
             }
             if (tabsAfter.length) {
-              group.addTabs(tabsAfter);
+              group.addTabs(getNativeTabsOrSplitViews(tabsAfter));
             }
           }
           return getExtTabGroupIdForInternalTabGroupId(group.id);
@@ -1892,15 +1904,20 @@ this.tabs = class extends ExtensionAPIPersistent {
               ungroupOrder.get(nativeTab.group).push(nativeTab);
             }
           }
-          for (const [group, tabs] of ungroupOrder) {
+          for (let [group, tabs] of ungroupOrder) {
             // Preserve original order of ungrouped tabs.
             tabs.sort((a, b) => a._tPos - b._tPos);
-            if (tabs[0] === tabs[0].group.tabs[0]) {
+            tabs = getNativeTabsOrSplitViews(tabs);
+            let firstTab = tabs[0];
+            if (group.ownerGlobal.gBrowser.isSplitViewWrapper(firstTab)) {
+              firstTab = firstTab.tabs[0];
+            }
+            if (firstTab === group.tabs[0]) {
               // The tab is the front of the tab group, so insert before
               // current tab group to preserve order.
-              tabs[0].ownerGlobal.gBrowser.moveTabsBefore(tabs, group);
+              group.ownerGlobal.gBrowser.moveTabsBefore(tabs, group);
             } else {
-              tabs[0].ownerGlobal.gBrowser.moveTabsAfter(tabs, group);
+              group.ownerGlobal.gBrowser.moveTabsAfter(tabs, group);
             }
           }
         },

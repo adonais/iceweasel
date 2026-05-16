@@ -15,22 +15,24 @@ const BENIGN_PAGE =
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/benignPage.html";
 const NOTIFICATION_VALUE = "reduced-protection-reload";
 
+let pbWindow;
+
 function getNotification(browser) {
-  let notificationBox = gBrowser.getNotificationBox(browser);
-  return notificationBox.getNotificationWithValue(NOTIFICATION_VALUE);
+  let notificationBox = browser.getTabBrowser()?.getNotificationBox(browser);
+  return notificationBox?.getNotificationWithValue(NOTIFICATION_VALUE);
 }
 
-function waitForContentBlockingEvent() {
+function waitForContentBlockingEvent(aBrowser) {
   return new Promise(resolve => {
     let listener = {
       onContentBlockingEvent(webProgress, request, event) {
         if (event & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT) {
-          gBrowser.removeProgressListener(listener);
+          aBrowser.removeProgressListener(listener);
           resolve();
         }
       },
     };
-    gBrowser.addProgressListener(listener);
+    aBrowser.addProgressListener(listener);
   });
 }
 
@@ -39,21 +41,25 @@ add_setup(async function () {
     set: [
       ["privacy.trackingprotection.enabled", true],
       ["privacy.reducePageProtection.infobar.enabled.pbmode", true],
+      ["dom.security.https_first_pbm", false],
     ],
   });
 
   await UrlClassifierTestUtils.addTestTrackers();
 
-  registerCleanupFunction(() => {
+  pbWindow = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+
+  registerCleanupFunction(async () => {
+    await BrowserTestUtils.closeWindow(pbWindow);
     UrlClassifierTestUtils.cleanupTestTrackers();
   });
 });
 
 // The infobar must NOT appear on initial navigation (first load).
 add_task(async function test_no_infobar_on_first_load() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
@@ -69,16 +75,16 @@ add_task(async function test_no_infobar_on_first_load() {
 
 // The infobar appears after reloading a page that had blocked trackers.
 add_task(async function test_infobar_on_reload() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
 
   info("Reloading to trigger the infobar");
   let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   let notification = await TestUtils.waitForCondition(
@@ -95,9 +101,9 @@ add_task(async function test_infobar_on_reload() {
 
 // The infobar does NOT appear when navigating to a new page
 add_task(async function test_no_infobar_on_navigation() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
@@ -118,16 +124,16 @@ add_task(async function test_no_infobar_on_navigation() {
 // Clicking the "Reload with reduced protection" button disables TP via
 // ScopedPrefs and reloads the page so trackers are no longer blocked.
 add_task(async function test_button_disables_tp_and_reloads() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
 
   info("Reloading to trigger the infobar");
   let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   let notification = await TestUtils.waitForCondition(
@@ -144,8 +150,7 @@ add_task(async function test_button_disables_tp_and_reloads() {
 
   // After the button-triggered reload, TP should be disabled for this site
   // in this tab. The shield should not be active.
-  let isActive =
-    gBrowser.ownerGlobal.gProtectionsHandler.iconBox.hasAttribute("active");
+  let isActive = pbWindow.gProtectionsHandler.iconBox.hasAttribute("active");
   ok(!isActive, "Shield is not active: TP disabled via ScopedPrefs");
 
   BrowserTestUtils.removeTab(tab);
@@ -154,16 +159,16 @@ add_task(async function test_button_disables_tp_and_reloads() {
 // After the infobar is shown for a host, it should not reappear for that host
 // on subsequent reloads (dismissed-hosts tracking).
 add_task(async function test_no_reappear_after_dismiss() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
 
   info("Reloading to trigger the infobar for the first time");
   let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   await TestUtils.waitForCondition(
@@ -172,9 +177,9 @@ add_task(async function test_no_reappear_after_dismiss() {
   );
 
   info("Reloading again - infobar should not reappear for this host");
-  blockingPromise = waitForContentBlockingEvent();
+  blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
   await blockingPromise;
 
@@ -190,16 +195,16 @@ add_task(async function test_no_reappear_after_dismiss() {
 // After an address-bar navigation (LOAD_CMD_NORMAL), the dismissed-hosts set
 // should be cleared, so the infobar can appear again on the next reload.
 add_task(async function test_dismissal_resets_on_navigation() {
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    pbWindow.gBrowser,
     TRACKING_PAGE
   );
   await blockingPromise;
 
   info("Reload to trigger and dismiss the infobar");
   let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   await TestUtils.waitForCondition(
@@ -213,7 +218,7 @@ add_task(async function test_dismissal_resets_on_navigation() {
   await loadedPromise;
 
   info("Navigate back to the tracking page");
-  blockingPromise = waitForContentBlockingEvent();
+  blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
   loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, TRACKING_PAGE);
   await loadedPromise;
@@ -221,7 +226,7 @@ add_task(async function test_dismissal_resets_on_navigation() {
 
   info("Reload again - infobar should appear because dismissal was reset");
   loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   let notification = await TestUtils.waitForCondition(
@@ -233,13 +238,73 @@ add_task(async function test_dismissal_resets_on_navigation() {
   BrowserTestUtils.removeTab(tab);
 });
 
-// The infobar should not appear when the feature pref is disabled.
-add_task(async function test_pref_gating() {
+// Clicking the button disables all tracker-blocking scoped prefs, not just
+// tracking protection.
+add_task(async function test_button_disables_all_tracker_prefs() {
+  const TRACKER_PREFS = [
+    [
+      "privacy.trackingprotection.enabled",
+      Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_ENABLED,
+    ],
+    [
+      "privacy.trackingprotection.cryptomining.enabled",
+      Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_CRYPTOMINING_ENABLED,
+    ],
+    [
+      "privacy.trackingprotection.fingerprinting.enabled",
+      Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_FINGERPRINTING_ENABLED,
+    ],
+    [
+      "privacy.trackingprotection.socialtracking.enabled",
+      Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_SOCIALTRACKING_ENABLED,
+    ],
+    [
+      "privacy.trackingprotection.emailtracking.enabled",
+      Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_EMAILTRACKING_ENABLED,
+    ],
+  ];
+
   await SpecialPowers.pushPrefEnv({
-    set: [["privacy.reducePageProtection.infobar.enabled.pbmode", false]],
+    set: TRACKER_PREFS.map(([pref]) => [pref, true]),
   });
 
-  let blockingPromise = waitForContentBlockingEvent();
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE
+  );
+  await blockingPromise;
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  await loadedPromise;
+
+  let notification = await TestUtils.waitForCondition(
+    () => getNotification(tab.linkedBrowser),
+    "Waiting for reduced protection notification"
+  );
+  ok(notification, "Infobar appeared");
+
+  let reloadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  notification.buttonContainer.querySelector("button").click();
+  await reloadPromise;
+
+  let scopedPrefs = tab.linkedBrowser.browsingContext.scopedPrefs;
+  let bc = tab.linkedBrowser.browsingContext;
+  for (const [, scopedPref] of TRACKER_PREFS) {
+    Assert.equal(
+      scopedPrefs.getBoolPrefScoped(scopedPref, bc),
+      false,
+      `Scoped pref ${scopedPref} is disabled after button click`
+    );
+  }
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+// The infobar should not appear in a normal (non-private) browsing
+add_task(async function test_no_infobar_in_normal_browsing() {
+  let blockingPromise = waitForContentBlockingEvent(gBrowser);
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     TRACKING_PAGE
@@ -248,6 +313,31 @@ add_task(async function test_pref_gating() {
 
   let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+  await loadedPromise;
+
+  await TestUtils.waitForTick();
+
+  let notification = getNotification(tab.linkedBrowser);
+  ok(!notification, "No infobar in a normal browsing window");
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+// The infobar should not appear when the feature pref is disabled.
+add_task(async function test_pref_gating() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.reducePageProtection.infobar.enabled.pbmode", false]],
+  });
+
+  let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    pbWindow.gBrowser,
+    TRACKING_PAGE
+  );
+  await blockingPromise;
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  pbWindow.gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
   await loadedPromise;
 
   await TestUtils.waitForTick();

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -60,7 +58,8 @@
 #endif
 
 #define JS_FOR_PROTOTYPES_(REAL, IMAGINARY, REAL_IF_INTL, REAL_IF_WASM_TYPE, \
-                           REAL_IF_WASM_JSPI, REAL_IF_NIGHTLY)               \
+                           REAL_IF_WASM_JSPI, REAL_IF_NIGHTLY,               \
+                           REAL_IF_SOURCE_PHASE_IMPORTS)                     \
   IMAGINARY(Null, dummy)                                                     \
   REAL(Object, OCLASP(Plain))                                                \
   REAL(Function, &FunctionClass)                                             \
@@ -144,6 +143,8 @@
   REAL(WeakRef, OCLASP(WeakRef))                                             \
   REAL(Iterator, OCLASP(Iterator))                                           \
   REAL(AsyncIterator, OCLASP(AsyncIterator))                                 \
+  REAL_IF_SOURCE_PHASE_IMPORTS(AbstractModuleSource,                         \
+                               &js::AbstractModuleSourceObject::class_)      \
   IF_EXPLICIT_RESOURCE_MANAGEMENT(                                           \
       REAL(DisposableStack, OCLASP(DisposableStack)))                        \
   IF_EXPLICIT_RESOURCE_MANAGEMENT(                                           \
@@ -168,11 +169,11 @@
 // list do not change depending on configuration settings of the same version of
 // the source.
 
-#define JS_FOR_PROTOTYPES(REAL, IMAGINARY)                      \
-  JS_FOR_PROTOTYPES_(REAL, IMAGINARY, IF_INTL(REAL, IMAGINARY), \
-                     IF_WASM_TYPE(REAL, IMAGINARY),             \
-                     IF_WASM_JSPI(REAL, IMAGINARY),             \
-                     IF_NIGHTLY(REAL, IMAGINARY))
+#define JS_FOR_PROTOTYPES(REAL, IMAGINARY)                          \
+  JS_FOR_PROTOTYPES_(                                               \
+      REAL, IMAGINARY, IF_INTL(REAL, IMAGINARY),                    \
+      IF_WASM_TYPE(REAL, IMAGINARY), IF_WASM_JSPI(REAL, IMAGINARY), \
+      IF_NIGHTLY(REAL, IMAGINARY), IF_SOURCE_PHASE_IMPORTS(REAL, IMAGINARY))
 
 #define JS_FOR_EACH_PROTOTYPE(MACRO) JS_FOR_PROTOTYPES(MACRO, MACRO)
 

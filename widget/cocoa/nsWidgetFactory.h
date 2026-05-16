@@ -12,7 +12,7 @@
 #include "nsID.h"
 
 namespace mozilla {
-class OSXNotificationCenter;
+class MacOSNotificationCenter;
 }  // namespace mozilla
 
 namespace mozilla::widget {

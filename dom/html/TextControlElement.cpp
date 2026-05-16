@@ -18,6 +18,7 @@
 #include "nsFocusManager.h"
 #include "nsFrameSelection.h"
 #include "nsIFormControl.h"
+#include "nsTextControlFrame.h"
 #include "nsTextNode.h"
 
 using namespace mozilla::dom;
@@ -99,17 +100,19 @@ void TextControlElement::SetPreviewValue(const nsAString& aValue) {
     text->SetData(aValue, IgnoreErrors());
     return;
   }
-  // Preview goes before the root (and after placeholder if present).
-  RefPtr editingRoot =
-      FindShadowPseudo(PseudoStyleType::MozTextControlEditingRoot);
-  if (NS_WARN_IF(!editingRoot)) {
+  // Preview goes after the root or placeholder.
+  RefPtr prevSibling = FindShadowPseudo(PseudoStyleType::Placeholder);
+  if (!prevSibling) {
+    prevSibling = FindShadowPseudo(PseudoStyleType::MozTextControlEditingRoot);
+  }
+  if (NS_WARN_IF(!prevSibling)) {
     // This can happen if we get called on e.g. a datetimebox or so.
     return;
   }
   RefPtr preview = MakePlaceholderOrPreview(
       *OwnerDoc(), PseudoStyleType::MozTextControlPreview, aValue);
-  sr->InsertChildBefore(preview, editingRoot, /* aNotify = */ true,
-                        IgnoreErrors());
+  sr->InsertChildBefore(preview, prevSibling->GetNextSibling(),
+                        /* aNotify = */ true, IgnoreErrors());
 }
 
 static void ProcessPlaceholder(nsAString& aValue, bool aTextArea) {
@@ -157,21 +160,27 @@ void TextControlElement::UpdatePlaceholder(const nsAttrValue* aOldValue,
   ProcessPlaceholder(value, IsTextArea());
   RefPtr ph = MakePlaceholderOrPreview(*OwnerDoc(),
                                        PseudoStyleType::Placeholder, value);
-  // ::placeholder is always the first child, see SetupShadowTree().
-  sr->InsertChildBefore(ph, sr->GetFirstChild(), /* aNotify = */ true,
+  // Placeholder goes after editing root.
+  RefPtr editingRoot =
+      FindShadowPseudo(PseudoStyleType::MozTextControlEditingRoot);
+  if (NS_WARN_IF(!editingRoot)) {
+    return;
+  }
+  sr->InsertChildBefore(ph, editingRoot->GetNextSibling(), /* aNotify = */ true,
                         IgnoreErrors());
 }
 
-static RefPtr<Element> CreateButton(FormControlType aType, Document& aDoc) {
-  switch (aType) {
+already_AddRefed<Element> TextControlElement::CreateButton() const {
+  auto& doc = *OwnerDoc();
+  switch (mType) {
     case FormControlType::InputPassword:
       if (StaticPrefs::layout_forms_reveal_password_button_enabled() ||
-          aDoc.ChromeRulesEnabled()) {
-        RefPtr button = MakeAnonElement(aDoc, PseudoStyleType::MozReveal,
-                                        nsGkAtoms::button);
+          doc.ChromeRulesEnabled()) {
+        RefPtr button =
+            MakeAnonElement(doc, PseudoStyleType::MozReveal, nsGkAtoms::button);
         button->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns,
                         false);
-        return button;
+        return button.forget();
       }
       break;
     case FormControlType::InputSearch: {
@@ -179,28 +188,25 @@ static RefPtr<Element> CreateButton(FormControlType aType, Document& aDoc) {
       // accessibility issues around the clear search button, we're only
       // enabling the clear button in chrome contexts. See also Bug 1655503
       if (StaticPrefs::layout_forms_input_type_search_enabled() ||
-          aDoc.ChromeRulesEnabled()) {
-        // Create the ::-moz-search-clear-button pseudo-element:
+          doc.ChromeRulesEnabled()) {
         RefPtr button = MakeAnonElement(
-            aDoc, PseudoStyleType::MozSearchClearButton, nsGkAtoms::button);
+            doc, PseudoStyleType::MozSearchClearButton, nsGkAtoms::button);
         button->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns,
                         false);
         button->SetAttr(kNameSpaceID_None, nsGkAtoms::title, u""_ns, false);
-        return button;
+        return button.forget();
       }
       break;
     }
 #ifndef ANDROID
     case FormControlType::InputNumber: {
-      // Create the ::-moz-number-spin-box pseudo-element:
-      RefPtr button = MakeAnonElement(aDoc, PseudoStyleType::MozNumberSpinBox);
-      // Create the ::-moz-number-spin-up/down pseudo-elements:
+      RefPtr button = MakeAnonElement(doc, PseudoStyleType::MozNumberSpinBox);
       for (auto pseudo : {PseudoStyleType::MozNumberSpinUp,
                           PseudoStyleType::MozNumberSpinDown}) {
-        RefPtr spinner = MakeAnonElement(aDoc, pseudo);
+        RefPtr spinner = MakeAnonElement(doc, pseudo);
         button->AppendChildTo(spinner, false, IgnoreErrors());
       }
-      return button;
+      return button.forget();
     }
 #endif
     default:
@@ -225,27 +231,11 @@ void TextControlElement::UpdateTextEditorShadowTree() {
   } else {
     text->UnsetFlags(NS_MAYBE_MASKED);
   }
-  if (RefPtr<Element> existing = GetTextEditorButton()) {
-    existing->Remove();
-  }
-  auto& doc = *OwnerDoc();
-  if (RefPtr<Element> button = CreateButton(mType, doc)) {
-    MOZ_ASSERT(IsButtonPseudoElement(button->GetPseudoElementType()));
-    ShadowRoot* shadowRoot = GetShadowRoot();
-    shadowRoot->AppendChildTo(button, true, IgnoreErrors());
-  }
 }
 
 void TextControlElement::SetupShadowTree(ShadowRoot& aShadow, bool aNotify) {
   MOZ_ASSERT(IsSingleLineTextControlOrTextArea());
   auto& doc = *OwnerDoc();
-  nsAutoString value;
-  if (GetAttr(nsGkAtoms::placeholder, value)) {
-    ProcessPlaceholder(value, IsTextArea());
-    RefPtr ph =
-        MakePlaceholderOrPreview(doc, PseudoStyleType::Placeholder, value);
-    aShadow.AppendChildTo(ph, aNotify, IgnoreErrors());
-  }
   const bool isPassword = mType == FormControlType::InputPassword;
   RefPtr root =
       MakeAnonElement(doc, PseudoStyleType::MozTextControlEditingRoot);
@@ -256,17 +246,18 @@ void TextControlElement::SetupShadowTree(ShadowRoot& aShadow, bool aNotify) {
       text->MarkAsMaybeMasked();
     }
     root->AppendChildTo(text, false, IgnoreErrors());
-    if (IsTextArea()) {
-      RefPtr br = doc.CreateHTMLElement(nsGkAtoms::br);
-      br->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
-      root->AppendChildTo(br, false, IgnoreErrors());
-    }
+    RefPtr br = doc.CreateHTMLElement(nsGkAtoms::br);
+    br->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
+    root->AppendChildTo(br, false, IgnoreErrors());
   }
   aShadow.AppendChildTo(root, aNotify, IgnoreErrors());
 
-  if (RefPtr<Element> button = CreateButton(mType, doc)) {
-    MOZ_ASSERT(IsButtonPseudoElement(button->GetPseudoElementType()));
-    aShadow.AppendChildTo(button, aNotify, IgnoreErrors());
+  nsAutoString value;
+  if (GetAttr(nsGkAtoms::placeholder, value)) {
+    ProcessPlaceholder(value, IsTextArea());
+    RefPtr ph =
+        MakePlaceholderOrPreview(doc, PseudoStyleType::Placeholder, value);
+    aShadow.AppendChildTo(ph, aNotify, IgnoreErrors());
   }
 
   UpdateValueDisplay(aNotify);
@@ -297,15 +288,8 @@ Element* TextControlElement::GetTextEditorPreview() const {
 }
 
 Element* TextControlElement::GetTextEditorButton() const {
-  auto* sr = GetShadowRoot();
-  if (!sr) {
-    return nullptr;
-  }
-  auto* el = Element::FromNodeOrNull(sr->GetLastChild());
-  if (!el || !IsButtonPseudoElement(el->GetPseudoElementType())) {
-    return nullptr;
-  }
-  return el;
+  nsTextControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
+  return frame ? frame->GetButton() : nullptr;
 }
 
 void TextControlElement::UpdateValueDisplay(bool aNotify) {
@@ -340,7 +324,7 @@ void TextControlElement::ScrollSelectionIntoViewAsync(
                          : ScrollFlags::ScrollFirstAncestorOnly;
   selCon->ScrollSelectionIntoView(
       SelectionType::eNormal, nsISelectionController::SELECTION_FOCUS_REGION,
-      ScrollAxis(), ScrollAxis(), flags);
+      AxisScrollParams(), AxisScrollParams(), flags);
 }
 
 void TextControlElement::ShowSelection() {

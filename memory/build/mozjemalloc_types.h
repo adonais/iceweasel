@@ -56,6 +56,32 @@ typedef MALLOC_USABLE_SIZE_CONST_PTR void* usable_ptr_t;
 
 typedef size_t arena_id_t;
 
+// A chunk allocator provides an abstraction for mapping, unmapping, committing
+// and decommitting chunks of pages. This allows for greater control over the
+// memory used to back an arena's allocations.
+//
+// The current primary use case for this is to restrict all of an arena's
+// allocations to a specific memory region as is required for
+// SpiderMonkey's sandbox.
+typedef struct chunk_allocator_s {
+  // Map aSize bytes of memory with alignment aAligment.
+  // The returned pages are expected to be committed with read-write
+  // permissions.
+  void* (*map)(size_t aSize, size_t aAlignment);
+
+  // Unmap aSize bytes of previously mapped memory starting at aAddr.
+  // The pages are returned to the allocator.
+  void (*unmap)(void* aAddr, size_t aSize);
+
+  // Commit aSize bytes of previously mapped decommitted memory starting at
+  // aAddr.
+  bool (*commit)(void* aAddr, size_t aSize);
+
+  // Decommit aSize bytes of previously mapped memory starting at aAddr.
+  // These pages need to be re-committed before they can be used again.
+  void (*decommit)(void* aAddr, size_t aSize);
+} chunk_allocator_t;
+
 #define ARENA_FLAG_RANDOMIZE_SMALL_MASK 0x3
 #define ARENA_FLAG_RANDOMIZE_SMALL_DEFAULT 0
 #define ARENA_FLAG_RANDOMIZE_SMALL_ENABLED 1
@@ -84,13 +110,18 @@ typedef struct arena_params_s {
   // within the arena.  It may be null for unamed arenas
   const char* mLabel;
 
+  // Chunk allocator to be used by the Arena.
+  // If this is not set, the default system allocator will be used.
+  chunk_allocator_t* mChunkAllocator;
+
 #ifdef __cplusplus
   arena_params_s()
       : mMaxDirty(0),
         mMaxDirtyIncreaseOverride(0),
         mMaxDirtyDecreaseOverride(0),
         mFlags(0),
-        mLabel(nullptr) {}
+        mLabel(nullptr),
+        mChunkAllocator(nullptr) {}
 #endif
 } arena_params_t;
 

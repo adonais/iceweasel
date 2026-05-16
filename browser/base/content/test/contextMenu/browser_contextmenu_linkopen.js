@@ -101,12 +101,22 @@ add_task(async function test_select_text_link() {
     gBrowser,
     RESOURCE_LINK
   );
-  for (let elementID of [
+  let elementIDs = [
     "test-link",
     "test-image-link",
     "svg-with-link",
     "svg-with-relative-link",
-  ]) {
+    "mathml-with-link",
+  ];
+  if (
+    !Services.prefs.getBoolPref(
+      "mathml.href_link_on_non_anchor_element.disabled"
+    )
+  ) {
+    elementIDs.push("deprecated-mathml-with-link");
+  }
+
+  for (let elementID of elementIDs) {
     for (let where of ["tab", "window", "privatewindow"]) {
       await activateContextAndWaitFor("#" + elementID, where);
     }

@@ -1,0 +1,17 @@
+{
+  "label": "andisearch.com",
+  "bugs": {
+    "1943987": {
+      "issue": "broken-layout",
+      "matches": ["*://andisearch.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "css": ["bug1943987-andisearch.com-fix-offscreen-elements.css"]
+      }
+    }
+  ]
+}

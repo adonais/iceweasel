@@ -131,7 +131,7 @@ var gBuiltInInputs = {
   },
   Sidebar: {
     title: "open-sidebar",
-    image: "chrome://browser/skin/sidebars.svg",
+    image: "chrome://browser/skin/sidebar-collapsed.svg",
     type: kInputTypes.BUTTON,
     callback: () => {
       let win = lazy.BrowserWindowTracker.getTopWindow();

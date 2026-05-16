@@ -47,7 +47,6 @@ mod color;
 #[cfg(feature = "debugger")]
 pub mod debugger;
 mod display_item;
-mod display_item_cache;
 mod display_list;
 mod font;
 mod gradient_builder;
@@ -57,7 +56,6 @@ pub mod units;
 
 pub use crate::color::*;
 pub use crate::display_item::*;
-pub use crate::display_item_cache::DisplayItemCache;
 pub use crate::display_list::*;
 pub use crate::font::*;
 pub use crate::gradient_builder::*;

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -290,7 +288,9 @@ static bool IsMarkedOrAllocated(TenuredCell* cell) {
 struct CheckEdgeTracer final : public JS::CallbackTracer {
   VerifyNode* node;
   explicit CheckEdgeTracer(JSRuntime* rt)
-      : JS::CallbackTracer(rt), node(nullptr) {}
+      : JS::CallbackTracer(rt, JS::TracerKind::Callback,
+                           JS::WeakEdgeTraceAction::Skip),
+        node(nullptr) {}
   void onChild(JS::GCCellPtr thing, const char* name) override;
 };
 
@@ -376,6 +376,7 @@ void gc::GCRuntime::endVerifyPreBarriers() {
 
     /* Start after the roots. */
     VerifyNode* node = NextNode(trc->root);
+    size_t found = 0;
     while ((char*)node < trc->edgeptr) {
       cetrc.node = node;
       JS::TraceChildren(&cetrc, node->thing);
@@ -392,13 +393,17 @@ void gc::GCRuntime::endVerifyPreBarriers() {
                 node->thing.asCell(), edge.label,
                 JS::GCTraceKindToAscii(edge.thing.kind()), edge.thing.asCell());
             MOZ_ReportAssertionFailure(msgbuf, __FILE__, __LINE__);
-            MOZ_CRASH();
+            found++;
           }
         }
       }
 
       node = NextNode(node);
     }
+    MOZ_RELEASE_ASSERT(
+        found == 0,
+        "barrier verifier found edges to unmarked objects that were reachable "
+        "when snapshot was taken (see above)");
   }
 
   marker().reset();

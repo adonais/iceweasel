@@ -1,0 +1,17 @@
+{
+  "label": "tsu-results.rf.gd",
+  "bugs": {
+    "1911243": {
+      "issue": "broken-layout",
+      "matches": ["*://tsu-results.rf.gd/tsu_results/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1911243-tsu-results.rf.gd-fix-table-headers.css"]
+      }
+    }
+  ]
+}

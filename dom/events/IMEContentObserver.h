@@ -103,8 +103,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
    *                        design mode document.
    * @param aEditorBase     The editor which is associated with aContent.
    */
-  MOZ_CAN_RUN_SCRIPT void Init(nsIWidget& aWidget, nsPresContext& aPresContext,
-                               dom::Element* aElement, EditorBase& aEditorBase);
+  void Init(nsIWidget& aWidget, nsPresContext& aPresContext,
+            dom::Element* aElement, EditorBase& aEditorBase);
 
   /**
    * Destroy() finalizes the instance, i.e., stops observing contents and
@@ -137,10 +137,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
    * @return            Returns true if the instance is managing the content.
    *                    Otherwise, false.
    */
-  MOZ_CAN_RUN_SCRIPT bool MaybeReinitialize(nsIWidget& aWidget,
-                                            nsPresContext& aPresContext,
-                                            dom::Element* aElement,
-                                            EditorBase& aEditorBase);
+  bool MaybeReinitialize(nsIWidget& aWidget, nsPresContext& aPresContext,
+                         dom::Element* aElement, EditorBase& aEditorBase);
 
   /**
    * Return true if this is observing editable content and aElement has focus.
@@ -244,9 +242,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
     eState_Observing
   };
   State GetState() const;
-  MOZ_CAN_RUN_SCRIPT bool InitWithEditor(nsPresContext& aPresContext,
-                                         dom::Element* aElement,
-                                         EditorBase& aEditorBase);
+  bool InitWithEditor(nsPresContext& aPresContext, dom::Element* aElement,
+                      EditorBase& aEditorBase);
   void OnIMEReceivedFocus();
   void Clear();
 

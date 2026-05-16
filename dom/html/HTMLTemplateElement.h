@@ -77,6 +77,11 @@ class HTMLTemplateElement final : public nsGenericHTMLElement {
     SetHTMLAttr(nsGkAtoms::shadowrootreferencetarget, aValue);
   }
 
+  void GetShadowRootSlotAssignment(nsAString& aResult) const;
+  void SetShadowRootSlotAssignment(const nsAString& aValue) {
+    SetHTMLAttr(nsGkAtoms::shadowrootslotassignment, aValue);
+  }
+
   void SetHTML(const nsAString& aInnerHTML, const SetHTMLOptions& aOptions,
                ErrorResult& aError) final;
 

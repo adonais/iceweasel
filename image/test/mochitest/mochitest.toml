@@ -81,6 +81,7 @@ support-files = [
   "mq_dynamic_svg_test.html",
   "mq_dynamic_svg_ref.html",
   "opaque.bmp",
+  "progressive.jxl",
   "purple.gif",
   "rainbow.gif",
   "red.gif",
@@ -90,6 +91,7 @@ support-files = [
   "restore-previous.png",
   "rillybad.jpg",
   "schrep.png",
+  "sendprogressivejxl.sjs",
   "shaver.png",
   "short_header.gif",
   "source.png",
@@ -202,6 +204,8 @@ skip-if = [
 
 ["test_bullet_animation.html"]
 
+["test_cache_eviction.html"]
+
 ["test_canvas_frame_animation.html"]
 
 ["test_changeOfSource.html"]
@@ -227,6 +231,13 @@ skip-if = [
 ["test_image_cache_notification.html"]
 
 ["test_image_crossorigin_data_url.html"]
+
+["test_jxl_progressive.html"]
+skip-if = [
+  "release_or_beta",
+  "http2",
+  "http3",
+]
 
 ["test_mq_dynamic_svg.html"]
 

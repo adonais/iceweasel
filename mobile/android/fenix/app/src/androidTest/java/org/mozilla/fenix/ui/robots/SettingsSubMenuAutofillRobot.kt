@@ -594,6 +594,10 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         expiryMonth: String,
         expiryYear: String,
     ) = with(composeTestRule) {
+        Log.i(TAG, "verifyEditCreditCardView: Waiting for compose rule to be idle")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "verifyEditCreditCardView: Waited for compose rule to be idle")
+
         editCreditCardToolbarTitle()
             .assertExists("Unable to assert that the edit credit card toolbar title exists")
         deleteCreditCardToolbarButton()

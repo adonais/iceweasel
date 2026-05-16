@@ -142,13 +142,14 @@ package org.mozilla.geckoview {
     ctor @VisibleForTesting protected AIFeature();
     field @NonNull public final String id;
     field public final boolean isAllowed;
+    field public final boolean isBlocked;
     field public final boolean isEnabled;
   }
 
   public static class AIFeaturesController.AIFeaturesException extends Exception {
     ctor public AIFeaturesException(int);
+    field public static final int ERROR_COULD_NOT_MAKE_AVAILABLE = -5;
     field public static final int ERROR_COULD_NOT_PARSE = -2;
-    field public static final int ERROR_COULD_NOT_RESET = -5;
     field public static final int ERROR_COULD_NOT_SET = -4;
     field public static final int ERROR_UNKNOWN = -1;
     field public static final int ERROR_UNKNOWN_FEATURE = -3;
@@ -161,7 +162,7 @@ package org.mozilla.geckoview {
   public static class AIFeaturesController.RuntimeAIFeatures {
     ctor public RuntimeAIFeatures();
     method @HandlerThread @NonNull public static GeckoResult<Map<String,AIFeaturesController.AIFeature>> listFeatures();
-    method @HandlerThread @NonNull public static GeckoResult<Void> resetFeature(@NonNull String);
+    method @HandlerThread @NonNull public static GeckoResult<Void> makeFeatureAvailable(@NonNull String);
     method @HandlerThread @NonNull public static GeckoResult<Void> setFeatureEnablement(@NonNull String, boolean);
   }
 
@@ -628,6 +629,7 @@ package org.mozilla.geckoview {
     method public boolean getAllowListConvenienceTrackingProtection();
     method public int getAntiTrackingCategories();
     method public int getBounceTrackingProtectionMode();
+    method public boolean getContentBlockingDatabaseStatus();
     method public boolean getCookieBannerDetectOnlyMode();
     method public boolean getCookieBannerGlobalRulesEnabled();
     method public boolean getCookieBannerGlobalRulesSubFramesEnabled();
@@ -644,15 +646,23 @@ package org.mozilla.geckoview {
     method public boolean getQueryParameterStrippingPrivateBrowsingEnabled();
     method @NonNull public String[] getQueryParameterStrippingStripList();
     method public int getSafeBrowsingCategories();
+    method public boolean getSafeBrowsingGlobalCacheEnabled();
     method @NonNull public String[] getSafeBrowsingMalwareTable();
     method @NonNull public String[] getSafeBrowsingPhishingTable();
     method @NonNull public Collection<ContentBlocking.SafeBrowsingProvider> getSafeBrowsingProviders();
+    method public boolean getSafeBrowsingRealTimeEnabled();
+    method public @org.mozilla.geckoview.ExperimentalGeckoViewApi int getSafeBrowsingRealTimeSimulationCacheTTLSec();
+    method public @org.mozilla.geckoview.ExperimentalGeckoViewApi boolean getSafeBrowsingRealTimeSimulationEnabled();
+    method public @org.mozilla.geckoview.ExperimentalGeckoViewApi int getSafeBrowsingRealTimeSimulationHitProbability();
+    method public @org.mozilla.geckoview.ExperimentalGeckoViewApi boolean getSafeBrowsingRealTimeSimulationNegativeCacheEnabled();
+    method public @org.mozilla.geckoview.ExperimentalGeckoViewApi int getSafeBrowsingRealTimeSimulationNegativeCacheTTLSec();
     method @NonNull public Boolean getSafeBrowsingV5Enabled();
     method public boolean getStrictSocialTrackingProtection();
     method @NonNull public ContentBlocking.Settings setAllowListBaselineTrackingProtection(boolean);
     method @NonNull public ContentBlocking.Settings setAllowListConvenienceTrackingProtection(boolean);
     method @NonNull public ContentBlocking.Settings setAntiTracking(int);
     method @NonNull public ContentBlocking.Settings setBounceTrackingProtectionMode(int);
+    method @NonNull public ContentBlocking.Settings setContentBlockingDatabaseStatus(boolean);
     method @NonNull public ContentBlocking.Settings setCookieBannerDetectOnlyMode(boolean);
     method @NonNull public ContentBlocking.Settings setCookieBannerGlobalRulesEnabled(boolean);
     method @NonNull public ContentBlocking.Settings setCookieBannerGlobalRulesSubFramesEnabled(boolean);
@@ -669,9 +679,16 @@ package org.mozilla.geckoview {
     method @NonNull public ContentBlocking.Settings setQueryParameterStrippingPrivateBrowsingEnabled(boolean);
     method @NonNull public ContentBlocking.Settings setQueryParameterStrippingStripList(@NonNull String...);
     method @NonNull public ContentBlocking.Settings setSafeBrowsing(int);
+    method @NonNull public ContentBlocking.Settings setSafeBrowsingGlobalCacheEnabled(boolean);
     method @NonNull public ContentBlocking.Settings setSafeBrowsingMalwareTable(@NonNull String...);
     method @NonNull public ContentBlocking.Settings setSafeBrowsingPhishingTable(@NonNull String...);
     method @NonNull public ContentBlocking.Settings setSafeBrowsingProviders(@NonNull ContentBlocking.SafeBrowsingProvider...);
+    method @NonNull public ContentBlocking.Settings setSafeBrowsingRealTimeEnabled(boolean);
+    method @NonNull public ContentBlocking.Settings setSafeBrowsingRealTimeSimulationCacheTTLSec(int);
+    method @NonNull public ContentBlocking.Settings setSafeBrowsingRealTimeSimulationEnabled(boolean);
+    method @NonNull public ContentBlocking.Settings setSafeBrowsingRealTimeSimulationHitProbability(int);
+    method @NonNull public ContentBlocking.Settings setSafeBrowsingRealTimeSimulationNegativeCacheEnabled(boolean);
+    method @NonNull public ContentBlocking.Settings setSafeBrowsingRealTimeSimulationNegativeCacheTTLSec(int);
     method @NonNull public ContentBlocking.Settings setSafeBrowsingV5Enabled(boolean);
     method @NonNull public ContentBlocking.Settings setStrictSocialTrackingProtection(boolean);
     field public static final Parcelable.Creator<ContentBlocking.Settings> CREATOR;
@@ -683,6 +700,7 @@ package org.mozilla.geckoview {
     method @NonNull public ContentBlocking.Settings.Builder allowListConvenienceTrackingProtection(boolean);
     method @NonNull public ContentBlocking.Settings.Builder antiTracking(int);
     method @NonNull public ContentBlocking.Settings.Builder bounceTrackingProtectionMode(int);
+    method @NonNull public ContentBlocking.Settings.Builder contentBlockingDatabase(boolean);
     method @NonNull public ContentBlocking.Settings.Builder cookieBannerGlobalRulesEnabled(boolean);
     method @NonNull public ContentBlocking.Settings.Builder cookieBannerGlobalRulesSubFramesEnabled(boolean);
     method @NonNull public ContentBlocking.Settings.Builder cookieBannerHandlingDetectOnlyMode(boolean);
@@ -1399,8 +1417,7 @@ package org.mozilla.geckoview {
   }
 
   public static class GeckoSession.ContentDelegate.ContextElement {
-    ctor protected ContextElement(@Nullable String, @Nullable String, @Nullable String, @Nullable String, @NonNull String, @Nullable String, @Nullable String, @Nullable String);
-    ctor @Deprecated @DeprecationSchedule(id="context-element-api-updates",version=151) protected ContextElement(@Nullable String, @Nullable String, @Nullable String, @Nullable String, @NonNull String, @Nullable String);
+    ctor protected ContextElement(@Nullable String, @Nullable String, @Nullable String, @Nullable String, @NonNull String, @Nullable String, @Nullable String);
     field public static final int TYPE_AUDIO = 3;
     field public static final int TYPE_IMAGE = 1;
     field public static final int TYPE_NONE = 0;
@@ -1410,7 +1427,6 @@ package org.mozilla.geckoview {
     field @Nullable public final String linkText;
     field @Nullable public final String linkUri;
     field @Nullable public final String srcUri;
-    field @Deprecated @DeprecationSchedule(id="context-element-api-updates",version=151) @Nullable public final String textContent;
     field @Nullable public final String title;
     field public final int type;
   }
@@ -2328,6 +2344,11 @@ package org.mozilla.geckoview {
     ctor public PageExtractionController();
   }
 
+  public static class PageExtractionController.ContentParams {
+    ctor public ContentParams(boolean);
+    field public final boolean removeBoilerplate;
+  }
+
   public static class PageExtractionController.PageExtractionException extends Exception {
     ctor public PageExtractionException(@NonNull String);
     ctor public PageExtractionException(@NonNull String, Throwable);
@@ -2338,7 +2359,8 @@ package org.mozilla.geckoview {
   }
 
   public static class PageExtractionController.PageMetadata {
-    ctor public PageMetadata(@NonNull String[], int, @NonNull String);
+    ctor public PageMetadata(@NonNull String[], int, @NonNull String, boolean);
+    field public final boolean isReaderable;
     field @NonNull public final String language;
     field @NonNull public final String[] structuredDataTypes;
     field public final int wordCount;
@@ -2347,6 +2369,7 @@ package org.mozilla.geckoview {
   public static class PageExtractionController.SessionPageExtractor {
     ctor public SessionPageExtractor(GeckoSession);
     method @HandlerThread @NonNull public GeckoResult<String> getPageContent();
+    method @HandlerThread @NonNull public GeckoResult<String> getPageContent(@NonNull PageExtractionController.ContentParams);
     method @HandlerThread @NonNull public GeckoResult<PageExtractionController.PageMetadata> getPageMetadata();
   }
 
@@ -2647,6 +2670,7 @@ package org.mozilla.geckoview {
     field public static final int ERROR_COULD_NOT_LOAD_LANGUAGES = -5;
     field public static final int ERROR_COULD_NOT_RESTORE = -4;
     field public static final int ERROR_COULD_NOT_TRANSLATE = -3;
+    field public static final int ERROR_ENGINE_DEACTIVATED = -12;
     field public static final int ERROR_ENGINE_NOT_SUPPORTED = -2;
     field public static final int ERROR_LANGUAGE_NOT_SUPPORTED = -6;
     field public static final int ERROR_MODEL_COULD_NOT_DELETE = -8;

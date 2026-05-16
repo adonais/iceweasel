@@ -232,6 +232,10 @@ void MarkerSchema::Stream(JSONWriter& aWriter,
       aWriter.BoolProperty("isStackBased", true);
     }
 
+    if (!mColorField.empty()) {
+      aWriter.StringProperty("colorField", mColorField);
+    }
+
     aWriter.StartArrayProperty("display");
     {
       for (Location location : mLocations) {

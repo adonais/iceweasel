@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.trackingprotection
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import mozilla.components.feature.protection.dashboard.ProtectionsStorage
@@ -15,11 +17,16 @@ import org.mozilla.fenix.components.appstate.AppState
 /**
  * View-bound feature that dispatches tracker blocked count changes to the [AppStore]
  * when the [ProtectionsStorage] is updated.
+ *
+ * @param appStore The [AppStore] to dispatch actions to.
+ * @param protectionsStorage The [ProtectionsStorage] to observe for tracker count updates.
+ * @param ioDispatcher The [CoroutineDispatcher] for database operations. Defaults to [Dispatchers.IO].
  */
 class TrackersBlockedFeature(
     private val appStore: AppStore,
     private val protectionsStorage: ProtectionsStorage,
-) : AbstractBinding<AppState>(appStore) {
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) : AbstractBinding<AppState>(appStore, ioDispatcher) {
 
     override suspend fun onState(flow: Flow<AppState>) {
         protectionsStorage.getTotalCountAllTime()

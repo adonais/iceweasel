@@ -69,7 +69,8 @@ class OSKeyStore final : public nsIOSKeyStore {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOSKEYSTORE
 
-  OSKeyStore();
+  static already_AddRefed<OSKeyStore> GetSingleton();
+
   nsresult GenerateSecret(const nsACString& aLabel,
                           /* out */ nsACString& aRecoveryPhrase);
   nsresult SecretAvailable(const nsACString& aLabel,
@@ -88,6 +89,7 @@ class OSKeyStore final : public nsIOSKeyStore {
                         /*out*/ uint8_t** outBytes);
 
  private:
+  OSKeyStore();
   ~OSKeyStore() = default;
 
   std::unique_ptr<AbstractOSKeyStore> mKs;

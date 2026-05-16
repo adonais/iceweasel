@@ -347,6 +347,7 @@ add_task(async function test_IPPStartupCache_usageInfo_type_validation() {
 add_task(async function test_IPPStartupCache_usage_event_listener() {
   Services.prefs.setBoolPref("browser.ipProtection.cacheDisabled", false);
 
+  await IPProtectionService.init();
   using cacheHandle = makeCacheHandle();
 
   Services.obs.notifyObservers(null, "sessionstore-windows-restored");
@@ -413,4 +414,5 @@ add_task(async function test_IPPStartupCache_usage_event_listener() {
 
   Services.prefs.clearUserPref("browser.ipProtection.usageCache");
   Services.prefs.clearUserPref("browser.ipProtection.stateCache");
+  IPProtectionService.uninit();
 });

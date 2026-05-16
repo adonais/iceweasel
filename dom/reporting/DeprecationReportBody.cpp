@@ -37,7 +37,8 @@ void DeprecationReportBody::GetId(nsAString& aId) const { aId = mId; }
 void DeprecationReportBody::GetAnticipatedRemoval(
     JSContext* aCx, JS::MutableHandle<JSObject*> aResult) const {
   if (!mDate.IsNull()) {
-    JSObject* date = JS::NewDateObject(aCx, JS::TimeClip(mDate.Value()));
+    JSObject* date =
+        JS::NewDateObject(aCx, JS::TimeClip(int64_t(mDate.Value())));
     aResult.set(date);
   }
 }

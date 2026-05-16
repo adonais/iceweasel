@@ -92,7 +92,7 @@ add_task(async function test_fetch_page_meta_info() {
 
   let TEST_URI = NetUtil.newURI("http://mozilla.com/test_fetch_page_meta_info");
   await PlacesTestUtils.addVisits(TEST_URI);
-  Assert.ok(page_in_database(TEST_URI));
+  Assert.ok(await page_in_database(TEST_URI));
 
   // Test fetching the null values
   let includeMeta = true;
@@ -159,7 +159,7 @@ add_task(async function test_fetch_annotations() {
 
   const TEST_URI = "http://mozilla.com/test_fetch_page_meta_info";
   await PlacesTestUtils.addVisits(TEST_URI);
-  Assert.ok(page_in_database(TEST_URI));
+  Assert.ok(await page_in_database(TEST_URI));
 
   let includeAnnotations = true;
   let pageInfo = await PlacesUtils.history.fetch(TEST_URI, {

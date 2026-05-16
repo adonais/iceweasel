@@ -16,7 +16,6 @@
 #include "mozilla/layers/WebRenderCanvasRenderer.h"
 #include "mozilla/webgpu/CanvasContext.h"
 #include "nsDisplayList.h"
-#include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleUtil.h"
 

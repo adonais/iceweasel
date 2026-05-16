@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -33,7 +31,7 @@
 #include "gc/AllocKind.h"         // gc::AllocKind
 #include "gc/Tracer.h"            // TraceNullableRoot
 #include "jit/BaselineCompileTask.h"  // BaselineCompileTask::OffThreadBaselineCompilationAvailable
-#include "jit/BaselineJIT.h"  // jit::BaselineScript, jit::CanBaselineInterpretScript
+#include "jit/BaselineJIT.h"  // jit::BaselineScript, jit::CanBaselineCompileScript
 #include "jit/JitContext.h"     // jit::MethodStatus
 #include "jit/JitRuntime.h"     // jit::JitRuntime
 #include "jit/JitScript.h"      // AutoKeepJitScripts
@@ -2723,7 +2721,7 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
                                              const CompilationStencil& stencil,
                                              CompilationGCOutput& gcOutput,
                                              bool doAggressive) {
-  if (!jit::IsBaselineInterpreterEnabled()) {
+  if (!jit::IsBaselineJitEnabled(cx)) {
     return true;
   }
 
@@ -2762,11 +2760,7 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
       }
     }
 
-    if (script->baselineDisabled()) {
-      continue;
-    }
-
-    if (!jit::CanBaselineInterpretScript(script)) {
+    if (!jit::CanBaselineCompileScript(cx, script)) {
       continue;
     }
 
@@ -2783,10 +2777,9 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
       TRACE_FOR_TEST_DOM(cx, "omt_eager_baseline_dispatch");
     }
 
-    // Add script to queue
-    if (!queue.enqueue(script)) {
-      return false;
-    }
+    // Add script to queue. DispatchOffThreadBaselineBatch guarantees
+    // that there will be room.
+    MOZ_ALWAYS_TRUE(queue.enqueue(script));
     TRACE_FOR_TEST_DOM(cx, "omt_eager_baseline_function", script);
   }
 

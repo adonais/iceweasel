@@ -215,6 +215,46 @@ add_task(async function test_runWithAuth_fails_after_retry_401() {
   }
 });
 
+// Test 401 error is thrown immediately when custom endpoint is set (no retry)
+add_task(async function test_runWithAuth_throws_401_with_custom_endpoint() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.endpoint", "https://example.test/v1"]],
+  });
+
+  try {
+    const engine = await openAIEngine.build("chat");
+    const testContent = { messages: [{ role: "user", content: "test" }] };
+    const expectedError = new Error("Request failed with 401 status code");
+
+    const runStub = sinon
+      .stub(engine.engineInstance, "run")
+      .rejects(expectedError);
+    const fxAccounts = getFxAccountsSingleton();
+    const removeCachedTokenStub = sinon
+      .stub(fxAccounts, "removeCachedOAuthToken")
+      .resolves();
+
+    try {
+      await Assert.rejects(
+        engine._runWithAuth(testContent),
+        ex => ex === expectedError,
+        "_runWithAuth should throw 401 immediately when custom endpoint is set"
+      );
+
+      Assert.ok(runStub.calledOnce, "engine.run should be called once");
+      Assert.ok(
+        removeCachedTokenStub.notCalled,
+        "removeCachedOAuthToken should not be called when custom endpoint is set"
+      );
+    } finally {
+      runStub.restore();
+      removeCachedTokenStub.restore();
+    }
+  } finally {
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
 // Test no retry for non-401 errors and error is thrown immediately
 add_task(async function test_runWithAuth_throws_non_401_error() {
   const engine = await openAIEngine.build("chat");

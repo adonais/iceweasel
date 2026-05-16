@@ -1,0 +1,15 @@
+{
+  "label": "boostapp.io",
+  "bugs": {
+    "1947682": {
+      "issue": "unsupported-warning",
+      "matches": ["*://www.boostapp.io/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

@@ -1418,23 +1418,6 @@ async function selectContextMenuItem(monitor, id) {
 }
 
 /**
- * Wait for DOM being in specific state. But, do not wait
- * for change if it's in the expected state already.
- */
-async function waitForDOMIfNeeded(target, selector, expectedLength = 1) {
-  return new Promise(resolve => {
-    const elements = target.querySelectorAll(selector);
-    if (elements.length == expectedLength) {
-      resolve(elements);
-    } else {
-      waitForDOM(target, selector, expectedLength).then(elems => {
-        resolve(elems);
-      });
-    }
-  });
-}
-
-/**
  * Helper for blocking or unblocking a request via the list item's context menu.
  *
  * @param {Element} element

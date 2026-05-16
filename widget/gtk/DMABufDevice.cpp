@@ -155,6 +155,12 @@ DMABufDevice* DMABufDeviceLock::EnsureDMABufDevice() {
   return sDMABufDevice;
 }
 
+void DMABufDeviceLock::Shutdown() {
+  StaticMutexAutoLock lock(sMutex);
+  delete sDMABufDevice;
+  sDMABufDevice = nullptr;
+}
+
 DMABufDeviceLock::DMABufDeviceLock() {
   LOGDMABUF(("DMABufDeviceLock::DMABufDeviceLock() [%p]", this));
   sMutex.Lock();

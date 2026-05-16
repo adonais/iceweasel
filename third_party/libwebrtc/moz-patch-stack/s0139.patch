@@ -1,30 +1,44 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Fri, 30 Jan 2026 18:55:00 +0000
-Subject: Bug 2005262 - better logging in
- ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension. r=ng
+Date: Thu, 2 Apr 2026 16:11:00 +0000
+Subject: Bug 2027501 - fix fast recovery retransmission logic. r=bwc
 
-Differential Revision: https://phabricator.services.mozilla.com/D281051
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b44955c4c033ebaf31b40701f12f7cb0dc035ba8
+Differential Revision: https://phabricator.services.mozilla.com/D291024
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/32071ccb68af0cd311916477dc57d92d0fcd72ef
 ---
- modules/rtp_rtcp/source/rtp_rtcp_impl2.cc | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ net/dcsctp/tx/outstanding_data.cc     | 3 ++-
+ net/dcsctp/tx/retransmission_queue.cc | 8 ++++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index d3f073881b..91408f9de5 100644
---- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-+++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-@@ -574,9 +574,13 @@ void ModuleRtpRtcpImpl2::SetExtmapAllowMixed(bool extmap_allow_mixed) {
- 
- void ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension(absl::string_view uri,
-                                                     int id) {
-+  RTC_LOG(LS_INFO) << "RegisterRtpHeaderExtension uri:'" << uri << "' id: " << id;
-   bool registered =
-       rtp_sender_->packet_generator.RegisterRtpHeaderExtension(uri, id);
--  RTC_CHECK(registered);
-+  if (!registered) {
-+    RTC_LOG(LS_WARNING) << "RegisterRtpHeaderExtension failed to register uri:'" << uri << "' id: " << id;
+diff --git a/net/dcsctp/tx/outstanding_data.cc b/net/dcsctp/tx/outstanding_data.cc
+index 37ba07b822..3fce484fc8 100644
+--- a/net/dcsctp/tx/outstanding_data.cc
++++ b/net/dcsctp/tx/outstanding_data.cc
+@@ -256,7 +256,8 @@ void OutstandingData::NackBetweenAckBlocks(
+     UnwrappedTSN cur_block_first_acked =
+         UnwrappedTSN::AddTo(cumulative_tsn_ack, block.start);
+     for (UnwrappedTSN tsn = prev_block_last_acked.next_value();
+-         tsn < cur_block_first_acked && tsn <= max_tsn_to_nack;
++         tsn < cur_block_first_acked && tsn <= max_tsn_to_nack &&
++         tsn < next_tsn();
+          tsn = tsn.next_value()) {
+       ack_info.has_packet_loss |=
+           NackItem(tsn, /*retransmit_now=*/false,
+diff --git a/net/dcsctp/tx/retransmission_queue.cc b/net/dcsctp/tx/retransmission_queue.cc
+index 9557a9be22..e3ed0e6da1 100644
+--- a/net/dcsctp/tx/retransmission_queue.cc
++++ b/net/dcsctp/tx/retransmission_queue.cc
+@@ -251,6 +251,14 @@ bool RetransmissionQueue::IsSackValid(const SackChunk& sack) const {
+   } else if (cumulative_tsn_ack > outstanding_data_.highest_outstanding_tsn()) {
+     return false;
+   }
++
++  for (const auto& block : sack.gap_ack_blocks()) {
++    if (UnwrappedTSN::AddTo(cumulative_tsn_ack, block.end) >
++        outstanding_data_.highest_outstanding_tsn()) {
++      return false;
++    }
 +  }
-+  RTC_DCHECK(registered);
++
+   return true;
  }
  
- void ModuleRtpRtcpImpl2::DeregisterSendRtpHeaderExtension(

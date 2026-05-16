@@ -7,8 +7,8 @@ package mozilla.components.browser.engine.gecko.ai
 import androidx.annotation.OptIn
 import mozilla.components.concept.engine.ai.AIFeaturesError
 import org.mozilla.geckoview.AIFeaturesController
+import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COULD_NOT_MAKE_AVAILABLE
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COULD_NOT_PARSE
-import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COULD_NOT_RESET
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COULD_NOT_SET
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_UNKNOWN_FEATURE
 import org.mozilla.geckoview.ExperimentalGeckoViewApi
@@ -38,8 +38,8 @@ object GeckoAIFeaturesUtils {
                 ERROR_COULD_NOT_SET ->
                     AIFeaturesError.CouldNotSetError(this)
 
-                ERROR_COULD_NOT_RESET ->
-                    AIFeaturesError.CouldNotResetError(this)
+                ERROR_COULD_NOT_MAKE_AVAILABLE ->
+                    AIFeaturesError.CouldNotMakeAvailableError(this)
 
                 else -> AIFeaturesError.UnknownError(this)
             }

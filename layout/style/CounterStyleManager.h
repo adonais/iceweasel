@@ -5,7 +5,6 @@
 #define mozilla_CounterStyleManager_h_
 
 #include "mozilla/Attributes.h"
-#include "nsGkAtoms.h"
 #include "nsHashKeys.h"
 #include "nsStringFwd.h"
 #include "nsStyleConsts.h"

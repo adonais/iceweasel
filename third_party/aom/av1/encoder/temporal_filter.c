@@ -46,9 +46,6 @@
 
 // NOTE: All `tf` in this file means `temporal filtering`.
 
-// Number of 16x16 blocks within one 64x64 TF block.
-#define NUM_16X16 16
-
 // Forward Declaration.
 static void tf_determine_block_partition(const MV block_mv, const int block_mse,
                                          const MV *midblock_mvs,
@@ -1064,6 +1061,7 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
   const GF_GROUP *gf_group = &cpi->ppi->gf_group;
   const FRAME_TYPE frame_type = gf_group->frame_type[cpi->gf_frame_index];
 
+#if CONFIG_AV1_HIGHBITDEPTH
   // Determine whether the video is with `YUV 4:2:2` format, since the avx2/sse2
   // function only supports square block size. We will use C function instead
   // for videos with `YUV 4:2:2` format.
@@ -1074,6 +1072,7 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
       break;
     }
   }
+#endif
 
   // Do filtering.
   FRAME_DIFF *diff = &td->tf_data.diff;
@@ -1159,7 +1158,7 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
         // only supports 32x32 block size and 5x5 filtering window.
         if (is_frame_high_bitdepth(frame_to_filter)) {  // for high bit-depth
 #if CONFIG_AV1_HIGHBITDEPTH
-          if (!is_yuv422_format && TF_BLOCK_SIZE == BLOCK_32X32 &&
+          if (!is_yuv422_format && TF_BLOCK_SIZE == BLOCK_64X64 &&
               TF_WINDOW_LENGTH == 5) {
             av1_highbd_apply_temporal_filter(
                 frame_to_filter, mbd, block_size, mb_row, mb_col, num_planes,
@@ -1176,8 +1175,7 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
 #endif  // CONFIG_AV1_HIGHBITDEPTH
         } else {
           // for 8-bit
-          if (!is_yuv422_format && TF_BLOCK_SIZE == BLOCK_32X32 &&
-              TF_WINDOW_LENGTH == 5) {
+          if (TF_BLOCK_SIZE == BLOCK_64X64 && TF_WINDOW_LENGTH == 5) {
             av1_apply_temporal_filter(
                 frame_to_filter, mbd, block_size, mb_row, mb_col, num_planes,
                 noise_levels, subblock_mvs, subblock_mses, q_factor,
@@ -1368,10 +1366,10 @@ static void tf_setup_filtering_buffer(AV1_COMP *cpi,
     num_before = AOMMIN(is_forward_keyframe ? num_frames / 2 : 0, max_before);
     num_after = AOMMIN(num_frames - 1, max_after);
   } else {
-    int gfu_boost = av1_calc_arf_boost(&cpi->ppi->twopass, &cpi->twopass_frame,
-                                       &cpi->ppi->p_rc, &cpi->frame_info,
-                                       filter_frame_lookahead_idx, max_before,
-                                       max_after, NULL, NULL, 0);
+    int gfu_boost = av1_calc_arf_boost(
+        &cpi->ppi->twopass, &cpi->twopass_frame, &cpi->ppi->p_rc,
+        &cpi->frame_info, filter_frame_lookahead_idx, max_before, max_after,
+        NULL, NULL, 0, cpi->oxcf.mode != REALTIME);
 
     num_frames = AOMMIN(num_frames, gfu_boost / 150);
     num_frames += !(num_frames & 1);  // Make the number odd.
@@ -1592,7 +1590,10 @@ static void init_tf_ctx(AV1_COMP *cpi, int filter_frame_lookahead_idx,
 
 int av1_check_show_filtered_frame(const YV12_BUFFER_CONFIG *frame,
                                   const FRAME_DIFF *frame_diff, int q_index,
-                                  aom_bit_depth_t bit_depth) {
+                                  aom_bit_depth_t bit_depth, int enable_overlay,
+                                  int is_second_arf) {
+  if (!enable_overlay || is_second_arf) return 1;
+
   const int frame_height = frame->y_crop_height;
   const int frame_width = frame->y_crop_width;
   const int block_height = block_size_high[TF_BLOCK_SIZE];

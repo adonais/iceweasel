@@ -625,6 +625,7 @@ struct ParamTraits<mozilla::layers::ScrollMetadata>
     WriteParam(aWriter, aParam.mOverscrollBehavior);
     WriteParam(aWriter, aParam.mOverflow);
     WriteParam(aWriter, aParam.mScrollUpdates);
+    WriteParam(aWriter, aParam.mWritingMode);
   }
 
   static bool ReadContentDescription(MessageReader* aReader,
@@ -666,7 +667,8 @@ struct ParamTraits<mozilla::layers::ScrollMetadata>
            ReadParam(aReader, &aResult->mDisregardedDirection) &&
            ReadParam(aReader, &aResult->mOverscrollBehavior) &&
            ReadParam(aReader, &aResult->mOverflow) &&
-           ReadParam(aReader, &aResult->mScrollUpdates);
+           ReadParam(aReader, &aResult->mScrollUpdates) &&
+           ReadParam(aReader, &aResult->mWritingMode);
   }
 };
 
@@ -1037,7 +1039,7 @@ struct ParamTraits<mozilla::layers::CompositorOptions> {
 
 template <>
 struct ParamTraits<mozilla::layers::OverlaySupportType>
-    : public ContiguousEnumSerializerInclusive<
+    : public ContiguousEnumSerializer<
           mozilla::layers::OverlaySupportType,
           mozilla::layers::OverlaySupportType::None,
           mozilla::layers::OverlaySupportType::MAX> {};

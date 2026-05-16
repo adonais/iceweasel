@@ -1,0 +1,17 @@
+{
+  "label": "tjoy.jp",
+  "bugs": {
+    "2003826": {
+      "issue": "broken-zooming",
+      "matches": ["*://tjoy.jp/shinjuku_wald9/reservation/choice_seat"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "css": ["bug2003826-tjoy.jp-fix-broken-zoom.css"]
+      }
+    }
+  ]
+}

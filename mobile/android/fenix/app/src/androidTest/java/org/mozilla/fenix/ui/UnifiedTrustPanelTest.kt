@@ -165,6 +165,7 @@ class UnifiedTrustPanelTest {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(trackingProtectionPage.toUri()) {
+            waitForPageToLoad()
             verifyPageContent("Tracker Blocking")
             verifyPageContent("BLOCKED")
         }

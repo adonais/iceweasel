@@ -21,11 +21,11 @@ GamepadTestChannelChild::GamepadTestChannelChild(
 
 mozilla::ipc::IPCResult GamepadTestChannelChild::RecvReplyGamepadHandle(
     const uint32_t& aID, const GamepadHandle& aHandle) {
-  MOZ_RELEASE_ASSERT(
-      mGamepadServiceTest,
-      "Test channel should never outlive the owning GamepadServiceTest");
-
-  mGamepadServiceTest->ReplyGamepadHandle(aID, aHandle);
+  RefPtr<GamepadServiceTest> gst(mGamepadServiceTest.get());
+  if (!gst) {
+    return IPC_OK();
+  }
+  gst->ReplyGamepadHandle(aID, aHandle);
   return IPC_OK();
 }
 

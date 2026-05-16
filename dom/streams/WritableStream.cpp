@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/WritableStream.h"
-
 #include "StreamUtils.h"
+#include "WritableStreamAbstract.h"
+#include "WritableStreamDefaultControllerAbstract.h"
+#include "WritableStreamDefaultWriterAbstract.h"
 #include "js/Array.h"
 #include "js/PropertyAndElement.h"
 #include "js/TypeDecls.h"
@@ -23,8 +24,6 @@
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/UnderlyingSinkBinding.h"
 #include "mozilla/dom/WritableStreamBinding.h"
-#include "mozilla/dom/WritableStreamDefaultController.h"
-#include "mozilla/dom/WritableStreamDefaultWriter.h"
 #include "nsCOMPtr.h"
 #include "nsIGlobalObject.h"
 #include "nsISupports.h"
@@ -815,6 +814,15 @@ void WritableStream::ErrorNative(JSContext* aCx, JS::Handle<JS::Value> aError,
   // mController is set outside of the constructor
   WritableStreamDefaultControllerErrorIfNeeded(aCx, MOZ_KnownLive(mController),
                                                aError, aRv);
+}
+
+// https://streams.spec.whatwg.org/#writablestream-error
+// To abort a WritableStream stream with reason, return !
+// WritableStreamAbort(stream, reason). The return value will be a promise that
+// either fulfills with undefined, or rejects with a failure reason.
+already_AddRefed<Promise> WritableStream::AbortNative(
+    JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
+  return WritableStreamAbort(aCx, this, aReason, aRv);
 }
 
 }  // namespace mozilla::dom

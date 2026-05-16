@@ -97,6 +97,9 @@ Push Information
 ``tasks_for``
    The ``tasks_for`` value used to generate the decision task.
 
+``pull_request_number``
+   The GitHub pull request number, if any.
+
 ``dontbuild``
    Set (to `true`) when the commit message requested that no tasks run on this push.
 

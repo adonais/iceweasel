@@ -9,6 +9,7 @@
 #include "BufferReader.h"
 #include "MP4Metadata.h"
 #include "VideoUtils.h"
+#include "gfxUtils.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/glean/DomMediaMp4Metrics.h"
@@ -343,6 +344,21 @@ MediaResult MP4VideoInfo::Update(const Mp4parseTrackInfo* track,
   Mp4parseByteData extraData = video->sample_info[0].extra_data;
   // If length is 0 we append nothing
   mExtraData->AppendElements(extraData.data, extraData.length);
+  if (video->sample_info[0].has_colour_info) {
+    const auto& si = video->sample_info[0];
+    mTransferFunction = gfxUtils::CicpToTransferFunction(
+        static_cast<gfx::CICP::TransferCharacteristics>(
+            si.transfer_characteristics));
+    mColorPrimaries = gfxUtils::CicpToColorPrimaries(
+        static_cast<gfx::CICP::ColourPrimaries>(si.colour_primaries),
+        gMP4MetadataLog);
+    mColorSpace = gfxUtils::CicpToColorSpace(
+        static_cast<gfx::CICP::MatrixCoefficients>(si.matrix_coefficients),
+        static_cast<gfx::CICP::ColourPrimaries>(si.colour_primaries),
+        gMP4MetadataLog);
+    mColorRange =
+        si.full_range_flag ? gfx::ColorRange::FULL : gfx::ColorRange::LIMITED;
+  }
   return NS_OK;
 }
 

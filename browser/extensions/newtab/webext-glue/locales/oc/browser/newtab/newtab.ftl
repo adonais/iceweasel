@@ -262,9 +262,21 @@ newtab-error-fallback-refresh-link = Actualizatz la pagina per tornar ensajar.
 
 newtab-custom-shortcuts-title = Acorchis
 newtab-custom-shortcuts-subtitle = Los sites qu’enregistratz o consultatz
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Acorchis
     .description = Los sites qu’enregistratz o consultatz
+newtab-custom-shortcuts-nova =
+    .label = Acorchis
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } linha
+           *[other] { $num } linhas
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -289,13 +301,17 @@ newtab-custom-settings = Gerir mai de paramètres
 
 newtab-wallpaper-title = Fonzes
 newtab-wallpaper-reset = Reïnicializar
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Enviar un imatge
+newtab-wallpaper-toggle-title =
+    .label = Fonzes
 newtab-wallpaper-light-red-panda = Panda ros
 newtab-wallpaper-light-mountain = Montanha blanca
 newtab-wallpaper-light-color = Fòrmas blavas, ròsas e jaunas
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Colors unidas
 newtab-wallpaper-blue = Blau
 newtab-wallpaper-light-blue = Blau clar
@@ -412,6 +428,12 @@ newtab-topic-selection-privacy-link = Descobrissètz cossí protegissèm e geris
 newtab-topic-selection-button-update-interests = Metre a jorn vòstres interèsses
 newtab-topic-selection-button-pick-interests = Causir vòstres interèsses
 
+## Button to block/unblock listed topics
+## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
+## e.g. Blocked the politics section of stories.
+
+newtab-section-unblock-button = Desblocar
+
 ## Confirmation modal for blocking a section
 
 newtab-section-cancel-button = Pas ara
@@ -419,6 +441,16 @@ newtab-section-cancel-button = Pas ara
 ## Strings for shortcuts highlight
 
 newtab-shortcuts-highlight-subtitle = Apondre un acorchi per gardar vòstres sites preferits a un clic.
+
+## Strings for task / to-do list productivity widget
+
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nòu
+newtab-widget-lists-menu-create = Crear una lista novèla
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Lista novèla
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

@@ -2956,16 +2956,6 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
       f->SetComputedStyle(upToDateStyle);
     }
 
-    if (!aElement->GetParent()) {
-      // This is the root.  Update styles on the viewport as needed.
-      ViewportFrame* viewport =
-          do_QueryFrame(mPresContext->PresShell()->GetRootFrame());
-      if (viewport) {
-        // NB: The root restyle state, not the one for our children!
-        viewport->UpdateStyle(aRestyleState);
-      }
-    }
-
     // Some changes to animations don't affect the computed style and yet still
     // require the layer to be updated. For example, pausing an animation via
     // the Web Animations API won't affect an element's style but still

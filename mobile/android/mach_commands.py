@@ -147,39 +147,6 @@ def android_gradle_dependencies(command_context, args):
     return 0
 
 
-@SubCommand(
-    "android",
-    "write-verification-metadata",
-    """Regenerate Gradle dependency verification metadata for all mobile projects""",
-)
-def android_write_verification_metadata(command_context):
-    """
-    Update verification-metadata.xml files in all mobile projects with new checksums.
-
-    Run this after updating dependencies and confirming they are as expected.
-
-    Example error when a checksum failure occurs:
-
-        > Dependency verification failed for configuration ':components:browser-state:kotlinBuildToolsApiClasspath'
-          One artifact failed verification: mockito-core-5.23.0.jar (org.mockito:mockito-core:5.23.0) from repository maven3
-          This can indicate that a dependency has been compromised. Please carefully verify the checksums.
-    """
-    for project in ["fenix", "focus-android", "android-components"]:
-        rv = gradle(
-            command_context,
-            [
-                "-p",
-                f"mobile/android/{project}",
-                "--write-verification-metadata",
-                "sha256",
-                "help",
-            ],
-        )
-        if rv:
-            return rv
-    return 0
-
-
 def get_maven_archive_paths(maven_folder):
     for subdir, _, files in os.walk(maven_folder):
         if "-SNAPSHOT" in subdir:

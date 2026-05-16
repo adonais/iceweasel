@@ -119,6 +119,8 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
       bool get_and_clear_legacy_stats) const override;
   void SetSink(AudioSinkInterface* sink) override;
   void SetGain(float gain) override;
+  void SetJitterBufferMaxPackets(size_t max_packets) override;
+  void SetJitterBufferFastAccelerate(bool fast_accelerate) override;
   bool SetBaseMinimumPlayoutDelayMs(int delay_ms) override;
   int GetBaseMinimumPlayoutDelayMs() const override;
   std::vector<webrtc::RtpSource> GetSources() const override;
@@ -141,10 +143,6 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
   void DeliverRtcp(ArrayView<const uint8_t> packet);
 
   void SetSyncGroup(absl::string_view sync_group);
-
-  void SetLocalSsrc(uint32_t local_ssrc);
-
-  uint32_t local_ssrc() const;
 
   uint32_t remote_ssrc() const override {
     // The remote_ssrc member variable of config_ will never change and can be

@@ -10,7 +10,7 @@ import {
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/elements/panel-list.js";
+import "chrome://global/content/elements/panel-list.mjs";
 
 /**
  * A generic panel list component for displaying grouped items in a popup.
@@ -115,7 +115,6 @@ export class SmartwindowPanelList extends MozLitElement {
           : this.renderRoot.querySelector(".smartwindow-panel-list-anchor");
     }
     if (
-      this.sidebarMode &&
       this.#panelList?.open &&
       (changedProperties.has("anchor") || changedProperties.has("groups"))
     ) {

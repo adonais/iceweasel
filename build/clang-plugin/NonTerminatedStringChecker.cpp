@@ -6,8 +6,9 @@
 #include "CustomMatchers.h"
 
 void NonTerminatedStringChecker::registerMatchers(MatchFinder *AstMatcher) {
-  AstMatcher->addMatcher(callExpr().bind("call"), this);
-  AstMatcher->addMatcher(cxxConstructExpr().bind("construct"), this);
+  auto HasAnyCallArgument = hasAnyArgument(callExpr(callee(functionDecl(isMarkedNonTerminatedString()))));
+  AstMatcher->addMatcher(callExpr(HasAnyCallArgument).bind("call"), this);
+  AstMatcher->addMatcher(cxxConstructExpr(HasAnyCallArgument).bind("construct"), this);
 }
 
 template <typename CallExprT>

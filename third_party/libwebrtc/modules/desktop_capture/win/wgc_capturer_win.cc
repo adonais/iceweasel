@@ -49,7 +49,6 @@ constexpr wchar_t kCoreMessagingDll[] = L"CoreMessaging.dll";
 constexpr wchar_t kWgcSessionType[] =
     L"Windows.Graphics.Capture.GraphicsCaptureSession";
 constexpr wchar_t kApiContract[] = L"Windows.Foundation.UniversalApiContract";
-constexpr wchar_t kDirtyRegionMode[] = L"DirtyRegionMode";
 constexpr UINT16 kRequiredApiContractVersion = 8;
 
 enum class WgcCapturerResult {
@@ -68,44 +67,6 @@ void RecordWgcCapturerResult(WgcCapturerResult error) {
   RTC_HISTOGRAM_ENUMERATION("WebRTC.DesktopCapture.Win.WgcCapturerResult",
                             static_cast<int>(error),
                             static_cast<int>(WgcCapturerResult::kMaxValue));
-}
-
-// Checks if the DirtyRegionMode property is present in GraphicsCaptureSession
-// and logs a boolean histogram with the result.
-// TODO(https://crbug.com/40259177): Detecting support for this property means
-// that the WGC API supports dirty regions and it can be utilized to improve
-// the capture performance and the existing zero-herz support.
-void LogDirtyRegionSupport() {
-  ComPtr<ABI::Windows::Foundation::Metadata::IApiInformationStatics>
-      api_info_statics;
-  HRESULT hr = GetActivationFactory<
-      ABI::Windows::Foundation::Metadata::IApiInformationStatics,
-      RuntimeClass_Windows_Foundation_Metadata_ApiInformation>(
-      &api_info_statics);
-  if (FAILED(hr)) {
-    return;
-  }
-
-  HSTRING dirty_region_mode;
-  hr = CreateHstring(kDirtyRegionMode, wcslen(kDirtyRegionMode),
-                     &dirty_region_mode);
-  if (FAILED(hr)) {
-    DeleteHstring(dirty_region_mode);
-    return;
-  }
-
-  HSTRING wgc_session_type;
-  hr = CreateHstring(kWgcSessionType, wcslen(kWgcSessionType),
-                     &wgc_session_type);
-  if (SUCCEEDED(hr)) {
-    boolean is_dirty_region_mode_supported =
-        api_info_statics->IsPropertyPresent(wgc_session_type, dirty_region_mode,
-                                            &is_dirty_region_mode_supported);
-    RTC_HISTOGRAM_BOOLEAN("WebRTC.DesktopCapture.Win.WgcDirtyRegionSupport",
-                          !!is_dirty_region_mode_supported);
-  }
-  DeleteHstring(dirty_region_mode);
-  DeleteHstring(wgc_session_type);
 }
 
 }  // namespace
@@ -217,7 +178,6 @@ WgcCapturerWin::WgcCapturerWin(
         reinterpret_cast<CreateDispatcherQueueControllerFunc>(GetProcAddress(
             core_messaging_library_, "CreateDispatcherQueueController"));
   }
-  LogDirtyRegionSupport();
 }
 
 WgcCapturerWin::~WgcCapturerWin() {
@@ -252,11 +212,33 @@ bool WgcCapturerWin::GetSourceList(SourceList* sources) {
 bool WgcCapturerWin::SelectSource(DesktopCapturer::SourceId id) {
   selected_source_id_ = id;
 
+  if (full_screen_window_detector_ &&
+      full_screen_window_detector_->UseHeuristicForFindingEditor() &&
+      editor_id_ == 0) {
+    // Use `full_screen_window_detector_` to check if the selected `id` is a
+    // full screen window, in which case we would like the `selected_source_id_`
+    // to store window id of the editor window.
+    // If there's a corresponding editor window for the slide show we pretend
+    // that the user selected the editor window and then rely on
+    // FullscreenWindowDetector to return the actual slide show window below.
+    editor_id_ = full_screen_window_detector_->FindEditorWindow(id);
+    if (editor_id_ && editor_id_ != selected_source_id_) {
+      // Setting `selected_source_id_` to `editor_id_` allows tying the capture
+      // session to the editor window instead of the full screen window.
+      selected_source_id_ = editor_id_;
+      chosen_slide_show_id_ = id;
+
+      // Updating `selected_source_id_` also creates a new
+      // application_handler(for the editor window) inside
+      // `full_screen_window_detector_` which then needs to be informed about
+      // the fact that the slide show was chosen first.
+      full_screen_window_detector_->SetEditorWasFoundForChosenSlideShow();
+    }
+  }
   // Use `full_screen_window_detector_` to check if there is a corresponding
-  // full screen window for the `selected_source_id_`.
+  // full screen window for the selected `id`.
   const DesktopCapturer::SourceId full_screen_source_id =
-      full_screen_window_detector_ &&
-              full_screen_window_detector_->UseHeuristicForWGC()
+      full_screen_window_detector_
           ? full_screen_window_detector_->FindFullScreenWindow(id)
           : 0;
 
@@ -268,6 +250,12 @@ bool WgcCapturerWin::SelectSource(DesktopCapturer::SourceId id) {
     // successful.
     fullscreen_usage_logged_ = true;
     LogDesktopCapturerFullscreenDetectorUsage();
+
+    if (chosen_slide_show_id_) {
+      RTC_HISTOGRAM_BOOLEAN(
+          "WebRTC.Screenshare.DesktopCapturerFullScreenFindEditorUsage",
+          capture_id == chosen_slide_show_id_);
+    }
   }
 
   if (!capture_source_ || capture_source_->GetSourceId() != capture_id) {
@@ -461,14 +449,13 @@ bool WgcCapturerWin::IsSourceBeingCaptured(DesktopCapturer::SourceId id) {
 }
 
 void WgcCapturerWin::SetUpFullScreenDetectorForTest(
-    bool use_heuristic,
     DesktopCapturer::SourceId source_id,
-    bool fullscreen_slide_show_started_after_capture_start) {
+    bool fullscreen_slide_show_started_after_capture_start,
+    bool use_heuristic_for_finding_editor) {
   if (full_screen_window_detector_) {
-    full_screen_window_detector_->SetUseHeuristicFullscreenPowerPointWindows(
-        /*use_heuristic_fullscreen_powerpoint_windows=*/true, use_heuristic);
     full_screen_window_detector_->CreateFullScreenApplicationHandlerForTest(
-        source_id, fullscreen_slide_show_started_after_capture_start);
+        source_id, fullscreen_slide_show_started_after_capture_start,
+        use_heuristic_for_finding_editor);
   }
 }
 

@@ -4,6 +4,7 @@
 
 package mozilla.components.lib.llm.mlpa.service
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -13,20 +14,122 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import mozilla.components.concept.integrity.IntegrityToken
+import mozilla.components.concept.llm.ErrorCode
+import mozilla.components.concept.llm.Llm
+
+private val INTEGRITY_HANDSHAKE_FAILURE = ErrorCode(1002)
+private val VERIFICATION_SERVICE_FAILED = ErrorCode(1003)
+private val INVALID_TOKEN = ErrorCode(1004)
+private val USER_BLOCKED = ErrorCode(1005)
+private val REQUEST_TOO_LARGE = ErrorCode(1006)
+private val BUDGET_EXCEEDED = ErrorCode(1007)
+private val RATE_LIMITED = ErrorCode(1008)
+private val UPSTREAM_ERROR = ErrorCode(1009)
+private val SERVER_ERROR = ErrorCode(1010)
+private val NETWORK_ERROR = ErrorCode(1011)
+private val RESPONSE_PARSE_ERROR = ErrorCode(1012)
+private val RATE_LIMIT_RESPONSE_PARSE_ERROR = ErrorCode(1013)
+private val UPSTREAM_RESPONSE_PARSE_ERROR = ErrorCode(1014)
+private val STREAM_CONTENT_PARSE_ERROR = ErrorCode(1015)
+private val STREAM_EVENT_PARSE_ERROR = ErrorCode(1016)
+
+/**
+ * Thrown when the Integrity client experiences a failure, propagating its error message.
+ */
+class IntegrityHandshakeFailure(message: String) : Llm.Exception(message, INTEGRITY_HANDSHAKE_FAILURE)
 
 /**
  * Thrown when the MLPA verification service fails to process or validate a request.
  *
  * @param reason A human-readable explanation of the failure.
  */
-class VerificationServiceFailed(reason: String) : Exception("Verification Service Failed: $reason")
+class VerificationServiceFailed(reason: String) :
+    Llm.Exception("Verification Service Failed: $reason", VERIFICATION_SERVICE_FAILED)
 
 /**
- * Thrown when the MLPA chat/completion service fails to process a request.
- *
- * @param reason A human-readable explanation of the failure.
+ * Sealed class for describing the type of error a [ChatService] can return.
  */
-class ChatServiceFailed(reason: String) : Exception("Chat Service Failed: $reason")
+sealed class ChatServiceError(message: String, errorCode: ErrorCode) : Llm.Exception(message, errorCode) {
+    /** Token expired or invalid. Re-authenticate via [AuthenticationService.verify]. */
+    class InvalidToken : ChatServiceError("Invalid token", INVALID_TOKEN)
+
+    /** The user has been blocked from accessing the service. */
+    class UserBlocked : ChatServiceError("User blocked", USER_BLOCKED)
+
+    /** The request body exceeded the 10MB limit. */
+    class RequestTooLarge : ChatServiceError("Request too large", REQUEST_TOO_LARGE)
+
+    /**
+     * The user's total budget has been exhausted.
+     *
+     * @property retryAfter Duration in seconds before the budget resets (typically 86400s).
+     */
+    data class BudgetExceeded(val retryAfter: Long?) : ChatServiceError("Budget exceeded", BUDGET_EXCEEDED)
+
+    /**
+     * Requests per minute or tokens per minute limit reached.
+     *
+     * @property retryAfter Duration in seconds before the limit resets (typically 60s).
+     */
+    data class RateLimited(val retryAfter: Long?) : ChatServiceError("Rate limited", RATE_LIMITED)
+
+    /** The upstream LLM was unreachable or returned an error (502). */
+    data class UpstreamError(val reason: String) : ChatServiceError("Upstream error: $reason", UPSTREAM_ERROR)
+
+    /**
+     * An unexpected server-side error occurred.
+     *
+     * @property statusCode The HTTP status code returned.
+     */
+    data class ServerError(val statusCode: Int) : ChatServiceError("Server error: $statusCode", SERVER_ERROR)
+
+    /**
+     * A network error occurred while communicating with the service.
+     *
+     * @param cause The underlying network exception.
+     */
+    class NetworkError(cause: Exception) : ChatServiceError("Network error: ${cause.message}", NETWORK_ERROR)
+
+    /**
+     * The server response could not be parsed.
+     *
+     * @param cause The underlying serialization exception.
+     */
+    class ResponseParseError(cause: Exception) :
+        ChatServiceError("Response parse error: ${cause.message}", RESPONSE_PARSE_ERROR)
+
+    /**
+     * The rate-limit error response body (HTTP 429) could not be parsed.
+     *
+     * @param cause The underlying serialization exception.
+     */
+    class RateLimitResponseParseError(cause: Exception) :
+        ChatServiceError("Rate limit response parse error: ${cause.message}", RATE_LIMIT_RESPONSE_PARSE_ERROR)
+
+    /**
+     * The upstream error response body (HTTP 502) could not be parsed.
+     *
+     * @param cause The underlying serialization exception.
+     */
+    class UpstreamResponseParseError(cause: Exception) :
+        ChatServiceError("Upstream response parse error: ${cause.message}", UPSTREAM_RESPONSE_PARSE_ERROR)
+
+    /**
+     * A streamed response could not be parsed.
+     *
+     * @param cause The underlying serialization exception.
+     */
+    class StreamEventParseError(cause: Exception) :
+        ChatServiceError("Stream event parse error: ${cause.message}", STREAM_CONTENT_PARSE_ERROR)
+
+    /**
+     * A streamed response event included an error message.
+     *
+     * @param cause The underlying serialization exception.
+     */
+    class StreamError(cause: Exception) :
+        ChatServiceError("Stream event error: ${cause.message}", STREAM_EVENT_PARSE_ERROR)
+}
 
 /**
  * Configuration for connecting to MLPA services.
@@ -161,10 +264,26 @@ fun interface ChatService {
      * @param request The completion request payload.
      * @return A [Result] containing a [Response] on success, or a failure otherwise.
      */
-    suspend fun completion(
+    fun completion(
         authorizationToken: AuthorizationToken,
         request: Request,
-    ): Result<Response>
+    ): Flow<String>
+
+    /**
+     * Body of an error response with a code.
+     *
+     * @property error the error number the [ChatService] returned.
+     */
+    @Serializable
+    data class ResponseErrorCode(val error: Int)
+
+    /**
+     * Body of an error response with a reason.
+     *
+     * @property error the error reason the [ChatService] returned.
+     */
+    @Serializable
+    data class ResponseErrorReason(val error: String)
 
     /**
      * Response returned from a completion request.
@@ -206,6 +325,9 @@ fun interface ChatService {
     data class Request(
         val model: ModelID,
         val messages: List<Message>,
+        val stream: Boolean = true,
+        val temperature: Float = 0.1f,
+        @SerialName("top_p") val topP: Float = 0.01f,
     ) {
         /**
          * Identifier of a model supported by MLPA.
@@ -219,8 +341,8 @@ fun interface ChatService {
                 /**
                  * Predefined model identifier for the Mistral Small model hosted via Vertex AI.
                  */
-                val mistral: ModelID
-                    get() = ModelID("vertex_ai/mistral-small-2503")
+                val mozSummarization: ModelID
+                    get() = ModelID("moz-summarization")
             }
         }
 
@@ -242,6 +364,12 @@ fun interface ChatService {
                  */
                 @SerialName("user")
                 User,
+
+                /**
+                 * A system-level instruction that shapes model behavior.
+                 */
+                @SerialName("system")
+                System,
             }
 
             companion object {
@@ -251,6 +379,13 @@ fun interface ChatService {
                  * @param content The message content.
                  */
                 fun user(content: String) = Message(Role.User, content)
+
+                /**
+                 * Convenience factory for creating a system message.
+                 *
+                 * @param content The message content.
+                 */
+                fun system(content: String) = Message(Role.System, content)
             }
         }
     }

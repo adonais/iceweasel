@@ -114,7 +114,7 @@ std::string ToString(const EncodedImage& encoded_image) {
   char buffer[1024];
   SimpleStringBuilder ss(buffer);
 
-  ss << VideoFrameTypeToString(encoded_image._frameType)
+  ss << VideoFrameTypeToString(encoded_image.frame_type())
      << ", size=" << encoded_image.size() << ", qp=" << encoded_image.qp_
      << ", timestamp=" << encoded_image.RtpTimestamp();
 
@@ -341,6 +341,10 @@ class BitstreamProcessor final : public EncodedImageCallback,
 
     return Result(Result::Error::OK);
   }
+
+  void OnFrameDropped(uint32_t /*rtp_timestamp*/,
+                      int /*spatial_id*/,
+                      bool /*is_end_of_temporal_unit*/) override {}
 
   VideoCodec video_codec_setting_;
   int32_t frames_ = 0;

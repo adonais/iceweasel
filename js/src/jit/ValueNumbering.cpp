@@ -1,11 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/ValueNumbering.h"
 
+#include "jit/BranchPruning.h"
 #include "jit/IonAnalysis.h"
 #include "jit/JitSpewer.h"
 #include "jit/MIRGenerator.h"
@@ -806,15 +805,8 @@ bool ValueNumberer::visitDefinition(MDefinition* def) {
     // If |sim| doesn't belong to a block, insert it next to |def|.
     if (isNewInstruction) {
 #ifdef DEBUG
-      if (sim->isObjectKeysLength() && def->isArrayLength()) {
-        // /!\ Exception: MArrayLength::foldsTo replaces a sequence of
-        // instructions containing an effectful instruction by an effectful
-        // instruction.
-      } else {
-        // Otherwise, a new |sim| node mustn't be effectful when |def| wasn't
-        // effectful.
-        MOZ_ASSERT_IF(sim->isEffectful(), def->isEffectful());
-      }
+      // A new |sim| node mustn't be effectful when |def| wasn't effectful.
+      MOZ_ASSERT_IF(sim->isEffectful(), def->isEffectful());
 #endif
 
       // If both instructions are effectful, |sim| must have stolen the resume

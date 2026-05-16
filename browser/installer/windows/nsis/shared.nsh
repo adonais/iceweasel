@@ -1679,7 +1679,7 @@ FunctionEnd
   ; uninstalled.
 
   ; Do all of that twice, once for the local machine and once for the current user
-  
+
   ; Remove protocol handlers
   ClearErrors
   ReadRegStr $0 HKLM "Software\Classes\${_PROTOCOL}\DefaultIcon" ""

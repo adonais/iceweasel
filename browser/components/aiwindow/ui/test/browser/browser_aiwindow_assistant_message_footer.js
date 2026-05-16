@@ -64,3 +64,44 @@ add_task(async function test_message_footer_wires_buttons() {
     });
   });
 });
+
+add_task(async function test_message_footer_shows_up_on_last_chunk() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Hello from mock."] },
+  });
+
+  try {
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await typeInSmartbar(browser, "hello");
+    await submitSmartbar(browser);
+
+    const aiWindowEl = browser.contentDocument?.querySelector("ai-window");
+    const aichatBrowser = await TestUtils.waitForCondition(
+      () => aiWindowEl.shadowRoot?.querySelector("#aichat-browser"),
+      "Wait for aichat-browser"
+    );
+
+    await SpecialPowers.spawn(aichatBrowser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+
+      await ContentTaskUtils.waitForMutationCondition(
+        chatContent.shadowRoot,
+        { childList: true, subtree: true },
+        () => chatContent.shadowRoot.querySelector("assistant-message-footer")
+      );
+
+      Assert.ok(
+        chatContent.shadowRoot.querySelector("assistant-message-footer"),
+        "assistant chat bubble should have the footer when message is complete"
+      );
+    });
+
+    await BrowserTestUtils.closeWindow(win);
+  } finally {
+    restoreSignIn();
+    await restore();
+  }
+});

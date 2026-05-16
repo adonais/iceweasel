@@ -98,6 +98,10 @@ tasks:
         suite: web-platform-tests
         treeherder-symbol: W(wpt)
         virtualization: virtual
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         tier:
             by-variant:
                 no-fission:
@@ -182,6 +186,10 @@ tasks:
     web-platform-tests-backlog:
         description: "Web platform test (backlog) run"
         treeherder-symbol: W-b(wpt)
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         variants:
             - no-fission
         chunks:
@@ -223,6 +231,10 @@ tasks:
         suite: web-platform-tests
         treeherder-symbol: W(codecs)
         virtualization: virtual
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         tier: default
         chunks: dynamic
         default-chunks: 1
@@ -276,6 +288,10 @@ tasks:
             by-test-platform:
                 windows.*64.*/.*: virtual-with-gpu
                 default: virtual
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2-gpu
+                default: default
         chunks: dynamic
         default-chunks:
             by-test-platform:
@@ -498,6 +514,10 @@ tasks:
         suite: web-platform-tests
         treeherder-symbol: W(canvas)
         virtualization: virtual-with-gpu
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2-gpu
+                default: default
         tier:
             by-variant:
                 no-fission:
@@ -561,6 +581,10 @@ tasks:
         schedules-component: web-platform-tests-reftest
         treeherder-symbol: W-b(Wr)
         virtualization: virtual
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         chunks: 1
         variants:
             - no-fission
@@ -592,6 +616,10 @@ tasks:
         description: "Web platform webdriver-spec run"
         schedules-component: web-platform-tests-wdspec
         treeherder-symbol: W(Wd)
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         chunks:
             by-test-platform:
                 .*-ccov.*: 6
@@ -675,6 +703,10 @@ tasks:
         description: "Web platform crashtests run"
         schedules-component: web-platform-tests-crashtest
         treeherder-symbol: W(Wc)
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         chunks: dynamic
         default-chunks:
             by-test-platform:
@@ -734,6 +766,10 @@ tasks:
         description: "Web platform print-reftest run"
         schedules-component: web-platform-tests-print-reftest
         treeherder-symbol: W(Wp)
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         chunks: 1
         test-manifest-loader: null  # don't load tests in the taskgraph
         tier:
@@ -790,6 +826,10 @@ tasks:
             category: test-verify
             name: test-verify-wpt
         treeherder-symbol: TVw
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         max-run-time: 10800
         run-on-projects:
             by-test-platform:
@@ -843,6 +883,10 @@ tasks:
             name: test-coverage-wpt
         schedules-component: test-coverage-wpt
         treeherder-symbol: TCw
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         max-run-time: 10800
         variants:
             - no-fission

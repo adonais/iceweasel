@@ -103,6 +103,8 @@ nsHttpConnectionMgr::~nsHttpConnectionMgr() {
 }
 
 nsresult nsHttpConnectionMgr::EnsureSocketThreadTarget() {
+  if (mIsShuttingDown) return NS_OK;
+
   nsCOMPtr<nsIEventTarget> sts;
   nsCOMPtr<nsIIOService> ioService = components::IO::Service();
   if (ioService) {
@@ -111,12 +113,12 @@ nsresult nsHttpConnectionMgr::EnsureSocketThreadTarget() {
     sts = do_QueryInterface(realSTS);
   }
 
-  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+  auto lock = mSocketThreadTarget.Lock();
 
   // do nothing if already initialized or if we've shut down
-  if (mSocketThreadTarget || mIsShuttingDown) return NS_OK;
+  if (*lock || mIsShuttingDown) return NS_OK;
 
-  mSocketThreadTarget = sts;
+  *lock = sts;
 
   return sts ? NS_OK : NS_ERROR_NOT_AVAILABLE;
 }
@@ -129,25 +131,21 @@ nsresult nsHttpConnectionMgr::Init(
     uint32_t throttleMaxTime, bool beConservativeForProxy) {
   LOG(("nsHttpConnectionMgr::Init\n"));
 
-  {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+  mMaxUrgentExcessiveConns = maxUrgentExcessiveConns;
+  mMaxConns = maxConns;
+  mMaxPersistConnsPerHost = maxPersistConnsPerHost;
+  mMaxPersistConnsPerProxy = maxPersistConnsPerProxy;
+  mMaxRequestDelay = maxRequestDelay;
 
-    mMaxUrgentExcessiveConns = maxUrgentExcessiveConns;
-    mMaxConns = maxConns;
-    mMaxPersistConnsPerHost = maxPersistConnsPerHost;
-    mMaxPersistConnsPerProxy = maxPersistConnsPerProxy;
-    mMaxRequestDelay = maxRequestDelay;
+  mThrottleEnabled = throttleEnabled;
+  mThrottleSuspendFor = throttleSuspendFor;
+  mThrottleResumeFor = throttleResumeFor;
+  mThrottleHoldTime = throttleHoldTime;
+  mThrottleMaxTime = TimeDuration::FromMilliseconds(throttleMaxTime);
 
-    mThrottleEnabled = throttleEnabled;
-    mThrottleSuspendFor = throttleSuspendFor;
-    mThrottleResumeFor = throttleResumeFor;
-    mThrottleHoldTime = throttleHoldTime;
-    mThrottleMaxTime = TimeDuration::FromMilliseconds(throttleMaxTime);
+  mBeConservativeForProxy = beConservativeForProxy;
 
-    mBeConservativeForProxy = beConservativeForProxy;
-
-    mIsShuttingDown = false;
-  }
+  mIsShuttingDown = false;
 
   return EnsureSocketThreadTarget();
 }
@@ -163,38 +161,6 @@ class BoolWrapper : public ARefBase {
  private:
   virtual ~BoolWrapper() = default;
 };
-
-nsresult nsHttpConnectionMgr::Shutdown() {
-  LOG(("nsHttpConnectionMgr::Shutdown\n"));
-
-  RefPtr<BoolWrapper> shutdownWrapper = new BoolWrapper();
-  {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-
-    // do nothing if already shutdown
-    if (!mSocketThreadTarget) return NS_OK;
-
-    nsresult rv =
-        PostEvent(&nsHttpConnectionMgr::OnMsgShutdown, 0, shutdownWrapper);
-
-    // release our reference to the STS to prevent further events
-    // from being posted.  this is how we indicate that we are
-    // shutting down.
-    mIsShuttingDown = true;
-    mSocketThreadTarget = nullptr;
-
-    if (NS_FAILED(rv)) {
-      NS_WARNING("unable to post SHUTDOWN message");
-      return rv;
-    }
-  }
-
-  // wait for shutdown event to complete
-  SpinEventLoopUntil("nsHttpConnectionMgr::Shutdown"_ns,
-                     [&, shutdownWrapper]() { return shutdownWrapper->mBool; });
-
-  return NS_OK;
-}
 
 class ConnEvent : public Runnable, public nsIRunnablePriority {
  public:
@@ -233,6 +199,41 @@ ConnEvent::GetPriority(uint32_t* aPriority) {
   return NS_OK;
 }
 
+nsresult nsHttpConnectionMgr::Shutdown() {
+  LOG(("nsHttpConnectionMgr::Shutdown\n"));
+
+  RefPtr<BoolWrapper> shutdownWrapper = new BoolWrapper();
+  nsCOMPtr<nsIEventTarget> target;
+  {
+    auto lock = mSocketThreadTarget.Lock();
+
+    // do nothing if already shutdown
+    if (!*lock) return NS_OK;
+
+    // Copy the target, then clear it to prevent further PostEvent calls from
+    // succeeding.  This is how we indicate that we are shutting down.
+    target = *lock;
+    mIsShuttingDown = true;
+    *lock = nullptr;
+  }
+
+  nsCOMPtr<nsIRunnable> event =
+      new ConnEvent(this, &nsHttpConnectionMgr::OnMsgShutdown, 0,
+                    shutdownWrapper, nsIRunnablePriority::PRIORITY_NORMAL);
+  nsresult rv = target->Dispatch(event, NS_DISPATCH_NORMAL);
+
+  if (NS_FAILED(rv)) {
+    NS_WARNING("unable to post SHUTDOWN message");
+    return rv;
+  }
+
+  // wait for shutdown event to complete
+  SpinEventLoopUntil("nsHttpConnectionMgr::Shutdown"_ns,
+                     [&, shutdownWrapper]() { return shutdownWrapper->mBool; });
+
+  return NS_OK;
+}
+
 nsresult nsHttpConnectionMgr::PostEvent(nsConnEventHandler handler,
                                         int32_t iparam, ARefBase* vparam,
                                         uint32_t priority) {
@@ -240,8 +241,8 @@ nsresult nsHttpConnectionMgr::PostEvent(nsConnEventHandler handler,
 
   nsCOMPtr<nsIEventTarget> target;
   {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    target = mSocketThreadTarget;
+    auto lock = mSocketThreadTarget.Lock();
+    target = *lock;
   }
 
   if (!target) {
@@ -425,8 +426,8 @@ void nsHttpConnectionMgr::UpdateClassOfServiceOnTransaction(
 
   nsCOMPtr<nsIEventTarget> target;
   {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    target = mSocketThreadTarget;
+    auto lock = mSocketThreadTarget.Lock();
+    target = *lock;
   }
 
   if (!target) {
@@ -570,8 +571,8 @@ nsresult nsHttpConnectionMgr::SpeculativeConnect(
 nsresult nsHttpConnectionMgr::GetSocketThreadTarget(nsIEventTarget** target) {
   (void)EnsureSocketThreadTarget();
 
-  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-  nsCOMPtr<nsIEventTarget> temp(mSocketThreadTarget);
+  auto lock = mSocketThreadTarget.Lock();
+  nsCOMPtr<nsIEventTarget> temp(*lock);
   temp.forget(target);
   return NS_OK;
 }
@@ -583,8 +584,8 @@ nsresult nsHttpConnectionMgr::ReclaimConnection(HttpConnectionBase* conn) {
 
   nsCOMPtr<nsIEventTarget> target;
   {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    target = mSocketThreadTarget;
+    auto lock = mSocketThreadTarget.Lock();
+    target = *lock;
   }
 
   if (!target) {
@@ -2377,9 +2378,19 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
   // then ask the connection to close the transaction.  otherwise, close the
   // transaction directly (removing it from the pending queue first).
   //
+  // If the transaction has a HappyEyeballsTransaction proxy, cancel through
+  // the proxy so the connection can find its transaction properly, and so
+  // the proxy doesn't re-queue the transaction.
+  RefPtr<nsAHttpTransaction> proxyTrans;
+  if (nsAHttpTransaction* proxy = trans->HappyEyeballsProxy()) {
+    proxy->Cancel(closeCode);
+    proxyTrans = proxy;
+  }
+
+  nsAHttpTransaction* transToClose = proxyTrans ? proxyTrans.get() : trans;
   RefPtr<nsAHttpConnection> conn(trans->Connection());
   if (conn && !trans->IsDone()) {
-    conn->CloseTransaction(trans, closeCode);
+    conn->CloseTransaction(transToClose, closeCode);
   } else {
     ConnectionEntry* ent = nullptr;
     if (trans->ConnectionInfo()) {
@@ -2392,7 +2403,7 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
            trans));
     }
 
-    trans->Close(closeCode);
+    transToClose->Close(closeCode);
 
     // Cancel is a pretty strong signal that things might be hanging
     // so we want to cancel any null transactions related to this connection
@@ -2570,7 +2581,11 @@ void nsHttpConnectionMgr::OnMsgDoShiftReloadConnectionCleanup(int32_t,
 
   nsHttpConnectionInfo* ci = static_cast<nsHttpConnectionInfo*>(param);
 
+  bool preserveTRR = StaticPrefs::network_trr_preserve_on_background();
   for (const auto& entry : mCT.Values()) {
+    if (preserveTRR && entry->mConnInfo->GetIsTrrServiceChannel()) {
+      continue;
+    }
     entry->ClosePersistentConnections();
   }
 
@@ -2865,12 +2880,16 @@ void nsHttpConnectionMgr::ActivateTimeoutTick() {
       NS_WARNING("failed to create timer for http timeout management");
       return;
     }
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    if (!mSocketThreadTarget) {
+    nsCOMPtr<nsIEventTarget> target;
+    {
+      auto lock = mSocketThreadTarget.Lock();
+      target = *lock;
+    }
+    if (!target) {
       NS_WARNING("cannot activate timout if not initialized or shutdown");
       return;
     }
-    mTimeoutTick->SetTarget(mSocketThreadTarget);
+    mTimeoutTick->SetTarget(target);
   }
 
   if (mIsShuttingDown) {  // Atomic

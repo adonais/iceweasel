@@ -83,6 +83,75 @@ features:
         description: The drawable displayed in the app menu for Settings
         type: String
         default: mozac_ic_settings
+  gecko-nimbus-validation:
+    description: "Feature for validating Nimbus Gecko functionality"
+    variables:
+      test-preference:
+        description: "A test gecko preference"
+        type: Option<String>
+        gecko-pref:
+          pref: "gecko.nimbus.test"
+          branch: "default"
+      test-preference-2:
+        description: "A second test gecko preference"
+        type: Option<Int>
+        gecko-pref:
+          pref: "gecko.nimbus.test.two"
+          branch: "user"
+  nimbus-qa-string-default:
+    description: "A feature for testing string pref-setting on the default branch."
+    variables:
+      value:
+        description: "The value to set for the pref."
+        type: Option<String>
+        gecko-pref:
+          pref: "nimbus.qa.pref-string-default"
+          branch: "default"
+  nimbus-qa-string-user:
+    description: "A feature for testing string pref-setting on the user branch."
+    variables:
+      value:
+        description: "The value to set for the pref."
+        type: Option<String>
+        gecko-pref:
+          pref: "nimbus.qa.pref-string-user"
+          branch: "user"
+  nimbus-qa-int-default:
+    description: "A feature for testing int pref-setting on the default branch."
+    variables:
+      value:
+        description: "The value to set for the pref."
+        type: Option<Int>
+        gecko-pref:
+          pref: "nimbus.qa.pref-int-default"
+          branch: "default"
+  nimbus-qa-int-user:
+    description: "A feature for testing int pref-setting on the user branch."
+    variables:
+      value:
+        description: "The value to set for the pref."
+        type: Option<Int>
+        gecko-pref:
+          pref: "nimbus.qa.pref-int-user"
+          branch: "user"
+  nimbus-qa-bool-default:
+    description: "A feature for testing boolean pref-setting on the default branch."
+    variables:
+      value:
+        description: "The value to set for the pref."
+        type: Option<Boolean>
+        gecko-pref:
+          pref: "nimbus.qa.pref-bool-default"
+          branch: "default"
+  nimbus-qa-bool-user:
+    description: "A feature for testing boolean pref-setting on the user branch."
+    variables:
+      value:
+        description: "The value to set for the pref."
+        type: Option<Boolean>
+        gecko-pref:
+          pref: "nimbus.qa.pref-bool-user"
+          branch: "user"
   cookie-banners:
     description: Features for cookie banner handling.
     variables:
@@ -251,6 +320,16 @@ features:
         type: Boolean
         description: If true, shake to summarize will be enabled
         default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+      - channel: nightly
+        value:
+          enabled: true
+      - channel: beta
+        value:
+          enabled: true
 
   setup-checklist:
     description: A feature on the home page that allows the user to track onboarding setup progress.
@@ -380,15 +459,6 @@ features:
       - channel: nightly
         value:
           enabled: true
-
-  composable-toolbar:
-    description: Use a composable toolbar instead of the View based one.
-    variables:
-      enabled:
-        description: >
-          When the feature is enabled the user will see a new composable toolbar instead the previous View based one.
-        type: Boolean
-        default: true
 
   minimal-addressbar:
     description: Show a smaller height bottom addressbar with just the URL.
@@ -575,6 +645,51 @@ features:
           Enables / disables the SafeBrowsing V5 protocol.
         type: Boolean
         default: false
+
+  safe-browsing-real-time:
+    description: Control Safe Browsing real-time lookup and simulation.
+    variables:
+      feature-enabled:
+        description: >-
+          If true, this feature is enabled and the below settings override
+          the Gecko defaults. Otherwise, the Gecko defaults are used.
+        type: Boolean
+        default: false
+      global-cache-enabled:
+        description: >-
+          Enables / disables the Safe Browsing Global Cache.
+        type: Boolean
+        default: false
+      real-time-enabled:
+        description: >-
+          Enables / disables Safe Browsing real-time lookup.
+        type: Boolean
+        default: false
+      simulation-enabled:
+        description: >-
+          Enables / disables the real-time request simulator.
+        type: Boolean
+        default: false
+      simulation-hit-probability:
+        description: >-
+          Hit probability for the real-time request simulator.
+        type: Int
+        default: 5
+      simulation-cache-ttl-sec:
+        description: >-
+          Cache TTL in seconds for the real-time request simulator.
+        type: Int
+        default: 300
+      simulation-negative-cache-enabled:
+        description: >-
+          Enables / disables the negative cache for the real-time request simulator.
+        type: Boolean
+        default: false
+      simulation-negative-cache-ttl-sec:
+        description: >-
+          Negative cache TTL in seconds for the real-time request simulator.
+        type: Int
+        default: 300
 
   menu-redesign:
     description: Control the new menu redesign.
@@ -885,17 +1000,7 @@ features:
         description: >
           Whether or not to enable the tab search feature.
         type: Boolean
-        default: false
-    defaults:
-      - channel: release
-        value:
-          enabled: false
-      - channel: beta
-        value:
-          enabled: false
-      - channel: nightly
-        value:
-          enabled: true
+        default: true
 
   tab-groups:
     description: Control the visibility of the tab groups feature.
@@ -915,6 +1020,32 @@ features:
       - channel: nightly
         value:
           enabled: false
+  tab-groups-drag-and-drop:
+    description: Control the visibility of drag and drop for tab groups.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable drag and drop for tab groups.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: release
+        value:
+          enabled: false
+      - channel: beta
+        value:
+          enabled: false
+      - channel: nightly
+        value:
+          enabled: false
+
+  marketing-onboarding-card:
+    description: A temporary feature to control the marketing onboarding card shown during the onboarding flow.
+    variables:
+      enabled:
+        description: If false, the marketing onboarding card will never be shown.
+        type: Boolean
+        default: true
 
   suppress-sponsored-top-sites:
     description: Suppress sponsored top sites for new users for 14 days.
@@ -1013,6 +1144,18 @@ features:
         value:
           enabled: true
 
+  ip-protection:
+    description: Feature to enable IP Protection (VPN) for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, IP Protection feature is enabled.
+        type: Boolean
+        default: false
+      show-beta-badge:
+        description: If true, a BETA badge is shown next to the IP Protection entry in the settings list.
+        type: Boolean
+        default: true
+
   native-share-sheet:
     description: Feature to enable the Native Share Sheet for users on Firefox on Android.
     variables:
@@ -1021,11 +1164,27 @@ features:
         type: Boolean
         default: false
 
+  add-shortcuts-improvement:
+    description: Feature to enable Add Shortcuts improvement for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Add Shortcuts improvement is enabled.
+        type: Boolean
+        default: false
+
   merino-client:
     description: Feature to enable the Merino Client for users on Firefox on Android.
     variables:
       enabled:
         description: If true, Merino Client is enabled.
+        type: Boolean
+        default: false
+
+  merino-manifest:
+    description: Feature to enable the Merino Manifest for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Merino Manifest is enabled.
         type: Boolean
         default: false
 
@@ -1100,6 +1259,29 @@ features:
       - channel: nightly
         value:
           enabled: true
+
+  google-lens-integration:
+    description: A feature that enables Google Lens integration for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Google Lens integration is enabled.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+      - channel: nightly
+        value:
+          enabled: false
+
+  homepage-sports-widget:
+    description: Feature to enable Homepage Sports Widget for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Homepage Sports Widget is enabled.
+        type: Boolean
+        default: false
 
 types:
   objects:

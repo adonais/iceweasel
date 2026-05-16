@@ -39,7 +39,7 @@ nsresult nsHTMLTags::AddRefTable(void) {
     // keys and the value of the corresponding enum as the value in
     // the table.
 
-    for (int32_t i = 0; i < NS_HTML_TAG_MAX; ++i) {
+    for (size_t i = 0; i < std::size(sTagNames); ++i) {
       const char16_t* tagName = sTagNames[i];
       const nsHTMLTag tagValue = static_cast<nsHTMLTag>(i + 1);
 
@@ -60,9 +60,7 @@ nsresult nsHTMLTags::AddRefTable(void) {
     // Check all tagNames are lowercase, and that NS_HTMLTAG_NAME_MAX_LENGTH is
     // correct.
     uint32_t maxTagNameLength = 0;
-    for (int i = 0; i < NS_HTML_TAG_MAX; ++i) {
-      const char16_t* tagName = sTagNames[i];
-
+    for (const char16_t* tagName : sTagNames) {
       nsAutoString lowerTagName(tagName);
       ToLowerCase(lowerTagName);
       MOZ_ASSERT(lowerTagName.Equals(tagName));
@@ -124,14 +122,12 @@ nsHTMLTag nsHTMLTags::StringTagToId(const nsAString& aTagName) {
 
 #ifdef DEBUG
 void nsHTMLTags::TestTagTable() {
-  const char16_t* tag;
   nsHTMLTag id;
   RefPtr<nsAtom> atom;
 
   nsHTMLTags::AddRefTable();
   // Make sure we can find everything we are supposed to
-  for (int i = 0; i < NS_HTML_TAG_MAX; ++i) {
-    tag = sTagNames[i];
+  for (const char16_t* tag : sTagNames) {
     const nsAString& tagString = nsDependentString(tag);
     id = StringTagToId(tagString);
     NS_ASSERTION(id != eHTMLTag_userdefined, "can't find tag id");

@@ -42,6 +42,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.compareArray(result, [
     20, 20, 20, 60,
   ]);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

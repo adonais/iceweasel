@@ -5,6 +5,7 @@
 #ifndef mozilla_OriginAttributes_h
 #define mozilla_OriginAttributes_h
 
+#include "mozilla/HashFunctions.h"
 #include "mozilla/dom/OriginAttributesBinding.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "nsIScriptSecurityManager.h"
@@ -82,6 +83,17 @@ class OriginAttributes : public dom::OriginAttributesDictionary {
   [[nodiscard]] inline bool IsPrivateBrowsing() const {
     return mPrivateBrowsingId !=
            nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID;
+  }
+
+  // Keep field order in sync with CreateSuffix.
+  [[nodiscard]] HashNumber Hash() const {
+    return AddToHash(
+        mUserContextId, mPrivateBrowsingId,
+        HashString(mFirstPartyDomain.BeginReading(),
+                   mFirstPartyDomain.Length()),
+        HashString(mGeckoViewSessionContextId.BeginReading(),
+                   mGeckoViewSessionContextId.Length()),
+        HashString(mPartitionKey.BeginReading(), mPartitionKey.Length()));
   }
 
   // Serializes/Deserializes non-default values into the suffix format, i.e.

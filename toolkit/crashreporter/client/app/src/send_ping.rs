@@ -58,6 +58,10 @@ pub fn cleanup_main() {
     .init()
     .expect("failed to acquire Glean store");
 
+    // Sleep for a short period for Glean to do its thing in the background (and so that
+    // `glean::shutdown()` won't log a warning about waiting for init to complete).
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
     // Glean shutdown will block (for a period) on at least one ping to be sent.
     ::glean::shutdown();
 }

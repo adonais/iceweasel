@@ -1,0 +1,21 @@
+{
+  "label": "www.keisan.nta.go.jp",
+  "bugs": {
+    "1902520": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://www.keisan.nta.go.jp/kyoutu/ky/sm/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["mac"],
+      "ua_string": ["Safari_with_FxQuantum"]
+    },
+    {
+      "platforms": ["linux", "windows"],
+      "content_scripts": {
+        "js": ["bug1902520-keisan.nta.go.jp-ua-override.js"]
+      }
+    }
+  ]
+}

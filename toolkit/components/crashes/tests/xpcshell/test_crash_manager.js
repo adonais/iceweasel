@@ -285,7 +285,7 @@ const productName = "Firefox";
 const productId = "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
 const sha256Hash =
   "f8410c3ac4496cfa9191a1240f0e365101aef40c7bf34fc5bcb8ec511832ed79";
-const stackTraces = { status: "OK" };
+const stackTraces = "{}";
 
 add_task(async function test_main_crash_event_file() {
   let ac = new TelemetryArchiveTesting.Checker();
@@ -329,7 +329,7 @@ add_task(async function test_main_crash_event_file() {
   Assert.ok(crashes[0].metadata.TelemetryEnvironment);
   Assert.equal(Object.getOwnPropertyNames(crashes[0].metadata).length, 7);
   Assert.equal(crashes[0].metadata.TelemetrySessionId, sessionId);
-  Assert.ok(crashes[0].metadata.StackTraces);
+  Assert.equal(crashes[0].metadata.StackTraces, stackTraces);
   Assert.deepEqual(crashes[0].crashDate, DUMMY_DATE);
 
   Assert.ok(m._gleanPingPromise, "ping submitted for found crash");

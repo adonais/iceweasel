@@ -104,6 +104,14 @@ typedef IntRect (*ReorientRowFn)(const uint8_t* aSrc, int32_t aSrcRow,
 GFX2D_API ReorientRowFn
 ReorientRow(const struct image::Orientation& aOrientation);
 
+/**
+ * Converts a row of RGBA float16 pixels to uint16_t values, clamping the
+ * float [0.0, 1.0] range to uint16 [0, 65535], with NaN treated as 0.0.
+ * Writes aChannels (3 or 4) channels per pixel.
+ */
+GFX2D_API void ConvertFloat16RowToUint16(const uint16_t* aSrc, uint16_t* aDst,
+                                         uint32_t aWidth, uint32_t aChannels);
+
 }  // namespace gfx
 }  // namespace mozilla
 

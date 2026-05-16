@@ -507,6 +507,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLCanvasElement,
   tmp->Destroy();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCurrentContext, mPrintCallback, mPrintState,
                                   mOriginalCanvas, mOffscreenCanvas)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLCanvasElement,
@@ -1125,7 +1126,8 @@ OffscreenCanvas* HTMLCanvasElement::TransferControlToOffscreen(
   mOffscreenDisplay =
       MakeRefPtr<OffscreenCanvasDisplayHelper>(this, sz.width, sz.height);
   mOffscreenCanvas = new OffscreenCanvas(win->AsGlobal(), sz.width, sz.height,
-                                         backend, do_AddRef(mOffscreenDisplay));
+                                         backend, do_AddRef(mOffscreenDisplay),
+                                         FragmentOrElement::GetLang());
   if (mWriteOnly) {
     mOffscreenCanvas->SetWriteOnly(mExpandedReader);
   }

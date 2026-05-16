@@ -94,6 +94,7 @@ describe("ASRouter", () => {
         getSharedMessageBlocklist: sandbox
           .stub()
           .resolves(multiProfileMessageBlocklist),
+        resetSharedMessageStorage: sandbox.stub().resolves(),
       },
       sendTelemetry: sandbox.stub().resolves(),
       clearChildMessages: sandbox.stub().resolves(),
@@ -403,8 +404,8 @@ describe("ASRouter", () => {
 
       assert.deepEqual(Router.state.screenImpressions, screenImpressions);
     });
-    it("should clear impressions for groups that are not active", async () => {
-      groupImpressions = { foo: [0, 1, 2] };
+    it("should clear impressions for groups that are not active once they are more than six months old", async () => {
+      groupImpressions = { foo: [Date.now() - SIX_MONTHS_IN_MS - 1] };
       Router = new _ASRouter();
       await initASRouter(Router);
 
@@ -2353,30 +2354,48 @@ describe("ASRouter", () => {
     });
 
     describe("cleanup on init", () => {
-      it("should clear messageImpressions for messages which do not exist in state.messages", async () => {
-        const messages = [{ id: "foo", frequency: { lifetime: 10 } }];
-        messageImpressions = { foo: [0], bar: [0, 1] };
-        // Impressions for "bar" should be removed since that id does not exist in messages
-        const result = { foo: [0] };
-
-        await createRouterAndInit([
-          { id: "onboarding", type: "local", messages, enabled: true },
-        ]);
-        assert.calledWith(Router._storage.set, "messageImpressions", result);
-        assert.deepEqual(Router.state.messageImpressions, result);
-      });
-      it("should clear messageImpressions older than the period if no lifetime impression cap is included", async () => {
-        const CURRENT_TIME = ONE_DAY_IN_MS * 2;
-        clock.tick(CURRENT_TIME);
+      it("should clear old messageImpressions for missing messages", async () => {
         const messages = [
           {
-            id: "foo",
-            frequency: { custom: [{ period: ONE_DAY_IN_MS, cap: 5 }] },
+            id: "recentImpressionForActiveMessage",
+            frequency: { lifetime: 10 },
           },
+          { id: "oldImpressionForActiveMessage", frequency: { lifetime: 10 } },
         ];
-        messageImpressions = { foo: [0, 1, CURRENT_TIME - 10] };
-        // Only 0 and 1 are more than 24 hours before CURRENT_TIME
-        const result = { foo: [CURRENT_TIME - 10] };
+        let now = Date.now();
+        let old = now - SIX_MONTHS_IN_MS - 1;
+        messageImpressions = {
+          recentImpressionForActiveMessage: [now],
+          oldImpressionForActiveMessage: [old],
+          recentImpressionForInactiveMessage: [now],
+          oldImpressionForInactiveMessage: [old],
+          mixedImpressionsForInactiveMessage: [now, old],
+        };
+        // Impressions older than six months for nonexistent messages should be
+        // cleared. If that results in an empty impressions array, the key
+        // should be removed altogether.
+        const expectedResult = {
+          recentImpressionForActiveMessage: [now],
+          oldImpressionForActiveMessage: [old],
+          recentImpressionForInactiveMessage: [now],
+          mixedImpressionsForInactiveMessage: [now],
+        };
+
+        await createRouterAndInit([
+          { id: "onboarding", type: "local", messages, enabled: true },
+        ]);
+        assert.calledWith(
+          Router._storage.set,
+          "messageImpressions",
+          expectedResult
+        );
+        assert.deepEqual(Router.state.messageImpressions, expectedResult);
+      });
+      it("should clear messageImpressions if they are not properly formatted", async () => {
+        const messages = [{ id: "foo", frequency: { lifetime: 10 } }];
+        // this is impromperly formatted since messageImpressions are supposed to be an array
+        messageImpressions = { foo: 0, bar: undefined, baz: [] };
+        const result = {};
 
         await createRouterAndInit([
           { id: "onboarding", type: "local", messages, enabled: true },
@@ -2384,10 +2403,10 @@ describe("ASRouter", () => {
         assert.calledWith(Router._storage.set, "messageImpressions", result);
         assert.deepEqual(Router.state.messageImpressions, result);
       });
-      it("should clear messageImpressions older than the longest period if no lifetime impression cap is included", async () => {
+      it("should clear groupImpressions older than the longest period if no lifetime impression cap is included", async () => {
         const CURRENT_TIME = ONE_DAY_IN_MS * 2;
         clock.tick(CURRENT_TIME);
-        const messages = [
+        const groups = [
           {
             id: "foo",
             frequency: {
@@ -2398,40 +2417,19 @@ describe("ASRouter", () => {
             },
           },
         ];
-        messageImpressions = { foo: [0, 1, CURRENT_TIME - 10] };
+        groupImpressions = { foo: [0, 1, CURRENT_TIME - 10] };
         // Only 0 and 1 are more than 24 hours before CURRENT_TIME
         const result = { foo: [CURRENT_TIME - 10] };
 
-        await createRouterAndInit([
-          { id: "onboarding", type: "local", messages, enabled: true },
-        ]);
-        assert.calledWith(Router._storage.set, "messageImpressions", result);
-        assert.deepEqual(Router.state.messageImpressions, result);
-      });
-      it("should clear messageImpressions if they are not properly formatted", async () => {
-        const messages = [{ id: "foo", frequency: { lifetime: 10 } }];
-        // this is impromperly formatted since messageImpressions are supposed to be an array
-        messageImpressions = { foo: 0 };
-        const result = {};
-
-        await createRouterAndInit([
-          { id: "onboarding", type: "local", messages, enabled: true },
-        ]);
-        assert.calledWith(Router._storage.set, "messageImpressions", result);
-        assert.deepEqual(Router.state.messageImpressions, result);
-      });
-      it("should not clear messageImpressions for messages which do exist in state.messages", async () => {
-        const messages = [
-          { id: "foo", frequency: { lifetime: 10 } },
-          { id: "bar", frequency: { lifetime: 10 } },
-        ];
-        messageImpressions = { foo: [0], bar: [] };
-
-        await createRouterAndInit([
-          { id: "onboarding", type: "local", messages, enabled: true },
-        ]);
-        assert.notCalled(Router._storage.set);
-        assert.deepEqual(Router.state.messageImpressions, messageImpressions);
+        Router = new _ASRouter();
+        await initASRouter(Router);
+        await Router.setState({
+          groups,
+          groupImpressions,
+        });
+        Router.cleanupImpressions();
+        assert.calledWith(Router._storage.set, "groupImpressions", result);
+        assert.deepEqual(Router.state.groupImpressions, result);
       });
     });
   });
@@ -2951,18 +2949,17 @@ describe("ASRouter", () => {
       });
       await Router.setState({
         messageImpressions: { 1: [0, 1, 2], 2: [0, 1, 2] },
-      }); // Add impressions for test messages
-      let impressions = Object.values(Router.state.messageImpressions);
-      assert.equal(impressions.filter(i => i.length).length, 2); // Both messages have impressions
+      });
+      assert.equal(
+        Object.values(Router.state.messageImpressions).filter(i => i.length)
+          .length,
+        2
+      );
 
       Router.resetMessageState();
-      impressions = Object.values(Router.state.messageImpressions);
-
-      assert.isEmpty(impressions.filter(i => i.length)); // Both messages now have zero impressions
-      assert.calledWithExactly(Router._storage.set, "messageImpressions", {
-        1: [],
-        2: [],
-      });
+      assert.isEmpty(
+        Object.values(Router.state.messageImpressions).filter(i => i.length)
+      );
     });
   });
   describe("#resetGroupsState", () => {
@@ -2972,31 +2969,31 @@ describe("ASRouter", () => {
       });
       await Router.setState({
         groupImpressions: { 1: [0, 1, 2], 2: [0, 1, 2] },
-      }); // Add impressions for test groups
-      let impressions = Object.values(Router.state.groupImpressions);
-      assert.equal(impressions.filter(i => i.length).length, 2); // Both groups have impressions
+      });
+      assert.equal(
+        Object.values(Router.state.groupImpressions).filter(i => i.length)
+          .length,
+        2
+      );
 
       Router.resetGroupsState();
-      impressions = Object.values(Router.state.groupImpressions);
-
-      assert.isEmpty(impressions.filter(i => i.length)); // Both groups now have zero impressions
-      assert.calledWithExactly(Router._storage.set, "groupImpressions", {
-        1: [],
-        2: [],
-      });
+      assert.isEmpty(
+        Object.values(Router.state.groupImpressions).filter(i => i.length)
+      );
     });
   });
   describe("#resetScreenImpressions", () => {
     it("should reset all screen impressions", async () => {
       await Router.setState({ screenImpressions: { 1: 1, 2: 2 } });
-      let impressions = Object.values(Router.state.screenImpressions);
-      assert.equal(impressions.filter(i => i).length, 2); // Both screens have impressions
+      assert.equal(
+        Object.values(Router.state.screenImpressions).filter(i => i).length,
+        2
+      );
 
       Router.resetScreenImpressions();
-      impressions = Object.values(Router.state.screenImpressions);
-
-      assert.isEmpty(impressions.filter(i => i)); // Both screens now have zero impressions
-      assert.calledWithExactly(Router._storage.set, "screenImpressions", {});
+      assert.isEmpty(
+        Object.values(Router.state.screenImpressions).filter(i => i)
+      );
     });
   });
   describe("#editState", () => {
@@ -3006,8 +3003,11 @@ describe("ASRouter", () => {
       await Router.setState({
         messageImpressions: { 1: [0, 1, 2], 2: [0, 1, 2] },
       });
-      let impressions = Object.values(Router.state.messageImpressions);
-      assert.equal(impressions.filter(i => i.length).length, 2); // Both messages have impressions
+      assert.equal(
+        Object.values(Router.state.messageImpressions).filter(i => i.length)
+          .length,
+        2
+      );
 
       Router.editState("messageImpressions", {
         1: [],
@@ -3173,44 +3173,22 @@ describe("ASRouter", () => {
       it("should remove impressions from shared multiprofile impressions if the message is not in state & is older than six months", async () => {
         await Router.setState(() => ({
           multiProfileMessageImpressions: {
-            foo: [Date.now() - SIX_MONTHS_IN_MS - 1, Date.now()],
+            deadMessage: [Date.now() - SIX_MONTHS_IN_MS - 1, Date.now()],
           },
           messageImpressions: {
-            foo: [Date.now() - SIX_MONTHS_IN_MS - 1, Date.now()],
+            deadMessage: [Date.now() - SIX_MONTHS_IN_MS - 1, Date.now()],
           },
         }));
 
         Router.cleanupImpressions();
 
-        assert.property(Router.state.multiProfileMessageImpressions, "foo");
-        assert.lengthOf(Router.state.multiProfileMessageImpressions.foo, 1);
-        assert.notProperty(Router.state.messageImpressions, "foo");
-      });
-      it("should remove impressions from shared multiprofile impressions if the frequency cap is exceeded", async () => {
-        const CURRENT_TIME = ONE_DAY_IN_MS * 2;
-        clock.tick(CURRENT_TIME);
-        const testMessages = [
-          {
-            id: "foo",
-            profileScope: "single",
-            frequency: { custom: [{ period: ONE_DAY_IN_MS, cap: 5 }] },
-          },
-        ];
-        messageImpressions = { foo: [0, 1, CURRENT_TIME - 10] };
-        // Only 0 and 1 are more than 24 hours before CURRENT_TIME
-        const result = { foo: [CURRENT_TIME - 10] };
-
-        await Router.setState(() => ({
-          messages: testMessages,
-          multiProfileMessageImpressions: messageImpressions,
-        }));
-
-        Router.cleanupImpressions();
-
-        assert.deepEqual(
+        assert.property(
           Router.state.multiProfileMessageImpressions,
-          result,
-          "foo message shared multiprofile impressions"
+          "deadMessage"
+        );
+        assert.lengthOf(
+          Router.state.multiProfileMessageImpressions.deadMessage,
+          1
         );
       });
     });

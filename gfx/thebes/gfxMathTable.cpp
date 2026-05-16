@@ -83,10 +83,6 @@ void gfxMathTable::ClearCache() const {
 
 void gfxMathTable::UpdateMathVariantCache(uint32_t aGlyphID, bool aVertical,
                                           bool aRTL) const {
-  if (!StaticPrefs::mathml_rtl_operator_mirroring_enabled()) {
-    aRTL = false;
-  }
-
   if (aGlyphID == mMathVariantCache.glyphID &&
       aVertical == mMathVariantCache.vertical &&
       aRTL == mMathVariantCache.isRTL)

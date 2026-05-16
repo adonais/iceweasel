@@ -206,6 +206,10 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     store.stateFlow.map { state -> state.websitePermissionsState.values }
                 }.collectAsState(initial = listOf())
                 val isGlobalTrackingProtectionEnabled = settings.shouldUseTrackingProtection
+                val showIpProtection = settings.isIPProtectionAvailable
+                val ipProtectionMenuState by remember {
+                    store.stateFlow.map { state -> state.ipProtectionMenuState }
+                }.collectAsState(initial = store.state.ipProtectionMenuState)
 
                 permissionsCallback = { isGranted: Map<String, Boolean> ->
                     if (isGranted.values.all { it }) {
@@ -274,10 +278,12 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                         Route.ProtectionPanel -> {
                             ProtectionPanel(
                                 websiteInfoState = websiteInfoState,
+                                ipProtectionMenuState = ipProtectionMenuState,
                                 icon = sessionState?.content?.icon,
                                 isTrackingProtectionEnabled = isTrackingProtectionEnabled,
                                 isGlobalTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled,
                                 isLocalPdf = args.isLocalPdf,
+                                showIPProtection = showIpProtection,
                                 numberOfTrackersBlocked = numberOfTrackersBlocked,
                                 websitePermissions = websitePermissions.filter { it.isVisible },
                                 onTrackerBlockedMenuClick = {
@@ -304,6 +310,12 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                 },
                                 onViewQWACClick = {
                                     store.dispatch(TrustPanelAction.Navigate.QWAC)
+                                },
+                                onIPProtectionToggle = {
+                                    // will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2030143
+                                },
+                                onIPProtectionNavigate = {
+                                    store.dispatch(TrustPanelAction.Navigate.IPProtectionSettings)
                                 },
                             )
                         }

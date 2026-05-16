@@ -4,8 +4,10 @@
 
 package org.mozilla.conventions
 
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 
 interface ProjectExtension {
     val androidComponentsProject: Property<Boolean>
+    val ktlintSourcePaths: ListProperty<String>
 }

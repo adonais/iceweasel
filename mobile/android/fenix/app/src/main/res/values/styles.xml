@@ -207,7 +207,14 @@
     <style name="BaseDialogStyle.Private" parent="BaseDialogStyle">
         <item name="android:background">?attr/layer2</item>
         <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.App.Title.Text.Private</item>
+        <item name="buttonBarPositiveButtonStyle">@style/PrivateDialogButtonStyle</item>
+        <item name="buttonBarNegativeButtonStyle">@style/PrivateDialogButtonStyle</item>
         <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.App.Body.Text.Private</item>
+    </style>
+
+    <style name="PrivateDialogButtonStyle" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">?textAccent</item>
+        <item name="android:titleTextStyle">@style/Button14TextStyle</item>
     </style>
 
     <style name="Normal.MaterialTimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
@@ -677,6 +684,10 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentNavigation">false</item>
     </style>
+    <style name="QRCodeDialogStyle" parent="NormalThemeBase">
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+    </style>
     <style name="WallpaperOnboardingDialogStyle" parent="DialogStyleBase">
         <item name="android:windowIsFloating">true</item>
         <item name="android:backgroundDimAmount">0.06</item>
@@ -807,13 +818,6 @@
         <item name="android:windowIsFloating">true</item>
         <item name="android:background">@android:color/transparent</item>
         <item name="android:colorBackgroundCacheHint">@null</item>
-    </style>
-
-    <style name="TabManagerDialogStyle" parent="Theme.AppCompat.Light.Dialog">
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowIsFloating">false</item>
     </style>
 
     <style name="SwitchCompatPreferenceMaterialStyle" parent="@style/Preference.SwitchPreferenceCompat.Material">

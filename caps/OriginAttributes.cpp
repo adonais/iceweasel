@@ -213,6 +213,7 @@ void OriginAttributes::SetPartitionKey(const nsAString& aOther) {
   mPartitionKey = aOther;
 }
 
+// Keep field order in sync with OriginAttributes::Hash().
 void OriginAttributes::CreateSuffix(nsACString& aStr) const {
   URLParams params;
   nsAutoCString value;

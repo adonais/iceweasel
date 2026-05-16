@@ -157,16 +157,12 @@ class VisitObserver {
  * @param {string} aTitle
  *   The expected title in the database.
  */
-function do_check_title_for_uri(aURI, aTitle) {
-  let stmt = DBConn().createStatement(
-    `SELECT title
-     FROM moz_places
-     WHERE url_hash = hash(:url) AND url = :url`
-  );
-  stmt.params.url = aURI.spec;
-  Assert.ok(stmt.executeStep());
-  Assert.equal(stmt.row.title, aTitle);
-  stmt.finalize();
+async function do_check_title_for_uri(aURI, aTitle) {
+  const title = await PlacesTestUtils.getDatabaseValue("moz_places", "title", {
+    url: aURI.spec,
+  });
+  Assert.notStrictEqual(title, undefined, "Should have a result for URI");
+  Assert.equal(title, aTitle);
 }
 
 // Test Functions
@@ -464,15 +460,13 @@ add_task(async function test_invalid_referrerURI_ignored() {
   );
 
   // Check to make sure from_visit is zero in database.
-  let stmt = DBConn().createStatement(
-    `SELECT from_visit
-     FROM moz_historyvisits
-     WHERE id = :visit_id`
+  const fromVisit = await PlacesTestUtils.getDatabaseValue(
+    "moz_historyvisits",
+    "from_visit",
+    { id: placeInfo.visits[0].visitId }
   );
-  stmt.params.visit_id = placeInfo.visits[0].visitId;
-  Assert.ok(stmt.executeStep());
-  Assert.equal(stmt.row.from_visit, 0);
-  stmt.finalize();
+  Assert.notEqual(fromVisit, undefined, "Should have a result");
+  Assert.equal(fromVisit, 0);
 
   await PlacesTestUtils.promiseAsyncUpdates();
 });
@@ -493,15 +487,15 @@ add_task(async function test_nonnsIURI_referrerURI_ignored() {
   Assert.ok(await PlacesUtils.history.hasVisits(placeInfo.uri));
 
   // Check to make sure from_visit is zero in database.
-  let stmt = DBConn().createStatement(
-    `SELECT from_visit
-     FROM moz_historyvisits
-     WHERE id = :visit_id`
-  );
-  stmt.params.visit_id = placeInfo.visits[0].visitId;
-  Assert.ok(stmt.executeStep());
-  Assert.equal(stmt.row.from_visit, 0);
-  stmt.finalize();
+  {
+    const fromVisit = await PlacesTestUtils.getDatabaseValue(
+      "moz_historyvisits",
+      "from_visit",
+      { id: placeInfo.visits[0].visitId }
+    );
+    Assert.notEqual(fromVisit, undefined, "Should have a result");
+    Assert.equal(fromVisit, 0);
+  }
 
   await PlacesTestUtils.promiseAsyncUpdates();
 });
@@ -547,17 +541,18 @@ add_task(async function test_old_referrer_ignored() {
   // Though the visit will not contain the referrer, we must examine the
   // database to be sure.
   Assert.equal(placeInfo.visits[0].referrerURI, null);
-  let stmt = DBConn().createStatement(
-    `SELECT COUNT(1) AS count
-     FROM moz_historyvisits
-     JOIN moz_places h ON h.id = place_id
-     WHERE url_hash = hash(:page_url) AND url = :page_url
-     AND from_visit = 0`
-  );
-  stmt.params.page_url = place.uri.spec;
-  Assert.ok(stmt.executeStep());
-  Assert.equal(stmt.row.count, 1);
-  stmt.finalize();
+  {
+    let db = await PlacesUtils.promiseDBConnection();
+    let rows = await db.execute(
+      `SELECT COUNT(1) AS count
+       FROM moz_historyvisits
+       JOIN moz_places h ON h.id = place_id
+       WHERE url_hash = hash(:page_url) AND url = :page_url
+       AND from_visit = 0`,
+      { page_url: place.uri.spec }
+    );
+    Assert.equal(rows[0].getResultByName("count"), 1);
+  }
 
   await PlacesTestUtils.promiseAsyncUpdates();
 });
@@ -733,47 +728,37 @@ add_task(async function test_properties_saved() {
     const EXPECTED_COUNT = visit.transitionType == TRANSITION_EMBED ? 0 : 1;
 
     // mozIVisitInfo::date
-    let stmt = DBConn().createStatement(
+    let db = await PlacesUtils.promiseDBConnection();
+    let dateRows = await db.execute(
       `SELECT COUNT(1) AS count
        FROM moz_places h
-       JOIN moz_historyvisits v
-       ON h.id = v.place_id
+       JOIN moz_historyvisits v ON h.id = v.place_id
        WHERE h.url_hash = hash(:page_url) AND h.url = :page_url
-       AND v.visit_date = :visit_date`
+       AND v.visit_date = :visit_date`,
+      { page_url: uri.spec, visit_date: visit.visitDate }
     );
-    stmt.params.page_url = uri.spec;
-    stmt.params.visit_date = visit.visitDate;
-    Assert.ok(stmt.executeStep());
-    Assert.equal(stmt.row.count, EXPECTED_COUNT);
-    stmt.finalize();
+    Assert.equal(dateRows[0].getResultByName("count"), EXPECTED_COUNT);
 
     // mozIVisitInfo::transitionType
-    stmt = DBConn().createStatement(
+    let transRows = await db.execute(
       `SELECT COUNT(1) AS count
        FROM moz_places h
-       JOIN moz_historyvisits v
-       ON h.id = v.place_id
+       JOIN moz_historyvisits v ON h.id = v.place_id
        WHERE h.url_hash = hash(:page_url) AND h.url = :page_url
-       AND v.visit_type = :transition_type`
+       AND v.visit_type = :transition_type`,
+      { page_url: uri.spec, transition_type: visit.transitionType }
     );
-    stmt.params.page_url = uri.spec;
-    stmt.params.transition_type = visit.transitionType;
-    Assert.ok(stmt.executeStep());
-    Assert.equal(stmt.row.count, EXPECTED_COUNT);
-    stmt.finalize();
+    Assert.equal(transRows[0].getResultByName("count"), EXPECTED_COUNT);
 
     // mozIPlaceInfo::title
-    stmt = DBConn().createStatement(
+    let titleRows = await db.execute(
       `SELECT COUNT(1) AS count
        FROM moz_places h
        WHERE h.url_hash = hash(:page_url) AND h.url = :page_url
-       AND h.title = :title`
+       AND h.title = :title`,
+      { page_url: uri.spec, title: placeInfo.title }
     );
-    stmt.params.page_url = uri.spec;
-    stmt.params.title = placeInfo.title;
-    Assert.ok(stmt.executeStep());
-    Assert.equal(stmt.row.count, EXPECTED_COUNT);
-    stmt.finalize();
+    Assert.equal(titleRows[0].getResultByName("count"), EXPECTED_COUNT);
 
     // If we have had all of our callbacks, continue running tests.
     if (++callbackCount == places.length) {
@@ -832,7 +817,8 @@ add_task(async function test_referrer_saved() {
     if (++resultCount == places.length) {
       Assert.ok(places[0].uri.equals(visit.referrerURI));
 
-      let stmt = DBConn().createStatement(
+      let db = await PlacesUtils.promiseDBConnection();
+      let rows = await db.execute(
         `SELECT COUNT(1) AS count
          FROM moz_historyvisits
          JOIN moz_places h ON h.id = place_id
@@ -842,13 +828,10 @@ add_task(async function test_referrer_saved() {
            FROM moz_historyvisits v
            JOIN moz_places h ON h.id = place_id
            WHERE url_hash = hash(:referrer) AND url = :referrer
-         )`
+         )`,
+        { page_url: uri.spec, referrer: visit.referrerURI.spec }
       );
-      stmt.params.page_url = uri.spec;
-      stmt.params.referrer = visit.referrerURI.spec;
-      Assert.ok(stmt.executeStep());
-      Assert.equal(stmt.row.count, 1);
-      stmt.finalize();
+      Assert.equal(rows[0].getResultByName("count"), 1);
 
       await PlacesTestUtils.promiseAsyncUpdates();
     }
@@ -900,7 +883,7 @@ add_task(async function test_title_change_saved() {
   if (placesResult.errors.length) {
     do_throw("Unexpected error.");
   }
-  do_check_title_for_uri(place.uri, null);
+  await do_check_title_for_uri(place.uri, null);
 
   // Then, change the title with visits.
   place.title = "title change";
@@ -909,7 +892,7 @@ add_task(async function test_title_change_saved() {
   if (placesResult.errors.length) {
     do_throw("Unexpected error.");
   }
-  do_check_title_for_uri(place.uri, place.title);
+  await do_check_title_for_uri(place.uri, place.title);
 
   // Lastly, check that the title is cleared if we set it to null.
   place.title = null;
@@ -918,7 +901,7 @@ add_task(async function test_title_change_saved() {
   if (placesResult.errors.length) {
     do_throw("Unexpected error.");
   }
-  do_check_title_for_uri(place.uri, place.title);
+  await do_check_title_for_uri(place.uri, place.title);
 
   await PlacesTestUtils.promiseAsyncUpdates();
 });
@@ -944,7 +927,7 @@ add_task(async function test_no_title_does_not_clear_title() {
   if (placesResult.errors.length) {
     do_throw("Unexpected error.");
   }
-  do_check_title_for_uri(place.uri, TITLE);
+  await do_check_title_for_uri(place.uri, TITLE);
 
   await PlacesTestUtils.promiseAsyncUpdates();
 });
@@ -1114,18 +1097,17 @@ add_task(async function test_typed_hidden_not_overwritten() {
   ];
   await promiseUpdatePlaces(places);
 
-  let db = await PlacesUtils.promiseDBConnection();
-  let rows = await db.execute(
-    "SELECT hidden, typed FROM moz_places WHERE url_hash = hash(:url) AND url = :url",
-    { url: "http://mozilla.org/" }
-  );
   Assert.equal(
-    rows[0].getResultByName("typed"),
+    await PlacesTestUtils.getDatabaseValue("moz_places", "typed", {
+      url: "http://mozilla.org/",
+    }),
     1,
     "The page should be marked as typed"
   );
   Assert.equal(
-    rows[0].getResultByName("hidden"),
+    await PlacesTestUtils.getDatabaseValue("moz_places", "hidden", {
+      url: "http://mozilla.org/",
+    }),
     0,
     "The page should be marked as not hidden"
   );

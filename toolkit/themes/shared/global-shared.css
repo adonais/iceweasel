@@ -27,12 +27,12 @@
 
   @media (-moz-platform: macos) {
     /* On macOS we use native shadows via -moz-window-shadow */
-    --arrowpanel-shadow-margin: 0px;
+    --panel-shadow-margin: 0px;
   }
 
   --panel-separator-color: color-mix(in srgb, currentColor 25%, transparent);
 
-  --popup-notification-body-width: calc(31em - calc(2 * var(--arrowpanel-padding)));
+  --popup-notification-body-width: calc(31em - calc(2 * var(--panel-padding)));
 
   --input-border-color: var(--border-color-interactive);
 
@@ -71,15 +71,9 @@
 }
 
 :is(menupopup, panel):where([type="arrow"]) {
-  --panel-background: var(--arrowpanel-background);
-  --panel-color: var(--arrowpanel-color);
-  --panel-border-color: var(--arrowpanel-border-color);
-  --panel-border-radius: var(--arrowpanel-border-radius);
-  --panel-padding: var(--arrowpanel-padding);
-  --panel-shadow-margin: var(--arrowpanel-shadow-margin);
-  --menuitem-border-radius: var(--arrowpanel-menuitem-border-radius);
-  --menuitem-padding: var(--arrowpanel-menuitem-padding);
-  --menuitem-margin: var(--arrowpanel-menuitem-margin);
+  --menuitem-border-radius: var(--panel-menuitem-border-radius);
+  --menuitem-padding: var(--panel-menuitem-padding);
+  --menuitem-margin: var(--panel-menuitem-margin);
 }
 
 /* Lightweight theme roots */
@@ -295,7 +289,7 @@ button.text-link .button-text {
 
 .footer-button {
   appearance: none;
-  border: 0;
+  border: var(--button-border);
   border-radius: var(--button-border-radius);
   color: var(--button-text-color);
   background-color: var(--button-background-color);
@@ -326,24 +320,29 @@ button.text-link .button-text {
     &:hover {
       color: var(--button-text-color-hover);
       background-color: var(--button-background-color-hover);
+      border-color: var(--button-border-color-hover);
     }
     &:hover:active,
     &[open] {
       color: var(--button-text-color-active);
       background-color: var(--button-background-color-active);
+      border-color: var(--button-border-color-active);
     }
     &[default],
     &.primary {
       color: var(--button-text-color-primary);
       background-color: var(--button-background-color-primary);
+      border-color: var(--button-border-color-primary);
       &:hover {
         color: var(--button-text-color-primary-hover);
         background-color: var(--button-background-color-primary-hover);
+        border-color: var(--button-border-color-primary-hover);
       }
       &:hover:active,
       &[open] {
         color: var(--button-text-color-primary-active);
         background-color: var(--button-background-color-primary-active);
+        border-color: var(--button-border-color-primary-active);
       }
     }
   }

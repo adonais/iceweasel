@@ -115,7 +115,6 @@ nsresult JSEventHandler::HandleEvent(Event* aEvent) {
   if (mTypedHandler.Type() == TypedEventHandler::eOnError) {
     MOZ_ASSERT_IF(mEventName, mEventName == nsGkAtoms::onerror);
 
-    nsString errorMsg;
     nsCString file;
     EventOrString msgOrEvent;
     Optional<nsACString> fileName;
@@ -126,9 +125,7 @@ nsresult JSEventHandler::HandleEvent(Event* aEvent) {
     NS_ENSURE_TRUE(aEvent, NS_ERROR_UNEXPECTED);
     ErrorEvent* scriptEvent = aEvent->AsErrorEvent();
     if (scriptEvent) {
-      scriptEvent->GetMessage(errorMsg);
-      msgOrEvent.SetAsString().ShareOrDependUpon(errorMsg);
-
+      scriptEvent->GetMessage(msgOrEvent.SetAsString());
       scriptEvent->GetFilename(file);
       fileName = &file;
 

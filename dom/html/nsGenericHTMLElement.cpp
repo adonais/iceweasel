@@ -132,14 +132,16 @@ static const uint8_t NS_AUTOCAPITALIZE_NONE = 1;
 static const uint8_t NS_AUTOCAPITALIZE_SENTENCES = 2;
 static const uint8_t NS_AUTOCAPITALIZE_WORDS = 3;
 static const uint8_t NS_AUTOCAPITALIZE_CHARACTERS = 4;
+static const uint8_t NS_AUTOCAPITALIZE_OFF = 5;
+static const uint8_t NS_AUTOCAPITALIZE_ON = 6;
 
 static constexpr nsAttrValue::EnumTableEntry kAutocapitalizeTable[] = {
     {"none", NS_AUTOCAPITALIZE_NONE},
     {"sentences", NS_AUTOCAPITALIZE_SENTENCES},
     {"words", NS_AUTOCAPITALIZE_WORDS},
     {"characters", NS_AUTOCAPITALIZE_CHARACTERS},
-    {"off", NS_AUTOCAPITALIZE_NONE},
-    {"on", NS_AUTOCAPITALIZE_SENTENCES},
+    {"off", NS_AUTOCAPITALIZE_OFF},
+    {"on", NS_AUTOCAPITALIZE_ON},
     {"", 0},
 };
 
@@ -711,7 +713,18 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
     }
 
     if (newState == PopoverAttributeState::None) {
-      ClearPopoverData();
+      auto* popoverData = GetPopoverData();
+      if (popoverData) {
+        // We have to keep track of the toggle event task, if, for example,
+        // the popover attribute is removed as part of the popover focusing
+        // steps in https://html.spec.whatwg.org/#show-popover. So we can't
+        // clear the popover data in that case.
+        if (popoverData->IsShowingOrHiding()) {
+          popoverData->SetPopoverAttributeState(newState);
+        } else {
+          ClearPopoverData();
+        }
+      }
       RemoveStates(ElementState::POPOVER_OPEN);
     } else {
       // Re-apply the state in case event handlers changed it
@@ -1836,6 +1849,10 @@ const nsAttrValue* nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr,
 }
 
 bool nsGenericHTMLElement::IsContentEditable() const {
+  if (IsInComposedDoc()) {
+    return IsEditable();
+  }
+  // Editable flag is not set for non-connected elements, so we must compute it.
   for (const auto* element : InclusiveAncestorsOfType<nsGenericHTMLElement>()) {
     const ContentEditableState state = element->GetContentEditableState();
     if (state != ContentEditableState::Inherit) {
@@ -3399,25 +3416,49 @@ bool nsGenericHTMLElement::PopoverOpen() const {
 bool nsGenericHTMLElement::CheckPopoverValidity(
     PopoverVisibilityState aExpectedState, Document* aExpectedDocument,
     ErrorResult& aRv) {
+  // 1. If element's popover attribute is in the No Popover state, then:
   if (GetPopoverAttributeState() == PopoverAttributeState::None) {
+    // 1. If throwExceptions is true, then throw a "NotSupportedError"
+    //    DOMException.
     aRv.ThrowNotSupportedError("Element is in the no popover state");
+    // 2. Return false.
     return false;
   }
 
+  // 2. If any of the following are true:
+  //  - expectedToBeShowing is true and element's popover visibility state is
+  //    not showing; or
+  //  - expectedToBeShowing is false and element's popover visibility state is
+  //    not hidden,
   if (GetPopoverData()->GetPopoverVisibilityState() != aExpectedState) {
+    // then return false.
     return false;
   }
 
+  // 3. If any of the following are true:
+  //   - element is not connected;
   if (!IsInComposedDoc()) {
+    // 1. If throwExceptions is true, then throw an "InvalidStateError"
+    //    DOMException.
     aRv.ThrowInvalidStateError("Element is not connected");
+    // 2. Return false.
     return false;
   }
 
+  //   - element's node document is not fully active;
+  if (!OwnerDoc()->IsFullyActive()) {
+    aRv.ThrowInvalidStateError("Element's document is not fully active");
+    return false;
+  }
+
+  //   - expectedDocument is not null and element's node document is not
+  //     expectedDocument;
   if (aExpectedDocument && aExpectedDocument != OwnerDoc()) {
     aRv.ThrowInvalidStateError("Element is moved to other document");
     return false;
   }
 
+  //  - element is a dialog element and its is modal is set to true; or
   if (auto* dialog = HTMLDialogElement::FromNode(this)) {
     if (dialog->IsInTopLayer()) {
       aRv.ThrowInvalidStateError("Element is a modal <dialog> element");
@@ -3425,6 +3466,7 @@ bool nsGenericHTMLElement::CheckPopoverValidity(
     }
   }
 
+  //  - element's fullscreen flag is set,
   if (State().HasState(ElementState::FULLSCREEN)) {
     aRv.ThrowInvalidStateError("Element is fullscreen");
     return false;
@@ -3473,6 +3515,9 @@ bool nsGenericHTMLElement::FireToggleEvent(const nsAString& aOldState,
 // https://html.spec.whatwg.org/#queue-a-popover-toggle-event-task
 void nsGenericHTMLElement::QueuePopoverEventTask(
     PopoverVisibilityState aOldState, Element* aSource) {
+  PopoverVisibilityState newState = aOldState == PopoverVisibilityState::Hidden
+                                        ? PopoverVisibilityState::Showing
+                                        : PopoverVisibilityState::Hidden;
   auto* data = GetPopoverData();
   MOZ_ASSERT(data, "Should have popover data");
 
@@ -3480,15 +3525,15 @@ void nsGenericHTMLElement::QueuePopoverEventTask(
     aOldState = queuedToggleEventTask->GetOldState();
   }
 
-  auto task = MakeRefPtr<PopoverToggleEventTask>(
-      do_GetWeakReference(this), do_GetWeakReference(aSource), aOldState);
+  auto task = MakeRefPtr<PopoverToggleEventTask>(do_GetWeakReference(this),
+                                                 do_GetWeakReference(aSource),
+                                                 aOldState, newState);
   data->SetToggleEventTask(task);
   OwnerDoc()->Dispatch(task.forget());
 }
 
 void nsGenericHTMLElement::RunPopoverToggleEventTask(
-    PopoverToggleEventTask* aTask, PopoverVisibilityState aOldState,
-    Element* aSource) {
+    PopoverToggleEventTask* aTask, Element* aSource) {
   auto* data = GetPopoverData();
   if (!data) {
     return;
@@ -3498,14 +3543,15 @@ void nsGenericHTMLElement::RunPopoverToggleEventTask(
   if (!popoverToggleEventTask || aTask != popoverToggleEventTask) {
     return;
   }
+  auto oldState = aTask->GetOldState();
+  auto newState = aTask->GetNewState();
   data->ClearToggleEventTask();
   // Intentionally ignore the return value here as only on open event the
   // cancelable attribute is initialized to true for beforetoggle event.
   auto stringForState = [](PopoverVisibilityState state) {
     return state == PopoverVisibilityState::Hidden ? u"closed"_ns : u"open"_ns;
   };
-  FireToggleEvent(stringForState(aOldState),
-                  stringForState(data->GetPopoverVisibilityState()),
+  FireToggleEvent(stringForState(oldState), stringForState(newState),
                   u"toggle"_ns, aSource);
 }
 
@@ -3925,6 +3971,26 @@ bool nsGenericHTMLElement::IsFormAssociatedCustomElement() const {
 }
 
 void nsGenericHTMLElement::GetAutocapitalize(nsAString& aValue) const {
+  // https://html.spec.whatwg.org/#dom-autocapitalize
+  // 1. Let state be the own autocapitalization hint of this.
+  const auto* attr = GetParsedAttr(nsGkAtoms::autocapitalize);
+  if (attr && attr->Type() == nsAttrValue::eEnum) {
+    auto enumValue = attr->GetEnumValue();
+    if (enumValue == NS_AUTOCAPITALIZE_OFF ||
+        enumValue == NS_AUTOCAPITALIZE_NONE) {
+      // 3. If state is None, then return "none".
+      aValue.AssignLiteral("none");
+      return;
+    }
+    if (enumValue == NS_AUTOCAPITALIZE_ON ||
+        enumValue == NS_AUTOCAPITALIZE_SENTENCES) {
+      // 4. If state is Sentences, then return "sentences".
+      aValue.AssignLiteral("sentences");
+      return;
+    }
+  }
+  // 2. If state is Default, then return the empty string.
+  // 5. Return the keyword value corresponding to state.
   GetEnumAttr(nsGkAtoms::autocapitalize, nullptr, kDefaultAutocapitalize->tag,
               aValue);
 }

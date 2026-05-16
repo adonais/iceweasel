@@ -123,6 +123,7 @@ struct ScrollToOptions;
 struct FocusOptions;
 struct ShadowRootInit;
 struct ScrollOptions;
+struct FullscreenOptions;
 class Attr;
 class BooleanOrScrollIntoViewOptions;
 class Document;
@@ -682,6 +683,8 @@ class Element : public FragmentOrElement {
    * @param aData The custom element data.
    */
   void SetCustomElementData(UniquePtr<CustomElementData> aData);
+
+  void ClearCustomElementData();
 
   nsTArray<RefPtr<nsAtom>>& EnsureCustomStates();
 
@@ -1321,7 +1324,7 @@ class Element : public FragmentOrElement {
   void GetAttribute(const nsAString& aName, nsAString& aReturn) {
     DOMString str;
     GetAttribute(aName, str);
-    str.ToString(aReturn);
+    aReturn.Assign(std::move(str));
   }
 
   void GetAttribute(const nsAString& aName, DOMString& aReturn);
@@ -1589,7 +1592,8 @@ class Element : public FragmentOrElement {
 
   void ReleaseCapture();
 
-  already_AddRefed<Promise> RequestFullscreen(CallerType, ErrorResult&);
+  already_AddRefed<Promise> RequestFullscreen(const FullscreenOptions&,
+                                              CallerType, ErrorResult&);
   void RequestPointerLock(CallerType aCallerType);
   Attr* GetAttributeNode(const nsAString& aName);
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Attr> SetAttributeNode(
@@ -1662,10 +1666,11 @@ class Element : public FragmentOrElement {
 
   void UnattachShadow();
 
-  ShadowRoot* GetShadowRootByMode() const;
   void SetSlot(const nsAString& aName, ErrorResult& aError);
   void GetSlot(nsAString& aName);
 
+  ShadowRoot* GetShadowRootForBindings() const;
+  ShadowRoot* GetOpenOrClosedShadowRoot(nsIPrincipal& aSubject) const;
   ShadowRoot* GetShadowRoot() const {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
     return slots ? slots->mShadowRoot.get() : nullptr;

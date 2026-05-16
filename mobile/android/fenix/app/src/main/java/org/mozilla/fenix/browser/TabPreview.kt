@@ -520,13 +520,14 @@ class TabPreview @JvmOverloads constructor(
         val isTallWindow = context.isTallWindow()
         val shouldUseExpandedToolbar = settings.shouldUseExpandedToolbar
 
-        val primarySlotAction = ShortcutType.fromValue(settings.toolbarSimpleShortcut)
-            ?.toToolbarAction(tab) ?: ToolbarAction.NewTab
+        val primarySlotAction = ShortcutType.fromValue(settings.toolbarSimpleShortcut)?.toToolbarAction(tab)
 
-        return listOf(
-            ToolbarActionConfig(primarySlotAction) {
-                (!shouldUseExpandedToolbar || !isTallWindow || isWideWindow) &&
+        return listOfNotNull(
+            primarySlotAction?.let {
+                ToolbarActionConfig(primarySlotAction) {
+                    (!shouldUseExpandedToolbar || !isTallWindow || isWideWindow) &&
                         tab?.content?.url != ABOUT_HOME_URL
+                }
             },
             ToolbarActionConfig(ToolbarAction.TabCounter) {
                 !shouldUseExpandedToolbar || !isTallWindow || isWideWindow
@@ -611,5 +612,6 @@ class TabPreview @JvmOverloads constructor(
         ShortcutType.TRANSLATE -> ToolbarAction.Translate
         ShortcutType.HOMEPAGE -> ToolbarAction.Homepage
         ShortcutType.BACK -> ToolbarAction.Back
+        ShortcutType.NONE -> null
     }
 }

@@ -108,4 +108,5 @@
   background-size: cover;
   -moz-context-properties: fill;
   fill: var(--identity-icon-color);
+  margin-inline-end: 8px;
 }

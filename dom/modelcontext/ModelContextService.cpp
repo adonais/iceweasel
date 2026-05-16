@@ -109,7 +109,12 @@ ModelContextService::GetToolsForWindow(uint64_t aInnerWindowId, JSContext* aCx,
                   "Failed to parse inputSchema"_ns);
               return;
             }
-            def.mInputSchema.Construct(schemaVal.toObjectOrNull());
+            if (!schemaVal.isObject()) {
+              promise->MaybeRejectWithInvalidStateError(
+                  "Tool stored with non-object inputSchema"_ns);
+              return;
+            }
+            def.mInputSchema.Construct(&schemaVal.toObject());
           }
 
           if (tools[i].annotations().isSome()) {

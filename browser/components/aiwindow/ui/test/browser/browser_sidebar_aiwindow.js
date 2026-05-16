@@ -37,7 +37,7 @@ add_task(async function test_aichat_sidebar_not_restored_in_aiwindow() {
   const aiWin = await BrowserTestUtils.openNewBrowserWindow({ aiWindow: true });
   await aiWin.SidebarController.promiseInitialized;
 
-  await aiWin.SidebarController.initializeUIState({
+  await aiWin.SidebarController.updateUIState({
     command: "viewGenaiChatSidebar",
     panelOpen: true,
   });

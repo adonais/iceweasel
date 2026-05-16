@@ -9,18 +9,19 @@ use api::{
 };
 use api::units::*;
 use euclid::point2;
+use crate::clip::{ClipChainInstance, ClipIntern};
+use crate::command_buffer::CommandBufferIndex;
 use crate::composite::CompositorSurfaceKind;
 use crate::gpu_types::{ImageBrushPrimitiveData, YuvPrimitive};
+use crate::pattern::image::ImagePattern;
+use crate::quad::QuadTransformState;
 use crate::renderer::{GpuBufferBuilderF, GpuBufferWriterF};
 use crate::scene_building::{CreateShadow, IsVisible};
-use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
-use crate::intern::{Internable, InternDebug, Handle as InternHandle};
+use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
+use crate::intern::{DataStore, Handle as InternHandle, InternDebug, Internable};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    EdgeMask, PrimitiveInstanceKind,
-    PrimitiveOpacity, PrimKey,
-    PrimTemplate, PrimTemplateCommonData, PrimitiveStore, SegmentInstanceIndex,
-    SizeKey, InternablePrimitive,
+    EdgeMask, InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveInstanceKind, PrimitiveOpacity, PrimitiveScratchBuffer, PrimitiveStore, SegmentInstanceIndex, SizeKey
 };
 use crate::render_target::RenderTargetKind;
 use crate::render_task_graph::RenderTaskId;
@@ -31,7 +32,7 @@ use crate::render_task_cache::{
 use crate::resource_cache::{ImageRequest, ImageProperties, ResourceCache};
 use crate::visibility::{PrimitiveVisibility, compute_conservative_visible_rect};
 use crate::spatial_tree::SpatialNodeIndex;
-use crate::image_tiling;
+use crate::{image_tiling, quad};
 
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -408,6 +409,138 @@ impl ImageData {
             stretch_size,
         });
     }
+}
+
+pub fn can_use_quad_shaders(
+    _image_data: &ImageData,
+    _resource_cache: &ResourceCache,
+) -> bool {
+    // TODO(Bug 2026629): Temporarily disabled due to some visiual regressions.
+
+    // let image_properties = resource_cache.get_image_properties(image_data.key);
+    // match &image_properties {
+    //     Some(ImageProperties { tiling: None, external_image: None, adjustment, .. }) => {
+    //         return adjustment.x0 == 0.0
+    //             && adjustment.y0 == 0.0
+    //             && adjustment.x1 == 0.0
+    //             && adjustment.y1 == 0.0
+    //             && image_data.alpha_type == AlphaType::PremultipliedAlpha
+    //             // See the comment in ps_quad_textured about ignoring the base color
+    //             // due to a driver issue.
+    //             && image_data.color == ColorF::WHITE;
+    //     }
+    //     _ => {
+    //         return false;
+    //     }
+    // }
+
+    false
+}
+
+pub fn prepare_image_quads(
+    prim_rect: &LayoutRect,
+    common_data: &PrimTemplateCommonData,
+    image_data: &ImageData,
+    clip_chain: &ClipChainInstance,
+    prim_instance_index: PrimitiveInstanceIndex,
+    quad_transform: &mut QuadTransformState,
+    frame_context: &FrameBuildingContext,
+    pic_context: &PictureContext,
+    targets: &[CommandBufferIndex],
+    interned_clips: &DataStore<ClipIntern>,
+    frame_state: &mut FrameBuildingState,
+    scratch: &mut PrimitiveScratchBuffer,
+) {
+    let image_properties = frame_state
+        .resource_cache
+        .get_image_properties(image_data.key);
+
+    match image_properties {
+        // Non-tiled (most common) path.
+        Some(ImageProperties { tiling: None, ref descriptor, .. }) => {
+            let request = ImageRequest {
+                key: image_data.key,
+                rendering: image_data.image_rendering,
+                tile: None,
+            };
+
+            let size = frame_state.resource_cache.request_image(
+                request,
+                &mut frame_state.frame_gpu_data.f32,
+            );
+
+            let is_opaque = if descriptor.is_opaque() {
+                image_data.color.a >= 0.9999
+            } else {
+                false
+            };
+
+            let task_id = frame_state.rg_builder.add().init(
+                RenderTask::new_image(size, request, false)
+            );
+
+            prepare_non_tiled_image_quad(
+                task_id,
+                is_opaque,
+                prim_rect,
+                common_data,
+                image_data,
+                clip_chain,
+                prim_instance_index,
+                quad_transform,
+                frame_context,
+                pic_context,
+                targets,
+                interned_clips,
+                frame_state,
+                scratch
+            );
+        }
+        _ => {
+            unimplemented!();
+        }
+    }
+}
+
+pub fn prepare_non_tiled_image_quad(
+    image_task: RenderTaskId,
+    is_opaque: bool,
+    prim_rect: &LayoutRect,
+    common_data: &PrimTemplateCommonData,
+    image_data: &ImageData,
+    clip_chain: &ClipChainInstance,
+    prim_instance_index: PrimitiveInstanceIndex,
+    quad_transform: &mut QuadTransformState,
+    frame_context: &FrameBuildingContext,
+    pic_context: &PictureContext,
+    targets: &[CommandBufferIndex],
+    interned_clips: &DataStore<ClipIntern>,
+    frame_state: &mut FrameBuildingState,
+    scratch: &mut PrimitiveScratchBuffer,
+) {
+    let pattern_builder = ImagePattern {
+        src_task_id: image_task,
+        src_is_opaque: common_data.opacity.is_opaque && is_opaque,
+    };
+
+    quad::prepare_repeatable_quad(
+        &pattern_builder,
+        prim_rect,
+        image_data.stretch_size,
+        image_data.tile_spacing,
+        common_data.aligned_aa_edges,
+        common_data.transformed_aa_edges,
+        prim_instance_index,
+        &None,
+        clip_chain,
+        quad_transform,
+        frame_context,
+        pic_context,
+        targets,
+        interned_clips,
+        frame_state,
+        scratch,
+    );
 }
 
 fn edge_flags_for_tile_spacing(tile_spacing: &LayoutSize) -> EdgeMask {

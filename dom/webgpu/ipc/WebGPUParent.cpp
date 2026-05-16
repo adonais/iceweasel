@@ -277,7 +277,8 @@ extern void wgpu_parent_create_swap_chain(
   }
   auto size = gfx::IntSize(aWidth, aHeight);
   auto format = gfx::SurfaceFormat(aFormat);
-  auto desc = layers::RGBDescriptor(size, format);
+  auto desc = layers::RGBDescriptor(size, format, gfx::ColorSpace2::SRGB,
+                                    gfx::TransferFunction::SRGB);
   auto owner = layers::RemoteTextureOwnerId{aRemoteTextureOwnerId};
   parent->DeviceCreateSwapChain(aDeviceId, aQueueId, desc, buffer_ids, owner,
                                 aUseSharedTextureInSwapChain);
@@ -1207,8 +1208,12 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
     return IPC_OK();
   }
   const auto stride = maybeStride.value();
-
   const auto& size = data->mDesc.size();
+
+  if (size.width > INT16_MAX || size.height > INT16_MAX || stride > INT16_MAX) {
+    return IPC_OK();
+  }
+
   const auto len = CheckedInt<size_t>(size.height) * stride;
   if (!len.isValid()) {
     return IPC_OK();
@@ -1341,20 +1346,11 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   auto snapshotRequest = MakeUnique<ReadbackSnapshotRequest>(
       mContext.get(), data, bufferId, shmem, stride);
 
-  ffi::WGPUBufferMapClosure closure = {
-      &ReadbackSnapshotCallback,
-      reinterpret_cast<uint8_t*>(snapshotRequest.release())};
-
-  ErrorBuffer error;
-  ffi::wgpu_server_buffer_map(mContext.get(), data->mDeviceId, bufferId, 0,
-                              bufferSize, ffi::WGPUHostMap_Read, closure,
-                              error.ToFFI());
-  if (ForwardError(error)) {
-    return IPC_OK();
-  }
-
-  // Callback should be called during the poll.
-  ffi::wgpu_server_poll_all_devices(mContext.get(), true);
+  ffi::WGPUBufferMapAsyncStatus status = ffi::wgpu_server_buffer_map_blocking(
+      mContext.get(), data->mDeviceId, bufferId, 0, bufferSize,
+      ffi::WGPUHostMap_Read);
+  ReadbackSnapshotCallback(
+      reinterpret_cast<uint8_t*>(snapshotRequest.release()), status);
 
   // Check if ReadbackSnapshotCallback is called.
   MOZ_RELEASE_ASSERT(data->mReadbackSnapshotCallbackCalled == true);
@@ -1427,6 +1423,11 @@ void WebGPUParent::SwapChainPresent(
     }
     std::shared_ptr<SharedTexture> sharedTexture = it->second;
     mSharedTextures.erase(it);
+
+    if (!sharedTexture->IsSubmitted()) {
+      gfxCriticalNoteOnce << "Texture is not submitted";
+      return;
+    }
 
     MOZ_ASSERT(sharedTexture->GetOwnerId() == aOwnerId);
 

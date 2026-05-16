@@ -181,6 +181,19 @@ class WebGLFramebuffer final : public WebGLContextBoundObject,
     // IsFeedback
     std::vector<const WebGLFBAttachPoint*> texAttachments;  // Non-null
 
+    CompletenessInfo() = default;
+    CompletenessInfo(const CompletenessInfo&) = default;
+    explicit CompletenessInfo(const WebGLFramebuffer* fb) : fb(fb) {}
+    CompletenessInfo(CompletenessInfo&& other)
+        : fb{std::exchange(other.fb, nullptr)},
+          width{other.width},
+          height{other.height},
+          hasAttachment{std::move(other.hasAttachment)},
+          isAttachmentF32{std::move(other.isAttachmentF32)},
+          zLayerCount{other.zLayerCount},
+          isMultiview{other.isMultiview},
+          texAttachments{std::move(other.texAttachments)} {}
+
     ~CompletenessInfo();
   };
   friend struct CompletenessInfo;

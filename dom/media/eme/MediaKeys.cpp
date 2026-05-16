@@ -30,7 +30,7 @@
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidDecoderModule.h"
 #  include "mozilla/MediaDrmCDMProxy.h"
-#  include "mozilla/RemoteCDMChild.h"
+#  include "mozilla/RemoteCDMProxy.h"
 #  include "mozilla/RemoteMediaManagerChild.h"
 #  include "mozilla/StaticPrefs_media.h"
 #endif

@@ -161,7 +161,8 @@ void UDPSocket::CloseWithReason(nsresult aReason) {
   RefPtr<UDPSocket> kungFuDeathGrip(this);
 
   if (mOpened) {
-    if (mReadyState == SocketReadyState::Opening) {
+    if (mReadyState == SocketReadyState::Opening ||
+        mReadyState == SocketReadyState::Open) {
       // reject openedPromise with AbortError if socket is closed without error
       nsresult openFailedReason =
           NS_FAILED(aReason) ? aReason : NS_ERROR_DOM_ABORT_ERR;
@@ -436,15 +437,15 @@ nsresult UDPSocket::InitLocal(const nsAString& aLocalAddress,
   }
   mLocalPort.SetValue(localPort);
 
-  mListenerProxy = new ListenerProxy(this);
-
-  rv = mSocket->AsyncListen(mListenerProxy);
+  mReadyState = SocketReadyState::Open;
+  rv = DoPendingMcastCommand();
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  mReadyState = SocketReadyState::Open;
-  rv = DoPendingMcastCommand();
+  mListenerProxy = new ListenerProxy(this);
+
+  rv = mSocket->AsyncListen(mListenerProxy);
   if (NS_FAILED(rv)) {
     return rv;
   }

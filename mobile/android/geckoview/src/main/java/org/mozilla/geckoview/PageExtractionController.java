@@ -23,28 +23,60 @@ public class PageExtractionController {
     /** BCP 47 language tag of the page */
     @NonNull public final String language;
 
+    /** Whether the page is likely readable by reader mode */
+    public final boolean isReaderable;
+
     /**
      * Construct a new page metadata object.
      *
      * @param structuredDataTypes JSON-LD types as defined by Schema.org
      * @param wordCount word count of all the content on the page
      * @param language BCP 47 language tag of the page
+     * @param isReaderable whether the page is likely readable by reader mode
      */
     public PageMetadata(
         @NonNull final String[] structuredDataTypes,
         final int wordCount,
-        @NonNull final String language) {
+        @NonNull final String language,
+        final boolean isReaderable) {
       this.structuredDataTypes = structuredDataTypes;
       this.wordCount = wordCount;
       this.language = language;
+      this.isReaderable = isReaderable;
     }
 
     /* package */ static PageMetadata fromBundle(@NonNull final GeckoBundle bundle) {
       final String[] structuredDataTypes = bundle.getStringArray("structuredDataTypes");
       final int wordCount = bundle.getInt("wordCount", -1);
       final String language = bundle.getString("language");
+      final boolean isReaderable = bundle.getBoolean("isReaderable", false);
 
-      return new PageMetadata(structuredDataTypes, wordCount, language);
+      return new PageMetadata(structuredDataTypes, wordCount, language, isReaderable);
+    }
+  }
+
+  /** Options for controlling how text is extracted from a page. */
+  public static class ContentParams {
+
+    /**
+     * When true, attempts to remove boilerplate content from the page using reader mode, falling
+     * back to full extraction if unavailable.
+     */
+    public final boolean removeBoilerplate;
+
+    /**
+     * Construct a new ContentParams.
+     *
+     * @param removeBoilerplate whether to remove boilerplate using reader mode
+     */
+    public ContentParams(final boolean removeBoilerplate) {
+      this.removeBoilerplate = removeBoilerplate;
+    }
+
+    /* package */ GeckoBundle toBundle() {
+      final GeckoBundle bundle = new GeckoBundle(1);
+      bundle.putBoolean("removeBoilerplate", removeBoilerplate);
+      return bundle;
     }
   }
 
@@ -74,17 +106,29 @@ public class PageExtractionController {
     }
 
     /**
-     * Gets the page content for the current page.
+     * Gets the page content for the current page with default options.
      *
      * @return the content of the current page as a {@link String} or a {@link
      *     PageExtractionException} if an error occurs while extracting the page content
      */
     @HandlerThread
     public @NonNull GeckoResult<String> getPageContent() {
+      return getPageContent(new ContentParams(false));
+    }
+
+    /**
+     * Gets the page content for the current page using the provided options.
+     *
+     * @param options the options to control how the text is extracted
+     * @return the content of the current page as a {@link String} or a {@link
+     *     PageExtractionException} if an error occurs while extracting the page content
+     */
+    @HandlerThread
+    public @NonNull GeckoResult<String> getPageContent(@NonNull final ContentParams options) {
       ThreadUtils.assertOnHandlerThread();
       return mSession
           .getEventDispatcher()
-          .queryBundle(GET_TEXT_CONTENT_EVENT)
+          .queryBundle(GET_TEXT_CONTENT_EVENT, options.toBundle())
           .then(
               result -> {
                 if (result == null)

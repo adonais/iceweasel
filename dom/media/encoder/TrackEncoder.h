@@ -218,7 +218,7 @@ class AudioTrackEncoder : public TrackEncoder {
     if (aInput.Length() < aOutputChannels) {
       // Up-mix. This might make the mChannelData have more than aChannels.
       AudioChannelsUpMix(&aInput, aOutputChannels,
-                         SilentChannel::ZeroChannel<T>());
+                         static_cast<const T*>(nullptr));
     }
 
     if (aInput.Length() > aOutputChannels) {

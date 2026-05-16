@@ -184,8 +184,7 @@ mozilla::ipc::IPCResult FetchChild::RecvOnFlushConsoleReport(
     // extract doc object to flush the console report
     for (const auto& report : aReports) {
       mReporter->AddConsoleReport(
-          report.errorFlags(), report.category(),
-          static_cast<PropertiesFile>(report.propertiesFile()),
+          report.errorFlags(), report.category(), report.propertiesFile(),
           report.sourceFileURI(), report.lineNumber(), report.columnNumber(),
           report.messageName(), report.stringParams());
     }
@@ -216,8 +215,7 @@ mozilla::ipc::IPCResult FetchChild::RecvOnFlushConsoleReport(
                  workerRef = std::move(workerRef)]() mutable {
         for (const auto& report : reports) {
           reporter->AddConsoleReport(
-              report.errorFlags(), report.category(),
-              static_cast<PropertiesFile>(report.propertiesFile()),
+              report.errorFlags(), report.category(), report.propertiesFile(),
               report.sourceFileURI(), report.lineNumber(),
               report.columnNumber(), report.messageName(),
               report.stringParams());

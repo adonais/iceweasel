@@ -93,6 +93,13 @@ HB_BEGIN_DECLS
 #mesondefine HB_HAS_GRAPHITE
 
 /**
+ * HB_HAS_GPU:
+ *
+ * Defined if Harfbuzz has been built with the GPU library.
+ */
+#mesondefine HB_HAS_GPU
+
+/**
  * HB_HAS_ICU:
  *
  * Defined if Harfbuzz has been built with ICU support.

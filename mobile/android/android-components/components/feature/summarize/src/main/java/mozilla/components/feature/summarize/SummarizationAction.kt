@@ -6,7 +6,9 @@ package mozilla.components.feature.summarize
 
 import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.LlmProvider
+import mozilla.components.feature.summarize.content.Content
 import mozilla.components.lib.state.Action
+import mozilla.components.ui.richtext.ir.RichDocument
 
 /**
  * Actions for the [SummarizationStore].
@@ -15,6 +17,9 @@ interface SummarizationAction : Action
 
 /** The Summarization Screen View Appeared */
 data object ViewAppeared : SummarizationAction
+
+/** The Summarization Screen View was Dismissed */
+data object ViewDismissed : SummarizationAction
 
 /** The user tapped the settings cog. */
 data object SettingsClicked : SummarizationAction
@@ -25,9 +30,16 @@ data object SettingsBackClicked : SummarizationAction
 /** Shake Consent has been requested */
 data object ShakeConsentRequested : SummarizationAction
 
-internal sealed interface LlmProviderAction : SummarizationAction {
-    data object ProviderFailed : LlmProviderAction
-    data object ProviderUnavailable : LlmProviderAction
+/**  */
+sealed interface LlmProviderAction : SummarizationAction {
+
+    /** The LLM provider failed to initialize. */
+    data class ProviderFailed(val exception: Llm.Exception) : LlmProviderAction
+
+    /** The LLM provider has been made available */
+    data object ProviderAvailable : LlmProviderAction
+
+    /** The LLM provider finished initializing with the given [llm]. */
     data class ProviderInitialized(val llm: Llm) : LlmProviderAction
 }
 
@@ -36,11 +48,25 @@ internal sealed interface LlmProviderAction : SummarizationAction {
  */
 data class SummarizationFailed(val throwable: Throwable) : SummarizationAction
 
-/** Initialize the Llm */
-internal sealed interface LlmAction : SummarizationAction {
-    data class SummarizationRequested(val info: LlmProvider.Info) : SummarizationAction
-    data class ReceivedResponse(val response: Llm.Response) : LlmAction
-}
+/**
+ * We've requested a response from a Llm.
+ */
+data class SummarizationRequested(val info: LlmProvider.Info) : SummarizationAction
+
+/**
+ * The Summarization has completed successfully.
+ */
+data object SummarizationCompleted : SummarizationAction
+
+/**
+ * We've received a new parsed document.
+ */
+data class ReceivedParsedDocument(val document: RichDocument) : SummarizationAction
+
+/**
+ * Page content has been extracted and is ready to be sent to the LLM.
+ */
+data class ContentExtracted(val content: Content) : SummarizationAction
 
 /**
  * Actions for the consent step of the shake to summarize user flow when using an on-device model.
@@ -112,4 +138,7 @@ sealed interface DownloadErrorAction : SummarizationAction {
 sealed interface ErrorAction : SummarizationAction {
     /** Dispatched when the user taps the "Learn more" link. */
     data object LearnMoreClicked : ErrorAction
+
+    /** Dispatched when the user taps the the "Dismiss" button on the error screen. */
+    data object ErrorDismissed : ErrorAction
 }

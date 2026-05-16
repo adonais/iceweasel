@@ -28,7 +28,7 @@ class ConnectionAttemptPool final {
       PendingTransactionInfo* pendingTransInfo);
   size_t Length() const { return mAttempts.Length(); }
   void RemoveConnectionAttempt(ConnectionAttempt* attempt, bool abandon);
-  void CloseAllConnectionAttempts();
+  void CloseAllConnectionAttempts(bool aReenqueueTransaction = false);
   // calculate the number of half open sockets that have not had at least 1
   // connection complete
   uint32_t UnconnectedConnectionAttempts() const;

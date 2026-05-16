@@ -119,7 +119,7 @@ NS_IMETHODIMP nsUDPOutputStream::Close() {
 
   mIsClosed = true;
   if (mSocket->IsSocketClosed()) {
-      return NS_BASE_STREAM_CLOSED;
+    return NS_BASE_STREAM_CLOSED;
   }
   return NS_OK;
 }
@@ -1263,7 +1263,6 @@ void nsUDPSocket::EnableWritePoll() {
   mPollFlags = (PR_POLL_WRITE | PR_POLL_READ | PR_POLL_EXCEPT);
 }
 
-
 NS_IMETHODIMP
 nsUDPSocket::SendBinaryStream(const nsACString& aHost, uint16_t aPort,
                               nsIInputStream* aStream) {
@@ -1322,13 +1321,18 @@ nsresult nsUDPSocket::SetSocketOption(const PRSocketOptionData& aOpt) {
   mSts->IsOnCurrentThread(&onSTSThread);
 
   if (!onSTSThread) {
-    // Dispatch to STS thread and re-enter this method there
-    nsCOMPtr<nsIRunnable> runnable = new SetSocketOptionRunnable(this, aOpt);
-    nsresult rv = mSts->Dispatch(runnable, NS_DISPATCH_NORMAL);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    if (mAttached) {
+      // Socket is attached to STS; dispatch to avoid racing with STS polling.
+      nsCOMPtr<nsIRunnable> runnable = new SetSocketOptionRunnable(this, aOpt);
+      nsresult rv = mSts->Dispatch(runnable, NS_DISPATCH_NORMAL);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      return NS_OK;
     }
-    return NS_OK;
+    // Socket not yet attached to STS; safe to call PR_SetSocketOption directly
+    // since no other thread is accessing the FD. Errors are propagated to the
+    // caller rather than silently discarded.
   }
 
   if (NS_WARN_IF(!mFD)) {

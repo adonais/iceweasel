@@ -108,7 +108,6 @@ struct ParamTraits<mozilla::wr::BuiltDisplayListDescriptor> {
     WriteParam(aWriter, aParam.send_start_time);
     WriteParam(aWriter, aParam.total_clip_nodes);
     WriteParam(aWriter, aParam.total_spatial_nodes);
-    WriteParam(aWriter, aParam.cache_size);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -117,8 +116,7 @@ struct ParamTraits<mozilla::wr::BuiltDisplayListDescriptor> {
            ReadParam(aReader, &aResult->builder_finish_time) &&
            ReadParam(aReader, &aResult->send_start_time) &&
            ReadParam(aReader, &aResult->total_clip_nodes) &&
-           ReadParam(aReader, &aResult->total_spatial_nodes) &&
-           ReadParam(aReader, &aResult->cache_size);
+           ReadParam(aReader, &aResult->total_spatial_nodes);
   }
 };
 

@@ -298,10 +298,10 @@ nsIFrame* SVGUtils::GetOuterSVGFrameAndCoveredRegion(nsIFrame* aFrame,
   // double-counting.
   m.PreTranslate(-initPosition);
 
-  uint32_t flags =
-      SVGUtils::eForGetClientRects | SVGUtils::eBBoxIncludeFillGeometry |
-      SVGUtils::eBBoxIncludeStroke | SVGUtils::eBBoxIncludeMarkers |
-      SVGUtils::eUseUserSpaceOfUseElement;
+  SVGBBoxFlags flags = {SVGBBoxFlag::ForGetClientRects,
+                        SVGBBoxFlag::IncludeFillGeometry,
+                        SVGBBoxFlag::IncludeStroke, SVGBBoxFlag::IncludeMarkers,
+                        SVGBBoxFlag::UseUserSpaceOfUseElement};
 
   gfxRect bbox = SVGUtils::GetBBox(aFrame, flags, &m);
   *aRect = nsLayoutUtils::RoundGfxRectToAppRect(bbox, appUnitsPerDevPixel);
@@ -699,9 +699,9 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     };
     // If we're masking a userSpaceOnUse mask we may need to include the
     // stroke too. Err on the side of caution and include it always.
-    gfxRect bbox = GetBBox(aFrame, SVGUtils::eUseFrameBoundsForOuterSVG |
-                                       SVGUtils::eBBoxIncludeFillGeometry |
-                                       SVGUtils::eBBoxIncludeStroke);
+    gfxRect bbox = GetBBox(
+        aFrame, {SVGBBoxFlag::UseFrameBoundsForOuterSVG,
+                 SVGBBoxFlag::IncludeFillGeometry, SVGBBoxFlag::IncludeStroke});
     FilterInstance::PaintFilteredFrame(
         aFrame, aFrame->StyleEffects()->mFilters.AsSpan(), filterFrames, target,
         callback, nullptr, aImgParams, 1.0f, &bbox);
@@ -804,7 +804,7 @@ gfxRect SVGUtils::GetClipRectForFrame(const nsIFrame* aFrame, float aX,
   return clipRect;
 }
 
-gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
+gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
                           const gfxMatrix* aToBoundsSpace) {
   if (aFrame->IsTextFrame()) {
     aFrame = aFrame->GetParent();
@@ -828,10 +828,12 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
 
   const bool isOuterSVG = svg && !hasSVGLayout;
   MOZ_ASSERT(!isOuterSVG || aFrame->IsSVGOuterSVGFrame());
-  if (!svg || (isOuterSVG && (aFlags & eUseFrameBoundsForOuterSVG))) {
+  if (!svg ||
+      (isOuterSVG && aFlags.contains(SVGBBoxFlag::UseFrameBoundsForOuterSVG))) {
     // An HTML element or an SVG outer frame.
     MOZ_ASSERT(!hasSVGLayout);
-    bool onlyCurrentFrame = aFlags & eIncludeOnlyCurrentFrameForNonSVGElement;
+    bool onlyCurrentFrame =
+        aFlags.contains(SVGBBoxFlag::IncludeOnlyCurrentFrameForNonSVGElement);
     return SVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(
         aFrame,
         /* aUnionContinuations = */ !onlyCurrentFrame);
@@ -847,13 +849,13 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
 
   // Clean out flags which have no effects on returning bbox from now, so that
   // we can cache and reuse ObjectBoundingBoxProperty() in the code below.
-  aFlags &=
-      ~(eIncludeOnlyCurrentFrameForNonSVGElement | eUseFrameBoundsForOuterSVG);
+  aFlags -= {SVGBBoxFlag::IncludeOnlyCurrentFrameForNonSVGElement,
+             SVGBBoxFlag::UseFrameBoundsForOuterSVG};
   if (!aFrame->IsSVGUseFrame()) {
-    aFlags &= ~eUseUserSpaceOfUseElement;
+    aFlags -= SVGBBoxFlag::UseUserSpaceOfUseElement;
   }
 
-  if (aFlags == eBBoxIncludeFillGeometry &&
+  if (aFlags == SVGBBoxFlag::IncludeFillGeometry &&
       // We only cache bbox in element's own user space
       !aToBoundsSpace) {
     gfxRect* prop = aFrame->GetProperty(ObjectBoundingBoxProperty());
@@ -868,7 +870,7 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
   }
 
   if (aFrame->IsSVGForeignObjectFrame() ||
-      aFlags & SVGUtils::eUseUserSpaceOfUseElement) {
+      aFlags.contains(SVGBBoxFlag::UseUserSpaceOfUseElement)) {
     // The spec says getBBox "Returns the tight bounding box in *current user
     // space*". So we should really be doing this for all elements, but that
     // needs investigation to check that we won't break too much content.
@@ -881,10 +883,10 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
   gfxRect bbox =
       svg->GetBBoxContribution(ToMatrix(matrix), aFlags).ToThebesRect();
   // Account for 'clipped'.
-  if (aFlags & SVGUtils::eBBoxIncludeClipped) {
+  if (aFlags.contains(SVGBBoxFlag::IncludeClipped)) {
     gfxRect clipRect;
     gfxRect fillBBox =
-        svg->GetBBoxContribution({}, SVGUtils::eBBoxIncludeFillGeometry)
+        svg->GetBBoxContribution({}, SVGBBoxFlag::IncludeFillGeometry)
             .ToThebesRect();
     // XXX Should probably check for overflow: clip too.
     bool hasClip = aFrame->StyleDisplay()->IsScrollableOverflow();
@@ -916,7 +918,8 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
                    .ToThebesRect();
       }
 
-      if (hasClip && !(aFlags & eDoNotClipToBBoxOfContentInsideClipPath)) {
+      if (hasClip && !aFlags.contains(
+                         SVGBBoxFlag::DoNotClipToBBoxOfContentInsideClipPath)) {
         bbox = bbox.Intersect(clipRect);
       }
 
@@ -926,7 +929,7 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
     }
   }
 
-  if (aFlags == eBBoxIncludeFillGeometry &&
+  if (aFlags == SVGBBoxFlag::IncludeFillGeometry &&
       // We only cache bbox in element's own user space
       !aToBoundsSpace) {
     // Obtaining the bbox for objectBoundingBox calculations is common so we
@@ -1034,7 +1037,8 @@ bool SVGUtils::CanOptimizeOpacity(const nsIFrame* aFrame) {
 
 gfxMatrix SVGUtils::AdjustMatrixForUnits(const gfxMatrix& aMatrix,
                                          const SVGAnimatedEnumeration* aUnits,
-                                         nsIFrame* aFrame, uint32_t aFlags) {
+                                         nsIFrame* aFrame,
+                                         SVGBBoxFlags aFlags) {
   if (aFrame && aUnits->GetAnimValue() == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) {
     gfxRect bbox = GetBBox(aFrame, aFlags);
     gfxMatrix tm = aMatrix;
@@ -1476,11 +1480,10 @@ bool SVGUtils::GetSVGGlyphExtents(const Element* aElement,
 
   *aResult =
       svgFrame
-          ->GetBBoxContribution(gfx::ToMatrix(transform),
-                                SVGUtils::eBBoxIncludeFillGeometry |
-                                    SVGUtils::eBBoxIncludeStroke |
-                                    SVGUtils::eBBoxIncludeStrokeGeometry |
-                                    SVGUtils::eBBoxIncludeMarkers)
+          ->GetBBoxContribution(
+              gfx::ToMatrix(transform),
+              {SVGBBoxFlag::IncludeFillGeometry, SVGBBoxFlag::IncludeStroke,
+               SVGBBoxFlag::IncludeStrokeGeometry, SVGBBoxFlag::IncludeMarkers})
           .ToThebesRect();
   return true;
 }

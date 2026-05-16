@@ -11,6 +11,7 @@
  */
 add_task(async function test_browser_translations_full_page_multiple_windows() {
   const window1 = window;
+  await focusWindow(window1);
   const testPage = await loadTestPage({
     page: SPANISH_PAGE_URL,
     languagePairs: LANGUAGE_PAIRS,
@@ -38,6 +39,7 @@ add_task(async function test_browser_translations_full_page_multiple_windows() {
     "SwapDocShells"
   );
   await swapDocShellPromise;
+  await focusWindow(window2);
 
   await FullPageTranslationsTestUtils.assertTranslationsButton(
     { button: true, circleArrows: false, locale: false, icon: true },

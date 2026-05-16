@@ -86,6 +86,11 @@ extern "C" {
 #define NESTEGG_VIDEO_STEREO_TOP_BOTTOM 3 /**< Track is top-bottom stereo video.  Left first. */
 #define NESTEGG_VIDEO_STEREO_RIGHT_LEFT 11 /**< Track is side-by-side stereo video.  Right first. */
 
+#define NESTEGG_VIDEO_PROJECTION_RECTANGULAR     0 /**< Track uses rectangular projection type. */
+#define NESTEGG_VIDEO_PROJECTION_EQUIRECTANGULAR 1 /**< Track uses equirectangular projection type. */
+#define NESTEGG_VIDEO_PROJECTION_CUBEMAP         2 /**< Track uses cubemap projection type. */
+#define NESTEGG_VIDEO_PROJECTION_MESH            3 /**< Track uses mesh projection type. */
+
 #define NESTEGG_SEEK_SET 0 /**< Seek offset relative to beginning of stream. */
 #define NESTEGG_SEEK_CUR 1 /**< Seek offset relative to current position in stream. */
 #define NESTEGG_SEEK_END 2 /**< Seek offset relative to end of stream. */
@@ -180,6 +185,16 @@ typedef struct {
                                               NaN means element not present. */
   double luminance_min;                  /**< Minimum luminance in cd/m2.
                                               NaN means element not present. */
+  unsigned int projection_type;          /**< Projection type.  One of #NESTEGG_VIDEO_PROJECTION_RECTANGULAR,
+                                              #NESTEGG_VIDEO_PROJECTION_EQUIRECTANGULAR,
+                                              #NESTEGG_VIDEO_PROJECTION_CUBEMAP, or
+                                              #NESTEGG_VIDEO_PROJECTION_MESH. */
+  double projection_pose_yaw;            /**< Specifies a yaw rotation to the projection.
+                                              Value represents a clockwise rotation, in degrees, around the up vector. */
+  double projection_pose_pitch;          /**< Specifies a pitch rotation to the projection.
+                                              Value represents a counter-clockwise rotation, in degrees, around the right vector. */
+  double projection_pose_roll;           /**< Specifies a roll rotation to the projection.
+                                              Value represents a counter-clockwise rotation, in degrees, around the forward vector. */
 } nestegg_video_params;
 
 /** Parameters specific to an audio track. */

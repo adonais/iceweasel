@@ -441,6 +441,9 @@ void AltSvcMapping::GetConnectionInfo(
   if (!mHttps && !mMixedScheme) {
     ci->SetInsecureScheme(true);
   }
+  if (StaticPrefs::network_http_happy_eyeballs_enabled() && !pi) {
+    ci->SetHappyEyeballsEnabled(true);
+  }
   ci->SetPrivate(mPrivate);
   ci.forget(outCI);
 }
@@ -1449,6 +1452,9 @@ void Http3FirstAltSvcMapping::GetConnectionInfo(
   RefPtr<nsHttpConnectionInfo> ci = new nsHttpConnectionInfo(
       mOriginHost, mOriginPort, mNPNToken, mUsername, pi, originAttributes,
       mAlternateHost, mAlternatePort, mIsHttp3, false);
+  if (StaticPrefs::network_http_happy_eyeballs_enabled() && !pi) {
+    ci->SetHappyEyeballsEnabled(true);
+  }
   ci->SetPrivate(mPrivate);
   ci.forget(outCI);
 }

@@ -5,6 +5,7 @@
 #ifndef mozilla_net_CookieKey_h
 #define mozilla_net_CookieKey_h
 
+#include "mozilla/HashFunctions.h"
 #include "mozilla/OriginAttributes.h"
 #include "nsHashKeys.h"
 
@@ -36,12 +37,8 @@ class CookieKey : public PLDHashEntryHdr {
   static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
 
   static PLDHashNumber HashKey(KeyTypePointer aKey) {
-    nsAutoCString temp(aKey->mBaseDomain);
-    temp.Append('#');
-    nsAutoCString suffix;
-    aKey->mOriginAttributes.CreateSuffix(suffix);
-    temp.Append(suffix);
-    return HashString(temp);
+    return AddToHash(HashString(aKey->mBaseDomain),
+                     aKey->mOriginAttributes.Hash());
   }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {

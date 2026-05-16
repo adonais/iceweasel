@@ -1,0 +1,17 @@
+{
+  "label": "jw.org",
+  "bugs": {
+    "2003019": {
+      "issue": "broken-layout",
+      "matches": ["*://www.jw.org/*/library/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug2003019-www.jw.org-fix-ruby-text-linebreaks.css"]
+      }
+    }
+  ]
+}

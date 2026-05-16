@@ -36,6 +36,8 @@ function run_test() {
   // Set to allow the cert presented by our H3 server
   do_get_profile();
 
+  // HE3 doesn't support AltSvc with different host yet.
+  Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", false);
   Services.prefs.setBoolPref("network.http.http2.enabled", true);
   Services.prefs.setBoolPref("network.http.http3.enable", true);
   Services.prefs.setBoolPref("network.http.altsvc.enabled", true);
@@ -148,6 +150,7 @@ function resetPrefs() {
   Services.prefs.clearUserPref("network.http.altsvc.oe");
   Services.prefs.clearUserPref("network.dns.localDomains");
   Services.prefs.clearUserPref("network.security.ports.banned");
+  Services.prefs.clearUserPref("network.http.happy_eyeballs_enabled");
 }
 
 function makeChan(origin) {

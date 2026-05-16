@@ -5,7 +5,6 @@
 #ifndef mozilla_RubyUtils_h_
 #define mozilla_RubyUtils_h_
 
-#include "nsGkAtoms.h"
 #include "nsIFrame.h"
 #include "nsTArray.h"
 

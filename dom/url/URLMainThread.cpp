@@ -7,8 +7,10 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
+#include "nsGlobalWindowInner.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
 
@@ -26,8 +28,27 @@ void URLMainThread::CreateObjectURL(const GlobalObject& aGlobal,
     return;
   }
 
+  // MediaSource URLs cannot be used across Agent boundaries, as they require
+  // direct scriptable object sharing between registration and use.
+  // A MediaSource URL also cannot be used for generic subresource fetches.
+  // Because of this, they are registered on the DocGroup instead of globally.
+  if (aObj.IsMediaSource()) {
+    nsCOMPtr<nsPIDOMWindowInner> owner = do_QueryInterface(global);
+    RefPtr<DocGroup> docGroup = owner ? owner->GetDocGroup() : nullptr;
+    if (!docGroup) {
+      aRv.ThrowSecurityError("MediaSource URL must be registered in a Window");
+      return;
+    }
+
+    aRv = docGroup->RegisterMediaSourceURL(nsGlobalWindowInner::Cast(owner),
+                                           &aObj.GetAsMediaSource(), aResult);
+    return;
+  }
+
+  MOZ_RELEASE_ASSERT(aObj.IsBlob(), "MediaSource handled above");
+
   nsAutoString partKey;
-  if (nsCOMPtr<nsPIDOMWindowInner> owner = do_QueryInterface(global)) {
+  if (nsPIDOMWindowInner* owner = global->GetAsInnerWindow()) {
     if (Document* doc = owner->GetExtantDoc()) {
       nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
           doc->CookieJarSettings();
@@ -39,17 +60,9 @@ void URLMainThread::CreateObjectURL(const GlobalObject& aGlobal,
   nsCOMPtr<nsIPrincipal> principal =
       nsContentUtils::ObjectPrincipal(aGlobal.Get());
 
-  if (aObj.IsBlob()) {
-    aRv = BlobURLProtocolHandler::AddDataEntry(
-        aObj.GetAsBlob().Impl(), principal, NS_ConvertUTF16toUTF8(partKey),
-        aResult);
-  } else if (aObj.IsMediaSource()) {
-    aRv = BlobURLProtocolHandler::AddDataEntry(
-        &aObj.GetAsMediaSource(), principal, NS_ConvertUTF16toUTF8(partKey),
-        aResult);
-  } else {
-    MOZ_CRASH("Invalid type for a BlobOrMediaSource");
-  }
+  aRv = BlobURLProtocolHandler::AddDataEntry(aObj.GetAsBlob().Impl(), principal,
+                                             NS_ConvertUTF16toUTF8(partKey),
+                                             aResult);
 
   if (NS_WARN_IF(aRv.Failed())) {
     return;
@@ -69,7 +82,13 @@ void URLMainThread::RevokeObjectURL(const GlobalObject& aGlobal,
   }
 
   nsAutoString partKey;
-  if (nsCOMPtr<nsPIDOMWindowInner> owner = do_QueryInterface(global)) {
+  if (nsPIDOMWindowInner* owner = global->GetAsInnerWindow()) {
+    // If this is a Media Source URL, we can skip checking the global store.
+    RefPtr<DocGroup> docGroup = owner->GetDocGroup();
+    if (docGroup && docGroup->UnregisterMediaSourceURL(aURL)) {
+      return;
+    }
+
     if (Document* doc = owner->GetExtantDoc()) {
       nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
           doc->CookieJarSettings();

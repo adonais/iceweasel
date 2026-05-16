@@ -40,7 +40,7 @@ LayoutDeviceIntSize ScrollbarDrawingGTK::GetMinimumWidgetSize(
 
 Maybe<nsITheme::Transparency> ScrollbarDrawingGTK::GetScrollbarPartTransparency(
     nsIFrame* aFrame, StyleAppearance aAppearance) {
-  if (!aFrame->PresContext()->UseOverlayScrollbars() &&
+  if (!nsLayoutUtils::UseOverlayScrollbars(aFrame) &&
       (aAppearance == StyleAppearance::ScrollbarVertical ||
        aAppearance == StyleAppearance::ScrollbarHorizontal) &&
       IsScrollbarTrackOpaque(aFrame)) {
@@ -62,7 +62,7 @@ bool ScrollbarDrawingGTK::DoPaintScrollbarThumb(
   LayoutDeviceRect thumbRect(aRect);
 
   const bool horizontal = aScrollbarKind == ScrollbarKind::Horizontal;
-  if (aFrame->PresContext()->UseOverlayScrollbars() &&
+  if (nsLayoutUtils::UseOverlayScrollbars(aFrame) &&
       !ScrollbarDrawing::IsParentScrollbarHoveredOrActive(aFrame)) {
     if (horizontal) {
       thumbRect.height *= 0.5;

@@ -1954,8 +1954,10 @@ static nscoord CalcQuirkContainingBlockHeight(
       // If the current frame we're looking at is positioned, we don't want to
       // go any further (see bug 221784).  The behavior we want here is: 1) If
       // not auto-height, use this as the percentage base.  2) If auto-height,
-      // keep looking, unless the frame is positioned.
-      if (NS_UNCONSTRAINEDSIZE == ri->ComputedHeight()) {
+      // or treating the height as indefinite, keep looking, unless the frame is
+      // positioned.
+      if (ri->ComputedHeight() == NS_UNCONSTRAINEDSIZE ||
+          ri->mFlags.mTreatBSizeAsIndefinite) {
         if (ri->mFrame->IsAbsolutelyPositioned(ri->mStyleDisplay)) {
           break;
         } else {

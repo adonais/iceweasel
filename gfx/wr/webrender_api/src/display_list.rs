@@ -18,7 +18,6 @@ use std::collections::HashMap;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 // local imports
 use crate::display_item as di;
-use crate::display_item_cache::*;
 use crate::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, PropertyBinding};
 use crate::gradient_builder::GradientBuilder;
 use crate::color::ColorF;
@@ -117,9 +116,6 @@ pub struct DisplayListPayload {
     /// Serde encoded bytes. Mostly DisplayItems, but some mixed in slices.
     pub items_data: Vec<u8>,
 
-    /// Serde encoded DisplayItemCache structs
-    pub cache_data: Vec<u8>,
-
     /// Serde encoded SpatialTreeItem structs
     pub spatial_tree: Vec<u8>,
 }
@@ -128,7 +124,6 @@ impl DisplayListPayload {
     fn default() -> Self {
         DisplayListPayload {
             items_data: Vec::new(),
-            cache_data: Vec::new(),
             spatial_tree: Vec::new(),
         }
     }
@@ -142,9 +137,6 @@ impl DisplayListPayload {
         if payload.items_data.try_reserve(capacity.items_size).is_err() {
             return Self::default();
         }
-        if payload.cache_data.try_reserve(capacity.cache_size).is_err() {
-            return Self::default();
-        }
         if payload.spatial_tree.try_reserve(capacity.spatial_tree_size).is_err() {
             return Self::default();
         }
@@ -153,13 +145,11 @@ impl DisplayListPayload {
 
     fn clear(&mut self) {
         self.items_data.clear();
-        self.cache_data.clear();
         self.spatial_tree.clear();
     }
 
     fn size_in_bytes(&self) -> usize {
         self.items_data.len() +
-        self.cache_data.len() +
         self.spatial_tree.len()
     }
 
@@ -178,7 +168,6 @@ impl DisplayListPayload {
 impl MallocSizeOf for DisplayListPayload {
     fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
         self.items_data.size_of(ops) +
-        self.cache_data.size_of(ops) +
         self.spatial_tree.size_of(ops)
     }
 }
@@ -188,6 +177,12 @@ impl MallocSizeOf for DisplayListPayload {
 pub struct BuiltDisplayList {
     payload: DisplayListPayload,
     descriptor: BuiltDisplayListDescriptor,
+}
+
+impl MallocSizeOf for BuiltDisplayList {
+    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+        self.payload.size_of(ops)
+    }
 }
 
 #[repr(C)]
@@ -218,54 +213,8 @@ pub struct BuiltDisplayListDescriptor {
     total_clip_nodes: usize,
     /// The amount of spatial nodes created while building this display list.
     total_spatial_nodes: usize,
-    /// The size of the cache for this display list.
-    cache_size: usize,
 }
 
-#[derive(Clone)]
-pub struct DisplayListWithCache {
-    pub display_list: BuiltDisplayList,
-    cache: DisplayItemCache,
-}
-
-impl DisplayListWithCache {
-    pub fn iter(&self) -> BuiltDisplayListIter {
-        self.display_list.iter_with_cache(&self.cache)
-    }
-
-    pub fn new_from_list(display_list: BuiltDisplayList) -> Self {
-        let mut cache = DisplayItemCache::new();
-        cache.update(&display_list);
-
-        DisplayListWithCache {
-            display_list,
-            cache
-        }
-    }
-
-    pub fn update(&mut self, display_list: BuiltDisplayList) {
-        self.cache.update(&display_list);
-        self.display_list = display_list;
-    }
-
-    pub fn descriptor(&self) -> &BuiltDisplayListDescriptor {
-        self.display_list.descriptor()
-    }
-
-    pub fn times(&self) -> (u64, u64, u64) {
-        self.display_list.times()
-    }
-
-    pub fn items_data(&self) -> &[u8] {
-        self.display_list.items_data()
-    }
-}
-
-impl MallocSizeOf for DisplayListWithCache {
-    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-        self.display_list.payload.size_of(ops) + self.cache.size_of(ops)
-    }
-}
 
 /// A debug (human-readable) representation of a built display list that
 /// can be used for capture and replay.
@@ -279,18 +228,18 @@ struct DisplayListCapture {
 }
 
 #[cfg(feature = "serialize")]
-impl Serialize for DisplayListWithCache {
+impl Serialize for BuiltDisplayList {
     fn serialize<S: Serializer>(
         &self,
         serializer: S
     ) -> Result<S::Ok, S::Error> {
         let display_items = BuiltDisplayList::create_debug_display_items(self.iter());
-        let spatial_tree_items = self.display_list.payload.create_debug_spatial_tree_items();
+        let spatial_tree_items = self.payload.create_debug_spatial_tree_items();
 
         let dl = DisplayListCapture {
             display_items,
             spatial_tree_items,
-            descriptor: self.display_list.descriptor,
+            descriptor: self.descriptor,
         };
 
         dl.serialize(serializer)
@@ -298,7 +247,7 @@ impl Serialize for DisplayListWithCache {
 }
 
 #[cfg(feature = "deserialize")]
-impl<'de> Deserialize<'de> for DisplayListWithCache {
+impl<'de> Deserialize<'de> for BuiltDisplayList {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -390,25 +339,18 @@ impl<'de> Deserialize<'de> for DisplayListWithCache {
         // serialization.
         ensure_red_zone::<di::DisplayItem>(&mut items_data);
 
-        Ok(DisplayListWithCache {
-            display_list: BuiltDisplayList {
-                descriptor: capture.descriptor,
-                payload: DisplayListPayload {
-                    cache_data: Vec::new(),
-                    items_data,
-                    spatial_tree,
-                },
+        Ok(BuiltDisplayList {
+            descriptor: capture.descriptor,
+            payload: DisplayListPayload {
+                items_data,
+                spatial_tree,
             },
-            cache: DisplayItemCache::new(),
         })
     }
 }
 
 pub struct BuiltDisplayListIter<'a> {
     data: &'a [u8],
-    cache: Option<&'a DisplayItemCache>,
-    pending_items: std::slice::Iter<'a, CachedDisplayItem>,
-    cur_cached_item: Option<&'a CachedDisplayItem>,
     cur_item: di::DisplayItem,
     cur_stops: ItemRange<'a, di::GradientStop>,
     cur_glyphs: ItemRange<'a, GlyphInstance>,
@@ -560,10 +502,6 @@ impl BuiltDisplayList {
         &self.payload.items_data
     }
 
-    pub fn cache_data(&self) -> &[u8] {
-        &self.payload.cache_data
-    }
-
     pub fn descriptor(&self) -> &BuiltDisplayListDescriptor {
         &self.descriptor
     }
@@ -597,22 +535,7 @@ impl BuiltDisplayList {
     }
 
     pub fn iter(&self) -> BuiltDisplayListIter {
-        BuiltDisplayListIter::new(self.items_data(), None)
-    }
-
-    pub fn cache_data_iter(&self) -> BuiltDisplayListIter {
-        BuiltDisplayListIter::new(self.cache_data(), None)
-    }
-
-    pub fn iter_with_cache<'a>(
-        &'a self,
-        cache: &'a DisplayItemCache
-    ) -> BuiltDisplayListIter<'a> {
-        BuiltDisplayListIter::new(self.items_data(), Some(cache))
-    }
-
-    pub fn cache_size(&self) -> usize {
-        self.descriptor.cache_size
+        BuiltDisplayListIter::new(self.items_data())
     }
 
     pub fn size_in_bytes(&self) -> usize {
@@ -693,8 +616,6 @@ impl BuiltDisplayList {
                 Real::PopReferenceFrame => Debug::PopReferenceFrame,
                 Real::PopStackingContext => Debug::PopStackingContext,
                 Real::PopAllShadows => Debug::PopAllShadows,
-                Real::ReuseItems(_) |
-                Real::RetainedItems(_) => unreachable!("Unexpected item"),
                 Real::DebugMarker(val) => Debug::DebugMarker(val),
             };
             debug_items.push(serial_di);
@@ -722,13 +643,9 @@ fn skip_slice<'a, T: peek_poke::Peek>(data: &mut &'a [u8]) -> ItemRange<'a, T> {
 impl<'a> BuiltDisplayListIter<'a> {
     pub fn new(
         data: &'a [u8],
-        cache: Option<&'a DisplayItemCache>,
     ) -> Self {
         Self {
             data,
-            cache,
-            pending_items: [].iter(),
-            cur_cached_item: None,
             cur_item: di::DisplayItem::PopStackingContext,
             cur_stops: ItemRange::default(),
             cur_glyphs: ItemRange::default(),
@@ -745,41 +662,19 @@ impl<'a> BuiltDisplayListIter<'a> {
     }
 
     pub fn sub_iter(&self) -> Self {
-        let mut iter = BuiltDisplayListIter::new(
-            self.data, self.cache
-        );
-        iter.pending_items = self.pending_items.clone();
-        iter
+        BuiltDisplayListIter::new(self.data)
     }
 
     pub fn current_item(&self) -> &di::DisplayItem {
-        match self.cur_cached_item {
-            Some(cached_item) => cached_item.display_item(),
-            None => &self.cur_item
-        }
-    }
-
-    fn cached_item_range_or<T>(
-        &self,
-        data: ItemRange<'a, T>
-    ) -> ItemRange<'a, T> {
-        match self.cur_cached_item {
-            Some(cached_item) => cached_item.data_as_item_range(),
-            None => data,
-        }
+        &self.cur_item
     }
 
     pub fn glyphs(&self) -> ItemRange<GlyphInstance> {
-        self.cached_item_range_or(self.cur_glyphs)
+        self.cur_glyphs
     }
 
     pub fn gradient_stops(&self) -> ItemRange<di::GradientStop> {
-        self.cached_item_range_or(self.cur_stops)
-    }
-
-    fn advance_pending_items(&mut self) -> bool {
-        self.cur_cached_item = self.pending_items.next();
-        self.cur_cached_item.is_some()
+        self.cur_stops
     }
 
     pub fn next<'b>(&'b mut self) -> Option<DisplayItemRef<'a, 'b>> {
@@ -828,10 +723,6 @@ impl<'a> BuiltDisplayListIter<'a> {
     pub fn next_raw<'b>(&'b mut self) -> Option<DisplayItemRef<'a, 'b>> {
         use crate::DisplayItem::*;
 
-        if self.advance_pending_items() {
-            return Some(self.as_ref());
-        }
-
         // A "red zone" of DisplayItem::max_size() bytes has been added to the
         // end of the serialized display list. If this amount, or less, is
         // remaining then we've reached the end of the display list.
@@ -878,17 +769,6 @@ impl<'a> BuiltDisplayListIter<'a> {
             Text(_) => {
                 self.cur_glyphs = skip_slice::<GlyphInstance>(&mut self.data);
                 self.debug_stats.log_slice("text.glyphs", &self.cur_glyphs);
-            }
-            ReuseItems(key) => {
-                match self.cache {
-                    Some(cache) => {
-                        self.pending_items = cache.get_items(key).iter();
-                        self.advance_pending_items();
-                    }
-                    None => {
-                        unreachable!("Cache marker without cache!");
-                    }
-                }
             }
             _ => { /* do nothing */ }
         }
@@ -998,7 +878,6 @@ impl<'a, T: Copy + peek_poke::Peek> ::std::iter::ExactSizeIterator for AuxIter<'
 #[derive(Clone, Debug)]
 pub struct SaveState {
     dl_items_len: usize,
-    dl_cache_len: usize,
     next_clip_index: usize,
     next_spatial_index: usize,
     next_clip_chain_id: u64,
@@ -1006,21 +885,13 @@ pub struct SaveState {
 
 /// DisplayListSection determines the target buffer for the display items.
 pub enum DisplayListSection {
-    /// The main/default buffer: contains item data and item group markers.
+    /// The main/default buffer: contains item data.
     Data,
-    /// Auxiliary buffer: contains the item data for item groups.
-    CacheData,
-    /// Temporary buffer: contains the data for pending item group. Flushed to
-    /// one of the buffers above, after item grouping finishes.
-    Chunk,
 }
 
 pub struct DisplayListBuilder {
     payload: DisplayListPayload,
     pub pipeline_id: PipelineId,
-
-    pending_chunk: Vec<u8>,
-    writing_to_chunk: bool,
 
     next_clip_index: usize,
     next_spatial_index: usize,
@@ -1029,7 +900,6 @@ pub struct DisplayListBuilder {
 
     save_state: Option<SaveState>,
 
-    cache_size: usize,
     serialized_content_buffer: Option<String>,
     state: BuildState,
 
@@ -1038,7 +908,6 @@ pub struct DisplayListBuilder {
 #[repr(C)]
 struct DisplayListCapacity {
     items_size: usize,
-    cache_size: usize,
     spatial_tree_size: usize,
 }
 
@@ -1046,7 +915,6 @@ impl DisplayListCapacity {
     fn empty() -> Self {
         DisplayListCapacity {
             items_size: 0,
-            cache_size: 0,
             spatial_tree_size: 0,
         }
     }
@@ -1058,15 +926,11 @@ impl DisplayListBuilder {
             payload: DisplayListPayload::new(DisplayListCapacity::empty()),
             pipeline_id,
 
-            pending_chunk: Vec::new(),
-            writing_to_chunk: false,
-
             next_clip_index: FIRST_CLIP_NODE_INDEX,
             next_spatial_index: FIRST_SPATIAL_NODE_INDEX,
             next_clip_chain_id: 0,
             builder_start_time: 0,
             save_state: None,
-            cache_size: 0,
             serialized_content_buffer: None,
             state: BuildState::Idle,
         }
@@ -1074,15 +938,12 @@ impl DisplayListBuilder {
 
     fn reset(&mut self) {
         self.payload.clear();
-        self.pending_chunk.clear();
-        self.writing_to_chunk = false;
 
         self.next_clip_index = FIRST_CLIP_NODE_INDEX;
         self.next_spatial_index = FIRST_SPATIAL_NODE_INDEX;
         self.next_clip_chain_id = 0;
 
         self.save_state = None;
-        self.cache_size = 0;
         self.serialized_content_buffer = None;
     }
 
@@ -1098,7 +959,6 @@ impl DisplayListBuilder {
 
         self.save_state = Some(SaveState {
             dl_items_len: self.payload.items_data.len(),
-            dl_cache_len: self.payload.cache_data.len(),
             next_clip_index: self.next_clip_index,
             next_spatial_index: self.next_spatial_index,
             next_clip_chain_id: self.next_clip_chain_id,
@@ -1110,7 +970,6 @@ impl DisplayListBuilder {
         let state = self.save_state.take().expect("No save to restore DisplayListBuilder from");
 
         self.payload.items_data.truncate(state.dl_items_len);
-        self.payload.cache_data.truncate(state.dl_cache_len);
         self.next_clip_index = state.next_clip_index;
         self.next_spatial_index = state.next_spatial_index;
         self.next_clip_chain_id = state.next_clip_chain_id;
@@ -1143,14 +1002,11 @@ impl DisplayListBuilder {
     {
         let mut temp = BuiltDisplayList::default();
         ensure_red_zone::<di::DisplayItem>(&mut self.payload.items_data);
-        ensure_red_zone::<di::DisplayItem>(&mut self.payload.cache_data);
         mem::swap(&mut temp.payload, &mut self.payload);
 
         let mut index: usize = 0;
         {
-            let mut cache = DisplayItemCache::new();
-            cache.update(&temp);
-            let mut iter = temp.iter_with_cache(&cache);
+            let mut iter = temp.iter();
             while let Some(item) = iter.next_raw() {
                 if index >= range.start.unwrap_or(0) && range.end.map_or(true, |e| index < e) {
                     writeln!(sink, "{}{:?}", "  ".repeat(indent), item.item()).unwrap();
@@ -1161,7 +1017,6 @@ impl DisplayListBuilder {
 
         self.payload = temp.payload;
         strip_red_zone::<di::DisplayItem>(&mut self.payload.items_data);
-        strip_red_zone::<di::DisplayItem>(&mut self.payload.cache_data);
         index
     }
 
@@ -1180,11 +1035,7 @@ impl DisplayListBuilder {
     /// Returns the default section that DisplayListBuilder will write to,
     /// if no section is specified explicitly.
     fn default_section(&self) -> DisplayListSection {
-        if self.writing_to_chunk {
-            DisplayListSection::Chunk
-        } else {
-            DisplayListSection::Data
-        }
+        DisplayListSection::Data
     }
 
     fn buffer_from_section(
@@ -1193,8 +1044,6 @@ impl DisplayListBuilder {
     ) -> &mut Vec<u8> {
         match section {
             DisplayListSection::Data => &mut self.payload.items_data,
-            DisplayListSection::CacheData => &mut self.payload.cache_data,
-            DisplayListSection::Chunk => &mut self.pending_chunk,
         }
     }
 
@@ -1986,66 +1835,6 @@ impl DisplayListBuilder {
         self.push_item(&di::DisplayItem::PopAllShadows);
     }
 
-    pub fn start_item_group(&mut self) {
-        debug_assert!(!self.writing_to_chunk);
-        debug_assert!(self.pending_chunk.is_empty());
-
-        self.writing_to_chunk = true;
-    }
-
-    fn flush_pending_item_group(&mut self, key: di::ItemKey) {
-        // Push RetainedItems-marker to cache_data section.
-        self.push_retained_items(key);
-
-        // Push pending chunk to cache_data section.
-        self.payload.cache_data.append(&mut self.pending_chunk);
-
-        // Push ReuseItems-marker to data section.
-        self.push_reuse_items(key);
-    }
-
-    pub fn finish_item_group(&mut self, key: di::ItemKey) -> bool {
-        debug_assert!(self.writing_to_chunk);
-        self.writing_to_chunk = false;
-
-        if self.pending_chunk.is_empty() {
-            return false;
-        }
-
-        self.flush_pending_item_group(key);
-        true
-    }
-
-    pub fn cancel_item_group(&mut self, discard: bool) {
-        debug_assert!(self.writing_to_chunk);
-        self.writing_to_chunk = false;
-
-        if discard {
-            self.pending_chunk.clear();
-        } else {
-            // Push pending chunk to data section.
-            self.payload.items_data.append(&mut self.pending_chunk);
-        }
-    }
-
-    pub fn push_reuse_items(&mut self, key: di::ItemKey) {
-        self.push_item_to_section(
-            &di::DisplayItem::ReuseItems(key),
-            DisplayListSection::Data
-        );
-    }
-
-    fn push_retained_items(&mut self, key: di::ItemKey) {
-        self.push_item_to_section(
-            &di::DisplayItem::RetainedItems(key),
-            DisplayListSection::CacheData
-        );
-    }
-
-    pub fn set_cache_size(&mut self, cache_size: usize) {
-        self.cache_size = cache_size;
-    }
-
     pub fn begin(&mut self) {
         assert_eq!(self.state, BuildState::Idle);
         self.state = BuildState::Build;
@@ -2066,7 +1855,6 @@ impl DisplayListBuilder {
         // so there is at least this amount available in the display list during
         // serialization.
         ensure_red_zone::<di::DisplayItem>(&mut self.payload.items_data);
-        ensure_red_zone::<di::DisplayItem>(&mut self.payload.cache_data);
         ensure_red_zone::<di::SpatialTreeItem>(&mut self.payload.spatial_tree);
 
         // While the first display list after tab-switch can be large, the
@@ -2075,7 +1863,6 @@ impl DisplayListBuilder {
         // pressure events will cause us to release our buffers if we ask for
         // too much. See bug 1531819 for related OOM issues.
         let next_capacity = DisplayListCapacity {
-            cache_size: self.payload.cache_data.len(),
             items_size: self.payload.items_data.len(),
             spatial_tree_size: self.payload.spatial_tree.len(),
         };
@@ -2097,7 +1884,6 @@ impl DisplayListBuilder {
                     send_start_time: end_time,
                     total_clip_nodes: self.next_clip_index,
                     total_spatial_nodes: self.next_spatial_index,
-                    cache_size: self.cache_size,
                 },
                 payload,
             },

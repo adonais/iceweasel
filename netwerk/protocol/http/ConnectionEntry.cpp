@@ -70,8 +70,8 @@ void ConnectionEntry::RemoveConnectionAttempt(ConnectionAttempt* sock,
   mConnectionAttemptPool->RemoveConnectionAttempt(sock, abandon);
 }
 
-void ConnectionEntry::CloseAllConnectionAttempts() {
-  mConnectionAttemptPool->CloseAllConnectionAttempts();
+void ConnectionEntry::CloseAllConnectionAttempts(bool aReenqueueTransaction) {
+  mConnectionAttemptPool->CloseAllConnectionAttempts(aReenqueueTransaction);
 }
 
 void ConnectionEntry::DisallowHttp2() {
@@ -587,12 +587,11 @@ void ConnectionEntry::MakeAllDontReuseExcept(HttpConnectionBase* conn) {
   }
 
   // Cancel any other pending connections - their associated transactions
-  // are in the pending queue and will be dispatched onto this new connection
-  // Skip this for fallback entries: their DnsAndConnectSockets are for
-  // FallbackTransactions whose real transactions are in the H3 entry, not
-  // here. Abandoning them would strand those transactions with no recovery.
+  // are in the pending queue and will be dispatched onto this new connection.
+  // Skip for fallback entries: their DnsAndConnectSockets are for
+  // FallbackTransactions whose real transactions are in the H3 entry.
   if (!mConnInfo->GetFallbackConnection()) {
-    CloseAllConnectionAttempts();
+    CloseAllConnectionAttempts(true);
   }
 }
 
@@ -863,6 +862,13 @@ HttpRetParams ConnectionEntry::GetConnectionData() {
     data.idle.AppendElement(info);
   }
   mConnectionAttemptPool->GetConnectionData(data);
+  if (mConnInfo->IsHttp3()) {
+    data.httpVersion = "HTTP/3"_ns;
+  } else if (mUsingSpdy) {
+    data.httpVersion = "HTTP/2"_ns;
+  } else {
+    data.httpVersion = "HTTP <= 1.1"_ns;
+  }
   data.ssl = mConnInfo->EndToEndSSL();
   return data;
 }

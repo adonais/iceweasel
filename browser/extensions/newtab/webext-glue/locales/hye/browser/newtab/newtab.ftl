@@ -237,9 +237,21 @@ newtab-error-fallback-refresh-link = Թարմացրեք էջը՝ կրկին փո
 
 newtab-custom-shortcuts-title = Դիւրանցումներ
 newtab-custom-shortcuts-subtitle = Կայքեր, որոնք Դուք պահում էք կամ այցելում
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Դիւրանցումներ
     .description = Կայքեր, որոնք Դուք պահում էք կամ այցելում
+newtab-custom-shortcuts-nova =
+    .label = Դիւրանցումներ
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } տող
+           *[other] { $num } տողեր
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =

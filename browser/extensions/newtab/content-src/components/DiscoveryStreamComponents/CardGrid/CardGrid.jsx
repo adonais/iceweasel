@@ -173,7 +173,6 @@ export class _CardGrid extends React.PureComponent {
             url={rec.url}
             id={rec.id}
             shim={rec.shim}
-            fetchTimestamp={rec.fetchTimestamp}
             type={this.props.type}
             context={rec.context}
             sponsor={rec.sponsor}
@@ -187,7 +186,6 @@ export class _CardGrid extends React.PureComponent {
             ctaButtonSponsors={ctaButtonSponsors}
             ctaButtonVariant={ctaButtonVariant}
             recommendation_id={rec.recommendation_id}
-            firstVisibleTimestamp={this.props.firstVisibleTimestamp}
             mayHaveSectionsCards={mayHaveSectionsCards}
             corpus_item_id={rec.corpus_item_id}
             scheduled_corpus_item_id={rec.scheduled_corpus_item_id}
@@ -287,7 +285,6 @@ export class _CardGrid extends React.PureComponent {
               key={`dscard-${spocToRender.id}`}
               dispatch={this.props.dispatch}
               type={this.props.type}
-              firstVisibleTimestamp={this.props.firstVisibleTimestamp}
               row={row}
               prefs={prefs}
             />

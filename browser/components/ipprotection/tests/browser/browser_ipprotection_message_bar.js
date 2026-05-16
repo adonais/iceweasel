@@ -17,6 +17,52 @@ const mockBandwidthUsage = {
   max: BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB,
 };
 
+function dispatchUsageAtThreshold(maxBytes, threshold) {
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes * threshold),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+}
+
+async function dismissPanelWarning(content) {
+  const messageBar = content.shadowRoot.querySelector(
+    "ipprotection-message-bar"
+  );
+  await messageBar.updateComplete;
+  await messageBar.mozMessageBarEl.updateComplete;
+  const closeButton = messageBar.mozMessageBarEl.closeButton;
+  const dismissedPromise = BrowserTestUtils.waitForEvent(
+    document,
+    "IPProtection:DismissBandwidthWarning"
+  );
+  const unloadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => !content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  closeButton.click();
+  await dismissedPromise;
+  await unloadedPromise;
+}
+
+async function resetUsageState(maxBytes) {
+  const stateChangedPromise = BrowserTestUtils.waitForEvent(
+    IPPUsageHelper,
+    "IPPUsageHelper:StateChanged"
+  );
+  dispatchUsageAtThreshold(maxBytes, 1);
+  await stateChangedPromise;
+}
+
 /**
  * Tests the warning message bar triggered by UsageChanged event
  */
@@ -447,8 +493,8 @@ add_task(async function test_warning_message_l10n_args_at_80_percent_used() {
   const l10nArgs = JSON.parse(messageBar.messageLinkL10nArgs);
   Assert.equal(
     l10nArgs.usageLeft,
-    (remaining / BANDWIDTH.BYTES_IN_GB).toFixed(1),
-    "usageLeft should be a decimal GB value when 75% <= pctUsed < 90%"
+    parseFloat((remaining / BANDWIDTH.BYTES_IN_GB).toFixed(1)),
+    "usageLeft should be the GB value rounded to nearest 0.1"
   );
 
   await closePanel();
@@ -818,4 +864,337 @@ add_task(async function test_no_message_bar_when_paused() {
     })
   );
   await resetPromise;
+});
+
+/**
+ * Tests that dismissing a panel warning stores the threshold in the pref and
+ * that it stays dismissed when the panel is reopened.
+ */
+add_task(async function test_dismissed_panel_warning_stays_dismissed() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
+  });
+
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+  let content = await openPanel({ unauthenticated: false, error: "" });
+
+  const messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);
+  await messageBarLoadedPromise;
+
+  Assert.ok(
+    content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Message bar should be present at 75% threshold"
+  );
+
+  await dismissPanelWarning(content);
+
+  Assert.equal(
+    IPPUsageHelper.getDismissedThresholds().panel,
+    75,
+    "Panel dismissed threshold should be set to 75 after dismissal"
+  );
+
+  await closePanel();
+  content = await openPanel({ unauthenticated: false, error: "" });
+  await content.updateComplete;
+
+  Assert.ok(
+    !content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Message bar should stay dismissed after reopening panel"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  await resetUsageState(maxBytes);
+});
+
+/**
+ * Tests that after dismissing the 75% panel warning the 90% panel warning
+ * still appears.
+ */
+add_task(async function test_dismissed_75_panel_still_allows_90_panel() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
+  });
+
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+  let content = await openPanel({ unauthenticated: false, error: "" });
+
+  let messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);
+  await messageBarLoadedPromise;
+
+  await dismissPanelWarning(content);
+
+  Assert.equal(
+    IPPUsageHelper.getDismissedThresholds().panel,
+    75,
+    "Panel dismissed threshold should be 75 after dismissing 75% warning"
+  );
+
+  messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  dispatchUsageAtThreshold(maxBytes, BANDWIDTH.THIRD_THRESHOLD);
+  await messageBarLoadedPromise;
+
+  Assert.ok(
+    content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "90% panel warning should appear even after 75% was dismissed"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  await resetUsageState(maxBytes);
+});
+
+/**
+ * Tests that the panel dismissed state persists through sign out and back in.
+ */
+add_task(async function test_panel_dismissed_state_persists_through_sign_out() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
+  });
+
+  setupService({ isSignedIn: true, isEnrolledAndEntitled: true });
+  IPProtectionService.updateState();
+
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+  let content = await openPanel({ unauthenticated: false, error: "" });
+
+  const messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);
+  await messageBarLoadedPromise;
+
+  await dismissPanelWarning(content);
+
+  setupService({ isSignedIn: false });
+  IPProtectionService.updateState();
+  await content.updateComplete;
+
+  setupService({ isSignedIn: true, isEnrolledAndEntitled: true });
+  IPProtectionService.updateState();
+
+  dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);
+  await content.updateComplete;
+
+  Assert.ok(
+    !content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Panel warning should stay dismissed after sign out and back in"
+  );
+  Assert.equal(
+    IPPUsageHelper.getDismissedThresholds().panel,
+    75,
+    "Panel dismissed threshold should persist through sign out"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  await resetUsageState(maxBytes);
+  cleanupService();
+});
+
+/**
+ * Tests that bandwidth reset clears the panel dismissed state, allowing the
+ * warning to reappear.
+ */
+add_task(async function test_bandwidth_reset_clears_panel_dismissed_state() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
+  });
+
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+  let content = await openPanel({ unauthenticated: false, error: "" });
+
+  let messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);
+  await messageBarLoadedPromise;
+
+  await dismissPanelWarning(content);
+
+  Assert.equal(
+    IPPUsageHelper.getDismissedThresholds().panel,
+    75,
+    "Panel dismissed threshold should be 75 after dismissal"
+  );
+
+  await resetUsageState(maxBytes);
+
+  Assert.equal(
+    IPPUsageHelper.getDismissedThresholds().panel,
+    0,
+    "Panel dismissed threshold should be reset to 0 after bandwidth resets"
+  );
+
+  messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);
+  await messageBarLoadedPromise;
+
+  Assert.ok(
+    content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Panel warning should reappear after bandwidth resets"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  await resetUsageState(maxBytes);
+});
+
+/**
+ * Tests that dismissing a panel warning in one window removes it from all
+ * other windows with the panel open.
+ */
+add_task(async function test_dismiss_panel_warning_removes_from_all_windows() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
+  });
+
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+
+  let content = await openPanel({ unauthenticated: false, error: "" });
+
+  // Trigger the warning and verify it appears in the original window.
+  const messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);
+  await messageBarLoadedPromise;
+
+  Assert.ok(
+    content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Message bar should be present in original window"
+  );
+
+  // Close the original panel before opening the new window. In headless mode
+  // focus shifts do not automatically close popups, so without this the panel
+  // stays open and the subsequent openPanel call hangs. The bandwidth warning
+  // state in IPPUsageHelper is shared and unaffected by closing the panel.
+  // Here we're closing the panel and maintaining the state by setting the
+  // second parameter (resetState) to false:
+  await closePanel(window, false);
+
+  // Open a new window and verify the warning is also shown there.
+  const newWin = await BrowserTestUtils.openNewBrowserWindow();
+  const contentNewWin = await openPanel(
+    { unauthenticated: false, error: "" },
+    newWin
+  );
+
+  await BrowserTestUtils.waitForMutationCondition(
+    contentNewWin.shadowRoot,
+    { childList: true, subtree: true },
+    () => contentNewWin.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+
+  Assert.ok(
+    contentNewWin.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Message bar should be present in new window"
+  );
+
+  // Dismiss the warning in the new window.
+  const messageBarNewWin = contentNewWin.shadowRoot.querySelector(
+    "ipprotection-message-bar"
+  );
+  await messageBarNewWin.updateComplete;
+  await messageBarNewWin.mozMessageBarEl.updateComplete;
+
+  const messageBarUnloadedPromise = BrowserTestUtils.waitForMutationCondition(
+    contentNewWin.shadowRoot,
+    { childList: true, subtree: true },
+    () => !contentNewWin.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  messageBarNewWin.mozMessageBarEl.closeButton.click();
+  await messageBarUnloadedPromise;
+
+  Assert.equal(
+    IPPUsageHelper.getDismissedThresholds().panel,
+    75,
+    "Panel dismissed threshold should be 75 after dismissal in new window"
+  );
+
+  // Close the new window and verify the warning is gone in the original window.
+  await closePanel(newWin);
+  await BrowserTestUtils.closeWindow(newWin);
+
+  content = await openPanel({ unauthenticated: false, error: "" });
+  await content.updateComplete;
+
+  Assert.ok(
+    !content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Message bar should not appear in original window after dismissal in new window"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  await resetUsageState(maxBytes);
+});
+
+/**
+ * Tests that dismissing an infobar warning does not clear the in-panel warning.
+ */
+add_task(async function test_infobar_dismiss_does_not_clear_panel_warning() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
+  });
+
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+
+  let content = await openPanel({ unauthenticated: false, error: "" });
+
+  let messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+  dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);
+  await messageBarLoadedPromise;
+
+  Assert.ok(
+    content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Message bar should be present before infobar dismissal"
+  );
+
+  // Simulate infobar dismissed in another window: only the infobar key changes
+  IPPUsageHelper.setDismissedThresholds({ infobar: 75, panel: 0 });
+  await content.updateComplete;
+
+  Assert.ok(
+    content.shadowRoot.querySelector("ipprotection-message-bar"),
+    "Panel warning should remain when only the infobar is dismissed"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  await resetUsageState(maxBytes);
 });

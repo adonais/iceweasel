@@ -174,9 +174,13 @@ size_t RenderBufferTextureHost::GetPlaneCount() const {
 gfx::SurfaceFormat RenderBufferTextureHost::GetFormat() const {
   switch (mDescriptor.type()) {
     case layers::BufferDescriptor::TYCbCrDescriptor:
-      return gfx::SurfaceFormat::YUV420;
-    default:
+      return mFormat;
+    case layers::BufferDescriptor::TRGBDescriptor:
       return mDescriptor.get_RGBDescriptor().format();
+    default:
+      gfxCriticalError() << "Bad buffer host descriptor "
+                         << (int)mDescriptor.type();
+      MOZ_CRASH("GFX: Bad descriptor");
   }
 }
 
@@ -195,6 +199,19 @@ gfx::YUVRangedColorSpace RenderBufferTextureHost::GetYUVColorSpace() const {
       return gfx::GetYUVRangedColorSpace(mDescriptor.get_YCbCrDescriptor());
     default:
       return gfx::YUVRangedColorSpace::Default;
+  }
+}
+
+gfx::TransferFunction RenderBufferTextureHost::GetTransferFunction() const {
+  switch (mDescriptor.type()) {
+    case layers::BufferDescriptor::TYCbCrDescriptor:
+      return mDescriptor.get_YCbCrDescriptor().transferFunction();
+    case layers::BufferDescriptor::TRGBDescriptor:
+      return mDescriptor.get_RGBDescriptor().transferFunction();
+    default:
+      gfxCriticalError() << "Bad buffer host descriptor "
+                         << (int)mDescriptor.type();
+      MOZ_CRASH("GFX: Bad descriptor");
   }
 }
 

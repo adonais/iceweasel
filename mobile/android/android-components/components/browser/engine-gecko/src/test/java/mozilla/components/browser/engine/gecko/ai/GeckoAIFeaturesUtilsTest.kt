@@ -11,8 +11,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException
+import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COULD_NOT_MAKE_AVAILABLE
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COULD_NOT_PARSE
-import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COULD_NOT_RESET
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COULD_NOT_SET
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_UNKNOWN_FEATURE
 import org.robolectric.RobolectricTestRunner
@@ -40,11 +40,11 @@ class GeckoAIFeaturesUtilsTest {
         assertTrue(error3 is AIFeaturesError.CouldNotSetError)
         assertEquals(couldNotSetException, error3.cause)
 
-        val couldNotResetException =
-            AIFeaturesException(ERROR_COULD_NOT_RESET)
-        val error4 = couldNotResetException.intoAIFeaturesError()
-        assertTrue(error4 is AIFeaturesError.CouldNotResetError)
-        assertEquals(couldNotResetException, error4.cause)
+        val couldNotMakeAvailableException =
+            AIFeaturesException(ERROR_COULD_NOT_MAKE_AVAILABLE)
+        val error4 = couldNotMakeAvailableException.intoAIFeaturesError()
+        assertTrue(error4 is AIFeaturesError.CouldNotMakeAvailableError)
+        assertEquals(couldNotMakeAvailableException, error4.cause)
 
         val unknownCodeException = AIFeaturesException(999)
         val error5 = unknownCodeException.intoAIFeaturesError()

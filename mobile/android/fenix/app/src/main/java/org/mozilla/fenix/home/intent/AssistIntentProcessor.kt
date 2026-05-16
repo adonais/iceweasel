@@ -14,7 +14,7 @@ import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
 
 /**
- * Long pressing home button should also start a new search is set as the assist app.
+ * Using Firefox as a digital assistant application should start a voice search.
  */
 class AssistIntentProcessor : HomeIntentProcessor {
     override fun process(intent: Intent, navController: NavController, out: Intent, settings: Settings): Boolean {
@@ -26,15 +26,15 @@ class AssistIntentProcessor : HomeIntentProcessor {
             navController.nav(
                 id = null,
                 directions = NavGraphDirections.actionGlobalHome(
+                    searchAccessPoint = MetricsUtils.Source.DIGITAL_ASSISTANT,
                     focusOnAddressBar = true,
+                    startVoiceSearch = settings.shouldShowVoiceSearch,
                 ),
             )
         } else {
             val directions = NavGraphDirections.actionGlobalSearchDialog(
                 sessionId = null,
-                // Will follow this up with adding `ASSIST` as a search source.
-                // https://bugzilla.mozilla.org/show_bug.cgi?id=1808043
-                searchAccessPoint = MetricsUtils.Source.NONE,
+                searchAccessPoint = MetricsUtils.Source.DIGITAL_ASSISTANT,
             )
 
             val options = navOptions {

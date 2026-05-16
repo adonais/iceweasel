@@ -19,7 +19,6 @@
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsCRT.h"
-#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsINode.h"
 #include "nsString.h"

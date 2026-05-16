@@ -79,7 +79,6 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
             for (path, file) in JarFinder(zip_path, JarReader(zip_path)).find(
                 "**/geckoview-*.aar"
             )
-            if "exoplayer2" not in path
         ]
         if len(aars) != 1:
             raise ValueError(

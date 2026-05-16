@@ -63,6 +63,9 @@ class Speedometer3Support(BasePythonSupport):
         if "score-internal" in measurement_name:
             subtest["shouldAlert"] = False
 
+        if any(measurement_name.endswith(suffix) for suffix in ("/Async", "/Sync")):
+            subtest["shouldAlert"] = False
+
         return subtest
 
     def summarize_test(self, test, suite, **kwargs):

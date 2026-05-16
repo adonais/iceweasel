@@ -51,6 +51,9 @@ skip-if = [
 ["test_bug549170.html"]
 
 ["test_bug562447.html"]
+skip-if = [
+  "standalone", # Bug 2026600
+]
 
 ["test_bug563642.html"]
 

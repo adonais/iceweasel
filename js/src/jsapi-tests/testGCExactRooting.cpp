@@ -1,6 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -217,7 +214,7 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented) {
 }
 END_TEST(testGCRootedStaticStructInternalStackStorageAugmented)
 
-MOZ_RUNINIT static JS::PersistentRooted<JSObject*> sLongLived;
+constinit static JS::PersistentRooted<JSObject*> sLongLived;
 BEGIN_TEST(testGCPersistentRootedOutlivesRuntime) {
   sLongLived.init(cx, JS_NewObject(cx, nullptr));
   CHECK(sLongLived);
@@ -229,7 +226,7 @@ END_TEST(testGCPersistentRootedOutlivesRuntime)
 // performance and simplicity reasons, PersistentRooted<Traceable> is not
 // allowed to outlive the container it belongs to. The following commented out
 // test can be used to verify that the relevant assertion fires as expected.
-MOZ_RUNINIT static JS::PersistentRooted<MyContainer> sContainer;
+static JS::PersistentRooted<MyContainer> sContainer;
 BEGIN_TEST(testGCPersistentRootedTraceableCannotOutliveRuntime) {
   JS::Rooted<MyContainer> container(cx);
   container.obj() = JS_NewObject(cx, nullptr);

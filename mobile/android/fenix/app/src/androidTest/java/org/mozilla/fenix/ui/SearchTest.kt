@@ -67,6 +67,7 @@ import java.util.Locale
 class SearchTest {
     private val queryString: String = "firefox"
     private val generalEnginesList = listOf("DuckDuckGo", "Google", "Bing")
+    private val scanButtonEnginesList = listOf("DuckDuckGo", "Bing")
     private val topicEnginesList = listOf("Wikipedia (en)")
     private val firefoxSuggestHeader = getStringResource(R.string.firefox_suggest_header)
 
@@ -102,9 +103,11 @@ class SearchTest {
             verifySearchBarPlaceholder("Search or enter address")
         }.clickURLBar {
             verifyKeyboardVisibility(isExpectedToBeVisible = true)
-            verifyScanButton(isDisplayed = true)
             verifyVoiceSearchButton(isDisplayed = true)
             verifySearchBarPlaceholder("Search or enter address")
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("DuckDuckGo")
+            verifyScanButton(isDisplayed = true)
             typeSearch("mozilla ")
             waitForAppWindowToBeUpdated()
             verifyScanButton(isDisplayed = false)
@@ -185,6 +188,8 @@ class SearchTest {
         homeScreen(composeTestRule) {
         }.openSearch {
             waitForAppWindowToBeUpdated()
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("DuckDuckGo")
             clickScanButton()
             denyPermission()
             clickScanButton()
@@ -215,6 +220,8 @@ class SearchTest {
 
         homeScreen(composeTestRule) {
         }.openSearch {
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("DuckDuckGo")
             clickScanButton()
             grantSystemPermission()
             verifyScannerOpen()
@@ -224,7 +231,7 @@ class SearchTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2154191
     @Test
     fun verifyScanButtonAvailableOnlyForGeneralSearchEnginesTest() {
-        generalEnginesList.forEach {
+        scanButtonEnginesList.forEach {
             searchScreen(composeTestRule) {
                 clickSearchSelectorButton()
                 selectTemporarySearchMethod(it)
@@ -687,10 +694,15 @@ class SearchTest {
         val firstPage = searchMockServerRule.server.getGenericAsset(1)
         val secondPage = searchMockServerRule.server.getGenericAsset(2)
 
-        createTabItem(firstPage.url.toString())
         createBookmarkItem(secondPage.url.toString(), secondPage.title, 1u)
 
-        homeScreen(composeTestRule) {
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstPage.url) {
+            verifyTabCounter("1")
+        }.openThreeDotMenu {
+        }.clickBookmarksButton {
+            verifyBookmarkTitle(secondPage.title)
+        }.goBackToHomeScreen {
         }.openSearch {
             typeSearch("generic")
             verifyTheSuggestionsHeader(firefoxSuggestHeader)

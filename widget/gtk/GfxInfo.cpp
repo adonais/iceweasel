@@ -849,6 +849,11 @@ void GfxInfo::V4L2ProbeDevice(nsCString& dev) {
     media::MCSInfo::AddSupport(media::MediaCodecsSupport::HEVCHardwareDecode);
     mV4L2SupportedCodecs |= CODEC_HW_DEC_HEVC;
   }
+  if (outFormats.Contains("AV01")) {
+    mIsV4L2Supported = Some(true);
+    media::MCSInfo::AddSupport(media::MediaCodecsSupport::AV1HardwareDecode);
+    mV4L2SupportedCodecs |= CODEC_HW_DEC_AV1;
+  }
 }
 
 const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
@@ -1015,6 +1020,15 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_WEBGL_USE_HARDWARE,
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
         V(0, 0, 0, 0), "FEATURE_FAILURE_WEBGL_MESA_VM", "");
+
+    // Disable nvidia 390.157 due to startup crashes (Bug 2028081)
+    APPEND_TO_DRIVER_BLOCKLIST_RANGE_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        WindowProtocol::All, DriverVendor::NonMesaAll, DeviceFamily::NvidiaAll,
+        nsIGfxInfo::FEATURE_WEBGL_USE_HARDWARE,
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_BETWEEN_INCLUSIVE_START,
+        V(390, 157, 0, 0), V(391, 0, 0, 0), "FEATURE_FAILURE_WEBGL_OLD_NVIDIA",
+        "391.0.0");
 
     ////////////////////////////////////
     // FEATURE_WEBRENDER_COMPOSITOR
@@ -1185,6 +1199,18 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         "FEATURE_HARDWARE_VIDEO_ZERO_COPY_LINUX_AMD_DISABLE", "Mesa 24.2.0.0");
 
     ////////////////////////////////////
+    // FEATURE_VIDEO_HDR - ALLOWLIST
+
+    // Allow HDR video on Wayland - this is also controlled by the pref
+    // gfx.color_management.hdr which is currently false as of this writing (see
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1642854)
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        WindowProtocol::Wayland, DriverVendor::All, DeviceFamily::All,
+        nsIGfxInfo::FEATURE_VIDEO_HDR, nsIGfxInfo::FEATURE_ALLOW_ALWAYS,
+        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_ROLLOUT_ALL", "");
+
+    ////////////////////////////////////
     // FEATURE_WEBRENDER_PARTIAL_PRESENT
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
@@ -1209,13 +1235,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_WEBGPU, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
         DRIVER_LESS_THAN, V(25, 0, 4, 0),
         "FEATURE_FAILURE_WEBGPU_MESA_BUG_1979007", "Mesa 25.0.4");
-
-    APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
-        WindowProtocol::All, DriverVendor::MesaLLVMPipe, DeviceFamily::All,
-        nsIGfxInfo::FEATURE_WEBGPU, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-        DRIVER_LESS_THAN, V(25, 2, 5, 0),
-        "FEATURE_FAILURE_WEBGPU_MESA_LLVMPipe_BUG_1995054", "Mesa 25.2.5");
 
     ////////////////////////////////////
 

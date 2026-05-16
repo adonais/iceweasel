@@ -49,7 +49,7 @@ function importReusableComponents() {
   });
 
   // Manually import the two components that don't follow our naming conventions.
-  import("toolkit/content/widgets/panel-list/panel-list.js");
+  import("toolkit/content/widgets/panel-list/panel-list.mjs");
   import("toolkit/content/widgets/named-deck.js");
 }
 importReusableComponents();

@@ -303,9 +303,21 @@ newtab-error-fallback-refresh-link = Rechargia la pagina per reempruvar.
 
 newtab-custom-shortcuts-title = Scursanidas
 newtab-custom-shortcuts-subtitle = Websites che ti memoriseschas u visitas
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Scursanidas
     .description = Websites che ti memoriseschas u visitas
+newtab-custom-shortcuts-nova =
+    .label = Scursanidas
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } lingia
+           *[other] { $num } lingias
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -316,9 +328,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Scursanidas sponsuradas
 newtab-custom-pocket-title = Recumandà da { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Cuntegn excepziunal, tschernì da { -pocket-brand-name }, in product da { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Istorgias recumandadas
     .description = Cuntegn excepziunal curà da { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Istorgias recumandadas
 newtab-custom-stories-personalized-toggle =
     .label = Artitgels
 newtab-custom-stories-personalized-checkbox-label = Artitgels persunalisads a basa da tia activitad
@@ -350,8 +365,11 @@ newtab-custom-settings = Administrar ulteriurs parameters
 
 newtab-wallpaper-title = Maletgs dal fund davos
 newtab-wallpaper-reset = Restaurar il standard
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Transferir in maletg
 newtab-wallpaper-custom-color = Tscherner ina colur
+newtab-wallpaper-toggle-title =
+    .label = Maletgs dal fund davos
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Il maletg surpassa la grondezza maximala permessa da { $file_size } MB. Emprova per plaschair da transferir ina datoteca pli pitschna.
@@ -374,6 +392,7 @@ newtab-wallpaper-light-fox-anniversary = Ina vulp sin in prà en ina cuntrada mu
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Colurs uni
 newtab-wallpaper-blue = Blau
 newtab-wallpaper-light-blue = Blau cler
@@ -640,7 +659,6 @@ newtab-widget-lists-menu-edit = Modifitgar il num da la glista
 newtab-widget-lists-menu-create = Crear ina nova glista
 newtab-widget-lists-menu-delete = Stizzar questa glista
 newtab-widget-lists-menu-copy = Copiar la glista en l’archiv provisoric
-newtab-widget-lists-menu-hide = Zuppentar tut las glistas
 newtab-widget-lists-menu-learn-more = Ulteriuras infurmaziuns
 newtab-widget-lists-input-add-an-item =
     .placeholder = Agiuntar in element
@@ -691,7 +709,6 @@ newtab-widget-timer-reset =
     .title = Reinizialisar
 newtab-widget-timer-menu-notifications = Deactivar las notificaziuns
 newtab-widget-timer-menu-notifications-on = Activar las notificaziuns
-newtab-widget-timer-menu-hide = Zuppentar il svegliarin
 newtab-widget-timer-menu-learn-more = Ulteriuras infurmaziuns
 newtab-widget-message-title = Mantegna la concentraziun cun agid da glistas ed in svegliarin integrà
 # to-dos stands for "things to do".

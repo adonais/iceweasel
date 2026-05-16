@@ -295,9 +295,22 @@ newtab-error-fallback-refresh-link = Osvježite stranicu da biste pokušali pono
 
 newtab-custom-shortcuts-title = Prečice
 newtab-custom-shortcuts-subtitle = Web stranice koje sačuvate ili posjetite
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Prečice
     .description = Stranice koje ste sačuvali ili posjetili
+newtab-custom-shortcuts-nova =
+    .label = Prečice
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } red
+            [few] { $num } reda
+           *[other] { $num } redova
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -309,9 +322,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Sponzorisane prečice
 newtab-custom-pocket-title = Preporučuje { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Izuzetan sadržaj koji je kurirao { -pocket-brand-name }, dio porodice { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Preporučene priče
     .description = Izuzetan sadržaj koji je kurirala porodica { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Preporučene priče
 newtab-custom-pocket-sponsored = Sponzorisane priče
 newtab-custom-pocket-show-recent-saves = Prikaži nedavno sačuvane
 newtab-custom-recent-title = Nedavne aktivnosti
@@ -326,8 +342,11 @@ newtab-custom-settings = Upravljajte više postavki
 
 newtab-wallpaper-title = Pozadine
 newtab-wallpaper-reset = Vrati na izvorno
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Učitaj sliku
 newtab-wallpaper-custom-color = Izaberite boju
+newtab-wallpaper-toggle-title =
+    .label = Pozadine
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Slika je premašila ograničenje veličine datoteke od { $file_size }MB. Molimo pokušajte s učitavanjem manje datoteke.
@@ -349,6 +368,7 @@ newtab-wallpaper-light-fox-anniversary = Lisica u travnatom polju sa maglovitim 
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Čvrste boje
 newtab-wallpaper-blue = Plava
 newtab-wallpaper-light-blue = Svijetlo plava

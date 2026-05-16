@@ -16,6 +16,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -70,7 +71,6 @@ std::string MakeNetworkKey(absl::string_view name,
 // Utility function that attempts to determine an adapter type by an interface
 // name (e.g., "wlan0"). Can be used by NetworkManager subclasses when other
 // mechanisms fail to determine the type.
-RTC_EXPORT AdapterType GetAdapterTypeFromName(absl::string_view network_name);
 RTC_EXPORT AdapterType GetAdapterTypeFromName(absl::string_view network_name);
 
 class DefaultLocalAddressProvider {
@@ -187,11 +187,12 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
 
   // The implementation of the Subscribe methods is in the .cc file due
   // to linking issues with Chrome.
-  void SubscribeNetworksChanged(absl::AnyInvocable<void()> callback);
+  [[deprecated]] void SubscribeNetworksChanged(
+      absl::AnyInvocable<void()> callback);
   void SubscribeNetworksChanged(void* tag, absl::AnyInvocable<void()> callback);
   void UnsubscribeNetworksChanged(void* tag);
   void NotifyNetworksChanged() { networks_changed_callbacks_.Send(); }
-  void SubscribeError(absl::AnyInvocable<void()> callback);
+  [[deprecated]] void SubscribeError(absl::AnyInvocable<void()> callback);
   void SubscribeError(void* tag, absl::AnyInvocable<void()> callback);
   void UnsubscribeError(void* tag);
   void NotifyError() { error_callbacks_.Send(); }
@@ -231,7 +232,8 @@ class RTC_EXPORT Network {
   std::unique_ptr<Network> Clone() const;
 
   // This signal is fired whenever type() or underlying_type_for_vpn() changes.
-  void SubscribeTypeChanged(absl::AnyInvocable<void(const Network*)> callback) {
+  [[deprecated]] void SubscribeTypeChanged(
+      absl::AnyInvocable<void(const Network*)> callback) {
     type_changed_callbacks_.AddReceiver(std::move(callback));
   }
   void SubscribeTypeChanged(void* tag,
@@ -246,9 +248,17 @@ class RTC_EXPORT Network {
   }
 
   // This signal is fired whenever network preference changes.
-  void SubscribeNetworkPreferenceChanged(
+  [[deprecated]] void SubscribeNetworkPreferenceChanged(
       absl::AnyInvocable<void(const Network*)> callback) {
     network_preference_changed_callbacks_.AddReceiver(std::move(callback));
+  }
+  void SubscribeNetworkPreferenceChanged(
+      void* tag,
+      absl::AnyInvocable<void(const Network*)> callback) {
+    network_preference_changed_callbacks_.AddReceiver(tag, std::move(callback));
+  }
+  void UnsubscribeNetworkPreferenceChanged(void* tag) {
+    network_preference_changed_callbacks_.RemoveReceivers(tag);
   }
   void NotifyNetworkPreferenceChanged(Network* network) {
     network_preference_changed_callbacks_.Send(network);
@@ -414,8 +424,11 @@ class RTC_EXPORT Network {
     NotifyNetworkPreferenceChanged(this);
   }
 
-  static std::pair<AdapterType, bool /* vpn */> GuessAdapterFromNetworkCost(
-      int network_cost);
+  NetworkSlice network_slice() const { return network_slice_; }
+  void set_network_slice(NetworkSlice slice) { network_slice_ = slice; }
+
+  static std::tuple<AdapterType, bool /* vpn */, NetworkSlice>
+  GuessAdapterFromNetworkCost(int network_cost);
 
   // Debugging description of this network
   std::string ToString() const;
@@ -437,6 +450,7 @@ class RTC_EXPORT Network {
   bool active_ = true;
   uint16_t id_ = 0;
   NetworkPreference network_preference_ = NetworkPreference::NEUTRAL;
+  NetworkSlice network_slice_ = NetworkSlice::NO_SLICE;
   CallbackList<const Network*> type_changed_callbacks_;
   CallbackList<const Network*> network_preference_changed_callbacks_;
   friend class NetworkManager;
@@ -521,7 +535,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
       SocketFactory* absl_nonnull socket_factory,
       NetworkMonitorFactory* absl_nullable network_monitor_factory = nullptr);
 
-  ~BasicNetworkManager();
+  ~BasicNetworkManager() override;
 
   void StartUpdating() override;
   void StopUpdating() override;
@@ -611,6 +625,5 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
 };
 
 }  //  namespace webrtc
-
 
 #endif  // RTC_BASE_NETWORK_H_

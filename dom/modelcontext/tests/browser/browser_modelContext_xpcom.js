@@ -398,6 +398,56 @@ add_task(async function test_tool_with_annotations() {
   );
 });
 
+add_task(async function test_registerTool_rejects_non_object_inputSchema() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "https://example.com" },
+    async browser => {
+      await SpecialPowers.spawn(browser, [], async () => {
+        const cases = [
+          /* eslint-disable no-new-wrappers */
+          { value: new Number(0x41414141), label: "Number wrapper" },
+          { value: new String("hello"), label: "String wrapper" },
+          { value: new Boolean(true), label: "Boolean wrapper" },
+          { value: [1, 2, 3], label: "array" },
+          /* eslint-enable no-new-wrappers */
+        ];
+
+        for (const { value, label } of cases) {
+          Assert.throws(
+            () => {
+              content.navigator.modelContext.registerTool({
+                name: "poc_" + label,
+                description: "poc",
+                inputSchema: value,
+                execute: async () => {},
+              });
+            },
+            /inputSchema must serialize to a JSON object/,
+            `registerTool with ${label} inputSchema should throw TypeError`
+          );
+        }
+
+        let tools = content.navigator.modelContext.getTools();
+        Assert.equal(
+          tools.length,
+          0,
+          "content getTools should return empty after all registrations were rejected"
+        );
+      });
+
+      let innerWindowId =
+        browser.browsingContext.currentWindowGlobal.innerWindowId;
+      let xpcomTools =
+        await Services.modelContext.getToolsForWindow(innerWindowId);
+      Assert.equal(
+        xpcomTools.length,
+        0,
+        "XPCOM getToolsForWindow should return empty after all registrations were rejected"
+      );
+    }
+  );
+});
+
 add_task(async function test_tool_without_annotations() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "https://example.com" },

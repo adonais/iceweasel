@@ -8,7 +8,6 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsCOMPtr.h"
 #include "nsCSSRendering.h"
-#include "nsGkAtoms.h"
 #include "nsHTMLParts.h"
 #include "nsPresContext.h"
 #include "nsStyleConsts.h"

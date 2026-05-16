@@ -1,0 +1,148 @@
+{
+  "block": {
+    "margin": {
+      "value": "{dimension.4}"
+    }
+  },
+  "border": {
+    "radius": {
+      "value": "var(--toolbarbutton-border-radius)"
+    }
+  },
+  "box": {
+    "shadow": {
+      "value": "{box-shadow.level-1}"
+    }
+  },
+  "attention": {
+    "dot": {
+      "color": {
+        "value": "{color.accent.attention}"
+      }
+    }
+  },
+  "close": {
+    "button": {
+      "padding": {
+        "value": "6px"
+      }
+    }
+  },
+  "hover": {
+    "background": {
+      "color": {
+        "value": "color-mix(in srgb, currentColor 11%, transparent)"
+      }
+    },
+    "outline": {
+      "color": {
+        "value": {
+          "default": "transparent",
+          "prefersContrast": "currentColor"
+        }
+      }
+    }
+  },
+  "icon": {
+    "end": {
+      "margin": {
+        "value": "5.5px"
+      }
+    }
+  },
+  "inline": {
+    "padding": {
+      "value": "{dimension.8}"
+    }
+  },
+  "inner": {
+    "inline": {
+      "margin": {
+        "value": "{space.medium}"
+      }
+    }
+  },
+  "label": {
+    "line": {
+      "height": {
+        "value": 1.7
+      }
+    }
+  },
+  "loading": {
+    "fill": {
+      "value": "{color.blue.50}"
+    }
+  },
+  "outline": {
+    "@base": {
+      "value": "{border.width} solid {tab.outline.color}"
+    },
+    "color": {
+      "value": "transparent"
+    },
+    "offset": {
+      "value": "calc(-1 * {border.width})"
+    }
+  },
+  "overflow": {
+    "clip": {
+      "margin": {
+        "value": "{dimension.2}"
+      }
+    }
+  },
+  "pinned": {
+    "container": {
+      "margin": {
+        "inline": {
+          "expanded": {
+            "value": "{space.small}"
+          }
+        }
+      }
+    },
+    "expanded": {
+      "background": {
+        "width": {
+          "value": "{dimension.40}"
+        }
+      }
+    },
+    "margin": {
+      "inline": {
+        "expanded": {
+          "value": "{space.xsmall}"
+        }
+      }
+    }
+  },
+  "selected": {
+    "bgcolor": {
+      "value": "var(--toolbar-bgcolor)"
+    },
+    "outline": {
+      "color": {
+        "value": {
+          "default": "transparent",
+          "prefersContrast": "currentColor"
+        }
+      }
+    },
+    "textcolor": {
+      "value": "var(--toolbar-color)"
+    }
+  },
+  "vertical": {
+    "block": {
+      "margin": {
+        "value": "{dimension.2}"
+      }
+    },
+    "inline": {
+      "padding": {
+        "value": "{space.medium}"
+      }
+    }
+  }
+}

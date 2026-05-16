@@ -6,6 +6,9 @@ Ranking (Legacy)
   The frecency algorithm was changed in Firefox 147. For current documentation,
   see `ranking.rst <https://firefox-source-docs.mozilla.org/browser/urlbar/ranking.html>`_
 
+.. NOTE:: The ``places.frecency.*`` preferences referenced throughout this
+  document were removed in Firefox 151. The values shown below reflect the
+  hardcoded defaults that were in effect at the time of removal.
 
 Before results appear in the UrlbarView, they are fetched from providers.
 

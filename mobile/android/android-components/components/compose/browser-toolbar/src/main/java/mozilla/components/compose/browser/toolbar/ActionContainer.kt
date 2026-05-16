@@ -23,6 +23,7 @@ import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
+import mozilla.components.compose.browser.toolbar.concept.Action.AnimatedPillAction
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription.StringContentDescription
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription.StringResContentDescription
@@ -30,6 +31,7 @@ import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorA
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.Icon.DrawableResIcon
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
+import mozilla.components.compose.browser.toolbar.ui.AnimatedPillButton
 import mozilla.components.compose.browser.toolbar.ui.SearchSelector
 import mozilla.components.compose.browser.toolbar.ui.TabCounter
 import mozilla.components.compose.browser.toolbar.ui.ActionButton as ActionButtonComposable
@@ -103,6 +105,16 @@ fun ActionContainer(
                         onClick = action.onClick,
                         onLongClick = action.onLongClick,
                         onInteraction = { onInteraction(it) },
+                    )
+                }
+
+                is AnimatedPillAction -> {
+                    AnimatedPillButton(
+                        icon = action.icon,
+                        text = action.text,
+                        contentDescription = action.contentDescription,
+                        onClick = action.onClick,
+                        onInteraction = onInteraction,
                     )
                 }
             }

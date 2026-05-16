@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -44,6 +42,7 @@ enum class ModuleType : uint32_t {
   JSON,
   CSS,
   Bytes,
+  Text,
 
   // The specification has renamed the "javascript" module type to
   // "javascript-or-wasm". For now, we'll add JavaScriptOrWasm as
@@ -53,7 +52,7 @@ enum class ModuleType : uint32_t {
   // JavaScriptOrWasm, we'll can just rename JavaScript to JavaScriptOrWasm.
   JavaScriptOrWasm = JavaScript,
 
-  Limit = Bytes,
+  Limit = Text,
 };
 
 /**
@@ -136,7 +135,8 @@ extern JS_PUBLIC_API bool LoadRequestedModules(
  * This is based on the spec's HostGetImportMetaProperties hook but defines
  * properties on the meta object directly rather than returning a list.
  */
-using ModuleMetadataHook = bool (*)(JSContext* cx, Handle<Value> privateValue,
+using ModuleMetadataHook = bool (*)(JSContext* cx,
+                                    Handle<JSObject*> moduleRecord,
                                     Handle<JSObject*> metaObject);
 
 /**
@@ -213,7 +213,7 @@ extern JS_PUBLIC_API JSObject* CompileJsonModule(
  * https://tc39.es/ecma262/#sec-create-default-export-synthetic-module
  */
 extern JS_PUBLIC_API JSObject* CreateDefaultExportSyntheticModule(
-    JSContext* cx, const Value& defaultExport);
+    JSContext* cx, Handle<Value> defaultExport);
 
 /**
  * Parse the given source buffer as a module in the scope of the current global

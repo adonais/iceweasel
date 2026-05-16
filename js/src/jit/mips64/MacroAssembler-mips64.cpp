@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -2457,7 +2455,7 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
 
   // Found a wasm catch handler, restore state and jump to it.
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), sp, a1, a2);
+  wasm::GenerateJumpToCatchHandler(asMasm(), sp, a1, a2, a3);
 }
 
 CodeOffset MacroAssemblerMIPS64Compat::toggledJump(Label* label) {

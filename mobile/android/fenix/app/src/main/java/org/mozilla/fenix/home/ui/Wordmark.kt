@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -23,7 +24,10 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_LOGO
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 
 @Composable
- internal fun WordmarkLogo() {
+internal fun WordmarkLogo(
+    onLogoClicked: () -> Unit,
+    onLogoLongClicked: () -> Unit,
+) {
     Image(
         modifier = Modifier
             .height(40.dp)
@@ -31,6 +35,7 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
                 testTagsAsResourceId = true
                 testTag = HOMEPAGE_WORDMARK_LOGO
             }
+            .combinedClickable(onClick = onLogoClicked, onLongClick = onLogoLongClicked)
             .padding(end = 10.dp),
         painter = painterResource(getAttr(R.attr.fenixWordmarkLogo)),
         contentDescription = null,

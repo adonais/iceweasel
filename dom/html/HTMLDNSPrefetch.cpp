@@ -17,7 +17,6 @@
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "nsCOMPtr.h"
-#include "nsGkAtoms.h"
 #include "nsICancelable.h"
 #include "nsIDNSListener.h"
 #include "nsIDNSRecord.h"

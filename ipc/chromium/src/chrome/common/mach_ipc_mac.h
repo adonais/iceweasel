@@ -8,6 +8,9 @@
 #include <mach/mach.h>
 #include <mach/message.h>
 #include <sys/types.h>
+#ifdef XP_MACOSX
+#  include <vector>
+#endif
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"

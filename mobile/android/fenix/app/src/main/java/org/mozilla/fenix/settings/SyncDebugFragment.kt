@@ -38,10 +38,13 @@ class SyncDebugFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {
-        val handled = showCustomEditTextPreferenceDialog(preference) {
-            hasChanges = true
-            updateMenu()
-        }
+        val handled = showCustomEditTextPreferenceDialog(
+            preference = preference,
+            onSuccess = {
+                hasChanges = true
+                updateMenu()
+            },
+        )
 
         if (!handled) {
             super.onDisplayPreferenceDialog(preference)

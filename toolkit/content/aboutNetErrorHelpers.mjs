@@ -222,6 +222,49 @@ export function errorHasNoUserFix(errorCodeString) {
   }
 }
 
+/**
+ * Detect if the user's system clock is likely wrong by comparing against
+ * the remote-settings (Kinto) server time and the application build date.
+ *
+ * @param {object} failedCertInfo - Certificate security info from document.getFailedCertSecurityInfo()
+ * @param {number} [now] - Current time in ms (default: Date.now()). Pass an explicit value when
+ *   the same timestamp must be reused for display after the call.
+ * @returns {boolean} true if the system clock appears to be skewed
+ */
+export function detectClockSkew(failedCertInfo, now = Date.now()) {
+  const ONE_DAY_SECONDS = 60 * 60 * 24;
+  const FIVE_DAYS_MS = 5 * ONE_DAY_SECONDS * 1000;
+
+  const certNotBefore = failedCertInfo.certValidityRangeNotBefore;
+  const certNotAfter = failedCertInfo.certValidityRangeNotAfter;
+  if (certNotBefore == null || certNotAfter == null) {
+    return false;
+  }
+
+  const difference = RPMGetIntPref("services.settings.clock_skew_seconds", 0);
+  const lastFetched =
+    RPMGetIntPref("services.settings.last_update_seconds", 0) * 1000;
+
+  const approximateDate = now - difference * 1000;
+
+  if (
+    Math.abs(difference) > ONE_DAY_SECONDS &&
+    now - lastFetched <= FIVE_DAYS_MS &&
+    certNotBefore < approximateDate &&
+    certNotAfter > approximateDate
+  ) {
+    return true;
+  }
+
+  const appBuildID = RPMGetAppBuildID();
+  const year = parseInt(appBuildID.substring(0, 4), 10);
+  const month = parseInt(appBuildID.substring(4, 6), 10) - 1;
+  const day = parseInt(appBuildID.substring(6, 8), 10);
+  const buildDate = new Date(year, month, day).getTime();
+
+  return buildDate > now && certNotAfter > buildDate;
+}
+
 export function handleNSSFailure(callback) {
   const netErrorInfo = document.getNetErrorInfo();
   void recordSecurityUITelemetry(

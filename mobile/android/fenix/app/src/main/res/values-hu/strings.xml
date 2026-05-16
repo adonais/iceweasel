@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Lapok keresése</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Adja meg a keresési kifejezéseket</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">A nyitott lapok itt fognak megjelenni.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">A privát lapjai itt fognak megjelenni.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Privát böngészés</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Gyűjtemény kiválasztása</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Kilépés a többszörös kiválasztási módból</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Kiválasztott lapok gyűjteménybe mentése</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Vegye át a lapokat bármely eszközről</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Leállítás</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Kiegészítők</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Vannak olyan kiegészítői, amelyek telepítve vannak, de nincsenek engedélyezve</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Kiegészítők kezelése</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Próbáljon ki egy ajánlott kiegészítőt</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Fiókinformáció</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Súgó</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Újdonságok</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Beállítások</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Könyvtár</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Asztali oldal</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Megnyitás szokásos lapon</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Kezdőképernyőhöz adás</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s ALAPOKON</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">A motorháztető alatt: %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Olvasó nézet</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Megnyitás alkalmazásban</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Olvasó nézet testreszabása</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Olvasó nézet testreszabása</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Hozzáadás</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Szerkesztés</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Kezdőoldal testreszabása</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Bejelentkezés</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Menü bezárása</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigáció</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Kiegészítők menülap bezárása</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Mentés menülap bezárása</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Eszközök menülap bezárása</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Egyéni lap menülap bezárása</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -368,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Kezdőképernyő</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Oldal fordítása</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -391,6 +362,58 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Üzenet eltüntetése</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Oldalösszegzések</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">MI vezérlők</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Mindig van választása a %sban</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Ez magában foglalja, hogy használja-e az MI funkciókkal bővített szolgáltatásokat. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Ez magában foglalja, hogy használja-e az MI funkciókkal bővített szolgáltatásokat.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">További tudnivalók</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">MI funkcióbővítések letiltása</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">A blokkolás azt jelenti, hogy nem fogja látni a %s új vagy jelenlegi fejlesztéseit, vagy az ezekről szóló felugró ablakokat.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Nézze meg, hogy mi tartozik ide és mi nem</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Az új és jelenlegi MI funkcióbővítések alapértelmezés szerint blokkolva vannak. Egy adott funkció blokkolásának feloldásához használja az alábbi vezérlőket.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">MI-alapú funkciók</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Fordítások</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Az összes fordítás privát marad az eszközén.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">További fordítási beállítások</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">További oldalösszegzési beállítások</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Hangalapú keresés</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">A hangokat a Google Speech Services szöveggé alakítja.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Letiltja az MI funkcióbővítéseket?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Nem fogja látni a %1$s új vagy jelenlegi MI funkcióbővítéseit, vagy az ezekkel kapcsolatos felugró ablakokat. Később feloldhatja bármelyik használni kívánt elem letiltását.\n\nA letiltás hatással van a %1$s által biztosított MI-t használó kiegészítőkre is.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Mi lesz letiltva:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Mégse</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Tiltás</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -408,7 +431,11 @@
   <string name="search_scan_button_2">QR-kód leolvasása</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Keresőszolgáltatás-beállítások</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Hivatkozás kitöltése a vágólapról</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Engedélyezés</string>
@@ -581,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Folytatás</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Segítsen a Firefox növekedésében</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Segítsen a Firefox növekedésében</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Ossza meg a Mozilla marketinges partnereivel, hogy miként fedezte fel, és hogyan használja a Firefoxot. Ezeket az adatokat sosem adjuk el.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -685,9 +712,15 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Ossza meg a Mozilla marketinges partnereivel, hogy miként fedezte fel, és hogyan használja a Firefoxot. Ezeket az adatokat sosem adjuk el. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Ossza meg a Mozilla marketinges partnereivel, hogy miként fedezte fel, és hogyan használja a Firefoxot. Ezeket az adatokat sosem adjuk el. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Ossza meg a Mozilla marketinges partnereivel, hogy miként fedezte fel, és hogyan használja a Firefoxot. Ezeket az adatokat sosem adjuk el.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Hogyan használjuk az adatokat</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Segítsen a Firefoxnak</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Köszönöm, nem</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Az értesítések segítségével nagyobb biztonságban lehet a Firefoxszal</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -1098,6 +1131,8 @@
   <string name="customize_wallpapers">Háttérképek</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Szponzorált indítóikonok</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Világbajnokság</string>
   <!--
     Wallpapers
 
@@ -1107,7 +1142,7 @@
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Nem sikerült letölteni a háttérképet</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
-  <string name="wallpaper_download_error_snackbar_action">Próbálja újra</string>
+  <string name="wallpaper_download_error_snackbar_action">Újrapróbálkozás</string>
   <!-- Snackbar message for when wallpaper couldn't be selected because of the disk error -->
   <string name="wallpaper_select_error_snackbar_message">Nem sikerült megváltoztatni a háttérképet</string>
   <!-- Text displayed that links to website containing documentation about the "Limited Edition" wallpapers. -->
@@ -1414,9 +1449,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Görgetés az eszköztár elrejtéséhez</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Az eszköztár csúsztatása függőlegesen a megnyitott lapok megtekintéséhez</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Eszköztár felfelé csúsztatása a lapok megnyitásához</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Lapok közti váltás a címsáv csúsztatásával</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Rázás az összegzéshez</string>
   <!--
     Library
 
@@ -1579,6 +1618,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Nyitott privát lapok: %1$s. Koppintson a lapok közötti váltáshoz.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d lapcsoport van nyitva. Koppintson a lapok közötti váltáshoz.</item>
+    <item quantity="other">%1$d lapcsoport van nyitva. Koppintson a lapok közötti váltáshoz.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1600,18 +1647,10 @@
   <string name="add_tab">Lap hozzáadása</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Privát lap hozzáadása</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privát</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Szinkronizálás</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Lapok keresése</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Az összes lap megosztása</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Nemrég bezárt lapok</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Nemrég bezárt</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Fiókbeállítások</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1626,12 +1665,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Lapok bezárása</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Mégse</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Könyvjelzőzés</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Kijelölt lapok könyvjelzőzése</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Bezárás</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Kiválasztott lapok bezárása</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1680,6 +1715,10 @@
   <string name="pwa_site_controls_title_private">%1$s (privát mód)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Lapkeresés megnyitása</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Próbálja ki a lapcsoportokat: kevesebb görgetés, több munka</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Válassza ki a lapokat egy csoport létrehozásához. Itt vannak mentve, és készen állnak.</string>
   <!--
     Tab Group
 
@@ -1689,6 +1728,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Csoport szerkesztése</string>
   <string name="create_tab_group_save_button">Mentés</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Új csoport, húzó fogantyú összecsukása</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Lapcsoport szerkesztésének bezárása</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Csoport</string>
@@ -1704,6 +1745,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Hozzáadás…</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Hozzáadás lapcsoporthoz, húzó fogantyú összecsukása</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Hozzáadás új lapcsoporthoz</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Lapcsoporthoz adás bezárása</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Új lapcsoport</string>
@@ -1715,6 +1760,33 @@
     <item quantity="one">%1$d lap</item>
     <item quantity="other">%1$d lap</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Hozzáadás a(z) %1$s lapcsoporthoz, %2$d lap, %3$s színű</item>
+    <item quantity="other">Hozzáadás a(z) %1$s lapcsoporthoz, %2$d lap, %3$s színű</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">A(z) %1$s lapcsoport megosztása %2$d lappal.</item>
+    <item quantity="other">A(z) %1$s lapcsoport megosztása %2$d lappal.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Lapcsoport megtekintése, húzó fogantyú összecsukása</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s lapcsoport %2$d lappal, %3$s színű</item>
+    <item quantity="other">%1$s lapcsoport %2$d lappal, %3$s színű</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Törli a lapcsoportot?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1723,6 +1795,38 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Csoport törlése</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Mégse</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Bezárja a lapokat és törli a csoportot?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Ez véglegesen törli a csoportot.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Csoport törlése</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Mégse</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Sárga</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Narancs</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Vörös</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Rózsaszín</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Lila</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Ibolya</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Kék</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cián</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Zöld</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Szürke</string>
   <!--
     History
 
@@ -1858,6 +1962,8 @@
   <string name="download_rename_error_exists_error">Már létezik „%s” nevű fájl ezen a helyen</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">A fájlnevekben nem lehet „/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">A megadott név csak kis- és nagybetűk közti változásokat tartalmaz. Próbálkozzon másik fájlnévvel.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Nem nevezhető át a fájl</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2107,6 +2213,12 @@
   <string name="bookmark_sort_menu_a_to_z">Rendezés A-tól Z-ig</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Rendezés Z-től A-ig</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Importálás fájlból</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Nem sikerült a könyvjelzők importálása. Próbálja újra.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Importált könyvjelzők</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2165,8 +2277,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Mappa bezárása: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Könyvjelzők bezárása</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Importálás fájlból</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Még nincsenek könyvjelzők</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Tartsa egyben az összes kedvenc könyvjelzőjét</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Könyvjelzők a mappában: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2382,8 +2498,6 @@
   <string name="toast_copy_link_to_clipboard">Vágólapra másolva</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Jelentkezzen be a Syncbe</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Bejelentkezés</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Küldés az összes eszközre</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2540,8 +2654,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Böngészési adatok törlése kilépéskor</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Automatikusan törli a böngészési adatokat, ha a főmenüben a „Kilépés” lehetőséget választja</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Kilépés</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Törlendő időtartomány</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2633,6 +2745,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Védve van</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Segítsen a követők elfogásában</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Normál (alapértelmezett)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2643,10 +2757,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Szigorú</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Erősebb követésvédelem és jobb teljesítmény, de előfordulhat, hogy egyes oldalak nem fognak megfelelően működni.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Engedélyezés, hogy a %1$s automatikusan alkalmazza a nagyobb webhelyhibák elkerüléséhez szükséges kivételeket.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">A csak az apró hibák megoldásához és a kényelmi funkciók elérhetőségéhez szükséges kivételek automatikus alkalmazása.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Nagy oldalhibák javítása (ajánlott)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3034,6 +3144,92 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Az e-mail-maszkok jelenleg nem érhetőek el. Próbálja újra néhány perc múlva.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Beépített VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BÉTA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">A %s beépített VPN-je</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Böngésszen a tartózkodási helyének elrejtésével, extra védelemmel, még nyilvános Wi-Fi-n is.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">További tudnivalók</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Havi adatkorlát</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB / %2$.1f GB maradt</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Minden hónap elsején %1$.0f GB-ra áll vissza.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Hely</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Ajánlott</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Kiválasztja a leggyorsabb VPN helyet.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Be</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Ki</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Kapcsolódás…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Szünetel</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Hiba</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Próbálja ki</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">VPN beállítások megnyitása</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">%1$d GB-os korlát elérve</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Felhasználta a teljes %1$d GB-os VPN adatkeretét. A hozzáférés a következő hónapban visszaáll.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label">VPN be</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description">A VPN aktív.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Kezdő lépések</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Próbálja ki a %s beépített VPN-jét</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s a helye elrejtésével, még nyilvános Wi-Fi-n is. Kapjon %2$d GB-ot ingyen minden hónapban.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Böngésszen extra védelemmel</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Most nem</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Nem sikerült a VPN-hez kapcsolódni. Próbálja újra néhány perc múlva.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">%1$d GB VPN-adat felhasználva. A hozzáférés a következő hónapban vissza fog állni.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3268,26 +3464,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Ellenőrizte: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Törlés</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Szerkesztés</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Biztos, hogy törli ezt a jelszót?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Törlés</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Mégse</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Jelszóbeállítások</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">A webhely címének szerkeszthető szövegmezője.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">A felhasználónév szerkeszthető szövegmezője.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">A jelszó szerkeszthető szövegmezője.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Változások mentése.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Jelszó szerkesztése</string>
   <!-- The page title for adding new password. -->
@@ -3347,6 +3529,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Összes indítóikon megjelenítése</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Indítóikon hozzáadása</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Adjon meg egy webhelycímet</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Az indítóikonok korlátja elérve</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3461,16 +3645,6 @@
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Ugrás a beállításokhoz</string>
   <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Minden termékértékeléshez egy <b>betűvel megadott osztályzatot</b> rendelünk, A-tól F-ig.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[A <b>módosított értékelés</b> az általunk megbízhatónak gondolt értékelések alapján van számítva.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[A <b>kiemelések</b> a(z) %s értékeléseinek az elmúlt 80 napból származó és megbízhatónak ítélt elemei.]]></string>
-  <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
     Action label for elements that can be collapsed if interacting with them. Talkback will append this to say "Double tap to collapse".
@@ -3527,7 +3701,7 @@
   <!-- Button text on the translations dialog to begin a translation of the website. -->
   <string name="translations_bottom_sheet_positive_button">Fordítás</string>
   <!-- Button text on the translations dialog when a translation error appears. -->
-  <string name="translations_bottom_sheet_positive_button_error">Próbálja újra</string>
+  <string name="translations_bottom_sheet_positive_button_error">Újrapróbálkozás</string>
   <!-- Inactive button text on the translations dialog that indicates a translation is currently in progress. This button will be accompanied by a loading icon. -->
   <string name="translations_bottom_sheet_translating_in_progress">Fordítás</string>
   <!-- Button content description (not visible, for screen readers etc.) for the translations dialog translate button that indicates a translation is currently in progress. -->
@@ -3595,6 +3769,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Sose fordítsa ezeket az oldalakat</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Nyelvek letöltése</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Fordítások</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Az összes fordítás privát marad az eszközén.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">További tudnivalók</string>
   <!--
     Automatic translation preference screen
 
@@ -4281,6 +4461,201 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">%1$s többet megtudhat.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">Itt</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title">Kövesse a csapatát</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Észak-Amerika</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Afrika</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Ázsia</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Európa</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Óceánia</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Dél-Amerika</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Anglia</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Skócia</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">ÉLŐ</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">A 2026-os világbajnokság bajnokai</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Második helyezett</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Harmadik helyezett</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32">Legjobb 32</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16">Legjobb 16</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final">Negyeddöntők</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final">Elődöntők</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">Döntő</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">Bronzmérkőzés</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">A mérkőzésinformációk most nem érhetők el. Próbálja meg néhány perc múlva frissíteni.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">A kapcsolat megszakadt – az élő frissítések szüneteltetve.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Frissítés</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">A csoport</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">B csoport</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">C csoport</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">D csoport</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">E csoport</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">F csoport</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">G csoport</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">H csoport</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">I csoport</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">J csoport</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">K csoport</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">L csoport</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Eredmények megtekintése</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Mérkőzés részleteinek megtekintése</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches">Kapcsolódó mérkőzések</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Közelgő</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Teljes játékidő)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Teljes játékidő</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Kövesse a világbajnokságot</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Kapjon élő mérkőzésinformációkat és még sok mást.</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Csapat módosítása</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Egyéni háttérkép szerzése</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">Eltávolítás</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow">Még mindig követi?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">Válasszon másik csapatot, hogy lépést tartson a világbajnoksággal.</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team">Másik csapat követése</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Visszaszámlálás a vébéig</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Ütemezés megtekintése</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Kihagyás</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Félidő</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Hosszabbítás</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Büntetők</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">N</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">Ó</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">P</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Csapatválasztó lap bezárása</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">Bezárás</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">További beállítások</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">Hátralévő idő. Napok: %1$d. Órák: %2$d. Percek: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Ugrás a világbajnokság oldalára</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Közeleg: %1$s kontra %2$s, %3$s (%4$s).</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, élő játék</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, élő</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, %2$d. / %3$d oldal</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Világbajnoki végeredmények, %1$d. / %2$d oldal</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Világbajnokság eltávolítása a kezdőlapról</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Követve: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Nézzen vissza a mérkőzésinformációkért a vébé közeledtével.</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Első félidő</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Második félidő</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Úgy tűnik, hogy kapcsolat nélküli módban van.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Ellenőrizze az internetkapcsolatát, és próbálja újra.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Csoportkörök szakasza</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

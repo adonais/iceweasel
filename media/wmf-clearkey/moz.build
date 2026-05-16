@@ -37,6 +37,8 @@ DEFFILE = "WMFClearKey.def"
 if CONFIG["CC_TYPE"] == "clang-cl":
     CXXFLAGS += [
         "-Wno-missing-braces",
+    ]
+    COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += [
         "-Wunused-result",
     ]
 

@@ -2,37 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@import url("chrome://global/content/elements/moz-message-bar.tokens.css");
+
 :host {
-  /* Icon */
-  --message-bar-icon-color: var(--icon-color-information);
-  --message-bar-icon-size: var(--icon-size);
   --message-bar-icon-close-url: url("chrome://global/skin/icons/close.svg");
-
-  /* Container */
-  --message-bar-container-min-height: var(--size-item-large);
-
-  /* Border */
-  --message-bar-border-color: oklch(from var(--message-bar-icon-color) l c h / 20%);
-  --message-bar-border-radius: var(--border-radius-small);
-  --message-bar-border-width: var(--border-width);
-
-  /* Text */
-  --message-bar-text-color: var(--text-color);
-
-  /* Background */
-  --message-bar-background-color: var(--background-color-information);
 
   background-color: var(--message-bar-background-color);
   border: var(--message-bar-border-width) solid var(--message-bar-border-color);
   border-radius: var(--message-bar-border-radius);
   color: var(--message-bar-text-color);
   text-align: start;
-}
-
-@media (prefers-contrast) {
-  :host {
-    --message-bar-border-color: var(--border-color);
-  }
 }
 
 /* Make the host to behave as a block by default, but allow hidden to hide it. */

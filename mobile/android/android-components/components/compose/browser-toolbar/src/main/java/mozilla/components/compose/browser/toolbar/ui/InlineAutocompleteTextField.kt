@@ -7,6 +7,7 @@ package mozilla.components.compose.browser.toolbar.ui
 import android.content.Context
 import android.text.Spanned
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import androidx.annotation.DoNotInline
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.ComposeFoundationFlags
@@ -48,6 +49,11 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.InterceptPlatformTextInput
@@ -206,7 +212,47 @@ internal fun InlineAutocompleteTextField(
                             keyboardController?.show()
                         }
                     }
-                    .focusRequester(focusRequester),
+                    .focusRequester(focusRequester)
+                    .onPreviewKeyEvent { keyEvent ->
+                        if (keyEvent.type == KeyEventType.KeyUp &&
+                            (keyEvent.key == Key.DirectionRight || keyEvent.key == Key.MoveEnd)
+                        ) {
+                            val currentText = textFieldState.text.toString()
+                            val suggestionText = currentSuggestion?.text
+
+                            if (suggestionText != null && shouldAcceptSuggestion(
+                                    currentText = currentText,
+                                    suggestionText = suggestionText,
+                                    useSuggestion = useSuggestion,
+                                )
+                            ) {
+                                onUrlEdit(
+                                    BrowserToolbarQuery(
+                                        previous = currentText,
+                                        current = suggestionText,
+                                    ),
+                                )
+                                textFieldState.edit {
+                                    replace(0, length, suggestionText)
+                                    selection = TextRange(suggestionText.length)
+                                }
+                                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE)
+                                    as InputMethodManager
+                                imm.updateSelection(
+                                    localView,
+                                    suggestionText.length,
+                                    suggestionText.length,
+                                    -1,
+                                    -1,
+                                )
+                                true
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    },
                 textStyle = TextStyle(
                     fontSize = TEXT_SIZE.sp,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -448,6 +494,19 @@ internal object NoPersonalizedLearningHelper {
     fun addNoPersonalizedLearning(info: EditorInfo) {
         info.imeOptions = info.imeOptions or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
     }
+}
+
+private fun shouldAcceptSuggestion(
+    currentText: String,
+    suggestionText: String,
+    useSuggestion: Boolean,
+): Boolean {
+    val suggestionExtendsCurrentText = suggestionText.startsWith(currentText)
+    val suggestionAddsNewText = suggestionText.length > currentText.length
+
+    return useSuggestion &&
+        suggestionExtendsCurrentText &&
+        suggestionAddsNewText
 }
 
 /**

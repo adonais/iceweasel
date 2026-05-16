@@ -26,12 +26,10 @@ UNIFIED_SOURCES += [
     "mozAccessible.mm",
     "mozActionElements.mm",
     "mozHTMLAccessible.mm",
-    "mozRootAccessible.mm",
     "mozSelectableElements.mm",
     "mozTableAccessible.mm",
     "mozTextAccessible.mm",
     "Platform.mm",
-    "RootAccessibleWrap.mm",
     "RotorRules.mm",
 ]
 

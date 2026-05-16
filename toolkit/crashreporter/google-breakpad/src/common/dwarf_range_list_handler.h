@@ -1,5 +1,3 @@
-// -*- mode: c++ -*-
-
 // Copyright (c) 2018 Google Inc.
 // All rights reserved.
 //

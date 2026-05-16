@@ -18,15 +18,8 @@
 
 namespace mozilla::dom {
 
-const float BUTTON_THRESHOLD_VALUE = 0.1f;
-
 float NormalizeTouch(long aValue, long aMin, long aMax) {
   return (2.f * (aValue - aMin) / static_cast<float>(aMax - aMin)) - 1.f;
-}
-
-double AxisToButtonValue(double aValue) {
-  // Mapping axis value range from (-1, +1) to (0, +1).
-  return (aValue + 1.0f) * 0.5f;
 }
 
 void FetchDpadFromAxis(GamepadHandle aHandle, double dir) {

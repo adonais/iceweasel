@@ -602,6 +602,11 @@ class AvailableLocalesEnumeration final {
     }
   };
 
+  /**
+   * Return the total number of available locales.
+   */
+  int32_t Count() const { return mLocalesCount; }
+
   // std::iterator begin() and end() methods.
 
   /**
@@ -685,6 +690,11 @@ class ICU4XEnumeration final {
       return mozilla::Span<const char>{ptr, len};
     }
   };
+
+  /**
+   * Return the total number of entries.
+   */
+  uintptr_t Count() const { return mLen; }
 
   // std::iterator begin() and end() methods.
 

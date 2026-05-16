@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.interactor
 
 import org.mozilla.fenix.home.bookmarks.interactor.BookmarksInteractor
+import org.mozilla.fenix.home.logo.LogoInteractor
 import org.mozilla.fenix.home.pocket.interactor.PocketStoriesInteractor
 import org.mozilla.fenix.home.privatebrowsing.interactor.PrivateBrowsingInteractor
 import org.mozilla.fenix.home.recentsyncedtabs.interactor.RecentSyncedTabInteractor
@@ -16,6 +17,7 @@ import org.mozilla.fenix.home.sessioncontrol.MessageCardInteractor
 import org.mozilla.fenix.home.sessioncontrol.SetupChecklistInteractor
 import org.mozilla.fenix.home.sessioncontrol.TabSessionInteractor
 import org.mozilla.fenix.home.sessioncontrol.WallpaperInteractor
+import org.mozilla.fenix.home.sports.SportsInteractor
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerInteractor
 import org.mozilla.fenix.home.toolbar.ToolbarInteractor
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
@@ -40,4 +42,6 @@ interface HomepageInteractor :
     PrivateBrowsingInteractor,
     SearchSelectorInteractor,
     WallpaperInteractor,
-    SetupChecklistInteractor
+    SetupChecklistInteractor,
+    LogoInteractor,
+    SportsInteractor

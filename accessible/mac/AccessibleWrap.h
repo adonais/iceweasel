@@ -23,6 +23,7 @@
 
 #if defined(__OBJC__)
 @class mozAccessible;
+@class NSView;
 #endif
 
 namespace mozilla {
@@ -41,6 +42,15 @@ class AccessibleWrap : public LocalAccessible {
    * Get the native Obj-C object (mozAccessible).
    */
   virtual void GetNativeInterface(void** aOutAccessible) override;
+
+  /**
+   * Get the NSView parallel to this accessible.
+   */
+#if defined(__OBJC__)
+  NSView* GetNativeWidget();
+#else
+  id GetNativeWidget();
+#endif
 
   /**
    * The objective-c |Class| type that this accessible's native object

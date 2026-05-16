@@ -7429,7 +7429,7 @@
  * Copy the post-signing data, which was left alongside the installer
  * by the self-extractor stub, into the global location for this data.
  *
- * If the post-signing data file doesn't exist, or is empty, an error value 
+ * If the post-signing data file doesn't exist, or is empty, an error value
  * is pushed on the stack, and nothing is copied.
  * Otherwise the first line of the post-signing data (including newline,
  * if any) is pushed on the stack.

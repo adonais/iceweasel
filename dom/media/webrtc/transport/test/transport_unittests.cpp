@@ -27,6 +27,7 @@
 #include "ssl.h"
 #include "sslexp.h"
 #include "sslproto.h"
+#include "stunserver.h"
 #include "transportflow.h"
 #include "transportlayer.h"
 #include "transportlayerdtls.h"
@@ -438,11 +439,10 @@ class TransportTestPeer : public sigslot::has_slots<> {
         test_utils_(utils) {
     NrIceCtx::InitializeGlobals(NrIceCtx::GlobalConfig());
     ice_ctx_ = NrIceCtx::Create(name);
-    std::vector<NrIceStunServer> stun_servers;
-    UniquePtr<NrIceStunServer> server(NrIceStunServer::Create(
-        std::string((char*)"stun.services.mozilla.com"), 3478));
-    stun_servers.push_back(*server);
-    EXPECT_TRUE(NS_SUCCEEDED(ice_ctx_->SetStunServers(stun_servers)));
+    nsTArray<ParsedIceServer> stun_servers;
+    stun_servers.AppendElement(
+        MakeStunEntry("stun.services.mozilla.com", 3478));
+    EXPECT_TRUE(NS_SUCCEEDED(ice_ctx_->SetIceServers(stun_servers, false)));
 
     dtls_->SetIdentity(identity_);
     dtls_->SetRole(offerer_ ? TransportLayerDtls::SERVER

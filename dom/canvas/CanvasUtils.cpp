@@ -545,14 +545,20 @@ ImageExtraction ImageExtractionResult(dom::OffscreenCanvas* aOffscreenCanvas,
     return ImageExtraction::Placeholder;
   }
 
+  if (GetCanvasExtractDataPermission(aPrincipal) ==
+      nsIPermissionManager::ALLOW_ACTION) {
+    return ImageExtraction::Unrestricted;
+  }
+
+  if (aOffscreenCanvas->ShouldResistFingerprinting(
+          RFPTarget::EfficientCanvasRandomization)) {
+    return ImageExtraction::EfficientRandomize;
+  }
+
   if (aOffscreenCanvas->ShouldResistFingerprinting(
           RFPTarget::CanvasRandomization) ||
       aOffscreenCanvas->ShouldResistFingerprinting(
           RFPTarget::WebGLRandomization)) {
-    if (GetCanvasExtractDataPermission(aPrincipal) ==
-        nsIPermissionManager::ALLOW_ACTION) {
-      return ImageExtraction::Unrestricted;
-    }
     return ImageExtraction::Randomize;
   }
 

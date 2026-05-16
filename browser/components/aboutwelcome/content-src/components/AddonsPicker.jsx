@@ -8,24 +8,23 @@ import { Localized } from "./MSLocalized";
 import { InstallButton } from "./InstallButton";
 
 export const AddonsPicker = props => {
-  const { content, installedAddons, layout } = props;
+  const { content, installedAddons, layout, handleAction } = props;
 
   if (!content) {
     return null;
   }
 
-  function handleAction(event) {
+  function handleInstallClick(event) {
     const { message_id, writeInMicrosurvey } = props;
     let { action, source_id } = content.tiles.data[event.currentTarget.value];
-    let { type, data } = action;
 
-    if (type === "INSTALL_ADDON_FROM_URL") {
-      if (!data) {
+    if (action.type === "INSTALL_ADDON_FROM_URL") {
+      if (!action.data) {
         return;
       }
     }
 
-    AboutWelcomeUtils.handleUserAction({ type, data });
+    handleAction(event, action);
     AboutWelcomeUtils.sendActionTelemetry(
       message_id,
       source_id,
@@ -102,7 +101,7 @@ export const AddonsPicker = props => {
                     <InstallButton
                       key={id}
                       addonId={id}
-                      handleAction={handleAction}
+                      handleAction={handleInstallClick}
                       index={index}
                       installedAddons={installedAddons}
                       install_label={install_label}
@@ -129,7 +128,7 @@ export const AddonsPicker = props => {
                   <InstallButton
                     key={id}
                     addonId={id}
-                    handleAction={handleAction}
+                    handleAction={handleInstallClick}
                     index={index}
                     installedAddons={installedAddons}
                     install_label={install_label}

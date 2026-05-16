@@ -241,6 +241,10 @@ For jobs that operate on only one locale, we set the attribute ``locale`` to the
 specific locale involved. Currently this is only in l10n versions of the
 ``beetmover`` and ``balrog`` kinds.
 
+build_target
+============
+The build_target used in update requests for the platform. A list of these can be found in ``python/mozrelease/mozrelease/platforms.py``.
+
 signed
 ======
 Signals that the output of this task contains signed artifacts.
@@ -418,9 +422,9 @@ The mar-channel-ids this build will accept updates to. It should usually be the 
 the value mar_channel_id.  If more than one ID is needed, then you should use a
 comma separated list of values.
 
-openh264_rev
-============
-Only used for openh264 plugin builds, used to signify the revision (and thus inform artifact name) of the given build.
+openh264_version
+================
+Only used for openh264 plugin builds, used to signify the version (and thus inform artifact name) of the given build.
 
 code-review
 ===========

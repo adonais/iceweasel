@@ -34,63 +34,40 @@ namespace TestThreadPoolIdleTimeout {
 // environment, while running the timeout test we run in parallel some
 // extra timeouts of known duration in order to check for their deviation.
 // This allows us to skip test conditions if the deviation is getting
-// significant. This is not perfect because this is run on different threads
-// but there is no significant workload on the tested threads, neither, so
-// hopefully we capture most cases with this.
+// significant.
+//
+// The checker uses CondVar::Wait to measure timeout precision because the
+// thread pool idle timeout itself uses CondVar::Wait internally. This ensures
+// the checker reflects the same timing characteristics as the code under test.
 template <uint32_t ms, size_t repeats>
 class ScopedTimingChecker {
-  Mutex mMutex{"ScopedTimingCheckMutex"};
-  CondVar mWaitForTimer MOZ_GUARDED_BY(mMutex);
-  nsCOMPtr<nsISerialEventTarget> mTarget MOZ_GUARDED_BY(mMutex);
-  TimeStamp mLastStart MOZ_GUARDED_BY(mMutex);
-  nsCOMPtr<nsITimer> mTimer MOZ_GUARDED_BY(mMutex);
-  AutoTArray<TimeDuration, repeats> mEffectiveMS MOZ_GUARDED_BY(mMutex);
   double& mDeviationPerc;
-
-  void TimerFn() {
-    MutexAutoLock lock(mMutex);
-    TimeDuration delta = TimeStamp::Now() - mLastStart;
-    mEffectiveMS.AppendElement(delta);
-    if (mEffectiveMS.Length() < repeats) {
-      mLastStart = TimeStamp::Now();
-      auto ret = NS_NewTimerWithCallback(
-          [self = this](nsITimer* t) { self->TimerFn(); },
-          TimeDuration::FromMilliseconds(ms), nsITimer::TYPE_ONE_SHOT,
-          "TimingChecker"_ns, mTarget);
-      MOZ_ASSERT(ret.isOk());
-      mTimer = ret.unwrap();
-    } else {
-      mWaitForTimer.Notify();
-    }
-  };
+  nsCOMPtr<nsIThread> mThread;
 
  public:
-  ScopedTimingChecker(nsCOMPtr<nsISerialEventTarget> aTarget,
-                      double& aDeviationPerc)
-      : mWaitForTimer(mMutex, "WaitForPeak"),
-        mTarget(std::move(aTarget)),
-        mDeviationPerc(aDeviationPerc) {
-    MutexAutoLock lock(mMutex);
-    mLastStart = TimeStamp::Now();
-    auto ret = NS_NewTimerWithCallback(
-        [self = this](nsITimer* t) { self->TimerFn(); },
-        TimeDuration::FromMilliseconds(ms), nsITimer::TYPE_ONE_SHOT,
-        "TimingChecker"_ns, mTarget);
-    MOZ_ASSERT(ret.isOk());
-    mTimer = ret.unwrap();
+  explicit ScopedTimingChecker(double& aDeviationPerc)
+      : mDeviationPerc(aDeviationPerc) {
+    NS_NewNamedThread(
+        "TimingCheck", getter_AddRefs(mThread),
+        NS_NewRunnableFunction("TimingCheckRun", [this]() {
+          Mutex mutex{"ScopedTimingCheckMutex"};
+          CondVar condVar(mutex, "ScopedTimingCheckCondVar");
+          double maxDeviation = 0.0;
+          for (size_t i = 0; i < repeats; i++) {
+            TimeStamp before = TimeStamp::Now();
+            {
+              MutexAutoLock lock(mutex);
+              condVar.Wait(TimeDuration::FromMilliseconds(ms));
+            }
+            double elapsed = (TimeStamp::Now() - before).ToMilliseconds();
+            maxDeviation = std::max(maxDeviation, std::abs(elapsed - ms));
+          }
+          mDeviationPerc = 100.0 * (maxDeviation / ms);
+        }));
   }
 
   ~ScopedTimingChecker() {
-    MutexAutoLock lock(mMutex);
-    if (mEffectiveMS.Length() < repeats) {
-      mWaitForTimer.Wait();
-    }
-    double maxDeviation = 0.0;
-    for (size_t i = 0; i < repeats; i++) {
-      maxDeviation = std::max(maxDeviation,
-                              std::abs(mEffectiveMS[i].ToMilliseconds() - ms));
-    }
-    mDeviationPerc = 100.0 * (maxDeviation / ms);
+    mThread->Shutdown();
     printf("ScopedTimingChecker calculated %.2f %% deviation.\n",
            mDeviationPerc);
   }
@@ -243,7 +220,7 @@ TEST(ThreadPoolIdleTimeout, Test)
     TimeDuration graceTime;
     {
       ScopedTimingChecker<IDLE_THREAD_GRACE_TIMEOUT / 5, 5> checker(
-          helperTarget, deviationPerc);
+          deviationPerc);
       {
         MutexAutoLock lock(waitMutex);
         activateThreads(NUMBER_OF_MAX_THREADS);
@@ -285,7 +262,7 @@ TEST(ThreadPoolIdleTimeout, Test)
     {
       ScopedTimingChecker<
           (IDLE_THREAD_MAX_TIMEOUT - IDLE_THREAD_GRACE_TIMEOUT) / 5, 5>
-          checker(helperTarget, deviationPerc);
+          checker(deviationPerc);
       printf("%u Wait for maximum timeout...\n",
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds());
       {
@@ -366,7 +343,7 @@ TEST(ThreadPoolIdleTimeout, Test)
     double deviationPerc = 0.0;
     {
       ScopedTimingChecker<IDLE_THREAD_GRACE_TIMEOUT / 5, 5> checker(
-          helperTarget, deviationPerc);
+          deviationPerc);
 
       // Create some low level noise that should need only 1 idle thread at
       // a time (1 runnable every 50ms for 625ms).

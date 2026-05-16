@@ -2179,6 +2179,22 @@ networking:
       - direct
       - unknown
 
+  proxy_fast_path_used:
+    type: counter
+    description: >
+      The number of HTTP channels that skipped async proxy resolution via the
+      fast path (system proxy reports no proxy configured, no filters
+      registered).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2028356
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2028356
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
   os_socket_limit_reached:
     type: counter
     description: >
@@ -2534,6 +2550,23 @@ network.cookies:
     expires: never
     telemetry_mirror: MOZ_SQLITE_COOKIES_OPEN_READAHEAD_MS
 
+  open_error:
+    type: labeled_counter
+    description: >
+      Counts the number of times the cookie DB failed to open at startup,
+      labeled by nsresult error name. Used to diagnose cases where the
+      cookie DB may be incorrectly wiped due to transient I/O errors
+      rather than actual corruption.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972382
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972382
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+    expires: 157
+
 network:
   id:
     type: custom_distribution
@@ -2722,3 +2755,30 @@ network:
     notification_emails:
       - necko@mozilla.com
     expires: never
+
+  content_decoding_error_report:
+    type: event
+    description: >
+      Recorded when a content decoding error occurs, including the
+      top-level site for site-specific investigation.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2016228
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2016228
+    data_sensitivity:
+      - stored_content
+    notification_emails:
+      - necko@mozilla.com
+    send_in_pings:
+      - content-decoding-error
+    expires: never
+    extra_keys:
+      error_type:
+        description: >
+          The type of decoding error: gzip, deflate, brotli, zstd, dcb,
+          dcz, or dict_hash_mismatch.
+        type: string
+      top_level_site:
+        description: >
+          The ETLD+1 of the top-level document site.
+        type: string

@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = Tilpas
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Afvis
+    .aria-label = Afvis
 
 ## Search box component.
 
@@ -69,6 +72,11 @@ newtab-topsites-url-validation = Gyldig URL påkrævet
 newtab-topsites-image-url-label = URL til selvvalgt billede
 newtab-topsites-use-image-link = Brug selvvalgt billede…
 newtab-topsites-image-validation = Kunne ikke indlæse billede. Prøv en anden URL.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Ryd tekst
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
@@ -304,9 +312,21 @@ newtab-error-fallback-refresh-link = Prøv igen ved at genindlæse siden.
 
 newtab-custom-shortcuts-title = Genveje
 newtab-custom-shortcuts-subtitle = Gemte eller besøgte websteder
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Genveje
     .description = Gemte eller besøgte websteder
+newtab-custom-shortcuts-nova =
+    .label = Genveje
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } række
+           *[other] { $num } rækker
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -317,9 +337,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Sponsorerede genveje
 newtab-custom-pocket-title = Anbefalet af { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Interessant indhold udvalgt af { -pocket-brand-name }, en del af { -brand-product-name }-familien
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Anbefalede historier
     .description = Interessant indhold udvalgt af { -brand-product-name }-holdet
+newtab-recommended-stories-toggle =
+    .label = Anbefalede historier
 newtab-custom-stories-personalized-toggle =
     .label = Historier
 newtab-custom-stories-personalized-checkbox-label = Tilpassede historier baseret på din aktivitet
@@ -353,8 +376,11 @@ newtab-custom-settings = Håndter flere indstillinger
 
 newtab-wallpaper-title = Baggrunde
 newtab-wallpaper-reset = Nulstil til standard
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Upload et billede
 newtab-wallpaper-custom-color = Vælg en farve
+newtab-wallpaper-toggle-title =
+    .label = Baggrunde
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Billedet overskrider grænsen for filstørrelse på { $file_size } MB. Prøv at uploade en mindre fil.
@@ -377,6 +403,7 @@ newtab-wallpaper-light-fox-anniversary = En ræv på en græsmark i et tåget bj
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Ensfarvede
 newtab-wallpaper-blue = Blå
 newtab-wallpaper-light-blue = Lyseblå
@@ -483,7 +510,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Skift til Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Skift til Celsius
-newtab-weather-menu-hide-weather-v2 = Skjul vejr
 newtab-weather-menu-hide-weather = Skjul vejr på Nyt faneblad
 newtab-weather-menu-learn-more = Læs mere
 newtab-weather-menu-detect-my-location = Registrer min placering
@@ -630,6 +656,8 @@ newtab-report-cancel = Annuller
 newtab-report-submit = Indsend
 newtab-toast-thanks-for-reporting =
     .message = Tak for at du rapporterer dette.
+newtab-toast-widgets-hidden =
+    .message = Vælg blyant-ikonet for at tilføje widgets igen.
 
 ## Strings for task / to-do list productivity widget
 
@@ -649,7 +677,6 @@ newtab-widget-lists-menu-edit = Rediger listens navn
 newtab-widget-lists-menu-create = Opret en ny liste
 newtab-widget-lists-menu-delete = Slet denne liste
 newtab-widget-lists-menu-copy = Kopier liste til udklipsholderen
-newtab-widget-lists-menu-hide = Skjul alle lister
 newtab-widget-lists-menu-learn-more = Læs mere
 newtab-widget-lists-input-add-an-item =
     .placeholder = Tilføj et element
@@ -670,6 +697,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Ny liste
 newtab-widget-section-title = Widgets
+newtab-widget-menu-hide = Skjul widgets
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Skjul widgets
@@ -680,6 +708,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimer widgets
     .aria-label = Sammenfold alle widgets til kompakt størrelse
+newtab-widget-section-feedback = Fortæl os, hvad du synes
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -700,11 +729,13 @@ newtab-widget-timer-reset =
     .title = Nulstil
 newtab-widget-timer-menu-notifications = Slå notifikationer fra
 newtab-widget-timer-menu-notifications-on = Slå notifikationer til
-newtab-widget-timer-menu-hide = Skjul timer
 newtab-widget-timer-menu-learn-more = Læs mere
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Topoverskrifter
 newtab-daily-briefing-card-menu-dismiss = Afvis
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = Opdateret for { $minutes } m. siden
 newtab-widget-message-title = Hold fokus med lister og den indbyggede timer
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Fra hurtige påmindelser til daglige opgaver — funktionen Fokus hjælper dig med at have styr på tingene og din tid.
@@ -728,3 +759,10 @@ newtab-activation-window-message-dismiss-button =
 # existing widgetry that appears on it.
 newtab-activation-window-message-customization-focus-header = Gør denne plads til din egen
 newtab-activation-window-message-customization-focus-message = Vælg en ny baggrund, tilføj genveje til dine foretrukne websteder, og hold dig opdateret med artikler, som interesserer dig.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Gå i gang med at tilpasse
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = Denne plads følger dine regler

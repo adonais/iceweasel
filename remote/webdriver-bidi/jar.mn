@@ -5,6 +5,7 @@
 remote.jar:
 % content remote %content/
 
+  content/webdriver-bidi/ConsoleMessageFormatter.sys.mjs (ConsoleMessageFormatter.sys.mjs)
   content/webdriver-bidi/DownloadBehaviorManager.sys.mjs (DownloadBehaviorManager.sys.mjs)
   content/webdriver-bidi/NewSessionHandler.sys.mjs (NewSessionHandler.sys.mjs)
   content/webdriver-bidi/ProxyPerUserContextManager.sys.mjs (ProxyPerUserContextManager.sys.mjs)

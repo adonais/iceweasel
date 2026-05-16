@@ -22,9 +22,9 @@ class MediaKeys;
 
 class PMFCDMChild;
 class PMFMediaEngineChild;
-class RemoteCDMChild;
+class RemoteCDMProxy;
 class RemoteDecoderChild;
-class RemoteMediaDataEncoderChild;
+class RemoteMediaDataEncoder;
 
 enum class RemoteMediaIn {
   Unspecified,
@@ -70,7 +70,7 @@ class RemoteMediaManagerChild final
       const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
   static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateVideoDecoder(
       const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
-  static RefPtr<RemoteCDMChild> CreateCDM(RemoteMediaIn aLocation,
+  static RefPtr<RemoteCDMProxy> CreateCDM(RemoteMediaIn aLocation,
                                           dom::MediaKeys* aKeys,
                                           const nsAString& aKeySystem,
                                           bool aDistinctiveIdentifierRequired,
@@ -79,8 +79,7 @@ class RemoteMediaManagerChild final
   static media::EncodeSupportSet Supports(RemoteMediaIn aLocation,
                                           CodecType aCodec);
   static RefPtr<PlatformEncoderModule::CreateEncoderPromise> InitializeEncoder(
-      RefPtr<RemoteMediaDataEncoderChild>&& aEncoder,
-      const EncoderConfig& aConfig);
+      RefPtr<RemoteMediaDataEncoder>&& aEncoder, const EncoderConfig& aConfig);
 
   // Can be called from any thread.
   static nsCOMPtr<nsISerialEventTarget> GetManagerThread();

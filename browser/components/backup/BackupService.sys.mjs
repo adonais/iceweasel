@@ -1468,6 +1468,12 @@ export class BackupService extends EventTarget {
    * Creates a backup for a given profile into a staging foler.
    *
    * @param {string} profilePath The path to the profile to backup.
+   * @param {ArchiveEncryptionState|null|undefined} [encState=undefined]
+   *   If supplied, overrides the ArchiveEncryptionState that the BackupService
+   *   uses by default with one supplied the caller. If this is null, this means
+   *   that the backup will not be encrypted. If this is undefined, this will
+   *   fallback to using the ArchiveEncryptionState that BackupService uses by
+   *   default.
    * @returns {Promsie<object>} An object containing the results of this function.
    * @property {STEPS} currentStep The current step of the backup process.
    * @property {string} backupDirPath The path to the folder containing backups.
@@ -1479,7 +1485,7 @@ export class BackupService extends EventTarget {
    *   manifest object.
    * @property {Error} error An error. Only included if an error was thrown.
    */
-  async createAndPopulateStagingFolder(profilePath) {
+  async createAndPopulateStagingFolder(profilePath, encState) {
     let currentStep, backupDirPath, renamedStagingPath, manifest;
     try {
       currentStep = STEPS.CREATE_BACKUP_CREATE_MANIFEST;
@@ -1512,8 +1518,13 @@ export class BackupService extends EventTarget {
         }
       );
 
-      currentStep = STEPS.CREATE_BACKUP_LOAD_ENCSTATE;
-      let encState = await this.loadEncryptionState(profilePath);
+      if (encState === undefined) {
+        currentStep = STEPS.CREATE_BACKUP_LOAD_ENCSTATE;
+        encState = await this.loadEncryptionState(profilePath);
+      } else {
+        lazy.logConsole.debug("Using encState param: ", encState);
+      }
+
       let encryptionEnabled = !!encState;
       lazy.logConsole.debug("Encryption enabled: ", encryptionEnabled);
 
@@ -1657,6 +1668,13 @@ export class BackupService extends EventTarget {
    * @param {string} [options.reason=unknown]
    *   The reason for starting the backup. This is sent along with the
    *   backup.backup_start event.
+   * @param {ArchiveEncryptionState|null} [options.encState=undefined]
+   *   Callers can supply an override to the current encryption state if they,
+   *   for example, want to create a one-off encrypted backup with a different
+   *   passphrase, or want to create a backup without encryption when encryption
+   *   is still enabled. When undefined, this will use the current default
+   *   encryption state. When null, this will create the backup without
+   *   encryption.
    * @returns {Promise<CreateBackupResult|null>}
    *   A promise that resolves to information about the backup that was
    *   created, or null if the backup failed.
@@ -1664,6 +1682,7 @@ export class BackupService extends EventTarget {
   async createBackup({
     profilePath = PathUtils.profileDir,
     reason = "unknown",
+    encState,
   } = {}) {
     let status = this.archiveEnabledStatus;
     if (!status.enabled) {
@@ -1678,6 +1697,10 @@ export class BackupService extends EventTarget {
     }
 
     Glean.browserBackup.backupStart.record({ reason });
+
+    if (encState === undefined) {
+      encState = await this.loadEncryptionState(profilePath);
+    }
 
     return locks.request(
       BackupService.WRITE_BACKUP_LOCK_NAME,
@@ -1706,7 +1729,10 @@ export class BackupService extends EventTarget {
             `Destination for archive: ${archiveDestFolderPath}`
           );
 
-          let result = await this.createAndPopulateStagingFolder(profilePath);
+          let result = await this.createAndPopulateStagingFolder(
+            profilePath,
+            encState
+          );
           currentStep = result.currentStep;
           if (result.error) {
             // Re-throw the error so we can catch it below for telemetry
@@ -1741,7 +1767,7 @@ export class BackupService extends EventTarget {
             archiveTmpPath,
             BackupService.ARCHIVE_TEMPLATE,
             compressedStagingPath,
-            this.#encState,
+            encState,
             manifest.meta
           ).finally(async () => {
             await IOUtils.remove(compressedStagingPath, {
@@ -1915,9 +1941,17 @@ export class BackupService extends EventTarget {
 
     let existingChildren = await IOUtils.getChildren(destFolder);
 
-    const FILENAME_PREFIX = `${BackupService.BACKUP_FILE_NAME}_${metadata.profileName}`;
+    // construct prefix
+    let nameParts = [BackupService.BACKUP_FILE_NAME, metadata.profileName];
+    let storeID = lazy.SelectableProfileService.storeID;
+    if (storeID) {
+      nameParts.push(storeID);
+    }
+    const FILENAME_PREFIX = nameParts.join("_");
+
     const FILENAME = `${FILENAME_PREFIX}_${archiveDateSuffix}.html`;
     let destPath = PathUtils.join(destFolder, FILENAME);
+
     lazy.logConsole.log("Moving single-file archive to ", destPath);
     await IOUtils.move(sourcePath, destPath);
 
@@ -4589,7 +4623,7 @@ export class BackupService extends EventTarget {
       if (this.state.encryptionEnabled) {
         await this.disableEncryption();
       }
-      this.deleteLastBackup();
+      await this.deleteLastBackup();
     } catch (e) {
       // Ignore any exceptions
       lazy.logConsole.error(

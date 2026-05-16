@@ -130,9 +130,21 @@
         let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(topWindow);
         control.controlEl.focus();
         synthesizeKey(" ");
-        await pickerOpened;
-        synthesizeKey("KEY_ArrowDown");
-        synthesizeKey("KEY_Enter");
+        const selectPopup = await pickerOpened;
+        if (
+          navigator.platform.startsWith("Mac") &&
+          Services.prefs.getBoolPref(
+            "widget.macos.native-anchored-menus",
+            false
+          ) &&
+          Services.prefs.getBoolPref("widget.macos.allow-native-select", false)
+        ) {
+          // Synthesized events are not available with native menus
+          selectPopup.activateItem(selectPopup.childNodes[2]);
+        } else {
+          synthesizeKey("KEY_ArrowDown");
+          synthesizeKey("KEY_Enter");
+        }
         await settingChanged;
 
         is(Services.prefs.getIntPref(PREF), 2, "pref is 2");

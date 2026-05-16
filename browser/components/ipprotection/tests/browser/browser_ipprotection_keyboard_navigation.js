@@ -4,30 +4,6 @@
 
 "use strict";
 
-// Borrowed from browser_PanelMultiView_keyboard.js
-async function expectFocusAfterKey(aKey, aFocus) {
-  let res = aKey.match(/^(Shift\+)?(.+)$/);
-  let shift = Boolean(res[1]);
-  let key;
-  if (res[2].length == 1) {
-    key = res[2]; // Character.
-  } else {
-    key = "KEY_" + res[2]; // Tab, ArrowRight, etc.
-  }
-  info("Waiting for focus on " + aFocus.id);
-  // Attempts to capture a nested button element (ie. inside of a moz-button)
-  let focused = BrowserTestUtils.waitForEvent(
-    aFocus.buttonEl ?? aFocus,
-    "focus"
-  );
-  EventUtils.synthesizeKey(key, { shiftKey: shift });
-  await focused;
-  ok(
-    true,
-    `${aFocus.id || "unidentified element"} focused after [${aKey}] pressed`
-  );
-}
-
 /**
  * Tests that the panel can be navigated with Tab and Arrow keys
  * and that the help button responds to the Enter key
@@ -58,8 +34,11 @@ add_task(async function test_keyboard_navigation_in_panel() {
 
   let statusCard = content.statusCardEl;
   let turnOnButton = statusCard.actionButtonEl;
+  let locationButton = statusCard.locationButtonEl;
 
   await expectFocusAfterKey("Tab", turnOnButton);
+
+  await expectFocusAfterKey("Tab", locationButton);
 
   await expectFocusAfterKey("Tab", content.settingsButtonEl);
 
@@ -72,6 +51,8 @@ add_task(async function test_keyboard_navigation_in_panel() {
   );
   await expectFocusAfterKey("Tab", turnOnButton);
 
+  await expectFocusAfterKey("Tab", locationButton);
+
   await expectFocusAfterKey("Tab", content.settingsButtonEl);
 
   // Loop back around with ArrowDown
@@ -80,8 +61,10 @@ add_task(async function test_keyboard_navigation_in_panel() {
   );
   await expectFocusAfterKey("ArrowDown", headerButton);
   await expectFocusAfterKey("ArrowDown", turnOnButton);
+  await expectFocusAfterKey("ArrowDown", locationButton);
 
   // Test ArrowUp (backward)
+  await expectFocusAfterKey("ArrowUp", turnOnButton);
   await expectFocusAfterKey("ArrowUp", headerButton);
 
   // Navigate forward to turnOnButton to set up for Shift+Tab test

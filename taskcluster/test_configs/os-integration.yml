@@ -20,10 +20,10 @@
       - macosx1500-aarch64/debug
       - macosx1470-64/debug
       - windows10-64-2009-qr/debug
-      - windows11-32-24h2/opt
-      - windows11-32-24h2/debug
-      - windows11-64-24h2/opt
-      - windows11-64-24h2/debug
+      - windows11-32-25h2/opt
+      - windows11-32-25h2/debug
+      - windows11-64-25h2/opt
+      - windows11-64-25h2/debug
   unittest_suite: &unittest-suites
       - marionette-integration
       - mochitest-browser-chrome
@@ -66,8 +66,8 @@
 # win/gpu
 - kind: web-platform-tests
   test_platform:
-      - windows11-64-24h2/opt
-      - windows11-64-24h2/debug
+      - windows11-64-25h2/opt
+      - windows11-64-25h2/debug
   unittest_suite:
       - web-platform-tests-reftest
   unittest_variant: null
@@ -82,7 +82,7 @@
 
 - kind: *unittest-kinds
   test_platform:
-      - windows11-64-24h2-asan/opt
+      - windows11-64-25h2-asan/opt
   unittest_suite: *unittest-suites
   unittest_variant:
       - null

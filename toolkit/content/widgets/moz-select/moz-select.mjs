@@ -202,7 +202,7 @@ export default class MozSelect extends MozBaseInputElement {
     if (navigator.platform.includes("Mac")) {
       this.panelTrigger?.focus();
     }
-    this.panelList?.toggle(event);
+    this.panelList?.toggle(event, this.panelTrigger);
   }
 
   /**
@@ -274,7 +274,12 @@ export default class MozSelect extends MozBaseInputElement {
     for (let i = 1; i < options.length; i++) {
       let nextIndex = currentIndex + direction * i;
       let nextOption = options[nextIndex];
-      if (nextOption && !nextOption.disabled && !nextOption.hidden) {
+      if (
+        nextOption &&
+        !nextOption.disabled &&
+        !nextOption.hidden &&
+        !nextOption.separator
+      ) {
         this.value = nextOption.value;
         this.redispatchEvent(new Event("change", { bubbles: true }));
         return;
@@ -372,7 +377,7 @@ export default class MozSelect extends MozBaseInputElement {
       @keydown=${this.handlePanelKeydown}
       ?disabled=${this.disabled || this.parentDisabled}
     >
-      ${this.selectedOption?.label}
+      <span class="panel-trigger-text">${this.selectedOption?.label}</span>
     </button>`;
   }
 

@@ -1,4 +1,4 @@
-// Tests stepping through the wasm code with JS PI suspendable stack.
+// Tests stepping through the wasm code with JS PI cont stack.
 
 const g = newGlobal({ newCompartment: true });
 const dbg = new Debugger(g);
@@ -39,8 +39,8 @@ dbg.onExceptionUnwind = function (f, e) {
   checkStack("exception");
 };
 
-// Run typical JS PI program: create suspendable stack, suspend execution,
-// throw on suspendable stack.
+// Run typical JS PI program: create cont stack, suspend execution,
+// throw on cont stack.
 g.eval(`
 function wasmEvalText(t, imp) {
   var wasm = wasmTextToBinary(t)

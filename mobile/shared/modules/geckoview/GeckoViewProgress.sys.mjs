@@ -307,8 +307,7 @@ class ProgressTracker extends Tracker {
     // Although Firefox Desktop always set title by onLocationChange, to reduce title change call,
     // we only send title during history navigation.
     if ((aStateFlags & Ci.nsIWebProgressListener.STATE_RESTORING) != 0) {
-      this.eventDispatcher.sendRequest({
-        type: "GeckoView:PageTitleChanged",
+      this.eventDispatcher.sendRequest("GeckoView:PageTitleChanged", {
         title: this.browser.contentTitle,
       });
     }
@@ -443,8 +442,7 @@ class ProgressTracker extends Tracker {
     debug`ProgressTracker updateProgress data=${this._debugData()}
            progress=${progress}`;
 
-    this.eventDispatcher.sendRequest({
-      type: "GeckoView:ProgressChanged",
+    this.eventDispatcher.sendRequest("GeckoView:ProgressChanged", {
       progress,
     });
 
@@ -462,8 +460,7 @@ class StateTracker extends Tracker {
   start(aUri) {
     this._inProgress = true;
     this._uri = aUri;
-    this.eventDispatcher.sendRequest({
-      type: "GeckoView:PageStart",
+    this.eventDispatcher.sendRequest("GeckoView:PageStart", {
       uri: aUri,
     });
   }
@@ -477,8 +474,7 @@ class StateTracker extends Tracker {
     this._inProgress = false;
     this._uri = null;
 
-    this.eventDispatcher.sendRequest({
-      type: "GeckoView:PageStop",
+    this.eventDispatcher.sendRequest("GeckoView:PageStop", {
       success: aIsSuccess,
     });
 
@@ -535,8 +531,7 @@ class SecurityTracker extends Tracker {
 
     const identity = IdentityHandler.checkIdentity(aState, this.browser);
 
-    this.eventDispatcher.sendRequest({
-      type: "GeckoView:SecurityChanged",
+    this.eventDispatcher.sendRequest("GeckoView:SecurityChanged", {
       identity,
     });
   }
@@ -567,10 +562,7 @@ export class GeckoViewProgress extends GeckoViewModule {
     this.progressFilter.addProgressListener(this, flags);
     this.browser.addProgressListener(this.progressFilter, flags);
     Services.obs.addObserver(this, "oop-frameloader-crashed");
-    this.registerListener([
-      "GeckoView:FlushSessionState",
-      "GeckoView:GetQWACStatus",
-    ]);
+    this.registerListener("GeckoView:GetQWACStatus");
   }
 
   onDisable() {
@@ -582,10 +574,7 @@ export class GeckoViewProgress extends GeckoViewModule {
     }
 
     Services.obs.removeObserver(this, "oop-frameloader-crashed");
-    this.unregisterListener([
-      "GeckoView:FlushSessionState",
-      "GeckoView:GetQWACStatus",
-    ]);
+    this.unregisterListener("GeckoView:GetQWACStatus");
   }
 
   receiveMessage(aMsg) {
@@ -612,9 +601,6 @@ export class GeckoViewProgress extends GeckoViewModule {
     debug`onEvent: event=${aEvent}, data=${aData}`;
 
     switch (aEvent) {
-      case "GeckoView:FlushSessionState":
-        this.messageManager.sendAsyncMessage("GeckoView:FlushSessionState");
-        break;
       case "GeckoView:GetQWACStatus":
         this._securityTracker.qwacStatus(aCallback);
         break;
@@ -652,20 +638,17 @@ export class GeckoViewProgress extends GeckoViewModule {
   // What we do instead is ignore all initial about:blank events and fire them
   // manually once the child process has booted up.
   _fireInitialLoad() {
-    this.eventDispatcher.sendRequest({
-      type: "GeckoView:PageStart",
+    this.eventDispatcher.sendRequest("GeckoView:PageStart", {
       uri: "about:blank",
     });
-    this.eventDispatcher.sendRequest({
-      type: "GeckoView:LocationChange",
+    this.eventDispatcher.sendRequest("GeckoView:LocationChange", {
       uri: "about:blank",
       canGoBack: false,
       canGoForward: false,
       isTopLevel: true,
       hasUserGesture: false,
     });
-    this.eventDispatcher.sendRequest({
-      type: "GeckoView:PageStop",
+    this.eventDispatcher.sendRequest("GeckoView:PageStop", {
       success: true,
     });
   }

@@ -18,6 +18,7 @@
 #include "nsIInputStream.h"
 #include "nsISupportsImpl.h"
 #include "nsISupportsPriority.h"
+#include "nsIURIMutator.h"
 #ifdef DEBUG
 #  include "nsIURLParser.h"
 #  include "nsNetCID.h"
@@ -87,7 +88,7 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(InternalRequest)
-  InternalRequest(const nsACString& aURL, const nsACString& aFragment);
+  InternalRequest(NotNull<nsIURI*> aURL, const nsACString& aFragment);
 
   explicit InternalRequest(const IPCInternalRequest& aIPCRequest);
 
@@ -106,18 +107,20 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
            mMethod.LowerCaseEqualsASCII("head");
   }
   // GetURL should get the request's current url with fragment. A request has
-  // an associated current url. It is a pointer to the last fetch URL in
-  // request's url list.
-  void GetURL(nsACString& aURL) const {
-    aURL.Assign(GetURLWithoutFragment());
+  // an associated current url. It is based on the last fetch URL in request's
+  // url list.
+  already_AddRefed<nsIURI> GetURL() const {
     if (GetFragment().IsEmpty()) {
-      return;
+      return do_AddRef(GetURLWithoutFragment().get());
     }
-    aURL.AppendLiteral("#");
-    aURL.Append(GetFragment());
+
+    nsCOMPtr<nsIURI> url;
+    MOZ_ALWAYS_SUCCEEDS(NS_GetURIWithNewRef(
+        GetURLWithoutFragment(), "#"_ns + GetFragment(), getter_AddRefs(url)));
+    return url.forget();
   }
 
-  const nsCString& GetURLWithoutFragment() const {
+  NotNull<nsIURI*> GetURLWithoutFragment() const {
     MOZ_RELEASE_ASSERT(!mURLList.IsEmpty(),
                        "Internal Request's urlList should not be empty.");
 
@@ -126,7 +129,7 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   // A safe guard for ensuring that request's URL is only allowed to be set in a
   // sw internal redirect.
-  void SetURLForInternalRedirect(const uint32_t aFlag, const nsACString& aURL,
+  void SetURLForInternalRedirect(const uint32_t aFlag, NotNull<nsIURI*> aURL,
                                  const nsACString& aFragment) {
     // Only check in debug build to prevent it from being used unexpectedly.
     MOZ_ASSERT(aFlag & nsIChannelEventSink::REDIRECT_INTERNAL);
@@ -139,17 +142,20 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   // pass the fragment as the second argument into it.
   // If a fragment is present in the URL it must be stripped and passed in
   // separately.
-  void AddURL(const nsACString& aURL, const nsACString& aFragment) {
-    MOZ_ASSERT(!aURL.IsEmpty());
-    MOZ_ASSERT(!aURL.Contains('#'));
+  void AddURL(NotNull<nsIURI*> aURL, const nsACString& aFragment) {
+#ifdef DEBUG
+    bool hasRef = false;
+    MOZ_ALWAYS_SUCCEEDS(aURL->GetHasRef(&hasRef));
+    MOZ_ASSERT(!hasRef);
+#endif
 
     mURLList.AppendElement(aURL);
 
     mFragment.Assign(aFragment);
   }
   // Get the URL list without their fragments.
-  void GetURLListWithoutFragment(nsTArray<nsCString>& aURLList) {
-    aURLList.Assign(mURLList);
+  const nsTArray<NotNull<RefPtr<nsIURI>>>& GetURLListWithoutFragment() const {
+    return mURLList;
   }
   void GetReferrer(nsACString& aReferrer) const { aReferrer.Assign(mReferrer); }
 
@@ -451,10 +457,13 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   static bool IsWorkerContentPolicy(nsContentPolicyType aContentPolicyType);
 
   // It should only be called while there is a service-worker-internal-redirect.
-  void SetURL(const nsACString& aURL, const nsACString& aFragment) {
-    MOZ_ASSERT(!aURL.IsEmpty());
-    MOZ_ASSERT(!aURL.Contains('#'));
-    MOZ_ASSERT(mURLList.Length() > 0);
+  void SetURL(NotNull<nsIURI*> aURL, const nsACString& aFragment) {
+    MOZ_ASSERT(!mURLList.IsEmpty());
+#ifdef DEBUG
+    bool hasRef = false;
+    MOZ_ALWAYS_SUCCEEDS(aURL->GetHasRef(&hasRef));
+    MOZ_ASSERT(!hasRef);
+#endif
 
     mURLList.LastElement() = aURL;
     mFragment.Assign(aFragment);
@@ -462,7 +471,7 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   nsCString mMethod;
   // mURLList: a list of one or more fetch URLs
-  nsTArray<nsCString> mURLList;
+  nsTArray<NotNull<RefPtr<nsIURI>>> mURLList;
   RefPtr<InternalHeaders> mHeaders;
   nsCString mBodyBlobURISpec;
   nsString mBodyLocalPath;

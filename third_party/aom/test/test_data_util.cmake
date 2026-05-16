@@ -553,7 +553,7 @@ if(CONFIG_AV1_DECODER)
               "invalid-oss-fuzz-10227.ivf"
               "invalid-oss-fuzz-10227.ivf.res"
               "invalid-oss-fuzz-10389.ivf"
-              "invalid-oss-fuzz-10389.ivf.res.5"
+              "invalid-oss-fuzz-10389.ivf.res.4"
               "invalid-oss-fuzz-10555.ivf"
               "invalid-oss-fuzz-10555.ivf.res"
               "invalid-oss-fuzz-10705.ivf"

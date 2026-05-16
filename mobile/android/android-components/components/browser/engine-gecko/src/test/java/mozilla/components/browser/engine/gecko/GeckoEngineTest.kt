@@ -348,6 +348,7 @@ class GeckoEngineTest {
         assertEquals(contentBlockingSettings.queryParameterStrippingPrivateBrowsingEnabled, engine.settings.queryParameterStrippingPrivateBrowsing)
         assertEquals(contentBlockingSettings.queryParameterStrippingAllowList[0], engine.settings.queryParameterStrippingAllowList)
         assertEquals(contentBlockingSettings.queryParameterStrippingStripList[0], engine.settings.queryParameterStrippingStripList)
+        assertEquals(contentBlockingSettings.contentBlockingDatabaseStatus, engine.settings.useContentBlockingDatabase)
         assertEquals(contentBlockingSettings.bounceTrackingProtectionMode, EngineSession.BounceTrackingProtectionMode.ENABLED.mode)
         assertEquals(contentBlockingSettings.allowListBaselineTrackingProtection, (engine.settings.trackingProtectionPolicy as EngineSession.TrackingProtectionPolicyForSessionTypes).allowListBaselineTrackingProtection)
         assertEquals(contentBlockingSettings.allowListConvenienceTrackingProtection, (engine.settings.trackingProtectionPolicy as EngineSession.TrackingProtectionPolicyForSessionTypes).allowListConvenienceTrackingProtection)
@@ -936,6 +937,18 @@ class GeckoEngineTest {
         )
 
         verify(mockRuntime.settings.contentBlocking).setStrictSocialTrackingProtection(false)
+    }
+
+    @Test
+    fun `WHEN using the content blocking database is changed THEN update this value in content blocking settings`() {
+        val mockRuntime = mock<GeckoRuntime>()
+        whenever(mockRuntime.settings).thenReturn(mock())
+        whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
+        val engine = GeckoEngine(testContext, runtime = mockRuntime)
+
+        engine.settings.useContentBlockingDatabase = true
+
+        verify(mockRuntime.settings.contentBlocking).setContentBlockingDatabaseStatus(true)
     }
 
     @Test

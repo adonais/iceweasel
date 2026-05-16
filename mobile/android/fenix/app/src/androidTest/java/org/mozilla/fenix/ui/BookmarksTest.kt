@@ -251,7 +251,6 @@ class BookmarksTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833710
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifySearchBookmarksViewTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
@@ -266,8 +265,8 @@ class BookmarksTest {
             verifySearchSelectorButton()
             verifySearchEngineIcon("Bookmarks")
             verifySearchBarPlaceholder("Search bookmarks")
-            verifySearchBarPosition(true)
-            tapOutsideToDismissSearchBar()
+            verifySearchBarPosition()
+            tapOutsideToDismissSearchBar(defaultWebPage.url.toString())
             verifySearchToolbar(false)
         }
         composeBookmarksMenu(composeTestRule) {
@@ -286,7 +285,7 @@ class BookmarksTest {
         }.clickSearchButton {
             verifySearchToolbar(true)
             verifySearchEngineIcon("Bookmarks")
-            verifySearchBarPosition(false)
+            verifySearchBarPosition()
             pressBack()
             verifySearchToolbar(false)
         }

@@ -146,6 +146,9 @@ newtab-menu-report = Zdźělić
 newtab-menu-section-block = Blokować
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Hižo njeslědować
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Temje hižo njeslědować
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -311,9 +314,25 @@ newtab-error-fallback-refresh-link = Aktualizujće stronu, zo byšće hišće ra
 
 newtab-custom-shortcuts-title = Zwjazanja
 newtab-custom-shortcuts-subtitle = Sydła, kotrež składujeće abo wopytujeće
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Zwjazanja
     .description = Sydła, kotrež składujeće abo wopytujeće
+newtab-custom-shortcuts-nova =
+    .label = Zwjazanja
+newtab-custom-row-description =
+    .description = Ličba linkow
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } linka
+            [two] { $num } lince
+            [few] { $num } linki
+           *[other] { $num } linkow
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -326,9 +345,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Sponserowane zwjazanja
 newtab-custom-pocket-title = Wot { -pocket-brand-name } doporučene
 newtab-custom-pocket-subtitle = Wosebite wobsah, wubrany přez { -pocket-brand-name }, dźěla swójby { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Doporučene stawiznički
     .description = Wuwzaćowy wobsah, kotryž so přez swójbu { -brand-product-name } hlada
+newtab-recommended-stories-toggle =
+    .label = Doporučene stawiznički
 newtab-custom-stories-personalized-toggle =
     .label = Stawiznički
 newtab-custom-stories-personalized-checkbox-label = Personalizowane stawiznički na zakładźe wašeje aktiwity
@@ -362,8 +384,12 @@ newtab-custom-settings = Dalše nastajenja rjadować
 
 newtab-wallpaper-title = Pozadkowe wobrazy
 newtab-wallpaper-reset = Na standard wróćo stajić
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Wobraz nahrać
+newtab-wallpaper-add-an-image = Wobraz přidać
 newtab-wallpaper-custom-color = Barbu wubrać
+newtab-wallpaper-toggle-title =
+    .label = Pozadkowe wobrazy
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Wobraz je limit datajoweje wulkosće { $file_size } překročił. Nahrajće prošu mjeńšu dataju.
@@ -386,7 +412,9 @@ newtab-wallpaper-light-fox-anniversary = Liška w trawnym polu z młowej horinsk
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Jednotne barby
+newtab-wallpaper-colors = Barby
 newtab-wallpaper-blue = Módry
 newtab-wallpaper-light-blue = Swětłomódry
 newtab-wallpaper-light-purple = Swětłowioletny
@@ -492,7 +520,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Fahrenheit wužiwać
 newtab-weather-menu-change-temperature-units-celsius = Celsius wužiwać
-newtab-weather-menu-hide-weather-v2 = Wjedro schować
 newtab-weather-menu-hide-weather = Wjedro na nowym rajtarku schować
 newtab-weather-menu-learn-more = Dalše informacije
 newtab-weather-menu-detect-my-location = Moje stejnišćo namakać
@@ -503,8 +530,18 @@ newtab-weather-opt-in-not-now =
     .label = Nic nětko
 newtab-weather-opt-in-yes =
     .label = Haj
+newtab-weather-opt-in-headline = Dóstańće swoju lokalnu wjedrowu předpowědź
+newtab-weather-opt-in-use-location =
+    .label = Stejnišćo wužiwać
+newtab-weather-opt-in-choose-location = Stejnišćo wubrać
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Wysoka
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Niska
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -578,6 +615,7 @@ newtab-section-confirm-block-topic-p2 = Zablokowane temy so hižo we wašim kana
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = { $topic } blokować
+newtab-section-block-cancel-button = Přetorhnyć
 
 ## Strings for custom wallpaper highlight
 
@@ -641,6 +679,18 @@ newtab-toast-thanks-for-reporting =
     .message = Wulki dźak, zo sće to zdźělił.
 newtab-toast-widgets-hidden =
     .message = Wubjerće symbol pisaka, zo byšće  kóždy čas zaso asistenty přidał.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Slědujeće nětko { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Hižo njeslědujeće { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Njewidźiće hižo stawiznički wo { $topic }.
 
 ## Strings for task / to-do list productivity widget
 
@@ -660,7 +710,6 @@ newtab-widget-lists-menu-edit = Mjeno lisćiny wobdźěłać
 newtab-widget-lists-menu-create = Nowu lisćinu wutworić
 newtab-widget-lists-menu-delete = Tutu lisćinu zhašeć
 newtab-widget-lists-menu-copy = Lisćinu do mjezyskłada kopěrować
-newtab-widget-lists-menu-hide = Wšě lisćiny schować
 newtab-widget-lists-menu-learn-more = Dalše informacije
 newtab-widget-lists-input-add-an-item =
     .placeholder = Zapisk přidać
@@ -682,6 +731,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = Nowa lisćina
 newtab-widget-section-title = Asistenty
 newtab-widget-menu-hide = Asistent schować
+newtab-widget-menu-change-size = Wulkosć změnić
+newtab-widget-size-small = Mały
+newtab-widget-size-medium = Srjedźny
+newtab-widget-size-large = Wulki
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Asistenty schować
@@ -713,7 +766,6 @@ newtab-widget-timer-reset =
     .title = Wróćo stajić
 newtab-widget-timer-menu-notifications = Zdźělenja znjemóžnić
 newtab-widget-timer-menu-notifications-on = Zdźělenja zmóžnić
-newtab-widget-timer-menu-hide = Časoměr schować
 newtab-widget-timer-menu-learn-more = Dalše informacije
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Wažne hłowne nadpisma
@@ -724,6 +776,12 @@ newtab-daily-briefing-card-timestamp = Před { $minutes } m zaktualizowany
 newtab-widget-message-title = Wostańće koncentrowany z lisćinami a zatwarjenym časoměrom
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Wot spěšnych dopomnjećow do wšědnych nadawkowych lisćinow, koncentrujće so na posedźenja, zo byšće přestawki podlěšił – njepopušćejće a budźće zdypkom.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Přiměrće { -brand-product-name } po swojim dobrozdaću
+newtab-promo-card-body-addons = Wubjerće pozadkowy wobraz z našeje zběrki abo wutworće swójski.
+newtab-promo-card-cta-addons = Spytajće nětko
 newtab-promo-card-title = { -brand-product-name } podpěrać
 newtab-promo-card-body = Naši sponsorojo našu misiju podpěruja, zo bychu lěpši web tworili
 newtab-promo-card-cta = Dalše informacije

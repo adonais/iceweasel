@@ -68,7 +68,6 @@ add_task(async function test_prefs() {
   GMPPrefs.setInt(GMPPrefs.KEY_PLUGIN_LAST_UPDATE, 3, addon2);
   GMPPrefs.setInt(GMPPrefs.KEY_PLUGIN_VERSION, 4, addon2);
   GMPPrefs.setBool(GMPPrefs.KEY_PLUGIN_AUTOUPDATE, false, addon2);
-  GMPPrefs.setBool(GMPPrefs.KEY_CERT_CHECKATTRS, true);
   GMPPrefs.setString(GMPPrefs.KEY_PLUGIN_HASHVALUE, "5", addon1);
 
   Assert.equal(GMPPrefs.getString(GMPPrefs.KEY_URL), "http://not-really-used");
@@ -87,7 +86,6 @@ add_task(async function test_prefs() {
     GMPPrefs.getBool(GMPPrefs.KEY_PLUGIN_AUTOUPDATE, undefined, addon2),
     false
   );
-  Assert.ok(GMPPrefs.getBool(GMPPrefs.KEY_CERT_CHECKATTRS));
   GMPPrefs.setBool(GMPPrefs.KEY_PLUGIN_AUTOUPDATE, true, addon2);
   Assert.equal(
     GMPPrefs.getString(GMPPrefs.KEY_PLUGIN_HASHVALUE, "", addon1),
@@ -280,13 +278,6 @@ add_test(function test_checkForAddons_bad_ssl() {
   );
   Preferences.reset(GMPPrefs.KEY_URL_OVERRIDE);
 
-  let CERTS_BRANCH_DOT_ONE = GMPPrefs.KEY_CERTS_BRANCH + ".1";
-  let PREF_CERTS_BRANCH_DOT_ONE_BACKUP = Preferences.get(
-    CERTS_BRANCH_DOT_ONE,
-    ""
-  );
-  Services.prefs.setCharPref(CERTS_BRANCH_DOT_ONE, "funky value");
-
   let myRequest = new mockRequest(200, "");
   let installManager = new GMPInstallManager();
   let promise = ProductAddonCheckerTestUtils.overrideServiceRequest(
@@ -301,9 +292,6 @@ add_test(function test_checkForAddons_bad_ssl() {
     installManager.uninit();
     if (PREF_KEY_URL_OVERRIDE_BACKUP) {
       Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, PREF_KEY_URL_OVERRIDE_BACKUP);
-    }
-    if (PREF_CERTS_BRANCH_DOT_ONE_BACKUP) {
-      Preferences.set(CERTS_BRANCH_DOT_ONE, PREF_CERTS_BRANCH_DOT_ONE_BACKUP);
     }
     run_next_test();
   });

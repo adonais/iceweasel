@@ -357,6 +357,7 @@ tasks:
                   $merge:
                       - trustDomain: gecko
                         isPullRequest: false
+                        prNumber: null
                         eventType: '${tasks_for}'
                         eventAction: null
                       - $switch:
@@ -397,6 +398,7 @@ tasks:
                                 ref: 'refs/heads/${event.pull_request.head.ref}'
                                 baseRev: '${event.pull_request.base.sha}'
                                 headRev: '${event.pull_request.head.sha}'
+                                prNumber: '${event.pull_request.number}'
                                 isPullRequest: true
                             'tasks_for == "pr-action"':
                                 baseRepoUrl: '${repository.base_url}'
@@ -537,12 +539,14 @@ tasks:
                                             # This causes cached_task digest generation to be random for
                                             # some tasks. Disable bytecode generation to work around that.
                                             PYTHONDONTWRITEBYTECODE: '1'
-                                          - $if: 'eventType == "action"'
-                                            then:
-                                                ACTION_TASK_GROUP_ID: '${action.taskGroupId}'
-                                                ACTION_TASK_ID: {$json: {$eval: 'taskId'}}
-                                                ACTION_INPUT: {$json: {$eval: 'input'}}
-                                                ACTION_CALLBACK: '${action.cb_name}'
+                                          - $switch:
+                                                'isPullRequest':
+                                                    GECKO_PULL_REQUEST_NUMBER: "${prNumber}"
+                                                'eventType == "action"':
+                                                    ACTION_TASK_GROUP_ID: '${action.taskGroupId}'
+                                                    ACTION_TASK_ID: {$json: {$eval: 'taskId'}}
+                                                    ACTION_INPUT: {$json: {$eval: 'input'}}
+                                                    ACTION_CALLBACK: '${action.cb_name}'
                                   cache:
                                       "${trustDomain}-level-${level}-${project}-checkouts-git-shallow-v1": /builds/worker/checkouts
 

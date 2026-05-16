@@ -271,7 +271,7 @@ ContentCompositorBridgeParent::RecvCheckAndClearWRDidRasterize(
   *aDidRasterize = false;
 
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aId);
+      CompositorBridgeParent::GetLayerTreeState(aId);
   if (!state || !state->mParent) {
     return IPC_OK();
   }
@@ -308,7 +308,7 @@ bool ContentCompositorBridgeParent::SetTestSampleTime(const LayersId& aId,
                                                       const TimeStamp& aTime) {
   MOZ_ASSERT(aId.IsValid());
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aId);
+      CompositorBridgeParent::GetLayerTreeState(aId);
   if (!state) {
     return false;
   }
@@ -320,7 +320,7 @@ bool ContentCompositorBridgeParent::SetTestSampleTime(const LayersId& aId,
 void ContentCompositorBridgeParent::LeaveTestMode(const LayersId& aId) {
   MOZ_ASSERT(aId.IsValid());
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aId);
+      CompositorBridgeParent::GetLayerTreeState(aId);
   if (!state) {
     return;
   }
@@ -334,7 +334,7 @@ void ContentCompositorBridgeParent::SetTestAsyncScrollOffset(
     const CSSPoint& aPoint) {
   MOZ_ASSERT(aLayersId.IsValid());
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
+      CompositorBridgeParent::GetLayerTreeState(aLayersId);
   if (!state) {
     return;
   }
@@ -348,7 +348,7 @@ void ContentCompositorBridgeParent::SetTestAsyncZoom(
     const LayerToParentLayerScale& aZoom) {
   MOZ_ASSERT(aLayersId.IsValid());
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
+      CompositorBridgeParent::GetLayerTreeState(aLayersId);
   if (!state) {
     return;
   }
@@ -361,7 +361,7 @@ void ContentCompositorBridgeParent::FlushApzRepaints(
     const LayersId& aLayersId) {
   MOZ_ASSERT(aLayersId.IsValid());
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
+      CompositorBridgeParent::GetLayerTreeState(aLayersId);
   if (!state || !state->mParent) {
     return;
   }
@@ -373,7 +373,7 @@ void ContentCompositorBridgeParent::GetAPZTestData(const LayersId& aLayersId,
                                                    APZTestData* aOutData) {
   MOZ_ASSERT(aLayersId.IsValid());
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
+      CompositorBridgeParent::GetLayerTreeState(aLayersId);
   if (!state || !state->mParent) {
     return;
   }
@@ -385,7 +385,7 @@ void ContentCompositorBridgeParent::GetFrameUniformity(
     const LayersId& aLayersId, FrameUniformityData* aOutData) {
   MOZ_ASSERT(aLayersId.IsValid());
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
+      CompositorBridgeParent::GetLayerTreeState(aLayersId);
   if (!state || !state->mParent) {
     return;
   }
@@ -398,7 +398,7 @@ void ContentCompositorBridgeParent::SetConfirmedTargetAPZC(
     nsTArray<ScrollableLayerGuid>&& aTargets) {
   MOZ_ASSERT(aLayersId.IsValid());
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
+      CompositorBridgeParent::GetLayerTreeState(aLayersId);
   if (!state || !state->mParent) {
     return;
   }
@@ -412,8 +412,11 @@ void ContentCompositorBridgeParent::EndWheelTransaction(
     PWebRenderBridgeParent::EndWheelTransactionResolver&& aResolve) {
   MOZ_ASSERT(aLayersId.IsValid());
   const CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
+      CompositorBridgeParent::GetLayerTreeState(aLayersId);
   if (!state || !state->mParent) {
+    // The boolean value will never used so it doesn't matter whether it's true
+    // or false.
+    aResolve(true);
     return;
   }
 
@@ -452,7 +455,7 @@ void ContentCompositorBridgeParent::ObserveLayersUpdate(LayersId aLayersId,
   MOZ_ASSERT(aLayersId.IsValid());
 
   CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
+      CompositorBridgeParent::GetLayerTreeState(aLayersId);
   if (!state || !state->mParent) {
     return;
   }

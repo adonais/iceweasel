@@ -243,14 +243,18 @@ newtab-custom-settings = دؽوۉداری سامووا قلوه
 
 newtab-wallpaper-title = کاقز دیواری یل
 newtab-wallpaper-reset = وورگندن و سامووا پؽش فرز
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = آپلود ی شؽوات
 newtab-wallpaper-custom-color = ی رنگ پسند کۊنین
+newtab-wallpaper-toggle-title =
+    .label = کاقز دیواری یل
 newtab-wallpaper-light-red-panda = پاندای سوئر
 newtab-wallpaper-light-mountain = کوه اسبؽڌ
 newtab-wallpaper-light-sky = آسمۊوی وا ٱورا بناوش وو آل
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = رنگا سابت
 newtab-wallpaper-blue = کوۊ
 newtab-wallpaper-light-blue = کوۊ رۊشن
@@ -427,7 +431,6 @@ newtab-widget-lists-menu-edit = آلشت نومگه نوم
 newtab-widget-lists-menu-create = وورکل ی نومگه نۊ
 newtab-widget-lists-menu-delete = پاک کردن ای نومگه
 newtab-widget-lists-menu-copy = لف گیری نومگه من کلیپ بورد
-newtab-widget-lists-menu-hide = بؽڌار کردن پوی نومگه یل
 newtab-widget-lists-menu-learn-more = قلوه دووسته بۊین
 newtab-widget-lists-input-add-an-item =
     .placeholder = ٱووردن ی موورد
@@ -469,7 +472,6 @@ newtab-widget-timer-reset =
     .title = وورنشۊوی
 newtab-widget-timer-menu-notifications = کۊر کردن وارسۊویا
 newtab-widget-timer-menu-notifications-on = رۊشن کردن وارسۊویا
-newtab-widget-timer-menu-hide = بؽڌار کردن زمووݩ سنج
 newtab-widget-timer-menu-learn-more = قلوه دووسته بۊین
 newtab-daily-briefing-card-menu-dismiss = رڌ کردن
 newtab-promo-card-title = لادرار { -brand-product-name }

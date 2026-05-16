@@ -57,7 +57,7 @@ static nsSize GetContentRectSize(const nsIFrame& aFrame) {
     // This can break in some edge cases like when layout overflows sizes or
     // what not.
     NS_ASSERTION(
-        !aFrame.PresContext()->UseOverlayScrollbars() ||
+        !f->UseOverlayScrollbars() ||
             scrollPort.Size() == aFrame.GetContentRectRelativeToSelf().Size(),
         "Wrong scrollport?");
     return scrollPort.Size();

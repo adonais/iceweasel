@@ -5,7 +5,7 @@
 #ifndef nsXREAppData_h
 #define nsXREAppData_h
 
-#include <stdint.h>
+#include "mozilla/StaticXREAppData.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsCOMPtr.h"
 #include "nsCRTGlue.h"
@@ -193,42 +193,6 @@ class XREAppData {
   // https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-marshaling-object-path
   static void SanitizeNameForDBus(nsACString&);
   void GetDBusAppName(nsACString&) const;
-};
-
-/**
- * Indicates whether or not the profile migrator service may be
- * invoked at startup when creating a profile.
- */
-#define NS_XRE_ENABLE_PROFILE_MIGRATOR (1 << 1)
-
-/**
- * Indicates whether or not to use Breakpad crash reporting.
- */
-#define NS_XRE_ENABLE_CRASH_REPORTER (1 << 3)
-
-/**
- * A static version of the XRE app data is compiled into the application
- * so that it is not necessary to read application.ini at startup.
- *
- * This structure is initialized into and matches nsXREAppData
- */
-struct StaticXREAppData {
-  const char* vendor;
-  const char* name;
-  const char* remotingName;
-  const char* version;
-  const char* buildID;
-  const char* ID;
-  const char* copyright;
-  uint32_t flags;
-  const char* minVersion;
-  const char* maxVersion;
-  const char* crashReporterURL;
-  const char* profile;
-  const char* UAName;
-  const char* sourceURL;
-  const char* sourceRevision;
-  const char* updateURL;
 };
 
 }  // namespace mozilla

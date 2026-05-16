@@ -211,7 +211,7 @@ class DownloadTest {
         }
         browserScreen(composeTestRule) {
         }.clickDownloadLink(secondDownloadedFile) {
-        }.clickDownload {
+        }.clickDownload(composeTestRule) {
             verifyDownloadCompleteSnackbar(fileName = secondDownloadedFile)
         }
         browserScreen(composeTestRule) {
@@ -374,8 +374,8 @@ class DownloadTest {
         }.openThreeDotMenu {
         }.clickShareButton {
         }.clickSaveAsPDF(composeTestRule) {
-           verifyDownloadPrompt(downloadFile)
-        }.clickDownload {
+            verifyDownloadPrompt(composeTestRule, downloadFile)
+        }.clickDownload(composeTestRule) {
             verifyDownloadCompleteSnackbar(fileName = downloadFile)
             clickSnackbarButton(composeTestRule = composeTestRule, "OPEN")
             assertExternalAppOpens(GOOGLE_DOCS)
@@ -419,7 +419,7 @@ class DownloadTest {
         }
         browserScreen(composeTestRule) {
         }.clickDownloadLink(secondDownloadedFile) {
-        }.clickDownload {
+        }.clickDownload(composeTestRule) {
             verifyDownloadCompleteSnackbar(fileName = secondDownloadedFile)
         }
         browserScreen(composeTestRule) {

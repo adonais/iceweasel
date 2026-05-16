@@ -915,6 +915,23 @@ class TabNotePanel extends HoverPanel {
     this.panelElement
       .querySelector(".tab-note-preview-expand")
       .addEventListener("click", () => (this.#noteExpanded = true));
+
+    // Edit icon is created in JS to avoid eagerly loading the image at
+    // startup (see browser_startup_images.js).
+    const actionsContainer = this.panelElement.querySelector(
+      ".tab-note-preview-actions"
+    );
+    const editIcon = this.win.document.createElement("img");
+    editIcon.className = "tab-note-preview-edit-icon";
+    editIcon.src = "chrome://global/skin/icons/edit-outline.svg";
+    editIcon.setAttribute("role", "button");
+    editIcon.dataset.l10nId = "tab-note-preview-edit-icon";
+    editIcon.addEventListener("click", () => this.#openTabNotePanel());
+    actionsContainer.appendChild(editIcon);
+
+    this.panelElement
+      .querySelector(".tab-note-preview-text")
+      .addEventListener("dblclick", () => this.#openTabNotePanel());
   }
 
   handleEvent(e) {
@@ -1022,10 +1039,12 @@ class TabNotePanel extends HoverPanel {
     this.#noteOverflow =
       noteTextContainer.scrollHeight > noteTextContainer.clientHeight;
 
-    let button = this.panelElement.querySelector(".tab-note-preview-expand");
+    let actionsContainer = this.panelElement.querySelector(
+      ".tab-note-preview-actions"
+    );
     noteTextContainer.style.setProperty(
       "--tab-note-expand-toggle-width",
-      `${button.offsetWidth}px`
+      `${actionsContainer.offsetWidth}px`
     );
 
     this.#movePanel();
@@ -1053,6 +1072,13 @@ class TabNotePanel extends HoverPanel {
 
   set #noteOverflow(val) {
     this.panelElement.toggleAttribute("note-overflow", val);
+  }
+
+  #openTabNotePanel() {
+    this.win.gBrowser.tabNoteMenu.openPanel(this.#tab, {
+      telemetrySource: lazy.TabNotes.TELEMETRY_SOURCE.TAB_NOTE_PREVIEW_PANEL,
+    });
+    this.deactivate(null, { force: true });
   }
 
   get popupOptions() {

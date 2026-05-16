@@ -380,10 +380,8 @@ perfstats:
 record-websites:
     description: Run mozperftest to record desktop websites
     platform:
-        - linux1804-64/opt
         - linux2404-64/opt
     require-build:
-        linux1804-64/opt: build-linux64/opt
         linux2404-64/opt: build-linux64/opt
     treeherder:
         symbol: perftest(rec)

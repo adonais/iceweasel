@@ -15,6 +15,7 @@
 #include "nsCharSeparatedTokenizer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"

@@ -1,0 +1,61 @@
+[DEFAULT]
+support-files = [
+  "head.js",
+  "../head.js",
+]
+tags = "os_integration"
+
+["browser_homepage_custom_homepage_add_multiple_urls.js"]
+
+["browser_homepage_custom_homepage_add_urls.js"]
+
+["browser_homepage_custom_homepage_bookmark.js"]
+
+["browser_homepage_custom_homepage_current_pages.js"]
+
+["browser_homepage_custom_homepage_empty_state.js"]
+
+["browser_homepage_custom_homepage_manage_urls.js"]
+
+["browser_homepage_custom_homepage_policy.js"]
+
+["browser_homepage_default.js"]
+
+["browser_homepage_firefox_home.js"]
+
+["browser_homepage_firefox_home_recent_activity.js"]
+
+["browser_homepage_firefox_home_shortcuts.js"]
+
+["browser_homepage_firefox_home_sponsored_shortcuts.js"]
+
+["browser_homepage_firefox_home_sponsored_stories.js"]
+
+["browser_homepage_firefox_home_stories.js"]
+
+["browser_homepage_firefox_home_stories_personalization.js"]
+
+["browser_homepage_firefox_home_support_firefox.js"]
+
+["browser_homepage_firefox_home_widgets.js"]
+
+["browser_homepage_firefox_home_widgets_2.js"]
+
+["browser_homepage_homepage.js"]
+
+["browser_homepage_homepage_custom_homepage_button.js"]
+
+["browser_homepage_homepage_restore_defaults.js"]
+
+["browser_homepage_homepage_restore_defaults_2.js"]
+
+["browser_homepages_filter_aboutpreferences.js"]
+
+["browser_homepages_use_bookmark.js"]
+
+["browser_hometab_restore_defaults.js"]
+https_first_disabled = true
+
+["browser_newtab_menu.js"]
+
+["browser_startup_browser_restore_session.js"]

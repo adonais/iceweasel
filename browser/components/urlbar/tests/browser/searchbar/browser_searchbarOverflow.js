@@ -91,21 +91,18 @@ add_task(async function test_fixedOverflow() {
   Assert.equal(gBrowser.currentURI.spec, expectedUrl, "Search successful");
   Assert.equal(searchbar.value, searchTerm, "Search term was persisted");
 
-  info("Try entering search mode.");
+  info("Try searching");
   let popup = await SearchbarTestUtils.openSearchModeSwitcher(window);
   Assert.ok(true, "Can open search mode switcher");
-  popup.querySelector("menuitem[label=engine2]").click();
-  await SearchbarTestUtils.assertSearchMode(window, {
-    engineName: "engine2",
-    entry: "searchbutton",
-    source: 3,
-  });
-  Assert.ok(true, "Entered search mode");
-
-  info("Try searching in search mode.");
-  searchbar.querySelector(".urlbar-go-button").click();
-  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   expectedUrl = engine2.getSubmission(searchTerm).uri.spec;
+  let browserLoaded = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    expectedUrl
+  );
+  popup.querySelector('panel-item[data-engine-name="engine2"]').button.click();
+  EventUtils.synthesizeKey("KEY_Enter");
+  await browserLoaded;
   Assert.equal(gBrowser.currentURI.spec, expectedUrl, "Used correct engine");
   Assert.equal(searchbar.value, searchTerm, "Search term was persisted");
   await SearchbarTestUtils.assertSearchMode(window, {

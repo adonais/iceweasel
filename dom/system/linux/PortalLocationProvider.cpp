@@ -250,8 +250,13 @@ PortalLocationProvider::Startup() {
   // TODO Use wayland:handle as described in
   // https://flatpak.github.io/xdg-desktop-portal/#parent_window
   const gchar* parent_window = "";
-  gchar* portalSession;
+  gchar* portalSession = nullptr;
   g_variant_get_child(result, 0, "o", &portalSession);
+  if (!portalSession) {
+    mDBUSLocationProxy = nullptr;
+    return NS_ERROR_FAILURE;
+  }
+
   mPortalSession.reset(portalSession);
 
   result = g_dbus_proxy_call_sync(

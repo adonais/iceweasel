@@ -9485,7 +9485,7 @@ fail-if = [
 ["generated/test_2_conformance2__wasm__bufferdata-4gb-wasm-memory.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "true",
+  "os == 'win' && arch == 'x86'",
 ]
 
 ["generated/test_2_conformance2__wasm__buffersubdata-16gb-wasm-memory.html"]
@@ -9497,7 +9497,7 @@ fail-if = [
 ["generated/test_2_conformance2__wasm__buffersubdata-4gb-wasm-memory.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "true",
+  "os == 'win' && arch == 'x86'",
 ]
 
 ["generated/test_2_conformance2__wasm__getbuffersubdata-16gb-wasm-memory.html"]
@@ -9509,7 +9509,7 @@ fail-if = [
 ["generated/test_2_conformance2__wasm__getbuffersubdata-4gb-wasm-memory.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "true",
+  "os == 'win' && arch == 'x86'",
 ]
 
 ["generated/test_2_conformance2__wasm__readpixels-16gb-wasm-memory.html"]
@@ -9521,7 +9521,7 @@ fail-if = [
 ["generated/test_2_conformance2__wasm__readpixels-4gb-wasm-memory.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "true",
+  "os == 'win' && arch == 'x86'",
 ]
 
 ["generated/test_2_conformance2__wasm__teximage2d-16gb-wasm-memory.html"]
@@ -9533,7 +9533,7 @@ fail-if = [
 ["generated/test_2_conformance2__wasm__teximage2d-4gb-wasm-memory.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "true",
+  "os == 'win' && arch == 'x86'",
 ]
 
 ["generated/test_2_conformance2__wasm__texsubimage2d-16gb-wasm-memory.html"]
@@ -9545,7 +9545,7 @@ fail-if = [
 ["generated/test_2_conformance2__wasm__texsubimage2d-4gb-wasm-memory.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "true",
+  "os == 'win' && arch == 'x86'",
 ]
 
 ["generated/test_2_conformance__attribs__gl-bindAttribLocation-aliasing.html"]

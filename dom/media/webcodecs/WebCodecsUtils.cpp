@@ -323,6 +323,8 @@ Maybe<VideoTransferCharacteristics> ToTransferCharacteristics(
       return Some(VideoTransferCharacteristics::Pq);
     case gfx::TransferFunction::HLG:
       return Some(VideoTransferCharacteristics::Hlg);
+    case gfx::TransferFunction::LINEAR:
+      return Some(VideoTransferCharacteristics::Linear);
   }
   MOZ_ASSERT_UNREACHABLE("unsupported gfx::TransferFunction");
   return Nothing();

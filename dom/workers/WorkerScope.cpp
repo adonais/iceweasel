@@ -30,7 +30,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/StaticAnalysisFunctions.h"
@@ -193,7 +192,7 @@ bool WorkerScriptTimeoutHandler::Call(const char* aExecutionReason) {
 
 namespace workerinternals {
 void NamedWorkerGlobalScopeMixin::GetName(DOMString& aName) const {
-  aName.AsAString() = mName;
+  aName.SetKnownLiveString(mName);
 }
 static const char* GetTimeoutReasonString(Timeout* aTimeout) {
   switch (aTimeout->mReason) {
@@ -570,7 +569,6 @@ already_AddRefed<CacheStorage> WorkerGlobalScope::GetCaches(ErrorResult& aRv) {
   if (!mCacheStorage) {
     mCacheStorage = CacheStorage::CreateOnWorker(cache::DEFAULT_NAMESPACE, this,
                                                  mWorkerPrivate, aRv);
-    mWorkerPrivate->NotifyStorageKeyUsed();
   }
 
   RefPtr<CacheStorage> ref = mCacheStorage;
@@ -884,8 +882,6 @@ already_AddRefed<IDBFactory> WorkerGlobalScope::GetIndexedDB(
     indexedDB = res.unwrap();
     mIndexedDB = indexedDB;
   }
-
-  mWorkerPrivate->NotifyStorageKeyUsed();
 
   return indexedDB.forget();
 }

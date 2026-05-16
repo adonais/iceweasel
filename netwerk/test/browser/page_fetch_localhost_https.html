@@ -9,7 +9,9 @@
   window.addEventListener("load", function () {
     let params = new URLSearchParams(window.location.search);
     let port = params.get("port") || "8443";
-    fetch("https://localhost:" + port).catch(() => {});
+    let host = params.get("host") || "localhost";
+    let scheme = params.get("scheme") || "https";
+    fetch(scheme + "://" + host + ":" + port).catch(() => {});
   });
 </script>
 </body>

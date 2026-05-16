@@ -1,5 +1,4 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -8,6 +7,8 @@ document.addEventListener(
   () => {
     const lazy = {};
     ChromeUtils.defineESModuleGetters(lazy, {
+      ContentSharingUtils:
+        "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
       TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
       TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
     });
@@ -83,6 +84,13 @@ document.addEventListener(
         case "context_bookmarkSelectedTabs":
           PlacesCommandHook.bookmarkTabs(gBrowser.selectedTabs);
           break;
+        case "context_shareSelectedTabs":
+          lazy.ContentSharingUtils.handleShareTabs(TabContextMenu.contextTabs);
+          Services.prefs.setBoolPref(
+            "browser.contentsharing.newBadge.enabled",
+            false
+          );
+          break;
         case "context_bookmarkTab":
           PlacesCommandHook.bookmarkTabs([TabContextMenu.contextTab]);
           break;
@@ -95,9 +103,6 @@ document.addEventListener(
             "browser.tabs.notes.newBadge.enabled",
             false
           );
-          break;
-        case "context_deleteNote":
-          TabContextMenu.deleteTabNotes();
           break;
         case "context_moveToStart":
           gBrowser.moveTabsToStart(TabContextMenu.contextTab);
@@ -436,12 +441,21 @@ document.addEventListener(
     const containerHistoryPopup = document.getElementById(
       "sidebar-history-context-menu-container-popup"
     );
-    containerHistoryPopup.addEventListener("command", event =>
-      PlacesUIUtils.openInContainerTab(event)
-    );
+    containerHistoryPopup.addEventListener("command", event => {
+      PlacesUIUtils.openInContainerTab(event);
+      Glean.browserUiInteraction.sidebarHistory.open_in_new_container_tab.add(
+        1
+      );
+    });
     containerHistoryPopup.addEventListener("popupshowing", event =>
       PlacesUIUtils.createContainerTabMenu(event)
     );
+
+    document
+      .getElementById("sidebar-bookmarks-context-container-tab-popup")
+      .addEventListener("popupshowing", event =>
+        PlacesUIUtils.createContainerTabMenu(event)
+      );
 
     document
       .getElementById("context_reopenInContainerPopupMenu")

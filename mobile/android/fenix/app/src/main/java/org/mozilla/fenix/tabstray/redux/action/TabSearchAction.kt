@@ -32,7 +32,7 @@ sealed interface TabSearchAction : TabsTrayAction {
     /**
      * Fired when the user taps on a search result for an open tab.
      *
-     * @property tab The tab selected by the user.
+     * @property searchResult The tab selected by the user.
      */
-    data class SearchResultClicked(val tab: TabsTrayItem) : TabSearchAction
+    data class SearchResultClicked(val searchResult: TabsTrayItem) : TabSearchAction
 }

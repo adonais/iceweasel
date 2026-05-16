@@ -172,7 +172,6 @@ tasks:
             disable-push-apk: true
             maven_packages:
                 - geckoview
-                - geckoview-exoplayer2
         shipping-phase: build
         shipping-product: fennec
         index:

@@ -1071,9 +1071,10 @@ widget::LookAndFeelFont nsXPLookAndFeel::StyleToLookAndFeelFont(
 #ifdef DEBUG
   {
     // Assert that all the remaining font style properties have their
-    // default values.
+    // default values, except `systemFont` which should be true.
     gfxFontStyle candidate = aStyle;
     gfxFontStyle defaults{};
+    defaults.systemFont = true;
     candidate.size = defaults.size;
     candidate.weight = defaults.weight;
     candidate.style = defaults.style;

@@ -39,6 +39,13 @@ nsWebPEncoder::~nsWebPEncoder() {
   }
 }
 
+NS_IMETHODIMP
+nsWebPEncoder::SetColorSpaceInfo(imgIEncoder::CICPColourPrimaries,
+                                 imgIEncoder::CICPTransferCharacteristics,
+                                 imgIEncoder::CICPMatrixCoefficients, bool) {
+  return NS_OK;
+}
+
 // nsWebPEncoder::InitFromData
 //
 //    One output option is supported: "quality=X" where X is an integer in the

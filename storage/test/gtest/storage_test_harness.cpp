@@ -186,7 +186,7 @@ nsIThread* last_non_watched_thread = nullptr;
 extern "C" void wrapped_MutexEnter(sqlite3_mutex* mutex) {
   if (PR_GetCurrentThread() == watched_thread) {
     mutex_used_on_watched_thread = true;
-  } else {
+  } else if (!NS_IsMainThread()) {
     last_non_watched_thread = NS_GetCurrentThread();
   }
   orig_mutex_methods.xMutexEnter(mutex);
@@ -209,6 +209,7 @@ extern "C" int wrapped_MutexTry(sqlite3_mutex* mutex) {
 void watch_for_mutex_use_on_this_thread() {
   watched_thread = ::PR_GetCurrentThread();
   mutex_used_on_watched_thread = false;
+  last_non_watched_thread = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -745,6 +745,50 @@
         verifyElementStates("enabled");
       });
 
+      // Verify that disabling a radio group propagates the disabled state to
+      // nested elements (e.g. a checkbox slotted into a radio's nested slot).
+      add_task(async function testDisablingGroupDisablesNestedElements() {
+        let template = html`
+          <moz-radio-group name="test-name" label="Radio group label">
+            <moz-radio checked value="first" label="First">
+              <moz-checkbox
+                slot="nested"
+                label="Nested checkbox"
+              ></moz-checkbox>
+            </moz-radio>
+            <moz-radio value="second" label="Second"></moz-radio>
+          </moz-radio-group>
+        `;
+        let renderTarget = await testHelpers.renderTemplate(template);
+        let radioGroup = renderTarget.querySelector("moz-radio-group");
+        let nestedCheckbox = renderTarget.querySelector("moz-checkbox");
+
+        ok(
+          !nestedCheckbox.inputEl.disabled,
+          "Nested checkbox is enabled when the radio group is enabled and the parent radio is checked."
+        );
+
+        // Disable the radio group.
+        radioGroup.disabled = true;
+        await radioGroup.updateComplete;
+        await nestedCheckbox.updateComplete;
+
+        ok(
+          nestedCheckbox.inputEl.disabled,
+          "Nested checkbox is disabled when the radio group is disabled."
+        );
+
+        // Re-enable the radio group.
+        radioGroup.disabled = false;
+        await radioGroup.updateComplete;
+        await nestedCheckbox.updateComplete;
+
+        ok(
+          !nestedCheckbox.inputEl.disabled,
+          "Nested checkbox is re-enabled when the radio group is re-enabled."
+        );
+      });
+
       // Verify that keyboard events from nested focusable elements don't trigger
       // radio group navigation (Bug 2000343).
       add_task(async function testNestedElementKeyboardEvents() {

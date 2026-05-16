@@ -37,6 +37,7 @@ pref("pdfjs.enableComment", false);
 pref("pdfjs.enableGuessAltText", true);
 pref("pdfjs.enableHWA", true);
 pref("pdfjs.enableHighlightFloatingButton", false);
+pref("pdfjs.enableMerge", false);
 pref("pdfjs.enableNewAltTextWhenAddingImage", true);
 pref("pdfjs.enableNewBadge", true);
 pref("pdfjs.enableOptimizedPartialRendering", false);

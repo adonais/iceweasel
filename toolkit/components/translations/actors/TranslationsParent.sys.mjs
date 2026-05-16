@@ -4095,6 +4095,55 @@ export class TranslationsParent extends JSWindowActorParent {
   }
 
   /**
+   * Opens the about:translations page with the provided hash parameters.
+   *
+   * @param {object} options
+   * @param {ChromeWindow} options.browserWindow
+   * @param {string} [options.sourceLanguage="detect"]
+   *   The pre-populated source language.
+   * @param {string} [options.targetLanguage=""]
+   *   The pre-populated target language. Callers may pass "derive" to populate this value with the user's
+   *   top preferred supported target language {@link TranslationsParent.getTopPreferredSupportedToLang}.
+   * @param {string} [options.text=""]
+   *   The pre-populated text to translate.
+   */
+  static async openAboutTranslationsPage({
+    browserWindow,
+    sourceLanguage = "detect",
+    targetLanguage = "",
+    text = "",
+  }) {
+    const url = new URL("about:translations");
+    const searchParameters = new URLSearchParams();
+
+    searchParameters.set("src", sourceLanguage);
+    searchParameters.set("text", text);
+
+    if (targetLanguage === "derive") {
+      try {
+        const derivedTargetLanguage =
+          await TranslationsParent.getTopPreferredSupportedToLang({
+            excludeLangTags: [sourceLanguage],
+          });
+        searchParameters.set("trg", derivedTargetLanguage);
+      } catch (error) {
+        lazy.console.error(error);
+      }
+    } else {
+      searchParameters.set("trg", targetLanguage);
+    }
+
+    url.hash = searchParameters.toString();
+    browserWindow.switchToTabHavingURI(
+      Services.io.newURI(url.href),
+      /* aOpenNew */ true,
+      {
+        ignoreFragment: "whenComparing",
+      }
+    );
+  }
+
+  /**
    * Returns the lang tags that should be offered for translation. This is in the parent
    * rather than the child to remove the per-content process memory allocation amount.
    *

@@ -48,11 +48,13 @@
     @include newtab-card-style;
 
     position: relative;
-    box-shadow: var(--card-box-shadow);
+    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+    box-shadow: var(--card-box-shadow, var(--box-shadow-card));
     border-radius: var(--border-radius-large);
 
     &:hover {
-      box-shadow: var(--card-box-shadow-hover);
+      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+      box-shadow: var(--card-box-shadow-hover, var(--box-shadow-card-hover));
     }
 
     .ad-banner-link {
@@ -148,5 +150,21 @@
     }
 
     z-index: 1;
+  }
+}
+
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior for .ad-banner-inner.billboard
+.nova-enabled .ad-banner-wrapper .ad-banner-inner.billboard {
+  --billboard-container-width: calc(12 * var(--col-width) + 11 * var(--space-medium));
+
+  .ad-banner-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-block-start: var(--space-small);
+
+    .ad-banner-sponsored {
+      height: 19px;
+    }
   }
 }

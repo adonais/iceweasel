@@ -189,6 +189,10 @@ EditorUtils::CreateTransferableForPlainText(const Document& aDocument) {
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rvIgnored),
       "nsITransferable::AddDataFlavor(kMozTextInternal) failed, but ignored");
+  rvIgnored = transferable->AddDataFlavor(kURLDataMime);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvIgnored),
+      "nsITransferable::AddDataFlavor(kURLDataMime) failed, but ignored");
   return transferable;
 }
 

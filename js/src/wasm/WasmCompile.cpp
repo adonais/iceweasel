@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2015 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -363,25 +361,26 @@ SharedCompileArgs CompileArgs::buildAndReport(JSContext* cx,
 }
 
 BytecodeSource::BytecodeSource(const uint8_t* begin, size_t length) {
-  BytecodeRange envRange;
   BytecodeRange codeRange;
+  if (!StartsCodeSection(begin, begin + length, &codeRange)) {
+    env_ = BytecodeSpan(begin, length);
+    code_ = BytecodeSpan();
+    tail_ = BytecodeSpan();
+    return;
+  }
+
+  BytecodeRange envRange;
   BytecodeRange tailRange;
-  if (StartsCodeSection(begin, begin + length, &codeRange)) {
-    if (codeRange.end <= length) {
-      envRange = BytecodeRange(0, codeRange.start);
-      tailRange = BytecodeRange(codeRange.end, length - codeRange.end);
-    } else {
-      MOZ_RELEASE_ASSERT(codeRange.start <= length);
-      // If the specified code range is larger than the buffer, clamp it to the
-      // the buffer size. This buffer will be rejected later.
-      envRange = BytecodeRange(0, codeRange.start);
-      codeRange = BytecodeRange(codeRange.start, length - codeRange.start);
-      MOZ_RELEASE_ASSERT(codeRange.end == length);
-      tailRange = BytecodeRange(length, 0);
-    }
+  if (codeRange.end <= length) {
+    envRange = BytecodeRange(0, codeRange.start);
+    tailRange = BytecodeRange(codeRange.end, length - codeRange.end);
   } else {
-    envRange = BytecodeRange(0, length);
-    codeRange = BytecodeRange(length, 0);
+    MOZ_RELEASE_ASSERT(codeRange.start <= length);
+    // If the specified code range is larger than the buffer, clamp it to the
+    // the buffer size. This buffer will be rejected later.
+    envRange = BytecodeRange(0, codeRange.start);
+    codeRange = BytecodeRange(codeRange.start, length - codeRange.start);
+    MOZ_RELEASE_ASSERT(codeRange.end == length);
     tailRange = BytecodeRange(length, 0);
   }
 
@@ -1210,8 +1209,8 @@ SharedModule wasm::CompileStreaming(
   }
 
   BytecodeBuffer bytecodeBuffer(&envBytes, &codeBytes, &tailBytes);
-  return mg.finishModule(BytecodeBufferOrSource(bytecodeBuffer), *moduleMeta,
-                         streamEnd.completeTier2Listener);
+  return mg.finishModule(BytecodeBufferOrSource(std::move(bytecodeBuffer)),
+                         *moduleMeta, streamEnd.completeTier2Listener);
 }
 
 class DumpIonModuleGenerator {

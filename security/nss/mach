@@ -699,14 +699,10 @@ class sourceCovAction(argparse.Action):
         # Failures are logged but do not abort — we still want coverage
         # data from whichever tests did execute.
         test_suite = getattr(args, 'test_suite', None)
-        test_logfile = os.path.join(outdir, "test_output.log")
         if test_suite:
             cov_log.info("\nRunning test suite: %s...\n", test_suite)
         else:
             cov_log.info("\nRunning all test suites...\n")
-        cov_log.warning("Test output is being written to %s", test_logfile)
-        cov_log.info("This will take approximately 40 minutes. "
-                     "No output will appear until tests complete.\n")
         env = {
             "LLVM_PROFILE_FILE": os.path.join(profraw_dir, "%p-%m.profraw"),
             "GTESTFILTER": "*",  # Prevent parallel test runs.
@@ -714,8 +710,7 @@ class sourceCovAction(argparse.Action):
             "NSS_DISABLE_UNLOAD": "1",
         }
         try:
-            run_tests(test=test_suite, cycles="standard", env=env,
-                      logfile=test_logfile)
+            run_tests(test=test_suite, cycles="standard", env=env)
             cov_log.info("Done running tests.")
         except subprocess.CalledProcessError as e:
             cov_log.warning(
@@ -875,6 +870,48 @@ class fuzzCovAction(sourceCovAction):
 
         self.generateReports(outdir, profraw_dir, args)
 
+class clangTidyAction(argparse.Action):
+
+    def __call__(self, parser, args, values, option_string=None):
+        script = os.path.join(cwd, "automation", "clang-tidy",
+                              "run_clang_tidy.py")
+
+        cmd = [sys.executable, script, "--build",
+               "--include", "lib/",
+               "--include", "gtests/",
+               "--include", "cpputil/"]
+
+        if args.diff or args.diff_base:
+            cmd.append("--diff")
+        if args.diff_base:
+            cmd += ["--diff-base", args.diff_base]
+        if args.fix:
+            cmd.append("--fix")
+        if args.checks:
+            cmd += ["--checks", args.checks]
+        if args.fail_on_warnings:
+            cmd.append("--fail-on-warnings")
+
+        if values:
+            extensions = {".c", ".cc", ".cpp", ".cxx"}
+            files = []
+            for v in values:
+                p = os.path.abspath(v)
+                if os.path.isdir(p):
+                    for root, _, names in os.walk(p):
+                        for name in names:
+                            if os.path.splitext(name)[1] in extensions:
+                                files.append(os.path.join(root, name))
+                else:
+                    files.append(p)
+            cmd += [os.path.relpath(f, start=cwd) for f in files]
+
+        try:
+            subprocess.check_call(cmd, cwd=cwd)
+        except subprocess.CalledProcessError as e:
+            sys.exit(e.returncode)
+
+
 class docLintAction(argparse.Action):
 
     def __call__(self, parser, args, values, option_string=None):
@@ -929,10 +966,13 @@ def parse_arguments():
     tests = [
         "cipher", "lowhash", "chains", "cert", "dbtests", "tools", "fips",
         "sdr", "crmf", "smime", "ssl", "ocsp", "merge", "pkits", "ec",
-        "gtests", "ssl_gtests", "bogo", "interop", "policy"
+        "gtests", "ssl_gtests", "bogo", "interop", "policy", "mpi",
+        "cipher-noaes", "cipher-noavx", "cipher-nopclmul", "cipher-nosha",
+        "cipher-nosse41", "cipher-nossse3",
     ]
     parser_test.add_argument(
-        'test', choices=tests, help="Available tests", action=testAction)
+        'test', nargs='?', choices=tests, default=None,
+        help="Test suite to run (default: all)", action=testAction)
 
     parser_cov = subparsers.add_parser(
         'coverage', help='Generate coverage report')
@@ -994,6 +1034,30 @@ def parse_arguments():
         'action', nargs='?', default='run',
         help="Run fuzz coverage (default action)",
         action=fuzzCovAction)
+
+    parser_ct = subparsers.add_parser(
+        'clang-tidy',
+        help='Run clang-tidy static analysis on lib/, gtests/, and cpputil/ source files.')
+    parser_ct.add_argument(
+        '--diff', action='store_true',
+        help='Only check files modified in the working directory')
+    parser_ct.add_argument(
+        '--diff-base',
+        help='Base revision for --diff (default: working-directory changes)')
+    parser_ct.add_argument(
+        '--fix', action='store_true',
+        help='Apply suggested fixes in-place')
+    parser_ct.add_argument(
+        '--checks',
+        help='Override the checks glob (passed to clang-tidy --checks)')
+    parser_ct.add_argument(
+        '--fail-on-warnings', action='store_true',
+        help='Treat all warnings as errors')
+    parser_ct.add_argument(
+        '<file>',
+        nargs='*',
+        help='Specific files to check (default: all lib/ files)',
+        action=clangTidyAction)
 
     parser_doc_lint = subparsers.add_parser(
         'doc-lint', help='Check RST documentation for lint errors using sphinx-build.')

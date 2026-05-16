@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d881b16dd8a6813fe
  1 file changed, 6 insertions(+)
 
 diff --git a/rtc_base/platform_thread.cc b/rtc_base/platform_thread.cc
-index 23ee6b36c4..359d942121 100644
+index 1b2e289779..62ac4844ac 100644
 --- a/rtc_base/platform_thread.cc
 +++ b/rtc_base/platform_thread.cc
 @@ -25,6 +25,8 @@
@@ -22,7 +22,7 @@ index 23ee6b36c4..359d942121 100644
  namespace webrtc {
  namespace {
  
-@@ -189,6 +191,10 @@ PlatformThread PlatformThread::SpawnThread(
+@@ -196,6 +198,10 @@ PlatformThread PlatformThread::SpawnThread(
        [thread_function = std::move(thread_function), name = std::string(name),
         attributes]() mutable {
          SetCurrentThreadName(name.c_str());

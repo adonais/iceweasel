@@ -463,7 +463,7 @@ webrtcdtls:
     notification_emails:
       - webrtc-telemetry-alerts@mozilla.com
       - seceng-telemetry@mozilla.com
-    expires: 152
+    expires: 154
 
   srtp_cipher:
     type: labeled_counter

@@ -1,0 +1,17 @@
+{
+  "label": "climate.rutgers.edu",
+  "bugs": {
+    "1941530": {
+      "issue": "broken-images",
+      "matches": ["*://climate.rutgers.edu/snowcover/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1941530-climate.rutgers.edu-fix-broken-images.css"]
+      }
+    }
+  ]
+}

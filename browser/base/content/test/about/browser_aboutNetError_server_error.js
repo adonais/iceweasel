@@ -47,20 +47,14 @@ add_task(async function test_serverError() {
       const introEl = card.shadowRoot.getElementById("error-intro");
       is(
         introEl?.getAttribute("data-l10n-id"),
-        "fp-neterror-http-error-page-intro",
+        "fp-neterror-http-error-intro",
         "Intro element has correct l10n id"
       );
       const introArgs = JSON.parse(introEl?.getAttribute("data-l10n-args"));
       ok(introArgs?.hostname, "Intro has hostname arg");
-      const responseEl = card.shadowRoot.getElementById(
-        "response-status-label"
-      );
-      const responseArgs = JSON.parse(
-        responseEl?.getAttribute("data-l10n-args")
-      );
-      is(responseArgs?.responsestatus, 500, "Intro has responsestatus 500");
+      is(introArgs?.responsestatus, 500, "Intro has responsestatus 500");
       is(
-        responseArgs?.responsestatustext,
+        introArgs?.responsestatustext,
         "Internal Server Error",
         "Intro has correct responsestatustext"
       );

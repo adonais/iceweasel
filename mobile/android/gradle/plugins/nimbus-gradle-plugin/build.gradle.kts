@@ -15,6 +15,12 @@ gradlePlugin {
     }
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        allWarningsAsErrors.set(true)
+    }
+}
+
 dependencies {
     implementation(gradleApi())
     compileOnly("org.mozilla:conventions")

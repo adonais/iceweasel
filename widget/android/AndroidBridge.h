@@ -76,7 +76,6 @@ class AndroidBridge final {
   ~AndroidBridge();
 
   jni::Object::GlobalRef mMessageQueue;
-  jfieldID mMessageQueueMessages;
   jmethodID mMessageQueueNext;
 };
 

@@ -9,15 +9,12 @@
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
 
-class MLSFallback;
-
 namespace mozilla::dom {
 
 class WindowsLocationParent;
 
 // Uses a PWindowsLocation actor to subscribe to geolocation updates from the
-// Windows utility process and falls back to MLS when it is not available or
-// fails.
+// Windows utility process.
 class WindowsLocationProvider final : public nsIGeolocationProvider {
  public:
   NS_DECL_ISUPPORTS
@@ -29,9 +26,6 @@ class WindowsLocationProvider final : public nsIGeolocationProvider {
   friend WindowsLocationParent;
 
   ~WindowsLocationProvider();
-
-  nsresult CreateAndWatchMLSProvider(nsIGeolocationUpdate* aCallback);
-  void CancelMLSProvider();
 
   void MaybeCreateLocationActor();
   void ReleaseUtilityProcess();
@@ -55,8 +49,6 @@ class WindowsLocationProvider final : public nsIGeolocationProvider {
   // Run fn once actor is ready to send messages, which may be immediately.
   template <typename Fn>
   bool WhenActorIsReady(Fn&& fn);
-
-  RefPtr<MLSFallback> mMLSProvider;
 
   nsCOMPtr<nsIGeolocationUpdate> mCallback;
 

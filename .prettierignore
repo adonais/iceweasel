@@ -211,7 +211,6 @@ browser/components/textrecognition/textrecognition.html
 browser/components/urlbar/content/quicksuggestOnboarding.html
 browser/components/urlbar/tests/browser/dummy_page.html
 browser/components/urlbar/tests/browser/file_urlbar_edit_dos.html
-browser/extensions/webcompat/run.js
 browser/tools/mozscreenshots/mozscreenshots/extension/lib/controlCenter/mixed.html
 browser/tools/mozscreenshots/mozscreenshots/extension/lib/controlCenter/mixed_passive.html
 devtools/client/aboutdebugging/test/browser/test-tab-favicons.html
@@ -1016,10 +1015,6 @@ browser/base/content/test/urlbar/file_blank_but_not_blank.html
 # Test files that are really json not js, and don't need to be linted.
 browser/components/sessionstore/test/unit/data/sessionstore_valid.js
 browser/components/sessionstore/test/unit/data/sessionstore_invalid.js
-# This file is split into two in order to keep it as a valid json file
-# for documentation purposes (policies.json) but to be accessed by the
-# code as a .sys.mjs (schema.sys.mjs)
-browser/components/enterprisepolicies/schemas/schema.sys.mjs
 # Include the Storybook config files.
 !browser/components/storybook/.storybook/
 !browser/components/storybook/.storybook/*.js
@@ -1264,6 +1259,7 @@ toolkit/components/uniffi-bindgen-gecko-js/tests/generated/*
 browser/components/aboutwelcome/**/*.css
 browser/components/asrouter/**/*.css
 browser/extensions/newtab/**/*.css
+browser/extensions/newtab/data/content/bundled-renderer-index.js
 
 # Note that the debugger has its own stylelint setup, but that currently
 # produces errors. Bug 1831302 tracks making this better
@@ -1569,6 +1565,7 @@ rlbox/rlbox_sandbox.hpp
 browser/components/aboutwelcome/content/aboutwelcome.bundle.js
 browser/components/aboutwelcome/logs/
 browser/components/aboutwelcome/node_modules/
+browser/components/aiwindow/models/PreferencesNavMap.sys.mjs
 browser/components/asrouter/node_modules/
 browser/components/asrouter/content/asrouter-admin.bundle.js
 browser/components/asrouter/logs/
@@ -1738,6 +1735,7 @@ mobile/android/android-components/components/service/firefox-relay/lint-baseline
 mobile/android/android-components/components/service/glean/lint-baseline.xml
 mobile/android/android-components/components/service/location/lint-baseline.xml
 mobile/android/android-components/components/service/mars/lint-baseline.xml
+mobile/android/android-components/components/service/merino-manifest/lint-baseline.xml
 mobile/android/android-components/components/service/nimbus/lint-baseline.xml
 mobile/android/android-components/components/service/pocket/lint-baseline.xml
 mobile/android/android-components/components/service/sync-autofill/lint-baseline.xml
@@ -1766,6 +1764,7 @@ mobile/android/android-components/components/ui/icons/lint-baseline.xml
 mobile/android/android-components/components/ui/richtext/lint-baseline.xml
 mobile/android/android-components/components/ui/tabcounter/lint-baseline.xml
 mobile/android/android-components/components/ui/widgets/lint-baseline.xml
+mobile/android/android-components/samples/acorn-components/lint-baseline.xml
 mobile/android/android-components/samples/browser/lint-baseline.xml
 mobile/android/android-components/samples/compose-browser/lint-baseline.xml
 mobile/android/android-components/samples/crash/lint-baseline.xml

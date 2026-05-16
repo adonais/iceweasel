@@ -74,12 +74,6 @@ class CCSliceMarker : public BaseMarkerType<CCSliceMarker> {
       "{marker.name} (idle={marker.data.idle})";
 
   static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Memory;
-
-  static void StreamJSONMarkerData(
-      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-      bool aIsDuringIdle) {
-    StreamJSONMarkerDataImpl(aWriter, aIsDuringIdle);
-  }
 };
 }  // namespace geckoprofiler::markers
 

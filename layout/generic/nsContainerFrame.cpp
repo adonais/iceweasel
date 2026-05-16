@@ -35,7 +35,6 @@
 #include "nsError.h"
 #include "nsFlexContainerFrame.h"
 #include "nsFrameSelection.h"
-#include "nsGkAtoms.h"
 #include "nsIBaseWindow.h"
 #include "nsIFrameInlines.h"
 #include "nsIWidget.h"
@@ -339,13 +338,9 @@ void nsContainerFrame::BuildDisplayListForNonBlockChildren(
 
 class nsDisplaySelectionOverlay final : public nsPaintedDisplayItem {
  public:
-  /**
-   * @param aSelectionValue nsISelectionController::getDisplaySelection.
-   */
   nsDisplaySelectionOverlay(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                            int16_t aSelectionValue)
-      : nsPaintedDisplayItem(aBuilder, aFrame),
-        mSelectionValue(aSelectionValue) {
+                            const DeviceColor& aColor)
+      : nsPaintedDisplayItem(aBuilder, aFrame), mColor(aColor) {
     MOZ_COUNT_CTOR(nsDisplaySelectionOverlay);
   }
 
@@ -359,14 +354,12 @@ class nsDisplaySelectionOverlay final : public nsPaintedDisplayItem {
       mozilla::layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder) override;
   NS_DISPLAY_DECL_NAME("SelectionOverlay", TYPE_SELECTION_OVERLAY)
- private:
-  DeviceColor ComputeColor() const;
 
-  static DeviceColor ComputeColorFromSelectionStyle(ComputedStyle&);
+  static DeviceColor ComputeColorFromSelectionStyle(const ComputedStyle&);
   static DeviceColor ApplyTransparencyIfNecessary(nscolor);
 
-  // nsISelectionController::getDisplaySelection.
-  int16_t mSelectionValue;
+ private:
+  DeviceColor mColor;
 };
 
 DeviceColor nsDisplaySelectionOverlay::ApplyTransparencyIfNecessary(
@@ -384,33 +377,15 @@ DeviceColor nsDisplaySelectionOverlay::ApplyTransparencyIfNecessary(
 }
 
 DeviceColor nsDisplaySelectionOverlay::ComputeColorFromSelectionStyle(
-    ComputedStyle& aStyle) {
+    const ComputedStyle& aStyle) {
   return ApplyTransparencyIfNecessary(
       aStyle.GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor));
-}
-
-DeviceColor nsDisplaySelectionOverlay::ComputeColor() const {
-  LookAndFeel::ColorID colorID;
-  if (RefPtr<ComputedStyle> style =
-          mFrame->ComputeSelectionStyle(mSelectionValue)) {
-    return ComputeColorFromSelectionStyle(*style);
-  }
-  if (mSelectionValue == nsISelectionController::SELECTION_ON) {
-    colorID = LookAndFeel::ColorID::Highlight;
-  } else if (mSelectionValue == nsISelectionController::SELECTION_ATTENTION) {
-    colorID = LookAndFeel::ColorID::TextSelectAttentionBackground;
-  } else {
-    colorID = LookAndFeel::ColorID::TextSelectDisabledBackground;
-  }
-
-  return ApplyTransparencyIfNecessary(
-      LookAndFeel::Color(colorID, mFrame, NS_RGB(255, 255, 255)));
 }
 
 void nsDisplaySelectionOverlay::Paint(nsDisplayListBuilder* aBuilder,
                                       gfxContext* aCtx) {
   DrawTarget& aDrawTarget = *aCtx->GetDrawTarget();
-  ColorPattern color(ComputeColor());
+  ColorPattern color(mColor);
 
   nsIntRect pxRect =
       GetPaintRect(aBuilder, aCtx)
@@ -431,7 +406,7 @@ bool nsDisplaySelectionOverlay::CreateWebRenderCommands(
       nsRect(ToReferenceFrame(), Frame()->GetSize()),
       mFrame->PresContext()->AppUnitsPerDevPixel()));
   aBuilder.PushRect(bounds, bounds, !BackfaceIsHidden(), false, false,
-                    wr::ToColorF(ComputeColor()));
+                    wr::ToColorF(mColor));
   return true;
 }
 
@@ -472,19 +447,62 @@ void nsContainerFrame::DisplaySelectionOverlay(nsDisplayListBuilder* aBuilder,
   }
 
   bool normal = false;
+  AutoTArray<SelectionDetails*, 1> highlights;
   for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
     if (sd->mSelectionType == SelectionType::eNormal) {
       normal = true;
+    } else if (sd->mSelectionType == SelectionType::eHighlight) {
+      highlights.AppendElement(sd);
     }
   }
 
-  if (!normal && aContentType == nsISelectionDisplay::DISPLAY_IMAGES) {
-    // Don't overlay an image if it's not in the primary selection.
+  if (aContentType == nsISelectionDisplay::DISPLAY_IMAGES && !normal &&
+      highlights.IsEmpty()) {
+    // Don't overlay an image if it's not in the primary or a custom highlight
+    // selection.
     return;
   }
 
-  aList->AppendNewToTop<nsDisplaySelectionOverlay>(aBuilder, this,
-                                                   selectionValue);
+  // Custom highlights paint below ::selection per spec. Sort them by priority
+  // (stable sort preserves insertion order for equal priorities).
+  highlights.StableSort(
+      [](const SelectionDetails* a, const SelectionDetails* b) -> int {
+        const int32_t pa = a->mHighlightData.mHighlight->Priority();
+        const int32_t pb = b->mHighlightData.mHighlight->Priority();
+        return (pa > pb) - (pa < pb);
+      });
+
+  uint16_t index = 0;
+  for (const auto* sd : highlights) {
+    if (RefPtr<ComputedStyle> style =
+            ComputeHighlightSelectionStyle(sd->mHighlightData.mHighlightName)) {
+      aList->AppendNewToTopWithIndex<nsDisplaySelectionOverlay>(
+          aBuilder, this, index++,
+          nsDisplaySelectionOverlay::ComputeColorFromSelectionStyle(*style));
+    }
+  }
+
+  // ::selection paints on top of all custom highlights.
+  if (normal) {
+    DeviceColor color;
+    if (RefPtr<ComputedStyle> style = ComputeSelectionStyle(selectionValue)) {
+      color = nsDisplaySelectionOverlay::ComputeColorFromSelectionStyle(*style);
+    } else {
+      LookAndFeel::ColorID colorID;
+      if (selectionValue == nsISelectionController::SELECTION_ON) {
+        colorID = LookAndFeel::ColorID::Highlight;
+      } else if (selectionValue ==
+                 nsISelectionController::SELECTION_ATTENTION) {
+        colorID = LookAndFeel::ColorID::TextSelectAttentionBackground;
+      } else {
+        colorID = LookAndFeel::ColorID::TextSelectDisabledBackground;
+      }
+      color = nsDisplaySelectionOverlay::ApplyTransparencyIfNecessary(
+          LookAndFeel::Color(colorID, this, NS_RGB(255, 255, 255)));
+    }
+    aList->AppendNewToTopWithIndex<nsDisplaySelectionOverlay>(aBuilder, this,
+                                                              index++, color);
+  }
 }
 
 /* virtual */
@@ -987,10 +1005,17 @@ void nsContainerFrame::DisplayOverflowContainers(
   }
 }
 
-void nsContainerFrame::DisplayPushedAbsoluteFrames(
+void nsContainerFrame::DisplayAbsoluteFramesNotBuiltByPlaceholder(
     nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
   for (nsIFrame* frame : GetChildList(FrameChildListID::Absolute)) {
     if (frame->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
+      BuildDisplayListForChild(aBuilder, frame, aLists);
+    } else if (IsTransformed() && !nsLayoutUtils::IsProperAncestorFrame(
+                                      this, frame->GetPlaceholderFrame())) {
+      // If this is a transformed absolute containing block and the abspos's
+      // placeholder is in a different continuation's subtree, build the abspos
+      // directly here so that it ends up in the correct fragment's
+      // nsDisplayTransform.
       BuildDisplayListForChild(aBuilder, frame, aLists);
     }
   }

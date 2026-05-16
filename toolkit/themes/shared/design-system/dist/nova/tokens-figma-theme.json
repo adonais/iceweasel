@@ -104,11 +104,6 @@
     "dark": "{Colors$color/neutral/90}",
     "forcedColors": "{HCM Theme$SelectedItemText}"
   },
-  "badge/border/color": {
-    "light": "rgba(21, 20, 26, 0.4)",
-    "dark": "rgba(251, 251, 254, 0.4)",
-    "forcedColors": "{HCM Theme$CanvasText}"
-  },
   "button/background/color": {
     "light": "transparent",
     "dark": "transparent",
@@ -308,5 +303,25 @@
     "light": "#F0F0F4",
     "dark": "{Colors$color/neutral/80}",
     "forcedColors": "{Theme$background/color/canvas}"
+  },
+  "badge/text/color": {
+    "light": "{Theme$text/color}",
+    "dark": "{Theme$text/color}",
+    "forcedColors": "{Theme$text/color}"
+  },
+  "badge/text/color/filled": {
+    "light": "{Theme$button/text/color/primary}",
+    "dark": "{Theme$button/text/color/primary}",
+    "forcedColors": "{Theme$button/text/color/primary}"
+  },
+  "badge/background/color/filled": {
+    "light": "{Colors$color/green/50}",
+    "dark": "{Colors$color/green/20}",
+    "forcedColors": "{HCM Theme$AccentColor}"
+  },
+  "badge/border/color": {
+    "light": "rgba(21, 20, 26, 0.4)",
+    "dark": "rgba(251, 251, 254, 0.4)",
+    "forcedColors": "{HCM Theme$CanvasText}"
   }
 }

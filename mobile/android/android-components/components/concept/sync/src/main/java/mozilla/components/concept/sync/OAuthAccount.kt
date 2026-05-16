@@ -15,31 +15,6 @@ import kotlinx.coroutines.Deferred
 data class AuthFlowUrl(val state: String, val url: String)
 
 /**
- * Represents a specific type of an "in-flight" migration state that could result from intermittent
- * issues during [OAuthAccount.migrateFromAccount].
- */
-enum class InFlightMigrationState(val reuseSessionToken: Boolean) {
-    /**
-     * "Copy" in-flight migration present. Can retry migration via [OAuthAccount.retryMigrateFromSessionToken].
-     */
-    COPY_SESSION_TOKEN(false),
-
-    /**
-     * "Reuse" in-flight migration present. Can retry migration via [OAuthAccount.retryMigrateFromSessionToken].
-     */
-    REUSE_SESSION_TOKEN(true),
-}
-
-/**
- * Data structure describing FxA and Sync credentials necessary to sign-in into an FxA account.
- */
-data class MigratingAccountInfo(
-    val sessionToken: String,
-    val kSync: String,
-    val kXCS: String,
-)
-
-/**
  * User data provided by the web content as a means of delivering the session token to the
  * application
  */

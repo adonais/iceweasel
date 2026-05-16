@@ -103,10 +103,14 @@ TRRServiceParent::RecvNotifyNetworkConnectivityServiceObservers(
     const nsCString& aTopic) {
   // Must match TRRServiceChild::Observe()
   const char* topic = nullptr;
-  if (!strcmp(aTopic.get(), "network:connectivity-service:ip-checks-complete-from-socket-process")) {
-      topic = "network:connectivity-service:ip-checks-complete";
-  } else if (!strcmp(aTopic.get(), "network:connectivity-service:dns-checks-complete-from-socket-process")) {
-      topic = "network:connectivity-service:dns-checks-complete";
+  if (!strcmp(aTopic.get(),
+              "network:connectivity-service:ip-checks-complete-from-socket-"
+              "process")) {
+    topic = "network:connectivity-service:ip-checks-complete";
+  } else if (!strcmp(aTopic.get(),
+                     "network:connectivity-service:dns-checks-complete-from-"
+                     "socket-process")) {
+    topic = "network:connectivity-service:dns-checks-complete";
   } else {
     return IPC_FAIL(this, "Unexpected notification");
   }

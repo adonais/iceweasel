@@ -56,6 +56,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Exceptions.h"
+#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/FunctionBinding.h"
 #include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/dom/JSExecutionManager.h"
@@ -2288,32 +2289,6 @@ void WorkerPrivate::PropagateStorageAccessPermissionGranted() {
   (void)NS_WARN_IF(!runnable->Dispatch(this));
 }
 
-void WorkerPrivate::NotifyStorageKeyUsed() {
-  AssertIsOnWorkerThread();
-
-  // Only notify once per global.
-  if (hasNotifiedStorageKeyUsed) {
-    return;
-  }
-  hasNotifiedStorageKeyUsed = true;
-
-  // Notify about storage access on the main thread.
-  RefPtr<StrongWorkerRef> strongRef =
-      StrongWorkerRef::Create(this, "WorkerPrivate::NotifyStorageKeyUsed");
-  if (!strongRef) {
-    return;
-  }
-  RefPtr<ThreadSafeWorkerRef> ref = new ThreadSafeWorkerRef(strongRef);
-  DispatchToMainThread(NS_NewRunnableFunction(
-      "WorkerPrivate::NotifyStorageKeyUsed", [ref = std::move(ref)] {
-        nsGlobalWindowInner* window =
-            nsGlobalWindowInner::Cast(ref->Private()->GetAncestorWindow());
-        if (window) {
-          window->MaybeNotifyStorageKeyUsed();
-        }
-      }));
-}
-
 bool WorkerPrivate::Close() {
   mMutex.AssertCurrentThreadOwns();
   if (mParentStatus < Closing) {
@@ -3346,6 +3321,7 @@ nsresult WorkerPrivate::GetLoadInfo(
     loadInfo.mStorageAccess = aParent->StorageAccess();
     loadInfo.mUseRegularPrincipal = aParent->UseRegularPrincipal();
     loadInfo.mUsingStorageAccess = aParent->UsingStorageAccess();
+    loadInfo.mSerialAllowed = aParent->SerialAllowed();
     loadInfo.mCookieJarSettings = aParent->CookieJarSettings();
     if (loadInfo.mCookieJarSettings) {
       loadInfo.mCookieJarSettingsArgs = aParent->CookieJarSettingsArgs();
@@ -3503,6 +3479,8 @@ nsresult WorkerPrivate::GetLoadInfo(
       loadInfo.mStorageAccess = StorageAllowedForWindow(globalWindow);
       loadInfo.mUseRegularPrincipal = document->UseRegularPrincipal();
       loadInfo.mUsingStorageAccess = document->UsingStorageAccess();
+      loadInfo.mSerialAllowed =
+          FeaturePolicyUtils::IsFeatureAllowed(document, u"serial"_ns);
       loadInfo.mShouldResistFingerprinting =
           document->ShouldResistFingerprinting(
               RFPTarget::IsAlwaysEnabledForPrecompute);
@@ -6813,9 +6791,9 @@ FontVisibility WorkerPrivate::GetFontVisibility() const {
 
 void WorkerPrivate::ReportBlockedFontFamily(const nsCString& aMsg) const {
   MOZ_LOG(gFingerprinterDetection, mozilla::LogLevel::Info, ("%s", aMsg.get()));
-  nsContentUtils::ReportToConsoleNonLocalized(NS_ConvertUTF8toUTF16(aMsg),
-                                              nsIScriptError::warningFlag,
-                                              "Security"_ns, GetDocument());
+  nsContentUtils::ReportToConsoleByWindowID(NS_ConvertUTF8toUTF16(aMsg),
+                                            nsIScriptError::warningFlag,
+                                            "Security"_ns, WindowID());
 }
 
 bool WorkerPrivate::IsChrome() const { return IsChromeWorker(); }

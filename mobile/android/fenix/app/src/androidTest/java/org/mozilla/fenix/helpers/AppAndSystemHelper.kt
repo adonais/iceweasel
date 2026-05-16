@@ -447,7 +447,7 @@ object AppAndSystemHelper {
             TAG,
             "isExternalAppBrowserActivityInCurrentTask: Trying to verify that the latest activity of the application is used for custom tabs or PWAs",
         )
-        return activityManager.appTasks[0].taskInfo.topActivity!!.className == ExternalAppBrowserActivity::class.java.name
+        return activityManager.appTasks[0].taskInfo?.topActivity?.className == ExternalAppBrowserActivity::class.java.name
     }
 
     /**

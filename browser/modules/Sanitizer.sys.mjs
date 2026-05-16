@@ -1,4 +1,3 @@
-// -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -118,10 +117,11 @@ export var Sanitizer = {
    * @param {string} mode - flag to let the dialog know if it is opened
    *        using the clear on shutdown (clearOnShutdown) settings option
    *        in about:preferences or in a clear site data context (clearSiteData)
+   * @returns {"accept" | "cancel"} - The selected dialog box option.
    *
    * @throws if parentWindow is undefined or doesn't have a gDialogBox.
    */
-  showUI(parentWindow, mode) {
+  async showUI(parentWindow, mode) {
     // Treat the hidden window as not being a parent window:
     if (
       parentWindow?.document.documentURI ==
@@ -131,11 +131,14 @@ export var Sanitizer = {
     }
 
     let dialogFile = "sanitize_v2.xhtml";
+    let deferred = Promise.withResolvers();
 
     if (parentWindow?.gDialogBox) {
       parentWindow.gDialogBox.open(`chrome://browser/content/${dialogFile}`, {
         inBrowserWindow: true,
         mode,
+        onAccept: () => deferred.resolve("accept"),
+        onCancel: () => deferred.resolve("cancel"),
       });
     } else {
       Services.ww.openWindow(
@@ -143,9 +146,16 @@ export var Sanitizer = {
         `chrome://browser/content/${dialogFile}`,
         "Sanitize",
         "chrome,titlebar,dialog,centerscreen,modal",
-        { needNativeUI: true, mode }
+        {
+          needNativeUI: true,
+          mode,
+          onAccept: () => deferred.resolve("accept"),
+          onCancel: () => deferred.resolve("cancel"),
+        }
       );
     }
+
+    return deferred.promise;
   },
 
   /**

@@ -38,7 +38,7 @@ public class AIFeaturesController {
 
     private static final String LIST_FEATURES_EVENT = "GeckoView:AIFeature:ListFeatures";
     private static final String SET_FEATURE_ENABLED_EVENT = "GeckoView:AIFeature:SetEnabled";
-    private static final String RESET_FEATURE_EVENT = "GeckoView:AIFeature:Reset";
+    private static final String MAKE_FEATURE_AVAILABLE_EVENT = "GeckoView:AIFeature:MakeAvailable";
 
     /**
      * Returns a map of all known AI features and basic information keyed by feature ID.
@@ -76,10 +76,10 @@ public class AIFeaturesController {
     }
 
     /**
-     * Enables or disables the given AI feature.
+     * Enables or blocks the given AI feature.
      *
      * @param featureId The identifier of the AI feature to configure.
-     * @param enabled True to enable the feature, false to disable it.
+     * @param enabled True to enable the feature, false to block it.
      * @return A GeckoResult that resolves on success or rejects with an error.
      */
     @HandlerThread
@@ -108,31 +108,31 @@ public class AIFeaturesController {
     }
 
     /**
-     * Resets the given AI feature to its default state.
+     * Makes the given AI feature available (resets to default state).
      *
-     * @param featureId the identifier of the AI feature to reset
+     * @param featureId the identifier of the AI feature to make available
      * @return a GeckoResult that resolves on success or rejects with an error
      */
     @HandlerThread
-    public static @NonNull GeckoResult<Void> resetFeature(@NonNull final String featureId) {
+    public static @NonNull GeckoResult<Void> makeFeatureAvailable(@NonNull final String featureId) {
       ThreadUtils.warnOnHandlerThread();
       if (DEBUG) {
-        Log.d(LOGTAG, "Resetting AI feature: " + featureId);
+        Log.d(LOGTAG, "Making AI feature available: " + featureId);
       }
       final GeckoBundle bundle = new GeckoBundle(1);
       bundle.putString("featureId", featureId);
 
       return EventDispatcher.getInstance()
-          .queryVoid(RESET_FEATURE_EVENT, bundle)
+          .queryVoid(MAKE_FEATURE_AVAILABLE_EVENT, bundle)
           .map(
               result -> result,
               exception -> {
                 final String exceptionData =
                     ((EventDispatcher.QueryException) exception).data.toString();
                 if (exceptionData.contains("Unknown AI feature")) {
-                  return new AIFeaturesException(AIFeaturesException.ERROR_UNKNOWN_FEATURE);
+                  throw new AIFeaturesException(AIFeaturesException.ERROR_UNKNOWN_FEATURE);
                 }
-                return new AIFeaturesException(AIFeaturesException.ERROR_COULD_NOT_RESET);
+                throw new AIFeaturesException(AIFeaturesException.ERROR_COULD_NOT_MAKE_AVAILABLE);
               });
     }
   }
@@ -145,8 +145,11 @@ public class AIFeaturesController {
     /** Whether the feature is enabled to use. */
     public final boolean isEnabled;
 
-    /** Whether the feature is possible to use. For example, by device support or policy. */
+    /** Whether the feature is possible to use. */
     public final boolean isAllowed;
+
+    /** Whether the feature is blocked from being used. */
+    public final boolean isBlocked;
 
     /** For testing purposes only. */
     @VisibleForTesting
@@ -154,6 +157,7 @@ public class AIFeaturesController {
       this.id = "";
       this.isEnabled = false;
       this.isAllowed = false;
+      this.isBlocked = false;
     }
 
     /**
@@ -165,6 +169,7 @@ public class AIFeaturesController {
       this.id = builder.mId;
       this.isEnabled = builder.mIsEnabled;
       this.isAllowed = builder.mIsAllowed;
+      this.isBlocked = builder.mIsBlocked;
     }
 
     /** Builder for {@link AIFeature}. */
@@ -172,6 +177,7 @@ public class AIFeaturesController {
       private final @NonNull String mId;
       private boolean mIsEnabled;
       private boolean mIsAllowed;
+      private boolean mIsBlocked;
 
       /**
        * The unique id for the AI feature.
@@ -199,13 +205,26 @@ public class AIFeaturesController {
       /**
        * If the feature is allowed.
        *
-       * @param isAllowed Whether the feature is allowed by policy or support.
+       * @param isAllowed Whether the feature is allowed to use.
        * @return This builder instance.
        */
       @AnyThread
       /* package */ @NonNull
       Builder isAllowed(final boolean isAllowed) {
         this.mIsAllowed = isAllowed;
+        return this;
+      }
+
+      /**
+       * If the feature is blocked.
+       *
+       * @param isBlocked Whether the feature is blocked from use.
+       * @return This builder instance.
+       */
+      @AnyThread
+      /* package */ @NonNull
+      Builder isBlocked(final boolean isBlocked) {
+        this.mIsBlocked = isBlocked;
         return this;
       }
 
@@ -234,9 +253,12 @@ public class AIFeaturesController {
         if (featureId == null) {
           return null;
         }
-        final var isEnabled = bundle.getBoolean("isEnabled");
-        final var isAllowed = bundle.getBoolean("isAllowed");
-        return new Builder(featureId).isEnabled(isEnabled).isAllowed(isAllowed).build();
+
+        return new Builder(featureId)
+            .isEnabled(bundle.getBoolean("isEnabled"))
+            .isAllowed(bundle.getBoolean("isAllowed"))
+            .isBlocked(bundle.getBoolean("isBlocked"))
+            .build();
       } catch (final Exception e) {
         Log.w(LOGTAG, "Could not deserialize AIFeature object: " + e);
         return null;
@@ -251,6 +273,8 @@ public class AIFeaturesController {
           + isEnabled
           + ", isAllowed="
           + isAllowed
+          + ", isBlocked="
+          + isBlocked
           + " }";
     }
   }
@@ -276,11 +300,11 @@ public class AIFeaturesController {
     /** The requested AI feature ID is not recognized. */
     public static final int ERROR_UNKNOWN_FEATURE = -3;
 
-    /** Could not enable or disable the AI feature. */
+    /** Could not enable or block the AI feature. */
     public static final int ERROR_COULD_NOT_SET = -4;
 
-    /** Could not reset the AI feature. */
-    public static final int ERROR_COULD_NOT_RESET = -5;
+    /** Could not make the AI feature available. */
+    public static final int ERROR_COULD_NOT_MAKE_AVAILABLE = -5;
 
     /** AI features exception error codes. */
     @Retention(RetentionPolicy.SOURCE)
@@ -290,7 +314,7 @@ public class AIFeaturesController {
           ERROR_COULD_NOT_PARSE,
           ERROR_UNKNOWN_FEATURE,
           ERROR_COULD_NOT_SET,
-          ERROR_COULD_NOT_RESET,
+          ERROR_COULD_NOT_MAKE_AVAILABLE,
         })
     public @interface Code {}
 

@@ -155,7 +155,7 @@ add_setup(async function () {
 
   // Make sure the sidebar launcher is visible (when sidebar.revamp is true);
   // previous tests might have hidden it.
-  await SidebarController.initializeUIState({ launcherVisible: true });
+  await SidebarController.updateUIState({ launcherVisible: true });
 });
 
 // Test tab stops with no page loaded.

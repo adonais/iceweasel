@@ -9,7 +9,6 @@
 #include "nsCOMPtr.h"
 #include "nsCSSRendering.h"
 #include "nsContainerFrame.h"
-#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsPresContext.h"
 #include "nsStyleConsts.h"

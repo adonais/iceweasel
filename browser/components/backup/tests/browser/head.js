@@ -112,5 +112,14 @@ async function waitForBackupSettings(browser) {
 
   let settings = browser.contentDocument.querySelector("backup-settings");
   await settings.updateComplete;
+
+  // Wait for BackupService state to propagate to the component, which
+  // happens asynchronously after the element is connected to the DOM.
+  await BrowserTestUtils.waitForMutationCondition(
+    settings.shadowRoot,
+    { childList: true, subtree: true },
+    () => settings.backupServiceState.archiveEnabledStatus
+  );
+
   return settings;
 }

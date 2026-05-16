@@ -134,3 +134,21 @@ $side-col-width-px: $col-width-px * 2;
     background: var(--newtab-background-color-secondary);
   }
 }
+
+// Baseline styles for all widgets
+@mixin widget-base-style {
+  padding: var(--space-medium);
+  background-color: var(--newtab-background-card);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--box-shadow-level-2);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  &:hover,
+  &:focus-within {
+    outline: 1px solid var(--border-color-deemphasized);
+    box-shadow: var(--card-box-shadow-hover);
+  }
+}

@@ -35,11 +35,9 @@ export class MegalistParent extends JSWindowActorParent {
   }
 
   receiveMessage(message) {
-    let currentWindowGlobal = this.browsingContext.currentWindowGlobal;
     if (
-      !currentWindowGlobal ||
-      !currentWindowGlobal.isInProcess ||
-      currentWindowGlobal.documentURI?.spec !==
+      !this.manager.isInProcess ||
+      this.manager.documentURI?.spec !==
         "chrome://global/content/megalist/megalist.html"
     ) {
       lazy.logConsole.debug(

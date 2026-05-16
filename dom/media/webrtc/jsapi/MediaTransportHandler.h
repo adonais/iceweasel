@@ -44,12 +44,6 @@ class MediaTransportHandler {
   explicit MediaTransportHandler()
       : mStateCacheMutex("MediaTransportHandler::mStateCacheMutex") {}
 
-  // Exposed so we can synchronously validate ICE servers from PeerConnection
-  static nsresult ConvertIceServers(
-      const nsTArray<dom::RTCIceServer>& aIceServers,
-      std::vector<NrIceStunServer>* aStunServers,
-      std::vector<NrIceTurnServer>* aTurnServers);
-
   typedef MozPromise<dom::Sequence<nsString>, nsresult, true> IceLogPromise;
 
   virtual void Initialize() {}

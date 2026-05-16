@@ -9,6 +9,7 @@ import androidx.core.net.toUri
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.setNetworkEnabled
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -16,6 +17,7 @@ import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.RetryTestRule
+import org.mozilla.fenix.helpers.RetryableComposeTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
@@ -38,22 +40,22 @@ class BrowsingErrorPagesTest {
         getStringResource(errorpagesR.string.mozac_browser_errorpages_safe_harmful_uri_title)
 
     @get:Rule(order = 0)
+    val retryTestRule = RetryTestRule(3)
+
+    @get:Rule(order = 1)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
-
-    @get:Rule
-    val composeTestRule =
+    @get:Rule(order = 2)
+    val retryableComposeTestRule = RetryableComposeTestRule<HomeActivity, HomeActivityTestRule> {
         AndroidComposeTestRule(
             HomeActivityTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
+    }
 
-    @get:Rule
+    @get:Rule(order = 3)
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
-    @Rule
-    @JvmField
-    val retryTestRule = RetryTestRule(3)
+    private val mockWebServer get() = fenixTestRule.mockWebServer
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326774
     @SmokeTest
@@ -61,7 +63,7 @@ class BrowsingErrorPagesTest {
     fun verifyMalwareWebsiteWarningMessageTest() {
         val malwareURl = "http://itisatrap.org/firefox/its-an-attack.html"
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(malwareURl.toUri()) {
             verifyPageContent(malwareWarning)
         }
@@ -73,7 +75,7 @@ class BrowsingErrorPagesTest {
     fun verifyPhishingWebsiteWarningMessageTest() {
         val phishingURl = "http://itisatrap.org/firefox/its-a-trap.html"
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(phishingURl.toUri()) {
             verifyPageContent(phishingWarning)
         }
@@ -85,7 +87,7 @@ class BrowsingErrorPagesTest {
     fun verifyUnwantedSoftwareWebsiteWarningMessageTest() {
         val unwantedURl = "http://itisatrap.org/firefox/unwanted.html"
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(unwantedURl.toUri()) {
             verifyPageContent(unwantedSoftwareWarning)
         }
@@ -97,7 +99,7 @@ class BrowsingErrorPagesTest {
     fun verifyHarmfulWebsiteWarningMessageTest() {
         val harmfulURl = "https://itisatrap.org/firefox/harmful.html"
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(harmfulURl.toUri()) {
             verifyPageContent(harmfulSiteWarning)
         }
@@ -110,7 +112,7 @@ class BrowsingErrorPagesTest {
     fun verifyConnectionInterruptedErrorMessageTest() {
         val testUrl = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(testUrl.url) {
             waitForPageToLoad()
             verifyPageContent(testUrl.content)
@@ -128,11 +130,11 @@ class BrowsingErrorPagesTest {
     fun verifyAddressNotFoundErrorMessageTest() {
         val url = "ww.example.com"
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(url.toUri()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
             verifyAddressNotFoundErrorMessage()
-            clickPageObject(composeTestRule, itemWithResId("errorTryAgain"))
+            clickPageObject(retryableComposeTestRule.current, itemWithResId("errorTryAgain"))
             verifyAddressNotFoundErrorMessage()
         }
     }
@@ -145,15 +147,15 @@ class BrowsingErrorPagesTest {
 
         setNetworkEnabled(false)
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(url.toUri()) {
             verifyNoInternetConnectionErrorMessage()
         }
 
         setNetworkEnabled(true)
 
-        browserScreen(composeTestRule) {
-            clickPageObject(composeTestRule, itemWithResId("errorTryAgain"))
+        browserScreen(retryableComposeTestRule.current) {
+            clickPageObject(retryableComposeTestRule.current, itemWithResId("errorTryAgain"))
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
             verifyPageContent("Example Domain")
         }

@@ -432,6 +432,29 @@ add_task(async function test_onAction_OPEN_LINK() {
   sandbox.restore();
 });
 
+add_task(async function test_onAction_OPEN_LINK_where() {
+  info("PlacesFeed.onAction should respect action.data.where on OPEN_LINK");
+  let sandbox = sinon.createSandbox();
+  let feed = getPlacesFeedForTest(sandbox);
+  let openTrustedLinkIn = sandbox.stub();
+  let openLinkAction = {
+    type: actionTypes.OPEN_LINK,
+    data: { url: "https://foo.com", where: "tab" },
+    _target: {
+      browser: {
+        ownerGlobal: { openTrustedLinkIn },
+      },
+    },
+  };
+  feed.onAction(openLinkAction);
+
+  Assert.ok(openTrustedLinkIn.calledOnce, "openTrustedLinkIn called");
+  let [, where] = openTrustedLinkIn.firstCall.args;
+  Assert.equal(where, "tab");
+
+  sandbox.restore();
+});
+
 add_task(async function test_onAction_OPEN_LINK_referrer() {
   info("PlacesFeed.onAction should open link with referrer on OPEN_LINK");
   let sandbox = sinon.createSandbox();

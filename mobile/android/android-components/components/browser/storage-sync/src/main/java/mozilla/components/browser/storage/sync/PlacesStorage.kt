@@ -17,7 +17,6 @@ import mozilla.appservices.places.uniffi.PlacesApiException
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.storage.Storage
 import mozilla.components.concept.storage.StorageMaintenanceRegistry
-import mozilla.components.concept.sync.SyncStatus
 import mozilla.components.concept.sync.SyncableStore
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.NamedThreadFactory
@@ -195,25 +194,6 @@ abstract class PlacesStorage(
             logger.error("Ignoring internal uniffi places exception when running $operation", e)
             reportRustError("places-internal-error", e)
             default
-        }
-    }
-
-    /**
-     * Runs a [syncBlock], re-throwing any panics that may be encountered.
-     * @return [SyncStatus.Ok] on success, or [SyncStatus.Error] on non-panic [PlacesApiException].
-     * (Note that a panic is represented by an mozilla.appservices.places.uniffi.InternalException,
-     * which isn't part of the [PlacesApiException] error hierarchy)
-     */
-    protected inline fun syncAndHandleExceptions(syncBlock: () -> Unit): SyncStatus {
-        return try {
-            logger.debug("Syncing...")
-            syncBlock()
-            logger.debug("Successfully synced.")
-            SyncStatus.Ok
-        } catch (e: PlacesApiException) {
-            crashReporter?.submitCaughtException(e)
-            logger.error("Places exception while syncing", e)
-            SyncStatus.Error(e)
         }
     }
 

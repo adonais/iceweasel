@@ -210,7 +210,7 @@ class SharedSubResourceCache {
 
  public:
   struct Result {
-    Value* mCompleteValue = nullptr;
+    RefPtr<Value> mCompleteValue;
     RefPtr<SubResourceNetworkMetadataHolder> mNetworkMetadata;
 
     LoadingValue* mLoadingOrPendingValue = nullptr;

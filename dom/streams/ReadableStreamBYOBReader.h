@@ -5,12 +5,12 @@
 #ifndef mozilla_dom_ReadableStreamBYOBReader_h
 #define mozilla_dom_ReadableStreamBYOBReader_h
 
+#include "ReadableStreamGenericReader.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/ReadableStreamGenericReader.h"
 #include "mozilla/dom/TypedArray.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
@@ -65,26 +65,6 @@ class ReadableStreamBYOBReader final : public ReadableStreamGenericReader,
 
   LinkedList<RefPtr<ReadIntoRequest>> mReadIntoRequests;
 };
-
-namespace streams_abstract {
-
-already_AddRefed<ReadableStreamBYOBReader> AcquireReadableStreamBYOBReader(
-    ReadableStream* aStream, ErrorResult& aRv);
-
-MOZ_CAN_RUN_SCRIPT void ReadableStreamBYOBReaderRead(
-    JSContext* aCx, ReadableStreamBYOBReader* aReader,
-    JS::Handle<JSObject*> aView, uint64_t aMin,
-    ReadIntoRequest* aReadIntoRequest, ErrorResult& aRv);
-
-void ReadableStreamBYOBReaderErrorReadIntoRequests(
-    JSContext* aCx, ReadableStreamBYOBReader* aReader,
-    JS::Handle<JS::Value> aError, ErrorResult& aRv);
-
-void ReadableStreamBYOBReaderRelease(JSContext* aCx,
-                                     ReadableStreamBYOBReader* aReader,
-                                     ErrorResult& aRv);
-
-}  // namespace streams_abstract
 
 }  // namespace mozilla::dom
 

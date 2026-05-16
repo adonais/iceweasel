@@ -1016,7 +1016,7 @@ if __name__ == "__main__":
 
     template = Template(
         '[\
-{"urls":["stun:$hostname", "stun:$hostname?transport=tcp"]}, \
+{"urls":["stun:$hostname"]}, \
 {"username":"$user","credential":"$pwd","turn_redirect_port":"$TURN_REDIRECT_PORT","turns_redirect_port":"$TURNS_REDIRECT_PORT","urls": \
 ["turn:$hostname", "turn:$hostname?transport=tcp" $turns_url] \
 $cert_prop}]'  # Hack to make it easier to override cert checks

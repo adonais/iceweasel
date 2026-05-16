@@ -859,5 +859,227 @@ def test_release_promotion(
     assert kwargs["parameters"]["target_tasks_method"] == "promote_desktop"
 
 
+def test_backfill_standard(mocker, run_action):
+    task_id = "tid"
+    task_def = {
+        "metadata": {"name": "raptor-browsertime-firefox-tp6"},
+        "payload": {"env": {}},
+        "extra": {"treeherder": {"symbol": "tp6"}},
+    }
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_task_definition",
+        return_value=task_def,
+    )
+
+    pushes = ["200", "201", "202"]
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_pushes_from_params_input",
+        return_value=pushes,
+    )
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_decision_task_id",
+        side_effect=lambda project, push_id: f"decision-{push_id}",
+    )
+    trigger_mock = mocker.patch("gecko_taskgraph.actions.backfill.trigger_action")
+
+    run_action(
+        "backfill",
+        task_id=task_id,
+        input={"depth": 25, "retrigger": False},
+    )
+
+    trigger_mock.assert_has_calls(
+        [
+            mocker.call(
+                action_name="backfill-task",
+                decision_task_id="decision-200",
+                input=mocker.ANY,
+            ),
+            mocker.call(
+                action_name="backfill-task",
+                decision_task_id="decision-201",
+                input=mocker.ANY,
+            ),
+            mocker.call(
+                action_name="backfill-task",
+                decision_task_id="decision-202",
+                input=mocker.ANY,
+            ),
+        ],
+        any_order=False,
+    )
+    assert trigger_mock.call_count == 3
+
+
+def test_backfill_sliced(mocker, run_action):
+    task_id = "tid"
+    label = "raptor-browsertime-firefox-tp6"
+    task_def = {
+        "metadata": {"name": label},
+        "payload": {"env": {}},
+        "extra": {"treeherder": {"symbol": "tp6"}},
+    }
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_task_definition",
+        return_value=task_def,
+    )
+
+    pushes = [str(i) for i in range(100, 125)]
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_pushes_in_gap",
+        return_value=pushes,
+    )
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_decision_task_id",
+        side_effect=lambda project, push_id: f"decision-{push_id}",
+    )
+    trigger_mock = mocker.patch("gecko_taskgraph.actions.backfill.trigger_action")
+
+    run_action(
+        "backfill",
+        task_id=task_id,
+        input={"depth": 25, "retrigger": False, "slices": 3},
+    )
+
+    # slices=3 triggers only the 3 exact pivot pushes: n/4, 2n/4, 3n/4
+    # n=25, so pivot indices are 6, 12, 18 -> push IDs 106, 112, 118
+    assert trigger_mock.call_count == 3
+    called_pids = []
+    for call in trigger_mock.call_args_list:
+        kwargs = call.kwargs
+        assert kwargs["action_name"] == "backfill-task"
+        decision = kwargs["decision_task_id"]  # decision-<pid>
+        called_pids.append(decision.split("-")[1])
+
+    # ensure no duplicate pushes are triggered
+    assert len(called_pids) == len(set(called_pids))
+    assert set(called_pids) == {"106", "112", "118"}
+
+
+def test_backfill_sliced_small_gap_falls_back_to_standard(mocker, run_action):
+    task_id = "tid"
+    label = "raptor-browsertime-firefox-tp6"
+    task_def = {
+        "metadata": {"name": label},
+        "payload": {"env": {}},
+        "extra": {"treeherder": {"symbol": "tp6"}},
+    }
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_task_definition",
+        return_value=task_def,
+    )
+
+    # gap=6 (< 7) should trigger all 6 pushes via standard mode
+    pushes = [str(i) for i in range(100, 106)]
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_pushes_in_gap",
+        return_value=pushes,
+    )
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_decision_task_id",
+        side_effect=lambda project, push_id: f"decision-{push_id}",
+    )
+    trigger_mock = mocker.patch("gecko_taskgraph.actions.backfill.trigger_action")
+
+    run_action(
+        "backfill",
+        task_id=task_id,
+        input={"depth": 25, "retrigger": False, "slices": 3},
+    )
+
+    # standard mode should be triggered for all gap 6 pushes
+    assert trigger_mock.call_count == 6
+    called_pids = []
+    for call in trigger_mock.call_args_list:
+        kwargs = call.kwargs
+        assert kwargs["action_name"] == "backfill-task"
+        decision = kwargs["decision_task_id"]  # decision-<pid>
+        called_pids.append(decision.split("-")[1])
+
+    # ensure no duplicate pushes are triggered
+    assert len(called_pids) == len(set(called_pids))
+    assert set(called_pids) == {str(i) for i in range(100, 106)}
+
+
+def test_backfill_sliced_empty_gap(mocker, run_action):
+    task_id = "tid"
+    label = "raptor-browsertime-firefox-tp6"
+    task_def = {
+        "metadata": {"name": label},
+        "payload": {"env": {}},
+        "extra": {"treeherder": {"symbol": "tp6"}},
+    }
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_task_definition",
+        return_value=task_def,
+    )
+
+    # no missing pushes found
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_pushes_in_gap",
+        return_value=[],
+    )
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_decision_task_id",
+        side_effect=lambda project, push_id: f"decision-{push_id}",
+    )
+    trigger_mock = mocker.patch("gecko_taskgraph.actions.backfill.trigger_action")
+
+    run_action(
+        "backfill",
+        task_id=task_id,
+        input={"depth": 25, "retrigger": False, "slices": 3},
+    )
+
+    # No pushes should be triggered gap is 0 (no missing pushes found)
+    assert trigger_mock.call_count == 0
+
+
+def test_backfill_sliced_boundary_gap(mocker, run_action):
+    task_id = "tid"
+    label = "raptor-browsertime-firefox-tp6"
+    task_def = {
+        "metadata": {"name": label},
+        "payload": {"env": {}},
+        "extra": {"treeherder": {"symbol": "tp6"}},
+    }
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_task_definition",
+        return_value=task_def,
+    )
+
+    # gap=7 (>= 7) should use sliced mode
+    pushes = [str(i) for i in range(100, 107)]
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_pushes_in_gap",
+        return_value=pushes,
+    )
+    mocker.patch(
+        "gecko_taskgraph.actions.backfill.get_decision_task_id",
+        side_effect=lambda project, push_id: f"decision-{push_id}",
+    )
+    trigger_mock = mocker.patch("gecko_taskgraph.actions.backfill.trigger_action")
+
+    run_action(
+        "backfill",
+        task_id=task_id,
+        input={"depth": 25, "retrigger": False, "slices": 3},
+    )
+
+    # slices=3 triggers only the 3 exact pivot pushes: n/4, 2n/4, 3n/4
+    # n=7, so pivot indices are 1, 3, 5 -> push IDs 101, 103, 105
+    assert trigger_mock.call_count == 3
+    called_pids = []
+    for call in trigger_mock.call_args_list:
+        kwargs = call.kwargs
+        assert kwargs["action_name"] == "backfill-task"
+        decision = kwargs["decision_task_id"]  # decision-<pid>
+        called_pids.append(decision.split("-")[1])
+
+    # ensure no duplicate pushes are triggered
+    assert len(called_pids) == len(set(called_pids))
+    assert set(called_pids) == {"101", "103", "105"}
+
+
 if __name__ == "__main__":
     main()

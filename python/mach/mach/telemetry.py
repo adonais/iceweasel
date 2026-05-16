@@ -141,7 +141,8 @@ def resolve_is_employee_by_credentials(topsrcdir: Path):
             arcrc = json.load(arcrc_file)
 
         phabricator_token = (
-            arcrc.get("hosts", {})
+            arcrc
+            .get("hosts", {})
             .get(urllib_parse.urljoin(phabricator_uri, "api/"), {})
             .get("token")
         )

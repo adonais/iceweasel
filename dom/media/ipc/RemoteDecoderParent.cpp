@@ -53,7 +53,7 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvInit(
       mManagerThread, __func__,
       [self, resolver = std::move(aResolver)](
           MediaDataDecoder::InitPromise::ResolveOrRejectValue&& aValue) {
-        if (!self->CanRecv()) {
+        if (!self->CanSend()) {
           // The promise to the child would have already been rejected.
           return;
         }
@@ -93,7 +93,7 @@ void RemoteDecoderParent::DecodeNextSample(
     MediaDataDecoder::DecodedData&& aOutput, DecodeResolver&& aResolver) {
   MOZ_ASSERT(OnManagerThread());
 
-  if (!CanRecv()) {
+  if (!CanSend()) {
     // Avoid unnecessarily creating shmem objects later.
     return;
   }
@@ -192,7 +192,7 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvDrain(
       [self, this, resolver = std::move(aResolver)](
           MediaDataDecoder::DecodePromise::ResolveOrRejectValue&& aValue) {
         ReleaseAllBuffers();
-        if (!self->CanRecv()) {
+        if (!self->CanSend()) {
           // Avoid unnecessarily creating shmem objects later.
           return;
         }

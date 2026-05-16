@@ -122,14 +122,14 @@ void SVGViewportFrame::NotifySVGChanged(ChangeFlags aFlags) {
 }
 
 SVGBBox SVGViewportFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                                              uint32_t aFlags) {
+                                              SVGBBoxFlags aFlags) {
   // XXXjwatt It seems like authors would want the result to be clipped by the
   // viewport we establish if IsScrollableOverflow() is true.  We should
   // consider doing that.  See bug 1350755.
 
   SVGBBox bbox;
 
-  if (aFlags & SVGUtils::eForGetClientRects) {
+  if (aFlags.contains(SVGBBoxFlag::ForGetClientRects)) {
     // XXXjwatt For consistency with the old code this code includes the
     // viewport we establish in the result, but only includes the bounds of our
     // descendants if they are not clipped to that viewport.  However, this is

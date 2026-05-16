@@ -46,6 +46,8 @@ class SearchActionTest {
                 customSearchEngines = emptyList(),
                 userSelectedSearchEngineId = null,
                 userSelectedSearchEngineName = null,
+                userSelectedPrivateSearchEngineId = null,
+                userSelectedPrivateSearchEngineName = null,
                 hiddenSearchEngines = emptyList(),
                 disabledSearchEngineIds = emptyList(),
                 additionalSearchEngines = emptyList(),
@@ -122,6 +124,8 @@ class SearchActionTest {
                 regionDefaultSearchEngineId = "default",
                 userSelectedSearchEngineId = null,
                 userSelectedSearchEngineName = null,
+                userSelectedPrivateSearchEngineId = null,
+                userSelectedPrivateSearchEngineName = null,
                 hiddenSearchEngines = emptyList(),
                 disabledSearchEngineIds = emptyList(),
                 additionalSearchEngines = emptyList(),
@@ -546,6 +550,84 @@ class SearchActionTest {
             BrowserStateReducer.reduce(initialState, SearchAction.RefreshSearchEnginesAction)
 
         assertEquals(initialState.search, state.search)
+    }
+
+    @Test
+    fun `GIVEN the search state of the browser WHEN selecting a private search engine THEN update the state`() {
+        val searchEngine = SearchEngine(
+            id = "id1",
+            name = "search1",
+            icon = mock(),
+            type = SearchEngine.Type.BUNDLED,
+        )
+
+        var state = BrowserState(
+            search = SearchState(
+                regionSearchEngines = listOf(searchEngine),
+            ),
+        )
+
+        assertNull(state.search.userSelectedPrivateSearchEngineId)
+        assertNull(state.search.userSelectedPrivateSearchEngineName)
+
+        state = BrowserStateReducer.reduce(
+            state,
+            SearchAction.SelectPrivateSearchEngineAction(searchEngine.id, searchEngine.name),
+        )
+
+        assertEquals(searchEngine.id, state.search.userSelectedPrivateSearchEngineId)
+        assertEquals(searchEngine.name, state.search.userSelectedPrivateSearchEngineName)
+    }
+
+    @Test
+    fun `GIVEN a selected private default search engine WHEN clearing the private search engine THEN clear the private default search engine`() {
+        var state = BrowserState(
+            search = SearchState(
+                userSelectedPrivateSearchEngineId = "id1",
+                userSelectedPrivateSearchEngineName = "search1",
+            ),
+        )
+
+        assertEquals("id1", state.search.userSelectedPrivateSearchEngineId)
+        assertEquals("search1", state.search.userSelectedPrivateSearchEngineName)
+
+        state = BrowserStateReducer.reduce(
+            state,
+            SearchAction.ClearPrivateSearchEngineAction,
+        )
+
+        assertNull(state.search.userSelectedPrivateSearchEngineId)
+        assertNull(state.search.userSelectedPrivateSearchEngineName)
+    }
+
+    @Test
+    fun `GIVEN no selected private search engine WHEN setting search engines with private search engine fields THEN update the state`() {
+        var state = BrowserState()
+
+        assertNull(state.search.userSelectedPrivateSearchEngineId)
+        assertNull(state.search.userSelectedPrivateSearchEngineName)
+
+        state = BrowserStateReducer.reduce(
+            state,
+            SearchAction.SetSearchEnginesAction(
+                regionSearchEngines = emptyList(),
+                regionDefaultSearchEngineId = "default",
+                customSearchEngines = emptyList(),
+                userSelectedSearchEngineId = null,
+                userSelectedSearchEngineName = null,
+                userSelectedPrivateSearchEngineId = "private-id",
+                userSelectedPrivateSearchEngineName = "Private Engine",
+                hiddenSearchEngines = emptyList(),
+                disabledSearchEngineIds = emptyList(),
+                additionalSearchEngines = emptyList(),
+                additionalAvailableSearchEngines = emptyList(),
+                regionSearchEnginesOrder = emptyList(),
+                searchEnginesConfigurationId = null,
+            ),
+        )
+
+        assertEquals("private-id", state.search.userSelectedPrivateSearchEngineId)
+        assertEquals("Private Engine", state.search.userSelectedPrivateSearchEngineName)
     }
 
     @Test

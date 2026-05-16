@@ -25,6 +25,10 @@ import mozilla.components.browser.state.search.SearchEngine
  * `null` if the user hasn't made an explicit choice.
  * @property userSelectedSearchEngineName The name of the default [SearchEngine] selected by the user.
  * Or `null` if the user hasn't made an explicit choice.
+ * @property userSelectedPrivateSearchEngineId The ID of the default [SearchEngine] selected by the
+ * user for private browsing. Or `null` if the user hasn't made an explicit choice.
+ * @property userSelectedPrivateSearchEngineName The name of the default [SearchEngine] selected by
+ * the user for private browsing. Or `null` if the user hasn't made an explicit choice.
  * @property regionDefaultSearchEngineId The ID of the default [SearchEngine] of the "home" region
  * of the user.
  * @property regionSearchEnginesOrder Ordered list of [SearchEngine] IDs in the preferred order for
@@ -45,6 +49,8 @@ data class SearchState(
     val disabledSearchEngineIds: List<String> = emptyList(),
     val userSelectedSearchEngineId: String? = null,
     val userSelectedSearchEngineName: String? = null,
+    val userSelectedPrivateSearchEngineId: String? = null,
+    val userSelectedPrivateSearchEngineName: String? = null,
     val regionDefaultSearchEngineId: String? = null,
     val regionSearchEnginesOrder: List<String> = emptyList(),
     val searchEnvironmentId: Int? = null,
@@ -96,3 +102,26 @@ val SearchState.selectedOrDefaultSearchEngine: SearchEngine?
         // We couldn't find anything.
         return null
     }
+
+/**
+ * The search engine to be used by default for private browsing. If the user has explicitly selected
+ * a private search engine, that will be used. Otherwise, falls back to [selectedOrDefaultSearchEngine].
+ */
+val SearchState.selectedOrDefaultPrivateSearchEngine: SearchEngine?
+    get() {
+        if (userSelectedPrivateSearchEngineId != null) {
+            searchEngines.find { engine -> userSelectedPrivateSearchEngineId == engine.id }?.let { return it }
+        }
+
+        if (userSelectedPrivateSearchEngineName != null) {
+            searchEngines.find { engine -> userSelectedPrivateSearchEngineName == engine.name }?.let { return it }
+        }
+
+        return selectedOrDefaultSearchEngine
+    }
+
+/**
+ * Convenience function that returns the appropriate default search engine based on browsing mode.
+ */
+fun SearchState.selectedOrDefaultSearchEngine(private: Boolean): SearchEngine? =
+    if (private) selectedOrDefaultPrivateSearchEngine else selectedOrDefaultSearchEngine

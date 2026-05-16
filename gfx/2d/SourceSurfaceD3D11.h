@@ -20,12 +20,14 @@ class SourceSurfaceD3D11 : public SourceSurface {
   static RefPtr<SourceSurfaceD3D11> Create(
       ID3D11Texture2D* aTexture, const uint32_t aArrayIndex,
       const gfx::ColorSpace2 aColorSpace, const gfx::ColorRange aColorRange,
+      const gfx::TransferFunction aTransferFunction,
       const Maybe<layers::CompositeProcessFencesHolderId> aFencesHolderId);
 
   SourceSurfaceD3D11(
       const SurfaceFormat aFormat, const IntSize aSize,
       ID3D11Texture2D* aTexture, const uint32_t aArrayIndex,
       const gfx::ColorSpace2 aColorSpace, const gfx::ColorRange aColorRange,
+      const gfx::TransferFunction aTransferFunction,
       const Maybe<layers::CompositeProcessFencesHolderId> aFencesHolderId);
   ~SourceSurfaceD3D11();
 
@@ -43,6 +45,7 @@ class SourceSurfaceD3D11 : public SourceSurface {
   const uint32_t mArrayIndex;
   const ColorSpace2 mColorSpace;
   const ColorRange mColorRange;
+  const TransferFunction mTransferFunction;
   const Maybe<layers::CompositeProcessFencesHolderId> mFencesHolderId;
 };
 

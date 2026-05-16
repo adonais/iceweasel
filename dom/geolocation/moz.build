@@ -42,18 +42,23 @@ if (
     UNIFIED_SOURCES += [
         "GeolocationSystemWin.cpp",
     ]
-    EXTRA_JS_MODULES += [
-        "GeolocationUIUtilsWin.sys.mjs",
+elif CONFIG["OS_TARGET"] == "Darwin" and CONFIG["MOZ_BUILD_APP"] == "browser":
+    UNIFIED_SOURCES += [
+        "GeolocationSystemMac.mm",
     ]
-    XPCOM_MANIFESTS += [
-        "components.conf",
-    ]
-    XPIDL_SOURCES += ["nsIGeolocationUIUtilsWin.idl"]
-    XPIDL_MODULE = "dom_geolocation"
 else:
     UNIFIED_SOURCES += [
         "GeolocationSystem.cpp",
     ]
+
+EXTRA_JS_MODULES += [
+    "GeolocationUIUtils.sys.mjs",
+]
+XPCOM_MANIFESTS += [
+    "components.conf",
+]
+XPIDL_SOURCES += ["nsIGeolocationUIUtils.idl"]
+XPIDL_MODULE = "dom_geolocation"
 
 include("/ipc/chromium/chromium-config.mozbuild")
 

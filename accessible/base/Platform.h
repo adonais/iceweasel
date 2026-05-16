@@ -61,6 +61,12 @@ bool GetInstantiator(nsIFile** aOutInstantiator);
 #endif
 
 /**
+ * Return a string describing the platform a11y instantiators.
+ * Exposed through nsIXULRuntime.accessibilityInstantiator.
+ */
+void GetHumanReadableInstantiatorStr(nsAString& aResult);
+
+/**
  * Called to initialize platform specific accessibility support.
  * Note this is called after internal accessibility support is initialized.
  */

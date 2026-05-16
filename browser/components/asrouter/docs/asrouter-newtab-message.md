@@ -33,8 +33,22 @@ Messages are configured through ASRouter's messaging system. A typical message c
 
 ## Properties
 
-### `messageData` (Object)
+### `content` (Object)
 The message data object from ASRouter containing all configuration and content for the message. This is passed in by the newtab page infrastructure.
+
+`content` is passed directly through to `asrouter-newtab-message` to use as it pleases. One optional property, however, is used by New Tab as a way of controlling the position of the message - `content.position`.
+
+This is a string property that can have the following values:
+
+- `ABOVE_TOPSITES`: The message will be displayed above where top sites normally render (regardless of whether topsites are configured to be displayed)
+- `ABOVE_WIDGETS`: The message will be displayed above where widgets normally render (regardless of whether widgets are configured to be displayed)
+- `ABOVE_CONTENT_FEED`: The message will be displayed above where the content feed (stories) normally render (regardless of whether stories are configured to be displayed)
+
+If `content.position` is not defined, it defaults to the `ABOVE_WIDGETS` behaviour.
+
+### `content.imageSrc` (String)
+
+This is an optional square image that can be displayed at the start of the message surface. If `imageSrc` is not defined, the image element is not rendered.
 
 ### Handler Functions
 

@@ -30,7 +30,6 @@ pub type InitialLetter = GenericInitialLetter<Number, Integer>;
 
 /// A spacing value used by either the `letter-spacing` or `word-spacing` properties.
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
-#[typed_value(derive_fields)]
 pub enum Spacing {
     /// `normal`
     Normal,
@@ -57,7 +56,6 @@ impl Parse for Spacing {
 #[derive(
     Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub struct LetterSpacing(pub Spacing);
 
 impl ToComputedValue for LetterSpacing {
@@ -85,7 +83,6 @@ impl ToComputedValue for LetterSpacing {
 #[derive(
     Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub struct WordSpacing(pub Spacing);
 
 impl ToComputedValue for WordSpacing {
@@ -120,6 +117,7 @@ impl ToComputedValue for WordSpacing {
     ToTyped,
 )]
 #[repr(C, u8)]
+#[typed(todo_derive_fields)]
 pub enum HyphenateCharacter {
     /// `auto`
     Auto,
@@ -208,6 +206,7 @@ pub enum TextOverflowSide {
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 /// text-overflow.
 /// When the specified value only has one side, that's the "second"
 /// side, and the sides are logical, so "second" means "end".  The
@@ -557,6 +556,7 @@ pub enum TextAlignKeyword {
     ToShmem,
     ToTyped,
 )]
+#[typed(todo_derive_fields)]
 pub enum TextAlign {
     /// Keyword value of text-align property.
     Keyword(TextAlignKeyword),
@@ -643,6 +643,7 @@ fn fill_mode_is_default_and_shape_exists(
 /// https://drafts.csswg.org/css-text-decor/#propdef-text-emphasis-style
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 #[allow(missing_docs)]
+#[typed(todo_derive_fields)]
 pub enum TextEmphasisStyle {
     /// [ <fill> || <shape> ]
     Keyword {

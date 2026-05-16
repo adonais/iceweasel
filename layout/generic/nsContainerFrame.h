@@ -434,14 +434,16 @@ class nsContainerFrame : public nsSplittableFrame {
                                  const nsDisplayListSet& aLists);
 
   /**
-   * Add pushed absolute frames to the display list.
-   *
-   * Note: for an absolute frame's first-in-flow without the
-   * NS_FRAME_IS_PUSHED_OUT_OF_FLOW bit, it will be painted through its
-   * placeholder frame.
+   * Add absolute frames to the display list that should not be built via their
+   * placeholder. This includes:
+   * - Pushed out-of-flow frames (NS_FRAME_IS_PUSHED_OUT_OF_FLOW), whose
+   *   containing block is not an ancestor of the placeholder.
+   * - Under a transformed absolute containing block, abspos frames whose
+   *   placeholder is in a different continuation's subtree, so that they end up
+   *   in the correct fragment's nsDisplayTransform.
    */
-  void DisplayPushedAbsoluteFrames(nsDisplayListBuilder* aBuilder,
-                                   const nsDisplayListSet& aLists);
+  void DisplayAbsoluteFramesNotBuiltByPlaceholder(
+      nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists);
 
   /**
    * Builds display lists for the children. The background

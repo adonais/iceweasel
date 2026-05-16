@@ -7,36 +7,37 @@
 //! TODO: document this!
 
 use api::{ColorF, DebugFlags};
-use api::{BoxShadowClipMode, BorderStyle, ClipMode};
+use api::{BoxShadowClipMode, ClipMode};
+use crate::util::clamp_to_scale_factor;
+use crate::box_shadow::{BoxShadowCacheKey, BLUR_SAMPLE_SCALE};
+use crate::pattern::box_shadow::BoxShadowPatternData;
 use api::units::*;
 use euclid::Scale;
 use smallvec::SmallVec;
 use crate::composite::CompositorSurfaceKind;
 use crate::command_buffer::{CommandBufferIndex, PrimitiveCommand};
-use crate::image_tiling::{self, Repetition};
-use crate::border::{get_max_scale_for_border, build_border_instances};
+use crate::border;
 use crate::clip::{ClipStore, ClipNodeRange};
-use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, GpuBufferWriterF, GpuBufferDataF};
-use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
+use crate::render_task_graph::RenderTaskId;
+use crate::renderer::{GpuBufferAddress, GpuBufferWriterF};
+use crate::spatial_tree::SpatialNodeIndex;
 use crate::clip::{ClipDataStore, ClipNodeFlags, ClipChainInstance, ClipItemKind};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext, PictureState};
-use crate::gpu_types::{BrushFlags, LinearGradientBrushData};
+use crate::gpu_types::{BrushFlags, BlurEdgeMode};
+use crate::render_target::RenderTargetKind;
 use crate::internal_types::{FastHashMap, PlaneSplitAnchor, Filter};
 use crate::picture::{ClusterFlags, PictureCompositeMode, PicturePrimitive};
 use crate::picture::{PrimitiveList, PrimitiveCluster, SurfaceIndex, SubpixelMode, Picture3DContext};
 use crate::tile_cache::{SliceId, TileCacheInstance};
-use crate::prim_store::line_dec::MAX_LINE_DECORATION_RESOLUTION;
 use crate::prim_store::*;
+use crate::prim_store::borders::NormalBorderScratch;
 use crate::quad::{self, QuadTransformState};
-use crate::prim_store::gradient::GradientGpuBlockBuilder;
 use crate::render_backend::DataStores;
-use crate::render_task_graph::RenderTaskId;
 use crate::render_task_cache::RenderTaskCacheKeyKind;
 use crate::render_task_cache::{RenderTaskCacheKey, to_cache_size, RenderTaskParent};
-use crate::render_task::{EmptyTask, RenderTask, RenderTaskKind};
+use crate::render_task::{EmptyTask, RenderTask, RenderTaskKind, MAX_BLUR_STD_DEVIATION};
 use crate::segment::SegmentBuilder;
-use crate::util::clamp_to_scale_factor;
-use crate::visibility::{compute_conservative_visible_rect, PrimitiveVisibility, VisibilityState};
+use crate::visibility::VisibilityState;
 
 
 const MAX_MASK_SIZE: i32 = 4096;
@@ -192,7 +193,7 @@ fn can_use_clip_chain_for_quad_path(
         match clip_node.item.kind {
             ClipItemKind::RoundedRectangle { .. } | ClipItemKind::Rectangle { .. } => {}
             ClipItemKind::BoxShadow { .. } => {
-                // legacy path for box-shadows for now (move them to a separate primitive next)
+                // Only reachable when use_quad_box_shadow is not set.
                 return false;
             }
             ClipItemKind::Image { .. } => {
@@ -251,17 +252,23 @@ fn prepare_prim_for_render(
     }
 
     let prim_instance = &mut prim_instances[prim_instance_index];
-
+    let mut use_legacy_path = true;
     if !is_passthrough {
-        let disable_quad_path = match &prim_instance.kind {
+        match &prim_instance.kind {
             PrimitiveInstanceKind::Rectangle { .. }
             | PrimitiveInstanceKind::RadialGradient { .. }
             | PrimitiveInstanceKind::ConicGradient { .. }
-            => false,
-            PrimitiveInstanceKind::LinearGradient { .. } => {
-                !frame_context.fb_config.precise_linear_gradients
+            | PrimitiveInstanceKind::LinearGradient { .. }
+            => {
+                use_legacy_path = false;
             }
-            _ => true,
+            PrimitiveInstanceKind::Image { data_handle, .. } => {
+                use_legacy_path = !crate::prim_store::image::can_use_quad_shaders(
+                    &data_stores.image[*data_handle].kind,
+                    frame_state.resource_cache,
+                );
+            }
+            _ => {}
         };
 
         // In this initial patch, we only support non-masked primitives through the new
@@ -270,18 +277,19 @@ fn prepare_prim_for_render(
         // to skip the entry point to `update_clip_task` as that does old-style segmenting
         // and mask generation.
         let should_update_clip_task = match &mut prim_instance.kind {
-            PrimitiveInstanceKind::Rectangle { use_legacy_path, .. }
-            | PrimitiveInstanceKind::RadialGradient { use_legacy_path, .. }
-            | PrimitiveInstanceKind::ConicGradient { use_legacy_path, .. }
-            | PrimitiveInstanceKind::LinearGradient { use_legacy_path, .. }
+            PrimitiveInstanceKind::Rectangle { .. }
+            | PrimitiveInstanceKind::Image { .. }
+            | PrimitiveInstanceKind::RadialGradient { .. }
+            | PrimitiveInstanceKind::ConicGradient { .. }
+            | PrimitiveInstanceKind::LinearGradient { .. }
             => {
-                *use_legacy_path = disable_quad_path || !can_use_clip_chain_for_quad_path(
+                use_legacy_path |= !can_use_clip_chain_for_quad_path(
                     &prim_instance.vis.clip_chain,
                     frame_state.clip_store,
                     data_stores,
                 );
 
-                *use_legacy_path
+                use_legacy_path
             }
             PrimitiveInstanceKind::BoxShadow { .. } |
             PrimitiveInstanceKind::Picture { .. } => false,
@@ -316,6 +324,7 @@ fn prepare_prim_for_render(
 
     prepare_interned_prim_for_render(
         store,
+        use_legacy_path,
         PrimitiveInstanceIndex(prim_instance_index as u32),
         prim_instance,
         cluster,
@@ -336,6 +345,7 @@ fn prepare_prim_for_render(
 /// prepare_prim_for_render_inner call for old style primitives.
 fn prepare_interned_prim_for_render(
     store: &mut PrimitiveStore,
+    use_legacy_path: bool,
     prim_instance_index: PrimitiveInstanceIndex,
     prim_instance: &mut PrimitiveInstance,
     cluster: &mut PrimitiveCluster,
@@ -353,93 +363,250 @@ fn prepare_interned_prim_for_render(
     let device_pixel_scale = frame_state.surfaces[pic_context.surface_index.0].device_pixel_scale;
 
     match &mut prim_instance.kind {
-        PrimitiveInstanceKind::BoxShadow { .. } => {
-            unimplemented!();
+        PrimitiveInstanceKind::BoxShadow { data_handle, ref mut render_task } => {
+            profile_scope!("BoxShadow");
+
+            let prim_data = &data_stores.box_shadow[*data_handle];
+            let shadow_data = &prim_data.kind;
+            let blur_radius = shadow_data.blur_radius;
+
+            let shadow_rect_size = shadow_data.inner_shadow_rect.size();
+            let mut shadow_radius = shadow_data.shadow_radius;
+            border::ensure_no_corner_overlap(&mut shadow_radius, shadow_rect_size);
+
+            let blur_region = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
+
+            let max_corner_width = shadow_radius.top_left.width
+                .max(shadow_radius.bottom_left.width)
+                .max(shadow_radius.top_right.width)
+                .max(shadow_radius.bottom_right.width);
+            let max_corner_height = shadow_radius.top_left.height
+                .max(shadow_radius.bottom_left.height)
+                .max(shadow_radius.top_right.height)
+                .max(shadow_radius.bottom_right.height);
+
+            let used_corner_width = max_corner_width.max(blur_region);
+            let used_corner_height = max_corner_height.max(blur_region);
+
+            let min_shadow_rect_size = LayoutSize::new(
+                2.0 * used_corner_width + blur_region,
+                2.0 * used_corner_height + blur_region,
+            );
+
+            // Compute the nine-patch source rect size per axis (= min_shadow_rect_size when
+            // the shadow is large enough to stretch, = shadow_rect_size when corners overlap).
+            let src_rect_size = LayoutSize::new(
+                if shadow_rect_size.width >= min_shadow_rect_size.width {
+                    min_shadow_rect_size.width
+                } else {
+                    shadow_rect_size.width
+                },
+                if shadow_rect_size.height >= min_shadow_rect_size.height {
+                    min_shadow_rect_size.height
+                } else {
+                    shadow_rect_size.height
+                },
+            );
+
+            // The full blur alloc size in local pixels. This is the UV denominator passed to
+            // the shader: the nine-patch maps shadow_pos/alloc_size so that shadow_pos=blur_region
+            // maps exactly to the shadow edge in the texture (preserving the blur falloff).
+            let shadow_rect_alloc_size = LayoutSize::new(
+                2.0 * blur_region + src_rect_size.width,
+                2.0 * blur_region + src_rect_size.height,
+            );
+
+            // Scale to device pixels for the render task.
+            let blur_radius_dp = blur_radius * 0.5;
+            let mut content_scale = LayoutToWorldScale::new(1.0) * device_pixel_scale;
+            content_scale.0 = clamp_to_scale_factor(content_scale.0, false);
+
+            // Opt B: pre-reduce content_scale so the blur sigma is already within
+            // MAX_BLUR_STD_DEVIATION, eliminating downscale passes inside new_blur.
+            //
+            // Use the same rounding as the old code (round to nearest integer) to determine
+            // n_downscales, so mask scale exactly matches what old new_blur downscaling would
+            // have produced. Exception: if rounded sigma is 0 (tiny sigma from to_cache_size
+            // downscaling), use the float sigma to avoid a zero-blur regression.
+            let sigma_rounded = (blur_radius_dp * content_scale.0).round();
+            let sigma_for_n = if sigma_rounded == 0.0 { blur_radius_dp * content_scale.0 } else { sigma_rounded };
+            let n_downscales = if sigma_for_n > MAX_BLUR_STD_DEVIATION {
+                (sigma_for_n / MAX_BLUR_STD_DEVIATION).log2().ceil() as u32
+            } else {
+                0
+            };
+            content_scale.0 /= (1u32 << n_downscales) as f32;
+
+            // Safety cap: reduces content_scale further only for pathological
+            // small-blur-huge-element cases where the alloc would exceed the max task size.
+            let cache_size = to_cache_size(shadow_rect_alloc_size, &mut content_scale);
+
+            // Blur sigma to pass to new_blur. Use the same rounded value as the old code
+            // (now divided by 2^n instead of being halved inside new_blur), so the blur
+            // intensity is byte-for-byte identical to the old pipeline.
+            let blur_std_dev = if sigma_rounded == 0.0 {
+                blur_radius_dp * content_scale.0
+            } else {
+                sigma_rounded / (1u32 << n_downscales) as f32
+            };
+            debug_assert!(
+                blur_std_dev <= MAX_BLUR_STD_DEVIATION + 1e-3,
+                "BoxShadow sigma {blur_std_dev} exceeds MAX_BLUR_STD_DEVIATION after Opt B \
+                 (n_downscales={n_downscales}, content_scale={})",
+                content_scale.0,
+            );
+
+            let bs_cache_key = BoxShadowCacheKey {
+                blur_radius_dp: Au::from_f32_px(blur_std_dev),
+                clip_mode: shadow_data.clip_mode,
+                original_alloc_size: (shadow_rect_alloc_size * content_scale).round().to_i32(),
+                br_top_left: (shadow_radius.top_left * content_scale).round().to_i32(),
+                br_top_right: (shadow_radius.top_right * content_scale).round().to_i32(),
+                br_bottom_right: (shadow_radius.bottom_right * content_scale).round().to_i32(),
+                br_bottom_left: (shadow_radius.bottom_left * content_scale).round().to_i32(),
+                device_pixel_scale: Au::from_f32_px(content_scale.0),
+            };
+
+            let clip_data = ClipData::rounded_rect(
+                src_rect_size,
+                &shadow_radius,
+                ClipMode::Clip,
+            );
+
+            // The shadow shape is offset by blur_region within the alloc task (local pixels).
+            // device_pixel_scale_for_task scales it to the mask resolution.
+            let minimal_shadow_rect_origin = LayoutPoint::new(blur_region, blur_region);
+            let device_pixel_scale_for_task = DevicePixelScale::new(content_scale.0);
+
+            let task_id = frame_state.resource_cache.request_render_task(
+                Some(RenderTaskCacheKey {
+                    origin: DeviceIntPoint::zero(),
+                    size: cache_size,
+                    kind: RenderTaskCacheKeyKind::BoxShadow(bs_cache_key),
+                }),
+                false,
+                RenderTaskParent::Surface,
+                &mut frame_state.frame_gpu_data.f32,
+                frame_state.rg_builder,
+                &mut frame_state.surface_builder,
+                &mut |rg_builder, _| {
+                    let mask_task_id = rg_builder.add().init(RenderTask::new_dynamic(
+                        cache_size,
+                        RenderTaskKind::new_rounded_rect_mask(
+                            minimal_shadow_rect_origin,
+                            clip_data.clone(),
+                            device_pixel_scale_for_task,
+                            frame_context.fb_config,
+                        ),
+                    ));
+
+                    RenderTask::new_blur(
+                        DeviceSize::new(blur_std_dev, blur_std_dev),
+                        mask_task_id,
+                        rg_builder,
+                        RenderTargetKind::Alpha,
+                        None,
+                        cache_size,
+                        BlurEdgeMode::Duplicate,
+                    )
+                }
+            );
+
+            *render_task = Some(task_id);
+
+            let prim_rect = LayoutRect::from_origin_and_size(
+                prim_instance.prim_origin,
+                prim_data.common.prim_size,
+            );
+
+            // Compensate for the rounding `create_quad_primitive` applies to
+            // prim_rect when `aa_flags` is empty: the shader receives the
+            // rounded p0 as `local_prim_rect.p0` (after the round-trip through
+            // device space and back via `pattern_scale_offset`) and
+            // reconstructs absolute positions via `local_prim_rect.p0 +
+            // offset`. Computing offsets against the un-rounded p0 mismatches
+            // by up to half a device pixel and produces a one-pixel seam on
+            // trailing edges (bug 2035734). The round must be done in device
+            // space to match `create_quad_primitive` for non-identity
+            // transforms (e.g. Gecko at 125% display scaling).
+            let prim_min_rounded = match quad_transform.as_2d_scale_offset() {
+                Some(local_to_device) => {
+                    // Use Point2D::round (euclid's Round trait, defined as
+                    // (n+0.5).floor()) to match what create_quad_primitive
+                    // uses on the rendered quad bounds. f32::round here would
+                    // round half-away-from-zero and disagree at negative
+                    // half-integer device-x values, causing a 1-pixel shift
+                    // when the shader reconstructs dest_rect.min as
+                    // local_prim_rect.p0 + dest_rect_offset.
+                    let dev: DevicePoint = local_to_device.map_point(&prim_rect.min);
+                    local_to_device.unmap_point::<DevicePixel, LayoutPixel>(&dev.round())
+                }
+                None => prim_rect.min,
+            };
+
+            // For outset, prim_rect == dest_rect so offset is zero.
+            // For inset, prim_rect is the element rect; dest_rect (outer_shadow_rect)
+            // may be offset and smaller, so we pass its size and offset separately.
+            let dest_rect: LayoutRect = shadow_data.outer_shadow_rect.into();
+            let dest_rect_offset = LayoutVector2D::new(
+                dest_rect.min.x - prim_min_rounded.x,
+                dest_rect.min.y - prim_min_rounded.y,
+            );
+            let dest_rect_size = dest_rect.size();
+
+            let element_rect: LayoutRect = shadow_data.element_rect.into();
+            let mut element_radius = shadow_data.element_radius;
+            border::ensure_no_corner_overlap(&mut element_radius, element_rect.size());
+            let element_offset_rel_prim = LayoutVector2D::new(
+                element_rect.min.x - prim_min_rounded.x,
+                element_rect.min.y - prim_min_rounded.y,
+            );
+
+            let pattern = BoxShadowPatternData {
+                color: shadow_data.color,
+                render_task: task_id,
+                shadow_rect_alloc_size,
+                dest_rect_size,
+                dest_rect_offset,
+                clip_mode: shadow_data.clip_mode,
+                element_offset_rel_prim,
+                element_size: element_rect.size(),
+                element_radius,
+            };
+
+            quad::prepare_quad(
+                &pattern,
+                &prim_rect,
+                prim_data.common.aligned_aa_edges,
+                prim_data.common.transformed_aa_edges,
+                prim_instance_index,
+                &None,
+                &prim_instance.vis.clip_chain,
+                quad_transform,
+                frame_context,
+                pic_context,
+                targets,
+                &data_stores.clip,
+                frame_state,
+                scratch,
+            );
+
+            return;
         }
-        PrimitiveInstanceKind::LineDecoration { data_handle, ref mut render_task, .. } => {
+        PrimitiveInstanceKind::LineDecoration { data_handle, ref mut scratch_handle } => {
             profile_scope!("LineDecoration");
             let prim_data = &mut data_stores.line_decoration[*data_handle];
             let common_data = &mut prim_data.common;
             let line_dec_data = &mut prim_data.kind;
 
-            // Update the template this instane references, which may refresh the GPU
-            // cache with any shared template data.
             line_dec_data.update(common_data, frame_state);
 
-            // Work out the device pixel size to be used to cache this line decoration.
-
-            // If we have a cache key, it's a wavy / dashed / dotted line. Otherwise, it's
-            // a simple solid line.
-            if let Some(cache_key) = line_dec_data.cache_key.as_ref() {
-                // TODO(gw): These scale factors don't do a great job if the world transform
-                //           contains perspective
-                let scale = frame_context
-                    .spatial_tree
-                    .get_world_transform(prim_spatial_node_index)
-                    .scale_factors();
-
-                // Scale factors are normalized to a power of 2 to reduce the number of
-                // resolution changes.
-                // For frames with a changing scale transform round scale factors up to
-                // nearest power-of-2 boundary so that we don't keep having to redraw
-                // the content as it scales up and down. Rounding up to nearest
-                // power-of-2 boundary ensures we never scale up, only down --- avoiding
-                // jaggies. It also ensures we never scale down by more than a factor of
-                // 2, avoiding bad downscaling quality.
-                let scale_width = clamp_to_scale_factor(scale.0, false);
-                let scale_height = clamp_to_scale_factor(scale.1, false);
-                // Pick the maximum dimension as scale
-                let world_scale = LayoutToWorldScale::new(scale_width.max(scale_height));
-
-                let scale_factor = world_scale * Scale::new(1.0);
-                let task_size_f = (LayoutSize::from_au(cache_key.size) * scale_factor).ceil();
-                let mut task_size = if task_size_f.width > MAX_LINE_DECORATION_RESOLUTION as f32 ||
-                   task_size_f.height > MAX_LINE_DECORATION_RESOLUTION as f32 {
-                     let max_extent = task_size_f.width.max(task_size_f.height);
-                     let task_scale_factor = Scale::new(MAX_LINE_DECORATION_RESOLUTION as f32 / max_extent);
-                     let task_size = (LayoutSize::from_au(cache_key.size) * scale_factor * task_scale_factor)
-                                    .ceil().to_i32();
-                    task_size
-                } else {
-                    task_size_f.to_i32()
-                };
-
-                // It's plausible, due to float accuracy issues that the line decoration may be considered
-                // visible even if the scale factors are ~0. However, the render task allocation below requires
-                // that the size of the task is > 0. To work around this, ensure that the task size is at least
-                // 1x1 pixels
-                task_size.width = task_size.width.max(1);
-                task_size.height = task_size.height.max(1);
-
-                // Request a pre-rendered image task.
-                // TODO(gw): This match is a bit untidy, but it should disappear completely
-                //           once the prepare_prims and batching are unified. When that
-                //           happens, we can use the cache handle immediately, and not need
-                //           to temporarily store it in the primitive instance.
-                *render_task = Some(frame_state.resource_cache.request_render_task(
-                    Some(RenderTaskCacheKey {
-                        origin: DeviceIntPoint::zero(),
-                        size: task_size,
-                        kind: RenderTaskCacheKeyKind::LineDecoration(cache_key.clone()),
-                    }),
-                    false,
-                    RenderTaskParent::Surface,
-                    &mut frame_state.frame_gpu_data.f32,
-                    frame_state.rg_builder,
-                    &mut frame_state.surface_builder,
-                    &mut |rg_builder, _| {
-                        rg_builder.add().init(RenderTask::new_dynamic(
-                            task_size,
-                            RenderTaskKind::new_line_decoration(
-                                cache_key.style,
-                                cache_key.orientation,
-                                cache_key.wavy_line_thickness.to_f32_px(),
-                                LayoutSize::from_au(cache_key.size),
-                            ),
-                        ))
-                    }
-                ));
-            }
+            let render_task = line_dec_data.prepare_render_task(
+                prim_spatial_node_index,
+                frame_context,
+                frame_state,
+            );
+            *scratch_handle = scratch.arena.push(render_task);
         }
         PrimitiveInstanceKind::TextRun { run_index, data_handle, .. } => {
             profile_scope!("TextRun");
@@ -506,88 +673,29 @@ fn prepare_interned_prim_for_render(
 
             prim_data.update(frame_state);
         }
-        PrimitiveInstanceKind::NormalBorder { data_handle, ref mut render_task_ids, .. } => {
+        PrimitiveInstanceKind::NormalBorder { data_handle, ref mut scratch_handle } => {
             profile_scope!("NormalBorder");
             let prim_data = &mut data_stores.normal_border[*data_handle];
             let common_data = &mut prim_data.common;
             let border_data = &mut prim_data.kind;
 
-            common_data.may_need_repetition =
-                matches!(border_data.border.top.style, BorderStyle::Dotted | BorderStyle::Dashed) ||
-                matches!(border_data.border.right.style, BorderStyle::Dotted | BorderStyle::Dashed) ||
-                matches!(border_data.border.bottom.style, BorderStyle::Dotted | BorderStyle::Dashed) ||
-                matches!(border_data.border.left.style, BorderStyle::Dotted | BorderStyle::Dashed);
+            border_data.write_brush_gpu_blocks(common_data, frame_state);
 
+            let segment_count = border_data.border_segments.len() as u32;
+            let handle = scratch.arena.push(NormalBorderScratch { segment_count });
+            scratch.arena.push_zeroed::<RenderTaskId>(segment_count);
 
-            // Update the template this instance references, which may refresh the GPU
-            // cache with any shared template data.
-            border_data.update(common_data, frame_state);
+            border_data.update(
+                common_data,
+                prim_spatial_node_index,
+                device_pixel_scale,
+                frame_context,
+                frame_state,
+                handle,
+                &mut scratch.arena,
+            );
 
-            // TODO(gw): For now, the scale factors to rasterize borders at are
-            //           based on the true world transform of the primitive. When
-            //           raster roots with local scale are supported in future,
-            //           that will need to be accounted for here.
-            let scale = frame_context
-                .spatial_tree
-                .get_world_transform(prim_spatial_node_index)
-                .scale_factors();
-
-            // Scale factors are normalized to a power of 2 to reduce the number of
-            // resolution changes.
-            // For frames with a changing scale transform round scale factors up to
-            // nearest power-of-2 boundary so that we don't keep having to redraw
-            // the content as it scales up and down. Rounding up to nearest
-            // power-of-2 boundary ensures we never scale up, only down --- avoiding
-            // jaggies. It also ensures we never scale down by more than a factor of
-            // 2, avoiding bad downscaling quality.
-            let scale_width = clamp_to_scale_factor(scale.0, false);
-            let scale_height = clamp_to_scale_factor(scale.1, false);
-            // Pick the maximum dimension as scale
-            let world_scale = LayoutToWorldScale::new(scale_width.max(scale_height));
-            let mut scale = world_scale * device_pixel_scale;
-            let max_scale = get_max_scale_for_border(border_data);
-            scale.0 = scale.0.min(max_scale.0);
-
-            // For each edge and corner, request the render task by content key
-            // from the render task cache. This ensures that the render task for
-            // this segment will be available for batching later in the frame.
-            let mut handles: SmallVec<[RenderTaskId; 8]> = SmallVec::new();
-
-            for segment in &border_data.border_segments {
-                // Update the cache key device size based on requested scale.
-                let cache_size = to_cache_size(segment.local_task_size, &mut scale);
-                let cache_key = RenderTaskCacheKey {
-                    kind: RenderTaskCacheKeyKind::BorderSegment(segment.cache_key.clone()),
-                    origin: DeviceIntPoint::zero(),
-                    size: cache_size,
-                };
-
-                handles.push(frame_state.resource_cache.request_render_task(
-                    Some(cache_key),
-                    false,          // TODO(gw): We don't calculate opacity for borders yet!
-                    RenderTaskParent::Surface,
-                    &mut frame_state.frame_gpu_data.f32,
-                    frame_state.rg_builder,
-                    &mut frame_state.surface_builder,
-                    &mut |rg_builder, _| {
-                        rg_builder.add().init(RenderTask::new_dynamic(
-                            cache_size,
-                            RenderTaskKind::new_border_segment(
-                                build_border_instances(
-                                    &segment.cache_key,
-                                    cache_size,
-                                    &border_data.border,
-                                    scale,
-                                )
-                            ),
-                        ))
-                    }
-                ));
-            }
-
-            *render_task_ids = scratch
-                .border_cache_handles
-                .extend(handles);
+            *scratch_handle = handle;
         }
         PrimitiveInstanceKind::ImageBorder { data_handle, .. } => {
             profile_scope!("ImageBorder");
@@ -603,10 +711,10 @@ fn prepare_interned_prim_for_render(
                 frame_state
             );
         }
-        PrimitiveInstanceKind::Rectangle { data_handle, segment_instance_index, use_legacy_path, .. } => {
+        PrimitiveInstanceKind::Rectangle { data_handle, segment_instance_index, .. } => {
             profile_scope!("Rectangle");
 
-            if *use_legacy_path {
+            if use_legacy_path {
                 let prim_data = &mut data_stores.prim[*data_handle];
                 prim_data.common.may_need_repetition = false;
 
@@ -629,9 +737,10 @@ fn prepare_interned_prim_for_render(
             } else {
                 let prim_data = &data_stores.prim[*data_handle];
                 let prim_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
+                let color = prim_data.resolve(frame_context.scene_properties);
 
                 quad::prepare_quad(
-                    prim_data,
+                    &color,
                     &prim_rect,
                     prim_data.common.aligned_aa_edges,
                     prim_data.common.transformed_aa_edges,
@@ -684,6 +793,30 @@ fn prepare_interned_prim_for_render(
             let image_data = &mut prim_data.kind;
             let image_instance = &mut store.images[*image_instance_index];
 
+            if !use_legacy_path {
+                let prim_rect = LayoutRect::from_origin_and_size(
+                    prim_instance.prim_origin,
+                    common_data.prim_size,
+                );
+
+                crate::prim_store::image::prepare_image_quads(
+                    &prim_rect,
+                    common_data,
+                    image_data,
+                    &prim_instance.vis.clip_chain,
+                    prim_instance_index,
+                    quad_transform,
+                    frame_context,
+                    pic_context,
+                    targets,
+                    &data_stores.clip,
+                    frame_state,
+                    scratch,
+                );
+
+                return;
+            }
+
             // Update the template this instance references, which may refresh the GPU
             // cache with any shared template data.
             image_data.update(
@@ -706,70 +839,20 @@ fn prepare_interned_prim_for_render(
                 },
             );
         }
-        PrimitiveInstanceKind::LinearGradient { data_handle, ref mut visible_tiles_range, use_legacy_path, .. } => {
+        PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
             profile_scope!("LinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
             let prim_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-            if !*use_legacy_path {
-                if let Some(nine_patch) = &prim_data.border_nine_patch {
-                    quad::prepare_border_image_nine_patch(
-                        &*nine_patch,
-                        prim_data,
-                        &prim_rect,
-                        prim_data.stretch_size,
-                        prim_data.common.aligned_aa_edges,
-                        prim_data.common.transformed_aa_edges,
-                        prim_instance_index,
-                        &prim_instance.vis.clip_chain,
-                        quad_transform,
-                        frame_context,
-                        pic_context,
-                        targets,
-                        &data_stores.clip,
-                        frame_state,
-                        scratch,
-                    );
-                    return;
-                }
 
-                // For SWGL, evaluating the gradient is faster than reading from the texture cache.
-                let mut should_cache = !frame_context.fb_config.is_software
-                    && frame_state.resource_cache.texture_cache.allocated_color_bytes() < 10_000_000;
-                if should_cache {
-                    let surface = &frame_state.surfaces[pic_context.surface_index.0];
-                    let clipped_surface_rect = surface.get_surface_rect(
-                        &prim_instance.vis.clip_chain.pic_coverage_rect,
-                        frame_context.spatial_tree,
-                    );
-
-                    should_cache = if let Some(rect) = clipped_surface_rect {
-                        rect.width() < 512 && rect.height() < 512
-                    } else {
-                        false
-                    };
-                }
-
-                let cache_key = if should_cache {
-                    quad::cache_key(
-                        data_handle.uid(),
-                        quad_transform,
-                        &prim_instance.vis.clip_chain,
-                        frame_state.clip_store,
-                    )
-                } else {
-                    None
-                };
-
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                quad::prepare_repeatable_quad(
+            if let Some(nine_patch) = &prim_data.border_nine_patch {
+                quad::prepare_border_image_nine_patch(
+                    &*nine_patch,
                     prim_data,
-                    &local_rect,
+                    &prim_rect,
                     prim_data.stretch_size,
-                    prim_data.tile_spacing,
                     prim_data.common.aligned_aa_edges,
                     prim_data.common.transformed_aa_edges,
                     prim_instance_index,
-                    &cache_key,
                     &prim_instance.vis.clip_chain,
                     quad_transform,
                     frame_context,
@@ -779,245 +862,119 @@ fn prepare_interned_prim_for_render(
                     frame_state,
                     scratch,
                 );
-
                 return;
             }
 
-            // Update the template this instane references, which may refresh the GPU
-            // cache with any shared template data.
-            prim_data.update(frame_state);
-
-            if prim_data.stretch_size.width >= prim_data.common.prim_size.width &&
-                prim_data.stretch_size.height >= prim_data.common.prim_size.height {
-
-                prim_data.common.may_need_repetition = false;
-            }
-
-            if prim_data.tile_spacing != LayoutSize::zero() {
-                // We are performing the decomposition on the CPU here, no need to
-                // have it in the shader.
-                prim_data.common.may_need_repetition = false;
-
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                *visible_tiles_range = decompose_repeated_gradient(
-                    &prim_instance.vis,
-                    &local_rect,
-                    prim_spatial_node_index,
-                    &prim_data.stretch_size,
-                    &prim_data.tile_spacing,
-                    frame_state,
-                    &mut scratch.gradient_tiles,
-                    &frame_context.spatial_tree,
-                    Some(&mut |_, gpu_buffer| {
-                        let mut writer = gpu_buffer.write_blocks(LinearGradientBrushData::NUM_BLOCKS);
-                        writer.push(&LinearGradientBrushData {
-                            start: prim_data.start_point,
-                            end: prim_data.end_point,
-                            extend_mode: prim_data.extend_mode,
-                            stretch_size: prim_data.stretch_size,
-                        });
-                        writer.finish()
-                    }),
+            // For SWGL, evaluating the gradient is faster than reading from the texture cache.
+            let mut should_cache = !frame_context.fb_config.is_software
+                && frame_state.resource_cache.texture_cache.allocated_color_bytes() < 10_000_000;
+            if should_cache {
+                let surface = &frame_state.surfaces[pic_context.surface_index.0];
+                let clipped_surface_rect = surface.get_surface_rect(
+                    &prim_instance.vis.clip_chain.pic_coverage_rect,
+                    frame_context.spatial_tree,
                 );
 
-                if visible_tiles_range.is_empty() {
-                    prim_instance.clear_visibility();
-                }
+                should_cache = if let Some(rect) = clipped_surface_rect {
+                    rect.width() < 512 && rect.height() < 512
+                } else {
+                    false
+                };
             }
 
-            let stops_address = GradientGpuBlockBuilder::build(
-                prim_data.reverse_stops,
-                &mut frame_state.frame_gpu_data.f32,
-                &prim_data.stops,
+            let cache_key = if should_cache {
+                quad::cache_key(
+                    data_handle.uid(),
+                    quad_transform,
+                    &prim_instance.vis.clip_chain,
+                    frame_state.clip_store,
+                )
+            } else {
+                None
+            };
+
+            let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
+            quad::prepare_repeatable_quad(
+                prim_data,
+                &local_rect,
+                prim_data.stretch_size,
+                prim_data.tile_spacing,
+                prim_data.common.aligned_aa_edges,
+                prim_data.common.transformed_aa_edges,
+                prim_instance_index,
+                &cache_key,
+                &prim_instance.vis.clip_chain,
+                quad_transform,
+                frame_context,
+                pic_context,
+                targets,
+                &data_stores.clip,
+                frame_state,
+                scratch,
             );
 
-            // TODO(gw): Consider whether it's worth doing segment building
-            //           for gradient primitives.
-            frame_state.push_prim(
-                &PrimitiveCommand::instance(prim_instance_index, stops_address),
-                prim_spatial_node_index,
+            return;
+        }
+        PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
+            profile_scope!("RadialGradient");
+            let prim_data = &mut data_stores.radial_grad[*data_handle];
+            let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
+
+            if let Some(nine_patch) = &prim_data.border_nine_patch {
+                quad::prepare_border_image_nine_patch(
+                    &*nine_patch,
+                    prim_data,
+                    &local_rect,
+                    prim_data.stretch_size,
+                    prim_data.common.aligned_aa_edges,
+                    prim_data.common.transformed_aa_edges,
+                    prim_instance_index,
+                    &prim_instance.vis.clip_chain,
+                    quad_transform,
+                    frame_context,
+                    pic_context,
+                    targets,
+                    &data_stores.clip,
+                    frame_state,
+                    scratch,
+                );
+                return;
+            }
+
+            quad::prepare_repeatable_quad(
+                prim_data,
+                &local_rect,
+                prim_data.stretch_size,
+                prim_data.tile_spacing,
+                prim_data.common.aligned_aa_edges,
+                prim_data.common.transformed_aa_edges,
+                prim_instance_index,
+                &None,
+                &prim_instance.vis.clip_chain,
+                quad_transform,
+                frame_context,
+                pic_context,
                 targets,
+                &data_stores.clip,
+                frame_state,
+                scratch,
             );
             return;
         }
-        PrimitiveInstanceKind::CachedLinearGradient { data_handle, ref mut visible_tiles_range, .. } => {
-            profile_scope!("CachedLinearGradient");
-            let prim_data = &mut data_stores.linear_grad[*data_handle];
-            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_size.width
-                || prim_data.stretch_size.height < prim_data.common.prim_size.height;
-
-            // Update the template this instance references, which may refresh the GPU
-            // cache with any shared template data.
-            prim_data.update(frame_state);
-
-            if prim_data.tile_spacing != LayoutSize::zero() {
-                prim_data.common.may_need_repetition = false;
-
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                *visible_tiles_range = decompose_repeated_gradient(
-                    &prim_instance.vis,
-                    &local_rect,
-                    prim_spatial_node_index,
-                    &prim_data.stretch_size,
-                    &prim_data.tile_spacing,
-                    frame_state,
-                    &mut scratch.gradient_tiles,
-                    &frame_context.spatial_tree,
-                    None,
-                );
-
-                if visible_tiles_range.is_empty() {
-                    prim_instance.clear_visibility();
-                }
-            }
-        }
-        PrimitiveInstanceKind::RadialGradient { data_handle, ref mut visible_tiles_range, use_legacy_path, .. } => {
-            profile_scope!("RadialGradient");
-            let prim_data = &mut data_stores.radial_grad[*data_handle];
-
-            if !*use_legacy_path {
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                if let Some(nine_patch) = &prim_data.border_nine_patch {
-                    quad::prepare_border_image_nine_patch(
-                        &*nine_patch,
-                        prim_data,
-                        &local_rect,
-                        prim_data.stretch_size,
-                        prim_data.common.aligned_aa_edges,
-                        prim_data.common.transformed_aa_edges,
-                        prim_instance_index,
-                        &prim_instance.vis.clip_chain,
-                        quad_transform,
-                        frame_context,
-                        pic_context,
-                        targets,
-                        &data_stores.clip,
-                        frame_state,
-                        scratch,
-                    );
-                    return;
-                }
-
-                quad::prepare_repeatable_quad(
-                    prim_data,
-                    &local_rect,
-                    prim_data.stretch_size,
-                    prim_data.tile_spacing,
-                    prim_data.common.aligned_aa_edges,
-                    prim_data.common.transformed_aa_edges,
-                    prim_instance_index,
-                    &None,
-                    &prim_instance.vis.clip_chain,
-                    quad_transform,
-                    frame_context,
-                    pic_context,
-                    targets,
-                    &data_stores.clip,
-                    frame_state,
-                    scratch,
-                );
-
-                return;
-            }
-
-            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_size.width
-            || prim_data.stretch_size.height < prim_data.common.prim_size.height;
-
-            // Update the template this instane references, which may refresh the GPU
-            // cache with any shared template data.
-            prim_data.update(frame_state);
-
-            if prim_data.tile_spacing != LayoutSize::zero() {
-                prim_data.common.may_need_repetition = false;
-
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                *visible_tiles_range = decompose_repeated_gradient(
-                    &prim_instance.vis,
-                    &local_rect,
-                    prim_spatial_node_index,
-                    &prim_data.stretch_size,
-                    &prim_data.tile_spacing,
-                    frame_state,
-                    &mut scratch.gradient_tiles,
-                    &frame_context.spatial_tree,
-                    None,
-                );
-
-                if visible_tiles_range.is_empty() {
-                    prim_instance.clear_visibility();
-                }
-            }
-        }
-        PrimitiveInstanceKind::ConicGradient { data_handle, ref mut visible_tiles_range, use_legacy_path, .. } => {
+        PrimitiveInstanceKind::ConicGradient { data_handle, .. } => {
             profile_scope!("ConicGradient");
             let prim_data = &mut data_stores.conic_grad[*data_handle];
             let prim_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
 
-            if !*use_legacy_path {
-                if let Some(nine_patch) = &prim_data.border_nine_patch {
-                    quad::prepare_border_image_nine_patch(
-                        &*nine_patch,
-                        prim_data,
-                        &prim_rect,
-                        prim_data.stretch_size,
-                        prim_data.common.aligned_aa_edges,
-                        prim_data.common.transformed_aa_edges,
-                        prim_instance_index,
-                        &prim_instance.vis.clip_chain,
-                        quad_transform,
-                        frame_context,
-                        pic_context,
-                        targets,
-                        &data_stores.clip,
-                        frame_state,
-                        scratch,
-                    );
-                    return;
-                }
-
-                // Conic gradients are quite slow with SWGL, so we want to cache
-                // them as much as we can, even large ones.
-                // TODO: get_surface_rect is not always cheap. We should reorganize
-                // the code so that we only call it as much as we really need it,
-                // while avoiding this much boilerplate for each primitive that uses
-                // caching.
-                let mut should_cache = frame_context.fb_config.is_software
-                    && frame_state.resource_cache.texture_cache.allocated_color_bytes() < 30_000_000;
-                if should_cache {
-                    let surface = &frame_state.surfaces[pic_context.surface_index.0];
-                    let clipped_surface_rect = surface.get_surface_rect(
-                        &prim_instance.vis.clip_chain.pic_coverage_rect,
-                        frame_context.spatial_tree,
-                    );
-
-                    should_cache = if let Some(rect) = clipped_surface_rect {
-                        rect.width() < 4096 && rect.height() < 4096
-                    } else {
-                        false
-                    };
-                }
-
-                let cache_key = if should_cache {
-                    quad::cache_key(
-                        data_handle.uid(),
-                        quad_transform,
-                        &prim_instance.vis.clip_chain,
-                        frame_state.clip_store,
-                    )
-                } else {
-                    None
-                };
-
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                quad::prepare_repeatable_quad(
+            if let Some(nine_patch) = &prim_data.border_nine_patch {
+                quad::prepare_border_image_nine_patch(
+                    &*nine_patch,
                     prim_data,
-                    &local_rect,
+                    &prim_rect,
                     prim_data.stretch_size,
-                    prim_data.tile_spacing,
                     prim_data.common.aligned_aa_edges,
                     prim_data.common.transformed_aa_edges,
                     prim_instance_index,
-                    &cache_key,
                     &prim_instance.vis.clip_chain,
                     quad_transform,
                     frame_context,
@@ -1027,40 +984,62 @@ fn prepare_interned_prim_for_render(
                     frame_state,
                     scratch,
                 );
-
                 return;
             }
 
-            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_size.width
-                || prim_data.stretch_size.height < prim_data.common.prim_size.height;
-
-            // Update the template this instane references, which may refresh the GPU
-            // cache with any shared template data.
-            prim_data.update(frame_state);
-
-            if prim_data.tile_spacing != LayoutSize::zero() {
-                prim_data.common.may_need_repetition = false;
-
-                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
-                *visible_tiles_range = decompose_repeated_gradient(
-                    &prim_instance.vis,
-                    &local_rect,
-                    prim_spatial_node_index,
-                    &prim_data.stretch_size,
-                    &prim_data.tile_spacing,
-                    frame_state,
-                    &mut scratch.gradient_tiles,
-                    &frame_context.spatial_tree,
-                    None,
+            // Conic gradients are quite slow with SWGL, so we want to cache
+            // them as much as we can, even large ones.
+            // TODO: get_surface_rect is not always cheap. We should reorganize
+            // the code so that we only call it as much as we really need it,
+            // while avoiding this much boilerplate for each primitive that uses
+            // caching.
+            let mut should_cache = frame_context.fb_config.is_software
+                && frame_state.resource_cache.texture_cache.allocated_color_bytes() < 30_000_000;
+            if should_cache {
+                let surface = &frame_state.surfaces[pic_context.surface_index.0];
+                let clipped_surface_rect = surface.get_surface_rect(
+                    &prim_instance.vis.clip_chain.pic_coverage_rect,
+                    frame_context.spatial_tree,
                 );
 
-                if visible_tiles_range.is_empty() {
-                    prim_instance.clear_visibility();
-                }
+                should_cache = if let Some(rect) = clipped_surface_rect {
+                    rect.width() < 4096 && rect.height() < 4096
+                } else {
+                    false
+                };
             }
 
-            // TODO(gw): Consider whether it's worth doing segment building
-            //           for gradient primitives.
+            let cache_key = if should_cache {
+                quad::cache_key(
+                    data_handle.uid(),
+                    quad_transform,
+                    &prim_instance.vis.clip_chain,
+                    frame_state.clip_store,
+                )
+            } else {
+                None
+            };
+
+            let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
+            quad::prepare_repeatable_quad(
+                prim_data,
+                &local_rect,
+                prim_data.stretch_size,
+                prim_data.tile_spacing,
+                prim_data.common.aligned_aa_edges,
+                prim_data.common.transformed_aa_edges,
+                prim_instance_index,
+                &cache_key,
+                &prim_instance.vis.clip_chain,
+                quad_transform,
+                frame_context,
+                pic_context,
+                targets,
+                &data_stores.clip,
+                frame_state,
+                scratch,
+            );
+            return;
         }
         PrimitiveInstanceKind::Picture { pic_index, .. } => {
             profile_scope!("Picture");
@@ -1341,64 +1320,6 @@ fn write_segment<F>(
     }
 }
 
-fn decompose_repeated_gradient(
-    prim_vis: &PrimitiveVisibility,
-    prim_local_rect: &LayoutRect,
-    prim_spatial_node_index: SpatialNodeIndex,
-    stretch_size: &LayoutSize,
-    tile_spacing: &LayoutSize,
-    frame_state: &mut FrameBuildingState,
-    gradient_tiles: &mut GradientTileStorage,
-    spatial_tree: &SpatialTree,
-    mut callback: Option<&mut dyn FnMut(&LayoutRect, &mut GpuBufferBuilderF) -> GpuBufferAddress>,
-) -> GradientTileRange {
-    let tile_range = gradient_tiles.open_range();
-
-    // Tighten the clip rect because decomposing the repeated image can
-    // produce primitives that are partially covering the original image
-    // rect and we want to clip these extra parts out.
-    if let Some(tight_clip_rect) = prim_vis
-        .clip_chain
-        .local_clip_rect
-        .intersection(prim_local_rect) {
-
-        let visible_rect = compute_conservative_visible_rect(
-            &prim_vis.clip_chain,
-            frame_state.current_dirty_region().combined,
-            frame_state.current_dirty_region().visibility_spatial_node,
-            prim_spatial_node_index,
-            spatial_tree,
-        );
-        let stride = *stretch_size + *tile_spacing;
-
-        let repetitions = image_tiling::repetitions(prim_local_rect, &visible_rect, stride);
-        gradient_tiles.reserve(repetitions.num_repetitions());
-        for Repetition { origin, .. } in repetitions {
-            let rect = LayoutRect::from_origin_and_size(
-                origin,
-                *stretch_size,
-            );
-
-            let mut address = GpuBufferAddress::INVALID;
-
-            if let Some(callback) = &mut callback {
-                address = callback(&rect, &mut frame_state.frame_gpu_data.f32);
-            }
-
-            gradient_tiles.push(VisibleGradientTile {
-                local_rect: rect,
-                local_clip_rect: tight_clip_rect,
-                address,
-            });
-        }
-    }
-
-    // At this point if we don't have tiles to show it means we could probably
-    // have done a better a job at culling during an earlier stage.
-    gradient_tiles.close_range(tile_range)
-}
-
-
 fn update_clip_task_for_brush(
     instance: &PrimitiveInstance,
     prim_origin: &LayoutPoint,
@@ -1451,8 +1372,7 @@ fn update_clip_task_for_brush(
 
             &segments_store[segment_instance.segments_range]
         }
-        PrimitiveInstanceKind::Rectangle { use_legacy_path, segment_instance_index, .. } => {
-            assert!(use_legacy_path);
+        PrimitiveInstanceKind::Rectangle { segment_instance_index, .. } => {
             debug_assert!(segment_instance_index != SegmentInstanceIndex::INVALID);
 
             if segment_instance_index == SegmentInstanceIndex::UNUSED {
@@ -1477,8 +1397,7 @@ fn update_clip_task_for_brush(
             //       can change this to be a tuple match on (instance, template)
             border_data.brush_segments.as_slice()
         }
-        PrimitiveInstanceKind::LinearGradient { data_handle, .. }
-        | PrimitiveInstanceKind::CachedLinearGradient { data_handle, .. } => {
+        PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
             let prim_data = &data_stores.linear_grad[data_handle];
 
             // TODO: This is quite messy - once we remove legacy primitives we
@@ -1489,27 +1408,11 @@ fn update_clip_task_for_brush(
 
             prim_data.brush_segments.as_slice()
         }
-        PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
-            let prim_data = &data_stores.radial_grad[data_handle];
-
-            // TODO: This is quite messy - once we remove legacy primitives we
-            //       can change this to be a tuple match on (instance, template)
-            if prim_data.brush_segments.is_empty() {
-                return None;
-            }
-
-            prim_data.brush_segments.as_slice()
+        PrimitiveInstanceKind::RadialGradient { .. } => {
+            unreachable!("BUG: radial gradients should always use quad path");
         }
-        PrimitiveInstanceKind::ConicGradient { data_handle, .. } => {
-            let prim_data = &data_stores.conic_grad[data_handle];
-
-            // TODO: This is quite messy - once we remove legacy primitives we
-            //       can change this to be a tuple match on (instance, template)
-            if prim_data.brush_segments.is_empty() {
-                return None;
-            }
-
-            prim_data.brush_segments.as_slice()
+        PrimitiveInstanceKind::ConicGradient { .. } => {
+            unreachable!("BUG: conic gradients should always use quad path");
         }
     };
 
@@ -1783,13 +1686,16 @@ fn write_brush_segment_description(
         }
 
         let (local_clip_rect, radius, mode) = match clip_node.item.kind {
-            ClipItemKind::RoundedRectangle { rect, radius, mode } => {
+            ClipItemKind::RoundedRectangle { size, radius, mode } => {
+                let rect = LayoutRect::from_origin_and_size(clip_instance.clip_rect_origin, size);
                 (rect, Some(radius), mode)
             }
-            ClipItemKind::Rectangle { rect, mode } => {
+            ClipItemKind::Rectangle { size, mode } => {
+                let rect = LayoutRect::from_origin_and_size(clip_instance.clip_rect_origin, size);
                 (rect, None, mode)
             }
             ClipItemKind::BoxShadow { ref source } => {
+                // Only reachable when use_quad_box_shadow is not set.
                 // For inset box shadows, we can clip out any
                 // pixels that are inside the shadow region
                 // and are beyond the inner rect, as they can't
@@ -1844,8 +1750,7 @@ fn build_segments_if_needed(
     );
 
     let segment_instance_index = match instance.kind {
-        PrimitiveInstanceKind::Rectangle { use_legacy_path, ref mut segment_instance_index, .. } => {
-            assert!(use_legacy_path);
+        PrimitiveInstanceKind::Rectangle { ref mut segment_instance_index, .. } => {
             segment_instance_index
         }
         PrimitiveInstanceKind::YuvImage { ref mut segment_instance_index, compositor_surface_kind, .. } => {
@@ -1879,7 +1784,6 @@ fn build_segments_if_needed(
         PrimitiveInstanceKind::NormalBorder { .. } |
         PrimitiveInstanceKind::ImageBorder { .. } |
         PrimitiveInstanceKind::LinearGradient { .. } |
-        PrimitiveInstanceKind::CachedLinearGradient { .. } |
         PrimitiveInstanceKind::RadialGradient { .. } |
         PrimitiveInstanceKind::ConicGradient { .. } |
         PrimitiveInstanceKind::LineDecoration { .. } |

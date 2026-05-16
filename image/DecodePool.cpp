@@ -148,7 +148,9 @@ class DecodingTask final : public Task {
         mTask(aTask) {}
 
   TaskResult Run() override {
-    mTask->Run();
+    if (MOZ_LIKELY(!DecodePool::IsShuttingDown())) {
+      mTask->Run();
+    }
     return TaskResult::Complete;
   }
 

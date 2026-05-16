@@ -34,4 +34,18 @@
   <string name="mozac_feature_applinks_confirm_dialog_deny">Abbandunà</string>
   <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->
   <string name="mozac_feature_applinks_confirm_dialog_checkbox_label">Apre sempre i liami in l’appiecazioni</string>
+  <!-- The label for the expandable section that shows additional details -->
+  <string name="mozac_feature_applinks_view_details">Affissà i detaglii</string>
+  <!-- The label for the expandable section when details are shown -->
+  <string name="mozac_feature_applinks_hide_details">Piattà i detaglii</string>
+  <!-- The label for the source URL in the details section -->
+  <string name="mozac_feature_applinks_source_url">Indirizzu web d’origine</string>
+  <!-- The label for the destination URL in the details section -->
+  <string name="mozac_feature_applinks_destination_url">Indirizzu web di destinazione</string>
+  <!-- The label for the URL if opening in the browser in the details section. %s is the browser name. -->
+  <string name="mozac_feature_applinks_firefox_url">Indirizzu web s’è apertura in %s</string>
+  <!-- The label for the unique identifier in the details section -->
+  <string name="mozac_feature_applinks_unique_identifier">Identificatore unicu</string>
+  <!-- The text shown when there is no Firefox URL -->
+  <string name="mozac_feature_applinks_none">Nisunu</string>
 </resources>

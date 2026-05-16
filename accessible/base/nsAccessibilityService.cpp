@@ -180,13 +180,11 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
   }
   nsIFrame* frame = aContent->GetPrimaryFrame();
   MOZ_ASSERT(frame);
-  nsAutoCString overflow;
-  frame->Style()->GetComputedPropertyValue(eCSSProperty_overflow, overflow);
   // If the frame has been transformed, and the content has any children, we
   // should create an Accessible so that we can account for the transform when
   // calculating the Accessible's bounds using the parent process cache.
   // Ditto for content which is position: fixed or sticky or has overflow
-  // styling (auto, scroll, hidden).
+  // styling (auto, scroll, hidden, or any multi-axis combination).
   // However, don't do this for XUL widgets, as this breaks XUL a11y code
   // expectations in some cases. XUL widgets are only used in the parent
   // process and can't be cached anyway.
@@ -195,8 +193,7 @@ static bool MustBeGenericAccessible(nsIContent* aContent,
           frame->IsStickyPositioned() ||
           (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
            nsLayoutUtils::IsReallyFixedPos(frame)) ||
-          overflow.Equals("auto"_ns) || overflow.Equals("scroll"_ns) ||
-          overflow.Equals("hidden"_ns));
+          frame->StyleDisplay()->IsScrollableOverflow());
 }
 
 /**
@@ -1677,17 +1674,15 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
 
   eventListenerService->AddListenerChangeListener(this);
 
-  for (uint32_t i = 0; i < std::size(sHTMLMarkupMapList); i++) {
-    mHTMLMarkupMap.InsertOrUpdate(sHTMLMarkupMapList[i].tag,
-                                  &sHTMLMarkupMapList[i]);
+  for (const auto& info : sHTMLMarkupMapList) {
+    mHTMLMarkupMap.InsertOrUpdate(info.tag, &info);
   }
   for (const auto& info : sMathMLMarkupMapList) {
     mMathMLMarkupMap.InsertOrUpdate(info.tag, &info);
   }
 
-  for (uint32_t i = 0; i < std::size(sXULMarkupMapList); i++) {
-    mXULMarkupMap.InsertOrUpdate(sXULMarkupMapList[i].tag,
-                                 &sXULMarkupMapList[i]);
+  for (const auto& info : sXULMarkupMapList) {
+    mXULMarkupMap.InsertOrUpdate(info.tag, &info);
   }
 
 #ifdef A11Y_LOG

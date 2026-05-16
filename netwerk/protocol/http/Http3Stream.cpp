@@ -472,7 +472,7 @@ nsresult Http3Stream::Finish0RTT(bool aRestart) {
     mQueued = false;
     mDataReceived = false;
     mResetRecv = false;
-    mFlatResponseHeaders.TruncateLength(0);
+    mFlatResponseHeaders.ClearAndRetainStorage();
     mTotalSent = 0;
     mTotalRead = 0;
     mFin = false;

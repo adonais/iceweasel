@@ -145,6 +145,7 @@ class MozillaSocorroServiceTest {
                 processType = "main",
                 breadcrumbs = arrayListOf(Breadcrumb(message = "Hello World", date = "2018-06-12T19:30+00:00".toDate("yyyy-MM-dd'T'HH:mmXXX"))),
                 remoteType = null,
+                uuid = "f6aa9fc0-75f5-4677-b90d-7b481909365a",
             )
             service.report(crash)
 
@@ -161,6 +162,7 @@ class MozillaSocorroServiceTest {
             assert(request.contains("name=ReleaseChannel\r\n\r\nN/A"))
             assert(request.contains("name=Android_PackageName\r\n\r\nmozilla.components.lib.crash.test"))
             assert(request.contains("name=Android_Device\r\n\r\nrobolectric"))
+            assert(request.contains("name=CrashID\r\n\r\nf6aa9fc0-75f5-4677-b90d-7b481909365a"))
             assert(request.contains("name=CrashType\r\n\r\n$FATAL_NATIVE_CRASH_TYPE"))
             assert(request.contains("name=CrashTime\r\n\r\n123"))
             assert(request.contains("name=useragent_locale\r\n\r\nen-US"))
@@ -491,7 +493,7 @@ class MozillaSocorroServiceTest {
                 ),
             )
 
-            val crash = Crash.UncaughtExceptionCrash(123456, RuntimeException("Test"), arrayListOf())
+            val crash = Crash.UncaughtExceptionCrash(123456, RuntimeException("Test"), arrayListOf(), uuid = "13b041a0-3958-4d11-b3b6-194c973d8d58")
             service.report(crash)
 
             val fileInputStream =
@@ -509,6 +511,7 @@ class MozillaSocorroServiceTest {
             assert(request.contains("name=ReleaseChannel\r\n\r\nnightly"))
             assert(request.contains("name=Android_PackageName\r\n\r\nmozilla.components.lib.crash.test"))
             assert(request.contains("name=Android_Device\r\n\r\nrobolectric"))
+            assert(request.contains("name=CrashID\r\n\r\n13b041a0-3958-4d11-b3b6-194c973d8d58"))
             assert(request.contains("name=CrashType\r\n\r\n$UNCAUGHT_EXCEPTION_TYPE"))
             assert(request.contains("name=CrashTime\r\n\r\n123"))
             assert(request.contains("name=useragent_locale\r\n\r\nen-US"))

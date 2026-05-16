@@ -28,11 +28,11 @@ void GroupInfo::LockedAddOriginInfo(NotNull<RefPtr<OriginInfo>>&& aOriginInfo) {
 
   NS_ASSERTION(!mOriginInfos.Contains(aOriginInfo),
                "Replacing an existing entry!");
-  mOriginInfos.AppendElement(std::move(aOriginInfo));
+  const auto& back = *mOriginInfos.AppendElement(std::move(aOriginInfo));
 
-  uint64_t usage = aOriginInfo->LockedUsage();
+  uint64_t usage = back->LockedUsage();
 
-  if (!aOriginInfo->LockedPersisted()) {
+  if (!back->LockedPersisted()) {
     AssertNoOverflow(mUsage, usage);
     mUsage += usage;
   }

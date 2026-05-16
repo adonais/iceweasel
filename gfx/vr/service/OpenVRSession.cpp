@@ -1280,7 +1280,10 @@ bool OpenVRSession::SubmitFrame(const VRLayerTextureHandle& aTextureHandle,
   // We get aTextureHandle from get_SurfaceDescriptorMacIOSurface() at
   // VRDisplayExternal. scaleFactor and opaque are skipped because they always
   // are 1.0 and false.
-  RefPtr<MacIOSurface> surf = MacIOSurface::LookupSurface(aTextureHandle);
+  RefPtr<MacIOSurface> surf = MacIOSurface::LookupSurface(
+      aTextureHandle,
+      /* aHasAlpha */ false, gfx::YUVColorSpace::Identity,
+      gfx::TransferFunction::SRGB);
   if (!surf) {
     NS_WARNING("OpenVRSession::SubmitFrame failed to get a MacIOSurface");
     return false;

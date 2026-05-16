@@ -1,0 +1,18 @@
+{
+  "label": "perplexity.ai",
+  "bugs": {
+    "1997575": {
+      "issue": "user-interface-frustration",
+      "matches": ["*://www.perplexity.ai/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "all_frames": true,
+        "js": ["1997575-perplexity.ai-covered-fixed-element.js"]
+      }
+    }
+  ]
+}

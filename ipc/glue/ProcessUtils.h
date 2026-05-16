@@ -5,8 +5,6 @@
 #ifndef mozilla_ipc_ProcessUtils_h
 #define mozilla_ipc_ProcessUtils_h
 
-#include <functional>
-
 #include "mozilla/GeckoArgs.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"

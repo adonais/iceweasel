@@ -65,6 +65,7 @@ let patterns: string[];
 - [`elementClicked`](#elementclicked)
 - [`ipProtectionReady`](#ipprotectionready)
 - [`ipProtectionPanelClosed`](#ipprotectionpanelclosed)
+- [`ipProtectionBandwidthReset`](#ipprotectionbandwidthreset)
 - [`selectableProfilesUpdated`](#selectableprofilesupdated)
 - [`smartWindowNewTab`](#smartwindownewtab)
 
@@ -453,6 +454,17 @@ The `hasUsedSiteExceptions` boolean context variable is available in targeting, 
 {
   trigger: { id: "ipProtectionPanelClosed" },
   targeting: "!hasUsedSiteExceptions",
+}
+```
+
+### `ipProtectionBandwidthReset`
+
+Fires when the IP protection bandwidth quota resets at the start of a new month.
+
+```js
+{
+  trigger: { id: "ipProtectionBandwidthReset" },
+  targeting: "'browser.ipProtection.userEnableCount' | preferenceValue > 0",
 }
 ```
 

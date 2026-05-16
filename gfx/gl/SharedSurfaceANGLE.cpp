@@ -235,7 +235,8 @@ SharedSurface_ANGLEShareHandle::ToSurfaceDescriptor() {
   return Some(layers::SurfaceDescriptorD3D10(
       mSharedHandle, /* gpuProcessTextureId */ Nothing(),
       /* arrayIndex */ 0, format, mDesc.size, mDesc.colorSpace,
-      gfx::ColorRange::FULL, !!mKeyedMutex, mFencesHolderId));
+      gfx::ColorRange::FULL, mDesc.transferFunction, !!mKeyedMutex,
+      mFencesHolderId));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

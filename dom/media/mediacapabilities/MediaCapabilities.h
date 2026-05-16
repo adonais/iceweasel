@@ -6,9 +6,14 @@
 #define mozilla_dom_MediaCapabilities_h_
 
 #include "DDLoggedTypeTraits.h"
+#include "MediaResult.h"
 #include "js/TypeDecls.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/dom/MediaCapabilitiesBinding.h"
 #include "mozilla/dom/MediaKeySystemAccessManager.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"
 #include "nsCOMPtr.h"
@@ -22,6 +27,8 @@ class nsIGlobalObject;
 namespace mozilla {
 class ErrorResult;
 class MediaContainerType;
+class TaskQueue;
+class TrackInfo;
 
 namespace layers {
 class KnowsCompositor;
@@ -45,6 +52,9 @@ class MediaCapabilities final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(MediaCapabilities)
 
+  using CapabilitiesPromise =
+      MozPromise<MediaCapabilitiesInfo, MediaResult, /* IsExclusive = */ true>;
+
   // WebIDL Methods
   already_AddRefed<Promise> DecodingInfo(
       const MediaDecodingConfiguration& aConfiguration, ErrorResult& aRv);
@@ -53,6 +63,15 @@ class MediaCapabilities final : public nsISupports, public nsWrapperCache {
   // End WebIDL Methods
 
   explicit MediaCapabilities(nsIGlobalObject* aParent);
+
+  // Asynchronously queries the platform decoder to determine video decoding
+  // capabilities (supported, smooth, powerEfficient). Used by the DRM path for
+  // software-encrypted content to determine the powerEfficient field, and also
+  // used by the non-DRM video path to query the platform decoder.
+  static RefPtr<CapabilitiesPromise> CheckVideoDecodingInfo(
+      RefPtr<TaskQueue> aTaskQueue, RefPtr<layers::KnowsCompositor> aCompositor,
+      float aFrameRate, bool aShouldResistFingerprinting,
+      UniquePtr<TrackInfo> aConfig);
 
   nsIGlobalObject* GetParentObject() const { return mParent; }
   JSObject* WrapObject(JSContext* aCx,

@@ -36,52 +36,17 @@ add_task(async function () {
 
 async function testTopLeft(inspector, view) {
   const id = "#topleft";
-  const rules = await assertPseudoElementRulesNumbersForSelector(
-    id,
-    inspector,
-    view,
-    {
-      elementRules: 4,
-      firstLineRules: 2,
-      firstLetterRules: 1,
-      selectionRules: 1,
-      markerRules: 0,
-      afterRules: 1,
-      beforeRules: 2,
-    }
-  );
+  await assertPseudoElementRulesNumbersForSelector(id, inspector, view, {
+    elementRules: 4,
+    firstLineRules: 2,
+    firstLetterRules: 1,
+    selectionRules: 1,
+    markerRules: 0,
+    afterRules: 1,
+    beforeRules: 2,
+  });
 
-  const gutters = assertHeaders(view);
-
-  info("Make sure that clicking on the twisty hides pseudo elements");
-  const expander = gutters[0].querySelector(".ruleview-expander");
-  ok(!getPseudoElementContainer(view).hidden, "Pseudo Elements are expanded");
-
-  expander.click();
-  ok(
-    getPseudoElementContainer(view).hidden,
-    "Pseudo Elements are collapsed by twisty"
-  );
-
-  expander.click();
-  ok(
-    !getPseudoElementContainer(view).hidden,
-    "Pseudo Elements are expanded again"
-  );
-
-  info(
-    "Make sure that dblclicking on the header container also toggles " +
-      "the pseudo elements"
-  );
-  EventUtils.synthesizeMouseAtCenter(
-    gutters[0],
-    { clickCount: 2 },
-    view.styleWindow
-  );
-  ok(
-    getPseudoElementContainer(view).hidden,
-    "Pseudo Elements are collapsed by dblclicking"
-  );
+  assertHeaders(view);
 
   const elementRuleView = getRuleViewRuleEditorAt(view, 7);
   is(
@@ -90,12 +55,9 @@ async function testTopLeft(inspector, view) {
     "About to modify the 'element' rule"
   );
 
-  const elementFirstLineRule = rules.firstLineRules[0];
-  const elementFirstLineRuleView = [
-    ...getPseudoElementContainer(view).children,
-  ].filter(e => {
-    return e._ruleEditor && e._ruleEditor.rule === elementFirstLineRule;
-  })[0]._ruleEditor;
+  // Position for the ::first-line rule
+  const index = 4;
+  const elementFirstLineRule = getRuleViewRuleEditorAt(view, index).rule;
 
   is(
     convertTextPropsToString(elementFirstLineRule.textProps),
@@ -103,34 +65,16 @@ async function testTopLeft(inspector, view) {
     "TopLeft firstLine properties are correct"
   );
 
-  let onAdded = view.once("ruleview-changed");
-  let firstProp = elementFirstLineRuleView.addProperty(
+  const firstProp = await addProperty(
+    view,
+    index,
     "background-color",
     "rgb(0, 255, 0)",
     "",
     true
   );
-  await onAdded;
 
-  onAdded = view.once("ruleview-changed");
-  const secondProp = elementFirstLineRuleView.addProperty(
-    "font-style",
-    "italic",
-    "",
-    true
-  );
-  await onAdded;
-
-  is(
-    firstProp,
-    elementFirstLineRule.textProps[elementFirstLineRule.textProps.length - 2],
-    "First added property is on back of array"
-  );
-  is(
-    secondProp,
-    elementFirstLineRule.textProps[elementFirstLineRule.textProps.length - 1],
-    "Second added property is on back of array"
-  );
+  await addProperty(view, index, "font-style", "italic", "", true);
 
   is(
     await getComputedStyleProperty(id, ":first-line", "background-color"),
@@ -174,14 +118,7 @@ async function testTopLeft(inspector, view) {
     "Added property should not apply to element"
   );
 
-  onAdded = view.once("ruleview-changed");
-  firstProp = elementRuleView.addProperty(
-    "background-color",
-    "rgb(0, 0, 255)",
-    "",
-    true
-  );
-  await onAdded;
+  await addProperty(view, 7, "background-color", "rgb(0, 0, 255)");
 
   is(
     await getComputedStyleProperty(id, null, "background-color"),
@@ -192,6 +129,26 @@ async function testTopLeft(inspector, view) {
     await getComputedStyleProperty(id, ":first-line", "background-color"),
     "rgb(0, 255, 0)",
     "Added prop does not apply to pseudo"
+  );
+
+  // This will also ensure that the pseudo elements are hidden before switching to another test
+  info("Make sure that clicking on the twity re-hide the pseudo elements");
+  // Retrieve a fresh reference to the pseudo elements expander as the DOM Element may have been replaced
+  const expander = view.element.querySelector(
+    ".ruleview-header:not([hidden]) .ruleview-expander"
+  );
+
+  ok(!getPseudoElementContainer(view).hidden, "Pseudo Elements are expanded");
+
+  expander.click();
+  ok(
+    getPseudoElementContainer(view).hidden,
+    "Pseudo Elements are collapsed by twisty"
+  );
+  is(
+    expander.closest("button").ariaExpanded,
+    "false",
+    "pseudo element section is now collapsed"
   );
 }
 
@@ -629,6 +586,5 @@ function assertHeaders(view) {
  * @param {RuleView} view
  */
 function getPseudoElementContainer(view) {
-  // The very first element is the pseudo element headers and the second the container.
-  return view.element.children[1];
+  return view.element.querySelector("#pseudo-elements-container");
 }

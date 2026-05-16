@@ -178,11 +178,3 @@ splash-screen:
     maximum_duration_ms:
       type: int
       description: The maximum amount of time in milliseconds the splashscreen will be visible while waiting for initialization calls to complete.
-unified-search:
-  description: A feature allowing user to easily search for specified results directly in the search bar.
-  hasExposure: true
-  exposureDescription: ""
-  variables:
-    enabled:
-      type: boolean
-      description: "If true, the feature shows up in the search bar."

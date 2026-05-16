@@ -29,6 +29,7 @@ class AIFeaturesTest : BaseSessionTest() {
         assertEquals("Translations feature id should match", "translations", translations.id)
         assertTrue("Translations feature is enabled", translations.isEnabled)
         assertTrue("Translations feature is allowed", translations.isAllowed)
+        assertFalse("Translations feature is not blocked", translations.isBlocked)
     }
 
     @Test
@@ -60,22 +61,33 @@ class AIFeaturesTest : BaseSessionTest() {
     }
 
     @Test
-    fun resetFeatureTest() {
+    fun makeFeatureAvailableTest() {
         val initialFeatures = sessionRule.waitForResult(RuntimeAIFeatures.listFeatures())
         val initialIsEnabled = initialFeatures.getValue("translations").isEnabled
 
-        // Set to false
-        sessionRule.waitForResult(RuntimeAIFeatures.setFeatureEnablement("translations", false))
-        val enabledFeatures = sessionRule.waitForResult(RuntimeAIFeatures.listFeatures())
-        assertFalse("Translations feature should be disabled before reset", enabledFeatures.getValue("translations").isEnabled)
+        // setFeatureEnablement to true
+        sessionRule.waitForResult(RuntimeAIFeatures.setFeatureEnablement("translations", true))
+        val enabledFeatures = sessionRule.waitForResult(RuntimeAIFeatures.listFeatures()).getValue("translations")
+        assertTrue("Translations feature should be enabled.", enabledFeatures.isEnabled)
+        assertTrue("Translations feature should be allowed.", enabledFeatures.isAllowed)
+        assertFalse("Translations feature should not be blocked.", enabledFeatures.isBlocked)
 
-        // Reset
-        sessionRule.waitForResult(RuntimeAIFeatures.resetFeature("translations"))
-        val resetFeatures = sessionRule.waitForResult(RuntimeAIFeatures.listFeatures())
-        assertTrue("Translations feature should be enabled after reset", resetFeatures.getValue("translations").isEnabled)
+        // setFeatureEnablement to false
+        sessionRule.waitForResult(RuntimeAIFeatures.setFeatureEnablement("translations", false))
+        val blockedFeatures = sessionRule.waitForResult(RuntimeAIFeatures.listFeatures()).getValue("translations")
+        assertFalse("Translations feature should not be enabled.", blockedFeatures.isEnabled)
+        assertTrue("Translations feature should be allowed.", blockedFeatures.isAllowed)
+        assertTrue("Translations feature should be blocked.", blockedFeatures.isBlocked)
+
+        // Make available will reset back to default
+        sessionRule.waitForResult(RuntimeAIFeatures.makeFeatureAvailable("translations"))
+        val availableFeatures = sessionRule.waitForResult(RuntimeAIFeatures.listFeatures()).getValue("translations")
+        assertTrue("Translations feature should be enabled.", availableFeatures.isEnabled)
+        assertTrue("Translations feature should be allowed.", availableFeatures.isAllowed)
+        assertFalse("Translations feature should not be blocked.", availableFeatures.isBlocked)
 
         try {
-            sessionRule.waitForResult(RuntimeAIFeatures.resetFeature("unknown-feature"))
+            sessionRule.waitForResult(RuntimeAIFeatures.makeFeatureAvailable("unknown-feature"))
             fail("Should not complete request for an unknown feature.")
         } catch (e: RuntimeException) {
             val ae = e.cause as AIFeaturesException

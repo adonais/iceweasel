@@ -305,6 +305,58 @@ add_task(async function test_messageEvent_clear_conversation() {
 });
 
 /**
+ * Test that switching conversations clears the loading state.
+ */
+add_task(async function test_conversation_change_clears_loading_state() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.enabled", true]],
+  });
+
+  await BrowserTestUtils.withNewTab("about:aichatcontent", async browser => {
+    const actor =
+      browser.browsingContext.currentWindowGlobal.getActor("AIChatContent");
+
+    await actor.dispatchMessageToChatContent({
+      role: "user",
+      convId: "conv-a",
+      ordinal: 0,
+      content: { body: "Hello" },
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+      await ContentTaskUtils.waitForMutationCondition(
+        chatContent.shadowRoot,
+        { childList: true, subtree: true },
+        () => chatContent.shadowRoot?.querySelector("chat-assistant-loader")
+      );
+      Assert.ok(
+        chatContent.shadowRoot?.querySelector("chat-assistant-loader"),
+        "loading indicator should be visible while waiting for a response"
+      );
+    });
+
+    // A tab switch dispatches clear-conversation without a convId, which
+    // triggers #checkConversationState to detect the conversation change
+    // and reset assistantIsLoading and isSearching.
+    await actor.dispatchMessageToChatContent({
+      role: "clear-conversation",
+      content: { body: "" },
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+      await ContentTaskUtils.waitForCondition(
+        () => !chatContent.shadowRoot?.querySelector("chat-assistant-loader"),
+        "loading indicator should be cleared when conversation changes"
+      );
+    });
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
  * Test that a user message with contextMentions renders website chips.
  */
 add_task(async function test_messageEvent_user_context_mentions() {

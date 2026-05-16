@@ -11,11 +11,7 @@ add_task(
   async function test_select_translations_panel_telemetry_unsupported_language_ui() {
     const { cleanup, runInPage, resolveDownloads } = await loadTestPage({
       page: SELECT_TEST_PAGE_URL,
-      languagePairs: [
-        // Do not include Spanish.
-        { fromLang: "fr", toLang: "en" },
-        { fromLang: "en", toLang: "fr" },
-      ],
+      languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
       prefs: [["browser.translations.select.enable", true]],
     });
 

@@ -27,6 +27,7 @@
 #include "nsIFrame.h"
 #include "nsPresContext.h"
 #include "nsDeviceContext.h"
+#include "nsMenuPopupFrame.h"
 
 namespace mozilla {
 
@@ -244,10 +245,9 @@ static NSAppearance* NativeAppearanceForContent(nsIContent* aContent) {
 
 void NativeMenuMac::ShowMenuAnchored(nsIFrame* aClickedFrame,
                                      const CSSIntRect& aRect,
-                                     const nsAString& aPosition) {
+                                     int8_t aPosition) {
   // "Pulls down" in Cocoa means the menu does not overlap its anchor.
-  const bool pullsDown =
-      !aPosition.Equals(u"overlap"_ns) && !aPosition.Equals(u"selection"_ns);
+  const bool pullsDown = aPosition < POPUPPOSITION_OVERLAP;
 
   mMenu->SetIsAnchoredPopUp(!pullsDown);
   mMenu->SetIsAnchoredPullDown(pullsDown);
@@ -275,27 +275,24 @@ void NativeMenuMac::ShowMenuAnchored(nsIFrame* aClickedFrame,
   NSMenu* menu = mMenu->NativeNSMenu();
 
   // XUL accepts many more anchor popup alignments than Cocoa. Map to the best
-  // approximate edge setting.
+  // approximate edge setting. Because the view the button cell gets anchored
+  // to is not flipped, NSRectEdgeMinY represents the bottom edge.
   NSRectEdge edge;
-  if (StringBeginsWith(aPosition, u"topcenter bottom"_ns) ||
-      StringBeginsWith(aPosition, u"topleft bottom"_ns) ||
-      StringBeginsWith(aPosition, u"topright bottom"_ns) ||
-      StringBeginsWith(aPosition, u"before"_ns)) {
-    edge = NSRectEdgeMinY;
-  } else if ((StringEndsWith(aPosition, u"right"_ns) &&
-              (StringBeginsWith(aPosition, u"left"_ns) ||
-               StringBeginsWith(aPosition, u"topleft"_ns) ||
-               StringBeginsWith(aPosition, u"bottomleft"_ns))) ||
-             StringBeginsWith(aPosition, u"start"_ns)) {
-    edge = NSRectEdgeMinX;
-  } else if ((StringEndsWith(aPosition, u"left"_ns) &&
-              (StringBeginsWith(aPosition, u"right"_ns) ||
-               StringBeginsWith(aPosition, u"topright"_ns) ||
-               StringBeginsWith(aPosition, u"bottomright"_ns))) ||
-             StringBeginsWith(aPosition, u"end"_ns)) {
-    edge = NSRectEdgeMaxX;
-  } else {
-    edge = NSRectEdgeMaxY;
+  switch (aPosition) {
+    case POPUPPOSITION_BEFORESTART:
+    case POPUPPOSITION_BEFOREEND:
+      edge = NSRectEdgeMaxY;
+      break;
+    case POPUPPOSITION_STARTBEFORE:
+    case POPUPPOSITION_STARTAFTER:
+      edge = NSRectEdgeMinX;
+      break;
+    case POPUPPOSITION_ENDBEFORE:
+    case POPUPPOSITION_ENDAFTER:
+      edge = NSRectEdgeMaxX;
+      break;
+    default:
+      edge = NSRectEdgeMinY;
   }
 
   // Let the MOZMenuOpeningCoordinator do the actual opening, so that this

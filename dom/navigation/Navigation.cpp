@@ -532,7 +532,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
   RefPtr<NavigationDestination> mDestination;
 
  private:
-  ~NavigationWaitForAllScope() {}
+  ~NavigationWaitForAllScope() = default;
 
  public:
   // https://html.spec.whatwg.org/#process-navigate-event-handler-failure
@@ -827,37 +827,8 @@ void Navigation::RunNavigateEventHandlerSteps(
             }
           };
 
-  if (tracker && !StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-    // Promise::WaitForAll marks all promises as handled, but since we're
-    // delaying wait for all one microtask, we need to manually mark them
-    // here.
-    for (auto& promise : promiseList) {
-      (void)promise->SetAnyPromiseIsHandled();
-    }
-
-    LOG_FMTD("Waiting for committed");
-    tracker->CommittedPromise()->AddCallbacksWithCycleCollectedArgs(
-        [successSteps, cancelSteps](JSContext*, JS::Handle<JS::Value>,
-                                    ErrorResult&,
-                                    nsIGlobalObject* aGlobalObject,
-                                    const Span<RefPtr<Promise>>& aPromiseList,
-                                    NavigationWaitForAllScope* aScope)
-            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-              Promise::WaitForAll(aGlobalObject, aPromiseList, successSteps,
-                                  cancelSteps, aScope);
-            },
-        [](JSContext*, JS::Handle<JS::Value>, ErrorResult&, nsIGlobalObject*,
-           const Span<RefPtr<Promise>>&, NavigationWaitForAllScope*) {},
-        nsCOMPtr(globalObject),
-        nsTArray<RefPtr<Promise>>(std::move(promiseList)),
-        RefPtr<NavigationWaitForAllScope>(scope));
-  } else {
-    LOG_FMTD("No API method tracker, not waiting for committed");
-    // If we don't have an navigationTracker we can immediately start
-    // waiting for the promise list.
-    Promise::WaitForAll(globalObject, promiseList, successSteps, cancelSteps,
-                        scope);
-  }
+  Promise::WaitForAll(globalObject, promiseList, successSteps, cancelSteps,
+                      scope);
 }
 
 // https://html.spec.whatwg.org/#update-the-navigation-api-entries-for-reactivation
@@ -1667,19 +1638,6 @@ nsresult Navigation::FireErrorEvent(const nsAString& aName,
   return rv.StealNSResult();
 }
 
-already_AddRefed<NavigationAPIMethodTracker> CreateInternalTracker(
-    Navigation* aNavigation) {
-  RefPtr committedPromise =
-      Promise::CreateInfallible(aNavigation->GetOwnerGlobal());
-  (void)committedPromise->SetAnyPromiseIsHandled();
-  RefPtr finishedPromise = Promise::CreateResolvedWithUndefined(
-      aNavigation->GetOwnerGlobal(), IgnoreErrors());
-  return MakeAndAddRef<NavigationAPIMethodTracker>(
-      aNavigation, Nothing(), JS::UndefinedHandleValue,
-      /* aSerializedState */ nullptr,
-      /* aCommittedToEntry */ nullptr, committedPromise, finishedPromise);
-}
-
 // https://html.spec.whatwg.org/#inner-navigate-event-firing-algorithm
 bool Navigation::InnerFireNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType,
@@ -1727,8 +1685,6 @@ bool Navigation::InnerFireNavigateEvent(
   // Step 4
   if (apiMethodTracker) {
     apiMethodTracker->MarkAsNotPending();
-  } else if (StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-    apiMethodTracker = CreateInternalTracker(this);
   }
 
   // This step is currently missing in the spec. See

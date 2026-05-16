@@ -4,12 +4,35 @@
 mod common;
 use common::*;
 
-use std::{net::SocketAddr, time::Duration};
+use std::{
+    net::SocketAddr,
+    time::{Duration, Instant},
+};
 
 use happy_eyeballs::{
-    CONNECTION_ATTEMPT_DELAY, ConnectionAttemptHttpVersions, DnsResult, Endpoint, HttpVersions, Id,
-    Input, IpPreference, NetworkConfig, Output, RESOLUTION_DELAY,
+    CONNECTION_ATTEMPT_DELAY, ConnectionAttemptHttpVersions, DnsRecordType, DnsResult, Endpoint,
+    FailureReason, HappyEyeballs, HttpVersions, Id, Input, IpPreference, NetworkConfig, Output,
+    RESOLUTION_DELAY,
 };
+
+fn expect_hints_move_on_with_timeout(
+    he: &mut HappyEyeballs,
+    now: &mut Instant,
+    https_input: Input,
+    expected_attempt: Output,
+) {
+    he.expect(
+        vec![
+            (None, Some(out_send_dns_https(Id::from(0)))),
+            (None, Some(out_send_dns_aaaa(Id::from(1)))),
+            (None, Some(out_send_dns_a(Id::from(2)))),
+            (Some(https_input), Some(out_resolution_delay())),
+        ],
+        *now,
+    );
+    *now += RESOLUTION_DELAY;
+    he.expect(vec![(None, Some(expected_attempt))], *now);
+}
 
 #[test]
 fn initial_state() {
@@ -95,7 +118,7 @@ fn move_on_non_timeout() {
             address_family: NetworkConfig {
                 http_versions: HttpVersions::default(),
                 ip: IpPreference::DualStackPreferV6,
-                alt_svc: Vec::new(),
+                ..NetworkConfig::default()
             },
             positive: in_dns_aaaa_positive(Id::from(1)),
             preferred: None,
@@ -106,7 +129,7 @@ fn move_on_non_timeout() {
             address_family: NetworkConfig {
                 http_versions: HttpVersions::default(),
                 ip: IpPreference::DualStackPreferV6,
-                alt_svc: Vec::new(),
+                ..NetworkConfig::default()
             },
             positive: in_dns_a_positive(Id::from(2)),
             preferred: Some(in_dns_aaaa_positive(Id::from(1))),
@@ -117,7 +140,7 @@ fn move_on_non_timeout() {
             address_family: NetworkConfig {
                 http_versions: HttpVersions::default(),
                 ip: IpPreference::DualStackPreferV6,
-                alt_svc: Vec::new(),
+                ..NetworkConfig::default()
             },
             positive: in_dns_a_positive(Id::from(2)),
             preferred: Some(in_dns_aaaa_negative(Id::from(1))),
@@ -128,7 +151,7 @@ fn move_on_non_timeout() {
             address_family: NetworkConfig {
                 http_versions: HttpVersions::default(),
                 ip: IpPreference::DualStackPreferV4,
-                alt_svc: Vec::new(),
+                ..NetworkConfig::default()
             },
             positive: in_dns_a_positive(Id::from(2)),
             preferred: None,
@@ -139,7 +162,7 @@ fn move_on_non_timeout() {
             address_family: NetworkConfig {
                 http_versions: HttpVersions::default(),
                 ip: IpPreference::DualStackPreferV4,
-                alt_svc: Vec::new(),
+                ..NetworkConfig::default()
             },
             positive: in_dns_aaaa_positive(Id::from(1)),
             preferred: Some(in_dns_a_positive(Id::from(2))),
@@ -150,7 +173,7 @@ fn move_on_non_timeout() {
             address_family: NetworkConfig {
                 http_versions: HttpVersions::default(),
                 ip: IpPreference::DualStackPreferV4,
-                alt_svc: Vec::new(),
+                ..NetworkConfig::default()
             },
             positive: in_dns_aaaa_positive(Id::from(1)),
             preferred: Some(in_dns_a_negative(Id::from(2))),
@@ -294,10 +317,17 @@ fn resolution_delay_starts_on_first_response() {
 /// > algorithm when A and AAAA records corresponding to the TargetName
 /// > are not available yet.
 ///
+/// HTTPS arrives first with both v6 and v4 hints while AAAA and A are still
+/// in-flight. After the resolution timeout the v6 hint is used. When AAAA
+/// and A subsequently arrive with negative answers, both hints are discarded
+/// — a negative answer replaces hints per the draft: "when those records are
+/// received, they replace the hints". After the in-flight v6 attempt fails,
+/// no v4 attempt follows (v4 hint was discarded when A returned negative).
+///
 /// <https://www.ietf.org/archive/id/draft-ietf-happy-happyeyeballs-v3-02.html#section-4.2.1>
 #[test]
 fn https_hints() {
-    let (now, mut he) = setup();
+    let (mut now, mut he) = setup();
 
     he.expect(
         vec![
@@ -305,18 +335,105 @@ fn https_hints() {
             (None, Some(out_send_dns_aaaa(Id::from(1)))),
             (None, Some(out_send_dns_a(Id::from(2)))),
             (
-                Some(in_dns_aaaa_negative(Id::from(1))),
+                Some(in_dns_https_positive_v4_and_v6_hints(Id::from(0))),
                 Some(out_resolution_delay()),
+            ),
+        ],
+        now,
+    );
+
+    now += RESOLUTION_DELAY;
+    he.expect(
+        vec![
+            (None, Some(out_attempt_v6_h3(Id::from(3)))),
+            (None, Some(out_connection_attempt_delay())),
+            // AAAA and A arrive negative: both hints are discarded. The
+            // connection attempt delay is re-emitted while the in-flight
+            // v6 attempt is still pending.
+            (
+                Some(in_dns_aaaa_negative(Id::from(1))),
+                Some(out_connection_attempt_delay()),
             ),
             (
                 Some(in_dns_a_negative(Id::from(2))),
+                Some(out_connection_attempt_delay()),
+            ),
+            // The v6 attempt fails. No v4 retry — v4 hint was discarded when
+            // A returned a negative answer.
+            (
+                Some(in_connection_result_negative(Id::from(3))),
+                Some(Output::Failed(FailureReason::Connection)),
+            ),
+        ],
+        now,
+    );
+}
+
+/// HTTPS IP hints should count as positive address answers for the
+/// resolution delay timeout path (`move_on_with_timeout`).
+///
+/// Scenario: only HTTPS with v6 hints has arrived, AAAA and A are still
+/// in-progress. After the resolution delay we should move on.
+///
+/// <https://github.com/mozilla/happy-eyeballs/issues/39>
+#[test]
+fn https_hints_move_on_with_timeout() {
+    let (mut now, mut he) = setup();
+    expect_hints_move_on_with_timeout(
+        &mut he,
+        &mut now,
+        in_dns_https_positive_v6_hints(Id::from(0)),
+        out_attempt_v6_h3(Id::from(3)),
+    );
+}
+
+/// HTTPS IPv4 hints should also count for `move_on_with_timeout`.
+///
+/// Mirrors `https_hints_move_on_with_timeout` but using IPv4 hints instead of IPv6.
+#[test]
+fn https_v4_hints_move_on_with_timeout() {
+    let (mut now, mut he) = setup();
+    expect_hints_move_on_with_timeout(
+        &mut he,
+        &mut now,
+        in_dns_https_positive_v4_hints(Id::from(0)),
+        out_attempt_v4_h3(Id::from(3)),
+    );
+}
+
+/// When the resolution delay has exactly elapsed, `process_output` returns `None`,
+/// not a zero-duration timer.
+#[test]
+fn resolution_delay_boundary() {
+    let (mut now, mut he) = setup();
+
+    he.expect(
+        vec![
+            (None, Some(out_send_dns_https(Id::from(0)))),
+            (None, Some(out_send_dns_aaaa(Id::from(1)))),
+            (None, Some(out_send_dns_a(Id::from(2)))),
+            // HTTPS negative and A positive arrive at T; AAAA still pending.
+            (
+                Some(in_dns_https_negative(Id::from(0))),
                 Some(out_resolution_delay()),
             ),
             (
-                Some(in_dns_https_positive_v6_hints(Id::from(0))),
-                Some(out_attempt_v6_h3(Id::from(3))),
+                Some(in_dns_a_positive(Id::from(2))),
+                Some(out_resolution_delay()),
             ),
         ],
+        now,
+    );
+
+    now += RESOLUTION_DELAY;
+
+    // Resolution delay has elapsed; move_on_with_timeout fires.
+    he.expect(vec![(None, Some(out_attempt_v4_h1_h2(Id::from(3))))], now);
+
+    // Connection fails immediately. AAAA still pending, resolution delay exactly
+    // expired — no timer, just None.
+    he.expect(
+        vec![(Some(in_connection_result_negative(Id::from(3))), None)],
         now,
     );
 }
@@ -442,25 +559,104 @@ fn multiple_ips_per_record() {
     );
 }
 
+/// On a single-stack network, the state machine should skip querying the
+/// disabled address family. IPv4-only skips AAAA, IPv6-only skips A.
 #[test]
-fn dns_failed() {
-    let (now, mut he) = setup();
+fn single_stack_skips_disabled_address_family() {
+    struct Case {
+        ip: IpPreference,
+        expected_dns_query: Output,
+        dns_response: Input,
+        expected_connection: Output,
+    }
 
-    he.expect(
-        vec![
-            (None, Some(out_send_dns_https(Id::from(0)))),
-            (None, Some(out_send_dns_aaaa(Id::from(1)))),
-            (None, Some(out_send_dns_a(Id::from(2)))),
-            (
-                Some(in_dns_https_negative(Id::from(0))),
-                Some(out_resolution_delay()),
-            ),
-            (
-                Some(in_dns_aaaa_negative(Id::from(1))),
-                Some(out_resolution_delay()),
-            ),
-            (Some(in_dns_a_negative(Id::from(2))), Some(Output::Failed)),
-        ],
-        now,
-    );
+    let cases = vec![
+        Case {
+            ip: IpPreference::Ipv4Only,
+            expected_dns_query: out_send_dns_a(Id::from(1)),
+            dns_response: in_dns_a_positive(Id::from(1)),
+            expected_connection: out_attempt_v4_h1_h2(Id::from(2)),
+        },
+        Case {
+            ip: IpPreference::Ipv6Only,
+            expected_dns_query: out_send_dns_aaaa(Id::from(1)),
+            dns_response: in_dns_aaaa_positive(Id::from(1)),
+            expected_connection: out_attempt_v6_h1_h2(Id::from(2)),
+        },
+    ];
+
+    for case in cases {
+        let (now, mut he) = setup_with_config(NetworkConfig {
+            ip: case.ip,
+            ..NetworkConfig::default()
+        });
+
+        he.expect(
+            vec![
+                (None, Some(out_send_dns_https(Id::from(0)))),
+                // Should skip the disabled address family query.
+                (None, Some(case.expected_dns_query)),
+                (
+                    Some(in_dns_https_negative(Id::from(0))),
+                    Some(out_resolution_delay()),
+                ),
+                (Some(case.dns_response), Some(case.expected_connection)),
+            ],
+            now,
+        );
+    }
+}
+
+/// On a single-stack network, target-name follow-up queries must also skip
+/// the disabled address family.
+///
+/// <https://github.com/mozilla/happy-eyeballs/issues/38>
+#[test]
+fn single_stack_target_name_skips_disabled_address_family() {
+    struct Case {
+        ip: IpPreference,
+        /// The only address-family query sent for the origin domain.
+        origin_dns_query: Output,
+        /// The only address-family query sent for the target name.
+        target_name_dns_query: Output,
+    }
+
+    let cases = vec![
+        Case {
+            ip: IpPreference::Ipv6Only,
+            origin_dns_query: out_send_dns_aaaa(Id::from(1)),
+            target_name_dns_query: out_send_dns_svc1(Id::from(2)),
+        },
+        Case {
+            ip: IpPreference::Ipv4Only,
+            origin_dns_query: out_send_dns_a(Id::from(1)),
+            target_name_dns_query: Output::SendDnsQuery {
+                id: Id::from(2),
+                hostname: SVC1.into(),
+                record_type: DnsRecordType::A,
+            },
+        },
+    ];
+
+    for case in cases {
+        let (now, mut he) = setup_with_config(NetworkConfig {
+            ip: case.ip,
+            ..NetworkConfig::default()
+        });
+
+        he.expect(
+            vec![
+                (None, Some(out_send_dns_https(Id::from(0)))),
+                (None, Some(case.origin_dns_query)),
+                (
+                    Some(in_dns_https_positive_svc1(Id::from(0))),
+                    Some(case.target_name_dns_query),
+                ),
+                // No query for the disabled address family should appear,
+                // only the resolution delay.
+                (None, Some(out_resolution_delay())),
+            ],
+            now,
+        );
+    }
 }

@@ -50,7 +50,7 @@ be brought up to our design systems standards.
 ## Basic usage
 
 The source for `panel-list` can be found under
-[toolkit/content/widgets/panel-list/panel-list.js](https://searchfox.org/mozilla-central/source/toolkit/content/widgets/panel-list/panel-list.js).
+[toolkit/content/widgets/panel-list/panel-list.mjs](https://searchfox.org/mozilla-central/source/toolkit/content/widgets/panel-list/panel-list.mjs).
 You can find an examples of `panel-list` in use in the Firefox codebase in both
 [about:addons](https://searchfox.org/mozilla-central/rev/6f4bc07bd9eb07ed34774841ecf3b1f3678791e8/toolkit/mozapps/extensions/content/aboutaddons.html#209,252,280)
 and the
@@ -68,7 +68,10 @@ a template.
 In non-chrome documents it can be imported into `.html`/`.xhtml` files:
 
 ```html
-<script src="chrome://global/content/elements/panel-list.js"></script>
+<script
+  src="chrome://global/content/elements/panel-list.mjs"
+  type="module"
+></script>
 ```
 
 And used as follows:

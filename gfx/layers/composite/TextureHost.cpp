@@ -182,8 +182,9 @@ already_AddRefed<TextureHost> CreateDummyBufferTextureHost(
   aFlags &= ~TextureFlags::DEALLOCATE_CLIENT;
   aFlags |= TextureFlags::DUMMY_TEXTURE;
   UniquePtr<TextureData> textureData(BufferTextureData::Create(
-      gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, gfx::BackendType::SKIA,
-      aBackend, aFlags, TextureAllocationFlags::ALLOC_DEFAULT, nullptr));
+      gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, gfx::ColorSpace2::SRGB,
+      gfx::TransferFunction::SRGB, gfx::BackendType::SKIA, aBackend, aFlags,
+      TextureAllocationFlags::ALLOC_DEFAULT, nullptr));
   SurfaceDescriptor surfDesc;
   textureData->Serialize(surfDesc);
   const SurfaceDescriptorBuffer& bufferDesc =
@@ -467,7 +468,15 @@ BufferTextureHost::BufferTextureHost(const BufferDescriptor& aDesc,
       MOZ_ASSERT(gfx::IntRect(gfx::IntPoint(), ycbcr.ySize())
                      .Contains(ycbcr.display()));
       mSize = ycbcr.display().Size();
-      mFormat = gfx::SurfaceFormat::YUV420;
+      if (ycbcr.colorDepth() == gfx::ColorDepth::COLOR_8) {
+        mFormat = gfx::SurfaceFormat::YUV420;
+      } else if (ycbcr.colorDepth() == gfx::ColorDepth::COLOR_10) {
+        mFormat = gfx::SurfaceFormat::YUV420P10;
+      } else {
+        // we should probably do better for the other depths
+        // but UNKNOWN seems good enough.
+        mFormat = gfx::SurfaceFormat::UNKNOWN;
+      }
       break;
     }
     case BufferDescriptor::TRGBDescriptor: {
@@ -498,6 +507,10 @@ BufferTextureHost::~BufferTextureHost() = default;
 
 void BufferTextureHost::DeallocateDeviceData() {}
 
+bool BufferTextureHost::IsYCbCr() const {
+  return mDescriptor.type() == BufferDescriptor::TYCbCrDescriptor;
+}
+
 void BufferTextureHost::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
   MOZ_ASSERT(mExternalImageId.isSome());
@@ -521,7 +534,7 @@ void BufferTextureHost::CreateRenderTexture(
 }
 
 uint32_t BufferTextureHost::NumSubTextures() {
-  if (GetFormat() == gfx::SurfaceFormat::YUV420) {
+  if (IsYCbCr()) {
     return 3;
   }
 
@@ -545,7 +558,7 @@ void BufferTextureHost::PushResourceUpdates(
                                           wr::ImageBufferKind::TextureRect)
                                     : wr::ExternalImageType::Buffer();
 
-  if (GetFormat() != gfx::SurfaceFormat::YUV420) {
+  if (!IsYCbCr()) {
     if (aImageKeys.length() != 1) {
       MOZ_ASSERT_UNREACHABLE("unexpected keys lenght");
       return;
@@ -594,7 +607,7 @@ void BufferTextureHost::PushDisplayItems(wr::DisplayListBuilder& aBuilder,
       aFlags.contains(PushDisplayItemFlag::PREFER_COMPOSITOR_SURFACE);
   bool useExternalSurface =
       aFlags.contains(PushDisplayItemFlag::SUPPORTS_EXTERNAL_BUFFER_TEXTURES);
-  if (GetFormat() != gfx::SurfaceFormat::YUV420) {
+  if (!IsYCbCr()) {
     if (aImageKeys.length() != 1) {
       MOZ_ASSERT_UNREACHABLE("unexpected key length");
       return;
@@ -659,15 +672,23 @@ void BufferTextureHost::UnbindTextureSource() {
 gfx::SurfaceFormat BufferTextureHost::GetFormat() const { return mFormat; }
 
 gfx::YUVColorSpace BufferTextureHost::GetYUVColorSpace() const {
-  if (mFormat == gfx::SurfaceFormat::YUV420) {
+  if (IsYCbCr()) {
     const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
     return desc.yUVColorSpace();
   }
   return gfx::YUVColorSpace::Identity;
 }
 
+gfx::TransferFunction BufferTextureHost::GetTransferFunction() const {
+  if (IsYCbCr()) {
+    const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
+    return desc.transferFunction();
+  }
+  return gfx::TransferFunction::BT709;
+}
+
 gfx::ColorDepth BufferTextureHost::GetColorDepth() const {
-  if (mFormat == gfx::SurfaceFormat::YUV420) {
+  if (IsYCbCr()) {
     const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
     return desc.colorDepth();
   }
@@ -675,7 +696,7 @@ gfx::ColorDepth BufferTextureHost::GetColorDepth() const {
 }
 
 gfx::ColorRange BufferTextureHost::GetColorRange() const {
-  if (mFormat == gfx::SurfaceFormat::YUV420) {
+  if (IsYCbCr()) {
     const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
     return desc.colorRange();
   }
@@ -683,7 +704,7 @@ gfx::ColorRange BufferTextureHost::GetColorRange() const {
 }
 
 gfx::ChromaSubsampling BufferTextureHost::GetChromaSubsampling() const {
-  if (mFormat == gfx::SurfaceFormat::YUV420) {
+  if (IsYCbCr()) {
     const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
     return desc.chromaSubsampling();
   }
@@ -714,8 +735,35 @@ uint8_t* BufferTextureHost::GetCrChannel() {
   return nullptr;
 }
 
+uint16_t* BufferTextureHost::GetYChannel16() {
+  if (mFormat == gfx::SurfaceFormat::YUV420P10) {
+    const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
+    return ImageDataSerializer::GetYChannel(GetBuffer16(), desc);
+  }
+  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
+  return nullptr;
+}
+
+uint16_t* BufferTextureHost::GetCbChannel16() {
+  if (mFormat == gfx::SurfaceFormat::YUV420P10) {
+    const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
+    return ImageDataSerializer::GetCbChannel(GetBuffer16(), desc);
+  }
+  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
+  return nullptr;
+}
+
+uint16_t* BufferTextureHost::GetCrChannel16() {
+  if (mFormat == gfx::SurfaceFormat::YUV420P10) {
+    const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
+    return ImageDataSerializer::GetCrChannel(GetBuffer16(), desc);
+  }
+  MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
+  return nullptr;
+}
+
 int32_t BufferTextureHost::GetYStride() const {
-  if (mFormat == gfx::SurfaceFormat::YUV420) {
+  if (IsYCbCr()) {
     const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
     return desc.yStride();
   }
@@ -723,7 +771,7 @@ int32_t BufferTextureHost::GetYStride() const {
 }
 
 int32_t BufferTextureHost::GetCbCrStride() const {
-  if (mFormat == gfx::SurfaceFormat::YUV420) {
+  if (IsYCbCr()) {
     const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
     return desc.cbCrStride();
   }
@@ -740,7 +788,7 @@ already_AddRefed<gfx::DataSourceSurface> BufferTextureHost::GetAsSurface(
   if (!GetBuffer()) {
     return nullptr;
   }
-  if (mFormat == gfx::SurfaceFormat::YUV420) {
+  if (IsYCbCr()) {
     result = ImageDataSerializer::DataSourceSurfaceFromYCbCrDescriptor(
         GetBuffer(), mDescriptor.get_YCbCrDescriptor(), aSurface);
     if (NS_WARN_IF(!result)) {
@@ -861,6 +909,13 @@ uint8_t* ShmemTextureHost::GetBuffer() const {
   return nullptr;
 }
 
+uint16_t* ShmemTextureHost::GetBuffer16() const {
+  if (mShmemDeallocRunnable && mShmemDeallocRunnable->GetShmem()) {
+    return mShmemDeallocRunnable->GetShmem()->get<uint16_t>();
+  }
+  return nullptr;
+}
+
 size_t ShmemTextureHost::GetBufferSize() const {
   if (mShmemDeallocRunnable && mShmemDeallocRunnable->GetShmem()) {
     return mShmemDeallocRunnable->GetShmem()->Size<uint8_t>();
@@ -893,6 +948,9 @@ void MemoryTextureHost::DeallocateSharedData() {
 void MemoryTextureHost::ForgetSharedData() { mBuffer = nullptr; }
 
 uint8_t* MemoryTextureHost::GetBuffer() const { return mBuffer; }
+uint16_t* MemoryTextureHost::GetBuffer16() const {
+  return reinterpret_cast<uint16_t*>(mBuffer);
+}
 
 size_t MemoryTextureHost::GetBufferSize() const {
   // MemoryTextureHost just trusts that the buffer size is large enough to read

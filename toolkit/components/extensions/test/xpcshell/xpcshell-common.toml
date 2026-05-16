@@ -712,6 +712,7 @@ skip-if = [
 ["test_ext_storage_session_on_crash.js"]
 skip-if = [
   "isolated_process", # Bug 1709961
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
 
 ["test_ext_storage_sync.js"]
@@ -810,6 +811,10 @@ skip-if = [
   "os == 'android'", # Android: downloads.download goes through the embedder app instead of Gecko.
 ]
 
+["test_ext_webRequest_error_after_redirect.js"]
+
+["test_ext_webRequest_error_no_response.js"]
+
 ["test_ext_webRequest_filterTypes.js"]
 
 ["test_ext_webRequest_filter_urls.js"]
@@ -825,8 +830,6 @@ skip-if = [
 skip-if = [
   "os == 'android' && debug",
 ]
-
-["text_ext_webRequest_js_cache.js"]
 
 ["test_ext_webRequest_mergecsp.js"]
 skip-if = [
@@ -923,3 +926,5 @@ prefs = ["extensions.wpt.enabled=true"]
 skip-if = [
   "!nightly_build",
 ]
+
+["text_ext_webRequest_js_cache.js"]

@@ -1,5 +1,3 @@
-/* -*- mode: js; indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim: set ts=2 sw=2 sts=2 et tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -64,6 +62,15 @@ export class ContextMenuChild extends JSWindowActorChild {
             let blobURL = URL.createObjectURL(blob);
             resolve(blobURL);
           });
+        });
+      }
+
+      case "ContextMenu:Canvas:CopyImage": {
+        let target = lazy.ContentDOMReference.resolve(
+          message.data.targetIdentifier
+        );
+        return new Promise(resolve => {
+          target.toBlob(blob => resolve(blob.arrayBuffer()));
         });
       }
 
@@ -1106,16 +1113,22 @@ export class ContextMenuChild extends JSWindowActorChild {
         if (
           !context.onLink &&
           // Be consistent with what hrefAndLinkNodeForClickEvent
-          // does in browser.js
-          (this._isXULTextLinkLabel(elem) ||
-            (this.contentWindow.HTMLAnchorElement.isInstance(elem) &&
-              elem.href) ||
-            (this.contentWindow.SVGAElement.isInstance(elem) &&
-              (elem.href || elem.hasAttributeNS(XLINK_NS, "href"))) ||
+          // does in BrowserUtils.sys.msj
+          ((this.contentWindow.HTMLAnchorElement.isInstance(elem) &&
+            elem.href) ||
             (this.contentWindow.HTMLAreaElement.isInstance(elem) &&
               elem.href) ||
             this.contentWindow.HTMLLinkElement.isInstance(elem) ||
-            elem.getAttributeNS(XLINK_NS, "type") == "simple")
+            (this.contentWindow.SVGAElement.isInstance(elem) &&
+              (elem.href || elem.hasAttributeNS(XLINK_NS, "href"))) ||
+            (this.contentWindow.MathMLElement.isInstance(elem) &&
+              (elem.localName == "a" ||
+                !Services.prefs.getBoolPref(
+                  "mathml.href_link_on_non_anchor_element.disabled"
+                )) &&
+              elem.hasAttribute("href")) ||
+            elem.getAttributeNS(XLINK_NS, "type") == "simple" ||
+            this._isXULTextLinkLabel(elem))
         ) {
           // Target is a link or a descendant of a link.
           context.onLink = true;

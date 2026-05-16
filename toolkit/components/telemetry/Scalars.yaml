@@ -24,23 +24,6 @@ a11y:
     release_channel_collection: opt-out
     keyed: false
 
-  use_system_colors:
-    bug_numbers:
-      - 1835194
-    description: >
-      Bool tracking if the user has system colors enabled in firefox.
-    expires: never
-    kind: boolean
-    notification_emails:
-      - accessibility@mozilla.com
-      - mreschenberg@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - 'main'
-    release_channel_collection: opt-out
-    keyed: false
-
   HCM_background:
     bug_numbers:
       - 1694717
@@ -159,12 +142,13 @@ installation.firstSeen:
   failure_reason:
     bug_numbers:
       - 1811374
+      - 2026437
     description: >
       Only sent if unable to collect firstSeen data. Can have
       value "NotFoundError" if file not found or other values
       depending on the failure reason.
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: string
     notification_emails:
       - rtestard@mozilla.com
@@ -184,7 +168,7 @@ installation.firstSeen:
       The type of installer used to install Firefox.
       The value is one of "stub", "full", or "msix"
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: string
     notification_emails:
       - rtestard@mozilla.com
@@ -204,7 +188,7 @@ installation.firstSeen:
       The application version installed by the installer
       (not necessarily the current version)
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: string
     notification_emails:
       - rtestard@mozilla.com
@@ -223,7 +207,7 @@ installation.firstSeen:
     description: >
       Whether the installer is running from an elevated admin user
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -242,7 +226,7 @@ installation.firstSeen:
     description: >
       'Whether there was already an install in this location'
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -261,7 +245,7 @@ installation.firstSeen:
     description: >
       'Whether the top-level profile directory existed'
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -280,7 +264,7 @@ installation.firstSeen:
     description: >
       'Whether there was already any non-MSIX install on this system'
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -299,7 +283,7 @@ installation.firstSeen:
     description: >
       'Whether there was already any MSIX install on this system'
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -319,7 +303,7 @@ installation.firstSeen:
       (optional, present if installer_type is "full")
       Whether this was a silent install
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -339,7 +323,7 @@ installation.firstSeen:
       (optional, present if installer_type is "full")
       Whether this was an MSI install
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -359,7 +343,7 @@ installation.firstSeen:
       (optional, present if installer_type is "full")
       Whether the default path was used
     keyed: false
-    expires: "152"
+    expires: "164"
     kind: boolean
     notification_emails:
       - rtestard@mozilla.com
@@ -1973,108 +1957,6 @@ cookie.banners:
       - 'firefox'
     record_in_processes:
       - 'main'
-extensions.apis.dnr:
-  startup_cache_entries:
-    bug_numbers:
-      - 1803363
-      - 1850890
-      - 1881406
-      - 1946276
-      - 1984461
-    description: >
-      Counters for startup cache data hits or misses on initializating
-      DNR rules for extensions loaded on application startup.
-      The expected keys are 'hit' and 'miss'.
-      This probe is mirrored from a Glean metric with the same name.
-    keyed: true
-    expires: '155'
-    kind: uint
-    notification_emails:
-      - addons-dev-internal@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-  evaluate_rules_count_max:
-    bug_numbers:
-      - 1803363
-      - 1850890
-      - 1881406
-      - 1946276
-      - 1984461
-    description: >
-      Max amount of DNR rules being evaluated.
-    expires: '155'
-    kind: uint
-    notification_emails:
-      - addons-dev-internal@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-
-extensions.startupCache:
-  write_byteLength:
-    bug_numbers:
-      - 1767336
-      - 1892151
-      - 1928258
-      - 1958168
-      - 1994581
-    description: >
-      The amount of bytes writted into the Extensions StartupCache file.
-    expires: "154"
-    kind: uint
-    notification_emails:
-      - addons-dev-internal@mozilla.com
-      - lgreco@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-  read_errors:
-    bug_numbers:
-      - 1767336
-      - 1892151
-      - 1928258
-      - 1958168
-      - 1994581
-    description: >
-      The amount of times an unexpected error has been raised while
-      reading the Extensions StartupCache file
-    expires: "154"
-    kind: uint
-    keyed: true
-    notification_emails:
-      - addons-dev-internal@mozilla.com
-      - lgreco@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-  load_time:
-    bug_numbers:
-      - 1767336
-      - 1912170
-      - 1958168
-      - 1994581
-    description: >
-      Time to load and deserialize the extensions startupCache data.
-      This scalar is mirroring the never expiring Glean metric named
-      extensions.startup_cache_load_time, which is defined in
-      toolkit/components/extensions/metrics.yaml.
-      Unlike the related glean metric, this scalar has an expiring date,
-      set as a deadline to consider removing the mirrored scalar in
-      favor to just use the Glean metric).
-    expires: "154"
-    kind: uint
-    notification_emails:
-      - addons-dev-internal@mozilla.com
-      - lgreco@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
 
 security:
   https_only_mode_enabled:
@@ -2830,37 +2712,6 @@ os.environment:
     release_channel_collection: opt-out
     products:
       - firefox
-    record_in_processes:
-      - main
-
-pictureinpicture:
-  most_concurrent_players:
-    bug_numbers:
-      - 1677107
-      - 1706843
-      - 1736690
-    description:
-      The most concurrent Picture-in-Picture players the user had open at any one time.
-    expires: "never"
-    kind: uint
-    notification_emails:
-      - mconley@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-  toggle_enabled:
-    bug_numbers:
-      - 1639774
-    description: Whether the user has Picture-in-Picture enabled.
-    expires: "never"
-    kind: boolean
-    notification_emails:
-      - mconley@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
     record_in_processes:
       - main
 
@@ -5628,64 +5479,6 @@ networking:
     notification_emails:
       - necko@mozilla.com
       - vgosu@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-
-blocklist:
-  mlbf_source:
-    bug_numbers:
-      - 1662857
-      - 1730037
-      - 1763529
-      - 1811159
-      - 1861296
-      - 1912167
-    description: >
-      The source of the RemoteSettings attachment that holds the hard-blocks bloom filter.
-      Possible values are "dump_match", "cache_match", "remote_match", "dump_fallback", "cache_fallback", "unknown".
-      "dump_match", "cache_match" and "remote_match" are expected known-good values, and means that the loaded
-      bloomfilter matches the blocklist record in the RemoteSettings collection. The prefix denotes the immediate
-      source of the loaded data: "dump" means packaged with the application, "remote" means a freshly downloaded
-      bloomfilter, "cache" means a previously downloaded bloomfilter.
-      "dump_fallback" and "cache_fallback" means that the last known bloomfilter was used, despite it not matching
-      the latest record in the RemoteSettings collection. In this case the outdated bloomfilter is used as a fallback
-      (e.g. because the latest version cannot be downloaded).
-      "unknown" means that the bloomfilter cannot be loaded at all. This can happen if the blocklist is disabled
-      via preferences or enterprise policies.
-    expires: never
-    kind: string
-    release_channel_collection: opt-out
-    notification_emails:
-      - addons-dev-internal@mozilla.com
-      - rwu@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - main
-
-  mlbf_softblocks_source:
-    bug_numbers:
-      - 1917859
-    description: >
-      The source of the RemoteSettings attachment that holds the soft-blocks bloom filter.
-      Possible values are "dump_match", "cache_match", "remote_match", "dump_fallback", "cache_fallback", "unknown".
-      "dump_match", "cache_match" and "remote_match" are expected known-good values, and means that the loaded
-      bloomfilter matches the blocklist record in the RemoteSettings collection. The prefix denotes the immediate
-      source of the loaded data: "dump" means packaged with the application, "remote" means a freshly downloaded
-      bloomfilter, "cache" means a previously downloaded bloomfilter.
-      "dump_fallback" and "cache_fallback" means that the last known bloomfilter was used, despite it not matching
-      the latest record in the RemoteSettings collection. In this case the outdated bloomfilter is used as a fallback
-      (e.g. because the latest version cannot be downloaded).
-      "unknown" means that the bloomfilter cannot be loaded at all. This can happen if the blocklist is disabled
-      via preferences or enterprise policies.
-    expires: never
-    kind: string
-    release_channel_collection: opt-out
-    notification_emails:
-      - addons-dev-internal@mozilla.com
-      - rwu@mozilla.com
     products:
       - 'firefox'
     record_in_processes:

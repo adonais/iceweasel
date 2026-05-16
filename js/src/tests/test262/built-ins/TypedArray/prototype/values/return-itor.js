@@ -33,6 +33,6 @@ testWithTypedArrayConstructors(function(TA) {
   next = itor.next();
   assert.sameValue(next.value, undefined);
   assert.sameValue(next.done, true);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

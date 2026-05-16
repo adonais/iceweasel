@@ -69,6 +69,11 @@ void HTMLSlotElement::UnbindFromTree(UnbindContext& aContext) {
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
+  if (!HasValidDir() && oldContainingShadow) {
+    // Slot might've provided host directionality to dir=auto ancestors
+    ResetDirectionSetBySlotHost(this, aContext, oldContainingShadow);
+  }
+
   if (oldContainingShadow && !GetContainingShadow()) {
     oldContainingShadow->RemoveSlot(this);
   }

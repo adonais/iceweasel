@@ -179,9 +179,6 @@ pref("browser.triple_click_selects_paragraph", true);
 // Disable support for MathML
 pref("mathml.disabled",    false);
 
-// Enable scale transform for stretchy MathML operators. See bug 414277.
-pref("mathml.scale_stretchy_operators.enabled", true);
-
 // We'll throttle the download if the download rate is throttle-factor times
 // the estimated playback rate, AND we satisfy the cache readahead_limit
 // above. The estimated playback rate is time_duration/length_in_bytes.
@@ -340,7 +337,6 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   // third_party/libwebrtc/modules/audio_processing/include/audio_processing.h
   pref("media.getusermedia.audio.processing.aec.enabled", true);
   pref("media.getusermedia.audio.processing.aec", 1); // kModerateSuppression
-  pref("media.getusermedia.audio.processing.aec.mobile", false);
   pref("media.getusermedia.audio.processing.noise.enabled", true);
   pref("media.getusermedia.audio.processing.noise", 2); // kHigh
   pref("media.getusermedia.audio.processing.agc.enabled", true);
@@ -3030,8 +3026,10 @@ pref("signon.signupDetection.confidenceThreshold",     "0.75");
 
 #ifdef NIGHTLY_BUILD
   pref("signon.rustMirror.enabled", true);
+  pref("signon.rustMirror.collectFailedOrigins", true);
 #else
   pref("signon.rustMirror.enabled", false);
+  pref("signon.rustMirror.collectFailedOrigins", false);
 #endif
 
 // Satchel (Form Manager) prefs
@@ -3197,6 +3195,7 @@ pref("dom.webnotifications.requireinteraction.count", 3);
 pref("full-screen-api.transition.timeout", 1000);
 // time for the warning box stays on the screen before sliding out, unit: ms
 pref("full-screen-api.warning.timeout", 3000);
+pref("full-screen-api.keyboardlock-warning.timeout", 4000);
 // delay for the warning box to show when pointer stays on the top, unit: ms
 pref("full-screen-api.warning.delay", 500);
 
@@ -3486,28 +3485,6 @@ pref("media.gmp-manager.allowLocalSources", true);
 
 // Update service URL for GMP install/updates:
 pref("media.gmp-manager.url", "https://aus5.mozilla.org/update/3/GMP/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
-
-// The |media.gmp-manager.certs.| preference branch contains branches that are
-// sequentially numbered starting at 1 that contain attribute name / value
-// pairs for the certificate used by the server that hosts the update xml file
-// as specified in the |media.gmp-manager.url| preference. When these preferences are
-// present the following conditions apply for a successful update check:
-// 1. the uri scheme must be https
-// 2. the preference name must exist as an attribute name on the certificate and
-//    the value for the name must be the same as the value for the attribute name
-//    on the certificate.
-// If these conditions aren't met it will be treated the same as when there is
-// no update available. This validation will not be performed when the
-// |media.gmp-manager.url.override| user preference has been set for testing updates or
-// when the |media.gmp-manager.cert.checkAttributes| preference is set to false.
-// Also, the |media.gmp-manager.url.override| preference should ONLY be used for testing.
-// IMPORTANT! app.update.certs.* prefs should also be updated if these
-// are updated.
-pref("media.gmp-manager.cert.checkAttributes", true);
-pref("media.gmp-manager.certs.1.issuerName", "CN=DigiCert SHA2 Secure Server CA,O=DigiCert Inc,C=US");
-pref("media.gmp-manager.certs.1.commonName", "aus5.mozilla.org");
-pref("media.gmp-manager.certs.2.issuerName", "CN=thawte SSL CA - G2,O=\"thawte, Inc.\",C=US");
-pref("media.gmp-manager.certs.2.commonName", "aus5.mozilla.org");
 
 // Whether or not to perform reader mode article parsing on page load.
 // If this pref is disabled, we will never show a reader mode icon in the toolbar.
@@ -4035,7 +4012,7 @@ pref("extensions.formautofill.addresses.capture.enabled", true);
 #endif
 pref("extensions.formautofill.addresses.ignoreAutocompleteOff", true);
 // Supported countries need to follow ISO 3166-1 to align with "browser.search.region"
-pref("extensions.formautofill.addresses.supportedCountries", "US,CA,GB,FR,DE,BR,ES,JP,AT,IN,IT,PL,AU");
+pref("extensions.formautofill.addresses.supportedCountries", "US,CA,GB,FR,DE,BR,ES,JP,AT,IN,IT,PL,AU,NL");
 pref("extensions.formautofill.creditCards.supported", "on");
 pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);

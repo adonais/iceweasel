@@ -191,6 +191,11 @@ if(NOT BUILD_SHARED_LIBS)
     add_to_libaom_test_srcs(AOM_UNIT_TEST_COMMON_INTRIN_AVX2)
   endif()
 
+  if(CONFIG_MULTITHREAD)
+    list(APPEND AOM_UNIT_TEST_DECODER_SOURCES
+                "${AOM_ROOT}/test/grain_synthesis_race_test.cc")
+  endif()
+
   list(APPEND AOM_UNIT_TEST_ENCODER_SOURCES
               "${AOM_ROOT}/test/arf_freq_test.cc"
               "${AOM_ROOT}/test/av1_convolve_test.cc"
@@ -426,6 +431,8 @@ if(ENABLE_TESTS)
     aom_gtest STATIC
     "${AOM_ROOT}/third_party/googletest/src/googletest/src/gtest-all.cc")
   set_property(TARGET aom_gtest PROPERTY FOLDER ${AOM_IDE_TEST_FOLDER})
+  # Starting from the 1.17.0 release, GoogleTest requires at least C++17.
+  target_compile_features(aom_gtest PUBLIC cxx_std_17)
   # There are -Wundef warnings in the gtest headers. Tell the compiler to treat
   # the gtest include directories as system include directories and suppress
   # compiler warnings in the gtest headers.

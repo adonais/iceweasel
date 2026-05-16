@@ -29,7 +29,7 @@ struct BestOverlap {
 };
 
 static const size_t DottedCornerCacheSize = 256;
-MOZ_RUNINIT nsTHashMap<FourFloatsHashKey, BestOverlap> DottedCornerCache;
+constinit nsTHashMap<FourFloatsHashKey, BestOverlap> DottedCornerCache;
 
 DottedCornerFinder::DottedCornerFinder(const Bezier& aOuterBezier,
                                        const Bezier& aInnerBezier,

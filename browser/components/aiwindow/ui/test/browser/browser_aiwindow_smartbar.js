@@ -18,6 +18,40 @@ add_setup(async function () {
       ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
     ],
   });
+
+  const fakeIntentEngine = {
+    run({ args: [[query]] }) {
+      const searchKeywords = ["search", "find", "look up"];
+      const navigateKeywords = ["https://", "www.", ".com"];
+      const formattedPrompt = query.toLowerCase();
+
+      const isSearch = searchKeywords.some(keyword =>
+        formattedPrompt.includes(keyword)
+      );
+      const isNavigate = navigateKeywords.some(keyword =>
+        formattedPrompt.includes(keyword)
+      );
+
+      if (isNavigate) {
+        return [
+          { label: "navigate", score: 0.95 },
+          { label: "chat", score: 0.05 },
+        ];
+      }
+      if (isSearch) {
+        return [
+          { label: "search", score: 0.95 },
+          { label: "chat", score: 0.05 },
+        ];
+      }
+      return [
+        { label: "chat", score: 0.95 },
+        { label: "search", score: 0.05 },
+      ];
+    },
+  };
+
+  gIntentEngineStub.resolves(fakeIntentEngine);
 });
 
 /**
@@ -48,35 +82,6 @@ async function dispatchSmartbarCommit(browser, value, action) {
   });
 }
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.suggest.enabled", false]],
-  });
-
-  const fakeIntentEngine = {
-    run({ args: [[query]] }) {
-      const searchKeywords = ["search", "hello"];
-      const formattedPrompt = query.toLowerCase();
-      const isSearch = searchKeywords.some(keyword =>
-        formattedPrompt.includes(keyword)
-      );
-
-      if (isSearch) {
-        return [
-          { label: "search", score: 0.95 },
-          { label: "chat", score: 0.05 },
-        ];
-      }
-      return [
-        { label: "chat", score: 0.95 },
-        { label: "search", score: 0.05 },
-      ];
-    },
-  };
-
-  gIntentEngineStub.resolves(fakeIntentEngine);
-});
-
 add_task(async function test_smartbar_submit_chat() {
   const sb = this.sinon.createSandbox();
 
@@ -90,10 +95,8 @@ add_task(async function test_smartbar_submit_chat() {
     const browser = win.gBrowser.selectedBrowser;
 
     await dispatchSmartbarCommit(browser, "Test prompt", "chat");
-    await TestUtils.waitForTick();
-
-    Assert.ok(
-      fetchWithHistoryStub.calledOnce,
+    await TestUtils.waitForCondition(
+      () => fetchWithHistoryStub.calledOnce,
       "Should call fetchWithHistory once"
     );
 
@@ -127,15 +130,8 @@ add_task(async function test_smartbar_action_navigate() {
       "https://example.com/"
     );
 
-    await SpecialPowers.spawn(browser, [], async () => {
-      const aiWindowElement = content.document.querySelector("ai-window");
-      const smartbar = aiWindowElement.shadowRoot.querySelector(
-        "#ai-window-smartbar"
-      );
-      smartbar.value = "https://example.com/";
-      smartbar.smartbarAction = "navigate";
-      smartbar.handleNavigation({});
-    });
+    await typeInSmartbar(browser, "https://example.com/");
+    await submitSmartbar(browser);
 
     await loaded;
 
@@ -162,17 +158,9 @@ add_task(async function test_smartbar_explicit_navigate_action() {
 
   const testURL = "https://example.org/";
   const loaded = BrowserTestUtils.browserLoaded(browser, false, testURL);
-  await SpecialPowers.spawn(browser, [testURL], async url => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
-    );
 
-    smartbar.value = url;
-    smartbar.smartbarAction = "navigate";
-    smartbar.smartbarActionIsUserInitiated = true;
-    smartbar.handleNavigation({});
-  });
+  await typeInSmartbar(browser, testURL);
+  await selectExplicitSmartbarAction(browser, "navigate");
 
   await loaded;
   Assert.equal(
@@ -188,46 +176,20 @@ add_task(async function test_smartbar_explicit_search_action() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  const searchQuery = "Test";
-  const searchResult = await SpecialPowers.spawn(
-    browser,
-    [searchQuery],
-    async query => {
-      const aiWindowElement = content.document.querySelector("ai-window");
-      const smartbar = await ContentTaskUtils.waitForCondition(
-        () => aiWindowElement.shadowRoot.querySelector("#ai-window-smartbar"),
-        "Wait for Smartbar to be rendered"
-      );
+  const searchQuery = "tell me about cats";
 
-      let loadURLCalled = false;
-      let loadedURL = null;
-      // TODO (Bug 2016696): Ideally, we would use Sinon here to stub `_loadURL`.
-      // I did not have success getting it to work with the Smartbar inside of
-      // `SpecialPowers.spawn` here.
-      smartbar._loadURL = url => {
-        loadURLCalled = true;
-        loadedURL = url;
-      };
+  await stubLoadURL(browser, { captureURL: true });
+  await typeInSmartbar(browser, searchQuery);
+  await selectExplicitSmartbarAction(browser, "search");
 
-      smartbar.value = query;
-      smartbar.smartbarAction = "search";
-      smartbar.smartbarActionIsUserInitiated = true;
-      smartbar.handleNavigation({});
-
-      return {
-        loadURLCalled,
-        loadedURL,
-      };
-    }
-  );
-
+  const searchResult = await getStubLoadURLResult(browser);
   Assert.ok(
-    searchResult.loadURLCalled,
+    searchResult.called,
     "_loadURL should get called for explicit search action"
   );
   Assert.ok(
-    searchResult.loadedURL.includes(searchQuery),
-    `Search URL should contain the query: ${searchResult.loadedURL}`
+    searchResult.url.includes("cats"),
+    `Search URL should contain the query: ${searchResult.url}`
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -254,94 +216,6 @@ add_task(async function test_smartbar_empty_submit() {
   }
 });
 
-add_task(async function test_smartbar_cta_default_search_engine_label() {
-  const win = await openAIWindow();
-  const browser = win.gBrowser.selectedBrowser;
-
-  const defaultSearchEngineInfo = await SpecialPowers.spawn(
-    browser,
-    [],
-    async () => {
-      const aiWindowElement = content.document.querySelector("ai-window");
-      const smartbar = aiWindowElement.shadowRoot.querySelector(
-        "#ai-window-smartbar"
-      );
-      const inputCta = smartbar.querySelector("input-cta");
-      await ContentTaskUtils.waitForMutationCondition(
-        inputCta,
-        { attributes: true, subtree: true },
-        () => inputCta.searchEngineInfo.name
-      );
-      const searchEngineName = inputCta.searchEngineInfo.name;
-      inputCta.action = "search";
-      await inputCta.updateComplete;
-      const searchLabel = await content.document.l10n.formatValue(
-        "aiwindow-input-cta-menu-label-search",
-        { searchEngineName }
-      );
-
-      return {
-        name: searchEngineName,
-        hasIcon: !!inputCta.searchEngineInfo.icon,
-        searchLabel,
-      };
-    }
-  );
-
-  Assert.ok(defaultSearchEngineInfo.name, "Search engine name should be set");
-  Assert.ok(
-    defaultSearchEngineInfo.hasIcon,
-    "Search engine icon should be set"
-  );
-  Assert.equal(
-    defaultSearchEngineInfo.searchLabel,
-    `Search with ${defaultSearchEngineInfo.name}`,
-    `Search label should include engine name: [${defaultSearchEngineInfo.searchLabel}]`
-  );
-
-  await BrowserTestUtils.closeWindow(win);
-});
-
-add_task(async function test_smartbar_cta_intent() {
-  const win = await openAIWindow();
-  const browser = win.gBrowser.selectedBrowser;
-
-  await SpecialPowers.spawn(browser, [], async () => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
-    );
-    const inputCta = smartbar.querySelector("input-cta");
-    const TEST_QUERIES = [
-      { query: "Search for weather", expectedAction: "search" },
-      { query: "Hello, how are you?", expectedAction: "chat" },
-      { query: "mozilla.com", expectedAction: "navigate" },
-    ];
-    for (const { query, expectedAction } of TEST_QUERIES) {
-      smartbar.focus();
-
-      info("Waiting for action to update to " + expectedAction);
-      let mutate = ContentTaskUtils.waitForMutationCondition(
-        inputCta,
-        { attributes: true, subtree: true },
-        () => inputCta.action == expectedAction
-      );
-      EventUtils.sendString(query, content);
-      info("Backspace the whole string to reset the state for the next query.");
-      smartbar.setSelectionRange(0, query.length);
-      mutate = ContentTaskUtils.waitForMutationCondition(
-        inputCta,
-        { attributes: true, subtree: true },
-        () => inputCta.action == ""
-      );
-      EventUtils.sendKey("BACK_SPACE", content);
-      await mutate;
-    }
-  });
-
-  await BrowserTestUtils.closeWindow(win);
-});
-
 add_task(
   async function test_smartbar_shows_suggestions_on_input_below_in_fullpage() {
     const win = await openAIWindow();
@@ -358,37 +232,12 @@ add_task(
 
 add_task(
   async function test_smartbar_shows_suggestions_on_input_above_in_sidebar() {
-    const win = await openAIWindow();
-    AIWindowUI.toggleSidebar(win);
-    const browser = win.document.getElementById("ai-window-browser");
+    const { win, sidebarBrowser } = await openAIWindowWithSidebar();
 
-    await BrowserTestUtils.waitForCondition(
-      () => browser.contentDocument.querySelector("ai-window"),
-      "Sidebar ai-window should be loaded"
+    await promiseSmartbarSuggestionsOpen(sidebarBrowser, () =>
+      typeInSmartbar(sidebarBrowser, "test")
     );
-
-    const sidebarAIWindow = browser.contentDocument.querySelector("ai-window");
-    await BrowserTestUtils.waitForCondition(
-      () => sidebarAIWindow.shadowRoot?.querySelector("#ai-window-smartbar"),
-      "Sidebar smartbar should be rendered"
-    );
-
-    const smartbar = sidebarAIWindow.shadowRoot.querySelector(
-      "#ai-window-smartbar"
-    );
-
-    await promiseSmartbarSuggestionsOpen(browser, async () => {
-      smartbar.value = "test";
-      smartbar.startQuery({ searchString: "test" });
-      await smartbar.lastQueryContextPromise;
-    });
-
-    Assert.ok(smartbar.view.isOpen, "Suggestions view should be open");
-    Assert.equal(
-      smartbar.getAttribute("suggestions-position"),
-      "top",
-      "Suggestions position should be: top"
-    );
+    await assertSmartbarSuggestionsVisible(sidebarBrowser, true, "top");
 
     await BrowserTestUtils.closeWindow(win);
   }
@@ -564,20 +413,15 @@ add_task(async function test_smartbar_cleared_after_search_action() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  const searchQuery = "Test";
-  const aiWindowElement =
-    browser.contentWindow.document.querySelector("ai-window");
-  const smartbar = aiWindowElement.shadowRoot.querySelector(
-    "#ai-window-smartbar"
-  );
+  const searchQuery = "search for cats";
 
-  smartbar.value = searchQuery;
-  Assert.equal(smartbar.value, searchQuery, "Smartbar should have value");
-  smartbar.smartbarAction = "search";
-  smartbar.smartbarActionIsUserInitiated = true;
-  smartbar.handleNavigation({});
+  await stubLoadURL(browser);
+  await typeInSmartbar(browser, searchQuery);
+  await waitForSmartbarAction(browser, "search");
+  await assertSmartbarValue(browser, searchQuery, "Smartbar should have value");
 
-  Assert.equal(smartbar.value, "", "Smartbar should be cleared");
+  await submitSmartbar(browser, { useButton: true });
+  await assertSmartbarValue(browser, "", "Smartbar should be cleared");
 
   await BrowserTestUtils.closeWindow(win);
 });
@@ -587,18 +431,14 @@ add_task(async function test_smartbar_cleared_after_navigate_action() {
   const browser = win.gBrowser.selectedBrowser;
 
   const testURL = "https://example.org/";
-  const aiWindowElement =
-    browser.contentWindow.document.querySelector("ai-window");
-  const smartbar = aiWindowElement.shadowRoot.querySelector(
-    "#ai-window-smartbar"
-  );
-  smartbar.value = testURL;
-  Assert.equal(smartbar.value, testURL, "Smartbar should have value");
-  smartbar.smartbarAction = "navigate";
-  smartbar.smartbarActionIsUserInitiated = true;
-  smartbar.handleNavigation({});
 
-  Assert.equal(smartbar.value, "", "Smartbar should be cleared");
+  await stubLoadURL(browser);
+  await typeInSmartbar(browser, testURL);
+  await waitForSmartbarAction(browser, "navigate");
+  await assertSmartbarValue(browser, testURL, "Smartbar should have value");
+
+  await submitSmartbar(browser);
+  await assertSmartbarValue(browser, "", "Smartbar should be cleared");
 
   await BrowserTestUtils.closeWindow(win);
 });
@@ -797,3 +637,61 @@ add_task(
     }
   }
 );
+
+add_task(async function test_sidebar_element_order() {
+  const { win, sidebarBrowser } = await openAIWindowWithSidebar();
+
+  await SpecialPowers.spawn(sidebarBrowser, [], async () => {
+    const aiWindow = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("ai-window"),
+      "Wait for ai-window element"
+    );
+    const root = aiWindow.shadowRoot;
+
+    const prompts = await ContentTaskUtils.waitForCondition(
+      () => root.querySelector("smartwindow-prompts"),
+      "Wait for smartwindow-prompts"
+    );
+    const smartbarSlot = await ContentTaskUtils.waitForCondition(
+      () => root.querySelector("#smartbar-slot"),
+      "Wait for #smartbar-slot"
+    );
+
+    Assert.ok(
+      prompts.compareDocumentPosition(smartbarSlot) &
+        content.Node.DOCUMENT_POSITION_FOLLOWING,
+      "smartbar-slot should follow smartwindow-prompts in sidebar DOM order"
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_fullpage_element_order() {
+  const win = await openAIWindow();
+
+  await SpecialPowers.spawn(win.gBrowser.selectedBrowser, [], async () => {
+    const aiWindow = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("ai-window"),
+      "Wait for ai-window element"
+    );
+    const root = aiWindow.shadowRoot;
+
+    const prompts = await ContentTaskUtils.waitForCondition(
+      () => root.querySelector("smartwindow-prompts"),
+      "Wait for smartwindow-prompts"
+    );
+    const smartbarSlot = await ContentTaskUtils.waitForCondition(
+      () => root.querySelector("#smartbar-slot"),
+      "Wait for #smartbar-slot"
+    );
+
+    Assert.ok(
+      smartbarSlot.compareDocumentPosition(prompts) &
+        content.Node.DOCUMENT_POSITION_FOLLOWING,
+      "smartwindow-prompts should follow smartbar-slot in fullpage DOM order"
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+});

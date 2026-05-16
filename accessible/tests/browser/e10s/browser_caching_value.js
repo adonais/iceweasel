@@ -397,8 +397,10 @@ addAccessibleTask(
 
     // Expand the combobox dropdown.
     p = waitForEvent(EVENT_STATE_CHANGE, "ContentSelectDropdown");
+    let shownPromise = BrowserTestUtils.waitForSelectPopupShown(window);
     EventUtils.synthesizeKey("VK_SPACE");
     await p;
+    const selectPopup = await shownPromise;
 
     p = waitForEvents({
       expected: [
@@ -412,12 +414,21 @@ addAccessibleTask(
       ],
     });
 
-    // Press the up arrow to select the first option (drop-down expanded).
-    // Then, press Enter to confirm the selection and close the dropdown.
-    // We do both of these together to unify testing across platforms, since
-    // events are not entirely consistent on Windows vs. Linux + macOS.
-    EventUtils.synthesizeKey("VK_UP");
-    EventUtils.synthesizeKey("VK_RETURN");
+    if (
+      AppConstants.platform == "macosx" &&
+      Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
+      Services.prefs.getBoolPref("widget.macos.allow-native-select", false)
+    ) {
+      // Synthesized events are not available with native menus
+      selectPopup.activateItem(selectPopup.childNodes[0]);
+    } else {
+      // Press the up arrow to select the first option (drop-down expanded).
+      // Then, press Enter to confirm the selection and close the dropdown.
+      // We do both of these together to unify testing across platforms, since
+      // events are not entirely consistent on Windows vs. Linux + macOS.
+      EventUtils.synthesizeKey("VK_UP");
+      EventUtils.synthesizeKey("VK_RETURN");
+    }
     await p;
 
     is(

@@ -41,6 +41,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, () => {
     sample.toReversed();
   }, `array has a detached buffer`);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

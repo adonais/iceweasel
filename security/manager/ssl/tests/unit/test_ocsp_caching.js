@@ -388,14 +388,6 @@ function add_tests() {
 
   // This test makes sure that OCSP cache are isolated by partitionKey.
 
-  add_test(function () {
-    Services.prefs.setBoolPref(
-      "privacy.partition.network_state.ocsp_cache",
-      true
-    );
-    run_next_test();
-  });
-
   // A good OCSP response will be cached.
   add_ocsp_test(
     "ocsp-stapling-none.example.com",
@@ -430,7 +422,6 @@ function add_tests() {
 
   // Reset state
   add_test(function () {
-    Services.prefs.clearUserPref("privacy.partition.network_state.ocsp_cache");
     clearOCSPCache();
     run_next_test();
   });

@@ -50,9 +50,12 @@ export function resolveL10nArgs(l10nConfig, l10nArgValues) {
     hostname: l10nArgValues.hostname,
     path: l10nArgValues.filePath,
     date: Date.now(),
+    now: l10nArgValues.now ?? Date.now(),
     errorMessage: l10nArgValues.errorInfo?.errorMessage ?? "",
     validHosts: l10nArgValues.domainMismatchNames ?? "",
     mitm: l10nArgValues.mitmName ?? "",
+    responsestatus: l10nArgValues.errorInfo?.responseStatus ?? 0,
+    responsestatustext: l10nArgValues.errorInfo?.responseStatusText ?? "",
   };
 
   if (typeof l10nConfig.dataL10nId === "function") {
@@ -127,6 +130,24 @@ export function resolveAdvancedConfig(advancedConfig, l10nArgValues) {
   return resolved;
 }
 
+function resolveCustomNetError(customNetError, l10nArgValues) {
+  if (!customNetError) {
+    return customNetError;
+  }
+  const resolved = { ...customNetError };
+  if (typeof resolved.whatCanYouDoItems === "function") {
+    resolved.whatCanYouDoItems = resolved.whatCanYouDoItems(l10nArgValues);
+  }
+  if (customNetError.whatCanYouDoL10nArgs) {
+    const argsClone = {
+      dataL10nArgs: { ...customNetError.whatCanYouDoL10nArgs },
+    };
+    resolveL10nArgs(argsClone, l10nArgValues);
+    resolved.whatCanYouDoL10nArgs = argsClone.dataL10nArgs;
+  }
+  return resolved;
+}
+
 /**
  * Get a fully resolved error configuration with runtime context applied.
  *
@@ -136,26 +157,28 @@ export function resolveAdvancedConfig(advancedConfig, l10nArgValues) {
  */
 export function getResolvedErrorConfig(id, l10nArgValues) {
   const baseConfig = getErrorConfig(id);
+  if (!baseConfig) {
+    return {};
+  }
 
   const introContentHandler = Array.isArray(baseConfig.introContent)
     ? resolveManyL10nArgs
     : resolveL10nArgs;
-  return baseConfig
-    ? {
-        ...baseConfig,
-        introContent: introContentHandler(
-          baseConfig.introContent,
-          l10nArgValues
-        ),
-        shortDescription: resolveL10nArgs(
-          baseConfig.shortDescription,
-          l10nArgValues
-        ),
-        descriptionParts: resolveDescriptionParts(
-          baseConfig.descriptionParts,
-          l10nArgValues
-        ),
-        advanced: resolveAdvancedConfig(baseConfig.advanced, l10nArgValues),
-      }
-    : {};
+  return {
+    ...baseConfig,
+    introContent: introContentHandler(baseConfig.introContent, l10nArgValues),
+    shortDescription: resolveL10nArgs(
+      baseConfig.shortDescription,
+      l10nArgValues
+    ),
+    descriptionParts: resolveDescriptionParts(
+      baseConfig.descriptionParts,
+      l10nArgValues
+    ),
+    advanced: resolveAdvancedConfig(baseConfig.advanced, l10nArgValues),
+    customNetError: resolveCustomNetError(
+      baseConfig.customNetError,
+      l10nArgValues
+    ),
+  };
 }

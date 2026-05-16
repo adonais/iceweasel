@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { COLOR_SPACES } = ChromeUtils.importESModule(
+const { RECTANGULAR_COLOR_SPACES } = ChromeUtils.importESModule(
   "resource://devtools/client/shared/inplace-editor-utils/constants.mjs"
 );
 
@@ -33,7 +33,7 @@ export function getAutocompleteDataForColorFunction({
   // incomplete, we don't know which `color()` syntax we have yet.
   // We should provide the list of color spaces + "from"
   if (!tokensCount || (tokensCount === 1 && !isLastTokenComplete)) {
-    list = COLOR_SPACES.concat("from").sort();
+    list = RECTANGULAR_COLOR_SPACES.concat("from").sort();
   } else {
     const [firstToken] = functionTokens;
     if (firstToken.tokenType === "Ident" && firstToken.text === "from") {
@@ -48,7 +48,7 @@ export function getAutocompleteDataForColorFunction({
       ) {
         // we have relative syntax and the base the color, we need to show the list
         // of color spaces
-        list = Array.from(COLOR_SPACES);
+        list = Array.from(RECTANGULAR_COLOR_SPACES);
       } else {
         // there is more than 2 tokens, we shouldn't autocomplete
         // TODO: we could display `var()`, `calc()`, `attr()` (Bug 1900306)

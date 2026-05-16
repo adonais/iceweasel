@@ -23,10 +23,10 @@ interface AIFeaturesRuntime {
     ): Unit = onError(AIFeaturesError.UnsupportedError(UnsupportedOperationException(UNSUPPORTED_ERROR)))
 
     /**
-     * Enables or disables the specified AI feature.
+     * Enables or blocks the specified AI feature.
      *
      * @param featureId The identifier of the AI feature. May be found through [listFeatures].
-     * @param isEnabled True to enable the feature, false to disable it.
+     * @param isEnabled True to enable the feature, false to block it.
      * @param onSuccess Callback invoked on successful set.
      * @param onError Callback invoked if an issue occurred.
      */
@@ -38,14 +38,14 @@ interface AIFeaturesRuntime {
     ): Unit = onError(AIFeaturesError.UnsupportedError(UnsupportedOperationException(UNSUPPORTED_ERROR)))
 
     /**
-     * Resets the given AI feature to its default state.
+     * Makes the given AI feature available (resets to default state).
      *
-     * @param featureId The identifier of the AI feature to reset.
+     * @param featureId The identifier of the AI feature.
      * May be found through [listFeatures].
-     * @param onSuccess Callback invoked on successful reset.
+     * @param onSuccess Callback invoked on successful call.
      * @param onError Callback invoked if an issue occurred.
      */
-    fun resetFeature(
+    fun makeFeatureAvailable(
         featureId: String,
         onSuccess: () -> Unit,
         onError: (AIFeaturesError) -> Unit,

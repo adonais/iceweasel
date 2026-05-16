@@ -231,6 +231,13 @@ CacheEntry::CacheEntry(const nsACString& aStorageID, const nsACString& aURI,
 
 CacheEntry::~CacheEntry() { LOG(("CacheEntry::~CacheEntry [this=%p]", this)); }
 
+#ifdef NS_FREE_PERMANENT_DATA
+void CacheEntry::ClearCallbacks() {
+  mozilla::MutexAutoLock lock(mLock);
+  mCallbacks.Clear();
+}
+#endif
+
 char const* CacheEntry::StateString(uint32_t aState) {
   switch (aState) {
     case NOTLOADED:

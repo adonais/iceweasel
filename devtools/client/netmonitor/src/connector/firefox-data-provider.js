@@ -631,9 +631,14 @@ class FirefoxDataProvider {
         this.commands.resourceCommand.TYPES.NETWORK_EVENT_STACKTRACE
       )
     ) {
-      const requestInfo = this.stackTraceRequestInfoByActorID.get(actorID);
-      const { stacktrace } = await this.#getStackTraceFromWatcher(requestInfo);
-      this.stackTraceRequestInfoByActorID.delete(actorID);
+      let stacktrace = [];
+      const requestActorInfo = this.stackTraceRequestInfoByActorID.get(actorID);
+      if (requestActorInfo) {
+        const traceData =
+          await this.#getStackTraceFromWatcher(requestActorInfo);
+        stacktrace = traceData.stacktrace;
+        this.stackTraceRequestInfoByActorID.delete(actorID);
+      }
       response = { from: actor, stacktrace };
     } else {
       // We don't create fronts for NetworkEvent actors,
@@ -789,7 +794,7 @@ class FirefoxDataProvider {
       // We have to ensure passing mimeType as fetchResponseContent needs it from
       // updateRequest. It will convert the LongString in `response.content.text` to a
       // string.
-      mimeType: response.content.mimeType,
+      mimeType: response.content?.mimeType || "text/plain",
       responseContent: response,
     });
     this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_CONTENT, response);

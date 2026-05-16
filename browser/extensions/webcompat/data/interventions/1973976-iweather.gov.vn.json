@@ -1,0 +1,20 @@
+{
+  "label": "iweather.gov.vn",
+  "bugs": {
+    "1973976": {
+      "issue": "broken-layout",
+      "matches": ["*://iweather.gov.vn/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "pref_check": {
+        "layout.css.webkit-fill-available.enabled": false
+      },
+      "content_scripts": {
+        "css": ["bug1973976-iweather.gov.vn-fix-narrow-interface.css"]
+      }
+    }
+  ]
+}

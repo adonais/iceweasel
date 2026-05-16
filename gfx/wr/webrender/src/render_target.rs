@@ -24,10 +24,6 @@ use crate::tile_cache::{SliceId, TileCacheInstance};
 use crate::transform::TransformPalette;
 use crate::quad;
 use crate::prim_store::{PrimitiveInstance, PrimitiveStore, PrimitiveScratchBuffer};
-use crate::prim_store::gradient::{
-    FastLinearGradientInstance, LinearGradientInstance, RadialGradientInstance,
-    ConicGradientInstance,
-};
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilder};
 use crate::render_backend::DataStores;
 use crate::render_task::{RenderTaskKind, RenderTaskAddress};
@@ -174,10 +170,6 @@ pub struct RenderTarget {
     pub border_segments_complex: FrameVec<BorderInstance>,
     pub border_segments_solid: FrameVec<BorderInstance>,
     pub line_decorations: FrameVec<LineDecorationJob>,
-    pub fast_linear_gradients: FrameVec<FastLinearGradientInstance>,
-    pub linear_gradients: FrameVec<LinearGradientInstance>,
-    pub radial_gradients: FrameVec<RadialGradientInstance>,
-    pub conic_gradients: FrameVec<ConicGradientInstance>,
 
     pub clip_batcher: ClipBatcher,
 
@@ -240,6 +232,7 @@ impl RenderTarget {
                 FastHashMap::default(),
                 FastHashMap::default(),
                 FastHashMap::default(),
+                FastHashMap::default(),
             ],
             prim_instances_with_scissor: FastHashMap::default(),
             clip_masks: ClipMaskInstanceList::new(memory),
@@ -248,10 +241,6 @@ impl RenderTarget {
             border_segments_solid: memory.new_vec(),
             clears: memory.new_vec(),
             line_decorations: memory.new_vec(),
-            fast_linear_gradients: memory.new_vec(),
-            linear_gradients: memory.new_vec(),
-            radial_gradients: memory.new_vec(),
-            conic_gradients: memory.new_vec(),
         }
     }
 
@@ -543,18 +532,6 @@ impl RenderTarget {
                         self.border_segments_complex.push(instance);
                     }
                 }
-            }
-            RenderTaskKind::FastLinearGradient(ref task_info) => {
-                self.fast_linear_gradients.push(task_info.to_instance(&target_rect));
-            }
-            RenderTaskKind::LinearGradient(ref task_info) => {
-                self.linear_gradients.push(task_info.to_instance(&target_rect));
-            }
-            RenderTaskKind::RadialGradient(ref task_info) => {
-                self.radial_gradients.push(task_info.to_instance(&target_rect));
-            }
-            RenderTaskKind::ConicGradient(ref task_info) => {
-                self.conic_gradients.push(task_info.to_instance(&target_rect));
             }
             RenderTaskKind::Image(..) |
             RenderTaskKind::Cached(..) |

@@ -611,7 +611,8 @@ def classname_for_test(test):
         "java",
     )
     return (
-        os.path.normpath(test)
+        os.path
+        .normpath(test)
         .split(os.path.normpath(test_path))[-1]
         .removeprefix(os.path.sep)
         .replace(os.path.sep, ".")

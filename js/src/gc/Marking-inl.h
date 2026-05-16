@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -159,16 +157,6 @@ inline RelocationOverlay* RelocationOverlay::forwardCell(Cell* src, Cell* dst) {
   MOZ_ASSERT(!src->isForwarded());
   MOZ_ASSERT(!dst->isForwarded());
   return new (src) RelocationOverlay(dst);
-}
-
-inline bool IsAboutToBeFinalizedDuringMinorSweep(Cell** cellp) {
-  MOZ_ASSERT(JS::RuntimeHeapIsMinorCollecting());
-
-  if ((*cellp)->isTenured()) {
-    return false;
-  }
-
-  return !Nursery::getForwardedPointer(cellp);
 }
 
 // Special case pre-write barrier for strings used during rope flattening. This

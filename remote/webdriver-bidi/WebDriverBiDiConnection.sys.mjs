@@ -178,6 +178,8 @@ export class WebDriverBiDiConnection extends WebSocketConnection {
     super.onPacket(packet);
 
     const { id, method, params } = packet;
+
+    let errorMessage = "";
     const startTime = ChromeUtils.now();
 
     try {
@@ -256,6 +258,7 @@ export class WebDriverBiDiConnection extends WebSocketConnection {
         Services.obs.removeObserver(this, "quit-application-requested");
       }
     } catch (e) {
+      errorMessage = ` - Error: ${e.message}`;
       this.sendError(id, e);
     }
 
@@ -263,7 +266,7 @@ export class WebDriverBiDiConnection extends WebSocketConnection {
       ChromeUtils.addProfilerMarker(
         "BiDi: Command",
         { startTime, category: "Remote-Protocol" },
-        `${method} (${id})`
+        `${method} (${id})${errorMessage}`
       );
     }
   }

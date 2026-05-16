@@ -26,7 +26,6 @@ use crate::values::generics::length::{GenericLengthPercentageOrAuto, LengthPerce
     ToTyped,
 )]
 #[repr(C, u8)]
-#[typed_value(derive_fields)]
 pub enum GenericBackgroundSize<LengthPercent> {
     /// `<width> <height>`
     ExplicitSize {
@@ -34,7 +33,7 @@ pub enum GenericBackgroundSize<LengthPercent> {
         width: GenericLengthPercentageOrAuto<LengthPercent>,
         /// Explicit height.
         #[css(contextual_skip_if = "width_and_height_are_auto")]
-        #[typed_value(skip_if = "GenericLengthPercentageOrAuto::is_auto")]
+        #[typed(skip_if = "GenericLengthPercentageOrAuto::is_auto")]
         height: GenericLengthPercentageOrAuto<LengthPercent>,
     },
     /// `cover`
@@ -46,7 +45,10 @@ pub enum GenericBackgroundSize<LengthPercent> {
 }
 
 #[inline]
-fn width_and_height_are_auto<LengthPercent>(width: &GenericLengthPercentageOrAuto<LengthPercent>, height: &GenericLengthPercentageOrAuto<LengthPercent>) -> bool {
+fn width_and_height_are_auto<LengthPercent>(
+    width: &GenericLengthPercentageOrAuto<LengthPercent>,
+    height: &GenericLengthPercentageOrAuto<LengthPercent>,
+) -> bool {
     width.is_auto() && height.is_auto()
 }
 

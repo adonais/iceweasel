@@ -254,9 +254,21 @@ newtab-error-fallback-refresh-link = برای تلاش مجدد صفحه را ن
 
 newtab-custom-shortcuts-title = میانبرها
 newtab-custom-shortcuts-subtitle = وب‌سایت‌هایی که ذخیره یا بازدید می‌کنید
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = میانبرها
     .description = وب‌سایت‌هایی که ذخیره یا بازدید می‌کنید
+newtab-custom-shortcuts-nova =
+    .label = میانبرها
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } ردیف
+           *[other] { $num } ردیف
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -281,6 +293,8 @@ newtab-custom-settings = مدیریت تنظیمات بیشتر
 
 newtab-wallpaper-title = کاغذدیواری‌ها
 newtab-wallpaper-reset = بازگرداندن به تنظیمات اولیه
+newtab-wallpaper-toggle-title =
+    .label = کاغذدیواری‌ها
 newtab-wallpaper-light-red-panda = پاندای قرمز
 newtab-wallpaper-light-mountain = کوه سفید
 newtab-wallpaper-light-sky = آسمانی با ابرهای بنفش و صورتی

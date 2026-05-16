@@ -17,7 +17,6 @@
 #include <mach/mach_traps.h>
 #include <mach/task_info.h>
 #include <mach/task.h>
-#include <sstream>
 #include <string.h>
 #include <vector>
 

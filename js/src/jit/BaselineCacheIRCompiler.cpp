@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -459,7 +457,7 @@ bool BaselineCacheIRCompiler::emitGuardSpecificAtom(StringOperandId strId,
   // The pointers are not equal, so if the input string is also an atom it
   // must be a different string.
   masm.branchTest32(Assembler::NonZero, Address(str, JSString::offsetOfFlags()),
-                    Imm32(JSString::ATOM_BIT), failure->label());
+                    Imm32(StringFlags::ATOM_BIT), failure->label());
 
   masm.tryFastAtomize(str, scratch, scratch, &notCachedAtom);
   masm.branchPtr(Assembler::Equal, atomAddr, scratch, &done);
@@ -1389,7 +1387,7 @@ void BaselineCacheIRCompiler::emitAtomizeString(Register str, Register temp,
                                                 Label* failure) {
   Label isAtom, notCachedAtom;
   masm.branchTest32(Assembler::NonZero, Address(str, JSString::offsetOfFlags()),
-                    Imm32(JSString::ATOM_BIT), &isAtom);
+                    Imm32(StringFlags::ATOM_BIT), &isAtom);
   masm.tryFastAtomize(str, temp, str, &notCachedAtom);
   masm.jump(&isAtom);
   masm.bind(&notCachedAtom);
@@ -2172,6 +2170,15 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
     JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
     JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
     const char* name) {
+  gc::AutoMarkingLock lock(cx->zone(), icScript->markingLock());
+  return AttachBaselineCacheIRStubLocked(cx, writer, kind, outerScript,
+                                         icScript, stub, name, lock);
+}
+
+ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
+    JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
+    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
+    const char* name, const gc::AutoMarkingLock& lock) {
   // We shouldn't GC or report OOM (or any other exception) here.
   AutoAssertNoPendingException aanpe(cx);
   JS::AutoCheckCannotGC nogc;
@@ -2303,6 +2310,8 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
       break;
     case TrialInliningState::Inlined:
       stub->setTrialInliningState(TrialInliningState::Failure);
+      // Ensure we stop using the callee's trial inlining ICScript.
+      stub->discardStubs(cx->zone(), icEntry);
       icScript->removeInlinedChild(stub->pcOffset());
       break;
     case TrialInliningState::Failure:

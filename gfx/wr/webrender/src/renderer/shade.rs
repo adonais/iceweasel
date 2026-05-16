@@ -238,10 +238,6 @@ impl LazilyCompiledShader {
             let vertex_descriptor = match vertex_format {
                 VertexArrayKind::Primitive => &desc::PRIM_INSTANCES,
                 VertexArrayKind::LineDecoration => &desc::LINE,
-                VertexArrayKind::FastLinearGradient => &desc::FAST_LINEAR_GRADIENT,
-                VertexArrayKind::LinearGradient => &desc::LINEAR_GRADIENT,
-                VertexArrayKind::RadialGradient => &desc::RADIAL_GRADIENT,
-                VertexArrayKind::ConicGradient => &desc::CONIC_GRADIENT,
                 VertexArrayKind::Blur => &desc::BLUR,
                 VertexArrayKind::ClipRect => &desc::CLIP_RECT,
                 VertexArrayKind::ClipBoxShadow => &desc::CLIP_BOX_SHADOW,
@@ -593,10 +589,6 @@ pub struct Shaders {
     cs_border_solid: ShaderHandle,
     cs_scale: Vec<Option<ShaderHandle>>,
     cs_line_decoration: ShaderHandle,
-    cs_fast_linear_gradient: ShaderHandle,
-    cs_linear_gradient: ShaderHandle,
-    cs_radial_gradient: ShaderHandle,
-    cs_conic_gradient: ShaderHandle,
     cs_svg_filter_node: ShaderHandle,
 
     // Brush shaders
@@ -606,7 +598,6 @@ pub struct Shaders {
     brush_blend: BrushShader,
     brush_mix_blend: BrushShader,
     brush_yuv_image: Vec<Option<BrushShader>>,
-    brush_linear_gradient: BrushShader,
     brush_opacity: BrushShader,
     brush_opacity_aa: BrushShader,
 
@@ -631,6 +622,7 @@ pub struct Shaders {
     ps_quad_textured: ShaderHandle,
     ps_quad_repeat: ShaderHandle,
     ps_quad_gradient: ShaderHandle,
+    ps_quad_box_shadow: ShaderHandle,
     ps_mask: ShaderHandle,
     ps_mask_fast: ShaderHandle,
     ps_clear: ShaderHandle,
@@ -691,19 +683,6 @@ impl Shaders {
         let brush_mix_blend = BrushShader::new(
             "brush_mix_blend",
             &[],
-            &shader_list,
-            false /* advanced blend */,
-            false /* dual source */,
-            &mut loader,
-        )?;
-
-        let brush_linear_gradient = BrushShader::new(
-            "brush_linear_gradient",
-            if options.enable_dithering {
-               &[DITHERING_FEATURE]
-            } else {
-               &[]
-            },
             &shader_list,
             false /* advanced blend */,
             false /* dual source */,
@@ -855,6 +834,13 @@ impl Shaders {
             &shader_list,
         )?;
 
+        let ps_quad_box_shadow = loader.create_shader(
+            ShaderKind::Primitive,
+            "ps_quad_box_shadow",
+            &[],
+            &shader_list,
+        )?;
+
         let ps_split_composite = loader.create_shader(
             ShaderKind::Primitive,
             "ps_split_composite",
@@ -982,45 +968,6 @@ impl Shaders {
             &shader_list,
         )?;
 
-        let cs_fast_linear_gradient = loader.create_shader(
-            ShaderKind::Cache(VertexArrayKind::FastLinearGradient),
-            "cs_fast_linear_gradient",
-            &[],
-            &shader_list,
-        )?;
-
-        let cs_linear_gradient = loader.create_shader(
-            ShaderKind::Cache(VertexArrayKind::LinearGradient),
-            "cs_linear_gradient",
-            if options.enable_dithering {
-               &[DITHERING_FEATURE]
-            } else {
-               &[]
-            },
-            &shader_list,
-        )?;
-
-        let cs_radial_gradient = loader.create_shader(
-            ShaderKind::Cache(VertexArrayKind::RadialGradient),
-            "cs_radial_gradient",
-            if options.enable_dithering {
-               &[DITHERING_FEATURE]
-            } else {
-               &[]
-            },
-            &shader_list,
-        )?;
-
-        let cs_conic_gradient = loader.create_shader(
-            ShaderKind::Cache(VertexArrayKind::ConicGradient),
-            "cs_conic_gradient",
-            if options.enable_dithering {
-               &[DITHERING_FEATURE]
-            } else {
-               &[]
-            },
-            &shader_list,
-        )?;
 
         let cs_border_segment = loader.create_shader(
             ShaderKind::Cache(VertexArrayKind::Border),
@@ -1044,10 +991,6 @@ impl Shaders {
             cs_blur_rgba8,
             cs_border_segment,
             cs_line_decoration,
-            cs_fast_linear_gradient,
-            cs_linear_gradient,
-            cs_radial_gradient,
-            cs_conic_gradient,
             cs_border_solid,
             cs_scale,
             cs_svg_filter_node,
@@ -1057,7 +1000,6 @@ impl Shaders {
             brush_blend,
             brush_mix_blend,
             brush_yuv_image,
-            brush_linear_gradient,
             brush_opacity,
             brush_opacity_aa,
             cs_clip_rectangle_slow,
@@ -1068,6 +1010,7 @@ impl Shaders {
             ps_quad_textured,
             ps_quad_repeat,
             ps_quad_gradient,
+            ps_quad_box_shadow,
             ps_mask,
             ps_mask_fast,
             ps_split_composite,
@@ -1134,6 +1077,7 @@ impl Shaders {
             PatternKind::ColorOrTexture => self.ps_quad_textured,
             PatternKind::Gradient => self.ps_quad_gradient,
             PatternKind::Repeat => self.ps_quad_repeat,
+            PatternKind::BoxShadow => self.ps_quad_box_shadow,
             PatternKind::Mask => unreachable!(),
         };
         self.loader.get(shader_handle)
@@ -1166,6 +1110,9 @@ impl Shaders {
             }
             BatchKind::Quad(PatternKind::Repeat) => {
                 self.ps_quad_repeat
+            }
+            BatchKind::Quad(PatternKind::BoxShadow) => {
+                self.ps_quad_box_shadow
             }
             BatchKind::Quad(PatternKind::Mask) => {
                 unreachable!();
@@ -1203,27 +1150,6 @@ impl Shaders {
                     BrushBatchKind::MixBlend { .. } => {
                         &mut self.brush_mix_blend
                     }
-                    BrushBatchKind::LinearGradient => {
-                        // SWGL uses a native clip mask implementation that bypasses the shader.
-                        // Don't consider it in that case when deciding whether or not to use
-                        // an alpha-pass shader.
-                        if device.get_capabilities().uses_native_clip_mask {
-                            features.remove(BatchFeatures::CLIP_MASK);
-                        }
-                        // Gradient brushes can optimistically use the opaque shader even
-                        // with a blend mode if they don't require any features.
-                        if !features.intersects(
-                            BatchFeatures::ANTIALIASING
-                                | BatchFeatures::REPETITION
-                                | BatchFeatures::CLIP_MASK,
-                        ) {
-                            features.remove(BatchFeatures::ALPHA_PASS);
-                        }
-                        match brush_kind {
-                            BrushBatchKind::LinearGradient => &mut self.brush_linear_gradient,
-                            _ => panic!(),
-                        }
-                    }
                     BrushBatchKind::YuvImage(image_buffer_kind, ..) => {
                         let shader_index =
                             Self::get_compositing_shader_index(image_buffer_kind);
@@ -1255,10 +1181,6 @@ impl Shaders {
     pub fn cs_border_segment(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_border_segment) }
     pub fn cs_border_solid(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_border_solid) }
     pub fn cs_line_decoration(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_line_decoration) }
-    pub fn cs_fast_linear_gradient(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_fast_linear_gradient) }
-    pub fn cs_linear_gradient(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_linear_gradient) }
-    pub fn cs_radial_gradient(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_radial_gradient) }
-    pub fn cs_conic_gradient(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_conic_gradient) }
     pub fn cs_svg_filter_node(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_svg_filter_node) }
     pub fn cs_clip_rectangle_slow(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_clip_rectangle_slow) }
     pub fn cs_clip_rectangle_fast(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_clip_rectangle_fast) }

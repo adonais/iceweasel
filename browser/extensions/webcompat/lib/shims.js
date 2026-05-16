@@ -259,10 +259,13 @@ class Shim {
 
   async _allowRequestsInETP(alsoClearResourceCache) {
     let modified = false;
-    const matches = this.matches.map(m => m.patterns).flat();
-    if (matches.length) {
+    const matchEntries = this.matches.map(({ patterns, types }) => ({
+      patterns,
+      types,
+    }));
+    if (matchEntries.length) {
       // ensure requests shimmed in both PB and non-PB modes
-      await browser.trackingProtection.shim(this.id, matches);
+      await browser.trackingProtection.shim(this.id, matchEntries);
       modified = true;
     }
 
@@ -765,7 +768,7 @@ class Shims {
       registerShimListener(
         browser.webRequest.onBeforeRequest,
         this._ensureShimForRequestOnTab.bind(this),
-        { urls, types: [type] },
+        { urls },
         ["blocking"]
       );
     }

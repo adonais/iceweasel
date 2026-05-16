@@ -23,7 +23,7 @@ void FopenUsageChecker::registerMatchers(MatchFinder *AstMatcher) {
   AstMatcher->addMatcher(
       callExpr(
           isFirstParty(),
-          callee(functionDecl(allOf(
+          callee(functionDecl(
               isInSystemHeader(),
               anyOf(
                   allOf(anyOf(allOf(hasName("fopen"), hasConstCharPtrParam(0)),
@@ -46,7 +46,7 @@ void FopenUsageChecker::registerMatchers(MatchFinder *AstMatcher) {
                         hasIntegerParam(1), hasIntegerParam(2),
                         hasParamOfType(3, "LPSECURITY_ATTRIBUTES"),
                         hasIntegerParam(4), hasIntegerParam(5),
-                        hasParamOfType(6, "HANDLE")))))),
+                        hasParamOfType(6, "HANDLE"))))),
           unless(isInWhitelistForFopenUsage()))
           .bind("funcCall"),
       this);

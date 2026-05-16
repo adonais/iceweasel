@@ -493,7 +493,6 @@ export var UITour = {
       case "showFirefoxAccountsForAIWindow": {
         // if user "Blocked" Smart Window feature from AI Control or global AI Control default
         // override Smart Window feature to "available"
-        // TODO: Bug 2021205 - Open about:preferences#ai page doesn't update this pref change
         if (lazy.AIWindow.isBlocked) {
           Services.prefs.setStringPref(
             "browser.ai.control.smartWindow",

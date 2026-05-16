@@ -1,5 +1,3 @@
-/* -*- Mode: javascript; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4
- * -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -15,6 +13,7 @@
 #include "js/Conversions.h"
 #include "js/MapAndSet.h"
 #include "js/Modules.h"
+#include "js/Prefs.h"
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_GetProperty
 #include "js/SourceText.h"
 #include "js/StableStringChars.h"
@@ -80,10 +79,10 @@ bool ModuleLoader::LoadImportedModule(JSContext* cx,
 
 // static
 bool ModuleLoader::GetImportMetaProperties(JSContext* cx,
-                                           JS::HandleValue privateValue,
+                                           JS::HandleObject moduleRecord,
                                            JS::HandleObject metaObject) {
   ShellContext* scx = GetShellContext(cx);
-  return scx->moduleLoader->populateImportMeta(cx, privateValue, metaObject);
+  return scx->moduleLoader->populateImportMeta(cx, moduleRecord, metaObject);
 }
 
 bool ModuleLoader::ImportMetaResolve(JSContext* cx, unsigned argc, Value* vp) {
@@ -203,6 +202,47 @@ bool ModuleLoader::LoadRejected(JSContext* cx, HandleValue hostDefined,
   return true;
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+// See https://github.com/tc39/test262/blob/main/INTERPRETING.md#modules
+// We don't currently support wasm modules, so instead we implement an empty
+// module with a valid [[ModuleSource]] slot for test262.
+JSObject* ModuleLoader::getOrCreateTest262ModuleSourceModule(JSContext* cx) {
+  RootedString key(cx, JS_NewStringCopyZ(cx, "<module source>"));
+  if (!key) {
+    return nullptr;
+  }
+
+  RootedObject module(cx);
+  if (!lookupModuleInRegistry(cx, JS::ModuleType::JavaScript, key, &module)) {
+    return nullptr;
+  }
+  if (module) {
+    return module;
+  }
+
+  JS::CompileOptions options(cx);
+  options.setFileAndLine("<module source>", 1);
+  JS::SourceText<char16_t> srcBuf;
+  if (!srcBuf.init(cx, u"", 0, JS::SourceOwnership::Borrowed)) {
+    return nullptr;
+  }
+  module = JS::CompileModule(cx, options, srcBuf);
+  if (!module) {
+    return nullptr;
+  }
+  Rooted<ModuleSourceObject*> moduleSource(cx, ModuleSourceObject::create(cx));
+  if (!moduleSource) {
+    return nullptr;
+  }
+  module->as<ModuleObject>().initModuleSourceSlot(moduleSource);
+
+  if (!addModuleToRegistry(cx, JS::ModuleType::JavaScript, key, module)) {
+    return nullptr;
+  }
+  return module;
+}
+#endif
+
 bool ModuleLoader::loadImportedModule(JSContext* cx,
                                       JS::Handle<JSScript*> referrer,
                                       JS::Handle<JSObject*> moduleRequest,
@@ -212,6 +252,22 @@ bool ModuleLoader::loadImportedModule(JSContext* cx,
     // This is a dynamic import.
     return dynamicImport(cx, referrer, moduleRequest, payload);
   }
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (JS::Prefs::experimental_source_phase_imports_test262_module_source()) {
+    js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
+    JSAtom* specifier = moduleRequest->as<ModuleRequestObject>().specifier();
+    if (phase == ImportPhase::Source &&
+        StringEquals(specifier, u"<module source>")) {
+      RootedObject module(cx, getOrCreateTest262ModuleSourceModule(cx));
+      if (!module) {
+        return false;
+      }
+      return JS::FinishLoadingImportedModule(cx, referrer, moduleRequest,
+                                             payload, module, false);
+    }
+  }
+#endif
 
   Rooted<JSLinearString*> path(cx, resolve(cx, moduleRequest, referrer));
   if (!path) {
@@ -228,11 +284,12 @@ bool ModuleLoader::loadImportedModule(JSContext* cx,
 }
 
 bool ModuleLoader::populateImportMeta(JSContext* cx,
-                                      JS::HandleValue privateValue,
+                                      JS::HandleObject moduleRecord,
                                       JS::HandleObject metaObject) {
   Rooted<JSLinearString*> path(cx);
-  if (!privateValue.isUndefined()) {
-    if (!getScriptPath(cx, privateValue, &path)) {
+  Rooted<JS::Value> modulePrivate(cx, JS::GetModulePrivate(moduleRecord));
+  if (!modulePrivate.isUndefined()) {
+    if (!getScriptPath(cx, modulePrivate, &path)) {
       return false;
     }
   }
@@ -258,7 +315,7 @@ bool ModuleLoader::populateImportMeta(JSContext* cx,
 
   RootedObject resolveFuncObj(cx, JS_GetFunctionObject(resolveFunc));
   js::SetFunctionNativeReserved(resolveFuncObj, ModulePrivateSlot,
-                                privateValue);
+                                modulePrivate);
 
   return true;
 }
@@ -365,6 +422,23 @@ bool ModuleLoader::doDynamicImport(JSContext* cx, JS::HandleScript referrer,
                                    JS::HandleValue payload) {
   // Exceptions during dynamic import are handled by calling
   // FinishLoadingImportedModule with a pending exception on the context.
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (JS::Prefs::experimental_source_phase_imports_test262_module_source()) {
+    js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
+    JSAtom* specifier = moduleRequest->as<ModuleRequestObject>().specifier();
+    if (phase == ImportPhase::Source &&
+        StringEquals(specifier, u"<module source>")) {
+      RootedObject module(cx, getOrCreateTest262ModuleSourceModule(cx));
+      if (!module) {
+        return JS::FinishLoadingImportedModuleFailedWithPendingException(
+            cx, payload);
+      }
+      return JS::FinishLoadingImportedModule(cx, nullptr, moduleRequest,
+                                             payload, module, false);
+    }
+  }
+#endif
+
   Rooted<JSLinearString*> path(cx, resolve(cx, moduleRequest, referrer));
   if (!path) {
     return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,
@@ -528,16 +602,13 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
       return nullptr;
     }
 
-    RootedObject bytesArray(cx, FileAsTypedArray(cx, resolvedPath));
-    if (!bytesArray) {
+    auto* typedArray = FileAsImmutableTypedArray(cx, resolvedPath);
+    if (!typedArray) {
       return nullptr;
     }
+    JS::Rooted<JS::Value> defaultExport(cx, ObjectValue(*typedArray));
 
-    // TODO: The spec requires that the ArrayBuffer be immutable.
-    // Immutable ArrayBuffers (see bug 1952253) are still only a Stage 2.7
-    // proposal, once they are Stage 3, we can fix this.
-    module =
-        JS::CreateDefaultExportSyntheticModule(cx, ObjectValue(*bytesArray));
+    module = JS::CreateDefaultExportSyntheticModule(cx, defaultExport);
     if (!module) {
       return nullptr;
     }
@@ -555,6 +626,20 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
   RootedString source(cx, fetchSource(cx, path));
   if (!source) {
     return nullptr;
+  }
+
+  if (moduleType == JS::ModuleType::Text) {
+    JS::RootedValue defaultExport(cx, JS::StringValue(source));
+    module = JS::CreateDefaultExportSyntheticModule(cx, defaultExport);
+    if (!module) {
+      return nullptr;
+    }
+
+    if (!addModuleToRegistry(cx, moduleType, path, module)) {
+      return nullptr;
+    }
+
+    return module;
   }
 
   JS::AutoStableStringChars linearChars(cx);

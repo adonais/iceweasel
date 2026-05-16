@@ -92,6 +92,8 @@ void UpdateRtpAuthTag(ArrayView<uint8_t> rtp,
   uint8_t* auth_tag = rtp.data() + (rtp.size() - tag_length);
 
   // We should have a fake HMAC value @ auth_tag.
+  // Tag length must be no bigger than kFakeAuthTag size (currently 10).
+  RTC_DCHECK_LE(tag_length, sizeof(kFakeAuthTag));
   RTC_DCHECK_EQ(0, memcmp(auth_tag, kFakeAuthTag, tag_length));
 
   // Copy ROC after end of rtp packet.
@@ -145,7 +147,8 @@ bool GetRtcpSsrc(const void* data, size_t len, uint32_t* value) {
   // SDES packet parsing is not supported.
   if (pl_type == kRtcpTypeSDES)
     return false;
-  *value = GetBE32(static_cast<const uint8_t*>(data) + 4);
+  *value = GetBE32(
+      ArrayView<const uint8_t>(static_cast<const uint8_t*>(data) + 4, 4));
   return true;
 }
 
@@ -215,7 +218,7 @@ bool ValidateRtpHeader(ArrayView<const uint8_t> rtp, size_t* header_length) {
   // Getting extension profile length.
   // Length is in 32 bit words.
   uint16_t extension_length_in_32bits =
-      GetBE16(&rtp[header_length_without_extension + 2]);
+      GetBE16(rtp.subspan(header_length_without_extension + 2, 2));
   size_t extension_length = extension_length_in_32bits * 4;
 
   size_t rtp_header_length = extension_length +
@@ -262,10 +265,13 @@ bool UpdateRtpAbsSendTimeExtension(ArrayView<uint8_t> packet,
   uint8_t* rtp = packet.data();
   rtp += header_length_without_extension;
 
+  ArrayView<const uint8_t> extension_header =
+      packet.subspan(header_length_without_extension, kRtpExtensionHeaderLen);
+
   // Getting extension profile ID and length.
-  uint16_t profile_id = GetBE16(rtp);
+  uint16_t profile_id = GetBE16(extension_header);
   // Length is in 32 bit words.
-  uint16_t extension_length_in_32bits = GetBE16(rtp + 2);
+  uint16_t extension_length_in_32bits = GetBE16(extension_header.subspan(2, 2));
   size_t extension_length = extension_length_in_32bits * 4;
 
   rtp += kRtpExtensionHeaderLen;  // Moving past extension header.
@@ -374,7 +380,7 @@ bool ApplyPacketOptions(ArrayView<uint8_t> data,
   }
 
   // Making sure we have a valid RTP packet at the end.
-  auto packet = data.subview(rtp_start_pos, rtp_length);
+  auto packet = data.subspan(rtp_start_pos, rtp_length);
   if (!IsRtpPacket(packet) || !ValidateRtpHeader(packet, nullptr)) {
     RTC_DCHECK_NOTREACHED();
     return false;

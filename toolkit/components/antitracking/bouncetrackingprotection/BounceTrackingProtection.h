@@ -6,7 +6,6 @@
 
 #include "BounceTrackingMapEntry.h"
 #include "BounceTrackingRecord.h"
-#include "BounceTrackingStorageObserver.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
 #include "nsIBounceTrackingProtection.h"
@@ -131,9 +130,6 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
 
   // Timer which periodically runs PurgeBounceTrackers.
   nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
-
-  // Used to notify BounceTrackingState of storage and cookie access.
-  RefPtr<BounceTrackingStorageObserver> mStorageObserver;
 
   // Storage for user agent globals.
   RefPtr<BounceTrackingProtectionStorage> mStorage;

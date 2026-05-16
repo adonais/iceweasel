@@ -15,11 +15,13 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Try.h"
+#include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/EventSourceBinding.h"
 #include "mozilla/dom/EventSourceEventService.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
@@ -240,6 +242,8 @@ class EventSourceImpl final : public nsIChannelEventSink,
   nsCOMPtr<nsIURI> mSrc;
   uint32_t mReconnectionTime;  // in ms
   nsCOMPtr<nsIPrincipal> mPrincipal;
+  Maybe<ClientInfo> mClientInfo;
+  Maybe<ServiceWorkerDescriptor> mController;
   nsString mOrigin;
   nsCOMPtr<nsITimer> mTimer;
   nsCOMPtr<nsIHttpChannel> mHttpChannel;
@@ -1034,9 +1038,11 @@ nsresult EventSourceImpl::InitChannelAndRequestEventSource(
                        loadGroup,
                        nullptr,     // aCallbacks
                        loadFlags);  // aLoadFlags
-  } else {
-    // otherwise use the principal
-    rv = NS_NewChannel(getter_AddRefs(channel), mSrc, mPrincipal, securityFlags,
+  } else if (mClientInfo.isSome()) {
+    // Use the ClientInfo overload so the channel is associated with the
+    // correct client (e.g. the worker global that created this EventSource).
+    rv = NS_NewChannel(getter_AddRefs(channel), mSrc, mPrincipal,
+                       mClientInfo.ref(), mController, securityFlags,
                        nsIContentPolicy::TYPE_INTERNAL_EVENTSOURCE,
                        mCookieJarSettings,
                        nullptr,     // aPerformanceStorage
@@ -1052,6 +1058,15 @@ nsresult EventSourceImpl::InitChannelAndRequestEventSource(
       loadInfo->SetIsInThirdPartyContext(
           (*workerRef)->Private()->IsThirdPartyContext());
     }
+  } else {
+    // otherwise use the principal
+    rv = NS_NewChannel(getter_AddRefs(channel), mSrc, mPrincipal, securityFlags,
+                       nsIContentPolicy::TYPE_INTERNAL_EVENTSOURCE,
+                       mCookieJarSettings,
+                       nullptr,     // aPerformanceStorage
+                       nullptr,     // loadGroup
+                       nullptr,     // aCallbacks
+                       loadFlags);  // aLoadFlags
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
@@ -2005,6 +2020,10 @@ already_AddRefed<EventSource> EventSource::Constructor(
     MOZ_ASSERT(workerPrivate);
 
     eventSource->mESImpl->mInnerWindowID = workerPrivate->WindowID();
+    eventSource->mESImpl->mClientInfo =
+        workerPrivate->GlobalScope()->GetClientInfo();
+    eventSource->mESImpl->mController =
+        workerPrivate->GlobalScope()->GetController();
 
     eventSource->mESImpl->Init(nullptr, workerPrivate->GetPrincipal(), aURL,
                                aRv);

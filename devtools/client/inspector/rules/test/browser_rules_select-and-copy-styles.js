@@ -202,7 +202,8 @@ async function checkCopyNestedRule(view) {
   info("Select nested rule");
   const doc = view.styleDocument;
   const range = doc.createRange();
-  const nestedRule = doc.querySelector(".ruleview-rule:nth-of-type(2)");
+  const nestedRuleEditor = getRuleViewRuleEditorAt(view, 1);
+  const nestedRule = nestedRuleEditor.element;
   range.selectNode(nestedRule);
   const win = view.styleWindow;
   win.getSelection().addRange(range);

@@ -7,6 +7,7 @@
 #include "js/ForOfIterator.h"  // JS::ForOfIterator
 #include "json/json.h"
 #include "mozilla/dom/AutoEntryScript.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/L10nOverlays.h"
 #include "mozilla/intl/L10nRegistry.h"
@@ -110,7 +111,7 @@ bool DOMLocalization::HasPendingMutations() const {
  */
 
 void DOMLocalization::ConnectRoot(nsINode& aNode) {
-  nsCOMPtr<nsIGlobalObject> global = aNode.GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = aNode.GetOwnerDocGlobal();
   if (!global) {
     return;
   }

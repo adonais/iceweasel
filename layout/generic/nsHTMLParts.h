@@ -21,6 +21,7 @@ class nsIFragmentContentSink;
 class nsIFrame;
 class nsIURI;
 class nsListControlFrame;
+class nsTextControlFrame;
 class nsNodeInfoManager;
 class nsTableColFrame;
 namespace mozilla {
@@ -123,8 +124,8 @@ nsIFrame* NS_NewFileControlFrame(mozilla::PresShell* aPresShell,
                                  mozilla::ComputedStyle* aStyle);
 nsIFrame* NS_NewColorControlFrame(mozilla::PresShell* aPresShell,
                                   mozilla::ComputedStyle* aStyle);
-nsIFrame* NS_NewTextControlFrame(mozilla::PresShell* aPresShell,
-                                 mozilla::ComputedStyle* aStyle);
+nsTextControlFrame* NS_NewTextControlFrame(mozilla::PresShell* aPresShell,
+                                           mozilla::ComputedStyle* aStyle);
 nsListControlFrame* NS_NewListControlFrame(mozilla::PresShell* aPresShell,
                                            mozilla::ComputedStyle* aStyle);
 nsComboboxControlFrame* NS_NewComboboxControlFrame(

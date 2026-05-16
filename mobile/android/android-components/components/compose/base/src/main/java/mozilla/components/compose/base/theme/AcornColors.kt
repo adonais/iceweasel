@@ -37,17 +37,18 @@ class AcornColors(
     formDefault: Color,
     textOnColorPrimary: Color,
     iconPrimaryInactive: Color,
-    iconActive: Color,
     iconOnColor: Color,
-    iconOnColorDisabled: Color,
-    iconActionPrimary: Color,
-    borderAccent: Color,
     ripple: Color,
     tabActive: Color,
     tabInactive: Color,
     information: Color,
-    surfaceDimVariant: Color,
+    informationContainer: Color,
+    onInformationContainer: Color,
     success: Color,
+    warning: Color,
+    warningContainer: Color,
+    onWarningContainer: Color,
+    surfaceDimVariant: Color,
 ) {
     // Layers
 
@@ -117,26 +118,8 @@ class AcornColors(
     var iconPrimaryInactive by mutableStateOf(iconPrimaryInactive)
         private set
 
-    // Active tab
-    var iconActive by mutableStateOf(iconActive)
-        private set
-
     // Icon inverted (on color)
     var iconOnColor by mutableStateOf(iconOnColor)
-        private set
-
-    // Disabled icon inverted (on color)
-    var iconOnColorDisabled by mutableStateOf(iconOnColorDisabled)
-        private set
-
-    // Action primary icon
-    var iconActionPrimary by mutableStateOf(iconActionPrimary)
-        private set
-
-    // Border
-
-    // Active tab (Nav), Selected tab, Active form
-    var borderAccent by mutableStateOf(borderAccent)
         private set
 
     var ripple by mutableStateOf(ripple)
@@ -162,11 +145,15 @@ class AcornColors(
         private set
 
     /**
-     * Surface Dim Variant
-     *
-     * Slightly dimmer surface color in light theme.
+     * Less prominent fill color against surface, for neutral information.
      */
-    internal var surfaceDimVariant by mutableStateOf(surfaceDimVariant)
+    internal var informationContainer by mutableStateOf(informationContainer)
+        private set
+
+    /**
+     * Text and icons against information container.
+     */
+    internal var onInformationContainer by mutableStateOf(onInformationContainer)
         private set
 
     /**
@@ -174,6 +161,31 @@ class AcornColors(
      * indicating successful information
      */
     internal var success by mutableStateOf(success)
+        private set
+
+    /**
+     * Attention-grabbing color against surface for fills, icons, and text, indicating
+     * warning information.
+     */
+    internal var warning by mutableStateOf(warning)
+        private set
+
+    /**
+     * Less prominent fill color against surface, for warning information.
+     */
+    internal var warningContainer by mutableStateOf(warningContainer)
+        private set
+
+    /**
+     * Text and icons against warning container.
+     */
+    internal var onWarningContainer by mutableStateOf(onWarningContainer)
+        private set
+
+    /**
+     * Slightly dimmer surface color in light theme.
+     */
+    internal var surfaceDimVariant by mutableStateOf(surfaceDimVariant)
         private set
 
     /**
@@ -196,17 +208,18 @@ class AcornColors(
         formDefault = other.formDefault
         textOnColorPrimary = other.textOnColorPrimary
         iconPrimaryInactive = other.iconPrimaryInactive
-        iconActive = other.iconActive
         iconOnColor = other.iconOnColor
-        iconOnColorDisabled = other.iconOnColorDisabled
-        iconActionPrimary = other.iconActionPrimary
-        borderAccent = other.borderAccent
         ripple = other.ripple
         tabActive = other.tabActive
         tabInactive = other.tabInactive
         information = other.information
-        surfaceDimVariant = other.surfaceDimVariant
+        informationContainer = other.informationContainer
+        onInformationContainer = other.onInformationContainer
         success = other.success
+        warning = other.warning
+        warningContainer = other.warningContainer
+        onWarningContainer = other.onWarningContainer
+        surfaceDimVariant = other.surfaceDimVariant
     }
 
     /**
@@ -229,17 +242,18 @@ class AcornColors(
         formDefault: Color = this.formDefault,
         textOnColorPrimary: Color = this.textOnColorPrimary,
         iconPrimaryInactive: Color = this.iconPrimaryInactive,
-        iconActive: Color = this.iconActive,
         iconOnColor: Color = this.iconOnColor,
-        iconOnColorDisabled: Color = this.iconOnColorDisabled,
-        iconActionPrimary: Color = this.iconActionPrimary,
-        borderAccent: Color = this.borderAccent,
         ripple: Color = this.ripple,
         tabActive: Color = this.tabActive,
         tabInactive: Color = this.tabInactive,
         information: Color = this.information,
-        surfaceDimVariant: Color = this.surfaceDimVariant,
+        informationContainer: Color = this.informationContainer,
+        onInformationContainer: Color = this.onInformationContainer,
         success: Color = this.success,
+        warning: Color = this.warning,
+        warningContainer: Color = this.warningContainer,
+        onWarningContainer: Color = this.onWarningContainer,
+        surfaceDimVariant: Color = this.surfaceDimVariant,
     ): AcornColors = AcornColors(
         layer2 = layer2,
         layer3 = layer3,
@@ -256,17 +270,18 @@ class AcornColors(
         formDefault = formDefault,
         textOnColorPrimary = textOnColorPrimary,
         iconPrimaryInactive = iconPrimaryInactive,
-        iconActive = iconActive,
         iconOnColor = iconOnColor,
-        iconOnColorDisabled = iconOnColorDisabled,
-        iconActionPrimary = iconActionPrimary,
-        borderAccent = borderAccent,
         ripple = ripple,
         tabActive = tabActive,
         tabInactive = tabInactive,
         information = information,
-        surfaceDimVariant = surfaceDimVariant,
+        informationContainer = informationContainer,
+        onInformationContainer = onInformationContainer,
         success = success,
+        warning = warning,
+        warningContainer = warningContainer,
+        onWarningContainer = onWarningContainer,
+        surfaceDimVariant = surfaceDimVariant,
     )
 }
 
@@ -286,17 +301,18 @@ val darkColorPalette = AcornColors(
     formDefault = PhotonColors.LightGrey05,
     textOnColorPrimary = PhotonColors.LightGrey05,
     iconPrimaryInactive = PhotonColors.LightGrey05A60,
-    iconActive = PhotonColors.Violet40,
     iconOnColor = PhotonColors.LightGrey05,
-    iconOnColorDisabled = PhotonColors.LightGrey05A40,
-    iconActionPrimary = PhotonColors.LightGrey05,
-    borderAccent = PhotonColors.Violet40,
     ripple = PhotonColors.White,
     tabActive = PhotonColors.DarkGrey30,
     tabInactive = PhotonColors.DarkGrey80,
     information = PhotonColors.Blue30,
-    surfaceDimVariant = PhotonColors.DarkGrey80,
+    informationContainer = PhotonColors.Blue50,
+    onInformationContainer = PhotonColors.LightGrey05,
     success = PhotonColors.Green50,
+    warning = PhotonColors.Yellow50,
+    warningContainer = PhotonColors.Yellow70A77,
+    onWarningContainer = PhotonColors.LightGrey05,
+    surfaceDimVariant = PhotonColors.DarkGrey80,
 )
 
 val lightColorPalette = AcornColors(
@@ -315,17 +331,18 @@ val lightColorPalette = AcornColors(
     formDefault = PhotonColors.DarkGrey90,
     textOnColorPrimary = PhotonColors.LightGrey05,
     iconPrimaryInactive = PhotonColors.DarkGrey90A60,
-    iconActive = PhotonColors.Ink20,
     iconOnColor = PhotonColors.LightGrey05,
-    iconOnColorDisabled = PhotonColors.LightGrey05A40,
-    iconActionPrimary = PhotonColors.LightGrey05,
-    borderAccent = PhotonColors.Ink20,
     ripple = PhotonColors.Black,
     tabActive = PhotonColors.LightGrey10,
     tabInactive = PhotonColors.LightGrey20,
     information = PhotonColors.Blue60,
-    surfaceDimVariant = PhotonColors.LightGrey20,
+    informationContainer = PhotonColors.Blue50A44,
+    onInformationContainer = PhotonColors.DarkGrey90,
     success = PhotonColors.Green80,
+    warning = PhotonColors.Yellow80,
+    warningContainer = PhotonColors.Yellow20,
+    onWarningContainer = PhotonColors.DarkGrey90,
+    surfaceDimVariant = PhotonColors.LightGrey20,
 )
 
 val privateColorPalette = darkColorPalette.copy(
@@ -460,7 +477,7 @@ fun acornLightColorScheme(): ColorScheme = buildColorScheme(
     inverseSurface = PhotonColors.DarkGrey60,
     inverseOnSurface = PhotonColors.LightGrey05,
     error = PhotonColors.Red70,
-    errorContainer = PhotonColors.Red05,
+    errorContainer = PhotonColors.Red10,
     outline = PhotonColors.LightGrey90,
     outlineVariant = PhotonColors.LightGrey30,
     scrim = PhotonColors.DarkGrey30A95,
@@ -514,12 +531,20 @@ val ColorScheme.information: Color
     get() = AcornTheme.colors.information
 
 /**
- * @see AcornColors.surfaceDimVariant
+ * @see AcornColors.informationContainer
  */
-val ColorScheme.surfaceDimVariant: Color
+val ColorScheme.informationContainer: Color
     @Composable
     @ReadOnlyComposable
-    get() = AcornTheme.colors.surfaceDimVariant
+    get() = AcornTheme.colors.informationContainer
+
+/**
+ * @see AcornColors.onInformationContainer
+ */
+val ColorScheme.onInformationContainer: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = AcornTheme.colors.onInformationContainer
 
 /**
  * @see AcornColors.success
@@ -528,3 +553,35 @@ val ColorScheme.success: Color
     @Composable
     @ReadOnlyComposable
     get() = AcornTheme.colors.success
+
+/**
+ * @see AcornColors.warning
+ */
+val ColorScheme.warning: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = AcornTheme.colors.warning
+
+/**
+ * @see AcornColors.warningContainer
+ */
+val ColorScheme.warningContainer: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = AcornTheme.colors.warningContainer
+
+/**
+ * @see AcornColors.onWarningContainer
+ */
+val ColorScheme.onWarningContainer: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = AcornTheme.colors.onWarningContainer
+
+/**
+ * @see AcornColors.surfaceDimVariant
+ */
+val ColorScheme.surfaceDimVariant: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = AcornTheme.colors.surfaceDimVariant

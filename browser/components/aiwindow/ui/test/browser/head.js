@@ -21,6 +21,10 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
+/**
+ * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
+ */
+
 const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 
 let gIntentEngineStub;
@@ -166,6 +170,9 @@ async function getConversationId(browser) {
  *   stubs, pops the endpoint pref, and stops the mock server.
  * @property {number|null} port - The mock server's port number, or null when
  *   no server was started.
+ * @property {Array<object>} capturedRequests - Array that collects every
+ *   parsed request body sent to the mock server. Empty when no server was
+ *   started. Mutate .length = 0 to clear between phases of a test.
  */
 
 /**
@@ -220,10 +227,18 @@ async function stubEngineNetworkBoundaries({
     .stub(openAIEngine, "getFxAccountToken")
     .resolves(fxAccountToken);
 
+  const capturedRequests = [];
   let server = null;
   let port = null;
   if (serverOptions) {
-    ({ server, port } = startMockOpenAI(serverOptions));
+    const callerOnRequest = serverOptions.onRequest;
+    ({ server, port } = startMockOpenAI({
+      ...serverOptions,
+      onRequest(body) {
+        capturedRequests.push(body);
+        callerOnRequest?.(body);
+      },
+    }));
     await SpecialPowers.pushPrefEnv({
       set: [["browser.smartwindow.endpoint", `http://localhost:${port}/v1`]],
     });
@@ -238,7 +253,7 @@ async function stubEngineNetworkBoundaries({
     }
   }
 
-  return { restore, port };
+  return { restore, port, capturedRequests };
 }
 
 /**
@@ -252,6 +267,22 @@ function skipSignIn() {
     .stub(AIWindowAccountAuth, "ensureAIWindowAccess")
     .resolves(true);
   return () => stub.restore();
+}
+
+/**
+ * Clicks the New Chat button in the sidebar
+ *
+ * @param {Window} win
+ */
+async function clickNewChatButton(win) {
+  const sidebarBrowser = win.document.getElementById("ai-window-browser");
+  await TestUtils.waitForCondition(
+    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
+    "Wait for ai-window to be defined in sidebar"
+  );
+  const aiWindow = sidebarBrowser.contentDocument.querySelector("ai-window");
+  const newChatBtn = aiWindow.shadowRoot.querySelector(".new-chat-icon-button");
+  newChatBtn.click();
 }
 
 /**
@@ -304,22 +335,6 @@ async function openTabContextMenuAndClickTabByLabel(sidebarBrowser, label) {
   });
 }
 
-/**
- * Clicks the New Chat button in the sidebar
- *
- * @param {Window} win
- */
-async function clickNewChatButton(win) {
-  const sidebarBrowser = win.document.getElementById("ai-window-browser");
-  await TestUtils.waitForCondition(
-    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
-    "Wait for ai-window to be defined in sidebar"
-  );
-  const aiWindow = sidebarBrowser.contentDocument.querySelector("ai-window");
-  const newChatBtn = aiWindow.shadowRoot.querySelector(".new-chat-icon-button");
-  newChatBtn.click();
-}
-
 async function getSmartbarContextChipLabels(browser, expectedUrl) {
   await BrowserTestUtils.waitForCondition(
     () => browser.contentDocument?.querySelector("ai-window:defined"),
@@ -366,18 +381,21 @@ async function getSmartbarContextChipLabels(browser, expectedUrl) {
 }
 
 /**
- * Submits the current smartbar input by pressing Enter.
+ * Submits the current smartbar input.
  *
  * @param {MozBrowser} browser - The browser element
- * @param {object} [options]
- * @param {boolean} [options.useButton] - Click the CTA button instead of pressing Enter
+ * @param {object} [options] - Options for submission
+ * @param {boolean} [options.useButton=false] - If true, submit via CTA button
  */
 async function submitSmartbar(browser, { useButton = false } = {}) {
   await SpecialPowers.spawn(browser, [useButton], async clickButton => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
     );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
     if (clickButton) {
       const inputCta = smartbar.querySelector("input-cta");
       const mozButton = inputCta.shadowRoot.querySelector("moz-button");
@@ -394,6 +412,132 @@ async function submitSmartbar(browser, { useButton = false } = {}) {
       EventUtils.synthesizeKey("KEY_Enter", {}, content);
     }
   });
+}
+
+/**
+ * Select an explicit action from the smartbar CTA dropdown menu.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @param {SmartbarAction} action - The action to select
+ */
+async function selectExplicitSmartbarAction(browser, action) {
+  await SpecialPowers.spawn(browser, [action], async actionType => {
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+    );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    const inputCta = smartbar.querySelector("input-cta");
+    const mozButton = inputCta.shadowRoot.querySelector("moz-button");
+
+    await ContentTaskUtils.waitForMutationCondition(
+      mozButton.shadowRoot,
+      { childList: true, subtree: true },
+      () => mozButton.shadowRoot.querySelector("#chevron-button")
+    );
+    const chevronButton = mozButton.shadowRoot.querySelector("#chevron-button");
+    const panelList = inputCta.shadowRoot.querySelector("panel-list");
+    const shownPromise = ContentTaskUtils.waitForEvent(panelList, "shown");
+    chevronButton.click();
+    await shownPromise;
+
+    const actionItem = panelList.querySelector(
+      `panel-item[icon="${actionType}"]`
+    );
+    actionItem.click();
+  });
+}
+
+/**
+ * Wait for the smartbar action to be set.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @param {string} expectedAction - The expected action value
+ */
+async function waitForSmartbarAction(browser, expectedAction) {
+  await SpecialPowers.spawn(browser, [expectedAction], async action => {
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+    );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    await ContentTaskUtils.waitForCondition(
+      () => smartbar.smartbarAction === action,
+      `Wait for smartbar action to be "${action}"`
+    );
+  });
+}
+
+/**
+ * Stub the smartbar method _loadURL to prevent navigation.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @param {object} [options] - Options for the stub
+ * @param {boolean} [options.captureURL=false] - If true, capture the URL
+ */
+async function stubLoadURL(browser, { captureURL = false } = {}) {
+  await SpecialPowers.spawn(browser, [captureURL], async capture => {
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+    );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    if (capture) {
+      content._stubLoadURLCalled = false;
+      content._stubLoadedURL = null;
+      smartbar._loadURL = url => {
+        content._stubLoadURLCalled = true;
+        content._stubLoadedURL = url;
+      };
+    } else {
+      smartbar._loadURL = () => {};
+    }
+  });
+}
+
+/**
+ * Get the result of a stubbed and captured stubLoadURL call.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @returns {Promise<{called: boolean, url: string|null}>}
+ */
+async function getStubLoadURLResult(browser) {
+  return SpecialPowers.spawn(browser, [], async () => {
+    return {
+      called: content._stubLoadURLCalled,
+      url: content._stubLoadedURL,
+    };
+  });
+}
+
+/**
+ * Assert the current smartbar value.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @param {string} expectedValue - The expected value
+ * @param {string} message - The assertion message
+ */
+async function assertSmartbarValue(browser, expectedValue, message) {
+  await SpecialPowers.spawn(
+    browser,
+    [expectedValue, message],
+    async (val, msg) => {
+      const aiWindow = content.document.querySelector("ai-window");
+      await ContentTaskUtils.waitForMutationCondition(
+        aiWindow.shadowRoot,
+        { childList: true, subtree: true },
+        () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+      );
+      const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+      Assert.equal(smartbar.value, val, msg);
+    }
+  );
 }
 
 /**
@@ -676,10 +820,16 @@ async function getSidebarChatMessages(sidebarBrowser) {
     );
     await contentEl.updateComplete;
     const messageEls = contentEl.shadowRoot.querySelectorAll("ai-chat-message");
-    return Array.from(messageEls, el => ({
-      role: el.role,
-      message: el.message,
-    }));
+    return Array.from(messageEls, el => {
+      const elJS = el.wrappedJSObject || el;
+      return {
+        role: elJS.role,
+        message: elJS.message,
+        hasRendered: !!el.shadowRoot?.querySelector(
+          ".message-assistant, .message-user"
+        ),
+      };
+    });
   });
 }
 
@@ -922,6 +1072,57 @@ function startMockOpenAI({
  */
 function stopMockOpenAI(server) {
   return new Promise(resolve => server.stop(resolve));
+}
+
+/**
+ * Retrieves the context chip labels from a user message rendered in the
+ * ai-chat-content area. Waits for the aichat-browser, chat content, and
+ * chips to be available before reading labels.
+ *
+ * @param {MozBrowser} sidebarBrowser - The sidebar browser element
+ *   (e.g. win.document.getElementById("ai-window-browser"))
+ * @param {number} [messageIndex=0] - Zero-based index selecting which user
+ *   message to read chips from (0 = first user message, 1 = second, etc.)
+ * @returns {Promise<string[]>} Array of chip label strings from the
+ *   website-chip-container in the selected user message
+ */
+async function getUserMessageChipLabels(sidebarBrowser, messageIndex = 0) {
+  await BrowserTestUtils.waitForCondition(
+    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
+    "Sidebar ai-window should be loaded"
+  );
+
+  const aiWindowEl = sidebarBrowser.contentDocument.querySelector("ai-window");
+  const aichatBrowser = await BrowserTestUtils.waitForCondition(
+    () => aiWindowEl.shadowRoot?.querySelector("#aichat-browser"),
+    "Wait for aichat-browser"
+  );
+
+  return SpecialPowers.spawn(aichatBrowser, [messageIndex], async msgIndex => {
+    const chatContent = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("ai-chat-content"),
+      "Wait for ai-chat-content"
+    );
+
+    const containers = await ContentTaskUtils.waitForCondition(() => {
+      const found = chatContent.shadowRoot.querySelectorAll(
+        ".chat-bubble-user website-chip-container"
+      );
+      return found.length > msgIndex ? found : null;
+    }, `Wait for user message at index ${msgIndex}`);
+
+    const chipContainer = containers[msgIndex];
+
+    const chips = await ContentTaskUtils.waitForCondition(() => {
+      const found =
+        chipContainer.shadowRoot.querySelectorAll("ai-website-chip");
+      return found.length ? found : null;
+    }, "Wait for context chips to render");
+
+    return Array.from(chips).map(
+      chip => chip.shadowRoot?.querySelector(".chip-label")?.textContent ?? ""
+    );
+  });
 }
 
 /**

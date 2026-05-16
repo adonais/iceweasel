@@ -12,7 +12,11 @@ import urllib.request
 from pathlib import Path
 from typing import Optional
 
-import tomllib
+try:
+    import tomllib
+# FIXME: remove fallback once python3.11 is the lowest supported
+except ImportError:
+    import tomli as tomllib
 from mach.decorators import Command, CommandArgument, SubCommand
 from mozbuild.base import MachCommandBase
 
@@ -234,7 +238,7 @@ class EvalToolsCommand(MachCommandBase):
             print(
                 "MOZ_MLPA_AUTHORIZATION_TOKEN already set; skipping MLPA token fetch."
             )
-            print("Unset with: unset MOZ_MLPA_AUTHORIZATION_TOKEN")
+            print("Unset with:\nunset MOZ_MLPA_AUTHORIZATION_TOKEN")
             mlpa_token = os.environ.get("MOZ_MLPA_AUTHORIZATION_TOKEN")
         else:
             try:
@@ -248,6 +252,6 @@ class EvalToolsCommand(MachCommandBase):
             print(
                 "\nCopy and paste the following in your terminal to persist your login:\n"
             )
-            print(f"export MOZ_FXA_BEARER_TOKEN='{fxa_token}'")
-            print(f"export MOZ_MLPA_AUTHORIZATION_TOKEN='{mlpa_token}'")
+            print(f" export MOZ_FXA_BEARER_TOKEN='{fxa_token}'")
+            print(f" export MOZ_MLPA_AUTHORIZATION_TOKEN='{mlpa_token}'")
         return 0

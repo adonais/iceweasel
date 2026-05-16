@@ -90,8 +90,9 @@ class IDBEncryptionPBM(QuotaTestCase):
     def validateBlob(self, validator):
         self.ensureInvariantHolds(lambda _: self.sqliteWALReleased())
         self.ensureInvariantHolds(
-            lambda _: self.findDirObj(self.getIDBStoragePath(), ".files", False)
-            is not None
+            lambda _: (
+                self.findDirObj(self.getIDBStoragePath(), ".files", False) is not None
+            )
         )
 
         idbBlobDir = self.findDirObj(self.getIDBStoragePath(), ".files", False)
@@ -113,8 +114,9 @@ class IDBEncryptionPBM(QuotaTestCase):
     def validateSqlite(self, validator):
         self.ensureInvariantHolds(lambda _: self.sqliteWALReleased())
         self.ensureInvariantHolds(
-            lambda _: self.findDirObj(self.getIDBStoragePath(), ".sqlite", True)
-            is not None
+            lambda _: (
+                self.findDirObj(self.getIDBStoragePath(), ".sqlite", True) is not None
+            )
         )
 
         sqliteDBFile = self.findDirObj(self.getIDBStoragePath(), ".sqlite", True)

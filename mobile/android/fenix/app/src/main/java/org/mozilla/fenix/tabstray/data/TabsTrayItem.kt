@@ -19,10 +19,12 @@ import java.util.UUID
  *
  * @property id The ID of the item.
  * @property isHomepageItem Whether the entity represents a Homepage item.
+ * @property isFocused Whether the entity is focused.
  */
 sealed class TabsTrayItem(
     open val id: String,
     val isHomepageItem: Boolean,
+    open val isFocused: Boolean,
 ) {
     /**
      * Data entity representing a tab in the Tabs Tray.
@@ -33,7 +35,8 @@ sealed class TabsTrayItem(
      * @property inactive Whether the tab is inactive.
      * @property private Whether the tab is private.
      * @property icon The bitmap of the tab's favicon.
-     * @property lastAccess The last time this tab was selected.
+     * @property lastAccess The last time this tab was accessed.
+     * @property isFocused Whether the tab is focused.
      */
     data class Tab(
         override val id: String,
@@ -43,11 +46,16 @@ sealed class TabsTrayItem(
         val private: Boolean,
         val icon: Bitmap?,
         val lastAccess: Long,
+        override val isFocused: Boolean,
     ) : TabsTrayItem(
         id = id,
+        isFocused = isFocused,
         isHomepageItem = url.equals(ABOUT_HOME_URL, ignoreCase = true),
     ) {
-        constructor(tab: TabSessionState) : this(
+        constructor(
+            tab: TabSessionState,
+            isFocused: Boolean = false,
+        ) : this(
             id = tab.id,
             url = tab.content.url,
             title = tab.toDisplayTitle(),
@@ -55,6 +63,7 @@ sealed class TabsTrayItem(
             private = tab.content.private,
             icon = tab.content.icon,
             lastAccess = tab.lastAccess,
+            isFocused = isFocused,
         )
 
         /**
@@ -76,21 +85,22 @@ sealed class TabsTrayItem(
      * @property theme The group's [TabGroupTheme].
      * @property tabs The set of [Tab]s within the group.
      * @property closed Whether the group is closed and does not appear in the main tab item list.
+     * @property isFocused Whether the tab is focused.
      */
     data class TabGroup(
         override val id: String = UUID.randomUUID().toString(),
         val title: String,
         val theme: TabGroupTheme,
-        val tabs: HashSet<Tab>,
+        val tabs: MutableList<Tab>,
         val closed: Boolean = false,
+        override var isFocused: Boolean = false,
     ) : TabsTrayItem(
         id = id,
         isHomepageItem = false,
+        isFocused = isFocused,
     ) {
         /**
-         * Retrieves the thumbnail image data for the first 4 tabs in the group's tab set.
-         * Note - since HashSet has no guaranteed order, we should sort in this call
-         * if there's a desired priority of thumbnail ordering.
+         * Retrieves the thumbnail image data for the first 4 tabs in the group's tab collection.
          */
         val thumbnails by lazy {
             tabs.take(4).map { it.toThumbnailImageData() }
@@ -120,6 +130,7 @@ internal fun createTab(
     inactive: Boolean = false,
     private: Boolean = false,
     lastAccess: Long = 0L,
+    isFocused: Boolean = false,
 ): TabsTrayItem.Tab = TabsTrayItem.Tab(
     id = id,
     url = url,
@@ -128,30 +139,21 @@ internal fun createTab(
     private = private,
     icon = null,
     lastAccess = lastAccess,
+    isFocused = isFocused,
 )
 
 internal fun createTabGroup(
     id: String = UUID.randomUUID().toString(),
     title: String = "",
     theme: TabGroupTheme = TabGroupTheme.default,
-    tabs: HashSet<TabsTrayItem.Tab> = hashSetOf(),
-): TabsTrayItem.TabGroup = TabsTrayItem.TabGroup(
-    id = id,
-    title = title,
-    theme = theme,
-    tabs = tabs,
-)
-
-internal fun createTabGroup(
-    id: String = UUID.randomUUID().toString(),
-    title: String = "",
-    theme: TabGroupTheme = TabGroupTheme.default,
-    tabs: HashSet<TabsTrayItem.Tab> = hashSetOf(),
+    tabs: MutableList<TabsTrayItem.Tab> = mutableListOf(),
     closed: Boolean = false,
+    isFocused: Boolean = false,
 ): TabsTrayItem.TabGroup = TabsTrayItem.TabGroup(
     id = id,
     title = title,
     theme = theme,
     tabs = tabs,
     closed = closed,
+    isFocused = isFocused,
 )

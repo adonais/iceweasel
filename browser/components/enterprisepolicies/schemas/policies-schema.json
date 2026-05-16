@@ -511,6 +511,11 @@
       "type": "string"
     },
 
+    "DefaultSerialGuardSetting": {
+      "type": "number",
+      "enum": [2, 3]
+    },
+
     "DisableAccounts": {
       "type": "boolean"
     },
@@ -888,6 +893,9 @@
             },
             "updates_disabled": {
               "type": "boolean"
+            },
+            "update_url": {
+              "type": "URL"
             },
             "default_area": {
               "type": "string",
@@ -1580,6 +1588,26 @@
       }
     },
 
+    "RelaunchRequired": {
+      "type": "object",
+      "properties": {
+        "NotificationPeriodHours": {
+          "type": "number"
+        },
+        "RestartTimeOfDay": {
+          "type": "object",
+          "properties": {
+            "Hour": {
+              "type": "number"
+            },
+            "Minute": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+
     "RequestedLocales": {
       "type": ["string", "array"],
       "items": {
@@ -1841,6 +1869,10 @@
     },
 
     "WindowsSSO": {
+      "type": "boolean"
+    },
+
+    "XSLTEnabled": {
       "type": "boolean"
     }
   }

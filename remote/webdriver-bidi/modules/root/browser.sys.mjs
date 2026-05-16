@@ -58,6 +58,19 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 
 /**
+ * Enum representing the possible named states of a client window.
+ *
+ * @readonly
+ * @enum {ClientWindowNamedState}
+ */
+export const ClientWindowNamedState = {
+  Fullscreen: "fullscreen",
+  Maximized: "maximized",
+  Minimized: "minimized",
+  Normal: "normal",
+};
+
+/**
  * An object that holds information about a user context.
  *
  * @typedef UserContextInfo
@@ -403,16 +416,141 @@ class BrowserModule extends RootBiDiModule {
     this.#downloadBehaviorManager.setUserContextBehavior(internalId, null);
   }
 
+  /**
+   * Sets the position and dimension of a client window.
+   *
+   * @param {object=} options
+   * @param {string} options.clientWindow
+   *    The id of the client window to update.
+   * @param {ClientWindowNamedState} options.state
+   *    The target state of the client window.
+   * @param {number=} options.width
+   *    The target width of the client window.
+   * @param {number=} options.height
+   *    The target height of the client window.
+   * @param {number=} options.x
+   *    The target x-coordinate of the client window.
+   * @param {number=} options.y
+   *    The target y-coordinate of the client window.
+   *
+   * @returns {ClientWindowInfo}
+   *    The client window info.
+   *
+   * @throws {InvalidArgumentError}
+   *    Raised if an argument is of an invalid type or value.
+   * @throws {NoSuchClientWindow}
+   *    Raised if the client window could not be found.
+   * @throws {UnsupportedOperationError}
+   *     Raised when the command is not supported.
+   */
+  async setClientWindowState(options = {}) {
+    const { clientWindow, height, state, width, x, y } = options;
+
+    lazy.assert.string(
+      clientWindow,
+      lazy.pprint`Expected "clientWindow" to be a string, got ${clientWindow}`
+    );
+
+    const window = lazy.windowManager.getWindowById(clientWindow);
+    if (!window) {
+      throw new lazy.error.NoSuchClientWindow(
+        `Client window with id ${clientWindow} not found`
+      );
+    }
+
+    const windowStateValues = Object.values(lazy.WindowState);
+    if (!windowStateValues.includes(state)) {
+      throw new lazy.error.InvalidArgumentError(
+        `Expected "state" to be one of ${windowStateValues}, got ${state}`
+      );
+    }
+
+    if (x !== undefined) {
+      lazy.assert.integer(
+        x,
+        lazy.pprint`Expected "x" to be an integer, got ${x}`
+      );
+    }
+
+    if (y !== undefined) {
+      lazy.assert.integer(
+        y,
+        lazy.pprint`Expected "y" to be an integer, got ${y}`
+      );
+    }
+
+    if (width !== undefined) {
+      lazy.assert.positiveInteger(
+        width,
+        lazy.pprint`Expected "width" to be a positive integer, got ${width}`
+      );
+    }
+
+    if (height !== undefined) {
+      lazy.assert.positiveInteger(
+        height,
+        lazy.pprint`Expected "height" to be a positive integer, got ${height}`
+      );
+    }
+
+    // Window position and size cannot be modified on mobile.
+    lazy.assert.desktop();
+
+    await this.#setClientWindowState(window, state);
+
+    if (state === lazy.WindowState.Normal) {
+      await lazy.windowManager.adjustWindowGeometry(
+        window,
+        x ?? null,
+        y ?? null,
+        width ?? null,
+        height ?? null
+      );
+    }
+
+    return this.#getClientWindowInfo(window);
+  }
+
   #getClientWindowInfo(window) {
+    const { height, width, x, y } = lazy.windowManager.getWindowRect(window);
+
     return {
       active: Services.focus.activeWindow === window,
       clientWindow: lazy.windowManager.getIdForWindow(window),
-      height: window.outerHeight,
+      height,
       state: lazy.WindowState.from(window.windowState),
-      width: window.outerWidth,
-      x: window.screenX,
-      y: window.screenY,
+      width,
+      x,
+      y,
     };
+  }
+
+  async #setClientWindowState(window, state) {
+    const currentState = lazy.WindowState.from(window.windowState);
+    const specialWindowStates = [
+      lazy.WindowState.Fullscreen,
+      lazy.WindowState.Maximized,
+      lazy.WindowState.Minimized,
+    ];
+
+    if (specialWindowStates.includes(currentState) && currentState === state) {
+      // Only continue if we actually switch between special window states.
+      return null;
+    }
+
+    switch (state) {
+      case lazy.WindowState.Fullscreen:
+        await lazy.windowManager.fullscreenWindow(window);
+        break;
+      case lazy.WindowState.Maximized:
+        await lazy.windowManager.maximizeWindow(window);
+        break;
+      case lazy.WindowState.Minimized:
+        await lazy.windowManager.minimizeWindow(window);
+        break;
+    }
+
+    return null;
   }
 }
 

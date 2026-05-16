@@ -27,4 +27,11 @@ interface nsIProtocolProxyService2 : nsIProtocolProxyService
       in nsIChannel aChannel, in unsigned long aFlags,
       in nsIProtocolProxyCallback aCallback,
       [optional] in nsISerialEventTarget aMainThreadTarget);
+
+  /**
+   * Returns true if proxy resolution can be skipped entirely: no proxy is
+   * configured and no filters are registered. Must be called on the main
+   * thread (enforced by MOZ_ASSERT in the implementation).
+   */
+  [notxpcom, nostdcall] boolean isEffectivelyDirect();
 };

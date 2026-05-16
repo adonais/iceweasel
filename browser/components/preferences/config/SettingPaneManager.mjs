@@ -2,7 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/** @import {SettingPaneConfig, SettingPane} from "chrome://browser/content/preferences/widgets/setting-pane.mjs" */
+/** @import {SettingPaneConfig, SettingPaneFullConfig, SettingPaneId, SettingPane} from "chrome://browser/content/preferences/widgets/setting-pane.mjs" */
+
+const XPCOMUtils = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+).XPCOMUtils;
+
+const lazy = XPCOMUtils.declareLazy({
+  srdPromoDismissed: {
+    pref: "browser.settings-redesign.promo.dismissed",
+    default: false,
+  },
+  srdEnabled: { pref: "browser.settings-redesign.enabled", default: false },
+});
 
 /**
  * Converts a friendly category name to internal pane name.
@@ -20,7 +32,7 @@ export function friendlyPrefCategoryNameToInternalName(categoryName) {
 }
 
 export const SettingPaneManager = {
-  /** @type {Map<string, SettingPaneConfig>} */
+  /** @type {Map<string, SettingPaneFullConfig>} */
   _data: new Map(),
 
   /**
@@ -35,20 +47,50 @@ export const SettingPaneManager = {
 
   /**
    * @param {string} id
+   */
+  getWithParents(id) {
+    let configs = [this.get(id)];
+    while (configs[0].parent) {
+      configs.unshift(this.get(configs[0].parent));
+    }
+    return configs;
+  },
+
+  /**
+   * @param {string} id
+   */
+  importPane(id) {
+    for (let config of this.getWithParents(id)) {
+      if (config.module) {
+        ChromeUtils.importESModule(config.module, { global: "current" });
+      }
+    }
+  },
+
+  /**
+   * @param {SettingPaneId} id
    * @param {SettingPaneConfig} config
    */
   registerPane(id, config) {
     if (this._data.has(id)) {
       throw new Error(`Setting pane "${id}" already registered`);
     }
-    this._data.set(id, config);
+    let fullConfig = { ...config, id };
+    this._data.set(id, fullConfig);
+    if (!fullConfig.groupIds.length) {
+      // If we don't have groupIds then we're just registering the l10nId.
+      return;
+    }
     let subPane = friendlyPrefCategoryNameToInternalName(id);
     let settingPane = /** @type {SettingPane} */ (
       document.createElement("setting-pane")
     );
     settingPane.name = subPane;
-    settingPane.config = config;
+    settingPane.config = fullConfig;
     settingPane.isSubPane = !!config.parent;
+
+    settingPane.showRedesignPromo = this.shouldShowRedesignPromo;
+
     document.getElementById("mainPrefPane").append(settingPane);
     window.register_module(subPane, {
       init() {
@@ -65,4 +107,17 @@ export const SettingPaneManager = {
       this.registerPane(id, paneConfigs[id]);
     }
   },
+
+  get shouldShowRedesignPromo() {
+    return lazy.srdEnabled && !lazy.srdPromoDismissed;
+  },
 };
+
+/**
+ * Placement of this listener may seem a little odd, but is the only place
+ * where it will run once while still having this and its related
+ * dismissal logic be isolated all to this one file.
+ */
+document.addEventListener("settings-redesign-promo-dismiss", () => {
+  Services.prefs.setBoolPref("browser.settings-redesign.promo.dismissed", true);
+});

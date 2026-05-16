@@ -14,6 +14,7 @@ include protocol PBrowser;
 include protocol PInProcess;
 include protocol PBrowserBridge;
 include protocol PDigitalCredential;
+include protocol PSerialManager;
 include protocol PWebAuthnTransaction;
 include protocol PWebIdentity;
 
@@ -70,6 +71,7 @@ async protocol PWindowGlobal
 {
   manager PBrowser or PInProcess;
   manages PDigitalCredential;
+  manages PSerialManager;
   manages PWebAuthnTransaction;
   manages PWebIdentity;
 
@@ -220,13 +222,8 @@ parent:
   async SetCookies(nsCString baseDomain,
                                       OriginAttributes attrs,
                                       nullable nsIURI host,
-                                      bool fromHttp,
                                       bool isThirdParty,
                                       CookieStruct[] cookies);
-
-  // Notify parent of storage access in the content process. This only happens
-  // once per window lifetime to avoid redundant IPC.
-  async OnInitialStorageAccess();
 
   // User activation notifications for BounceTrackingProtection.
   async RecordUserActivationForBTP();
@@ -235,6 +232,7 @@ parent:
   async RecordUserInteractionForPermissions();
 
   async PDigitalCredential();
+  async PSerialManager();
   async PWebAuthnTransaction();
   async PWebIdentity();
 

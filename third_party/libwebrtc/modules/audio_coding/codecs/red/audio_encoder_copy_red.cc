@@ -64,7 +64,7 @@ size_t GetMaxRedundancyFromFieldTrial(const FieldTrialsView& field_trials) {
 AudioEncoderCopyRed::AudioEncoderCopyRed(Config&& config,
                                          const FieldTrialsView& field_trials)
     : speech_encoder_(std::move(config.speech_encoder)),
-      primary_encoded_(0, kAudioMaxRtpPacketLen),
+      primary_encoded_(Buffer::CreateWithCapacity(kAudioMaxRtpPacketLen)),
       max_packet_length_(kAudioMaxRtpPacketLen),
       red_payload_type_(config.payload_type) {
   RTC_CHECK(speech_encoder_) << "Speech encoder not provided.";
@@ -153,13 +153,14 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
 
   // Iterate backwards and append the data.
   size_t header_offset = 0;
-  while (it-- != redundant_encodings_.begin()) {
+  while (it != redundant_encodings_.begin()) {
+    --it;
     encoded->AppendData(it->second);
 
     const uint32_t timestamp_delta =
         info.encoded_timestamp - it->first.encoded_timestamp;
     encoded->data()[header_offset] = it->first.payload_type | 0x80;
-    SetBE16(static_cast<uint8_t*>(encoded->data()) + header_offset + 1,
+    SetBE16(ArrayView<uint8_t>(*encoded).subspan(header_offset + 1, 2),
             (timestamp_delta << 2) | (it->first.encoded_bytes >> 8));
     encoded->data()[header_offset + 3] = it->first.encoded_bytes & 0xff;
     header_offset += kRedHeaderLength;

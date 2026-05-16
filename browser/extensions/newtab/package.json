@@ -98,6 +98,7 @@
     "testmc:lint": "npm run lint",
     "testmc:build": "npm run bundle:webpack",
     "testmc:jest": "jest",
+    "testmc:jest:coverage": "jest --coverage",
     "testmc:unit": "karma start karma.mc.config.js",
     "tddmc": "karma start karma.mc.config.js --tdd",
     "debugcoverage": "open logs/coverage/lcov-report/index.html",

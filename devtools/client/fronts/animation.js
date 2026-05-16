@@ -9,11 +9,11 @@ const {
   registerFront,
 } = require("resource://devtools/shared/protocol.js");
 const {
-  animationPlayerSpec,
+  animationSpec,
   animationsSpec,
 } = require("resource://devtools/shared/specs/animation.js");
 
-class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
+class AnimationFront extends FrontClassWithSpec(animationSpec) {
   constructor(conn, targetFront, parentFront) {
     super(conn, targetFront, parentFront);
 
@@ -49,6 +49,11 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
       currentTime: this._form.currentTime,
       playState: this._form.playState,
       playbackRate: this._form.playbackRate,
+      playBackRateMultiplier:
+        // @backward-compat { version 151 } playBackRateMultiplier was added in 151,
+        // we need to set a default when connecting to older server.
+        // Once 151 hits release, the `|| 1` can be removed.
+        this._form.playBackRateMultiplier || 1,
       name: this._form.name,
       duration: this._form.duration,
       delay: this._form.delay,
@@ -70,7 +75,7 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
   }
 
   /**
-   * Executed when the AnimationPlayerActor emits a "changed" event. Used to
+   * Executed when the AnimationActor emits a "changed" event. Used to
    * update the local knowledge of the state.
    */
   onChanged(partialState) {
@@ -128,9 +133,12 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
       fill,
       iterationCount,
       playbackRate,
+      playBackRateMultiplier = 1,
     } = data;
 
-    const toRate = v => v / Math.abs(playbackRate);
+    const multiplier = playbackRate * playBackRateMultiplier;
+
+    const toRate = v => v / Math.abs(multiplier);
     const isPositivePlaybackRate = playbackRate > 0;
     let absoluteDelay = 0;
     let absoluteEndDelay = 0;
@@ -152,7 +160,7 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
     let endTime = 0;
 
     if (duration === Infinity) {
-      // Set endTime so as to enable the scrubber with keeping the consinstency of UI
+      // Set endTime so as to enable the scrubber with keeping the consistency of UI
       // even the duration was Infinity. In case of delay is longer than zero, handle
       // the graph duration as double of the delay amount. In case of no delay, handle
       // the duration as 1ms which is short enough so as to make the scrubber movable
@@ -198,7 +206,7 @@ class AnimationPlayerFront extends FrontClassWithSpec(animationPlayerSpec) {
   }
 }
 
-registerFront(AnimationPlayerFront);
+registerFront(AnimationFront);
 
 class AnimationsFront extends FrontClassWithSpec(animationsSpec) {
   constructor(client, targetFront, parentFront) {

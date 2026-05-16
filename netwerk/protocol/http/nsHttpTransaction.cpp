@@ -160,7 +160,13 @@ nsHttpTransaction::~nsHttpTransaction() {
   LOG(("Destroying nsHttpTransaction @%p\n", this));
 
   if (mTokenBucketCancel) {
-    mTokenBucketCancel->Cancel(NS_ERROR_ABORT);
+    if (OnSocketThread()) {
+      mTokenBucketCancel->Cancel(NS_ERROR_ABORT);
+    } else {
+      MOZ_DIAGNOSTIC_ASSERT(false,
+                            "Token bucket not canceled before off-thread "
+                            "destruction");
+    }
     mTokenBucketCancel = nullptr;
   }
 
@@ -526,6 +532,14 @@ void nsHttpTransaction::SetConnection(nsAHttpConnection* conn) {
     mConnection = conn;
     if (mConnection) {
       mIsHttp3Used = mConnection->Version() == HttpVersion::v3_0;
+      if (mActivated) {
+        mConnection->GetSelfAddr(&mSelfAddr);
+        mConnection->GetPeerAddr(&mPeerAddr);
+        mResolvedByTRR = mConnection->ResolvedByTRR();
+        mEffectiveTRRMode = mConnection->EffectiveTRRMode();
+        mTRRSkipReason = mConnection->TRRSkipReason();
+        mEchConfigUsed = mConnection->GetEchConfigUsed();
+      }
     }
   }
 }
@@ -620,12 +634,7 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
   // If we are using a persistent connection they will remain null,
   // and the correct value will be returned in Performance.
   if (GetRequestStart().IsNull()) {
-    if (mConnInfo && mConnInfo->GetHappyEyeballsEnabled()) {
-      // Happy eyeballs sets connection timing data directly.
-      if (status == NS_NET_STATUS_SENDING_TO) {
-        SetRequestStart(TimeStamp::Now(), true);
-      }
-    } else if (status == NS_NET_STATUS_RESOLVING_HOST) {
+    if (status == NS_NET_STATUS_RESOLVING_HOST) {
       SetDomainLookupStart(TimeStamp::Now(), true);
     } else if (status == NS_NET_STATUS_RESOLVED_HOST) {
       SetDomainLookupEnd(TimeStamp::Now());
@@ -634,7 +643,7 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
       {
         MutexAutoLock lock(mLock);
         mTimings.connectStart = tnow;
-        if (mConnInfo->IsHttp3()) {
+        if (mConnInfo && mConnInfo->IsHttp3()) {
           mTimings.secureConnectionStart = tnow;
         }
       }
@@ -662,14 +671,22 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
 
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  // Need to do this before the STATUS_RECEIVING_FROM check below, to make
-  // sure that the activity distributor gets told about all status events.
-
   // upon STATUS_WAITING_FOR; report request body sent
   if ((mHasRequestBody) && (status == NS_NET_STATUS_WAITING_FOR)) {
     gHttpHandler->ObserveHttpActivityWithArgs(
         HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
         NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_BODY_SENT, PR_Now(), 0, ""_ns);
+  }
+
+  if (status == NS_NET_STATUS_SENDING_TO && mReader) {
+    // A mRequestStream method is on the stack - wait.
+    LOG(
+        ("nsHttpTransaction::OnSocketStatus [this=%p] "
+         "Skipping Re-Entrant NS_NET_STATUS_SENDING_TO\n",
+         this));
+    // its ok to coalesce several of these into one deferred event
+    mDeferredSendProgress = true;
+    return;
   }
 
   // report the status and progress
@@ -689,17 +706,6 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
           ("nsHttpTransaction::OnTransportStatus %p "
            "SENDING_TO without request body\n",
            this));
-      return;
-    }
-
-    if (mReader) {
-      // A mRequestStream method is on the stack - wait.
-      LOG(
-          ("nsHttpTransaction::OnSocketStatus [this=%p] "
-           "Skipping Re-Entrant NS_NET_STATUS_SENDING_TO\n",
-           this));
-      // its ok to coalesce several of these into one deferred event
-      mDeferredSendProgress = true;
       return;
     }
 
@@ -2785,6 +2791,18 @@ void nsHttpTransaction::DisableHttp3(bool aAllowRetryHTTPSRR) {
     RemoveAlternateServiceUsedHeader(mRequestHead);
     MOZ_ASSERT(!connInfo->IsHttp3());
     mConnInfo.swap(connInfo);
+  }
+}
+
+void nsHttpTransaction::RemoveAltSvcUsedHeader() {
+  RemoveAlternateServiceUsedHeader(mRequestHead);
+}
+
+void nsHttpTransaction::Deactivate() {
+  MOZ_ASSERT(OnSocketThread());
+  if (mActivated) {
+    gHttpHandler->ConnMgr()->RemoveActiveTransaction(this);
+    mActivated = false;
   }
 }
 

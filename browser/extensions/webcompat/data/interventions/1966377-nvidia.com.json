@@ -1,0 +1,17 @@
+{
+  "label": "nvidia.com",
+  "bugs": {
+    "1966377": {
+      "issue": "broken-layout",
+      "matches": ["*://*.nvidia.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "css": ["bug1966377-nvidia.com-fix-overflowing-layout.css"]
+      }
+    }
+  ]
+}

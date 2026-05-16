@@ -11,13 +11,17 @@
 #include "mozilla/layers/PCompositorBridgeChild.h"
 #include "mozilla/layers/TextureForwarder.h"  // for TextureForwarder
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "mozilla/RefPtr.h"
 #include "nsClassHashtable.h"  // for nsClassHashtable
 #include "nsCOMPtr.h"          // for nsCOMPtr
 #include "nsHashKeys.h"        // for nsUint64HashKey
 #include "nsISupportsImpl.h"   // for NS_INLINE_DECL_REFCOUNTING
 #include "nsIWeakReferenceUtils.h"
+#include "nsStringFwd.h"
 
 #include <unordered_map>
+
+class nsIWidget;
 
 namespace mozilla {
 
@@ -60,8 +64,13 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
    */
   void InitForContent(uint32_t aNamespace);
 
-  void InitForWidget(uint64_t aProcessToken,
-                     WebRenderLayerManager* aLayerManager, uint32_t aNamespace);
+  void InitForWidget(uint64_t aProcessToken, uint32_t aNamespace);
+
+  // Creates a layer manager for this compositor bridge. Must only be called
+  // once, and only on widget compositor bridges.
+  RefPtr<WebRenderLayerManager> CreateLayerManager(nsIWidget* aWidget,
+                                                   wr::PipelineId aPipelineId,
+                                                   nsCString& aError);
 
   void Destroy();
 

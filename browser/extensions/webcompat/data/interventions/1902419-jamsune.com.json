@@ -1,0 +1,18 @@
+{
+  "label": "jamsune.com",
+  "bugs": {
+    "1902419": {
+      "issue": "unsupported-warning",
+      "matches": ["*://www.jamsune.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "all_frames": true,
+        "js": ["bug1902419-www.jamsune.com-prevent-unsupported-alert.js"]
+      }
+    }
+  ]
+}

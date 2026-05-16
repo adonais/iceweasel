@@ -75,7 +75,7 @@ hazard
 
 Hazard builds are similar to "regular' builds, but use a compiler extension to
 extract a bunch of data from the build and then analyze that data looking for
-hazardous behaviors.
+hazardous behaviors. See https://firefox-source-docs.mozilla.org/js/HazardAnalysis/index.html
 
 l10n
 ----
@@ -753,9 +753,17 @@ openh264-plugin
 ---------------
 Tasks used to build the openh264 plugin.
 
+openh264-notarization
+---------------------
+Mac notarization for the openh264 plugin.
+
 openh264-signing
 ----------------
 Signing for the openh264 plugin.
+
+openh264-symbol-upload
+-----------------------
+Upload crash symbols for the openh264 plugin to the symbol server.
 
 webrender
 ---------

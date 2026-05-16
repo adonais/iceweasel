@@ -1,0 +1,17 @@
+{
+  "label": "www.dockers.in",
+  "bugs": {
+    "1993453": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://www.dockers.in/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "css": ["1993453-www.dockers.in-fix-product-image-hovering.css"]
+      }
+    }
+  ]
+}

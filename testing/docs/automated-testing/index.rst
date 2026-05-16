@@ -254,8 +254,8 @@ uploaded to a web server when the test finishes. The URLs to retrieve
 the files will be output in the test log.
 
 Passing ``MOZ_RECORD_TEST=1`` as an environment variable when running some
-tests (e.g. mochitests) on Linux Desktop and macOS will trigger a recording of the
-desktop with GNOME Screencast. This works on try as well, in which case the video
+tests (e.g. mochitests) on Linux Desktop, macOS or Windows will trigger a recording of the
+desktop. This works on try as well, in which case the video
 file will be uploaded as an artifact and available in the
 ``Artifacts and Debugging Tools`` panel on Treeherder.
 
@@ -357,3 +357,10 @@ that can be used in ``skip-if`` annotations.
 .. toctree::
 
    manifest-sandbox
+
+Other Topics
+------------
+
+.. toctree::
+
+   tree-closure

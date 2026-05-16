@@ -1605,6 +1605,7 @@ export var PanelView = class extends AssociatedToNode {
         localName == "moz-button" ||
         localName == "moz-box-button" ||
         localName == "moz-toggle" ||
+        localName == "summary" ||
         node.classList.contains("text-link") ||
         (!arrowKey && isNavigableWithTabOnly) ||
         node.dataset?.capturesFocus === "true"

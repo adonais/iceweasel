@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -229,9 +227,11 @@ char32_t JS::Utf8ToOneUcs4Char(const uint8_t* utf8Buffer, int utf8Length) {
   return Utf8ToOneUcs4CharImpl(utf8Buffer, utf8Length);
 }
 
-static void ReportInvalidCharacter(JSContext* cx, uint32_t offset) {
-  char buffer[10];
-  SprintfLiteral(buffer, "%u", offset);
+static void ReportInvalidCharacter(JSContext* cx, size_t offset) {
+  // Max roundtrip digits, +1 to include largest numbers, +1 for null terminator
+  constexpr size_t BUFFER_LENGTH = std::numeric_limits<size_t>::digits10 + 2;
+  char buffer[BUFFER_LENGTH];
+  SprintfLiteral(buffer, "%zu", offset);
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                             JSMSG_MALFORMED_UTF8_CHAR, buffer);
 }
@@ -279,7 +279,7 @@ template <OnUTF8Error ErrorAction, typename OutputFn>
 static bool InflateUTF8ToUTF16(JSContext* cx, const UTF8Chars& src,
                                OutputFn dst) {
   size_t srclen = src.length();
-  for (uint32_t i = 0; i < srclen; i++) {
+  for (size_t i = 0; i < srclen; i++) {
     uint32_t v = uint32_t(src[i]);
     if (!(v & 0x80)) {
       // ASCII code unit.  Simple copy.
@@ -396,7 +396,7 @@ static void CopyAndInflateUTF8IntoBuffer(JSContext* cx, const UTF8Chars& src,
   if (allASCII) {
     size_t srclen = src.length();
     MOZ_ASSERT(outlen == srclen);
-    for (uint32_t i = 0; i < srclen; i++) {
+    for (size_t i = 0; i < srclen; i++) {
       dst[i] = CharT(src[i]);
     }
   } else {

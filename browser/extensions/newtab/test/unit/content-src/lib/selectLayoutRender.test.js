@@ -708,5 +708,20 @@ describe("selectLayoutRender", () => {
         "spoc should be injected when allowAds is true"
       );
     });
+
+    it("should add spoc positions for sections with allowAds: undefined", () => {
+      setupStore(undefined);
+
+      const { layoutRender } = selectLayoutRender({
+        state: store.getState().DiscoveryStream,
+        prefs: fakePrefs,
+      });
+
+      const [renderedSection] = layoutRender[0].components[0].data.sections;
+      assert.isTrue(
+        renderedSection.data.some(item => item.id === "spoc1"),
+        "spoc should be injected when allowAds is undefined"
+      );
+    });
   });
 });

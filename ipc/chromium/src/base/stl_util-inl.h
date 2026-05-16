@@ -9,7 +9,6 @@
 #define BASE_STL_UTIL_INL_H_
 
 #include <string.h>  // for memcpy
-#include <functional>
 #include <set>
 #include <string>
 #include <vector>

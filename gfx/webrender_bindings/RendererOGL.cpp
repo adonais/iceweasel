@@ -122,7 +122,6 @@ RendererOGL::RendererOGL(RefPtr<RenderThread>&& aThread,
       mRenderer(aRenderer),
       mBridge(aBridge),
       mWindowId(aWindowId),
-      mDisableNativeCompositor(false),
       mLastPipelineInfo(new WebRenderPipelineInfo) {
   MOZ_ASSERT(mThread);
   MOZ_ASSERT(mCompositor);
@@ -163,11 +162,6 @@ void RendererOGL::Update() {
     wr_renderer_update(mRenderer);
     FlushPipelineInfo();
   }
-}
-
-static void DoWebRenderDisableNativeCompositor(
-    layers::CompositorBridgeParent* aBridge) {
-  aBridge->NotifyWebRenderDisableNativeCompositor();
 }
 
 RenderedFrameId RendererOGL::UpdateAndRender(
@@ -332,14 +326,7 @@ bool RendererOGL::EnsureAsyncScreenshot() {
   if (mCompositor->SupportAsyncScreenshot()) {
     return true;
   }
-  if (!mDisableNativeCompositor) {
-    layers::CompositorThread()->Dispatch(
-        NewRunnableFunction("DoWebRenderDisableNativeCompositorRunnable",
-                            &DoWebRenderDisableNativeCompositor, mBridge));
-
-    mDisableNativeCompositor = true;
-    gfxCriticalNote << "Disable native compositor for async screenshot";
-  }
+  MOZ_ASSERT_UNREACHABLE("unexpected to be called");
   return false;
 }
 

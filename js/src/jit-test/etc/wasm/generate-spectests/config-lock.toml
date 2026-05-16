@@ -12,4 +12,8 @@ commit = 'cad80dc2c'
 
 [[repos]]
 name = 'compact-import-section'
-commit = 'a800fc626'
+commit = 'bebcdeff9'
+
+[[repos]]
+name = 'stack-switching'
+commit = '8fe7145d2'

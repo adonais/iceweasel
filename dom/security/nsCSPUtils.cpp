@@ -494,9 +494,9 @@ bool CSP_IsQuotelessKeyword(const nsAString& aKey) {
   ToLowerCase(aKey, lowerKey);
 
   nsAutoString keyword;
-  for (uint32_t i = 0; i < CSP_LAST_KEYWORD_VALUE; i++) {
+  for (auto& gCSPUTF8Keyword : gCSPUTF8Keywords) {
     // skipping the leading ' and trimming the trailing '
-    keyword.AssignASCII(gCSPUTF8Keywords[i] + 1);
+    keyword.AssignASCII(gCSPUTF8Keyword + 1);
     keyword.Trim("'", false, true);
     if (lowerKey.Equals(keyword)) {
       return true;

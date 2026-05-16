@@ -357,7 +357,7 @@ export class EditProfileCard extends MozLitElement {
     if (this.isCopy) {
       return html`<div>
         <h1
-          data-l10n-id="copied-profile-page-header"
+          data-l10n-id="copied-profile-page-header-2"
           data-l10n-args=${JSON.stringify({
             profilename: this.copiedProfileName,
           })}

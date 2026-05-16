@@ -222,7 +222,7 @@ export class LoginManagerStorage_json {
 
   // Synchronuously stores encrypted login, returns login clone with upserted
   // uuid and updated timestamps
-  #addLogin(login) {
+  async #addLogin(login) {
     this._store.ensureDataReady();
 
     // Throws if there are bogus values.
@@ -298,7 +298,7 @@ export class LoginManagerStorage_json {
     });
     this._store.saveSoon();
 
-    Glean.pwmgr.numSavedPasswords.set(this.countLogins("", "", ""));
+    Glean.pwmgr.numSavedPasswords.set(await this.countLoginsAsync("", "", ""));
     return loginClone;
   }
 
@@ -330,7 +330,7 @@ export class LoginManagerStorage_json {
         }
       }
 
-      const resultLogin = this.#addLogin(encryptedLogin);
+      const resultLogin = await this.#addLogin(encryptedLogin);
 
       // restore unencrypted username and password for use in `addLogin` event
       // and return value
@@ -385,9 +385,34 @@ export class LoginManagerStorage_json {
   }
 
   async removeLoginAsync(login, fromSync) {
-    let result = this.removeLogin(login, fromSync);
-    // Emulate being async:
-    return Promise.resolve(result);
+    this._store.ensureDataReady();
+
+    let [idToDelete, storedLogin] = this._getIdForLogin(login);
+    if (!idToDelete) {
+      throw new Error("No matching logins");
+    }
+
+    let foundIndex = this._store.data.logins.findIndex(l => l.id == idToDelete);
+    if (foundIndex != -1) {
+      let existingLogin = this._store.data.logins[foundIndex];
+      if (!existingLogin.deleted) {
+        if (fromSync) {
+          this.#replaceLoginWithTombstone(existingLogin);
+        } else if (existingLogin.everSynced) {
+          // The login has been synced, so mark it as deleted.
+          this.#incrementSyncCounter(existingLogin);
+          this.#replaceLoginWithTombstone(existingLogin);
+        } else {
+          // The login was never synced, so just remove it from the data.
+          this._store.data.logins.splice(foundIndex, 1);
+        }
+
+        this._store.saveSoon();
+      }
+    }
+
+    Glean.pwmgr.numSavedPasswords.set(await this.countLoginsAsync("", "", ""));
+    lazy.LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
   }
 
   /**
@@ -451,7 +476,6 @@ export class LoginManagerStorage_json {
     // Get the encrypted value of the username and password.
     let [encUsername, encPassword, encType, encUnknownFields] =
       this._encryptLogin(newLogin);
-
     for (let loginItem of this._store.data.logins) {
       if (loginItem.id == idToModify && !loginItem.deleted) {
         loginItem.hostname = newLogin.origin;
@@ -483,9 +507,85 @@ export class LoginManagerStorage_json {
   }
 
   async modifyLoginAsync(oldLogin, newLoginData, fromSync) {
-    let result = this.modifyLogin(oldLogin, newLoginData, fromSync);
-    // Emulate being async:
-    return Promise.resolve(result);
+    this._store.ensureDataReady();
+
+    let [idToModify, oldStoredLogin] = this._getIdForLogin(oldLogin);
+    if (!idToModify) {
+      throw new Error("No matching logins");
+    }
+
+    let newLogin = lazy.LoginHelper.buildModifiedLogin(
+      oldStoredLogin,
+      newLoginData
+    );
+
+    // Check if the new GUID is duplicate.
+    if (
+      newLogin.guid != oldStoredLogin.guid &&
+      !this._isGuidUnique(newLogin.guid)
+    ) {
+      throw new Error("specified GUID already exists");
+    }
+
+    // Look for an existing entry in case key properties changed.
+    if (!newLogin.matches(oldLogin, true)) {
+      const matchData = {};
+      for (const field of ["origin", "formActionOrigin", "httpRealm"]) {
+        if (newLogin[field] !== "") {
+          matchData[field] = newLogin[field];
+        }
+      }
+      const logins = await this.searchLoginsAsync(matchData);
+      let matchingLogin = logins.find(login => newLogin.matches(login, true));
+      if (matchingLogin) {
+        throw lazy.LoginHelper.createLoginAlreadyExistsError(
+          matchingLogin.guid
+        );
+      }
+    }
+
+    // Don't sync changes to the accounts password or when changes were only
+    // made to fields that should not be synced.
+    if (
+      !fromSync &&
+      !isFXAHost(newLogin) &&
+      isSyncableChange(oldLogin, newLogin)
+    ) {
+      this.#incrementSyncCounter(newLogin);
+    }
+
+    // Get the encrypted value of the username and password.
+    let [encUsername, encPassword, encType, encUnknownFields] =
+      this._encryptLogin(newLogin);
+
+    for (let loginItem of this._store.data.logins) {
+      if (loginItem.id == idToModify && !loginItem.deleted) {
+        loginItem.hostname = newLogin.origin;
+        loginItem.httpRealm = newLogin.httpRealm;
+        loginItem.formSubmitURL = newLogin.formActionOrigin;
+        loginItem.usernameField = newLogin.usernameField;
+        loginItem.passwordField = newLogin.passwordField;
+        loginItem.encryptedUsername = encUsername;
+        loginItem.encryptedPassword = encPassword;
+        loginItem.guid = newLogin.guid;
+        loginItem.encType = encType;
+        loginItem.timeCreated = newLogin.timeCreated;
+        loginItem.timeLastUsed = newLogin.timeLastUsed;
+        loginItem.timePasswordChanged = newLogin.timePasswordChanged;
+        loginItem.timesUsed = newLogin.timesUsed;
+        loginItem.timeLastBreachAlertDismissed =
+          newLogin.timeLastBreachAlertDismissed;
+        loginItem.encryptedUnknownFields = encUnknownFields;
+        loginItem.syncCounter = newLogin.syncCounter;
+        this._store.saveSoon();
+        break;
+      }
+    }
+
+    lazy.LoginHelper.notifyStorageChanged("modifyLogin", [
+      oldStoredLogin,
+      newLogin,
+    ]);
   }
 
   // Replace the login with a tombstone. It has a guid and sync-related properties,
@@ -527,9 +627,13 @@ export class LoginManagerStorage_json {
   }
 
   async recordPasswordUseAsync(login) {
-    let result = this.recordPasswordUse(login);
-    // Emulate being async:
-    return Promise.resolve(result);
+    // Update the lastUsed timestamp and increment the use count.
+    let propBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+      Ci.nsIWritablePropertyBag
+    );
+    propBag.setProperty("timeLastUsed", Date.now());
+    propBag.setProperty("timesUsedIncrement", 1);
+    this.modifyLoginAsync(login, propBag);
   }
 
   async recordBreachAlertDismissal(loginGUID) {
@@ -584,12 +688,32 @@ export class LoginManagerStorage_json {
     lazy.logger.log(
       `Searching for matching logins for origin ${matchData.origin}.`
     );
-    let result = this.searchLogins(
-      lazy.LoginHelper.newPropertyBag(matchData),
-      includeDeleted
-    );
-    // Emulate being async:
-    return Promise.resolve(result);
+    this._store.ensureDataReady();
+
+    let realMatchData = {};
+    let options = {};
+
+    if ("guid" in matchData) {
+      realMatchData.guid = matchData.guid;
+    } else {
+      for (const name in matchData) {
+        switch (name) {
+          case "acceptDifferentSubdomains":
+          case "schemeUpgrades":
+          case "acceptRelatedRealms":
+          case "relatedRealms":
+            options[name] = matchData[name];
+            break;
+          default:
+            realMatchData[name] = matchData[name];
+            break;
+        }
+      }
+    }
+
+    let [logins] = this._searchLogins(realMatchData, includeDeleted, options);
+
+    return this._decryptLogins(logins);
   }
 
   /**
@@ -727,7 +851,7 @@ export class LoginManagerStorage_json {
    *
    */
   async removeAllLoginsAsync() {
-    this.removeAllLogins();
+    this.#removeLogins(false, true);
   }
   /**
    * @deprecated Use removeAllUserFacingLoginsAsync instead.
@@ -747,7 +871,7 @@ export class LoginManagerStorage_json {
    * @param fullyRemove remove the logins rather than mark them deleted.
    */
   async removeAllUserFacingLoginsAsync(fullyRemove) {
-    this.removeAllUserFacingLogins(fullyRemove);
+    this.#removeLogins(fullyRemove, false);
   }
 
   /**
@@ -973,9 +1097,26 @@ export class LoginManagerStorage_json {
   }
 
   async countLoginsAsync(origin, formActionOrigin, httpRealm) {
-    let result = this.countLogins(origin, formActionOrigin, httpRealm);
-    // Emulate being async:
-    return Promise.resolve(result);
+    this._store.ensureDataReady();
+
+    let loginData = {
+      origin,
+      formActionOrigin,
+      httpRealm,
+    };
+    let matchData = {};
+    for (let field of ["origin", "formActionOrigin", "httpRealm"]) {
+      if (loginData[field] != "") {
+        matchData[field] = loginData[field];
+      }
+    }
+
+    const foundLogins = this._store.data.logins.filter(
+      loginItem => !loginItem.deleted && this.#matchLogin(loginItem, matchData)
+    );
+
+    lazy.logger.log(`Counted ${foundLogins.length} logins.`);
+    return foundLogins.length;
   }
 
   async addPotentiallyVulnerablePassword(login) {

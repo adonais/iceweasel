@@ -8,7 +8,7 @@ The implementation is split into two directories:
 * ``toolkit/components/ipprotection`` — platform-independent core (state machine,
   proxy/network stack, core helpers).
 * ``browser/components/ipprotection`` — desktop-specific UI layer (panel, toolbar
-  button, alert/infobar managers, onboarding helpers).
+  button, alert/infobar managers, and onboarding helpers).
 
 Component Diagram
 -----------------
@@ -43,15 +43,20 @@ A diagram of all the main components is the following:
 
        subgraph CoreHelpers["Core Helpers"]
          IPPStartupCache["Startup Cache Helper"]
-         IPPSignInWatcher["Sign-in Observer"]
          IPProtectionServerlist
-         IPPEnrollAndEntitleManager["Enroll & Entitle Manager"]
          IPPProxyManager
          IPPAutoStart["Auto-Start Helper"]
          IPPAutoRestoreHelper["Auto-Restore Helper"]
          IPPNimbusHelper["Nimbus Eligibility Helper"]
          IPPSessionPrefManager["Session Pref Manager"]
          IPPExceptionsManager
+       end
+
+       subgraph FxaAuth["FxA Authentication (fxa/)"]
+         IPPAuthProvider
+         IPPFxaAuthProvider
+         IPPSignInWatcher["Sign-in Observer"]
+         IPPEnrollAndEntitleManager["Enroll & Entitle Manager"]
        end
 
        subgraph Proxy["Proxy stack"]
@@ -65,10 +70,17 @@ A diagram of all the main components is the following:
      BrowserHelpers -- "addHelpers()" --> IPProtectionActivator
      IPProtectionActivator --> IPProtectionService
      IPProtectionActivator --> CoreHelpers
+     IPProtectionActivator -- "setAuthProvider()" --> IPPFxaAuthProvider
 
      %% Service wiring
      IPProtectionService --> GuardianClient
      IPProtectionService --> CoreHelpers
+     IPProtectionService -- "authProvider" --> IPPAuthProvider
+
+     %% FxA auth wiring
+     IPPFxaAuthProvider -->|extends| IPPAuthProvider
+     IPPFxaAuthProvider --> IPPSignInWatcher
+     IPPFxaAuthProvider --> IPPEnrollAndEntitleManager
 
      %% UI wiring
      IPProtection --> IPProtectionPanel
@@ -102,7 +114,8 @@ IPProtectionActivator
   Entry point that assembles the full helper list and initialises
   ``IPProtectionService``.  It owns the ordered list of core helpers and exposes
   ``addHelpers()`` so that the browser layer can register additional,
-  browser-specific helpers before ``init()`` is called.
+  browser-specific helpers before ``init()`` is called.  It also exposes
+  ``setAuthProvider()`` to set the active authentication provider.
 
 IPPExceptionsManager
   Manages the exceptions logic (for example, domain exclusions) in coordination
@@ -129,10 +142,6 @@ IPPAutoStart
 IPPAutoRestoreHelper
   Restores the proxy state after a crash or restart when auto-restore is enabled.
 
-IPPSignInWatcher
-  Observes user authentication state. It informs the state machine when the user
-  signs in or out.
-
 IPPStartupCache
   Exposes cached information to keep the state machine responsive during startup
   (last known state and entitlement JSON object).
@@ -141,9 +150,38 @@ IPPNimbusHelper
   Monitors the Nimbus feature (``NimbusFeatures.ipProtection``) and triggers a
   state recomputation on updates.
 
+FxA authentication (``toolkit/components/ipprotection/fxa``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Authentication is abstracted behind ``IPPAuthProvider``, which lives in the
+toolkit root.  ``IPProtectionService`` always interacts with the provider through
+this interface, so all FxA dependencies are fully contained in the ``fxa/``
+sub-directory.  The concrete provider and its helpers are registered from
+``IPProtectionHelpers.sys.mjs`` in the browser layer.
+
+IPPAuthProvider
+  Base class that defines the authentication interface used by
+  ``IPProtectionService``: ``isReady``, ``getToken()``, ``aboutToStart()``,
+  and ``excludedUrlPrefs``.  The default implementation is a no-op that keeps
+  the service in an unauthenticated/inactive state.
+
+IPPFxaAuthProvider
+  Concrete FxA implementation of ``IPPAuthProvider``.  It obtains OAuth tokens
+  from ``fxAccounts``, runs the enrollment flow before the proxy starts, and
+  lists the FxA endpoint prefs whose URL values should bypass the proxy.
+  Its ``helpers`` getter exposes ``IPPSignInWatcher`` and
+  ``IPPEnrollAndEntitleManager`` so they can be registered as service helpers.
+  The provider and its helpers are wired up from ``IPProtectionHelpers.sys.mjs``
+  in the browser layer via ``IPProtectionActivator.setAuthProvider()`` and
+  ``IPProtectionActivator.addHelpers()``.
+
+IPPSignInWatcher
+  Observes user authentication state.  It informs the state machine when the
+  user signs in or out.
+
 IPPEnrollAndEntitleManager
-  Orchestrates the user enrollment flow with Guardian and updates the service
-  when enrollment status changes.
+  Orchestrates the FxA-based enrollment flow with Guardian and updates the
+  service when enrollment or entitlement status changes.
 
 IPPSessionPrefManager
   Sets session-scoped preferences while the
@@ -163,6 +201,8 @@ IPProtectionHelpers
   Registers browser-specific helpers with ``IPProtectionActivator`` via
   ``addHelpers()``: ``UIHelper``, ``IPPOnboardingMessage``, ``IPPOptOutHelper``,
   ``IPPUsageHelper``, ``IPProtectionAlertManager``, and ``IPProtectionInfobarManager``.
+  It also registers ``IPPFxaAuthProvider`` (and its FxA helpers) via
+  ``setAuthProvider()`` and ``addHelpers()``.
 
 UIHelper
   Shows and hides the UI based on the current state machine state.

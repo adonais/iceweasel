@@ -312,7 +312,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mUpdatedDimensions(false),
       mSizeMode(nsSizeMode_Normal),
       mCreatingWindow(false),
-      mMarkedDestroying(false),
+      mHoldingGroupKeepAlive(false),
       mIsDestroyed(false),
       mRemoteTargetSetsCursor(false),
       mIsPreservingLayers(false),
@@ -497,7 +497,7 @@ already_AddRefed<nsIWidget> BrowserParent::GetDocWidget() const {
       nsContentUtils::WidgetForDocument(mFrameElement->OwnerDoc()));
 }
 
-nsIXULBrowserWindow* BrowserParent::GetXULBrowserWindow() {
+already_AddRefed<nsIXULBrowserWindow> BrowserParent::GetXULBrowserWindow() {
   if (!mFrameElement) {
     return nullptr;
   }
@@ -520,7 +520,7 @@ nsIXULBrowserWindow* BrowserParent::GetXULBrowserWindow() {
 
   nsCOMPtr<nsIXULBrowserWindow> xulBrowserWindow;
   window->GetXULBrowserWindow(getter_AddRefs(xulBrowserWindow));
-  return xulBrowserWindow;
+  return xulBrowserWindow.forget();
 }
 
 uint32_t BrowserParent::GetMaxTouchPoints(Element* aElement) {
@@ -581,7 +581,7 @@ ParentShowInfo BrowserParent::GetShowInfo() {
     mFrameElement->GetAttr(nsGkAtoms::name, name);
   }
   return ParentShowInfo(name, false, IsTransparent(), mDPI, mRounding,
-                        mDefaultScale.scale);
+                        mDefaultScale.scale, mDesktopToDeviceScale.scale);
 }
 
 already_AddRefed<nsIPrincipal> BrowserParent::GetContentPrincipal() const {
@@ -760,15 +760,14 @@ void BrowserParent::Destroy() {
   mContentParentKeepAlive = nullptr;
 #endif
 
-  // This `AddKeepAlive` will be cleared if `mMarkedDestroying` is set in
+  // This `AddKeepAlive` will be cleared if `mHoldingGroupKeepAlive` is set in
   // `ActorDestroy`. Out of caution, we don't add the `KeepAlive` if our IPC
   // actor has somehow already been destroyed, as that would mean `ActorDestroy`
   // won't be called.
-  if (CanRecv()) {
+  if (CanSend()) {
     mBrowsingContext->Group()->AddKeepAlive();
+    mHoldingGroupKeepAlive = true;
   }
-
-  mMarkedDestroying = true;
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvDidUnsuppressPainting() {
@@ -845,10 +844,9 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
     }
   }
 
-  // If we were shutting down normally, we held a reference to our
-  // BrowsingContextGroup in `BrowserParent::Destroy`. Clear that reference
-  // here.
-  if (mMarkedDestroying) {
+  // Release the reference to our `BrowsingContextGroup` we took in
+  // `BrowserParent::Destroy`.
+  if (mHoldingGroupKeepAlive) {
     mBrowsingContext->Group()->RemoveKeepAlive();
   }
 
@@ -1569,22 +1567,27 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aEvent) {
       return;
     }
 
-    if (!aEvent.mFlags.mIsSynthesizedForTests) {
+    // Don't compress mousemove events:
+    // - Every event is important for tests, since synthesized input events
+    //   may occur faster than real user interactions.
+    // - If the platform provides movement data, avoid compression to prevent
+    //   losing that data.
+    if (aEvent.mFlags.mIsSynthesizedForTests || aEvent.mMovement) {
       DebugOnly<bool> ret =
           isInputPriorityEventEnabled
-              ? SendRealMouseMoveEvent(aEvent, guid, blockId)
-              : SendNormalPriorityRealMouseMoveEvent(aEvent, guid, blockId);
-      NS_WARNING_ASSERTION(ret, "SendRealMouseMoveEvent() failed");
+              ? SendRealMouseMoveEventNoCompress(aEvent, guid, blockId)
+              : SendNormalPriorityRealMouseMoveEventNoCompress(aEvent, guid,
+                                                               blockId);
+      NS_WARNING_ASSERTION(ret, "SendRealMouseMoveEventNoCompress() failed");
       MOZ_ASSERT(!ret || aEvent.HasBeenPostedToRemoteProcess());
       return;
     }
 
     DebugOnly<bool> ret =
         isInputPriorityEventEnabled
-            ? SendRealMouseMoveEventForTests(aEvent, guid, blockId)
-            : SendNormalPriorityRealMouseMoveEventForTests(aEvent, guid,
-                                                           blockId);
-    NS_WARNING_ASSERTION(ret, "SendRealMouseMoveEventForTests() failed");
+            ? SendRealMouseMoveEvent(aEvent, guid, blockId)
+            : SendNormalPriorityRealMouseMoveEvent(aEvent, guid, blockId);
+    NS_WARNING_ASSERTION(ret, "SendRealMouseMoveEvent() failed");
     MOZ_ASSERT(!ret || aEvent.HasBeenPostedToRemoteProcess());
     return;
   }
@@ -3567,6 +3570,8 @@ void BrowserParent::TryCacheDPIAndScale() {
   mRounding = widget ? widget->RoundsWidgetCoordinatesTo() : 1;
   mDefaultScale =
       widget ? widget->GetDefaultScale() : nsIWidget::GetFallbackDefaultScale();
+  mDesktopToDeviceScale = widget ? widget->GetDesktopToDeviceScale()
+                                 : DesktopToLayoutDeviceScale(1.0);
 
   if (mDefaultScale != oldDefaultScale) {
     // The change of the default scale factor will affect the child dimensions
@@ -3712,7 +3717,8 @@ void BrowserParent::NotifyResolutionChanged() {
   // We don't want to send that value to content. Just send -1 for it too in
   // that case.
   (void)SendUIResolutionChanged(mDPI, mRounding,
-                                mDPI < 0 ? -1.0 : mDefaultScale.scale);
+                                mDPI < 0 ? -1.0 : mDefaultScale.scale,
+                                mDesktopToDeviceScale.scale);
 }
 
 void BrowserParent::NotifyTransparencyChanged() {
@@ -3818,11 +3824,11 @@ void BrowserParent::SuppressDisplayport(bool aEnabled) {
 
 #ifdef DEBUG
   if (aEnabled) {
-    mActiveSupressDisplayportCount++;
+    mActiveSuppressDisplayportCount++;
   } else {
-    mActiveSupressDisplayportCount--;
+    mActiveSuppressDisplayportCount--;
   }
-  MOZ_ASSERT(mActiveSupressDisplayportCount >= 0);
+  MOZ_ASSERT(mActiveSuppressDisplayportCount >= 0);
 #endif
 
   (void)SendSuppressDisplayport(aEnabled);
@@ -4203,8 +4209,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvMaybeFireEmbedderLoadEvents(
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvScrollRectIntoView(
-    const nsRect& aRect, const ScrollAxis& aVertical,
-    const ScrollAxis& aHorizontal, const ScrollFlags& aScrollFlags,
+    const nsRect& aRect, const AxisScrollParams& aVertical,
+    const AxisScrollParams& aHorizontal, const ScrollFlags& aScrollFlags,
     const int32_t& aAppUnitsPerDevPixel) {
   BrowserBridgeParent* bridge = GetBrowserBridgeParent();
   if (!bridge || !bridge->CanSend()) {

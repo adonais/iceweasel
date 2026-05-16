@@ -73,6 +73,11 @@ newtab-topsites-image-url-label = URL pentru imagine personalizată
 newtab-topsites-use-image-link = Folosește o imagine personalizată…
 newtab-topsites-image-validation = Imaginea nu s-a încărcat. Încearcă o altă adresă.
 
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Șterge textul
+
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
 newtab-topsites-cancel-button = Anulează
@@ -302,9 +307,24 @@ newtab-error-fallback-refresh-link = Reîmprospătează pagina pentru a încerca
 
 newtab-custom-shortcuts-title = Comenzi rapide
 newtab-custom-shortcuts-subtitle = Site-uri pe care le salvezi sau le vizitezi
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Comenzi rapide
     .description = Site-uri pe care le salvezi sau le vizitezi
+newtab-custom-shortcuts-nova =
+    .label = Comenzi rapide
+newtab-custom-row-description =
+    .description = Număr de rânduri
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } rând
+            [few] { $num } rânduri
+           *[other] { $num } de rânduri
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -316,9 +336,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Comenzi rapide sponsorizate
 newtab-custom-pocket-title = Recomandat de { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Conținut excepțional, creat de { -pocket-brand-name }, parte a familiei { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Articole recomandate
     .description = Conținut excepțional îngrijit de familia { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Articole recomandate
 newtab-custom-stories-personalized-toggle =
     .label = Povești
 newtab-custom-stories-personalized-checkbox-label = Povești personalizate bazate pe activitatea ta
@@ -352,8 +375,11 @@ newtab-custom-settings = Gestionează mai multe setări
 
 newtab-wallpaper-title = Imagini de fundal
 newtab-wallpaper-reset = Resetează la valorile implicite
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Încarcă o imagine
 newtab-wallpaper-custom-color = Alege o culoare
+newtab-wallpaper-toggle-title =
+    .label = Imagini de fundal
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Imaginea a depășit limita de dimensiune a fișierului de { $file_size } MB. Te rugăm să încerci să încarci un fișier mai mic.
@@ -376,6 +402,7 @@ newtab-wallpaper-light-fox-anniversary = O vulpe într-un câmp ierbos cu un pei
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Culori uni
 newtab-wallpaper-blue = Albastru
 newtab-wallpaper-light-blue = Albastru deschis
@@ -482,7 +509,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Treci pe Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Treci pe Celsius
-newtab-weather-menu-hide-weather-v2 = Ascunde vremea
 newtab-weather-menu-hide-weather = Ascunde vremea în fila nouă
 newtab-weather-menu-learn-more = Află mai multe
 newtab-weather-menu-detect-my-location = Detectează-mi locația
@@ -495,6 +521,12 @@ newtab-weather-opt-in-yes =
     .label = Da
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Ridicată
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Scăzută
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -629,6 +661,8 @@ newtab-report-cancel = Anulează
 newtab-report-submit = Trimite
 newtab-toast-thanks-for-reporting =
     .message = Îți mulțumim pentru sesizare.
+newtab-toast-widgets-hidden =
+    .message = Selectează pictograma cu creion ca să adaugi widgeturi în orice moment.
 
 ## Strings for task / to-do list productivity widget
 
@@ -648,7 +682,6 @@ newtab-widget-lists-menu-edit = Editează denumirea listei
 newtab-widget-lists-menu-create = Creează o listă nouă
 newtab-widget-lists-menu-delete = Șterge lista
 newtab-widget-lists-menu-copy = Copiază lista în clipboard
-newtab-widget-lists-menu-hide = Ascunde toate listele
 newtab-widget-lists-menu-learn-more = Află mai multe
 newtab-widget-lists-input-add-an-item =
     .placeholder = Adaugă un element
@@ -669,6 +702,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Listă nouă
 newtab-widget-section-title = Widgeturi
+newtab-widget-menu-hide = Ascunde widgetul
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Ascunde widgeturile
@@ -679,6 +713,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimizează widgeturile
     .aria-label = Minimizează toate widgeturile la mărimea compactă
+newtab-widget-section-feedback = Spune-ne ce părere ai
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -699,7 +734,6 @@ newtab-widget-timer-reset =
     .title = Resetează
 newtab-widget-timer-menu-notifications = Oprește notificările
 newtab-widget-timer-menu-notifications-on = Activează notificările
-newtab-widget-timer-menu-hide = Ascunde cronometrul
 newtab-widget-timer-menu-learn-more = Află mai multe
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Titluri principale
@@ -710,6 +744,12 @@ newtab-daily-briefing-card-timestamp = Actualizat acum { $minutes } min
 newtab-widget-message-title = Stai concentrat(ă) cu liste și un cronometru încorporat
 # to-dos stands for "things to do".
 newtab-widget-message-copy = De la mementouri rapide la liste zilnice de sarcini, sesiuni de concentrare până la pauze de întindere — stai concentrat(ă) pe sarcină și o termini la timp.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Personalizează { -brand-product-name } cum vrei tu
+newtab-promo-card-body-addons = Alege un fundal din colecție sau creează tu unul.
+newtab-promo-card-cta-addons = Încearcă acum
 newtab-promo-card-title = Susține { -brand-product-name }
 newtab-promo-card-body = Sponsorii noștri ne susțin misiunea de a construi un web mai bun
 newtab-promo-card-cta = Află mai multe

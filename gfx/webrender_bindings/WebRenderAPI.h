@@ -49,7 +49,6 @@ class CompositorWidget;
 
 namespace layers {
 class CompositorBridgeParent;
-class DisplayItemCache;
 class WebRenderBridgeParent;
 class RenderRootStateManager;
 class StackingContextHelper;
@@ -124,7 +123,6 @@ class TransactionBuilder final {
   void SetDisplayList(Epoch aEpoch, wr::WrPipelineId pipeline_id,
                       wr::BuiltDisplayListDescriptor dl_descriptor,
                       wr::Vec<uint8_t>& dl_items_data,
-                      wr::Vec<uint8_t>& dl_cache_data,
                       wr::Vec<uint8_t>& dl_spatial_tree);
 
   void ClearDisplayList(Epoch aEpoch, wr::WrPipelineId aPipeline);
@@ -280,7 +278,6 @@ class WebRenderAPI final {
                 const Range<uint8_t>& aBuffer, bool* aNeedsYFlip);
 
   void ClearAllCaches();
-  void EnableNativeCompositor(bool aEnable);
   void SetBatchingLookback(uint32_t aCount);
   void SetBool(wr::BoolParameter, bool value);
   void SetInt(wr::IntParameter, int32_t value);
@@ -604,7 +601,7 @@ class DisplayListBuilder final {
              const Maybe<usize>& aEnd);
   void DumpSerializedDisplayList();
 
-  void Begin(layers::DisplayItemCache* aCache = nullptr);
+  void Begin();
   void End(wr::BuiltDisplayList& aOutDisplayList);
   void End(layers::DisplayListData& aOutTransaction);
 
@@ -814,31 +811,6 @@ class DisplayListBuilder final {
 
   void PushDebug(uint32_t aVal);
 
-  /**
-   * Notifies the DisplayListBuilder that it can group together WR display items
-   * that are pushed until |CancelGroup()| or |FinishGroup()| call.
-   */
-  void StartGroup(nsPaintedDisplayItem* aItem);
-
-  /**
-   * Cancels grouping of the display items and discards all the display items
-   * pushed between the |StartGroup()| and |CancelGroup()| calls.
-   */
-  void CancelGroup(const bool aDiscard = false);
-
-  /**
-   * Finishes the display item group. The group is stored in WebRender backend,
-   * and can be reused with |ReuseItem()|, if the Gecko display item is reused.
-   */
-  void FinishGroup();
-
-  /**
-   * Try to reuse the previously created WebRender display items for the given
-   * Gecko display item |aItem|.
-   * Returns true if the items were reused, otherwise returns false.
-   */
-  bool ReuseItem(nsPaintedDisplayItem* aItem);
-
   uint64_t CurrentClipChainId() const {
     return mCurrentSpaceAndClipChain.clip_chain;
   }
@@ -890,8 +862,6 @@ class DisplayListBuilder final {
     mInheritedClipChain = aClipChain;
   }
 
-  layers::DisplayItemCache* GetDisplayItemCache() { return mDisplayItemCache; }
-
   // A chain of RAII objects, each holding a (ASR, ViewID, SideBits) tuple of
   // data. The topmost object is pointed to by the mActiveFixedPosTracker
   // pointer in the wr::DisplayListBuilder.
@@ -940,8 +910,6 @@ class DisplayListBuilder final {
   wr::PipelineId mPipelineId;
   layers::WebRenderBackend mBackend;
 
-  layers::DisplayItemCache* mDisplayItemCache;
-  Maybe<uint16_t> mCurrentCacheSlot;
   float mInheritedOpacity = 1.0f;
   const DisplayItemClipChain* mInheritedClipChain = nullptr;
 

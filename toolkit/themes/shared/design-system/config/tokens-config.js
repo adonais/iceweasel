@@ -9,17 +9,50 @@ const { createPropertyFormatter } = StyleDictionary.formatHelpers;
 const figmaConfig = require("./figma-tokens-config");
 const { OVERRIDE_IDENTIFIERS } = require("./override-identifiers");
 
+/**
+ * Base tokens are shared across all components and surfaces (e.g. color, typography, spacing).
+ * They are not component-specific and always go into the shared CSS output.
+ *
+ * @type {{ dir: string }}
+ */
+const BASE_TOKEN_PATH = {
+  dir: "src/tokens/base",
+};
+
+/**
+ * @typedef {object} TokenPath
+ * @property {string} dir - Path to the component directory, relative to design-system/.
+ * @property {boolean} [isGlobal] - If true, tokens go into the shared CSS output.
+ *  If false/absent, each component gets its own CSS output file co-located with its tokens.json.
+ * @property {function(string): string} [nameTransform] - Optional transform applied to the filename-derived component name.
+ */
+/** @type {TokenPath[]} */
+const COMPONENT_TOKEN_PATHS = [
+  {
+    dir: "src/tokens/components",
+    isGlobal: true,
+  },
+  {
+    dir: "../../../content/widgets",
+    nameTransform: name => name.replace("moz-", ""),
+  },
+  {
+    dir: "../../../../browser/themes/shared",
+  },
+];
+
 const PURPOSE = {
   SEMANTIC: "semantic",
   STORYBOOK: "storybook",
 };
 
 /**
- * @typedef {object[]} TokenCategories
+ * @typedef {object} TokenCategory
  * @property {string} name - A name used to group tokens into a category for storybook/stylelint to reference.
- * @property {string[]} alternateNames - Names not matching standard token naming conventions (e.g. "width" instead of "size").
+ * @property {string[]} [alternateNames] - Names not matching standard token naming conventions (e.g. "width" instead of "size").
  * @property {string[]} purposes - What the token category is used for, either semantic tokens used by stylelint or tokens to be demonstrated in storybook.
  */
+/** @type {TokenCategory[]} */
 const TOKEN_CATEGORIES = [
   {
     name: "table-background",
@@ -63,10 +96,6 @@ const TOKEN_CATEGORIES = [
     purposes: [PURPOSE.SEMANTIC],
   },
   {
-    name: "outline-radius",
-    purposes: [PURPOSE.SEMANTIC],
-  },
-  {
     name: "outline-width",
     purposes: [PURPOSE.SEMANTIC],
   },
@@ -106,12 +135,12 @@ const TOKEN_CATEGORIES = [
   },
   {
     name: "size",
-    alternateNames: ["height", "width"],
+    alternateNames: ["height", "width", "transform"],
     purposes: [PURPOSE.SEMANTIC, PURPOSE.STORYBOOK],
   },
   {
     name: "space",
-    alternateNames: ["padding", "margin"],
+    alternateNames: ["padding", "margin", "inset"],
     purposes: [PURPOSE.SEMANTIC, PURPOSE.STORYBOOK],
   },
   {
@@ -128,18 +157,54 @@ const TOKEN_CATEGORIES = [
   },
 ];
 
-const getTokenSections = () => {
-  const fileNames = fs.readdirSync(
-    path.join(__dirname, "../src/tokens/components/")
-  );
+/**
+ * Returns info about all component token files across all COMPONENT_TOKEN_PATHS.
+ *
+ * @returns {{ name: string, destination: string | null }[]}
+ */
+const getComponentInfo = () => {
+  return COMPONENT_TOKEN_PATHS.filter(({ dir }) =>
+    fs.existsSync(path.join(__dirname, "..", dir))
+  ).flatMap(({ dir, isGlobal = false, nameTransform = n => n }) => {
+    const srcDir = path.join(__dirname, "..", dir);
+    return fs
+      .readdirSync(srcDir, { recursive: true })
+      .filter(f => typeof f === "string")
+      .filter(
+        f =>
+          f.endsWith(".tokens.json") &&
+          !OVERRIDE_IDENTIFIERS.some(({ name }) =>
+            f.endsWith(`.${name}.tokens.json`)
+          )
+      )
+      .map(relativePath => ({
+        name: nameTransform(
+          path.basename(relativePath).replace(".tokens.json", "")
+        ),
+        destination: isGlobal
+          ? null
+          : `${dir}/${relativePath.replace(".tokens.json", ".tokens.css")}`,
+      }));
+  });
+};
 
-  const componentSections = fileNames.reduce((components, fileName) => {
-    const componentName = fileName.replace(".tokens.json", "");
-    return {
+/**
+ * Returns only the components that produce their own CSS output file.
+ *
+ * @returns {{ name: string, destination: string }[]}
+ */
+const getExternalComponentInfo = () =>
+  /** @type {{ name: string, destination: string }[]} */
+  (getComponentInfo().filter(({ destination }) => destination !== null));
+
+const getTokenSections = () => {
+  const componentSections = getComponentInfo().reduce(
+    (components, { name }) => ({
       ...components,
-      [componentName]: componentName,
-    };
-  }, {});
+      [name]: name,
+    }),
+    {}
+  );
 
   const baseSections = TOKEN_CATEGORIES.filter(category =>
     category.purposes.includes(PURPOSE.SEMANTIC)
@@ -161,6 +226,39 @@ const getTokenSections = () => {
       .map(key => [key, allSections[key]])
   );
 };
+
+/**
+ * Defines file configuration options for all external components that
+ * style-dictionary will process.
+ *
+ * @typedef {object} FileConfig
+ * @property {string} destination - The file path where CSS will be written.
+ * @property {string} format - Identifies which format style-dictionary will use for its output.
+ *
+ * @returns {FileConfig[]}
+ */
+const getExternalComponentFileConfig = () =>
+  getExternalComponentInfo().map(({ name, destination }) => ({
+    destination,
+    format: `css/variables/${name}`,
+  }));
+
+/**
+ * Defines formatting functions for all external components that
+ * style-dictionary will process.
+ *
+ * @returns {{[key: string]: Function}}
+ */
+const getExternalComponentFormatConfig = () =>
+  getExternalComponentInfo().reduce(
+    (config, { name: componentName }) => ({
+      ...config,
+      [`css/variables/${componentName}`]: createDesktopFormat({
+        componentName,
+      }),
+    }),
+    {}
+  );
 
 const TSHIRT_ORDER = [
   "circle",
@@ -211,7 +309,7 @@ const getLayerString = () => {
  *  whether or not we need to import tokens-shared.css.
  * @returns {string} Formatted comment header string
  */
-let customFileHeader = ({ surface, platform }) => {
+let customFileHeader = ({ surface, platform, componentName = "" }) => {
   let licenseString = [
     "/* This Source Code Form is subject to the terms of the Mozilla Public",
     " * License, v. 2.0. If a copy of the MPL was not distributed with this",
@@ -219,8 +317,8 @@ let customFileHeader = ({ surface, platform }) => {
   ].join("\n");
 
   let commentString = [
-    "/* DO NOT EDIT this file directly, instead modify the relevant *.tokens.json file",
-    " * and run `npm run build` to see your changes. */",
+    `/* DO NOT EDIT this file directly, instead modify ${componentName ? `moz-${componentName}.tokens.json` : "the relevant *.tokens.json file"}`,
+    " * and run `mach buildtokens` to see your changes. */",
   ].join("\n");
 
   let cssImport = surface
@@ -260,61 +358,234 @@ function formatBaseTokenNames(str) {
  * media queries. See more at
  * https://amzn.github.io/style-dictionary/#/formats?id=formatter
  *
- * @param {string} surface
+ * @param {object} config
+ * @param {string} [config.surface]
  *  Which desktop area we are generating CSS for.
  *  Either "brand" (i.e. in-content) or "platform" (i.e. chrome).
+ * @param {string} [config.componentName=""]
+ *  The name of the component that will be split out into its own CSS file.
  * @returns {Function} - Formatter function that returns a CSS string.
  */
-const createDesktopFormat = surface => args => {
-  let contents =
-    customFileHeader({ surface }) +
-    formatTokens({
-      surface,
-      args,
-    }) +
-    formatTokens({
-      mediaQuery: "prefers-contrast",
-      surface,
-      args,
-    }) +
-    formatTokens({
-      mediaQuery: "forced-colors",
-      surface,
-      args,
-    });
-
-  OVERRIDE_IDENTIFIERS.forEach(({ name, pref }) => {
-    const overrideContents =
+const createDesktopFormat =
+  ({ surface, componentName = "" } = {}) =>
+  args => {
+    let contents =
+      customFileHeader({ surface, componentName }) +
       formatTokens({
         surface,
         args,
-        overrideIdentifier: name,
+        componentName,
       }) +
       formatTokens({
         mediaQuery: "prefers-contrast",
         surface,
         args,
-        overrideIdentifier: name,
+        componentName,
       }) +
       formatTokens({
         mediaQuery: "forced-colors",
         surface,
         args,
-        overrideIdentifier: name,
+        componentName,
       });
 
-    if (!overrideContents) {
-      return;
-    }
+    OVERRIDE_IDENTIFIERS.forEach(({ name, pref }) => {
+      const overrideContents =
+        formatTokens({
+          surface,
+          args,
+          overrideIdentifier: name,
+          componentName,
+        }) +
+        formatTokens({
+          mediaQuery: "prefers-contrast",
+          surface,
+          args,
+          overrideIdentifier: name,
+          componentName,
+        }) +
+        formatTokens({
+          mediaQuery: "forced-colors",
+          surface,
+          args,
+          overrideIdentifier: name,
+          componentName,
+        });
 
-    contents += `
+      if (!overrideContents) {
+        return;
+      }
+
+      contents += `
 /* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("${pref}") {
 ${overrideContents}
 }`;
+    });
+
+    return contents;
+  };
+
+/**
+ * Creates the format for the nova newtab tokens file. Outputs nova override
+ * tokens as plain :root and @media (forced-colors) blocks without @layer
+ * wrappers or pref media queries, so tokens always apply when the nova
+ * newtab CSS is loaded. See browser/extensions/newtab for usage context.
+ */
+const createNovaNewtabFormat = () => args => {
+  let licenseString = [
+    "/* This Source Code Form is subject to the terms of the Mozilla Public",
+    " * License, v. 2.0. If a copy of the MPL was not distributed with this",
+    " * file, You can obtain one at http://mozilla.org/MPL/2.0/. */",
+  ].join("\n");
+
+  let commentString = [
+    "/* DO NOT EDIT this file directly, instead modify the relevant *.nova.tokens.json file",
+    " * and run `mach buildtokens` to see your changes. */",
+  ].join("\n");
+
+  let backwardCompatString = [
+    "/*",
+    " * @backward-compat { version 155 }",
+    " * Nova design token overrides are gated on the `browser.design-tokens.nova` pref in",
+    " * tokens-shared.css, which is NOT enabled when HNT ships its Nova experience (gated",
+    " * on `browser.newtabpage.activity-stream.nova.enabled`). Since the newtab extension",
+    " * can train-hop, it cannot rely on toolkit CSS behind a pref gate. This file provides",
+    " * those token values directly so nova/activity-stream.css is self-contained.",
+    " * Remove this file when `browser.nova.enabled` unifies both prefs and reaches Release.",
+    " */",
+  ].join("\n");
+
+  let header =
+    licenseString +
+    "\n\n" +
+    commentString +
+    "\n\n" +
+    backwardCompatString +
+    "\n\n";
+
+  let css =
+    header +
+    formatNovaNewtabTokens({ args }) +
+    formatNovaNewtabTokens({ mediaQuery: "forced-colors", args });
+
+  return postProcessNovaNewtab(css);
+};
+
+/**
+ * Post-processes generated CSS to match the stylelint rules enforced on SCSS
+ * files in browser/extensions/newtab:
+ *  - Shorten #RRGGBB hex to #RGB where all pairs match (color-hex-length: short)
+ *  - Convert decimal alpha values to percentages (alpha-value-notation: percentage)
+ *  - Add blank line before /* block comments that immediately follow a declaration
+ *    (comment-empty-line-before: always)
+ */
+function postProcessNovaNewtab(css) {
+  return css
+    .replace(
+      /#([0-9A-Fa-f])\1([0-9A-Fa-f])\2([0-9A-Fa-f])\3\b/g,
+      (_, r, g, b) => `#${(r + g + b).toUpperCase()}`
+    )
+    .replace(/,\s*0\.(\d+)\)/g, (_, dec) => {
+      let pct = dec.length === 1 ? dec + "0" : String(parseInt(dec, 10));
+      return `, ${pct}%)`;
+    })
+    .replace(/([^\n])\n( +\/\* (?!\*))/g, "$1\n\n$2");
+}
+
+/**
+ * Formats nova override tokens as plain CSS without @layer or pref media
+ * query wrapping, for use in the newtab's self-contained nova CSS file.
+ */
+function formatNovaNewtabTokens({ mediaQuery, args }) {
+  const overrideIdentifier = "nova";
+  let prop = MEDIA_QUERY_PROPERTY_MAP[mediaQuery] ?? "default";
+  let dictionary = Object.assign({}, args.dictionary);
+  let tokens = [];
+
+  dictionary.allTokens.forEach(token => {
+    if (shouldSkipToken({ overrideIdentifier, token })) {
+      return;
+    }
+
+    let originalVal = getOriginalTokenValue(token, prop);
+    if (originalVal != undefined) {
+      let formattedToken = transformToken({ token, originalVal, dictionary });
+      tokens.push(formattedToken);
+    }
   });
 
-  return contents;
+  if (!tokens.length) {
+    return "";
+  }
+
+  dictionary.allTokens = dictionary.allProperties = tokens;
+  let indentation = mediaQuery ? "    " : "  ";
+
+  let formattedVars = formatVariables({
+    format: "css",
+    dictionary,
+    outputReferences: false,
+    formatting: {
+      indentation,
+      commentPosition: "above",
+    },
+  });
+
+  if (mediaQuery) {
+    return `\n@media (${mediaQuery}) {\n  :root.nova-tokens {\n${formattedVars}\n  }\n}\n`;
+  }
+
+  return `:root.nova-tokens {\n${formattedVars}\n}\n`;
+}
+
+/**
+ * Determines whether a token should be skipped for processing, based on whether it's relevant to the file being built.
+ *
+ * @param {object} options
+ * @param {string} [options.overrideIdentifier=""] - The name of the set of overrides being processed, if applicable.
+ * @param {string} [options.componentName=""] - The name of the component being processed, if applicable.
+ * @param {object} options.token - The token being processed.
+ * @returns {boolean}
+ */
+const shouldSkipToken = ({ overrideIdentifier, componentName, token }) => {
+  // Skip any tokens that belong to a set of overrides.
+  if (
+    !overrideIdentifier &&
+    (OVERRIDE_IDENTIFIERS.some(({ name }) =>
+      token.name.includes(`-${name}-`)
+    ) ||
+      token.override)
+  ) {
+    return true;
+  }
+
+  // Ignore base/default tokens if a set of overrides is specified.
+  if (overrideIdentifier && !token.name.includes(`-${overrideIdentifier}-`)) {
+    return true;
+  }
+
+  // Skip any tokens that don't belong to the component, if applicable.
+  if (
+    componentName &&
+    !(
+      token.name.startsWith(`${componentName}-`) || token.name === componentName
+    )
+  ) {
+    return true;
+  }
+
+  // Skip custom component tokens if we're only getting base/shared tokens.
+  if (
+    !componentName &&
+    getExternalComponentInfo().some(
+      ({ name }) => token.name.startsWith(`${name}-`) || token.name === name
+    )
+  ) {
+    return true;
+  }
+
+  return false;
 };
 
 /**
@@ -327,43 +598,39 @@ ${overrideContents}
  *  to determine what property we are parsing from the token values.
  * @param {string} [tokenArgs.surface]
  *  Specifies a desktop surface, either "brand" or "platform".
- * @param {string} [tokenArgs.overrideIdentifier=""]
+ * @param {string} [tokenArgs.overrideIdentifier]
  *  Separates base/default tokens from overrides.
+ * @param {string} [tokenArgs.componentName]
+ *  Treat specified components differently.
  * @param {object} tokenArgs.args
  *  Formatter arguments provided by style-dictionary. See more at
  *  https://amzn.github.io/style-dictionary/#/formats?id=formatter
  * @returns {string} Tokens formatted into a CSS string.
  */
-function formatTokens({ mediaQuery, surface, args, overrideIdentifier }) {
+function formatTokens({
+  mediaQuery,
+  surface,
+  args,
+  overrideIdentifier,
+  componentName,
+}) {
   let prop = MEDIA_QUERY_PROPERTY_MAP[mediaQuery] ?? "default";
   let dictionary = Object.assign({}, args.dictionary);
   let tokens = [];
 
   dictionary.allTokens.forEach(token => {
-    // Skip any tokens that belong to a set of overrides.
-    if (
-      !overrideIdentifier &&
-      (OVERRIDE_IDENTIFIERS.some(({ name }) =>
-        token.name.includes(`-${name}-`)
-      ) ||
-        token.override)
-    ) {
-      return;
-    }
-
-    // Ignore base/default tokens if a set of overrides is specified.
-    if (overrideIdentifier && !token.name.includes(`-${overrideIdentifier}-`)) {
+    if (shouldSkipToken({ overrideIdentifier, componentName, token })) {
       return;
     }
 
     let originalVal = getOriginalTokenValue(token, prop, surface);
     if (originalVal != undefined) {
-      let formattedToken = transformToken(
+      let formattedToken = transformToken({
         token,
         originalVal,
         dictionary,
-        surface
-      );
+        surface,
+      });
       tokens.push(formattedToken);
     }
   });
@@ -381,10 +648,12 @@ function formatTokens({ mediaQuery, surface, args, overrideIdentifier }) {
   let formattedVars = formatVariables({
     format: "css",
     dictionary,
-    outputReferences: args.options.outputReferences,
+    outputReferences: false,
     formatting: {
       indentation,
+      commentPosition: "above",
     },
+    componentName,
   });
 
   let layer = `tokens-${mediaQuery ?? "foundation"}${overrideIdentifier ? `-${overrideIdentifier}` : ""}`;
@@ -395,7 +664,7 @@ ${NEST_MEDIA_QUERIES_COMMENT}
 @layer ${layer} {
   @media (${mediaQuery}) {
     :root,
-    :host(.anonymous-content-host) {
+    :host${componentName ? "" : "(.anonymous-content-host)"} {
 ${formattedVars}
     }
   }
@@ -405,7 +674,7 @@ ${formattedVars}
 
   return `@layer ${layer} {
   :root,
-  :host(.anonymous-content-host) {
+  :host${componentName ? "" : "(.anonymous-content-host)"} {
 ${formattedVars}
   }
 }
@@ -434,23 +703,25 @@ function getOriginalTokenValue(token, prop, surface) {
  * Updates a token's value to the relevant original value after resolving
  * variable references. Also checks for surface specific comments.
  *
- * @param {object} token - Token object parsed from JSON by style-dictionary.
- * @param {string} originalVal
+ * @param {object} config
+ * @param {object} config.token - Token object parsed from JSON by style-dictionary.
+ * @param {string} config.originalVal
  *  Original value of the token for the combination of surface and media query.
- * @param {object} dictionary
+ * @param {object} config.dictionary
  *  Object of transformed tokens and helper fns provided by style-dictionary.
- * @param {string} surface
+ * @param {string} config.surface
  *  The desktop surface we're generating CSS for, either "brand", "platform",
  *  or "shared".
  * @returns {object} Token object with an updated value.
  */
-function transformToken(token, originalVal, dictionary, surface) {
+function transformToken({ token, originalVal, dictionary, surface }) {
   let value = originalVal;
   if (dictionary.usesReference(value)) {
     dictionary.getReferences(value).forEach(ref => {
       value = value.replace(`{${ref.path.join(".")}}`, `var(--${ref.name})`);
     });
   }
+
   let surfaceComment = token.original?.value[surface]?.comment;
   return { ...token, value, comment: surfaceComment ?? token.comment };
 }
@@ -518,9 +789,17 @@ const createLightDarkTransform = surface => {
  *  Whether to output variable references.
  * @param {object} options.formatting
  *  The formatting settings to be passed to createPropertyFormatter.
+ * @param {string} [options.componentName=""]
+ *  The name of the component being processed, if applicable.
  * @returns {string} The formatted tokens.
  */
-function formatVariables({ format, dictionary, outputReferences, formatting }) {
+function formatVariables({
+  format,
+  dictionary,
+  outputReferences,
+  formatting,
+  componentName,
+}) {
   let lastSection = [];
   let propertyFormatter = createPropertyFormatter({
     outputReferences,
@@ -547,11 +826,12 @@ function formatVariables({ format, dictionary, outputReferences, formatting }) {
     let sectionParts = [];
 
     remainingTokens = remainingTokens.filter(token => {
+      const normalizedName = formatBaseTokenNames(token.name);
       if (
         sectionMatchers.some(m =>
           m.test
-            ? m.test(token.name)
-            : token.name.startsWith(`${m}-`) || token.name === m
+            ? m.test(normalizedName)
+            : normalizedName.startsWith(`${m}-`) || normalizedName === m
         )
       ) {
         sectionParts.push(token);
@@ -592,7 +872,7 @@ function formatVariables({ format, dictionary, outputReferences, formatting }) {
       let sectionLevel = "**";
       let labelParts = label.split("/");
       for (let i = 0; i < labelParts.length; i++) {
-        if (labelParts[i] != lastSection[i]) {
+        if (labelParts[i] != lastSection[i] && !componentName) {
           headingParts.push(
             `${formatting.indentation}/${sectionLevel} ${labelParts[i]} ${sectionLevel}/`
           );
@@ -726,21 +1006,27 @@ function getTokenCategoryName(tokenName, purpose) {
 
 function getTokenCategory(filePath) {
   const fileName = path.basename(filePath);
-  const tokenCategory = fileName.replace(".tokens.json", "");
+  const tokenCategory = fileName
+    .replace(".tokens.json", "")
+    .replace("moz-", "");
 
   return tokenCategory;
 }
 
 module.exports = {
-  source: ["src/tokens/**/*.json"],
+  source: [BASE_TOKEN_PATH, ...COMPONENT_TOKEN_PATHS].map(
+    ({ dir }) => `${dir}/**/*.tokens.json`
+  ),
   format: {
-    "css/variables/shared": createDesktopFormat(""),
-    "css/variables/brand": createDesktopFormat("brand"),
-    "css/variables/platform": createDesktopFormat("platform"),
+    "css/variables/shared": createDesktopFormat(),
+    "css/variables/brand": createDesktopFormat({ surface: "brand" }),
+    "css/variables/platform": createDesktopFormat({ surface: "platform" }),
+    "css/variables/nova-newtab": createNovaNewtabFormat(),
     // Organize tokens to be consumed by Storybook.
     "javascript/tokens-table": args => tokensTableFormat(args, false),
     // Organize tokens to be used by stylelint rules.
     "javascript/semantic-categories": args => tokensTableFormat(args, true),
+    ...getExternalComponentFormatConfig(),
     ...figmaConfig.formats,
   },
   parsers: [
@@ -766,6 +1052,11 @@ module.exports = {
           format: "css/variables/shared",
         },
         {
+          destination:
+            "../../../../browser/extensions/newtab/content-src/styles/nova/_tokens.scss",
+          format: "css/variables/nova-newtab",
+        },
+        {
           destination: "dist/tokens-brand.css",
           format: "css/variables/brand",
           filter: token =>
@@ -779,6 +1070,7 @@ module.exports = {
             typeof token.original.value == "object" &&
             token.original.value.platform,
         },
+        ...getExternalComponentFileConfig(),
       ],
     },
     tables: {

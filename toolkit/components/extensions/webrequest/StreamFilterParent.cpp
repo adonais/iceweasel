@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -874,7 +872,8 @@ void StreamFilterParent::AssertIsIOThread() { MOZ_ASSERT(IsIOThread()); }
 
 template <typename Function>
 void StreamFilterParent::RunOnMainThread(const char* aName, Function&& aFunc) {
-  mQueue->RunOrEnqueue(new ChannelEventFunction(mMainThread, std::move(aFunc)));
+  mQueue->RunOrEnqueue(
+      new ChannelEventFunction(mMainThread, std::forward<Function>(aFunc)));
 }
 
 void StreamFilterParent::RunOnMainThread(already_AddRefed<Runnable> aRunnable) {
@@ -884,7 +883,8 @@ void StreamFilterParent::RunOnMainThread(already_AddRefed<Runnable> aRunnable) {
 
 template <typename Function>
 void StreamFilterParent::RunOnIOThread(const char* aName, Function&& aFunc) {
-  mQueue->RunOrEnqueue(new ChannelEventFunction(mIOThread, std::move(aFunc)));
+  mQueue->RunOrEnqueue(
+      new ChannelEventFunction(mIOThread, std::forward<Function>(aFunc)));
 }
 
 void StreamFilterParent::RunOnIOThread(already_AddRefed<Runnable> aRunnable) {

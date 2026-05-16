@@ -1,0 +1,19 @@
+{
+  "label": "hermes.admin.ch",
+  "bugs": {
+    "1974686": {
+      "issue": "broken-layout",
+      "matches": [
+        "*://www.hermes.admin.ch/de/projektmanagement/szenarien/it-entwicklung/szenariouebersicht.html*"
+      ]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1974686-hermes_admin_ch.css"]
+      }
+    }
+  ]
+}

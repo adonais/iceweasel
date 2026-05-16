@@ -7,6 +7,7 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   AppUpdater: "resource://gre/modules/AppUpdater.sys.mjs",
 });
 
@@ -38,6 +39,10 @@ export default class SecurityPrivacyCard extends MozLitElement {
    * @returns {boolean} should we NOT warn the user about their app update status
    */
   #okUpdateStatus() {
+    if (!lazy.AppConstants.MOZ_UPDATER) {
+      return true;
+    }
+
     const okStatuses = [
       lazy.AppUpdater.STATUS.NO_UPDATES_FOUND,
       lazy.AppUpdater.STATUS.CHECKING,
@@ -229,6 +234,10 @@ export default class SecurityPrivacyCard extends MozLitElement {
    * @returns {TemplateResult} the HTML for the "update" bullet of the custom element
    */
   buildUpdateElement() {
+    if (!lazy.AppConstants.MOZ_UPDATER) {
+      return html``;
+    }
+
     switch (this.appUpdateStatus) {
       case lazy.AppUpdater.STATUS.NO_UPDATES_FOUND:
         return html`<li class="status-ok">
@@ -308,10 +317,18 @@ export default class SecurityPrivacyCard extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/preferences/widgets/security-privacy-card.css"
       />
+      <link
+        rel="stylesheet"
+        href="chrome://global/skin/design-system/text-and-typography.css"
+      />
       <moz-card aria-labelledby="heading">
         <div class="card-contents">
           <div class="status-text-container">
-            <h3 id="heading" data-l10n-id=${headerL10nId}></h3>
+            <h2
+              id="heading"
+              class="text-box-trim-start"
+              data-l10n-id=${headerL10nId}
+            ></h2>
             <ul>
               ${this.buildIssuesElement()} ${this.buildTrackersElement()}
               ${this.buildUpdateElement()}

@@ -156,12 +156,18 @@ scheme = "http"
 ["test_peerConnection_basicAudio_forced_lower_rate.html"]
 
 ["test_peerConnection_basicH264Video.html"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 2028636
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 2028636
+]
 
 ["test_peerConnection_basicScreenshare.html"]
 skip-if = [
   "os == 'android'", # no screenshare on android
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929420
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1929420
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 2028636
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 2028636
 ]
 
 ["test_peerConnection_basicVideo.html"]
@@ -190,6 +196,10 @@ scheme = "http"
 ["test_peerConnection_bug1013809.html"]
 
 ["test_peerConnection_bug1042791.html"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 2028636
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 2028636
+]
 
 ["test_peerConnection_bug1227781.html"]
 scheme = "http"
@@ -198,8 +208,6 @@ scheme = "http"
 fail-if = [
   "true",
 ]
-
-["test_peerConnection_bug1773067.html"]
 
 ["test_peerConnection_callbacks.html"]
 
@@ -265,6 +273,10 @@ skip-if = [
 ]
 
 ["test_peerConnection_getParameters.html"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 2028636
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 2028636
+]
 
 ["test_peerConnection_glean.html"]
 
@@ -388,8 +400,17 @@ skip-if = [
 ["test_peerConnection_rtcp_rsize.html"]
 
 ["test_peerConnection_scaleResolution.html"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 2028636
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 2028636
+]
 
 ["test_peerConnection_scaleResolution_oldSetParameters.html"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 2028636
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 2028636
+]
+
 
 ["test_peerConnection_sender_and_receiver_stats.html"]
 
@@ -434,6 +455,10 @@ skip-if = [
 ["test_peerConnection_simulcastOddResolution_oldSetParameters.html"]
 
 ["test_peerConnection_simulcastOffer.html"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 2028636
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 2028636
+]
 
 ["test_peerConnection_simulcastOffer_lowResFirst.html"]
 

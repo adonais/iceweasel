@@ -64,7 +64,6 @@ class nsScriptSecurityManager final : public nsIScriptSecurityManager {
    * false otherwise.
    */
   static bool SecurityCompareURIs(nsIURI* aSourceURI, nsIURI* aTargetURI);
-  static uint32_t SecurityHashURI(nsIURI* aURI);
   static bool IsHttpOrHttpsAndCrossOrigin(nsIURI* aUriA, nsIURI* aUriB);
 
   static nsresult ReportError(const char* aMessageTag, nsIURI* aSource,

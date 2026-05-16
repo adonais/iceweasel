@@ -20,7 +20,7 @@ def _extract_resources(tasks_data):
 @mach_func_cache(
     inputs=["taskcluster"],
     dynamic_inputs=_extract_resources,
-    env_vars=["TASKCLUSTER_ROOT_URL"],
+    env_vars=["TASKCLUSTER_ROOT_URL", "MOZ_SCM_LEVEL"],
 )
 def toolchain_task_definitions():
     root_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..")
@@ -28,11 +28,18 @@ def toolchain_task_definitions():
 
     env = os.environ.copy()
     env.pop("MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE", None)
+    params = {"level": os.environ.get("MOZ_SCM_LEVEL", "3"), "files_changed": []}
 
     import sys
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         output_file = f.name
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False
+    ) as params_file:
+        params_path = params_file.name
+        json.dump(params, params_file)
 
     try:
         result = subprocess.run(
@@ -48,6 +55,8 @@ def toolchain_task_definitions():
                 "-J",
                 "--output-file",
                 output_file,
+                "-p",
+                params_path,
             ],
             check=False,
             cwd=root_dir,
@@ -65,6 +74,7 @@ def toolchain_task_definitions():
             tasks_data = json.load(f)
     finally:
         os.unlink(output_file)
+        os.unlink(params_path)
     for label, data in tasks_data.items():
         data["label"] = label
         data["kind"] = data["attributes"]["kind"]

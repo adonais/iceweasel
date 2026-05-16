@@ -103,7 +103,7 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
   void PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                 imgDrawingParams& aImgParams) override;
   SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                              uint32_t aFlags) override;
+                              SVGBBoxFlags aFlags) override;
 
   // SVGContainerFrame methods:
   gfxMatrix GetCanvasTM() override;

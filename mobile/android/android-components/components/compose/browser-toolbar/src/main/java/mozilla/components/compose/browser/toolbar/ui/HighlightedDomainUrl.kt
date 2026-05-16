@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -171,7 +172,12 @@ private fun Modifier.focusTextIndexRange(
                     .drawWithContent {
                         drawContent()
 
-                        val brush = createDomainHighlightBrush(text, highlightRange, scrollState.value, fadeFraction)
+                        val brush = createUrlFadeBrush(
+                            scrolledPixels = scrollState.value,
+                            maxScrollPixels = scrollState.maxValue,
+                            viewportSize = scrollState.viewportSize,
+                            fadeFraction = fadeFraction,
+                        )
 
                         drawRect(
                             brush = brush,
@@ -205,36 +211,44 @@ internal fun computeDomainEndScrollValue(
     highlightRange: Pair<Int, Int>?,
     scrollState: ScrollState,
     textLayoutResult: TextLayoutResult,
-): Int {
-    val endOffset = when (highlightRange?.second == text.length) {
-        true -> scrollState.maxValue
-        else -> {
-            val index = (highlightRange?.second?.plus(END_SCROLL_OFFSET) ?: 0)
-                .coerceAtMost(text.lastIndex)
-            val offset = textLayoutResult.getBoundingBox(index)
-            // Ensure the end of [highlightRange] is shown to the end of the viewport.
-            (offset.right - scrollState.viewportSize).toInt().coerceIn(0, scrollState.maxValue)
-        }
+): Int = when (highlightRange?.second == text.length) {
+    true -> scrollState.maxValue
+    else -> {
+        val startIndex = highlightRange?.first ?: 0
+
+        val endIndex = (highlightRange?.second?.plus(END_SCROLL_OFFSET) ?: 0)
+            .coerceAtMost(text.length)
+
+        // Compute the exact visual boundaries of the domain.
+        val path = textLayoutResult.getPathForRange(startIndex, endIndex)
+        val maxRightEdge = path.getBounds().right
+
+        // Ensure the furthest visual right edge is shown in the viewport.
+        (maxRightEdge - scrollState.viewportSize).toInt().coerceIn(0, scrollState.maxValue)
     }
-    return endOffset
 }
 
 @VisibleForTesting
-internal fun createDomainHighlightBrush(
-    text: String,
-    highlightRange: Pair<Int, Int>?,
+internal fun createUrlFadeBrush(
     scrolledPixels: Int,
+    maxScrollPixels: Int,
+    viewportSize: Int,
     fadeFraction: Float,
 ): Brush {
-    val brush = when {
-        // Don't fade the start if the text is not scrolled to fit the highlighted domain.
-         scrolledPixels == 0 -> Brush.horizontalGradient(
+    val fadeWidthPixels = viewportSize * fadeFraction
+    val needsLeftFade = scrolledPixels > 0
+    val remainingScroll = maxScrollPixels - scrolledPixels
+    val needsRightFade = remainingScroll > fadeWidthPixels
+
+    return when {
+        !needsLeftFade && !needsRightFade -> SolidColor(Color.Black)
+
+        !needsLeftFade && needsRightFade -> Brush.horizontalGradient(
             (1f - fadeFraction) to Color.Black,
             1f to Color.Transparent,
         )
 
-        // Don't fade the end if the highlight is also at the end of the text.
-        (highlightRange?.second ?: Int.MIN_VALUE) >= text.lastIndex -> Brush.horizontalGradient(
+        needsLeftFade && !needsRightFade -> Brush.horizontalGradient(
             0f to Color.Transparent,
             fadeFraction to Color.Black,
         )
@@ -248,7 +262,6 @@ internal fun createDomainHighlightBrush(
             ),
         )
     }
-    return brush
 }
 
 @Composable

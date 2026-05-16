@@ -20,11 +20,11 @@ origin:
 
   # Human-readable identifier for this version/release
   # Generally "version NNN", "tag SSS", "bookmark SSS"
-  release: 4fcebeabe58e79255d291acb4cead4ed7953149e (Thu Feb 26 18:28:12 2026).
+  release: 3fce57ecc905d95a4619f33d09851d68c5a88663 (Mon Mar 23 23:20:46 2026).
 
   # Revision to pull in
   # Must be a long or short commit SHA (long preferred)
-  revision: 4fcebeabe58e79255d291acb4cead4ed7953149e
+  revision: 3fce57ecc905d95a4619f33d09851d68c5a88663
 
   # The package's license, where possible using the mnemonic from
   # https://spdx.org/licenses/
@@ -57,6 +57,7 @@ vendoring:
     - input_frame_validation.patch
     - input_frame_validation_vp9.patch
     - reset_post_proc_state.patch
+    - svc_multi_spatial_layers.patch
 
   update-actions:
     - action: move-file

@@ -37,7 +37,6 @@
 #include "jArray.h"
 #include "nsHtml5ArrayCopy.h"
 #include "nsAHtml5TreeBuilderState.h"
-#include "nsGkAtoms.h"
 #include "nsHtml5ByteReadable.h"
 #include "nsHtml5Macros.h"
 #include "nsIContentHandle.h"
@@ -291,6 +290,7 @@ class nsHtml5AttributeName {
   static nsHtml5AttributeName* ATTR_SANDBOX;
   static nsHtml5AttributeName* ATTR_SHADOWROOTCUSTOMELEMENTREGISTRY;
   static nsHtml5AttributeName* ATTR_SHADOWROOTDELEGATESFOCUS;
+  static nsHtml5AttributeName* ATTR_SHADOWROOTSLOTASSIGNMENT;
   static nsHtml5AttributeName* ATTR_WORD_SPACING;
   static nsHtml5AttributeName* ATTR_ACCENTUNDER;
   static nsHtml5AttributeName* ATTR_ACCEPT_CHARSET;

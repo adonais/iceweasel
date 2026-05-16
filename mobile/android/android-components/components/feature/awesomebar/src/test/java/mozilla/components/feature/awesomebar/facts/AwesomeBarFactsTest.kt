@@ -128,6 +128,33 @@ class AwesomeBarFactsTest {
                 assertEquals(AwesomeBarFacts.Items.RECENT_SEARCH_SUGGESTIONS_DISPLAYED, item)
                 assertEquals("4", value)
             }
+
+            emitOptimizedSuggestionCardDisplayedFact(SuggestionCardType.STOCKS)
+            assertEquals(14, facts.size)
+            facts[13].apply {
+                assertEquals(Component.FEATURE_AWESOMEBAR, component)
+                assertEquals(Action.DISPLAY, action)
+                assertEquals(AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_DISPLAYED, item)
+                assertEquals("stocks", value)
+            }
+
+            emitOptimizedSuggestionCardClickedFact(SuggestionCardType.SPORTS)
+            assertEquals(15, facts.size)
+            facts[14].apply {
+                assertEquals(Component.FEATURE_AWESOMEBAR, component)
+                assertEquals(Action.INTERACTION, action)
+                assertEquals(AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_CLICKED, item)
+                assertEquals("sports", value)
+            }
+
+            emitOptimizedSuggestionCardDisplayedFact(SuggestionCardType.FLIGHTS)
+            assertEquals(16, facts.size)
+            facts[15].apply {
+                assertEquals(Component.FEATURE_AWESOMEBAR, component)
+                assertEquals(Action.DISPLAY, action)
+                assertEquals(AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_DISPLAYED, item)
+                assertEquals("flights", value)
+            }
         }
     }
 }

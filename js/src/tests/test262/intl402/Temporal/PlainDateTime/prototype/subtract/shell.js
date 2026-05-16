@@ -69,11 +69,11 @@ var TemporalHelpers = {
       { era: "am" },
     ],
     ethiopic: [
-      { era: "aa", aliases: ["mundi"] },
-      { era: "am", aliases: ["incar"] },
+      { era: "aa" },
+      { era: "am" },
     ],
     ethioaa: [
-      { era: "aa", aliases: ["mundi"] },
+      { era: "aa" },
     ],
     gregory: [
       { era: "bce", aliases: ["bc"] },
@@ -85,15 +85,7 @@ var TemporalHelpers = {
     indian: [
       { era: "shaka" },
     ],
-    islamic: [
-      { era: "ah" },
-      { era: "bh" },
-    ],
     "islamic-civil": [
-      { era: "bh" },
-      { era: "ah" },
-    ],
-    "islamic-rgsa": [
       { era: "bh" },
       { era: "ah" },
     ],
@@ -118,8 +110,8 @@ var TemporalHelpers = {
       { era: "ap" },
     ],
     roc: [
-      { era: "roc", aliases: ["minguo"] },
-      { era: "broc", aliases: ["before-roc", "minguo-qian"] },
+      { era: "roc" },
+      { era: "broc" },
     ],
   },
 

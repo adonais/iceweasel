@@ -14,7 +14,16 @@ interface nsIScopedPrefs : nsISupports {
         // privacy.trackingprotection.enabled pref and privacy.trackingprotection.pbmode.enabled
         // depending on whether we are in private mode.
         PRIVACY_TRACKINGPROTECTION_ENABLED = 0,
-        NUM_SCOPED_BOOL_PREFS = 1,
+        // `privacy.trackingprotection.cryptomining.enabled` pref
+        PRIVACY_TRACKINGPROTECTION_CRYPTOMINING_ENABLED = 1,
+        // `privacy.trackingprotection.fingerprinting.enabled` pref
+        PRIVACY_TRACKINGPROTECTION_FINGERPRINTING_ENABLED = 2,
+        // `privacy.trackingprotection.socialtracking.enabled` pref
+        PRIVACY_TRACKINGPROTECTION_SOCIALTRACKING_ENABLED = 3,
+        // Comparable to privacy.trackingprotection.emailtracking.enabled and
+        // privacy.trackingprotection.emailtracking.pbmode.enabled.
+        PRIVACY_TRACKINGPROTECTION_EMAILTRACKING_ENABLED = 4,
+        NUM_SCOPED_BOOL_PREFS = 5,
     };
 
     void setBoolPrefScoped(in nsIScopedPrefs_Pref pref, in BrowsingContext bc, in boolean value);

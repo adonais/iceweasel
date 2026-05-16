@@ -9,7 +9,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 object SettingsCustomizeSelectors {
     val SETTINGS_CUSTOMIZE_TITLE = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
         value = "Customize",
         description = "The Customize Settings title",
         groups = listOf("requiredForPage"),

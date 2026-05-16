@@ -10,12 +10,17 @@ import android.content.Context
 import android.media.MediaPlayer
 import androidx.annotation.RawRes
 
-@Suppress("unused")
-class SoundEffectsPlayer(private val context: Context) {
+/**
+ * Plays sound effects for the game. Each sound plays asynchronously and is cleaned up on completion.
+ * @param context used to create [android.media.MediaPlayer] instances
+ * @param soundOn when false, all [playSound] calls are no-ops
+ */
+class SoundEffectsPlayer(private val context: Context, private val soundOn: Boolean) {
 
     private val activePlayers = mutableSetOf<MediaPlayer>()
 
     fun playSound(@RawRes soundResId: Int) {
+        if (!soundOn) return
         MediaPlayer.create(context, soundResId)?.apply {
             activePlayers.add(this)
             start()

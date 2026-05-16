@@ -583,7 +583,7 @@ void nsMenuPopupFrame::EnsureActiveMenuListItemIsVisible() {
   }
   RefPtr<mozilla::PresShell> presShell = PresShell();
   presShell->ScrollFrameIntoView(
-      frame, Nothing(), ScrollAxis(), ScrollAxis(),
+      frame, Nothing(), AxisScrollParams(), AxisScrollParams(),
       ScrollFlags::ScrollOverflowHidden | ScrollFlags::ScrollFirstAncestorOnly);
 }
 

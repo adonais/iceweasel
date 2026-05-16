@@ -1,0 +1,17 @@
+{
+  "label": "www.samsung.com (scrolling fix)",
+  "bugs": {
+    "1799968": {
+      "issue": "broken-scrolling",
+      "matches": ["*://www.samsung.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["linux"],
+      "content_scripts": {
+        "js": ["bug1799968-www.samsung.com-appVersion-linux-fix.js"]
+      }
+    }
+  ]
+}

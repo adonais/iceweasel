@@ -108,8 +108,8 @@ use.counter:
     send_in_pings:
       - use-counters
 
-# Total of 2507 use counter metrics (excludes denominators).
-# Total of 389 'page' use counters.
+# Total of 2527 use counter metrics (excludes denominators).
+# Total of 394 'page' use counters.
 use.counter.page:
   svgsvgelement_getelementbyid:
     type: counter
@@ -5432,6 +5432,57 @@ use.counter.page:
     send_in_pings:
       - use-counters
 
+  serial_getports:
+    type: counter
+    description: >
+      Whether a page called called Serial.getPorts.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  serial_requestport:
+    type: counter
+    description: >
+      Whether a page called called Serial.requestPort.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  serialport_open:
+    type: counter
+    description: >
+      Whether a page called called SerialPort.open.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
   window_open_empty_url:
     type: counter
     description: >
@@ -6724,7 +6775,41 @@ use.counter.page:
     send_in_pings:
       - use-counters
 
-# Total of 389 'document' use counters.
+  element_requestfullscreen:
+    type: counter
+    description: >
+      Whether a page called called Element.requestFullscreen.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  requested_keyboard_lock:
+    type: counter
+    description: >
+      Whether a page has requested fullscreen with keyboardlock.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+# Total of 394 'document' use counters.
 use.counter.doc:
   svgsvgelement_getelementbyid:
     type: counter
@@ -12047,6 +12132,57 @@ use.counter.doc:
     send_in_pings:
       - use-counters
 
+  serial_getports:
+    type: counter
+    description: >
+      Whether a document called called Serial.getPorts.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  serial_requestport:
+    type: counter
+    description: >
+      Whether a document called called Serial.requestPort.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  serialport_open:
+    type: counter
+    description: >
+      Whether a document called called SerialPort.open.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
   window_open_empty_url:
     type: counter
     description: >
@@ -13339,7 +13475,41 @@ use.counter.doc:
     send_in_pings:
       - use-counters
 
-# Total of 65 'dedicated worker' use counters.
+  element_requestfullscreen:
+    type: counter
+    description: >
+      Whether a document called called Element.requestFullscreen.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  requested_keyboard_lock:
+    type: counter
+    description: >
+      Whether a document has requested fullscreen with keyboardlock.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+# Total of 67 'dedicated worker' use counters.
 use.counter.worker.dedicated:
   pushmanager_subscribe:
     type: counter
@@ -14446,7 +14616,41 @@ use.counter.worker.dedicated:
     send_in_pings:
       - use-counters
 
-# Total of 65 'shared worker' use counters.
+  serial_getports:
+    type: counter
+    description: >
+      Whether a dedicated worker called called Serial.getPorts.
+      Compare against `use.counter.dedicated_workers_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  serialport_open:
+    type: counter
+    description: >
+      Whether a dedicated worker called called SerialPort.open.
+      Compare against `use.counter.dedicated_workers_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+# Total of 67 'shared worker' use counters.
 use.counter.worker.shared:
   pushmanager_subscribe:
     type: counter
@@ -15553,7 +15757,41 @@ use.counter.worker.shared:
     send_in_pings:
       - use-counters
 
-# Total of 65 'service worker' use counters.
+  serial_getports:
+    type: counter
+    description: >
+      Whether a shared worker called called Serial.getPorts.
+      Compare against `use.counter.shared_workers_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  serialport_open:
+    type: counter
+    description: >
+      Whether a shared worker called called SerialPort.open.
+      Compare against `use.counter.shared_workers_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+# Total of 67 'service worker' use counters.
 use.counter.worker.service:
   pushmanager_subscribe:
     type: counter
@@ -16660,12 +16898,63 @@ use.counter.worker.service:
     send_in_pings:
       - use-counters
 
-# Total of 56 'deprecated operations (page)' use counters.
+  serial_getports:
+    type: counter
+    description: >
+      Whether a service worker called called Serial.getPorts.
+      Compare against `use.counter.service_workers_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  serialport_open:
+    type: counter
+    description: >
+      Whether a service worker called called SerialPort.open.
+      Compare against `use.counter.service_workers_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+# Total of 58 'deprecated operations (page)' use counters.
 use.counter.deprecated_ops.page:
   components:
     type: counter
     description: >
       Whether a page used Components.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  csscontainer_rule_single_condition:
+    type: counter
+    description: >
+      Whether a page used CSSContainerRuleSingleCondition.
       Compare against `use.counter.top_level_content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -17342,6 +17631,23 @@ use.counter.deprecated_ops.page:
     send_in_pings:
       - use-counters
 
+  math_ml__deprecated_href_link_on_non_anchor_element:
+    type: counter
+    description: >
+      Whether a page used MathML_DeprecatedHrefLinkOnNonAnchorElement.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
   form_submission_untrusted_event:
     type: counter
     description: >
@@ -17614,12 +17920,29 @@ use.counter.deprecated_ops.page:
     send_in_pings:
       - use-counters
 
-# Total of 56 'deprecated operations (document)' use counters.
+# Total of 58 'deprecated operations (document)' use counters.
 use.counter.deprecated_ops.doc:
   components:
     type: counter
     description: >
       Whether a document used Components.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  csscontainer_rule_single_condition:
+    type: counter
+    description: >
+      Whether a document used CSSContainerRuleSingleCondition.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -18283,6 +18606,23 @@ use.counter.deprecated_ops.doc:
     type: counter
     description: >
       Whether a document used MathML_DeprecatedMunderNonExplicitAccentunder.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  math_ml__deprecated_href_link_on_non_anchor_element:
+    type: counter
+    description: >
+      Whether a document used MathML_DeprecatedHrefLinkOnNonAnchorElement.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:

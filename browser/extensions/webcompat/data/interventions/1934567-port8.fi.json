@@ -1,0 +1,17 @@
+{
+  "label": "port8.fi",
+  "bugs": {
+    "1934567": {
+      "issue": "broken-scrolling",
+      "matches": ["*://www.port8.fi/bokning/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "css": ["bug1934567-www.port8.fi-scrolling-fix.css"]
+      }
+    }
+  ]
+}

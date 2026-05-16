@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(3);
+
 const evalMetadata = {
   owner: "Smart Window",
   name: "Smart Window Chat Eval - gpt-oss-120b",

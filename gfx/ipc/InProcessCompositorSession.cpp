@@ -29,11 +29,10 @@ InProcessCompositorSession::InProcessCompositorSession(
 
 /* static */
 RefPtr<InProcessCompositorSession> InProcessCompositorSession::Create(
-    nsIWidget* aWidget, WebRenderLayerManager* aLayerManager,
-    const LayersId& aRootLayerTreeId, CSSToLayoutDeviceScale aScale,
-    const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
-    const gfx::IntSize& aSurfaceSize, uint32_t aNamespace,
-    uint64_t aInnerWindowId) {
+    nsIWidget* aWidget, const LayersId& aRootLayerTreeId,
+    CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
+    bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
+    uint32_t aNamespace, uint64_t aInnerWindowId) {
   widget::CompositorWidgetInitData initData;
   aWidget->GetCompositorWidgetInitData(&initData);
 
@@ -48,7 +47,7 @@ RefPtr<InProcessCompositorSession> InProcessCompositorSession::Create(
 
   RefPtr<CompositorBridgeChild> child =
       CompositorManagerChild::CreateSameProcessWidgetCompositorBridge(
-          aLayerManager, aNamespace);
+          aNamespace);
   MOZ_ASSERT(child);
   if (!child) {
     gfxCriticalNote << "Failed to create CompositorBridgeChild";

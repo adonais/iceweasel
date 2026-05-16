@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -566,12 +564,10 @@ void CodeGenerator::visitSignExtendInt64(LSignExtendInt64* ins) {
   Register64 output = ToOutRegister64(ins);
   switch (ins->mir()->mode()) {
     case MSignExtendInt64::Byte:
-      masm.move32To64SignExtend(input.reg, output);
-      masm.move8SignExtend(output.reg, output.reg);
+      masm.move8SignExtend(input.reg, output.reg);
       break;
     case MSignExtendInt64::Half:
-      masm.move32To64SignExtend(input.reg, output);
-      masm.move16SignExtend(output.reg, output.reg);
+      masm.move16SignExtend(input.reg, output.reg);
       break;
     case MSignExtendInt64::Word:
       masm.move32To64SignExtend(input.reg, output);

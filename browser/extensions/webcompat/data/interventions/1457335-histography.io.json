@@ -1,0 +1,17 @@
+{
+  "label": "histography.io",
+  "bugs": {
+    "1457335": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://histography.io/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "js": ["bug1457335-histography.io-ua-change.js"]
+      }
+    }
+  ]
+}

@@ -40,13 +40,16 @@ class VideoProcessorD3D11 {
 
   struct InputTextureInfo {
     InputTextureInfo(gfx::ColorSpace2 aColorSpace, gfx::ColorRange aColorRange,
-                     uint32_t aIndex, ID3D11Texture2D* aTexture)
+                     gfx::TransferFunction aTransferFunction, uint32_t aIndex,
+                     ID3D11Texture2D* aTexture)
         : mColorSpace(aColorSpace),
           mColorRange(aColorRange),
+          mTransferFunction(aTransferFunction),
           mIndex(aIndex),
           mTexture(aTexture) {}
     const gfx::ColorSpace2 mColorSpace;
     const gfx::ColorRange mColorRange;
+    const gfx::TransferFunction mTransferFunction;
     const uint32_t mIndex;
     ID3D11Texture2D* mTexture;
   };

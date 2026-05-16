@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "mozilla/Likely.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WritingModes.h"
 #include "nsDisplayList.h"
 #include "nsTHashSet.h"
@@ -46,14 +47,13 @@ class TextOverflow final {
    * Allocate an object for text-overflow processing. (Factory function.)
    * @return nullptr if no processing is necessary.  The caller owns the object.
    */
-  static Maybe<TextOverflow> WillProcessLines(nsDisplayListBuilder* aBuilder,
-                                              nsBlockFrame*);
+  static UniquePtr<TextOverflow> WillProcessLines(
+      nsDisplayListBuilder* aBuilder, nsBlockFrame*);
 
   /**
    * This is a factory-constructed non-reassignable class, so we delete nearly
    * all constructors and reassignment operators.  We only provide a
-   * move-constructor, because that's required for Maybe<TextOverflow> to work
-   * (and that's what our factory method returns).
+   * move-constructor for potential use with data structures that require it.
    */
   TextOverflow(TextOverflow&&) = default;
 
@@ -255,6 +255,8 @@ class TextOverflow final {
                      bool aCreateIEnd, const LogicalRect& aInsideMarkersArea,
                      const LogicalRect& aContentArea, uint32_t aLineNumber);
 
+  gfxTextRun* GetEllipsisTextRun();
+
   LogicalRect mContentArea;
   nsDisplayListBuilder* mBuilder;
   nsIFrame* mBlock;
@@ -322,6 +324,8 @@ class TextOverflow final {
 
   Marker mIStart;  // the inline start marker
   Marker mIEnd;    // the inline end marker
+
+  RefPtr<gfxTextRun> mEllipsisTextRun;
 };
 
 }  // namespace css

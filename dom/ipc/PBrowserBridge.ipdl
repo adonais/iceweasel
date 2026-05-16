@@ -17,7 +17,7 @@ include "mozilla/dom/TabMessageUtils.h";
 
 using class mozilla::WidgetMouseEvent from "ipc/nsGUIEventIPC.h";
 using mozilla::dom::EffectsInfo from "mozilla/dom/EffectsInfo.h";
-using mozilla::ScrollAxis from "mozilla/PresShellForwards.h";
+using mozilla::AxisScrollParams from "mozilla/PresShellForwards.h";
 using mozilla::ScrollFlags from "mozilla/PresShellForwards.h";
 using struct nsRect from "nsRect.h";
 using mozilla::dom::CallerType from "mozilla/dom/BindingDeclarations.h";
@@ -60,8 +60,8 @@ child:
    */
   async MaybeFireEmbedderLoadEvents(EmbedderElementEventType aFireEventAtEmbeddingElement);
 
-  async ScrollRectIntoView(nsRect aRect, ScrollAxis aVertical,
-                           ScrollAxis aHorizontal, ScrollFlags aScrollFlags,
+  async ScrollRectIntoView(nsRect aRect, AxisScrollParams aVertical,
+                           AxisScrollParams aHorizontal, ScrollFlags aScrollFlags,
                            int32_t aAppUnitsPerDevPixel);
 
   async SubFrameCrashed();

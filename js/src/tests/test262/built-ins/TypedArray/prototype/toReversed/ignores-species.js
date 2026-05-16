@@ -38,6 +38,6 @@ testWithTypedArrayConstructors(TA => {
     }
   });
   ta.toReversed();
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

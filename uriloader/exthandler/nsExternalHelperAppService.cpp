@@ -732,7 +732,8 @@ nsresult nsExternalHelperAppService::DoContentContentProcessHelper(
 
   NS_ADDREF(*aStreamListener = childListener);
 
-  uint32_t reason = nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
+  nsIHelperAppLauncherDialog::reason reason =
+      nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
 
   SanitizeFileName(fileName, 0);
 
@@ -757,7 +758,8 @@ NS_IMETHODIMP nsExternalHelperAppService::CreateListener(
 
   nsAutoString fileName;
   nsAutoCString fileExtension;
-  uint32_t reason = nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
+  nsIHelperAppLauncherDialog::reason reason =
+      nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
 
   uint32_t contentDisposition = -1;
   aChannel->GetContentDisposition(&contentDisposition);
@@ -1321,7 +1323,8 @@ nsExternalAppHandler::nsExternalAppHandler(
     nsIMIMEInfo* aMIMEInfo, const nsAString& aFileExtension,
     BrowsingContext* aBrowsingContext, nsIInterfaceRequestor* aWindowContext,
     nsExternalHelperAppService* aExtProtSvc,
-    const nsAString& aSuggestedFileName, uint32_t aReason, bool aForceSave)
+    const nsAString& aSuggestedFileName,
+    nsIHelperAppLauncherDialog::reason aReason, bool aForceSave)
     : mMimeInfo(aMIMEInfo),
       mBrowsingContext(aBrowsingContext),
       mWindowContext(aWindowContext),

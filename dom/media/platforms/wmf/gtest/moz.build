@@ -6,8 +6,17 @@ UNIFIED_SOURCES += [
     "TestCanCreateMFTDecoder.cpp",
 ]
 
+if CONFIG["MOZ_WMF_MEDIA_ENGINE"]:
+    UNIFIED_SOURCES += [
+        "TestMFVideoTransFunc.cpp",
+    ]
+
 LOCAL_INCLUDES += [
+    "/dom/media/ipc",
+    "/dom/media/platforms/wmf",
     "/dom/media/platforms/wmf/gtest",
 ]
+
+include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul-gtest"

@@ -1,0 +1,20 @@
+{
+  "label": "developer.apple.com",
+  "bugs": {
+    "1925508": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://developer.apple.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "pref_check": {
+        "layout.css.prefixes.transforms": true
+      },
+      "content_scripts": {
+        "css": ["bug1925508-developer-apple.com-transform-scale.css"]
+      }
+    }
+  ]
+}

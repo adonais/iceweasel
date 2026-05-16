@@ -583,7 +583,7 @@
             this.ownerGlobal === tabOrSplitView.ownerGlobal
               ? tabOrSplitView
               : gBrowser.adoptSplitView(tabOrSplitView, {
-                  elementIndex: gBrowser.tabs.at(-1)._tPos + 1,
+                  tabIndex: gBrowser.tabs.at(-1)._tPos + 1,
                 });
           gBrowser.moveSplitViewToExistingGroup(
             splitViewToMove,

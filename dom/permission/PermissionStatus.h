@@ -63,6 +63,7 @@ class PermissionStatus : public DOMEventTargetHelper {
   virtual already_AddRefed<PermissionStatusSink> CreateSink();
 
   void PermissionChanged(uint32_t aAction);
+  void SystemPermissionChanged(PermissionState aNewSystemState);
 
   PermissionState ComputeStateFromAction(uint32_t aAction);
 

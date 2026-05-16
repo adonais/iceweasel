@@ -60,7 +60,7 @@ class DownloadMiddleware(
         action: BrowserAction,
     ) {
         when (action) {
-            is DownloadAction.RemoveDownloadAction -> removeDownload(action.downloadId, store)
+            is DownloadAction.RemoveDownloadAction -> removeDownload(action.downloadId, action.removeFromDisk, store)
             is DownloadAction.RemoveAllDownloadsAction -> removeDownloads()
             is DownloadAction.UpdateDownloadAction -> updateDownload(action.download, store)
             is DownloadAction.RestoreDownloadsStateAction -> restoreDownloads(store)
@@ -76,6 +76,7 @@ class DownloadMiddleware(
                     return
                 }
             }
+
             else -> {
                 // no-op
             }
@@ -105,12 +106,22 @@ class DownloadMiddleware(
 
     private fun removeDownload(
         downloadId: String,
+        removeFromDisk: Boolean?,
         store: Store<BrowserState, BrowserAction>,
     ) {
         val downloadToDelete = store.state.downloads[downloadId] ?: return
 
+        val shouldDeleteFromDisk = removeFromDisk ?: deleteFileFromStorage()
+
+        removeDownload(downloadToDelete, shouldDeleteFromDisk)
+    }
+
+    private fun removeDownload(
+        downloadToDelete: DownloadState,
+        removeFromDisk: Boolean,
+    ) {
         scope.launch {
-            if (deleteFileFromStorage()) {
+            if (removeFromDisk) {
                 removeFileFromStorage(downloadToDelete)
             }
 

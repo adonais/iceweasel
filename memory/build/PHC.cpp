@@ -109,6 +109,8 @@
 #endif
 
 #include "mozjemalloc.h"
+#include "BaseArray.h"
+#include "BaseAlloc.h"
 #include "Chunk.h"
 #include "FdPrintf.h"
 #include "Mutex.h"
@@ -138,41 +140,6 @@ extern "C" MOZ_EXPORT int pthread_atfork(void (*)(void), void (*)(void),
     T(const T&);                      \
     void operator=(const T&)
 #endif
-
-// This class provides infallible operations for the small number of heap
-// allocations that PHC does for itself. It would be nice if we could use the
-// InfallibleAllocPolicy from mozalloc, but PHC cannot use mozalloc.
-class InfallibleAllocPolicy {
- public:
-  static void AbortOnFailure(const void* aP) {
-    if (!aP) {
-      MOZ_CRASH("PHC failed to allocate");
-    }
-  }
-
-  template <class T>
-  static T* new_() {
-    void* p = MozJemalloc::malloc(sizeof(T));
-    AbortOnFailure(p);
-    return new (p) T;
-  }
-
-  template <class T>
-  static T* new_(size_t n) {
-    void* p = MozJemalloc::malloc(sizeof(T) * n);
-    AbortOnFailure(p);
-    return new (p) T[n];
-  }
-
-  // Realloc for arrays, because we don't know the original size we can't
-  // initialize the elements past that size.  The caller must do that.
-  template <class T>
-  static T* realloc(T* aOldArray, size_t n) {
-    void* p = MozJemalloc::realloc(aOldArray, sizeof(T) * n);
-    AbortOnFailure(p);
-    return reinterpret_cast<T*>(p);
-  }
-};
 
 //---------------------------------------------------------------------------
 // Stack traces
@@ -263,69 +230,6 @@ void StackTrace::Fill() {
 #define PHC_LOGGING 0
 
 static void Log(const char* fmt, ...);
-
-//---------------------------------------------------------------------------
-// Array implementation
-//---------------------------------------------------------------------------
-
-// Unlike mfbt/Array.h this array has a dynamic size, but unlike a vector its
-// size is set explicitly rather than grown as needed.
-template <typename T>
-class PHCArray {
- private:
-  size_t mCapacity = 0;
-  T* mArray = nullptr;
-
- public:
-  PHCArray() {}
-
-  ~PHCArray() {
-    for (size_t i = 0; i < mCapacity; i++) {
-      mArray[i].~T();
-    }
-    MozJemalloc::free(mArray);
-  }
-
-  const T& operator[](size_t aIndex) const {
-    MOZ_ASSERT(aIndex < mCapacity);
-    return mArray[aIndex];
-  }
-  T& operator[](size_t aIndex) {
-    MOZ_ASSERT(aIndex < mCapacity);
-    return mArray[aIndex];
-  }
-
-  T* begin() { return mArray; }
-  const T* begin() const { return mArray; }
-  const T* end() const { return &mArray[mCapacity]; }
-
-  void Init(size_t aCapacity) {
-    MOZ_ASSERT(mCapacity == 0);
-    MOZ_ASSERT(mArray == nullptr);
-
-    mArray = InfallibleAllocPolicy::new_<T>(aCapacity);
-    mCapacity = aCapacity;
-  }
-
-  size_t Capacity() const { return mCapacity; }
-
-  void GrowTo(size_t aNewCapacity) {
-    MOZ_ASSERT(aNewCapacity > mCapacity);
-    if (mCapacity == 0) {
-      Init(aNewCapacity);
-      return;
-    }
-    mArray = InfallibleAllocPolicy::realloc<T>(mArray, aNewCapacity);
-    for (size_t i = mCapacity; i < aNewCapacity; i++) {
-      new (&mArray[i]) T();
-    }
-    mCapacity = aNewCapacity;
-  }
-
-  size_t SizeOfExcludingThis() {
-    return MozJemalloc::malloc_usable_size(mArray);
-  }
-};
 
 //---------------------------------------------------------------------------
 // Global state
@@ -632,6 +536,15 @@ class PHCRegion {
     return true;
   }
 
+  void ReleaseVirtualAddresses() {
+    MOZ_ASSERT(!!mPagesStart && !!mPagesLimit);
+
+    pages_unmap(mPagesStart, reinterpret_cast<uintptr_t>(mPagesLimit) -
+                                 reinterpret_cast<uintptr_t>(mPagesStart));
+    mPagesStart = nullptr;
+    mPagesLimit = nullptr;
+  }
+
   constexpr PHCRegion() {}
 
   bool IsInFirstGuardPage(const void* aPtr) {
@@ -665,7 +578,7 @@ class PtrKind;
 // Shared, mutable global state.  Many fields are protected by sMutex; functions
 // that access those feilds should take a PHCLock as proof that mMutex is held.
 // Other fields are TLS or Atomic and don't need the lock.
-class PHC {
+class PHC : public BaseAllocClass {
  public:
   // The RNG seeds here are poor, but non-reentrant since this can be called
   // from malloc().  SetState() will reset the RNG later.
@@ -713,9 +626,10 @@ class PHC {
     size_t old_size_pages = NumAllocPages();
     if (size_pages > old_size_pages) {
       Log("Growing PHC storage from %zu to %zu\n", old_size_pages, size_pages);
-      mAllocPages.GrowTo(size_pages);
-      for (size_t i = old_size_pages; i < size_pages; i++) {
-        AppendPageToFreeList(i);
+      if (mAllocPages.GrowTo(size_pages)) {
+        for (size_t i = old_size_pages; i < size_pages; i++) {
+          AppendPageToFreeList(i);
+        }
       }
     } else if (size_pages < old_size_pages) {
       Log("Shrink requested and ignored.");
@@ -1336,7 +1250,7 @@ class PHC {
   static PHC_THREAD_LOCAL(Delay) tlsLastDelay;
 
   // Using mfbt/Array.h makes MOZ_GUARDED_BY more reliable than a C array.
-  PHCArray<AllocPageInfo> mAllocPages MOZ_GUARDED_BY(mMutex);
+  BaseArray<AllocPageInfo> mAllocPages MOZ_GUARDED_BY(mMutex);
 
  public:
   // There are two kinds of page.
@@ -1492,7 +1406,11 @@ void phc_init() {
   }
 
   // sPHC is never freed. It lives for the life of the process.
-  PHC::sPHC = InfallibleAllocPolicy::new_<PHC>();
+  PHC::sPHC = new (fallible) PHC();
+  if (!PHC::sPHC) {
+    PHC::sRegion.ReleaseVirtualAddresses();
+    return;
+  }
 
 #ifndef XP_WIN
   // Avoid deadlocks when forking by acquiring our state lock prior to forking
@@ -2027,11 +1945,7 @@ inline void MozJemallocPHC::jemalloc_stats_internal(
   // aStats.page_cache and aStats.bin_unused are left unchanged because PHC
   // doesn't have anything corresponding to those.
 
-  // The metadata is stored in normal heap allocations, so they're measured by
-  // mozjemalloc as `allocated`. Move them into `bookkeeping`.
-  // They're also reported under explicit/heap-overhead/phc/fragmentation in
-  // about:memory.
-  aStats->allocated -= mem_info.mMetadataBytes;
+  // The metadata is `bookkeeping`.
   aStats->bookkeeping += mem_info.mMetadataBytes;
 }
 

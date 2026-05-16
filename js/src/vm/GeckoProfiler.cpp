@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -634,7 +632,7 @@ JS_PUBLIC_API JSScript* ProfilingStackFrame::script() const {
     return nullptr;
   }
 
-  // If profiling is supressed then we can't trust the script pointers to be
+  // If profiling is suppressed then we can't trust the script pointers to be
   // valid as they could be in the process of being moved by a compacting GC
   // (although it's still OK to get the runtime from them).
   JSContext* cx = script->runtimeFromAnyThread()->mainContextFromAnyThread();

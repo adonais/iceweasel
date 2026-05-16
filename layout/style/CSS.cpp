@@ -14,6 +14,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/HighlightRegistry.h"
+#include "nsContentUtils.h"
 #include "nsStyleUtil.h"
 #include "xpcpublic.h"
 
@@ -37,20 +38,11 @@ void CSS::Escape(const GlobalObject&, const nsAString& aIdent,
   nsStyleUtil::AppendEscapedCSSIdent(aIdent, aReturn);
 }
 
-static Document* GetDocument(const GlobalObject& aGlobal) {
-  nsCOMPtr<nsPIDOMWindowInner> window =
-      do_QueryInterface(aGlobal.GetAsSupports());
-  MOZ_DIAGNOSTIC_ASSERT(window, "CSS is only exposed to window globals");
-  if (!window) {
-    return nullptr;
-  }
-  return window->GetExtantDoc();
-}
-
 /* static */
 HighlightRegistry* CSS::GetHighlights(const GlobalObject& aGlobal,
                                       ErrorResult& aRv) {
-  Document* doc = GetDocument(aGlobal);
+  Document* doc =
+      nsContentUtils::TryGetDocumentFromWindowGlobal(aGlobal.GetAsSupports());
   if (!doc) {
     aRv.ThrowUnknownError("No document associated to this global?");
     return nullptr;
@@ -62,7 +54,8 @@ HighlightRegistry* CSS::GetHighlights(const GlobalObject& aGlobal,
 void CSS::RegisterProperty(const GlobalObject& aGlobal,
                            const PropertyDefinition& aDefinition,
                            ErrorResult& aRv) {
-  Document* doc = GetDocument(aGlobal);
+  Document* doc =
+      nsContentUtils::TryGetDocumentFromWindowGlobal(aGlobal.GetAsSupports());
   if (!doc) {
     return aRv.ThrowUnknownError("No document associated to this global?");
   }

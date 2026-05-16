@@ -17,8 +17,6 @@ const TEST_PAGE = `<html>
 
 add_task(async function () {
   info("Setup preferences for testing");
-  // Disable rcwn to make cache behavior deterministic.
-  await pushPref("network.http.rcwn.enabled", false);
   // Disable the cache.
   await pushPref("devtools.cache.disabled", true);
 

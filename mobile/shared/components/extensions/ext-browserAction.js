@@ -43,9 +43,8 @@ class BrowserAction extends BrowserActionBase {
     const action = tab
       ? this.getContextData(tab)
       : this.helper.extractProperties(this.globals);
-    this.helper.sendRequest(tabId, {
+    this.helper.sendRequest(tabId, "GeckoView:BrowserAction:Update", {
       action,
-      type: "GeckoView:BrowserAction:Update",
     });
   }
 
@@ -55,9 +54,8 @@ class BrowserAction extends BrowserActionBase {
       : this.triggerClickOrPopup(tab);
     const actionObject = this.getContextData(tab);
     const action = this.helper.extractProperties(actionObject);
-    this.helper.sendRequest(tab.id, {
+    this.helper.sendRequest(tab.id, "GeckoView:BrowserAction:OpenPopup", {
       action,
-      type: "GeckoView:BrowserAction:OpenPopup",
       popupUri,
     });
   }

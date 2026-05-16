@@ -9,7 +9,7 @@ info: |
   ...
   4. Let buffer be the value of O's [[ViewedArrayBuffer]] internal slot.
   5. Return buffer.
-includes: [testBigIntTypedArray.js, detachArrayBuffer.js]
+includes: [testTypedArray.js, detachArrayBuffer.js]
 features: [BigInt, TypedArray]
 ---*/
 
@@ -18,6 +18,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA(buffer, 0, 1);
   $DETACHBUFFER(sample.buffer);
   assert.sameValue(sample.buffer, buffer);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

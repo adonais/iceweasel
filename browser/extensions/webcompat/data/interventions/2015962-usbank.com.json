@@ -1,0 +1,17 @@
+{
+  "label": "usbank.com",
+  "bugs": {
+    "2015962": {
+      "issue": "broken-layout",
+      "matches": ["*://onlinebanking.usbank.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug2015962-usbank.com-font-fix.css"]
+      }
+    }
+  ]
+}

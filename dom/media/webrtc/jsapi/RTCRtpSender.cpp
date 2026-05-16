@@ -188,14 +188,6 @@ already_AddRefed<Promise> RTCRtpSender::GetStats(ErrorResult& aError) {
   if (aError.Failed()) {
     return nullptr;
   }
-  if (NS_WARN_IF(!mPipeline)) {
-    // TODO(bug 1056433): When we stop nulling this out when the PC is closed
-    // (or when the transceiver is stopped), we can remove this code. We
-    // resolve instead of reject in order to make this eventual change in
-    // behavior a little smaller.
-    promise->MaybeResolve(new RTCStatsReport(mWindow));
-    return promise.forget();
-  }
 
   mTransceiver->ChainToDomPromiseWithCodecStats(GetStatsInternal(), promise);
   return promise.forget();
@@ -366,16 +358,10 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
             // ReceiverReports have less information than SenderReports, so fill
             // in what we can.
             Maybe<webrtc::ReportBlockData> reportBlockData;
-            {
-              if (const auto remoteSsrc = aConduit->GetRemoteSSRC();
-                  remoteSsrc) {
-                for (auto& data : audioStats->report_block_datas) {
-                  if (data.source_ssrc() == ssrc &&
-                      data.sender_ssrc() == *remoteSsrc) {
-                    reportBlockData.emplace(data);
-                    break;
-                  }
-                }
+            for (auto& data : audioStats->report_block_datas) {
+              if (data.source_ssrc() == ssrc) {
+                reportBlockData.emplace(data);
+                break;
               }
             }
             reportBlockData.apply([&](auto& aReportBlockData) {

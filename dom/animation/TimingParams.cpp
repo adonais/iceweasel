@@ -218,17 +218,11 @@ bool TimingParams::operator==(const TimingParams& aOther) const {
 // implementation here ignores the case of percentage of start delay, end delay,
 // and duration because Gecko doesn't support them.
 //
-// FIXME: Bug 1804775. We may have to update the calculation here after we
-// introduce animaiton ranges.
-//
 // [1]
 // https://drafts.csswg.org/web-animations-2/#time-based-animation-to-a-proportional-animation
 // [2] https://chromium-review.googlesource.com/c/chromium/src/+/2992387
 TimingParams TimingParams::Normalize(
     const TimeDuration& aTimelineDuration) const {
-  MOZ_ASSERT(aTimelineDuration,
-             "the timeline duration of scroll-timeline is always non-zero now");
-
   TimingParams normalizedTiming(*this);
 
   // Handle iteration duration value of "auto" first.
@@ -238,9 +232,6 @@ TimingParams TimingParams::Normalize(
     //   and proportions.
     normalizedTiming.mDelay = TimeDuration();
     normalizedTiming.mEndDelay = TimeDuration();
-    // FIXME: Bug 1804775. We may have to tweak here once we introduce timeline
-    // range (e.g. animation-range-{start|end}). For now, we use the default
-    // timeline duration as the normalized duration of this timing.
     normalizedTiming.mDuration.emplace(aTimelineDuration);
     normalizedTiming.Update();
     return normalizedTiming;

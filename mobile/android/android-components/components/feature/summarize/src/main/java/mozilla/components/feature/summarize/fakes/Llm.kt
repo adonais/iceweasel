@@ -40,30 +40,29 @@ data class FakeCloudProvider(
  * Emits each item in [responses] sequentially, with a 2-second delay between
  * each emission to simulate real LLM streaming latency.
  *
- * @property responses The ordered list of [Llm.Response] values to emit when [prompt] is called.
+ * @property responses values to emit.
  */
 data class FakeLlm(
-    val responses: List<Llm.Response> = listOf(),
+    val responses: List<String> = listOf(),
 ) : Llm {
 
-    var promptCapture = ""
+    var lastPrompt: Prompt? = null
 
-    override suspend fun prompt(prompt: Prompt): Flow<Llm.Response> = flow {
+    override suspend fun prompt(prompt: Prompt): Flow<String> = flow {
         for (response in responses) {
             emit(response)
             delay(2.seconds)
         }
     }.also {
-        promptCapture = prompt.value
+        lastPrompt = prompt
     }
 
     companion object {
         val successful get() = FakeLlm(
             listOf(
-                Llm.Response.Success.ReplyPart("# This is the article\n"),
-                Llm.Response.Success.ReplyPart("This is some content...\n"),
-                Llm.Response.Success.ReplyPart("This is some *bold* content.\n"),
-                Llm.Response.Success.ReplyFinished,
+               "This is the article\n",
+               "This is some content...\n",
+               "This is some *bold* content.\n",
             ),
         )
     }

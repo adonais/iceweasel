@@ -61,12 +61,12 @@ if CONFIG['CC_TYPE'] == 'clang-cl':
 DEFINES['HAVE_AV_CONFIG_H'] = True
 
 if CONFIG['CC_TYPE'] == 'clang':
-  CXXFLAGS += [
-      '-Wsometimes-uninitialized',
-      '-Wunreachable-code-return',
-      '-Wunreachable-code',
-      '-Wunused-const-variable',
-  ]
+    COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += [
+        '-Wsometimes-uninitialized',
+        '-Wunreachable-code-return',
+        '-Wunreachable-code',
+        '-Wunused-const-variable',
+    ]
 
 if CONFIG['MOZ_DEBUG']:
     # Enable all assertions in debug builds.

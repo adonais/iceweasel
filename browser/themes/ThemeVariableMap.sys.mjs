@@ -94,13 +94,13 @@ export const ThemeVariableMap = [
     },
   ],
   [
-    "--urlbarView-highlight-background",
+    "--urlbarview-background-color-selected",
     {
       lwtProperty: "popup_highlight",
     },
   ],
   [
-    "--urlbarView-highlight-color",
+    "--urlbarview-text-color-selected",
     {
       lwtProperty: "popup_highlight_text",
     },

@@ -140,14 +140,6 @@ void nsIGlobalObject::UnlinkObjectsInGlobal() {
 
 void nsIGlobalObject::TraverseObjectsInGlobal(
     nsCycleCollectionTraversalCallback& cb) {
-  // Currently we only store BlobImpl objects off the the main-thread and they
-  // are not CCed.
-  if (!mHostObjectURIs.IsEmpty() && NS_IsMainThread()) {
-    for (uint32_t index = 0; index < mHostObjectURIs.Length(); ++index) {
-      BlobURLProtocolHandler::Traverse(mHostObjectURIs[index], cb);
-    }
-  }
-
   nsIGlobalObject* tmp = this;
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReportBuffer)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReportingObservers)

@@ -5,7 +5,6 @@
 #include "SourceBuffer.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstring>
 #include "mozilla/Likely.h"
 #include "nsIInputStream.h"

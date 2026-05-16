@@ -17,7 +17,7 @@ struct ParamTraits<nsILoadInfo::HTTPSUpgradeTelemetryType>
     : public ContiguousEnumSerializerInclusive<
           nsILoadInfo::HTTPSUpgradeTelemetryType,
           nsILoadInfo::HTTPSUpgradeTelemetryType::NOT_INITIALIZED,
-          nsILoadInfo::HTTPSUpgradeTelemetryType::UPGRADE_EXCEPTION> {};
+          nsILoadInfo::HTTPSUpgradeTelemetryType::SKIP_HTTPS_UPGRADE> {};
 
 template <>
 struct ParamTraits<nsILoadInfo::SchemelessInputType>

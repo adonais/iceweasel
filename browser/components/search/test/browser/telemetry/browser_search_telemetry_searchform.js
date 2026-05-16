@@ -150,9 +150,11 @@ add_task(async function test_appProvided() {
     let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
     let popup = await testUtils.openSearchModeSwitcher(window);
     info("Choose Second Engine in the unified search button popup.");
-    let item = popup.querySelector('menuitem[label="Second Engine"]');
+    let item = popup.querySelector(
+      'panel-item[data-engine-name="Second Engine"]'
+    );
     let popupHidden = testUtils.searchModeSwitcherPopupClosed(window);
-    popup.activateItem(item, { shiftKey: true });
+    EventUtils.synthesizeMouseAtCenter(item, { shiftKey: true });
     await popupHidden;
     await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
@@ -172,9 +174,11 @@ add_task(async function test_extension() {
     let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
     let popup = await testUtils.openSearchModeSwitcher(window);
     info("Choose extension engine in the unified search button popup.");
-    let item = popup.querySelector(`menuitem[label="${TEST_ENGINE_NAME}"]`);
+    let item = popup.querySelector(
+      `panel-item[data-engine-name="${TEST_ENGINE_NAME}"]`
+    );
     let popupHidden = testUtils.searchModeSwitcherPopupClosed(window);
-    popup.activateItem(item, { shiftKey: true });
+    EventUtils.synthesizeMouseAtCenter(item, { shiftKey: true });
     await popupHidden;
     await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
@@ -198,9 +202,11 @@ add_task(async function test_actualSearch() {
     });
     let popup = await testUtils.openSearchModeSwitcher(window);
     info("Shift-click Second Engine in the unified search button popup.");
-    let item = popup.querySelector('menuitem[label="Second Engine"]');
+    let item = popup.querySelector(
+      'panel-item[data-engine-name="Second Engine"]'
+    );
     let popupHidden = testUtils.searchModeSwitcherPopupClosed(window);
-    popup.activateItem(item, { shiftKey: true });
+    EventUtils.synthesizeMouseAtCenter(item, { shiftKey: true });
     await popupHidden;
     await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 

@@ -241,7 +241,9 @@ class SearchDialogController(
         if (searchEngine != null) {
             MetricsUtils.recordSearchMetrics(
                 searchEngine,
-                searchEngine == store.state.search.selectedOrDefaultSearchEngine,
+                searchEngine == store.state.search.selectedOrDefaultSearchEngine(
+                    private = appStore.state.mode.isPrivate,
+                ),
                 searchAccessPoint,
                 context.components.nimbus.events,
             )
@@ -264,7 +266,9 @@ class SearchDialogController(
             searchEngine.type == SearchEngine.Type.APPLICATION && searchEngine.id == TABS_SEARCH_ENGINE_ID -> {
                 fragmentStore.dispatch(SearchFragmentAction.SearchTabsEngineSelected(searchEngine))
             }
-            searchEngine == store.state.search.selectedOrDefaultSearchEngine -> {
+            searchEngine == store.state.search.selectedOrDefaultSearchEngine(
+                private = appStore.state.mode.isPrivate,
+            ) -> {
                 fragmentStore.dispatch(
                     SearchFragmentAction.SearchDefaultEngineSelected(
                         engine = searchEngine,

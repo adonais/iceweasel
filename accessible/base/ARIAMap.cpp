@@ -73,7 +73,8 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoAction,
     eNoLiveAttr,
     eLandmark,
-    kNoReqStates
+    kNoReqStates,
+    eARIAExpanded
   },
   { // article
     nsGkAtoms::article,
@@ -113,8 +114,9 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     ePressAction,
     eNoLiveAttr,
     eButton,
-    kNoReqStates
-    // eARIAPressed is auto applied on any button
+    kNoReqStates,
+    eARIAExpanded,
+    eARIAPressed
   },
   { // caption
     nsGkAtoms::caption,
@@ -144,6 +146,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
+    eARIAExpanded,
     eARIACheckableMixed,
     eARIAReadonly
   },
@@ -165,6 +168,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     eTableCell,
     kNoReqStates,
+    eARIAExpanded,
     eARIASelectableIfDefined,
     eARIAReadonly
   },
@@ -177,6 +181,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     eCombobox,
     states::EXPANDABLE | states::HASPOPUP,
+    eARIAExpanded,
     eARIAAutoComplete,
     eARIAReadonly,
     eARIAOrientation
@@ -772,6 +777,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     eTableCell,
     kNoReqStates,
+    eARIAExpanded,
     eARIASelectable,
     eARIAReadonly
   },
@@ -843,7 +849,8 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eJumpAction,
     eNoLiveAttr,
     kGenericAccType,
-    states::LINKED
+    states::LINKED,
+    eARIAExpanded
   },
   { // list
     nsGkAtoms::list,
@@ -959,7 +966,8 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eClickAction,
     eNoLiveAttr,
     kGenericAccType,
-    kNoReqStates
+    kNoReqStates,
+    eARIAExpanded
   },
   { // menuitemcheckbox
     nsGkAtoms::menuitemcheckbox,
@@ -970,6 +978,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
+    eARIAExpanded,
     eARIACheckableMixed,
     eARIAReadonly
   },
@@ -982,6 +991,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
+    eARIAExpanded,
     eARIACheckableBool,
     eARIAReadonly
   },
@@ -1109,6 +1119,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     eTableRow,
     kNoReqStates,
+    eARIAExpanded,
     eARIASelectable
   },
   { // rowgroup
@@ -1130,6 +1141,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     eTableCell,
     kNoReqStates,
+    eARIAExpanded,
     eARIASelectableIfDefined,
     eARIAReadonly
   },
@@ -1258,6 +1270,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
+    eARIAExpanded,
     eARIACheckableBool,
     eARIAReadonly
   },
@@ -1270,6 +1283,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
+    eARIAExpanded,
     eARIASelectable
   },
   { // table
@@ -1405,6 +1419,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoLiveAttr,
     kGenericAccType,
     kNoReqStates,
+    eARIAExpanded,
     eARIASelectable,
     eARIACheckedMixed
   }
@@ -1426,7 +1441,6 @@ nsRoleMapEntry aria::gEmptyRoleMap = {
  */
 static const EStateRule sWAIUnivStateMap[] = {
     eARIABusy,     eARIACurrent, eARIADisabled,
-    eARIAExpanded,  // Currently under spec review but precedent exists
     eARIAHasPopup,  // Note this is a tokenised attribute starting in ARIA 1.1
     eARIAInvalid,  eARIAModal,
     eARIARequired,  // XXX not global, Bug 553117
@@ -1597,10 +1611,26 @@ uint64_t aria::UniversalStatesFor(mozilla::dom::Element* aElement) {
   return state;
 }
 
+void aria::MapToStateIfInRoleMapEntry(const nsRoleMapEntry* aRoleMapEntry,
+                                      EStateRule aRule,
+                                      mozilla::dom::Element* aElement,
+                                      uint64_t* aState) {
+  if (!aRoleMapEntry) {
+    return;
+  }
+
+  if (aRoleMapEntry->attributeMap1 == aRule ||
+      aRoleMapEntry->attributeMap2 == aRule ||
+      aRoleMapEntry->attributeMap3 == aRule ||
+      aRoleMapEntry->attributeMap4 == aRule) {
+    MapToState(aRule, aElement, aState);
+  }
+}
+
 uint8_t aria::AttrCharacteristicsFor(nsAtom* aAtom) {
-  for (uint32_t i = 0; i < std::size(gWAIUnivAttrMap); i++) {
-    if (gWAIUnivAttrMap[i].attributeName == aAtom) {
-      return gWAIUnivAttrMap[i].characteristics;
+  for (auto entry : gWAIUnivAttrMap) {
+    if (entry.attributeName == aAtom) {
+      return entry.characteristics;
     }
   }
 

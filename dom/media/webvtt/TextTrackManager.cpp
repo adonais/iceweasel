@@ -104,7 +104,6 @@ NS_IMPL_CYCLE_COLLECTION(TextTrackManager, mMediaElement, mTextTracks,
                          mPendingTextTracks, mNewCues)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TextTrackManager)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMEventListener)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TextTrackManager)
@@ -319,16 +318,6 @@ void TextTrackManager::PopulatePendingList() {
   }
 }
 
-void TextTrackManager::AddListeners() {
-  if (mMediaElement) {
-    mMediaElement->AddEventListener(u"resizecaption"_ns, this, false, false);
-    mMediaElement->AddEventListener(u"resizevideocontrols"_ns, this, false,
-                                    false);
-    mMediaElement->AddEventListener(u"seeked"_ns, this, false, false);
-    mMediaElement->AddEventListener(u"controlbarchange"_ns, this, false, true);
-  }
-}
-
 void TextTrackManager::HonorUserPreferencesForTrackSelection() {
   if (performedTrackSelection || !mTextTracks) {
     return;
@@ -417,32 +406,16 @@ void TextTrackManager::GetTextTracksOfKind(TextTrackKind aTextTrackKind,
   }
 }
 
-NS_IMETHODIMP
-TextTrackManager::HandleEvent(Event* aEvent) {
+void TextTrackManager::SetCuesDirty() {
   if (!mTextTracks) {
-    return NS_OK;
+    return;
   }
 
-  nsAutoString type;
-  aEvent->GetType(type);
-  WEBVTT_LOG("Handle event %s", NS_ConvertUTF16toUTF8(type).get());
+  WEBVTT_LOG("SetCuesDirty()");
 
-  const bool setDirty = type.EqualsLiteral("seeked") ||
-                        type.EqualsLiteral("resizecaption") ||
-                        type.EqualsLiteral("resizevideocontrols");
-  const bool updateDisplay = type.EqualsLiteral("controlbarchange") ||
-                             type.EqualsLiteral("resizecaption");
-
-  if (setDirty) {
-    for (uint32_t i = 0; i < mTextTracks->Length(); i++) {
-      ((*mTextTracks)[i])->SetCuesDirty();
-    }
+  for (uint32_t i = 0; i < mTextTracks->Length(); i++) {
+    ((*mTextTracks)[i])->SetCuesDirty();
   }
-  if (updateDisplay) {
-    UpdateCueDisplay();
-  }
-
-  return NS_OK;
 }
 
 class SimpleTextTrackEvent : public Runnable {

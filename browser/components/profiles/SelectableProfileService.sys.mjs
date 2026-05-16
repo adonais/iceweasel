@@ -934,6 +934,18 @@ class SelectableProfileServiceClass extends EventEmitter {
     }
   }
 
+  async #updateTitlebar() {
+    let previousCount = this.#cachedProfileCount;
+    this.#cachedProfileCount = await this.getProfileCount();
+
+    // We only need to update the titles if transitioning to or from a single profile.
+    if (previousCount <= 1 || this.#cachedProfileCount <= 1) {
+      for (let win of lazy.EveryWindow.readyWindows) {
+        win.gBrowser.updateTitlebar();
+      }
+    }
+  }
+
   /**
    * Invoked when changes have been made to the database. Sends the observer
    * notification "sps-profiles-updated" indicating that something has changed.
@@ -958,6 +970,7 @@ class SelectableProfileServiceClass extends EventEmitter {
       await this.loadSharedPrefsFromDatabase();
     }
 
+    await this.#updateTitlebar();
     await this.#updateTaskbar();
 
     if (source != "startup") {
@@ -1589,13 +1602,7 @@ class SelectableProfileServiceClass extends EventEmitter {
       throw new Error(`Unable to insertProfile with values: ${profileData}`);
     }
 
-    this.#cachedProfileCount = await this.getProfileCount();
-
     ProfilesDatastoreService.notify();
-
-    for (let win of lazy.EveryWindow.readyWindows) {
-      win.gBrowser.updateTitlebar();
-    }
 
     return this.getProfile(profileId);
   }
@@ -1620,12 +1627,6 @@ class SelectableProfileServiceClass extends EventEmitter {
     await this.#connection.execute("DELETE FROM Profiles WHERE id = :id;", {
       id: aProfile.id,
     });
-
-    this.#cachedProfileCount = await this.getProfileCount();
-
-    for (let win of lazy.EveryWindow.readyWindows) {
-      win.gBrowser.updateTitlebar();
-    }
 
     ProfilesDatastoreService.notify();
   }

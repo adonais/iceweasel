@@ -265,12 +265,11 @@ class _QuickSuggest {
   }
 
   /**
-   * @returns {object}
-   *   Possible values of the `quickSuggestSettingsUi` Nimbus variable and its
-   *   fallback pref `browser.urlbar.quicksuggest.settingsUi`. When Suggest is
-   *   enabled, these values determine the Suggest settings that will be visible
-   *   in `about:preferences`. When Suggest is disabled, the variable/pref are
-   *   ignored and Suggest settings are hidden.
+   * Possible values of the `quickSuggestSettingsUi` Nimbus variable and its
+   * fallback pref `browser.urlbar.quicksuggest.settingsUi`. When Suggest is
+   * enabled, these values determine the Suggest settings that will be visible
+   * in `about:preferences`. When Suggest is disabled, the variable/pref are
+   * ignored and Suggest settings are hidden.
    */
   get SETTINGS_UI() {
     return SETTINGS_UI;

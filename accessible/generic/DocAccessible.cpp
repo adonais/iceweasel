@@ -67,8 +67,6 @@ static nsStaticAtom* const kRelationAttrs[] = {
     nsGkAtoms::commandfor,        nsGkAtoms::aria_activedescendant,
     nsGkAtoms::aria_actions};
 
-static const uint32_t kRelationAttrsLen = std::size(kRelationAttrs);
-
 static nsStaticAtom* const kSingleElementRelationIdlAttrs[] = {
     nsGkAtoms::popovertarget, nsGkAtoms::commandfor};
 
@@ -1941,8 +1939,7 @@ void DocAccessible::AddDependentIDsFor(LocalAccessible* aRelProvider,
   dom::Element* relProviderEl = aRelProvider->Elm();
   if (!relProviderEl) return;
 
-  for (uint32_t idx = 0; idx < kRelationAttrsLen; idx++) {
-    nsStaticAtom* relAttr = kRelationAttrs[idx];
+  for (auto relAttr : kRelationAttrs) {
     if (aRelAttr && aRelAttr != relAttr) continue;
 
     if (relAttr == nsGkAtoms::_for) {
@@ -2012,9 +2009,9 @@ void DocAccessible::RemoveDependentIDsFor(LocalAccessible* aRelProvider,
   dom::Element* relProviderElm = aRelProvider->Elm();
   if (!relProviderElm) return;
 
-  for (uint32_t idx = 0; idx < kRelationAttrsLen; idx++) {
-    nsStaticAtom* relAttr = kRelationAttrs[idx];
-    if (aRelAttr && aRelAttr != kRelationAttrs[idx]) continue;
+  for (auto relationAttr : kRelationAttrs) {
+    const nsStaticAtom* relAttr = relationAttr;
+    if (aRelAttr && aRelAttr != relationAttr) continue;
 
     if (const nsAttrValue* parsedAttrValue =
             relProviderElm->GetParsedAttr(relAttr)) {
@@ -3082,7 +3079,7 @@ void DocAccessible::UncacheChildrenInSubtree(LocalAccessible* aRoot) {
   // The parent of the removed subtree is about to be cleared, so we must do
   // this here rather than in LocalAccessible::UnbindFromParent because we need
   // the ancestry for this to work.
-  if (aRoot->IsTable() || aRoot->IsTableCell()) {
+  if (aRoot->IsTable() || aRoot->IsTableRow() || aRoot->IsTableCell()) {
     CachedTableAccessible::Invalidate(aRoot);
   }
 

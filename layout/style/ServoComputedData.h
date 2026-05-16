@@ -16,6 +16,8 @@ class nsWindowSizes;
 
 namespace mozilla {
 
+enum class PseudoStyleType : uint8_t;
+
 struct ServoWritingMode {
   uint8_t mBits;
 };
@@ -89,6 +91,8 @@ class ServoComputedData {
   const mozilla::ComputedStyle* visited_style;
   /// The computed writing-mode of the element.
   mozilla::ServoWritingMode writing_mode;
+  /// The pseudo type of this style.
+  mozilla::PseudoStyleType pseudo_type;
   /// The effective zoom (as in, the CSS zoom property) of this style.
   ///
   /// zoom is a non-inherited property, yet changes to it propagate through in

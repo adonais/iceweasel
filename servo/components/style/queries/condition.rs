@@ -245,18 +245,26 @@ impl StyleQuery {
         }
     }
 
-    fn matches(&self, ctx: &computed::Context) -> KleeneValue {
+    fn matches(
+        &self,
+        ctx: &computed::Context,
+        attribute_tracker: &mut AttributeTracker,
+    ) -> KleeneValue {
         ctx.builder
             .add_flags(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY);
         match *self {
-            StyleQuery::Feature(ref f) => f.matches(ctx),
-            StyleQuery::Not(ref c) => !c.matches(ctx),
-            StyleQuery::InParens(ref c) => c.matches(ctx),
+            StyleQuery::Feature(ref f) => f.matches(ctx, attribute_tracker),
+            StyleQuery::Not(ref c) => !c.matches(ctx, attribute_tracker),
+            StyleQuery::InParens(ref c) => c.matches(ctx, attribute_tracker),
             StyleQuery::Operation(ref conditions, op) => {
                 debug_assert!(!conditions.is_empty(), "We never create an empty op");
                 match op {
-                    Operator::And => KleeneValue::any_false(conditions.iter(), |c| c.matches(ctx)),
-                    Operator::Or => KleeneValue::any(conditions.iter(), |c| c.matches(ctx)),
+                    Operator::And => KleeneValue::any_false(conditions.iter(), |c| {
+                        c.matches(ctx, attribute_tracker)
+                    }),
+                    Operator::Or => {
+                        KleeneValue::any(conditions.iter(), |c| c.matches(ctx, attribute_tracker))
+                    },
                 }
             },
             StyleQuery::GeneralEnclosed(_) => KleeneValue::Unknown,
@@ -325,10 +333,14 @@ impl StyleFeature {
         Ok(Self::Plain(StyleFeaturePlain::parse(context, input)?))
     }
 
-    fn matches(&self, ctx: &computed::Context) -> KleeneValue {
+    fn matches(
+        &self,
+        ctx: &computed::Context,
+        attribute_tracker: &mut AttributeTracker,
+    ) -> KleeneValue {
         match self {
-            Self::Plain(plain) => plain.matches(ctx),
-            Self::Range(range) => range.evaluate(ctx),
+            Self::Plain(plain) => plain.matches(ctx, attribute_tracker),
+            Self::Range(range) => range.evaluate(ctx, attribute_tracker),
         }
     }
 }
@@ -401,26 +413,31 @@ impl StyleFeaturePlain {
         registration: &PropertyDescriptors,
         stylist: &Stylist,
         ctx: &computed::Context,
+        attribute_tracker: &mut AttributeTracker,
         current_value: Option<&ComputedRegisteredValue>,
     ) -> bool {
-        let substituted = match custom_properties::substitute(
+        let substitution_functions = custom_properties::ComputedSubstitutionFunctions::new(
+            Some(ctx.inherited_custom_properties().clone()),
+            None,
+        );
+        // FIXME(bug2026241): `attribute_tainted` should be used.
+        let custom_properties::SubstitutionResult { css, .. } = match custom_properties::substitute(
             &value,
-            ctx.inherited_custom_properties(),
+            &substitution_functions,
             stylist,
             ctx,
-            // FIXME: do we need to pass a real AttributeTracker for the query?
-            &mut AttributeTracker::new_dummy(),
+            attribute_tracker,
         ) {
             Ok(sub) => sub,
             Err(_) => return current_value.is_none(),
         };
         if registration.is_universal() {
             return match current_value {
-                Some(v) => v.as_universal().is_some_and(|v| v.css == substituted),
-                None => substituted.is_empty(),
+                Some(v) => v.as_universal().is_some_and(|v| v.css == css),
+                None => css.is_empty(),
             };
         }
-        let mut input = cssparser::ParserInput::new(&substituted);
+        let mut input = cssparser::ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
         let computed = SpecifiedRegisteredValue::compute(
             &mut parser,
@@ -434,7 +451,11 @@ impl StyleFeaturePlain {
         computed.as_ref() == current_value
     }
 
-    fn matches(&self, ctx: &computed::Context) -> KleeneValue {
+    fn matches(
+        &self,
+        ctx: &computed::Context,
+        attribute_tracker: &mut AttributeTracker,
+    ) -> KleeneValue {
         // FIXME(emilio): Confirm this is the right style to query.
         let stylist = ctx
             .builder
@@ -452,7 +473,14 @@ impl StyleFeaturePlain {
                 } else if v.has_references() {
                     // If there are --var() references in the query value,
                     // try to substitute them before comparing to current.
-                    Self::substitute_and_compare(v, registration, stylist, ctx, current_value)
+                    Self::substitute_and_compare(
+                        v,
+                        registration,
+                        stylist,
+                        ctx,
+                        attribute_tracker,
+                        current_value,
+                    )
                 } else {
                     custom_properties::compute_variable_value(&v, registration, ctx).as_ref()
                         == current_value
@@ -469,7 +497,7 @@ impl StyleFeaturePlain {
                                 registration,
                                 ctx,
                             );
-                            v == current_value.cloned()
+                            v.as_ref() == current_value
                         } else {
                             current_value.is_none()
                         }
@@ -481,8 +509,8 @@ impl StyleFeaturePlain {
                             .expect("queries should provide container info")
                             .inherited_style()
                         {
-                            current_value
-                                == inherited.custom_properties().get(registration, &self.name)
+                            inherited.custom_properties().get(registration, &self.name)
+                                == current_value
                         } else {
                             false
                         }
@@ -794,26 +822,27 @@ impl QueryCondition {
         &self,
         context: &computed::Context,
         custom: &mut CustomMediaEvaluator,
+        attribute_tracker: &mut AttributeTracker,
     ) -> KleeneValue {
         match *self {
             Self::Custom(ref f) => custom.matches(f, context),
             Self::Feature(ref f) => f.matches(context),
             Self::GeneralEnclosed(ref str, ref url_data) => {
-                self.matches_general(&str, url_data, context, custom)
+                self.matches_general(&str, url_data, context, custom, attribute_tracker)
             },
-            Self::InParens(ref c) => c.matches(context, custom),
-            Self::Not(ref c) => !c.matches(context, custom),
-            Self::Style(ref c) => c.matches(context),
+            Self::InParens(ref c) => c.matches(context, custom, attribute_tracker),
+            Self::Not(ref c) => !c.matches(context, custom, attribute_tracker),
+            Self::Style(ref c) => c.matches(context, attribute_tracker),
             Self::MozPref(ref c) => c.matches(context),
             Self::Operation(ref conditions, op) => {
                 debug_assert!(!conditions.is_empty(), "We never create an empty op");
                 match op {
-                    Operator::And => {
-                        KleeneValue::any_false(conditions.iter(), |c| c.matches(context, custom))
-                    },
-                    Operator::Or => {
-                        KleeneValue::any(conditions.iter(), |c| c.matches(context, custom))
-                    },
+                    Operator::And => KleeneValue::any_false(conditions.iter(), |c| {
+                        c.matches(context, custom, attribute_tracker)
+                    }),
+                    Operator::Or => KleeneValue::any(conditions.iter(), |c| {
+                        c.matches(context, custom, attribute_tracker)
+                    }),
                 }
             },
         }
@@ -827,6 +856,7 @@ impl QueryCondition {
         url_data: &UrlExtraData,
         context: &computed::Context,
         custom: &mut CustomMediaEvaluator,
+        attribute_tracker: &mut AttributeTracker,
     ) -> KleeneValue {
         // This only applies (currently, at least) to container queries.
         if !context.in_container_query {
@@ -855,30 +885,40 @@ impl QueryCondition {
         }
 
         // Substitute var() functions if possible.
-        let substituted = match custom_properties::substitute(
+        let substitution_functions = custom_properties::ComputedSubstitutionFunctions::new(
+            Some(context.inherited_custom_properties().clone()),
+            None,
+        );
+        let custom_properties::SubstitutionResult {
+            css,
+            attribute_tainted,
+        } = match custom_properties::substitute(
             &value,
-            context.inherited_custom_properties(),
+            &substitution_functions,
             stylist,
             context,
-            // FIXME: do we need to pass a real AttributeTracker for the query?
-            &mut AttributeTracker::new_dummy(),
+            attribute_tracker,
         ) {
             Ok(sub) => sub,
             Err(_) => return KleeneValue::Unknown,
         };
 
         // Re-parse the result as a query-condition, and evaluate it.
+        let mut parsing_mode = ParsingMode::DEFAULT;
+        if attribute_tainted {
+            parsing_mode.insert(ParsingMode::DISALLOW_URLS);
+        }
         let parser_context = ParserContext::new(
             Origin::Author,
             url_data,
             Some(CssRuleType::Container),
-            ParsingMode::DEFAULT,
+            parsing_mode,
             QuirksMode::NoQuirks,
             /* namespaces = */ Default::default(),
             /* error_reporter = */ None,
             /* use_counters = */ None,
         );
-        let mut input = ParserInput::new(&substituted);
+        let mut input = ParserInput::new(&css);
         let result = match Self::parse(
             &parser_context,
             &mut Parser::new(&mut input),
@@ -888,7 +928,7 @@ impl QueryCondition {
                 // If the result is still GeneralEnclosed, the query is unknown.
                 KleeneValue::Unknown
             },
-            Ok(query) => query.matches(context, custom),
+            Ok(query) => query.matches(context, custom, attribute_tracker),
             Err(_) => KleeneValue::Unknown,
         };
 

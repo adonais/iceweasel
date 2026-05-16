@@ -39,7 +39,11 @@ class ConnectionAttempt : public nsSupportsWeakReference {
                              bool speculative, bool urgentStart);
 
   virtual nsresult Init(ConnectionEntry* ent) = 0;
-  virtual void Abandon() = 0;
+  // Cancel this connection attempt and release resources. When
+  // aReenqueueTransaction is true, any claimed transaction that has not yet
+  // been dispatched onto a connection is put back into the pending queue
+  // instead of being closed (used during H2/H3 coalescing).
+  virtual void Abandon(bool aReenqueueTransaction = false) = 0;
   virtual double Duration(TimeStamp epoch) = 0;
   bool AcceptsTransaction(nsHttpTransaction* trans) const;
   virtual bool Claim(nsHttpTransaction* newTransaction = nullptr) = 0;

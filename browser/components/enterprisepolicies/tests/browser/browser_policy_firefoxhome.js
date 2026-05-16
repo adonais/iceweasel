@@ -3,7 +3,58 @@
 
 "use strict";
 
+// Importing these libraries from newtab is normally forbidden for code that
+// executes in the browser, but since these are just tests, it's fine.
+const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
+  // eslint-disable-next-line mozilla/no-newtab-refs-outside-newtab
+  "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs"
+);
+const { PREFS_CONFIG } = ChromeUtils.importESModule(
+  // eslint-disable-next-line mozilla/no-newtab-refs-outside-newtab
+  "resource://newtab/lib/ActivityStream.sys.mjs"
+);
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 add_setup(async function () {
+  // @nova-cleanup(remove-pref): Remove novaEnabled detection
+  const novaEnabled = Services.prefs.getBoolPref(
+    "browser.newtabpage.activity-stream.nova.enabled",
+    false
+  );
+
+  // @nova-cleanup(remove-conditional): Default to this block; in Nova, Highlights
+  // is rendered inside DiscoveryStreamBase which requires DS to be configured.
+  if (novaEnabled) {
+    let sandbox = sinon.createSandbox();
+    sandbox
+      .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
+      .returns(
+        "https://example.com/browser/browser/extensions/newtab/test/browser/topstories.json"
+      );
+
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [
+          "browser.newtabpage.activity-stream.discoverystream.config",
+          PREFS_CONFIG.get("discoverystream.config").getValue({
+            geo: "US",
+            locale: "en-US",
+          }),
+        ],
+        [
+          "browser.newtabpage.activity-stream.discoverystream.endpoints",
+          "https://example.com",
+        ],
+      ],
+    });
+
+    registerCleanupFunction(() => {
+      sandbox.restore();
+    });
+  }
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.newtabpage.activity-stream.feeds.section.highlights", true],

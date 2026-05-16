@@ -276,6 +276,11 @@ void NodeController::DropPeer(NodeName aNodeName) {
   MOZ_FUZZING_IPC_DROP_PEER("NodeController::DropPeer");
 #endif
 
+  // This may cause many error tasks to be dispatched.
+  // We batch them together to reduce locking contention when destroying a large
+  // number of actors due to a peer disconnecting.
+  MessageChannel::ErrorNotifyBatcher autoBatchNotify;
+
   Invite invite;
   RefPtr<NodeChannel> channel;
   nsTArray<PortRef> pendingMerges;
@@ -729,7 +734,8 @@ void NodeController::OnAcceptInvite(const NodeName& aFromNode,
     return;
   }
 
-  if (aRealName == mojo::core::ports::kInvalidNodeName ||
+  if (aRealName == kBrokerNodeName ||
+      aRealName == mojo::core::ports::kInvalidNodeName ||
       aInitialPort == mojo::core::ports::kInvalidPortName) {
     NODECONTROLLER_WARNING("Invalid name in AcceptInvite message");
     DropPeer(aFromNode);
@@ -869,6 +875,8 @@ void NodeController::CleanUp() {
 
   RefPtr<NodeController> nodeController = gNodeController;
   gNodeController = nullptr;
+
+  MessageChannel::ErrorNotifyBatcher autoBatchNotify;
 
   // Collect all objects from our state which need to be cleaned up.
   nsTArray<NodeName> lostConnections;

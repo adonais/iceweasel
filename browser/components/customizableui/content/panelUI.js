@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+ChromeUtils.importESModule(
+  "chrome://browser/content/tabbrowser/tab-groups-list.mjs",
+  { global: "current" }
+);
+
 ChromeUtils.defineESModuleGetters(this, {
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.sys.mjs",
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
@@ -114,6 +119,16 @@ const PanelUI = {
       }
     );
 
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "tabGroupsAlternateMenu",
+      "browser.tabs.groups.alternateMenu",
+      false,
+      (_pref, _previousValue, _newValue) => {
+        this._showTabGroupsMenuItem();
+      }
+    );
+
     if (this.autoHideToolbarInFullScreen) {
       window.addEventListener("fullscreen", this);
     } else {
@@ -142,6 +157,7 @@ const PanelUI = {
     );
 
     this._showAIMenuItem();
+    this._showTabGroupsMenuItem();
     this._initialized = true;
   },
 
@@ -405,6 +421,9 @@ const PanelUI = {
         break;
       case "appMenu-history-button":
         this.showSubView("PanelUI-history", target);
+        break;
+      case "appMenu-tab-groups-button":
+        this.showSubView("appMenu-tabGroupsListView", target);
         break;
       case "appMenu-passwords-button":
         LoginHelper.openPasswordManager(window, { entryPoint: "Mainmenu" });
@@ -1115,6 +1134,14 @@ const PanelUI = {
     classicWindowMenuItem.hidden = !isSmartWindowAvailable || !isAIWindowActive;
 
     chatHistoryMenuItem.hidden = !isSmartWindowAvailable || !isAIWindowActive;
+  },
+
+  _showTabGroupsMenuItem() {
+    const button = PanelMultiView.getViewNode(
+      document,
+      "appMenu-tab-groups-button"
+    );
+    button.hidden = !this.tabGroupsAlternateMenu;
   },
 
   _showBadge(notification) {

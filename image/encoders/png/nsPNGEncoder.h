@@ -12,6 +12,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ReentrantMonitor.h"
+#include "mozilla/gfx/Types.h"
 
 #define NS_PNGENCODER_CID                     \
   {/* 38d1592e-b81e-432b-86f8-471878bbfe07 */ \
@@ -58,6 +59,20 @@ class nsPNGEncoder final : public imgIEncoder {
   bool mAddCustomMetadata;
   bool mIsAnimation;
   bool mFinished;
+
+  uint32_t mBitDepth = 8;
+  // For 10-bit and 12-bit input, which are encoded as 16-bit png because that
+  // is the only option png supports with more than 8 bit depth, this records
+  // the original bit depth so we can write an sBIT chunk. 0 otherwise.
+  uint32_t mInputBitDepth = 0;
+  bool mHasCICP = false;
+  mozilla::gfx::CICP::ColourPrimaries mColourPrimaries =
+      mozilla::gfx::CICP::CP_BT709;
+  mozilla::gfx::CICP::TransferCharacteristics mTransferCharacteristics =
+      mozilla::gfx::CICP::TC_SRGB;
+  mozilla::gfx::CICP::MatrixCoefficients mMatrixCoefficients =
+      mozilla::gfx::CICP::MC_IDENTITY;
+  bool mFullRange = true;
 
   // image buffer
   uint8_t* mImageBuffer;

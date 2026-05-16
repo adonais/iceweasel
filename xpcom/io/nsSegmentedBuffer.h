@@ -6,7 +6,6 @@
 #define nsSegmentedBuffer_h_
 
 #include <stddef.h>
-#include <functional>
 
 #include "nsCOMPtr.h"
 #include "nsDebug.h"

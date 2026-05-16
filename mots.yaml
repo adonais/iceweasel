@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-03-20T09:34:11.282579+00:00'
+updated_at: '2026-04-13T15:42:58.632917+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -393,7 +393,7 @@ people:
     nick: florian
   - &fredwang
     bmo_id: 739410
-    name: Frédéric Wang
+    name: Frédéric Wang Nélar
     nick: fred.wang
   - &freddy
     bmo_id: 428608
@@ -941,10 +941,6 @@ people:
     bmo_id: 5630
     name: ''
     nick: rbs
-  - &relud
-    bmo_id: 444787
-    name: Daniel Thorn
-    nick: relud
   - &rhamoui
     bmo_id: 690143
     name: Reem Hamoui
@@ -2543,7 +2539,7 @@ modules:
       - toolkit/system/gnome/nsAlertsIconListener*
       - toolkit/system/gnome/nsSystemAlertsService*
       - widget/windows/ToastNotification*
-      - widget/cocoa/OSXNotificationCenter*
+      - widget/cocoa/MacOSNotificationCenter*
     meta:
       group: dev-platform
       components:
@@ -2751,8 +2747,8 @@ modules:
       - *gcp
     machine_name: core_sandboxing_linux
 
-  - name: 'Core: Sandboxing (OSX)'
-    description: Sandboxing for the OSX platform
+  - name: 'Core: Sandboxing (macOS)'
+    description: Sandboxing for the macOS platform
     includes:
       - security/sandbox/mac/**/*
     meta:
@@ -3330,6 +3326,7 @@ modules:
       group: dev-platform
       components:
         - 'Core::Widget: Win32'
+      review_group: win-reviewers
     owners:
       - *cmartin
     peers:
@@ -3559,6 +3556,7 @@ modules:
           - *adw
         peers:
           - *daisuke
+          - *daleharvey
           - *dao
           - *jteow
           - *mak
@@ -3695,6 +3693,8 @@ modules:
         meta:
           owners_emeritus:
             - Michael Cooper
+          peers_emeritus:
+            - Daniel Thorn
           components:
             - Firefox::Normandy
             - Firefox::Nimbus Desktop Client
@@ -3706,7 +3706,6 @@ modules:
           - *Gijs
           - *emcminn
           - *charlie
-          - *relud
         machine_name: normandy
 
       - machine_name: firefox_view
@@ -4756,5 +4755,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 8a84000338470da76a72781426a74b0e160c8a2e
-  export: d1955b830228b17ffcf1ed35b2798978aeb77381
+  config: 52e640ee3f784c3b5b10a5efc6edeeeb294829d9
+  export: 0032a1e2290ce3a7e59b3d872a526767c9be8aaf

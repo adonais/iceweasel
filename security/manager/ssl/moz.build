@@ -33,7 +33,6 @@ XPIDL_SOURCES += [
     "nsISiteIntegrityService.idl",
     "nsISiteSecurityService.idl",
     "nsITLSSocketControl.idl",
-    "nsITokenPasswordDialogs.idl",
     "nsITransportSecurityInfo.idl",
     "nsIX509Cert.idl",
     "nsIX509CertDB.idl",
@@ -263,7 +262,7 @@ USE_LIBS += ["mozpkix"]
 include("/ipc/chromium/chromium-config.mozbuild")
 
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
-    CXXFLAGS += [
+    COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += [
         "-Wextra",
         # -Wextra enables this warning, but it's too noisy to be useful.
         "-Wno-missing-field-initializers",

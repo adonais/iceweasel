@@ -256,7 +256,7 @@ add_task(async function testPrivacyInfoEnabled() {
   });
   let doc = gBrowser.contentDocument;
   let win = doc.ownerGlobal;
-  let profilesNote = doc.getElementById("preferences-privacy-profiles");
+  let profilesNote = doc.getElementById("preferencesPrivacyProfiles");
 
   ok(BrowserTestUtils.isVisible(profilesNote), "The profiles note is visible");
 
@@ -297,7 +297,7 @@ add_task(async function testPrivacyInfoHiddenWhenDisabled() {
     leaveOpen: true,
   });
   let profilesNote = gBrowser.contentDocument.getElementById(
-    "preferences-privacy-profiles"
+    "preferencesPrivacyProfiles"
   );
 
   ok(!BrowserTestUtils.isVisible(profilesNote), "The profiles note is hidden");

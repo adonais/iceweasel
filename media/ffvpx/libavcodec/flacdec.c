@@ -148,8 +148,10 @@ static int allocate_buffers(FLACContext *s)
         return buf_size;
 
     av_fast_malloc(&s->decoded_buffer, &s->decoded_buffer_size, buf_size);
-    if (!s->decoded_buffer)
+    if (!s->decoded_buffer) {
+        memset(s->decoded, 0, sizeof(s->decoded));
         return AVERROR(ENOMEM);
+    }
 
     ret = av_samples_fill_arrays((uint8_t **)s->decoded, NULL,
                                  s->decoded_buffer,
@@ -164,8 +166,10 @@ static int allocate_buffers(FLACContext *s)
             return buf_size;
 
         av_fast_malloc(&s->decoded_buffer_33bps, &s->decoded_buffer_size_33bps, buf_size);
-        if (!s->decoded_buffer_33bps)
+        if (!s->decoded_buffer_33bps) {
+            s->decoded_33bps = NULL;
             return AVERROR(ENOMEM);
+        }
 
         ret = av_samples_fill_arrays((uint8_t **)&s->decoded_33bps, NULL,
                                      s->decoded_buffer_33bps,
@@ -665,7 +669,7 @@ static int decode_frame(FLACContext *s)
         fi.samplerate = s->stream_info.samplerate;
     s->stream_info.samplerate = s->avctx->sample_rate = fi.samplerate;
 
-    if (!s->got_streaminfo) {
+    if (!s->got_streaminfo || !s->decoded_buffer) {
         ret = allocate_buffers(s);
         if (ret < 0)
             return ret;

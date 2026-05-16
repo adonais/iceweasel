@@ -28,14 +28,15 @@ javascript.ion:
 
 javascript.gc:
   total_time:
-    type: timing_distribution
+    type: labeled_timing_distribution
     time_unit: millisecond
     description: >
-      The total time taken by a major collection.
+      The total time taken by a major collection, labeled by process type.
       (Migrated from the geckoview metric of the same name.)
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1636419
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877843
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032192
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1636419#c8
     notification_emails:
@@ -170,12 +171,13 @@ javascript.gc:
     expires: never
 
   budget_overrun:
-    type: timing_distribution
+    type: labeled_timing_distribution
     time_unit: microsecond
     description: >
-      How long a GC slice ran over its budget.
+      How long a GC slice ran over its budget, labeled by process type.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1932957
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032192
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1932957
     notification_emails:
@@ -184,12 +186,13 @@ javascript.gc:
     expires: never
 
   animation:
-    type: timing_distribution
+    type: labeled_timing_distribution
     time_unit: millisecond
     description: >
-      Time spent running JS GC when animating.
+      Time spent running JS GC when animating, labeled by process type.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1932957
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032192
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1932957
     notification_emails:
@@ -198,12 +201,13 @@ javascript.gc:
     expires: never
 
   max_pause:
-    type: timing_distribution
+    type: labeled_timing_distribution
     time_unit: millisecond
     description: >
-      Longest GC slice in a GC.
+      Longest GC slice in a GC, labeled by process type.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1932957
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032192
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1932957
     notification_emails:

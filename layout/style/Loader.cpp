@@ -281,7 +281,6 @@ SheetLoadData::SheetLoadData(
       mPreloadKind(aPreloadKind),
       mObserver(aObserver),
       mTriggeringPrincipal(aTriggeringPrincipal),
-      mLoaderPrincipal(aLoader->LoaderPrincipal()),
       mReferrerInfo(aReferrerInfo),
       mNonce(aNonce),
       mFetchPriority{aFetchPriority},
@@ -325,7 +324,6 @@ SheetLoadData::SheetLoadData(
       mPreloadKind(StylePreloadKind::None),
       mObserver(aObserver),
       mTriggeringPrincipal(aTriggeringPrincipal),
-      mLoaderPrincipal(aLoader->LoaderPrincipal()),
       mReferrerInfo(aReferrerInfo),
       mNonce(u""_ns),
       mFetchPriority(FetchPriority::Auto),
@@ -372,7 +370,6 @@ SheetLoadData::SheetLoadData(
       mPreloadKind(aPreloadKind),
       mObserver(aObserver),
       mTriggeringPrincipal(aTriggeringPrincipal),
-      mLoaderPrincipal(aLoader->LoaderPrincipal()),
       mReferrerInfo(aReferrerInfo),
       mNonce(aNonce),
       mFetchPriority(aFetchPriority),
@@ -675,7 +672,7 @@ void SheetLoadData::OnStartRequest(nsIRequest* aRequest) {
     if (mSheet->GetCORSMode() != CORS_NONE) {
       return true;
     }
-    if (!mLoaderPrincipal->Subsumes(mSheet->Principal())) {
+    if (!mLoader->LoaderPrincipal()->Subsumes(mSheet->Principal())) {
       return false;
     }
     if (nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(channel)) {
@@ -734,20 +731,15 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
   nsAutoCString contentType;
   aChannel->GetContentType(contentType);
 
-  // In standards mode, a style sheet must have one of these MIME
-  // types to be processed at all.  In quirks mode, we accept any
-  // MIME type, but only if the style sheet is same-origin with the
-  // requesting document or parent sheet.  See bug 524223.
-
+  // In standards mode, a style sheet must have one of these MIME types to be
+  // processed at all.  In quirks mode, we accept any MIME type, but only if the
+  // style sheet is same-origin with the requesting document + parent stylesheet
+  // (and didn't have any cross-origin redirects).  See bug 524223.
   const bool validType = contentType.EqualsLiteral("text/css") ||
                          contentType.EqualsLiteral(UNKNOWN_CONTENT_TYPE) ||
                          contentType.IsEmpty();
-
   if (!validType) {
-    // FIXME(emilio, bug 1995647): This should arguably use IsOriginClean(),
-    // though test_css_cross_domain_no_orb.html tests precisely this behavior
-    // intentionally, and this is quirks-only...
-    const bool sameOrigin = mLoaderPrincipal->Subsumes(mSheet->Principal());
+    const bool sameOrigin = mSheet->IsOriginClean();
     const auto flag = sameOrigin && mCompatMode == eCompatibility_NavQuirks
                           ? nsIScriptError::warningFlag
                           : nsIScriptError::errorFlag;

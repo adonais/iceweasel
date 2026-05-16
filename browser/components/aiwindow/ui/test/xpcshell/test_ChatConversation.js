@@ -50,6 +50,56 @@ add_task(function test_ChatConversation_constructor_defaults() {
     soft.strictEqual(conversation.description, undefined);
     soft.strictEqual(conversation.pageUrl, undefined);
     soft.strictEqual(conversation.pageMeta, undefined);
+    soft.strictEqual(conversation.memoriesToggled, null);
+  });
+});
+
+add_task(function test_ChatConversation_memoriesToggled_property() {
+  Assert.withSoftAssertions(soft => {
+    // Test default value
+    const conversation1 = new ChatConversation({});
+    soft.equal(
+      conversation1.memoriesToggled,
+      null,
+      "Default memoriesToggled should be null"
+    );
+
+    // Test setting via constructor
+    const conversation2 = new ChatConversation({ memoriesToggled: true });
+    soft.equal(
+      conversation2.memoriesToggled,
+      true,
+      "Constructor should set memoriesToggled to true"
+    );
+
+    const conversation3 = new ChatConversation({ memoriesToggled: false });
+    soft.equal(
+      conversation3.memoriesToggled,
+      false,
+      "Constructor should set memoriesToggled to false"
+    );
+
+    // Test setting via property
+    conversation1.memoriesToggled = true;
+    soft.equal(
+      conversation1.memoriesToggled,
+      true,
+      "Should be able to set memoriesToggled to true"
+    );
+
+    conversation1.memoriesToggled = false;
+    soft.equal(
+      conversation1.memoriesToggled,
+      false,
+      "Should be able to set memoriesToggled to false"
+    );
+
+    conversation1.memoriesToggled = null;
+    soft.equal(
+      conversation1.memoriesToggled,
+      null,
+      "Should be able to reset memoriesToggled to null"
+    );
   });
 });
 

@@ -156,6 +156,8 @@ const UPDATED_REQ_ITEM_PROPS = [
   "status",
   "statusText",
   "fromCache",
+  // @backward-compat { version 151 } isRacing can be removed once 151 is on
+  // release. It was part of RCWN which was removed in Bug 2020946.
   "isRacing",
   "fromServiceWorker",
   "method",

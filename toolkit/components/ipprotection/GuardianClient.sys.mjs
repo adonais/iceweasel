@@ -6,11 +6,10 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
-ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () =>
-  ChromeUtils.importESModule(
-    "resource://gre/modules/FxAccounts.sys.mjs"
-  ).getFxAccountsSingleton()
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  IPProtectionService:
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
+});
 ChromeUtils.defineLazyGetter(
   lazy,
   "hiddenBrowserManager",
@@ -39,57 +38,31 @@ if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
   throw new Error("Guardian.sys.mjs should only run in the parent process");
 }
 
+export const GUARDIAN_EXPERIMENT_TYPE = "alpha";
+
 /**
  * An HTTP Client to talk to the Guardian service.
- * Allows to enroll FxA users to the proxy service,
+ * Allows to enroll users to the proxy service,
  * fetch a proxy pass and check if the user is a proxy user.
  *
  */
 export class GuardianClient {
-  /**
-   * @param {typeof gConfig} [config]
-   */
-  constructor(config = gConfig) {
-    this.guardianEndpoint = config.guardianEndpoint;
-    this.fxaOrigin = config.fxaOrigin;
-    this.getToken = config.getToken;
+  constructor() {
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "guardianEndpoint",
+      "browser.ipProtection.guardian.endpoint",
+      "https://vpn.mozilla.com"
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "fxaOrigin",
+      "identity.fxaccounts.remote.root"
+    );
   }
   /**
-   * Checks the current user's FxA account to see if it is linked to the Guardian service.
-   * This should be used before attempting to check Entitlement info.
-   *
-   * @param { boolean } onlyCached - if true only the cached clients will be checked.
-   * @returns {Promise<boolean>}
-   *  - True: The user is linked to the Guardian service, they might be a proxy user or have/had a VPN-Subscription.
-   *          This needs to be followed up with a call to `fetchUserInfo()` to check if they are a proxy user.
-   *  - False: The user is not linked to the Guardian service, they cannot be a proxy user.
-   */
-  async isLinkedToGuardian(onlyCached = false) {
-    const guardian_clientId = CLIENT_ID_MAP[this.#successURL.origin];
-    if (!guardian_clientId) {
-      // If we end up using an unknown successURL, we are definitely not linked to Guardian.
-      return false;
-    }
-
-    const cached_clients = await lazy.fxAccounts.listAttachedOAuthClients();
-    if (cached_clients.some(client => client.id === guardian_clientId)) {
-      return true;
-    }
-    if (onlyCached) {
-      return false;
-    }
-    // If we don't have the client in the cache, we refresh it, just to be sure.
-    const refreshed_clients =
-      await lazy.fxAccounts.listAttachedOAuthClients(true);
-    if (refreshed_clients.some(client => client.id === guardian_clientId)) {
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Tries to enroll the user to the proxy service.
-   * It will silently try to sign in the user into guardian using their FxA account.
+   * Tries to enroll the user to the proxy service via a hidden browser sign-in flow.
+   * The FxA OAuth flow is completed silently using the existing FxA session cookies.
    * If the user already has a proxy entitlement, the experiment type will update.
    *
    * @param { "alpha" | "beta" | "delta" | "gamma" } aExperimentType - The experiment type to enroll the user into.
@@ -98,15 +71,20 @@ export class GuardianClient {
    * @param { AbortSignal | null } aAbortSignal - An AbortSignal to cancel the operation.
    * @returns {Promise<{error?: string, ok?: boolean}>}
    */
-  async enroll(aExperimentType = "alpha", aAbortSignal = null) {
-    // We abort loading the page if the origion is not allowed.
+  async enrollWithFxa(
+    aExperimentType = GUARDIAN_EXPERIMENT_TYPE,
+    aAbortSignal = null
+  ) {
+    // We abort loading the page if the origin is not allowed.
     const allowedOrigins = [
       new URL(this.guardianEndpoint).origin,
       new URL(this.fxaOrigin).origin,
     ];
+    const { loginURL, successURL, errorURL } =
+      this.enrollmentURLs(aExperimentType);
     // If the browser is redirected to one of those urls
     // we know we're done with the browser.
-    const finalizerURLs = [this.#successURL, this.#enrollmentError];
+    const finalizerURLs = [successURL, errorURL];
     return await lazy.hiddenBrowserManager.withHiddenBrowser(async browser => {
       const aborted = new Promise((_, reject) => {
         aAbortSignal?.addEventListener("abort", () => {
@@ -138,8 +116,6 @@ export class GuardianClient {
         }
         return false;
       });
-      const loginURL = this.#loginURL;
-      loginURL.searchParams.set("experiment", aExperimentType);
       const loginURI = Services.io.newURI(loginURL.href);
       if (!allowedOrigins.includes(loginURL.origin)) {
         throw new Error(`Login URL origin ${loginURL.origin} is not allowed.`);
@@ -180,7 +156,7 @@ export class GuardianClient {
    *
    * Return values:
    * - {pass, status, usage}: Success with proxy pass and optional usage info
-   * - {error: "login_needed", usage: null}: No FxA token available
+   * - {error: "login_needed", usage: null}: No auth token available
    * - {status: 429, error: "quota_exceeded", usage, retryAfter}: Usage quota exceeded
    * - {status, error: "invalid_response", usage}: Invalid response from server
    * - {status, error: "parse_error", usage}: Failed to parse response
@@ -188,12 +164,13 @@ export class GuardianClient {
    * Status codes to watch for:
    * - 200: User is a proxy user and a new pass was fetched
    * - 429: Usage quota exceeded
-   * - 403: The FxA was valid but the user is not a proxy user.
-   * - 401: The FxA token was rejected.
+   * - 403: The auth token was valid but the user is not a proxy user.
+   * - 401: The auth token was rejected.
    * - 5xx: Internal guardian error.
    */
   async fetchProxyPass(abortSignal = null) {
-    using tokenHandle = await this.getToken(abortSignal);
+    using tokenHandle =
+      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
     const response = await fetch(this.#tokenURL, {
       method: "GET",
       cache: "no-cache",
@@ -248,10 +225,11 @@ export class GuardianClient {
    * Status codes to watch for:
    * - 200: User is a proxy user and the entitlement information is available.
    * - 404: User is not a proxy user, no entitlement information available.
-   * - 401: The FxA token was rejected, probably guardian and fxa mismatch. (i.e guardian-stage and fxa-prod)
+   * - 401: The auth token was rejected, probably a guardian/auth provider environment mismatch.
    */
   async fetchUserInfo(abortSignal = null) {
-    using tokenHandle = await this.getToken(abortSignal);
+    using tokenHandle =
+      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
     const response = await fetch(this.#statusURL, {
       method: "GET",
       headers: {
@@ -286,7 +264,8 @@ export class GuardianClient {
    * @returns {ProxyUsage | null}
    */
   async fetchProxyUsage(abortSignal) {
-    using tokenHandle = await this.getToken(abortSignal);
+    using tokenHandle =
+      await lazy.IPProtectionService.authProvider.getToken(abortSignal);
     const response = await fetch(this.#tokenURL, {
       method: "HEAD",
       cache: "no-cache",
@@ -316,26 +295,24 @@ export class GuardianClient {
     url.pathname = "/api/v1/fpn/token";
     return url;
   }
-  /** This is the URL that will be used to log in to the Guardian service. */
-  get #loginURL() {
-    const url = new URL(this.guardianEndpoint);
-    url.pathname = "/api/v1/fpn/auth";
-    return url;
-  }
-  /** This is the URL that the user will be redirected to after a successful enrollment. */
-  get #successURL() {
-    const url = new URL(this.guardianEndpoint);
-    url.pathname = "/oauth/success";
-    return url;
-  }
   /**
-   * This is the URL that the user will be redirected to after a rejected/failed enrollment.
-   * The url will contain an error query parameter with the error message.
+   * Returns the URLs needed to perform FxA enrollment with Guardian.
+   *
+   * @param {"alpha"|"beta"|"delta"|"gamma"} experimentType
+   * @returns {{ loginURL: URL, successURL: URL, errorURL: URL }}
    */
-  get #enrollmentError() {
-    const url = new URL(this.guardianEndpoint);
-    url.pathname = "/api/v1/fpn/error";
-    return url;
+  enrollmentURLs(experimentType = GUARDIAN_EXPERIMENT_TYPE) {
+    const loginURL = new URL(this.guardianEndpoint);
+    loginURL.pathname = "/api/v1/fpn/auth";
+    loginURL.searchParams.set("experiment", experimentType);
+
+    const successURL = new URL(this.guardianEndpoint);
+    successURL.pathname = "/oauth/success";
+
+    const errorURL = new URL(this.guardianEndpoint);
+    errorURL.pathname = "/api/v1/fpn/error";
+
+    return { loginURL, successURL, errorURL };
   }
   /** This is the URL that will be used to check the user's proxy status. */
   get #statusURL() {
@@ -497,8 +474,6 @@ export class ProxyPass extends EventTarget {
 
 /**
  * Represents a user's Entitlement for the Proxy Service of Guardian.
- *
- * Right now any FxA user can have one entitlement.
  * If a user has an entitlement, they may access the proxy service.
  *
  * Immutable after creation.
@@ -628,19 +603,6 @@ export class ProxyUsage {
 }
 
 /**
- * Maps the Guardian service endpoint to the public OAuth client ID.
- */
-const CLIENT_ID_MAP = {
-  "http://localhost:3000": "6089c54fdc970aed",
-  "https://guardian-dev.herokuapp.com": "64ef9b544a31bca8",
-  "https://dev.vpn.nonprod.webservices.mozgcp.net": "64ef9b544a31bca8",
-  "https://stage.guardian.nonprod.cloudops.mozgcp.net": "e6eb0d1e856335fc",
-  "https://stage.vpn.nonprod.webservices.mozgcp.net": "e6eb0d1e856335fc",
-  "https://fpn.firefox.com": "e6eb0d1e856335fc",
-  "https://vpn.mozilla.org": "e6eb0d1e856335fc",
-};
-
-/**
  * Adds a strong reference to keep listeners alive until
  * we're done with it.
  * (From kungFuDeathGrip in XPCShellContentUtils.sys.mjs)
@@ -707,54 +669,3 @@ async function waitUntilURL(browser, predicate) {
   const url = await prom.promise;
   return url;
 }
-
-let gConfig = {
-  /**
-   * Executes the callback with an FxA token and returns its result.
-   * Destroys the token after use.
-   *
-   * @template T
-   * @param {AbortSignal} abortSignal - An Abort Signal to abort the fetch.
-   * @returns {Promise<{token:string} & Disposable>} - A disposable, that will auto revoke the token after use.
-   */
-  getToken: async (abortSignal = null) => {
-    let tasks = [
-      lazy.fxAccounts.getOAuthToken({
-        scope: ["profile", "https://identity.mozilla.com/apps/vpn"],
-      }),
-    ];
-    if (abortSignal) {
-      abortSignal.throwIfAborted();
-      tasks.push(
-        new Promise((_, rej) => {
-          abortSignal?.addEventListener("abort", rej, { once: true });
-        })
-      );
-    }
-    const token = await Promise.race(tasks);
-    if (!token) {
-      return null;
-    }
-    return {
-      token,
-      [Symbol.dispose]: () => {
-        lazy.fxAccounts.removeCachedOAuthToken({
-          token,
-        });
-      },
-    };
-  },
-  guardianEndpoint: "",
-  fxaOrigin: "",
-};
-XPCOMUtils.defineLazyPreferenceGetter(
-  gConfig,
-  "guardianEndpoint",
-  "browser.ipProtection.guardian.endpoint",
-  "https://vpn.mozilla.com"
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  gConfig,
-  "fxaOrigin",
-  "identity.fxaccounts.remote.root"
-);

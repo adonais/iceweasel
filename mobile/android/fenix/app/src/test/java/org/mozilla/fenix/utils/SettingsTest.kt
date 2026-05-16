@@ -351,13 +351,6 @@ class SettingsTest {
     }
 
     @Test
-    fun shouldShowSearchShortcuts() {
-        // When just created
-        // Then
-        assertFalse(settings.shouldShowSearchShortcuts)
-    }
-
-    @Test
     fun shouldShowHistorySuggestions() {
         // When just created
         // Then
@@ -1105,14 +1098,6 @@ class SettingsTest {
         every { settings.shouldUseExpandedToolbar } returns true
 
         assertEquals(64, settings.browserToolbarHeight)
-    }
-
-    @Test
-    fun `GIVEN composable toolbar is not enabled WHEN querying the toolbar heigh THEN get the height of the toolbar view`() {
-        val settings = spyk(settings)
-        every { settings.shouldUseComposableToolbar } returns false
-
-        assertEquals(56, settings.browserToolbarHeight)
     }
 
     @Test

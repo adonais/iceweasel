@@ -232,7 +232,6 @@ async function setupLnaPrefs() {
       ["network.websocket.max-connections", 1000],
       ["network.lna.block_trackers", true],
       ["network.lna.blocking", true],
-      ["network.http.rcwn.enabled", false],
       ["network.lna.websocket.enabled", true],
       ["network.lna.local-network-to-localhost.skip-checks", false],
       ["browser.ipProtection.enabled", false],

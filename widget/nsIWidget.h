@@ -272,9 +272,6 @@ enum nsCursor {  ///(normal cursor,       usually rendered as an arrow)
   // This one is used for array sizing, and so better be the last
   // one in this list...
   eCursorCount,
-
-  // ...except for this one.
-  eCursorInvalid = eCursorCount + 1
 };
 
 /**

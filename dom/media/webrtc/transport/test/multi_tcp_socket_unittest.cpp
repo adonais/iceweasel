@@ -88,12 +88,10 @@ class MultiTcpSocketTest : public MtransportTest {
     int r;
 
     if (!stun_server_addr.empty()) {
-      std::vector<NrIceStunServer> stun_servers;
-      UniquePtr<NrIceStunServer> server(NrIceStunServer::Create(
-          stun_server_addr, stun_server_port, kNrIceTransportTcp));
-      stun_servers.push_back(*server);
-
-      ASSERT_TRUE(NS_SUCCEEDED(ice_ctx_->SetStunServers(stun_servers)));
+      nsTArray<ParsedIceServer> stun_servers;
+      stun_servers.AppendElement(
+          MakeStunEntry(stun_server_addr, stun_server_port, IceTransport::Tcp));
+      ASSERT_TRUE(NS_SUCCEEDED(ice_ctx_->SetIceServers(stun_servers, false)));
     }
 
     r = 1;

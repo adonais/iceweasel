@@ -40,6 +40,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.set(obj);
   }, "IsDetachedBuffer happens before Get(src.length)");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

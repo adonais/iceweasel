@@ -386,12 +386,12 @@ static const struct {
 NS_IMETHODIMP
 nsUrlClassifierUtils::ConvertThreatTypeToListNames(uint32_t aThreatType,
                                                    nsACString& aListNames) {
-  for (uint32_t i = 0; i < std::size(THREAT_TYPE_CONV_TABLE); i++) {
-    if (aThreatType == THREAT_TYPE_CONV_TABLE[i].mThreatType) {
+  for (auto entry : THREAT_TYPE_CONV_TABLE) {
+    if (aThreatType == entry.mThreatType) {
       if (!aListNames.IsEmpty()) {
         aListNames.AppendLiteral(",");
       }
-      aListNames += THREAT_TYPE_CONV_TABLE[i].mListName;
+      aListNames += entry.mListName;
     }
   }
 
@@ -401,9 +401,9 @@ nsUrlClassifierUtils::ConvertThreatTypeToListNames(uint32_t aThreatType,
 NS_IMETHODIMP
 nsUrlClassifierUtils::ConvertListNameToThreatType(const nsACString& aListName,
                                                   uint32_t* aThreatType) {
-  for (uint32_t i = 0; i < std::size(THREAT_TYPE_CONV_TABLE); i++) {
-    if (aListName.EqualsASCII(THREAT_TYPE_CONV_TABLE[i].mListName)) {
-      *aThreatType = THREAT_TYPE_CONV_TABLE[i].mThreatType;
+  for (auto entry : THREAT_TYPE_CONV_TABLE) {
+    if (aListName.EqualsASCII(entry.mListName)) {
+      *aThreatType = entry.mThreatType;
       return NS_OK;
     }
   }
@@ -414,10 +414,9 @@ nsUrlClassifierUtils::ConvertListNameToThreatType(const nsACString& aListName,
 NS_IMETHODIMP
 nsUrlClassifierUtils::ConvertServerListNameToLocalListNameV5(
     const nsACString& aServerListName, nsACString& aLocalListName) {
-  for (uint32_t i = 0; i < std::size(THREAT_NAME_CONV_TABLE_V5); i++) {
-    if (aServerListName.EqualsASCII(
-            THREAT_NAME_CONV_TABLE_V5[i].mServerListName)) {
-      aLocalListName = THREAT_NAME_CONV_TABLE_V5[i].mLocalListName;
+  for (auto entry : THREAT_NAME_CONV_TABLE_V5) {
+    if (aServerListName.EqualsASCII(entry.mServerListName)) {
+      aLocalListName = entry.mLocalListName;
       return NS_OK;
     }
   }
@@ -428,10 +427,9 @@ nsUrlClassifierUtils::ConvertServerListNameToLocalListNameV5(
 NS_IMETHODIMP
 nsUrlClassifierUtils::ConvertLocalListNameToServerListNameV5(
     const nsACString& aLocalListName, nsACString& aServerListName) {
-  for (uint32_t i = 0; i < std::size(THREAT_NAME_CONV_TABLE_V5); i++) {
-    if (aLocalListName.EqualsASCII(
-            THREAT_NAME_CONV_TABLE_V5[i].mLocalListName)) {
-      aServerListName = THREAT_NAME_CONV_TABLE_V5[i].mServerListName;
+  for (auto entry : THREAT_NAME_CONV_TABLE_V5) {
+    if (aLocalListName.EqualsASCII(entry.mLocalListName)) {
+      aServerListName = entry.mServerListName;
       return NS_OK;
     }
   }
@@ -443,12 +441,12 @@ NS_IMETHODIMP
 nsUrlClassifierUtils::ConvertThreatTypeToListNamesV5(uint32_t aThreatType,
                                                      nsACString& aListNames) {
   bool found = false;
-  for (uint32_t i = 0; i < std::size(THREAT_TYPE_CONV_TABLE_V5); i++) {
-    if (aThreatType == THREAT_TYPE_CONV_TABLE_V5[i].mThreatType) {
+  for (auto entry : THREAT_TYPE_CONV_TABLE_V5) {
+    if (aThreatType == entry.mThreatType) {
       if (!aListNames.IsEmpty()) {
         aListNames.AppendLiteral(",");
       }
-      aListNames += THREAT_TYPE_CONV_TABLE_V5[i].mListName;
+      aListNames += entry.mListName;
       found = true;
     }
   }

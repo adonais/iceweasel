@@ -297,6 +297,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   nsIContent* GetActiveContent() const { return mActiveContent; }
 
+  void SetLinkOverFrame(nsIFrame* aFrame) { mLinkOverFrame = aFrame; }
+
   void NativeAnonymousContentRemoved(nsIContent* aAnonContent);
   void ContentInserted(nsIContent* aChild, const ContentInsertInfo& aInfo);
   void ContentAppended(nsIContent* aFirstNewContent,
@@ -1392,6 +1394,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   static nsCOMPtr<nsIContent> sDragOverContent;
   nsCOMPtr<nsIContent> mURLTargetContent;
   nsCOMPtr<nsINode> mPopoverPointerDownTarget;
+
+  // The primary frame of the link currently shown in the status bar.
+  // Checked in ClearFrameRefs to avoid stalling link status bar.
+  WeakFrame mLinkOverFrame;
 
   nsPresContext* mPresContext;      // Not refcnted
   RefPtr<dom::Document> mDocument;  // Doesn't necessarily need to be owner

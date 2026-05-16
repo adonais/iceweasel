@@ -128,10 +128,6 @@ void nsAtom::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
   }
 }
 
-char16ptr_t nsAtom::GetUTF16String() const {
-  return IsStatic() ? AsStatic()->String() : AsDynamic()->String();
-}
-
 //----------------------------------------------------------------------
 
 struct AtomTableKey {

@@ -38,7 +38,6 @@ class PVideoBridgeParent;
 class RemoteCompositorSession;
 class InProcessCompositorSession;
 class UiCompositorControllerChild;
-class WebRenderLayerManager;
 }  // namespace layers
 namespace widget {
 class CompositorWidget;
@@ -72,7 +71,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   typedef layers::CompositorSession CompositorSession;
   typedef layers::CompositorUpdateObserver CompositorUpdateObserver;
   typedef layers::IAPZCTreeManager IAPZCTreeManager;
-  typedef layers::WebRenderLayerManager WebRenderLayerManager;
   typedef layers::LayersId LayersId;
   typedef layers::PCompositorBridgeChild PCompositorBridgeChild;
   typedef layers::PCompositorManagerChild PCompositorManagerChild;
@@ -112,10 +110,9 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   bool IsGPUReady() const;
 
   already_AddRefed<CompositorSession> CreateTopLevelCompositor(
-      nsIWidget* aWidget, WebRenderLayerManager* aLayerManager,
-      CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
-      bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
-      uint64_t aInnerWindowId, bool* aRetry);
+      nsIWidget* aWidget, CSSToLayoutDeviceScale aScale,
+      const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
+      const gfx::IntSize& aSurfaceSize, uint64_t aInnerWindowId, bool* aRetry);
 
   // It is asserted that IsGPUReady() is true for this method. If not on a path
   // which guarantees that, then the caller must call EnsureGPUReady() and check
@@ -342,10 +339,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 #endif  // defined(MOZ_WIDGET_ANDROID)
 
   RefPtr<CompositorSession> CreateRemoteSession(
-      nsIWidget* aWidget, WebRenderLayerManager* aLayerManager,
-      const LayersId& aRootLayerTreeId, CSSToLayoutDeviceScale aScale,
-      const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
-      const gfx::IntSize& aSurfaceSize, uint64_t aInnerWindowId);
+      nsIWidget* aWidget, const LayersId& aRootLayerTreeId,
+      CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
+      bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
+      uint64_t aInnerWindowId);
 
   DISALLOW_COPY_AND_ASSIGN(GPUProcessManager);
 

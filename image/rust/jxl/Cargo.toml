@@ -10,7 +10,7 @@ edition = "2021"
 license = "MPL-2.0"
 
 [dependencies]
-jxl = { version = "0.4", features = ["all-simd"] }
+jxl = { version = "0.4.1", features = ["all-simd"] }
 log = "0.4"
 qcms = { path = "../../../gfx/qcms", features = ["cmyk", "iccv4-enabled"] }
 static_prefs = { path = "../../../modules/libpref/init/static_prefs" }

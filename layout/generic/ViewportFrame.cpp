@@ -498,17 +498,6 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
   NS_FRAME_TRACE_REFLOW_OUT("ViewportFrame::Reflow", aStatus);
 }
 
-void ViewportFrame::UpdateStyle(ServoRestyleState& aRestyleState) {
-  RefPtr<ComputedStyle> newStyle =
-      aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-          Style()->GetPseudoType(), nullptr);
-
-  MOZ_ASSERT(!GetNextContinuation(), "Viewport has continuations?");
-  SetComputedStyle(newStyle);
-
-  UpdateStyleOfOwnedAnonBoxes(aRestyleState);
-}
-
 void ViewportFrame::AppendDirectlyOwnedAnonBoxes(
     nsTArray<OwnedAnonBox>& aResult) {
   if (mFrames.NotEmpty()) {

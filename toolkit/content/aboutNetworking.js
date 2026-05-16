@@ -24,8 +24,8 @@ const gRequestNetworkingData = {
   sockets: gDashboard.requestSockets,
   dns: gDashboard.requestDNSInfo,
   websockets: gDashboard.requestWebsocketConnections,
+  altsvc: gDashboard.requestAltSvcCache,
   dnslookuptool: () => {},
-  rcwn: gDashboard.requestRcwnStats,
   networkid: displayNetworkID,
 };
 const gDashboardCallbacks = {
@@ -33,7 +33,7 @@ const gDashboardCallbacks = {
   sockets: displaySockets,
   dns: displayDns,
   websockets: displayWebsockets,
-  rcwn: displayRcwnStats,
+  altsvc: displayAltSvc,
 };
 
 const REFRESH_INTERVAL_MS = 3000;
@@ -162,52 +162,50 @@ function displayWebsockets(data) {
   parent.replaceChild(new_cont, cont);
 }
 
-function displayRcwnStats(data) {
-  let status = Services.prefs.getBoolPref("network.http.rcwn.enabled");
-  let linkType = Ci.nsINetworkLinkService.LINK_TYPE_UNKNOWN;
-  try {
-    linkType = gNetLinkSvc.linkType;
-  } catch (e) {}
-  if (
-    !(
-      linkType == Ci.nsINetworkLinkService.LINK_TYPE_UNKNOWN ||
-      linkType == Ci.nsINetworkLinkService.LINK_TYPE_ETHERNET ||
-      linkType == Ci.nsINetworkLinkService.LINK_TYPE_USB ||
-      linkType == Ci.nsINetworkLinkService.LINK_TYPE_WIFI
-    )
-  ) {
-    status = false;
+function formatTTL(seconds) {
+  if (seconds <= 0) {
+    return "expired";
+  }
+  let parts = [];
+  let d = Math.floor(seconds / 86400);
+  if (d) {
+    parts.push(`${d}d`);
+  }
+  let h = Math.floor((seconds % 86400) / 3600);
+  if (h) {
+    parts.push(`${h}h`);
+  }
+  let m = Math.floor((seconds % 3600) / 60);
+  if (m) {
+    parts.push(`${m}m`);
+  }
+  let s = seconds % 60;
+  if (s || !parts.length) {
+    parts.push(`${s}s`);
+  }
+  return parts.join(" ");
+}
+
+function displayAltSvc(data) {
+  let cont = document.getElementById("altsvc_content");
+  let parent = cont.parentNode;
+  let new_cont = document.createElement("tbody");
+  new_cont.setAttribute("id", "altsvc_content");
+
+  for (let i = 0; i < data.entries.length; i++) {
+    let entry = data.entries[i];
+    let row = document.createElement("tr");
+    let scheme = entry.https ? "https" : "http";
+    row.appendChild(col(`${scheme}://${entry.originHost}:${entry.originPort}`));
+    row.appendChild(col(`${entry.alternateHost}:${entry.alternatePort}`));
+    row.appendChild(col(entry.alpn));
+    row.appendChild(col(entry.validated));
+    row.appendChild(col(formatTTL(entry.ttl)));
+    row.appendChild(col(entry.originAttributesSuffix));
+    new_cont.appendChild(row);
   }
 
-  let cacheWon = data.rcwnCacheWonCount;
-  let netWon = data.rcwnNetWonCount;
-  let total = data.totalNetworkRequests;
-  let cacheSlow = data.cacheSlowCount;
-  let cacheNotSlow = data.cacheNotSlowCount;
-
-  document.getElementById("rcwn_status").innerText = status;
-  document.getElementById("total_req_count").innerText = total;
-  document.getElementById("rcwn_cache_won_count").innerText = cacheWon;
-  document.getElementById("rcwn_cache_net_count").innerText = netWon;
-  document.getElementById("rcwn_cache_slow").innerText = cacheSlow;
-  document.getElementById("rcwn_cache_not_slow").innerText = cacheNotSlow;
-
-  // Keep in sync with CachePerfStats::EDataType in CacheFileUtils.h
-  const perfStatTypes = ["open", "read", "write", "entryopen"];
-
-  const perfStatFieldNames = ["avgShort", "avgLong", "stddevLong"];
-
-  for (let typeIndex in perfStatTypes) {
-    for (let statFieldIndex in perfStatFieldNames) {
-      document.getElementById(
-        "rcwn_perfstats_" +
-          perfStatTypes[typeIndex] +
-          "_" +
-          perfStatFieldNames[statFieldIndex]
-      ).innerText =
-        data.perfStats[typeIndex][perfStatFieldNames[statFieldIndex]];
-    }
-  }
+  parent.replaceChild(new_cont, cont);
 }
 
 function displayNetworkID() {

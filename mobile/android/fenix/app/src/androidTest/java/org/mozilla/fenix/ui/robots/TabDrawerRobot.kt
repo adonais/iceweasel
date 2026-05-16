@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -84,6 +85,25 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "verifyPrivateBrowsingButtonIsSelected: Trying to verify that the private browsing button is not selected")
             composeTestRule.privateBrowsingButton().assertIsNotSelected()
             Log.i(TAG, "verifyPrivateBrowsingButtonIsSelected: Verified that the private browsing button is not selected")
+        }
+    }
+
+    fun verifyTabGroupsButtonIsSelected(isSelected: Boolean = true) {
+        if (isSelected) {
+            Log.i(TAG, "verifyTabGroupsButtonIsSelected: Trying to verify that the tab groups button is selected")
+            composeTestRule.tabGroupsButton().assertIsSelected()
+            Log.i(TAG, "verifyTabGroupsButtonIsSelected: Verified that the tab groups button is selected")
+        } else {
+            Log.i(TAG, "verifyTabGroupsButtonIsSelected: Trying to verify that the tab groups button is not selected or hidden")
+            val tabGroupsButtons = composeTestRule.onAllNodesWithTag(TabsTrayTestTag.TAB_GROUPS_PAGE_BUTTON)
+
+            if (tabGroupsButtons.fetchSemanticsNodes().isEmpty()) {
+                tabGroupsButtons.assertCountEquals(0)
+            } else {
+                composeTestRule.tabGroupsButton().assertIsNotSelected()
+            }
+
+            Log.i(TAG, "verifyTabGroupsButtonIsSelected: Verified that the tab groups button is not selected or hidden")
         }
     }
 
@@ -614,6 +634,11 @@ private fun ComposeTestRule.normalBrowsingButton() = onNodeWithTag(TabsTrayTestT
  * Obtains the private browsing page button of the Tabs Tray banner.
  */
 private fun ComposeTestRule.privateBrowsingButton() = onNodeWithTag(TabsTrayTestTag.PRIVATE_TABS_PAGE_BUTTON)
+
+/**
+ * Obtains the tab groups page button of the Tabs Tray banner.
+ */
+private fun ComposeTestRule.tabGroupsButton() = onNodeWithTag(TabsTrayTestTag.TAB_GROUPS_PAGE_BUTTON)
 
 /**
  * Obtains the synced tabs page button of the Tabs Tray banner.

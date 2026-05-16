@@ -313,7 +313,8 @@ class nsExternalAppHandler final : public nsIStreamListener,
                        mozilla::dom::BrowsingContext* aBrowsingContext,
                        nsIInterfaceRequestor* aWindowContext,
                        nsExternalHelperAppService* aExtProtSvc,
-                       const nsAString& aSuggestedFileName, uint32_t aReason,
+                       const nsAString& aSuggestedFileName,
+                       nsIHelperAppLauncherDialog::reason aReason,
                        bool aForceSave);
 
   /**
@@ -407,7 +408,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
    * reason the dialog was shown (unknown content type, server requested it,
    * etc).
    */
-  uint32_t mReason;
+  nsIHelperAppLauncherDialog::reason mReason;
 
   /**
    * Indicates if the nsContentSecurityUtils rate this download as

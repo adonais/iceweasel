@@ -1,4 +1,3 @@
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -154,14 +153,11 @@ void ExtensionAPIBase::CallWebExtMethodReturnsString(
     return;
   }
 
-  nsAutoJSString str;
-  if (!str.init(aCx, retval.toString())) {
+  if (!AssignJSString(aCx, aRetVal, retval.toString())) {
     JS_ClearPendingException(aCx);
     ThrowUnexpectedError(aCx, aRv);
     return;
   }
-
-  aRetVal = str;
 }
 
 already_AddRefed<ExtensionPort> ExtensionAPIBase::CallWebExtMethodReturnsPort(
@@ -276,12 +272,10 @@ void ExtensionAPIBase::GetWebExtPropertyAsString(const nsString& aPropertyName,
     NS_WARNING("GetWebExtPropertyAsString failure");
     return;
   }
-  nsAutoJSString strRetval;
-  if (!retval.isString() || !strRetval.init(cx, retval)) {
+  if (!retval.isString() || !AssignJSString(cx, aRetval, retval.toString())) {
     NS_WARNING("GetWebExtPropertyAsString got a non string result");
     return;
   }
-  aRetval.SetKnownLiveString(strRetval);
 }
 
 void ExtensionAPIBase::GetWebExtPropertyAsJSValue(

@@ -10,6 +10,7 @@
 
 #include "pc/ice_server_parsing.h"
 
+#include <array>
 #include <cctype>
 #include <cstddef>
 #include <optional>
@@ -52,7 +53,8 @@ const char kRegNameCharacters[] =
     "!$&'()*+,;=";  // sub-delims
 
 // NOTE: Must be in the same order as the ServiceType enum.
-const char* kValidIceServiceTypes[] = {"stun", "stuns", "turn", "turns"};
+constexpr std::array<absl::string_view, 4> kValidIceServiceTypes{
+    "stun", "stuns", "turn", "turns"};
 
 // NOTE: A loop below assumes that the first value of this enum is 0 and all
 // other values are incremental.
@@ -188,6 +190,7 @@ RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   std::vector<absl::string_view> tokens = split(url, '?');
   absl::string_view uri_without_transport = tokens[0];
   // Let's look into transport= param, if it exists.
+  bool transport_given_explicitly = false;
   if (tokens.size() == kTurnTransportTokensNum) {  // ?transport= is present.
     std::vector<absl::string_view> transport_tokens = split(tokens[1], '=');
     if (transport_tokens[0] != kTransport) {
@@ -209,6 +212,7 @@ RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
           "always be udp or tcp.");
     }
     turn_transport_type = *proto;
+    transport_given_explicitly = true;
   }
 
   auto [service_type, hoststring] =
@@ -236,6 +240,13 @@ RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   if (service_type == ServiceType::TURNS) {
     default_port = kDefaultStunTlsPort;
     turn_transport_type = PROTO_TLS;
+    // When transport is given explicitly, the default transport is not
+    // specified in the RFC, but it's long-standing behavior to use TLS.
+    if (!transport_given_explicitly || turn_transport_type == PROTO_TCP) {
+      turn_transport_type = PROTO_TLS;
+    } else if (turn_transport_type == PROTO_UDP) {
+      turn_transport_type = PROTO_DTLS;
+    }
   }
 
   if (hoststring.find('@') != absl::string_view::npos) {

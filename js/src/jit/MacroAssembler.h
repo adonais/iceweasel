@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -44,6 +42,7 @@
 #include "vm/Opcodes.h"
 #include "vm/RealmFuses.h"
 #include "vm/RuntimeFuses.h"
+#include "vm/StringFlags.h"
 #include "wasm/WasmAnyRef.h"
 
 // [SMDOC] MacroAssembler multi-platform overview
@@ -261,8 +260,6 @@ enum class CheckUnsafeCallWithABI {
 // as an ABI function signature.
 template <typename Sig>
 static inline DynFn DynamicFunction(Sig fun);
-
-enum class CharEncoding { Latin1, TwoByte };
 
 constexpr uint32_t WasmCallerInstanceOffsetBeforeCall =
     wasm::FrameWithInstances::callerInstanceOffsetWithoutFrame();
@@ -6052,6 +6049,22 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void finish();
   void link(JitCode* code);
+
+  void assertUnreachable(const char* output);
+
+  void assert32Compare(Condition condition, Register lhs, Imm32 rhs,
+                       const char* output = nullptr);
+  void assert32Compare(Condition condition, Address lhs, Imm32 rhs,
+                       const char* output = nullptr);
+  void assertPtrCompare(Condition condition, Register lhs, ImmWord rhs,
+                        const char* output = nullptr);
+  void assertPtrCompare(Condition condition, Address lhs, ImmWord rhs,
+                        const char* output = nullptr);
+
+  void assertPtrZero(Address src, const char* output = nullptr);
+  void assertPtrZero(Register src, const char* output = nullptr);
+  void assertPtrNonZero(Address src, const char* output = nullptr);
+  void assertPtrNonZero(Register src, const char* output = nullptr);
 
   void assumeUnreachable(const char* output);
 

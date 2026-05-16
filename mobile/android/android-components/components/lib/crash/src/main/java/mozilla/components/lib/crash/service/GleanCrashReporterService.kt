@@ -247,6 +247,7 @@ class GleanCrashReporterService(
             appBuildId?.let { extras[Annotation.BuildID] = JsonPrimitive(it) }
             extras[Annotation.JavaException] = JsonPrimitive(crash.throwable.getStacktraceAsJsonString())
             extras[Annotation.CrashType] = JsonPrimitive("uncaught exception")
+            extras[Annotation.CrashID] = JsonPrimitive(crash.uuid)
 
             sendCrashPing(Json.encodeToString(extras))
         }
@@ -333,6 +334,8 @@ class GleanCrashReporterService(
             extras.setIfAbsent(Annotation.CrashType) {
                 JsonPrimitive("${if (!crash.isFatal) "non-" else ""}fatal native crash")
             }
+            // CrashID should only be absent if there is no extras file
+            extras.setIfAbsent(Annotation.CrashID) { JsonPrimitive(crash.uuid) }
 
             sendCrashPing(Json.encodeToString(extras))
         }

@@ -1,0 +1,19 @@
+{
+  "label": "incontrol.landrover.com",
+  "bugs": {
+    "1983538": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://incontrol.landrover.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "js": [
+          "bug1983538-incontrol.landrover.com-alias-WebKitMutationObserver.js"
+        ]
+      }
+    }
+  ]
+}

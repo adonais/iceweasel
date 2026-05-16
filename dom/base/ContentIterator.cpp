@@ -1004,9 +1004,7 @@ nsresult ContentSubtreeIterator::InitWithAllowCrossShadowBoundary(
 
   mRange = aRange;
 
-  if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-    mAllowCrossShadowBoundary = AllowRangeCrossShadowBoundary::Yes;
-  }
+  mAllowCrossShadowBoundary = AllowRangeCrossShadowBoundary::Yes;
   return InitWithRange();
 }
 

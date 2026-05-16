@@ -1,4 +1,3 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -23,6 +22,20 @@ document.addEventListener(
         case "placesContext_openLinks:tabs":
           PlacesUIUtils.openSelectionInTabs(event);
           break;
+        case "contentsharing_sharefolder": {
+          let view = PlacesUIUtils.getViewForNode(
+            PlacesUIUtils.lastContextMenuTriggerNode
+          );
+
+          ContentSharingUtils.createShareableLinkFromBookmarkFolders(
+            view.selectedNodes
+              .filter(n => PlacesUtils.nodeIsFolderOrShortcut(n))
+              .map(n => PlacesUtils.getConcreteItemGuid(n)),
+            window
+          );
+
+          break;
+        }
       }
     });
 

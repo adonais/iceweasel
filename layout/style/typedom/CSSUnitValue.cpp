@@ -84,12 +84,14 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       case eCSSProperty_flex_grow:
       case eCSSProperty_flex_shrink:
       case eCSSProperty_stroke_miterlimit:
+      case eCSSProperty_animation_duration:
       case eCSSProperty_animation_iteration_count:
       case eCSSProperty_background_size:
       case eCSSProperty_column_width:
       case eCSSProperty_flex_basis:
       case eCSSProperty_font_size:
       case eCSSProperty_perspective:
+      case eCSSProperty_transition_duration:
       case eCSSProperty_column_gap:
       case eCSSProperty_row_gap:
       case eCSSProperty_max_block_size:

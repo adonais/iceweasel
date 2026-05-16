@@ -268,7 +268,7 @@ macosx-custom-car:
         toolchain-artifact: public/build/car_macosx.tar.zst
     fetches:
         toolchain:
-            - MacOSX26.2.sdk
+            - MacOSX26.4.sdk
 
 macosx-arm64-custom-car:
     description: "Custom chromium-as-release build for mac (apple silicon)"
@@ -304,7 +304,7 @@ macosx-arm64-custom-car:
         toolchain-artifact: public/build/car_macosx_arm.tar.zst
     fetches:
         toolchain:
-            - MacOSX26.2.sdk
+            - MacOSX26.4.sdk
 
 android-custom-car:
     description: "Custom chromium-as-release build for Android"
@@ -405,7 +405,7 @@ win64-custom-car:
         toolchain-artifact: public/build/car_win64.tar.zst
     fetches:
         toolchain:
-            - win64-vs2022-car
+            - win64-vs2026
 
 browsertime:
     description: "npm install browsertime node_modules"
@@ -431,10 +431,7 @@ puppeteer-build:
         script: puppeteer-build.sh
         sparse-profile: null
         resources:
-            - 'remote/test/puppeteer/package.json'
-            - 'remote/test/puppeteer/package-lock.json'
-            - 'remote/test/puppeteer/test/package.json'
-            - 'remote/test/puppeteer/test/TestExpectations.json'
+            - 'remote/test/puppeteer/**'
         toolchain-artifact: public/build/puppeteer-build.tar.zst
     fetches:
         toolchain:
@@ -769,23 +766,6 @@ nsis:
         toolchain:
             - linux64-clang-toolchain
             - sysroot-x86_64-linux-gnu
-
-win64-vs2022-car:
-    description: "VS 2022 toolchain with SDK 10.0.26100.x, for CaR builds"
-    attributes:
-        local-toolchain: true
-    treeherder:
-        symbol: TW64(msvc2022-car)
-    worker:
-        env:
-            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
-    run:
-        script: get_vs.py
-        arguments:
-            - build/vs/vs2022-car.yaml
-        resources:
-            - build/vs/vs2022-car.yaml
-        toolchain-artifact: project/gecko/vs/vs.tar.zst
 
 win64-vs2026:
     description: "VS 2026"

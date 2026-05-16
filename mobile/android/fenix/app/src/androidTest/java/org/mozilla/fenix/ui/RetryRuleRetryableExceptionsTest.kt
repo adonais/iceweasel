@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui
 
 import android.util.Log
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.espresso.IdlingResourceTimeoutException
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.filters.LargeTest
@@ -15,8 +16,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.helpers.FenixTestRule
+import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
+import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
+import org.mozilla.fenix.helpers.RetryableComposeTestRule
 import org.mozilla.fenix.helpers.ThrowableCase
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -26,12 +31,19 @@ class RetryRuleRetryableExceptionsTest(
     private val case: ThrowableCase,
 ) {
     @get:Rule(order = 0)
+    val retryTestRule = RetryTestRule(3)
+
+    @get:Rule(order = 1)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    private val attempts = AtomicInteger(0)
+    @get:Rule(order = 2)
+    val retryableComposeTestRule = RetryableComposeTestRule<HomeActivity, HomeActivityTestRule> {
+        AndroidComposeTestRule(
+            HomeActivityIntentTestRule(),
+        ) { it.activity }
+    }
 
-    @get:Rule
-    val retryRule = RetryTestRule(retryCount = 2)
+    private val attempts = AtomicInteger(0)
 
 companion object {
     @JvmStatic

@@ -57,8 +57,10 @@ MOZ_RUNINIT const B64Test tests[] = {
     {"invalic", {0x8a, 0x7b, 0xda, 0x96, 0x27}, true},
 
     // Failure tests
-    {"A", {}, false},  // 1 character is too few.
-    {"_", {}, false},  // 1 character is too few.
+    {"A", {}, false},
+    {"_", {}, false},
+    {"A=", {}, false},
+    {"_=", {}, false},
 };
 
 TEST(ClearKey, DecodeBase64)

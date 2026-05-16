@@ -11,6 +11,7 @@
 
 #include "mozilla/Preferences.h"
 #include "mozilla/BinarySearch.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Sprintf.h"
 
 #include "nsCOMPtr.h"

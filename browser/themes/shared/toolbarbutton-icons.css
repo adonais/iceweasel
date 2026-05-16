@@ -196,11 +196,11 @@
 #sidebar-button {
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.revamp") {
-    list-style-image: url("chrome://browser/skin/sidebars.svg");
+    list-style-image: url("chrome://browser/skin/sidebar-collapsed.svg");
 
     &:-moz-locale-dir(ltr)[sidebar-positionend],
     &:-moz-locale-dir(rtl):not([sidebar-positionend]) {
-      list-style-image: url("chrome://browser/skin/sidebars-right.svg");
+      list-style-image: url("chrome://browser/skin/sidebar-collapsed-right.svg");
     }
   }
 

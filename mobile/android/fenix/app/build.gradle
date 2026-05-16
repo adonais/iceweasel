@@ -1,12 +1,9 @@
 import com.android.build.api.variant.FilterConfiguration
 import com.google.android.gms.oss.licenses.plugin.DependencyTask
-import groovy.json.JsonOutput
 
 import java.time.format.DateTimeFormatter
 
 import static org.mozilla.conventions.BuildConfigKt.getBuildId
-
-import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 buildscript {
     repositories {
@@ -60,6 +57,10 @@ android {
     compileSdk { version = release(config.compileSdkMajorVersion) { minorApiLevel = config.compileSdkMinorVersion } }
 
     defaultConfig {
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas".toString())
+        }
+
         applicationId "org.mozilla"
         minSdk config.minSdkVersion
         targetSdk config.targetSdkVersion
@@ -277,9 +278,6 @@ android {
             jniLibs {
                 useLegacyPackaging = true
             }
-        }
-        resources {
-            excludes += ["META-INF/LICENSE.md", "META-INF/LICENSE-notice.md"]
         }
     }
 
@@ -598,6 +596,7 @@ dependencies {
     implementation project(':components:service-glean')
     implementation project(':components:service-location')
     implementation project(':components:service-mars')
+    implementation project(':components:service-merino-manifest')
     implementation project(':components:service-nimbus')
     implementation project(':components:service-pocket')
     implementation project(':components:service-sync-autofill')
@@ -606,6 +605,7 @@ dependencies {
     implementation project(':components:support-base')
     implementation project(':components:support-images')
     implementation project(':components:support-ktx')
+    implementation project(':components:support-license')
     implementation project(':components:support-locale')
     implementation project(':components:support-remotesettings')
     implementation project(':components:support-utils')
@@ -624,6 +624,7 @@ dependencies {
     implementation project(':components:lib-integrity-googleplay')
     implementation project(':components:lib-llm-mlpa')
     implementation project(':components:lib-shake')
+    implementation project(':components:lib-ai-controls')
 
     implementation ComponentsDependencies.mozilla_appservices_syncmanager
     implementation libs.accompanist.drawablepainter
@@ -685,6 +686,7 @@ dependencies {
     implementation libs.protobuf.javalite
     implementation libs.sentry
     implementation libs.androidx.documentfile
+    implementation libs.zxing
 
     implementation libs.androidx.room.runtime
     ksp libs.androidx.room.compiler
@@ -812,38 +814,6 @@ if (project.hasProperty("coverage")) {
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-// Task for printing APK information for the requested variant
-// Usage: "./gradlew printVariants
-// -------------------------------------------------------------------------------------------------
-tasks.register('printVariants') {
-    def variants = project.provider {
-        android.applicationVariants.collect { variant -> [
-            apks: variant.outputs.collect { output -> [
-                    abi: getAbi(output),
-                    fileName: output.outputFile.name
-            ]},
-            build_type: variant.buildType.name,
-            name: variant.name,
-    ]}}
-    def outputFile = new File(projectDir, "build/printVariants.json")
-    doLast {
-        // AndroidTest is a special case not included above
-        variants.get().add([
-            apks: [[
-                abi: 'noarch',
-                fileName: 'app-debug-androidTest.apk',
-            ]],
-            build_type: 'androidTest',
-            name: 'androidTest',
-        ])
-        def json = JsonOutput.toJson(variants.get())
-        outputFile.parentFile.mkdirs()
-        outputFile.text = json
-        logger.debug("Wrote variant info to $outputFile")
-    }
-}
-
 // Work around generated SafeArgs code hitting USELESS_CAST warnings with Kotlin 2.3+
 // https://issuetracker.google.com/issues/458082829
 def safeArgsSrc = layout.buildDirectory
@@ -870,57 +840,6 @@ tasks.matching { it.name.startsWith("generateSafeArgs") }.configureEach {
     finalizedBy tasks.named("suppressUselessCastInSafeArgs")
 }
 
-afterEvaluate {
-
-    // Format test output. Ported from AC #2401
-    tasks.withType(Test).configureEach {
-        systemProperty "robolectric.logging", "stdout"
-        systemProperty "logging.test-mode", "true"
-
-        testLogging.events = []
-
-        beforeSuite { descriptor ->
-            if (descriptor.getClassName() != null) {
-                println("\nSUITE: " + descriptor.getClassName())
-            }
-        }
-
-        beforeTest { descriptor ->
-            println("  TEST: " + descriptor.getName())
-        }
-
-        onOutput { descriptor, event ->
-            it.logger.lifecycle("    " + event.message.trim())
-        }
-
-        afterTest { descriptor, result ->
-            switch (result.getResultType()) {
-                case ResultType.SUCCESS:
-                    println("  SUCCESS")
-                    break
-
-                case ResultType.FAILURE:
-                    def testId = descriptor.getClassName() + "." + descriptor.getName()
-                    println("  TEST-UNEXPECTED-FAIL | " + testId + " | " + result.getException())
-                    break
-
-                case ResultType.SKIPPED:
-                    println("  SKIPPED")
-                    break
-            }
-            it.logger.lifecycle("")
-        }
-    }
-}
-
-if (gradle.hasProperty('localProperties.dependencySubstitutions.geckoviewTopsrcdir')) {
-    if (gradle.hasProperty('localProperties.dependencySubstitutions.geckoviewTopobjdir')) {
-        ext.topobjdir = gradle."localProperties.dependencySubstitutions.geckoviewTopobjdir"
-    }
-    ext.topsrcdir = gradle."localProperties.dependencySubstitutions.geckoviewTopsrcdir"
-    apply from: "${topsrcdir}/substitute-local-geckoview.gradle"
-}
-
 def getSupportedLocales() {
     // This isn't running as a task, instead the array is build when the gradle file is parsed.
     // https://github.com/mozilla-mobile/fenix/issues/14175
@@ -945,23 +864,12 @@ tasks.withType(DependencyTask).configureEach { task ->
     // The OSS plugin creates a "LicensesCleanUp" task for every "DependencyTask"
     // e.g., nightlyOssDependencyTask -> nightlyOssLicensesCleanUp
     def cleanUpTaskName = task.name.replace("DependencyTask", "LicensesCleanUp")
-
     // make the dependency task depend on its cleanup task.
     task.dependsOn(tasks.named(cleanUpTaskName))
 }
 
-tasks.register("ktlint", Exec) {
-    group = "verification"
-    description = "Check Kotlin code style."
-    workingDir file("${gradle.mozconfig.topsrcdir}")
-    commandLine "./mach", "gradle", "-p", "mobile/android/fenix", ":ktlint"
-}
-
-tasks.register("ktlintFormat", Exec) {
-    group = "formatting"
-    description = "Fix Kotlin code style deviations."
-    workingDir file("${gradle.mozconfig.topsrcdir}")
-    commandLine "./mach", "gradle", "-p", "mobile/android/fenix", ":ktlintFormat"
+mozilla {
+    ktlintSourcePaths = ["src/**/*.kt", "!**/build/**/*.kt"]
 }
 
 tasks.register("detekt", Exec) {

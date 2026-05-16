@@ -14,7 +14,6 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsFrameManager.h"
-#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"
 #include "nsLineLayout.h"

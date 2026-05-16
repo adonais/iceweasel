@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_BlobImpl_h
 #define mozilla_dom_BlobImpl_h
 
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsISupports.h"
 #include "nsString.h"
 
@@ -22,12 +23,18 @@ class SystemCallerGuarantee;
 template <typename T>
 class Optional;
 
-// This is the abstract class for any File backend. It must be nsISupports
-// because this class must be ref-counted and it has to work with IPC.
-class BlobImpl : public nsISupports {
+// This is the abstract class for any File backend. It must be ref-counted and
+// implement nsISupports so it can be used with IPC. It also supports
+// thread-safe weak references, allowing BlobImpl instances to be used as weak
+// keys without keeping them alive (e.g. for IndexedDB blob sharing/dedup).
+class BlobImpl : public SupportsThreadSafeWeakPtr<BlobImpl>,
+                 public nsISupports {
  public:
   NS_INLINE_DECL_STATIC_IID(BLOBIMPL_IID)
-  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(BlobImpl,
+                                       SupportsThreadSafeWeakPtr<BlobImpl>);
+  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(BlobImpl);
 
   BlobImpl() = default;
 
@@ -97,6 +104,8 @@ class BlobImpl : public nsISupports {
   virtual bool IsDirectory() const { return false; }
 
  protected:
+  friend SupportsThreadSafeWeakPtr<BlobImpl>;
+
   virtual ~BlobImpl() = default;
 };
 

@@ -9852,8 +9852,11 @@ HTMLEditor::InsertPaddingBRElementIfInEmptyBlock(
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
   insertPaddingLineBreakResult.IgnoreCaretPointSuggestion();
-  return CreateLineBreakResult(EditorLineBreak(std::move(paddingBRElement)),
-                               EditorDOMPoint(paddingBRElement));
+
+  EditorDOMPoint editorDOMPoint{paddingBRElement};
+  EditorLineBreak editorLineBreak{std::move(paddingBRElement)};
+  return CreateLineBreakResult{std::move(editorLineBreak),
+                               std::move(editorDOMPoint)};
 }
 
 Result<CreateLineBreakResult, nsresult>

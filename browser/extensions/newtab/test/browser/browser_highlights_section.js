@@ -1,8 +1,41 @@
 "use strict";
 
+const { PREFS_CONFIG } = ChromeUtils.importESModule(
+  "resource://newtab/lib/ActivityStream.sys.mjs"
+);
+
 add_setup(async function () {
+  let sandbox = sinon.createSandbox();
+
+  sandbox
+    .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
+    .returns(
+      "https://example.com/browser/browser/extensions/newtab/test/browser/topstories.json"
+    );
+
   await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
+    set: [
+      [
+        "browser.newtabpage.activity-stream.discoverystream.config",
+        PREFS_CONFIG.get("discoverystream.config").getValue({
+          geo: "US",
+          locale: "en-US",
+        }),
+      ],
+      [
+        "browser.newtabpage.activity-stream.discoverystream.endpoints",
+        "https://example.com",
+      ],
+      ["test.wait300msAfterTabSwitch", true],
+    ],
+  });
+
+  registerCleanupFunction(async () => {
+    // This seems silly, since the mochitest harness will pop the pref off
+    // automatically, but this seems to help avoid a "waiting for vsync to be
+    // disabled" issue.
+    await SpecialPowers.popPrefEnv();
+    sandbox.restore();
   });
 });
 

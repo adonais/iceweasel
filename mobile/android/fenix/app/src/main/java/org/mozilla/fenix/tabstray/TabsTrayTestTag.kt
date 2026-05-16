@@ -12,6 +12,7 @@ internal object TabsTrayTestTag {
     const val BANNER_HANDLE = "$BANNER_ROOT.handle"
     const val NORMAL_TABS_PAGE_BUTTON = "$BANNER_ROOT.normalTabsPageButton"
     const val PRIVATE_TABS_PAGE_BUTTON = "$BANNER_ROOT.privateTabsPageButton"
+    const val TAB_GROUPS_PAGE_BUTTON = "$BANNER_ROOT.tabGroupsPageButton"
     const val SYNCED_TABS_PAGE_BUTTON = "$BANNER_ROOT.syncedTabsPageButton"
 
     const val SELECTION_COUNTER = "$BANNER_ROOT.selectionCounter"
@@ -35,10 +36,12 @@ internal object TabsTrayTestTag {
     private const val TAB_LIST_ROOT = "$TABS_TRAY.tabList"
     const val NORMAL_TABS_LIST = "$TAB_LIST_ROOT.normal"
     const val PRIVATE_TABS_LIST = "$TAB_LIST_ROOT.private"
+    const val TAB_GROUPS_LIST = "$TAB_LIST_ROOT.groups"
     const val SYNCED_TABS_LIST = "$TAB_LIST_ROOT.synced"
 
     const val EMPTY_NORMAL_TABS_LIST = "$NORMAL_TABS_LIST.empty"
     const val EMPTY_PRIVATE_TABS_LIST = "$PRIVATE_TABS_LIST.empty"
+    const val EMPTY_TAB_GROUPS_LIST = "$TAB_GROUPS_LIST.empty"
     const val UNAUTHENTICATED_SYNCED_TABS_PAGE = "$SYNCED_TABS_LIST.unauthenticated"
 
     // Tab items
@@ -59,6 +62,9 @@ internal object TabsTrayTestTag {
     const val TAB_GROUP_BOTTOM_SHEET_ROOT = "$TAB_GROUP_ROOT.bottomSheet"
     const val BOTTOM_SHEET_SHARE_BUTTON = "$TAB_GROUP_BOTTOM_SHEET_ROOT.share"
     const val BOTTOM_SHEET_CIRCLE = "$TAB_GROUP_BOTTOM_SHEET_ROOT.circle"
+    const val BOTTOM_SHEET_COLOR_LIST = "$TAB_GROUP_BOTTOM_SHEET_ROOT.colors"
+
+    const val GROUP_NAME = "$TAB_GROUP_BOTTOM_SHEET_ROOT.name"
 
     // Tab group three dot menu
     const val TAB_GROUP_THREE_DOT_BUTTON = "$TAB_GROUP_ROOT.threeDotButton"
@@ -68,4 +74,8 @@ internal object TabsTrayTestTag {
 
     // Bottom app bar
     const val TAB_SEARCH_ICON = "$TABS_TRAY.tabSearchIcon"
+
+    // Tab Search
+    const val TAB_SEARCH_ROOT = "$TABS_TRAY.tab_search"
+    const val TAB_SEARCH_BACK_BUTTON = "$TAB_SEARCH_ROOT.back_button"
 }

@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -378,10 +379,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
     @OptIn(ExperimentalTestApi::class)
     fun verifyExtensionsButtonWithInstalledExtension(extensionTitle: String) {
         Log.i(TAG, "Waiting for $waitingTime until node with tag: $EXTENSIONS exists")
-        composeTestRule.waitUntil(waitingTime) {
-            composeTestRule.onAllNodesWithTag(EXTENSIONS)
-                .fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty()
-        }
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EXTENSIONS), waitingTime)
         Log.i(TAG, "Waited for $waitingTime until node with tag: $EXTENSIONS exists")
         assertUIObjectExists(itemWithResIdAndDescription("mainMenu.extensions", extensionTitle))
     }

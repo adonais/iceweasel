@@ -95,10 +95,23 @@ features:
               title: nova_onboarding_marketing_title
               image-res: nova_onboarding_marketing
               primary-button-label: nova_onboarding_continue_button
+              secondary-button-label: nova_onboarding_marketing_secondary_button_text
               extra-data:
                 marketing-data:
                   body-line-one-text: nova_onboarding_marketing_body
                   body-line-one-link-text: nova_onboarding_marketing_body_link_text
+    defaults:
+      - channel: nightly
+        value:
+          cards:
+            add-search-widget:
+              enabled: false
+            sync-sign-in:
+              enabled: false
+            notification-permission:
+              enabled: false
+            toolbar-placement:
+              enabled: false
 
   continuous-onboarding:
     description: >
@@ -109,6 +122,10 @@ features:
         description: If true, the feature is enabled.
         type: Boolean
         default: false
+    defaults:
+      - channel: nightly
+        value:
+          enabled: true
 
 objects:
 
@@ -292,6 +309,10 @@ objects:
   MarketingData:
     description: An object to describe the marketing data onboarding card.
     fields:
+      marketing-card-variant:
+        description: Which marketing card variant to use.
+        type: MarketingCardVariant
+        default: default
       body-line-one-text:
         type: Text
         description: The text for line one of the body.
@@ -344,3 +365,15 @@ enums:
         description: Sets the theme to light mode.
       theme-dark:
         description: Sets the theme to dark mode.
+
+  MarketingCardVariant:
+    description: An enum to describe a marketing card variation.
+    variants:
+      default:
+        description: The default marketing card variation.
+      treatment-a:
+        description: The Treatment A marketing card variation.
+      treatment-b:
+        description: The Treatment B marketing card variation.
+      treatment-c:
+        description: The Treatment C marketing card variation.

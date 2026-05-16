@@ -20,11 +20,11 @@ origin:
 
   # Human-readable identifier for this version/release
   # Generally "version NNN", "tag SSS", "bookmark SSS"
-  release: 288ad69242232a60dac6dca5697cb0154a7f39dc (Sat Mar 07 20:53:10 2026 -0500).
+  release: dc2644ef7e1755f9e457828afeac9e63785ef421 (Tue Apr 14 14:54:32 2026 -0700).
 
   # Revision to pull in
   # Must be a long or short commit SHA (long preferred)
-  revision: 288ad69242232a60dac6dca5697cb0154a7f39dc
+  revision: dc2644ef7e1755f9e457828afeac9e63785ef421
 
   # The package's license, where possible using the mnemonic from
   # https://spdx.org/licenses/
@@ -57,3 +57,4 @@ vendoring:
 
   patches:
     - mmloadusi64.patch
+    - calloc_cdef.patch

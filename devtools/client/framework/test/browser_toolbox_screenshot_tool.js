@@ -5,7 +5,7 @@ const exampleOrgDocument = `https://example.org/document-builder.sjs`;
 const exampleComDocument = `https://example.com/document-builder.sjs`;
 
 const { MAX_CAPTURE_DIMENSION } = ChromeUtils.importESModule(
-  "resource:///modules/ScreenshotsUtils.sys.mjs"
+  "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs"
 );
 
 const TEST_URL = `${exampleOrgDocument}?html=

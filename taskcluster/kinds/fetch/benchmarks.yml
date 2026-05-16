@@ -28,9 +28,9 @@ pgo-extended-corpus:
     description: JetStream3 benchmark suite
     fetch:
         type: static-url
-        url: https://github.com/WebKit/JetStream/archive/a3f5c45465f5271bed385321a0587bd4202682d6.tar.gz
-        sha256: 0af66b94bfbc2eb67cbe6c30bbafd13d7789f8f8623d308783194934601b5fdd
-        size: 194426956
+        url: https://github.com/WebKit/JetStream/archive/3967678fa8ab98d847ab33cf3728dba726fa854b.tar.gz
+        sha256: d62e9dc22ae6b52b3d467a7fbd45689fbb77ddd57a4fd56422c0ffb022d4f9ee
+        size: 194403447
         artifact-name: pgo-extended-corpus.tar.zst
         strip-components: 1
         add-prefix: pgo-extended-corpus/JetStream/

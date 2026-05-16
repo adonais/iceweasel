@@ -206,6 +206,7 @@ class ManifestTokens:
         # privateBrowsing -- not used in any manifests
         _remote_async: Token = self.add(Token(t_type=t_variant, value="remote_async"))
         _snapshot: Token = self.add(Token(t_type=t_variant, value="snapshot"))
+        _standalone: Token = self.add(Token(t_type=t_variant, value="standalone"))
         _socketprocess_e10s: Token = self.add(
             Token(t_type=t_variant, value="socketprocess_e10s")
         )

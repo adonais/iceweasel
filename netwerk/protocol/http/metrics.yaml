@@ -87,6 +87,136 @@ netwerk:
     expires: never
     telemetry_mirror: HTTP3_TIME_TO_REUSE_IDLE_CONNECTTION_MS
 
+  happy_eyeballs_dns_resolution_time:
+    type: labeled_custom_distribution
+    description: >
+      Happy Eyeballs: time in milliseconds to resolve each DNS record type
+      (A, AAAA, HTTPS).
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    labels:
+      - a
+      - aaaa
+      - https
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_connection_attempt_count:
+    type: custom_distribution
+    description: >
+      Happy Eyeballs: number of connection attempts started before one
+      succeeded or all failed.
+    range_min: 1
+    range_max: 50
+    bucket_count: 50
+    histogram_type: linear
+    unit: attempts
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_connection_establishment_time:
+    type: custom_distribution
+    description: >
+      Happy Eyeballs: end-to-end time in milliseconds from algorithm start
+      to a successful connection or final failure.
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_winning_attempt_index:
+    type: custom_distribution
+    description: >
+      Happy Eyeballs: 1-based index of the connection attempt that ultimately
+      succeeded (e.g. 1 = first attempt won).
+    range_min: 1
+    range_max: 50
+    bucket_count: 50
+    histogram_type: linear
+    unit: index
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+
+  happy_eyeballs_https_record_available:
+    type: labeled_counter
+    description: >
+      Happy Eyeballs: whether an HTTPS service record was available during
+      connection establishment.
+    labels:
+      - available
+      - unavailable
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_cancelled_attempt_count:
+    type: custom_distribution
+    description: >
+      Happy Eyeballs: number of in-flight connection attempts cancelled when
+      the winning attempt succeeded.
+    range_min: 0
+    range_max: 50
+    bucket_count: 50
+    histogram_type: linear
+    unit: attempts
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_time_to_first_attempt:
+    type: custom_distribution
+    description: >
+      Happy Eyeballs: time in milliseconds from algorithm start to the first
+      connection attempt being dispatched. Captures DNS wait time before
+      racing begins.
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
 network:
   byte_range_request:
     type: labeled_counter
@@ -305,6 +435,15 @@ network:
       - vgosu@mozilla.com
     telemetry_mirror: HTTP_PAGE_TCP_CONNECTION_2
     expires: never
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
+        bugzilla_notification_emails:
+          - acreskey@mozilla.com
+          - necko@mozilla.com
 
   dns_start:
     type: timing_distribution
@@ -343,6 +482,15 @@ network:
       - vgosu@mozilla.com
     telemetry_mirror: HTTP_PAGE_DNS_LOOKUP_TIME
     expires: never
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
+        bugzilla_notification_emails:
+          - acreskey@mozilla.com
+          - necko@mozilla.com
 
   http_revalidation:
     type: timing_distribution
@@ -393,6 +541,15 @@ network:
     telemetry_mirror:
       HTTP_PAGE_OPEN_TO_FIRST_SENT
     expires: never
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
+        bugzilla_notification_emails:
+          - acreskey@mozilla.com
+          - necko@mozilla.com
 
   open_to_first_received:
     type: timing_distribution
@@ -726,6 +883,15 @@ network:
       - vgosu@mozilla.com
     telemetry_mirror: HTTP_PAGE_TLS_HANDSHAKE
     expires: never
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
+        bugzilla_notification_emails:
+          - acreskey@mozilla.com
+          - necko@mozilla.com
 
   http3_tls_handshake: &http3_tls_handshake
     type: labeled_timing_distribution
@@ -904,99 +1070,6 @@ network:
     notification_emails:
       - necko@mozilla.com
     expires: never
-
-
-  race_cache_with_network_saved_time:
-    type: timing_distribution
-    description: >
-      Time in milliseconds that we saved when we race cache with network.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram NETWORK_RACE_CACHE_WITH_NETWORK_SAVED_TIME.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1354407
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1354407
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: NETWORK_RACE_CACHE_WITH_NETWORK_SAVED_TIME
-
-  race_cache_with_network_ocec_on_start_diff:
-    type: timing_distribution
-    description: >
-      Time in milliseconds between onStartRequest from the cache and
-      onCacheEntryCheck. Report only when net wins and OCEC is before
-      onStartRequest from net.
-
-      This metric was generated to correspond to the Legacy Telemetry linear
-      histogram NETWORK_RACE_CACHE_WITH_NETWORK_OCEC_ON_START_DIFF.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1354407
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1354407
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: NETWORK_RACE_CACHE_WITH_NETWORK_OCEC_ON_START_DIFF
-
-  race_cache_bandwidth_race_network_win:
-    type: memory_distribution
-    description: >
-      Amount of bytes received when we decide to race cache with network and
-      network wins.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram NETWORK_RACE_CACHE_BANDWIDTH_RACE_NETWORK_WIN.
-    memory_unit: byte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1354405
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1354405
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: NETWORK_RACE_CACHE_BANDWIDTH_RACE_NETWORK_WIN
-
-  race_cache_bandwidth_race_cache_win:
-    type: memory_distribution
-    description: >
-      Amount of bytes received when we decide to race cache with network and
-      cache wins.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram NETWORK_RACE_CACHE_BANDWIDTH_RACE_CACHE_WIN.
-    memory_unit: byte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1354405
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1354405
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: NETWORK_RACE_CACHE_BANDWIDTH_RACE_CACHE_WIN
-
-  race_cache_validation:
-    type: labeled_counter
-    description: >
-      Stats for validation requests when cache won the race.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram NETWORK_RACE_CACHE_VALIDATION.
-    labels:
-      - NotSent
-      - CachedContentUsed
-      - CachedContentNotUsed
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1377223
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1377223
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: h#NETWORK_RACE_CACHE_VALIDATION
 
   back_pressure_suspension_rate:
     type: labeled_counter

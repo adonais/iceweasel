@@ -1,0 +1,17 @@
+{
+  "label": "vivaldi.com",
+  "bugs": {
+    "1896349": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://vivaldi.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1896349-vivaldi.com-selected-text-fix.css"]
+      }
+    }
+  ]
+}

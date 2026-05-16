@@ -146,8 +146,7 @@ export var GeckoViewSessionStore = {
   },
 
   onTabStateUpdate(permanentKey, win, data) {
-    win.WindowEventDispatcher.sendRequest({
-      type: "GeckoView:StateUpdated",
+    win.WindowEventDispatcher.sendRequest("GeckoView:StateUpdated", {
       data: data.data,
     });
   },

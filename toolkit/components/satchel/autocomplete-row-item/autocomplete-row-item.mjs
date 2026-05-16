@@ -6,7 +6,7 @@ import { html, when } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/elements/panel-list.js";
+import "chrome://global/content/elements/panel-list.mjs";
 
 class AutocompleteRowItem extends MozLitElement {
   static properties = {

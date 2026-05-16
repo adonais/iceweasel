@@ -60,10 +60,24 @@ const gCssWideKeywordsExamples = [
   },
 ];
 
+// Leading whitespace before var() is not consistently handled across engines.
+// See https://github.com/w3c/csswg-drafts/issues/13792
+// Allow either the original or normalized form for now.
 const gVarReferenceExamples = [
   {
     description: 'a var() reference',
-    input: new CSSUnparsedValue([' ', new CSSVariableReferenceValue('--A')])
+    input: new CSSUnparsedValue([' ', new CSSVariableReferenceValue('--A')]),
+    specifiedAlternateExpected: new CSSUnparsedValue([new CSSVariableReferenceValue('--A')]),
+    defaultSpecified: (input, result, alternateExpected) => {
+      try {
+        assert_style_value_equals(result, input);
+      } catch(e) {
+        if (alternateExpected === undefined) {
+          throw e;
+        }
+        assert_style_value_equals(result, alternateExpected);
+      }
+    }
   },
 ];
 
@@ -147,6 +161,10 @@ const gTestSyntaxExamples = {
         description: "a calc time",
         input: new CSSMathSum(new CSSUnitValue(0, 's'), new CSSUnitValue(0, 'ms')),
         specifiedExpected: new CSSMathSum(new CSSUnitValue(0, 's'), new CSSUnitValue(0, 's')),
+        // TODO: Consider merging specifiedAlternateExpected with
+        // specifiedExpected once all engines do simplification during
+        // association.
+        specifiedAlternateExpected: new CSSMathSum(new CSSUnitValue(0, 's')),
         defaultSpecified: (_, result) => assert_is_calc_sum(result),
         defaultComputed: (_, result) => assert_is_unit('s', result)
       }

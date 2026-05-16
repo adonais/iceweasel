@@ -63,8 +63,15 @@ void MediaDrmProvisioningHelper::ResolvedCallback(JSContext* aCx,
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mResolver);
 
+  if (!aValue.isObject()) {
+    MaybeResolve(
+        MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
+                    "Provisioning promise resolved with non-object value"_ns));
+    return;
+  }
+
   dom::ArrayBufferView view;
-  if (!view.Init(aValue.toObjectOrNull())) {
+  if (!view.Init(&aValue.toObject())) {
     MaybeResolve(MediaResult(
         NS_ERROR_DOM_INVALID_STATE_ERR,
         "Failed to initialize ArrayBufferView for provisioning response"_ns));

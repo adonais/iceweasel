@@ -136,6 +136,7 @@ class Location final : public nsISupports,
 
   nsCString mCachedHash;
   nsCOMPtr<nsPIDOMWindowInner> mInnerWindow;
+  RefPtr<DOMStringList> mRelevantDocNullAncestorOriginsList;
 };
 
 }  // namespace mozilla::dom

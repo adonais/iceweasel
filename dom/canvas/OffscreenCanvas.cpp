@@ -35,10 +35,11 @@ namespace mozilla::dom {
 static mozilla::LazyLogModule gFingerprinterDetection("FingerprinterDetection");
 
 OffscreenCanvasCloneData::OffscreenCanvasCloneData(
-    OffscreenCanvasDisplayHelper* aDisplay, uint32_t aWidth, uint32_t aHeight,
-    layers::LayersBackend aCompositorBackend, bool aNeutered, bool aIsWriteOnly,
-    nsIPrincipal* aExpandedReader)
+    OffscreenCanvasDisplayHelper* aDisplay, nsAtom* aLang, uint32_t aWidth,
+    uint32_t aHeight, layers::LayersBackend aCompositorBackend, bool aNeutered,
+    bool aIsWriteOnly, nsIPrincipal* aExpandedReader)
     : mDisplay(aDisplay),
+      mLang(aLang),
       mWidth(aWidth),
       mHeight(aHeight),
       mCompositorBackendType(aCompositorBackend),
@@ -61,12 +62,13 @@ OffscreenCanvas::OffscreenCanvas(nsIGlobalObject* aGlobal, uint32_t aWidth,
 OffscreenCanvas::OffscreenCanvas(
     nsIGlobalObject* aGlobal, uint32_t aWidth, uint32_t aHeight,
     layers::LayersBackend aCompositorBackend,
-    already_AddRefed<OffscreenCanvasDisplayHelper> aDisplay)
+    already_AddRefed<OffscreenCanvasDisplayHelper> aDisplay, nsAtom* aLang)
     : DOMEventTargetHelper(aGlobal),
       mWidth(aWidth),
       mHeight(aHeight),
       mCompositorBackendType(aCompositorBackend),
       mDisplay(aDisplay),
+      mLang(aLang),
       mFontVisibility(ComputeFontVisibility()) {}
 
 OffscreenCanvas::~OffscreenCanvas() {
@@ -378,7 +380,7 @@ UniquePtr<OffscreenCanvasCloneData> OffscreenCanvas::ToCloneData(
   }
 
   auto cloneData = MakeUnique<OffscreenCanvasCloneData>(
-      mDisplay, mWidth, mHeight, mCompositorBackendType, mNeutered,
+      mDisplay, mLang, mWidth, mHeight, mCompositorBackendType, mNeutered,
       mIsWriteOnly, mExpandedReader);
   SetNeutered();
   return cloneData;
@@ -626,7 +628,7 @@ already_AddRefed<OffscreenCanvas> OffscreenCanvas::CreateFromCloneData(
   MOZ_ASSERT(aData);
   RefPtr<OffscreenCanvas> wc = new OffscreenCanvas(
       aGlobal, aData->mWidth, aData->mHeight, aData->mCompositorBackendType,
-      aData->mDisplay.forget());
+      aData->mDisplay.forget(), aData->mLang);
   if (aData->mNeutered) {
     wc->SetNeutered();
   }

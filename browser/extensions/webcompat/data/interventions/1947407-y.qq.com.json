@@ -1,0 +1,15 @@
+{
+  "label": "y.qq.com",
+  "bugs": {
+    "1947407": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://y.qq.com/artists*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "ua_string": ["add_Chrome"]
+    }
+  ]
+}

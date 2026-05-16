@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -50,6 +48,7 @@
 #include "js/PropertySpec.h"
 #include "js/Wrapper.h"
 #include "util/DifferentialTesting.h"
+#include "util/LanguageId.h"
 #include "util/StringBuilder.h"
 #include "util/Text.h"
 #include "vm/DateObject.h"
@@ -68,25 +67,17 @@
 using namespace js;
 
 using mozilla::Atomic;
-using mozilla::BitwiseCast;
 using mozilla::IsAsciiAlpha;
 using mozilla::IsAsciiDigit;
 using mozilla::IsAsciiLowercaseAlpha;
-using mozilla::NumbersAreIdentical;
 using mozilla::Relaxed;
 
-using JS::AutoCheckCannotGC;
 using JS::ClippedTime;
 using JS::GenericNaN;
 using JS::GetBuiltinClass;
 using JS::TimeClip;
 using JS::ToInteger;
 
-// When this value is non-zero, we'll round the time by this resolution.
-static Atomic<uint32_t, Relaxed> sResolutionUsec;
-// This is not implemented yet, but we will use this to know to jitter the time
-// in the JS shell
-static Atomic<bool, Relaxed> sJitter;
 // The callback we will use for the Gecko implementation of Timer
 // Clamping/Jittering
 static Atomic<JS::ReduceMicrosecondTimePrecisionCallback, Relaxed>
@@ -110,7 +101,7 @@ class DateTimeHelper {
                                    DateTimeInfo::TimeZoneOffset offset);
 
   static JSString* timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
-                                   const char* locale, int64_t utcTime,
+                                   LanguageId locale, int64_t utcTime,
                                    int64_t localTime);
 #if !JS_HAS_INTL_API
   static size_t formatTime(char* buf, size_t buflen, const char* fmt,
@@ -175,14 +166,14 @@ static inline bool IsTimeValue(double t) {
 #endif
 
 /**
- * Time value with local time zone offset applied.
+ * Finite time value with local time zone offset applied.
  */
-static inline bool IsLocalTimeValue(double t) {
-  if (std::isnan(t)) {
-    return true;
-  }
-  return IsInteger(t) && (StartOfTime - msPerDay) < t &&
-         t < (EndOfTime + msPerDay);
+template <typename T>
+static inline bool IsLocalTimeValue(T t) {
+  static_assert(std::is_same_v<T, double> || std::is_same_v<T, int64_t>);
+  MOZ_ASSERT(!std::isfinite(t) || IsInteger(t),
+             "unexpected fractional parts in local time value");
+  return T(StartOfTime - msPerDay) < t && t < T(EndOfTime + msPerDay);
 }
 
 /**
@@ -438,15 +429,15 @@ static int32_t WeekDay(int64_t t) {
   return result;
 }
 
-static inline int DayFromMonth(int month, bool isLeapYear) {
-  /*
-   * The following array contains the day of year for the first day of
-   * each month, where index 0 is January, and day 0 is January 1.
-   */
-  static const int firstDayOfMonth[2][13] = {
-      {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365},
-      {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}};
+/*
+ * The following array contains the day of year for the first day of
+ * each month, where index 0 is January, and day 0 is January 1.
+ */
+static constexpr int firstDayOfMonth[2][13] = {
+    {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365},
+    {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}};
 
+static constexpr int DayFromMonth(int month, bool isLeapYear) {
   MOZ_ASSERT(0 <= month && month <= 12);
   return firstDayOfMonth[isLeapYear][month];
 }
@@ -622,11 +613,6 @@ JS::GetReduceMicrosecondTimePrecisionCallback() {
   return sReduceMicrosecondTimePrecisionCallback;
 }
 
-JS_PUBLIC_API void JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter) {
-  sResolutionUsec = resolution;
-  sJitter = jitter;
-}
-
 #if JS_HAS_INTL_API
 int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo* dtInfo,
                                           int64_t epochMilliseconds,
@@ -759,24 +745,31 @@ static int64_t LocalTime(DateTimeInfo* dtInfo, double t) {
  *
  * ES2025 draft rev 76814cbd5d7842c2a99d28e6e8c7833f1de5bee0
  */
-static double UTC(DateTimeInfo* dtInfo, double t) {
-  // Step 1.
-  if (!std::isfinite(t)) {
-    return GenericNaN();
-  }
+template <typename T>
+static int64_t UTC(DateTimeInfo* dtInfo, T t) {
+  static_assert(std::is_same_v<T, double> || std::is_same_v<T, int64_t>);
 
+  MOZ_ASSERT(!std::isfinite(t) || IsInteger(t),
+             "unexpected fractional parts in local time value");
+
+  // InvalidTime can be any value which is rejected by TimeClip.
+  static constexpr int64_t InvalidTime = INT64_MIN;
+
+  // Step 1.
+  //
   // Return early when |t| is outside the valid local time value limits.
   if (!IsLocalTimeValue(t)) {
-    return GenericNaN();
+    return InvalidTime;
   }
+  int64_t time = mozilla::AssertedCast<int64_t>(t);
 
   // Steps 2-5.
   int32_t offsetMs = DateTimeHelper::getTimeZoneOffset(
-      dtInfo, static_cast<int64_t>(t), DateTimeInfo::TimeZoneOffset::Local);
+      dtInfo, time, DateTimeInfo::TimeZoneOffset::Local);
   MOZ_ASSERT(std::abs(offsetMs) < msPerDay);
 
   // Step 6.
-  return static_cast<double>(static_cast<int64_t>(t) - offsetMs);
+  return time - offsetMs;
 }
 
 /**
@@ -976,90 +969,80 @@ static bool date_UTC(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 /*
- * Read and convert decimal digits from s[*i] into *result
- * while *i < limit.
+ * Read and convert decimal digits to the right of a decimal point, representing
+ * a fractional integer, from s[i = start] into *result while i < limit, up to 3
+ * digits. Consumes any digits beyond 3 without affecting the result.
  *
- * Succeed if any digits are converted. Advance *i only
- * as digits are consumed.
+ * Return the number of digits converted.
  */
 template <typename CharT>
-static bool ParseDigits(size_t* result, const CharT* s, size_t* i,
-                        size_t limit) {
-  size_t init = *i;
-  *result = 0;
-  while (*i < limit && ('0' <= s[*i] && s[*i] <= '9')) {
-    *result *= 10;
-    *result += (s[*i] - '0');
-    ++(*i);
-  }
-  return *i != init;
-}
-
-/*
- * Read and convert decimal digits to the right of a decimal point,
- * representing a fractional integer, from s[*i] into *result
- * while *i < limit, up to 3 digits. Consumes any digits beyond 3
- * without affecting the result.
- *
- * Succeed if any digits are converted. Advance *i only
- * as digits are consumed.
- */
-template <typename CharT>
-static bool ParseFractional(int* result, const CharT* s, size_t* i,
-                            size_t limit) {
-  int factor = 100;
-  size_t init = *i;
-  *result = 0;
-  for (; *i < limit && ('0' <= s[*i] && s[*i] <= '9'); ++(*i)) {
-    if (*i - init >= 3) {
-      // If we're past 3 digits, do nothing with it, but continue to
-      // consume the remainder of the digits
-      continue;
+static MOZ_ALWAYS_INLINE size_t ParseFractional(const CharT* s, size_t start,
+                                                size_t limit, int32_t* result) {
+  int32_t acc = 0;
+  size_t i = 0;
+  for (; i < 3 && start + i < limit && IsAsciiDigit(s[start + i]); i++) {
+    if (i == 0) {
+      acc += AsciiDigitToNumber(s[start + i]) * 100;
+    } else if (i == 1) {
+      acc += AsciiDigitToNumber(s[start + i]) * 10;
+    } else if (i == 2) {
+      acc += AsciiDigitToNumber(s[start + i]) * 1;
     }
-    *result += (s[*i] - '0') * factor;
-    factor /= 10;
   }
-  return *i != init;
+
+  // Separate loop to ensure the compiler will fully unroll the first loop.
+  for (; start + i < limit && IsAsciiDigit(s[start + i]); i++) {
+    // If we're past 3 digits, do nothing with it, but continue to
+    // consume the remainder of the digits
+  }
+
+  *result = acc;
+  return i;
 }
 
 /*
- * Read and convert exactly n decimal digits from s[*i]
- * to s[min(*i+n,limit)] into *result.
+ * Read and convert N decimal digits from s[start] to s[start + N] into result.
  *
- * Succeed if exactly n digits are converted. Advance *i only
- * on success.
+ * Succeed if exactly N digits are converted.
  */
-template <typename CharT>
-static bool ParseDigitsN(size_t n, size_t* result, const CharT* s, size_t* i,
-                         size_t limit) {
-  size_t init = *i;
+template <size_t N, typename CharT>
+static MOZ_ALWAYS_INLINE bool ParseDigitsN(const CharT* s, size_t start,
+                                           size_t limit, int32_t* result) {
+  static_assert(N == 2 || N == 4 || N == 6);
 
-  if (ParseDigits(result, s, i, std::min(limit, init + n))) {
-    return (*i - init) == n;
+  int32_t acc = 0;
+  size_t i = 0;
+  if (start + N <= limit) {
+    for (; i < N && IsAsciiDigit(s[start + i]); i++) {
+      acc *= 10;
+      acc += AsciiDigitToNumber(s[start + i]);
+    }
   }
 
-  *i = init;
-  return false;
+  *result = acc;
+  return i == N;
 }
 
 /*
- * Read and convert n or less decimal digits from s[*i]
- * to s[min(*i+n,limit)] into *result.
+ * Read and convert N or less decimal digits from s[start] to
+ * s[min(start + N, limit)] into *result.
  *
- * Succeed only if greater than zero but less than or equal to n digits are
- * converted. Advance *i only on success.
+ * Return the number of digits converted.
  */
-template <typename CharT>
-static bool ParseDigitsNOrLess(size_t n, size_t* result, const CharT* s,
-                               size_t* i, size_t limit) {
-  size_t init = *i;
+template <size_t N, typename CharT>
+static size_t ParseDigitsNOrLess(const CharT* s, size_t start, size_t limit,
+                                 int32_t* result) {
+  static_assert(N == 2 || N == 6);
 
-  if (ParseDigits(result, s, i, std::min(limit, init + n))) {
-    return ((*i - init) > 0) && ((*i - init) <= n);
+  int32_t acc = 0;
+  size_t i = 0;
+  for (; i < N && start + i < limit && IsAsciiDigit(s[start + i]); i++) {
+    acc *= 10;
+    acc += AsciiDigitToNumber(s[start + i]);
   }
 
-  *i = init;
-  return false;
+  *result = acc;
+  return i;
 }
 
 /*
@@ -1121,141 +1104,225 @@ static bool ParseDigitsNOrLess(size_t n, size_t* result, const CharT* s,
 template <typename CharT>
 static bool ParseISOStyleDate(DateTimeInfo* dtInfo, const CharT* s,
                               size_t length, ClippedTime* result) {
-  size_t i = 0;
-  int tzMul = 1;
-  int dateMul = 1;
-  size_t year = 1970;
-  size_t month = 1;
-  size_t day = 1;
-  size_t hour = 0;
-  size_t min = 0;
-  size_t sec = 0;
-  int msec = 0;
-  bool isLocalTime = false;
-  size_t tzHour = 0;
-  size_t tzMin = 0;
+  // Always inline all lambdas, because at least Clang generates calls for some
+  // of the lambdas.
+  //
+  // MOZ_ALWAYS_INLINE adds the `inline` keyword, which can't be used in (any)
+  // attribute position.
+  // `[[clang::always_inline]]` and `[[gnu::always_inline]]` can only be applied
+  // in front attribute position, but that's a C++23 extension.
+  // The old `__attribute__((always_inline))` syntax can be applied in back
+  // attribute position, so it's usable even in C++20.
+#define JS_ALWAYS_INLINE_LAMBDA __attribute__((always_inline))
 
-#define PEEK(ch) (i < length && s[i] == ch)
+  // Current index into |s|.
+  size_t index = 0;
 
-#define NEED(ch)                   \
-  if (i >= length || s[i] != ch) { \
-    return false;                  \
-  } else {                         \
-    ++i;                           \
-  }
-
-#define DONE_DATE_UNLESS(ch)       \
-  if (i >= length || s[i] != ch) { \
-    goto done_date;                \
-  } else {                         \
-    ++i;                           \
-  }
-
-#define DONE_UNLESS(ch)            \
-  if (i >= length || s[i] != ch) { \
-    goto done;                     \
-  } else {                         \
-    ++i;                           \
-  }
-
-#define NEED_NDIGITS(n, field)                   \
-  if (!ParseDigitsN(n, &field, s, &i, length)) { \
-    return false;                                \
-  }
-
-  if (PEEK('+') || PEEK('-')) {
-    if (PEEK('-')) {
-      dateMul = -1;
+  // Match |ch| at the current index.
+  auto match = [&](char ch) JS_ALWAYS_INLINE_LAMBDA {
+    if (index < length && s[index] == ch) {
+      ++index;
+      return true;
     }
-    ++i;
-    NEED_NDIGITS(6, year);
+    return false;
+  };
+
+  // Match '+' or '-' at the current index. Set |sign| to either 1 or -1.
+  auto matchSign = [&](int32_t* sign) JS_ALWAYS_INLINE_LAMBDA {
+    if (match('+')) {
+      *sign = 1;
+      return true;
+    }
+    if (match('-')) {
+      *sign = -1;
+      return true;
+    }
+    return false;
+  };
+
+  // Parse decimal digits at the current index. If exactly N digits were
+  // matched, return true and set |result| to the parsed decimal number.
+  auto parseDigits = [&]<size_t N>(int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    if (ParseDigitsN<N>(s, index, length, result)) {
+      index += N;
+      return true;
+    }
+    return false;
+  };
+
+  // Parse a six digit expanded year at the current index.
+  auto parseExpandedYear = [&](int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    return parseDigits.template operator()<6>(result);
+  };
+
+  // Parse a four digit year at the current index.
+  auto parseYear = [&](int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    return parseDigits.template operator()<4>(result);
+  };
+
+  // Parse a two digit decimal number at the current index.
+  auto parseTwoDigits = [&](int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    return parseDigits.template operator()<2>(result);
+  };
+
+  // Parse a decimal fractional number at the current index. The first three
+  // fractional digits are returned in |result|.
+  auto parseFractional = [&](int32_t* result) JS_ALWAYS_INLINE_LAMBDA {
+    if (size_t digits = ParseFractional(s, index, length, result)) {
+      index += digits;
+      return true;
+    }
+    return false;
+  };
+
+  int32_t yearSign = 1;
+  int32_t year = 0;
+  int32_t month = 1;
+  int32_t day = 1;
+  int32_t hour = 0;
+  int32_t min = 0;
+  int32_t sec = 0;
+  int32_t msec = 0;
+  bool isLocalTime = false;
+  int32_t tzSign = 1;
+  int32_t tzHour = 0;
+  int32_t tzMin = 0;
+
+  if (matchSign(&yearSign)) {
+    if (!parseExpandedYear(&year)) {
+      return false;
+    }
 
     // https://tc39.es/ecma262/#sec-expanded-years
     // -000000 is not a valid expanded year.
-    if (year == 0 && dateMul == -1) {
+    if (year == 0 && yearSign == -1) {
       return false;
     }
   } else {
-    NEED_NDIGITS(4, year);
-  }
-  DONE_DATE_UNLESS('-');
-  NEED_NDIGITS(2, month);
-  DONE_DATE_UNLESS('-');
-  NEED_NDIGITS(2, day);
-
-done_date:
-  if (PEEK('T')) {
-    ++i;
-  } else {
-    goto done;
+    if (!parseYear(&year)) {
+      return false;
+    }
   }
 
-  NEED_NDIGITS(2, hour);
-  NEED(':');
-  NEED_NDIGITS(2, min);
+  if (match('-')) {
+    if (!parseTwoDigits(&month)) {
+      return false;
+    }
 
-  if (PEEK(':')) {
-    ++i;
-    NEED_NDIGITS(2, sec);
-    if (PEEK('.')) {
-      ++i;
-      if (!ParseFractional(&msec, s, &i, length)) {
+    if (match('-')) {
+      if (!parseTwoDigits(&day)) {
         return false;
       }
     }
   }
 
-  if (PEEK('Z')) {
-    ++i;
-  } else if (PEEK('+') || PEEK('-')) {
-    if (PEEK('-')) {
-      tzMul = -1;
+  if (match('T')) {
+    if (!parseTwoDigits(&hour)) {
+      return false;
     }
-    ++i;
-    NEED_NDIGITS(2, tzHour);
-    /*
-     * Non-standard extension to the ISO date format (permitted by ES5):
-     * allow "-0700" as a time zone offset, not just "-07:00".
-     */
-    if (PEEK(':')) {
-      ++i;
+    if (!match(':')) {
+      return false;
     }
-    NEED_NDIGITS(2, tzMin);
-  } else {
-    isLocalTime = true;
+    if (!parseTwoDigits(&min)) {
+      return false;
+    }
+
+    if (match(':')) {
+      if (!parseTwoDigits(&sec)) {
+        return false;
+      }
+      if (match('.')) {
+        if (!parseFractional(&msec)) {
+          return false;
+        }
+      }
+    }
+
+    if (match('Z')) {
+      // UTC offset
+    } else if (matchSign(&tzSign)) {
+      if (!parseTwoDigits(&tzHour)) {
+        return false;
+      }
+
+      // Non-standard extension to the ISO date format (permitted by ES5):
+      // allow "-0700" as a time zone offset, not just "-07:00".
+      match(':');
+
+      if (!parseTwoDigits(&tzMin)) {
+        return false;
+      }
+    } else {
+      isLocalTime = true;
+    }
   }
 
-done:
-  if (year > 275943  // ceil(1e8/365) + 1970
-      || month == 0 || month > 12 || day == 0 || day > 31 || hour > 24 ||
+  // Check all elements are in-bounds.
+  //
+  // |year| can be any six digit value, TimeClip will reject too large values.
+  //
+  // |day| is not validated against |year| and |month|, i.e. inputs like
+  // "2000-02-31" and "2001-02-29" are both accepted.
+  if (month == 0 || month > 12 || day == 0 || day > 31 || hour > 24 ||
       (hour == 24 && (min > 0 || sec > 0 || msec > 0)) || min > 59 ||
       sec > 59 || tzHour > 23 || tzMin > 59) {
     return false;
   }
 
-  if (i != length) {
+  // Reject if there are still unprocessed characters.
+  if (index != length) {
     return false;
   }
 
-  month -= 1; /* convert month to 0-based */
+  // MakeDay optimized for in-bounds int32 values.
+  static constexpr auto MakeDay = [](int32_t year, int32_t month,
+                                     int32_t date) JS_ALWAYS_INLINE_LAMBDA {
+    MOZ_ASSERT(-999'999 <= year && year <= 999'999);
+    MOZ_ASSERT(1 <= month && month <= 12);
+    MOZ_ASSERT(1 <= date && date <= 31);
 
-  double date = MakeDate(MakeDay(dateMul * int32_t(year), month, day),
-                         MakeTime(hour, min, sec, msec));
+    int32_t yearday = ::DayFromYear(year);
+    int32_t monthday = DayFromMonth(month - 1, IsLeapYear(year));
+    return yearday + monthday + date - 1;
+  };
+
+  // MakeTime optimized for in-bounds int32 values.
+  static constexpr auto MakeTime = [](int32_t hour, int32_t min, int32_t sec,
+                                      int32_t ms) JS_ALWAYS_INLINE_LAMBDA {
+    return hour * msPerHour + min * msPerMinute + sec * msPerSecond + ms;
+  };
+
+  // Minimum and maximum possible day values when |abs(year) <= 999'999|.
+  static constexpr int32_t minDay = MakeDay(-999'999, 1, 1);
+  static constexpr int32_t maxDay = MakeDay(999'999, 12, 31);
+
+  // MakeDate optimized for in-bounds int32 values.
+  static constexpr auto MakeDate = [](int32_t day,
+                                      int32_t time) JS_ALWAYS_INLINE_LAMBDA {
+    MOZ_ASSERT(minDay <= day && day <= maxDay);
+    MOZ_ASSERT(time <= msPerDay);
+
+    return int64_t(day) * msPerDay + time;
+  };
+
+  static_assert(MakeDate(minDay, msPerDay) > INT64_MIN,
+                "doesn't overflow when day >= minDay");
+  static_assert(MakeDate(maxDay, msPerDay) < INT64_MAX,
+                "doesn't overflow when day <= maxDay");
+
+  int64_t date = MakeDate(MakeDay(yearSign * year, month, day),
+                          MakeTime(hour, min, sec, msec));
 
   if (isLocalTime) {
     date = UTC(dtInfo, date);
   } else {
-    date -=
-        tzMul * (int32_t(tzHour) * msPerHour + int32_t(tzMin) * msPerMinute);
+    date -= tzSign * (tzHour * msPerHour + tzMin * msPerMinute);
   }
 
   *result = TimeClip(date);
-  return NumbersAreIdentical(date, result->toDouble());
+  return true;
 
-#undef PEEK
-#undef NEED
-#undef DONE_UNLESS
-#undef NEED_NDIGITS
+#undef JS_ALWAYS_INLINE_LAMBDA
 }
 
 /**
@@ -1351,12 +1418,13 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
                                      int* monOut, int* mdayOut) {
   size_t i = *indexOut;
 
-  size_t pre = i;
-  size_t mday;
-  if (!ParseDigitsNOrLess(6, &mday, s, &i, length)) {
+  // Allow up to six digits in case this is actually a year.
+  int32_t mday;
+  size_t mdayDigits = ParseDigitsNOrLess<6>(s, i, length, &mday);
+  if (!mdayDigits) {
     return false;
   }
-  size_t mdayDigits = i - pre;
+  i += mdayDigits;
 
   if (i >= length || s[i] != '-') {
     return false;
@@ -1366,7 +1434,7 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
   int mon = 0;
   if (*monOut == -1) {
     // If month wasn't already set by ParseDate, it must be in the middle of
-    // this format, let's look for it
+    // this format, let's look for it.
     size_t start = i;
     for (; i < length; i++) {
       if (!IsAsciiAlpha(s[i])) {
@@ -1384,12 +1452,13 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
     ++i;
   }
 
-  pre = i;
-  size_t year;
-  if (!ParseDigitsNOrLess(6, &year, s, &i, length)) {
+  // Allow up to six digits for a year.
+  int32_t year;
+  size_t yearDigits = ParseDigitsNOrLess<6>(s, i, length, &year);
+  if (!yearDigits) {
     return false;
   }
-  size_t yearDigits = i - pre;
+  i += yearDigits;
 
   if (i < length && IsAsciiDigit(s[i])) {
     return false;
@@ -1436,30 +1505,40 @@ static bool TryParseDashedNumericDatePrefix(const CharT* s, size_t length,
                                             int* monOut, int* mdayOut) {
   size_t i = *indexOut;
 
-  size_t first;
-  if (!ParseDigitsNOrLess(6, &first, s, &i, length)) {
+  // Allow up to six digits for the first number, because it can be a year.
+  int32_t first;
+  size_t digits = ParseDigitsNOrLess<6>(s, i, length, &first);
+  if (!digits) {
     return false;
   }
+  i += digits;
 
   if (i >= length || s[i] != '-') {
     return false;
   }
   ++i;
 
-  size_t second;
-  if (!ParseDigitsNOrLess(2, &second, s, &i, length)) {
+  // Allow only up to two digits for the second number, because it's either a
+  // month or a day of month.
+  int32_t second;
+  digits = ParseDigitsNOrLess<2>(s, i, length, &second);
+  if (!digits) {
     return false;
   }
+  i += digits;
 
   if (i >= length || s[i] != '-') {
     return false;
   }
   ++i;
 
-  size_t third;
-  if (!ParseDigitsNOrLess(6, &third, s, &i, length)) {
+  // Allow up to six digits for the third number, because it can be a year.
+  int32_t third;
+  digits = ParseDigitsNOrLess<6>(s, i, length, &third);
+  if (!digits) {
     return false;
   }
+  i += digits;
 
   int year;
   int mon = -1;
@@ -1550,6 +1629,29 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
     return true;
   }
 
+  auto isAnyOf = [](std::string_view sv, CharT ch) {
+    // Intentionally doesn't use std::string_view::find, std::find, std::any_of,
+    // or any other built-in function, because the compiler tries to be "smart"
+    // and turns it into a `memchr` call. Whereas this loop gets compiled into
+    // smaller and faster assembly. For example when |sv| is " ,.-/", Clang
+    // compiles it to:
+    //
+    // mov     ecx, edi
+    // cmp     cl, 48
+    // setb    dl
+    // movabs  rax, 263887085633536
+    // shr     rax, cl
+    // and     al, dl
+    //
+    // That assembly surely beats calling `memchr`.
+    for (auto v : sv) {
+      if (v == ch) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Collect telemetry on how often Date.parse enters implementation defined
   // code. This can be removed in the future, see Bug 1944630.
   cx->runtime()->setUseCounter(cx->global(), JSUseCounter::DATEPARSE_IMPL_DEF);
@@ -1563,7 +1665,7 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
   for (; index < length; index++) {
     int c = s[index];
 
-    if (strchr(" ,.-/", c)) {
+    if (isAnyOf(" ,.-/", c)) {
       continue;
     }
     if (!IsAsciiAlpha(c)) {
@@ -1589,7 +1691,9 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
       if (IsAsciiDigit(s[index])) {
         break;
       }
-    } else if (!strchr(" ,.-/", s[index])) {
+      // Any other (single) character after the month name is ignored. (Not sure
+      // if this is intentional.)
+    } else if (!isAnyOf(" ,.-/", s[index])) {
       // We're only allowing the above delimiters after the day of
       // week to prevent things such as "foo_1" from being parsed
       // as a date, which may break software which uses this function
@@ -1626,7 +1730,7 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
       TryParseDashedDatePrefix(s, length, &index, &year, &mon, &mday) ||
       TryParseDashedNumericDatePrefix(s, length, &index, &year, &mon, &mday);
 
-  if (isDashedDate && index < length && strchr("T:+", s[index])) {
+  if (isDashedDate && index < length && isAnyOf("T:+", s[index])) {
     return false;
   }
 
@@ -1789,11 +1893,11 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
                  (c != '.' || sec != -1) &&
                  // Allow zulu time e.g. "09/26/1995 16:00Z", or
                  // '+' directly after time e.g. 00:00+0500
-                 !(hour != -1 && strchr("Zz+", c)) &&
+                 !(hour != -1 && isAnyOf("Zz+", c)) &&
                  // Allow month or AM/PM directly after a number
                  (!IsAsciiAlpha(c) ||
-                  (mon != -1 && !(strchr("AaPp", c) && index < length - 1 &&
-                                  strchr("Mm", s[index + 1]))))) {
+                  (mon != -1 && !(isAnyOf("AaPp", c) && index < length - 1 &&
+                                  isAnyOf("Mm", s[index + 1]))))) {
         return false;
       } else if (seenPlusMinus && n < 60) { /* handle GMT-3:30 */
         if (tzOffset < 0) {
@@ -1807,9 +1911,11 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
         sec = /*byte*/ n;
         if (c == '.') {
           index++;
-          if (!ParseFractional(&msec, s, &index, length)) {
+          size_t digits = ParseFractional(s, index, length, &msec);
+          if (!digits) {
             return false;
           }
+          index += digits;
         }
       } else if (mon < 0) {
         mon = /*byte*/ n;
@@ -2045,7 +2151,7 @@ static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
 
 static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo,
                       const JSLinearString* s, ClippedTime* result) {
-  AutoCheckCannotGC nogc;
+  JS::AutoCheckCannotGC nogc;
   // Collect telemetry on how often Date.parse is being used.
   // This can be removed in the future, see Bug 1944630.
   cx->runtime()->setUseCounter(cx->global(), JSUseCounter::DATEPARSE);
@@ -2091,48 +2197,20 @@ static bool date_parse(JSContext* cx, unsigned argc, Value* vp) {
 
 static ClippedTime NowAsMillis(JSContext* cx) {
   if (js::SupportDifferentialTesting()) {
-    return TimeClip(0);
+    return TimeClip(int64_t(0));
   }
 
-  double now = PRMJ_Now();
-  bool clampAndJitter = cx->realm()->behaviors().clampAndJitterTime();
-  if (clampAndJitter && sReduceMicrosecondTimePrecisionCallback) {
-    now = sReduceMicrosecondTimePrecisionCallback(
-        now, cx->realm()->behaviors().reduceTimerPrecisionCallerType().value(),
-        cx);
-  } else if (clampAndJitter && sResolutionUsec) {
-    double clamped = floor(now / sResolutionUsec) * sResolutionUsec;
-
-    if (sJitter) {
-      // Calculate a random midpoint for jittering. In the browser, we are
-      // adversarial: Web Content may try to calculate the midpoint themselves
-      // and use that to bypass it's security. In the JS Shell, we are not
-      // adversarial, we want to jitter the time to recreate the operating
-      // environment, but we do not concern ourselves with trying to prevent an
-      // attacker from calculating the midpoint themselves. So we use a very
-      // simple, very fast CRC with a hardcoded seed.
-
-      uint64_t midpoint = BitwiseCast<uint64_t>(clamped);
-      midpoint ^= 0x0F00DD1E2BAD2DED;  // XOR in a 'secret'
-      // MurmurHash3 internal component from
-      //   https://searchfox.org/mozilla-central/rev/61d400da1c692453c2dc2c1cf37b616ce13dea5b/dom/canvas/MurmurHash3.cpp#85
-      midpoint ^= midpoint >> 33;
-      midpoint *= uint64_t{0xFF51AFD7ED558CCD};
-      midpoint ^= midpoint >> 33;
-      midpoint *= uint64_t{0xC4CEB9FE1A85EC53};
-      midpoint ^= midpoint >> 33;
-      midpoint %= sResolutionUsec;
-
-      if (now > clamped + midpoint) {  // We're jittering up to the next step
-        now = clamped + sResolutionUsec;
-      } else {  // We're staying at the clamped value
-        now = clamped;
-      }
-    } else {  // No jitter, only clamping
-      now = clamped;
+  int64_t now = PRMJ_Now();
+  if (cx->realm()->behaviors().clampAndJitterTime()) {
+    auto reducePrecisionCallback = *sReduceMicrosecondTimePrecisionCallback;
+    if (reducePrecisionCallback) {
+      double reducedPrecision = reducePrecisionCallback(
+          now,
+          cx->realm()->behaviors().reduceTimerPrecisionCallerType().value(),
+          cx);
+      return TimeClip(reducedPrecision / PRMJ_USEC_PER_MSEC);
     }
   }
-
   return TimeClip(now / PRMJ_USEC_PER_MSEC);
 }
 
@@ -2181,8 +2259,9 @@ void DateObject::fillLocalTimeSlots() {
   setReservedSlot(TIME_ZONE_CACHE_KEY_SLOT, Int32Value(timeZoneCacheKey));
 
   double utcTime = UTCTime().toDouble();
+  MOZ_ASSERT(IsTimeValue(utcTime));
 
-  if (!std::isfinite(utcTime)) {
+  if (std::isnan(utcTime)) {
     for (size_t ind = COMPONENTS_START_SLOT; ind < RESERVED_SLOTS; ind++) {
       setReservedSlot(ind, DoubleValue(utcTime));
     }
@@ -3847,7 +3926,7 @@ static bool date_toISOString(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(IsTimeValue(utctime));
 
   // Step 4.
-  if (!std::isfinite(utctime)) {
+  if (std::isnan(utctime)) {
     JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                               JSMSG_INVALID_DATE);
     return false;
@@ -3924,7 +4003,7 @@ static bool date_toJSON(JSContext* cx, unsigned argc, Value* vp) {
 
 #if JS_HAS_INTL_API
 JSString* DateTimeHelper::timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
-                                          const char* locale, int64_t utcTime,
+                                          LanguageId locale, int64_t utcTime,
                                           int64_t localTime) {
   MOZ_ASSERT(IsTimeValue(utcTime));
   MOZ_ASSERT(IsLocalTimeValue(localTime));
@@ -3982,7 +4061,7 @@ size_t DateTimeHelper::formatTime(char* buf, size_t buflen, const char* fmt,
 }
 
 JSString* DateTimeHelper::timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
-                                          const char* locale, int64_t utcTime,
+                                          LanguageId locale, int64_t utcTime,
                                           int64_t localTime) {
   MOZ_ASSERT(dtInfo == nullptr);
 
@@ -4020,12 +4099,12 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
 
 enum class FormatSpec { DateTime, Date, Time };
 
-static bool FormatDate(JSContext* cx, DateTimeInfo* dtInfo, const char* locale,
+static bool FormatDate(JSContext* cx, DateTimeInfo* dtInfo, LanguageId locale,
                        double utcTime, FormatSpec format,
                        MutableHandleValue rval) {
   MOZ_ASSERT(IsTimeValue(utcTime));
 
-  if (!std::isfinite(utcTime)) {
+  if (std::isnan(utcTime)) {
     rval.setString(cx->names().Invalid_Date_);
     return true;
   }
@@ -4130,7 +4209,7 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
   double utcTime = unwrapped->UTCTime().toDouble();
   MOZ_ASSERT(IsTimeValue(utcTime));
 
-  if (!std::isfinite(utcTime)) {
+  if (std::isnan(utcTime)) {
     rval.setString(cx->names().Invalid_Date_);
     return true;
   }
@@ -4146,18 +4225,12 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
 static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
                                  const char* format, MutableHandleValue rval) {
   double utcTime = unwrapped->UTCTime().toDouble();
-
-  const char* locale = unwrapped->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
+  MOZ_ASSERT(IsTimeValue(utcTime));
 
   char buf[100];
-  if (!std::isfinite(utcTime)) {
+  if (std::isnan(utcTime)) {
     strcpy(buf, "InvalidDate");
   } else {
-    MOZ_ASSERT(IsTimeValue(utcTime));
-
     int64_t epochMilliseconds = static_cast<int64_t>(utcTime);
     int64_t localTime = static_cast<int64_t>(LocalTime(nullptr, utcTime));
 
@@ -4167,6 +4240,7 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
 
     /* If it failed, default to toString. */
     if (result_len == 0) {
+      auto locale = unwrapped->realm()->getLocale();
       return FormatDate(cx, nullptr, locale, utcTime, FormatSpec::DateTime,
                         rval);
     }
@@ -4325,10 +4399,7 @@ static bool date_toTimeString(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Steps 3-6.
-  const char* locale = unwrapped->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
+  auto locale = unwrapped->realm()->getLocale();
   return FormatDate(cx, unwrapped->dateTimeInfo(), locale,
                     unwrapped->UTCTime().toDouble(), FormatSpec::Time,
                     args.rval());
@@ -4351,10 +4422,7 @@ static bool date_toDateString(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Steps 3-6.
-  const char* locale = unwrapped->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
+  auto locale = unwrapped->realm()->getLocale();
   return FormatDate(cx, unwrapped->dateTimeInfo(), locale,
                     unwrapped->UTCTime().toDouble(), FormatSpec::Date,
                     args.rval());
@@ -4400,10 +4468,7 @@ static bool date_toString(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Steps 3-4.
-  const char* locale = unwrapped->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
+  auto locale = unwrapped->realm()->getLocale();
   return FormatDate(cx, unwrapped->dateTimeInfo(), locale,
                     unwrapped->UTCTime().toDouble(), FormatSpec::DateTime,
                     args.rval());
@@ -4579,10 +4644,7 @@ static bool NewDateObject(JSContext* cx, const CallArgs& args, ClippedTime t) {
  * ES2025 draft rev 76814cbd5d7842c2a99d28e6e8c7833f1de5bee0
  */
 static bool ToDateString(JSContext* cx, const CallArgs& args, ClippedTime t) {
-  const char* locale = cx->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
+  auto locale = cx->realm()->getLocale();
   return FormatDate(cx, cx->realm()->getDateTimeInfo(), locale, t.toDouble(),
                     FormatSpec::DateTime, args.rval());
 }
@@ -4833,16 +4895,6 @@ JS_PUBLIC_API JSObject* JS::NewDateObject(JSContext* cx, ClippedTime time) {
   return NewDateObjectMsec(cx, time);
 }
 
-JS_PUBLIC_API JSObject* js::NewDateObject(JSContext* cx, int year, int mon,
-                                          int mday, int hour, int min,
-                                          int sec) {
-  MOZ_ASSERT(mon < 12);
-  double msec_time =
-      MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, 0.0));
-  return NewDateObjectMsec(
-      cx, TimeClip(UTC(cx->realm()->getDateTimeInfo(), msec_time)));
-}
-
 JS_PUBLIC_API bool js::DateIsValid(JSContext* cx, HandleObject obj,
                                    bool* isValid) {
   ESClass cls;
@@ -4869,7 +4921,12 @@ JS_PUBLIC_API JSObject* JS::NewDateObject(JSContext* cx, int year, int mon,
                                           int sec) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
-  return js::NewDateObject(cx, year, mon, mday, hour, min, sec);
+  MOZ_ASSERT(mon < 12);
+
+  double msec_time =
+      ::MakeDate(::MakeDay(year, mon, mday), ::MakeTime(hour, min, sec, 0.0));
+  return NewDateObjectMsec(
+      cx, TimeClip(UTC(cx->realm()->getDateTimeInfo(), msec_time)));
 }
 
 JS_PUBLIC_API bool JS::ObjectIsDate(JSContext* cx, Handle<JSObject*> obj,

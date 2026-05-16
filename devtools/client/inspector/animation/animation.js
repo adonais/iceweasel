@@ -25,7 +25,7 @@ const {
   updateDetailVisibility,
   updateElementPickerEnabled,
   updateHighlightedNode,
-  updatePlaybackRates,
+  updatePlaybackRateMultiplier,
   updateSelectedAnimation,
   updateSidebarSize,
 } = require("resource://devtools/client/inspector/animation/actions/animations.js");
@@ -55,7 +55,8 @@ class AnimationInspector extends EventEmitter {
       this.rewindAnimationsCurrentTime.bind(this);
     this.selectAnimation = this.selectAnimation.bind(this);
     this.setAnimationsCurrentTime = this.setAnimationsCurrentTime.bind(this);
-    this.setAnimationsPlaybackRate = this.setAnimationsPlaybackRate.bind(this);
+    this.setAnimationsPlaybackRateMultiplier =
+      this.setAnimationsPlaybackRateMultiplier.bind(this);
     this.setAnimationsPlayState = this.setAnimationsPlayState.bind(this);
     this.setDetailVisibility = this.setDetailVisibility.bind(this);
     this.setHighlightedNode = this.setHighlightedNode.bind(this);
@@ -75,7 +76,6 @@ class AnimationInspector extends EventEmitter {
     this.onCurrentTimeTimerUpdated = this.onCurrentTimeTimerUpdated.bind(this);
     this.onElementPickerStarted = this.onElementPickerStarted.bind(this);
     this.onElementPickerStopped = this.onElementPickerStopped.bind(this);
-    this.onNavigate = this.onNavigate.bind(this);
     this.onNewNodeFront = this.onNewNodeFront.bind(this);
     this.onSidebarResized = this.onSidebarResized.bind(this);
     this.onSidebarSelectionChanged = this.onSidebarSelectionChanged.bind(this);
@@ -99,7 +99,7 @@ class AnimationInspector extends EventEmitter {
       rewindAnimationsCurrentTime,
       selectAnimation,
       setAnimationsCurrentTime,
-      setAnimationsPlaybackRate,
+      setAnimationsPlaybackRateMultiplier,
       setAnimationsPlayState,
       setDetailVisibility,
       setHighlightedNode,
@@ -134,7 +134,7 @@ class AnimationInspector extends EventEmitter {
         rewindAnimationsCurrentTime,
         selectAnimation,
         setAnimationsCurrentTime,
-        setAnimationsPlaybackRate,
+        setAnimationsPlaybackRateMultiplier,
         setAnimationsPlayState,
         setDetailVisibility,
         setHighlightedNode,
@@ -156,7 +156,6 @@ class AnimationInspector extends EventEmitter {
       force: true,
     });
 
-    this.inspector.on("new-root", this.onNavigate);
     this.inspector.selection.on("new-node-front", this.onNewNodeFront);
     this.inspector.sidebar.on("select", this.onSidebarSelectionChanged);
     this.inspector.toolbox.on("select", this.onSidebarSelectionChanged);
@@ -176,7 +175,6 @@ class AnimationInspector extends EventEmitter {
 
   destroy() {
     this.setAnimationStateChangedListenerEnabled(false);
-    this.inspector.off("new-root", this.onNewNodeFront);
     this.inspector.selection.off(
       "new-node-front",
       this.watchAnimationsForSelectedNode
@@ -413,14 +411,6 @@ class AnimationInspector extends EventEmitter {
     this.inspector.store.dispatch(updateElementPickerEnabled(false));
   }
 
-  onNavigate() {
-    if (!this.isPanelVisible()) {
-      return;
-    }
-
-    this.inspector.store.dispatch(updatePlaybackRates());
-  }
-
   async onSidebarSelectionChanged() {
     const isPanelVisibled = this.isPanelVisible();
 
@@ -501,9 +491,71 @@ class AnimationInspector extends EventEmitter {
     }
   }
 
-  async setAnimationsPlaybackRate(playbackRate) {
+  async setAnimationsPlaybackRateMultiplier(multiplier) {
     if (!this.inspector) {
       return; // Already destroyed or another node selected.
+    }
+
+    let { animations } = this.state;
+
+    // @backward-compat { version 151 } Once 151 hits release, we can remove this boolean
+    // and always consider it true (i.e. only keep the code inside the if block, and remove
+    // everything that comes after it)
+    const hasTargetConfigurationSupport =
+      await this.inspector.commands.targetConfigurationCommand.supports(
+        "animationsPlayBackRateMultiplier"
+      );
+    if (hasTargetConfigurationSupport) {
+      // "changed" event on each animation will fire respectively when the playback
+      // rate changed. Since for each occurrence of event, change of UI is urged.
+      // To avoid this, disable the listeners once in order to not capture the event.
+      this.setAnimationStateChangedListenerEnabled(false);
+
+      const wasRunning = hasRunningAnimation(animations);
+
+      // We only have an animationsFront if the selected node can have animations in its
+      // subtree (that excludes doctype, comment or text nodes for example)
+      if (this.animationsFront) {
+        // Pause the animations so we have a clean slate to set the multiplier.
+        // If the animation was running, we'll resume it after setting the multiplier.
+        // TODO: Eventually this should be handled by the platform, where the currentTime
+        // should be adjusted, but that requires more work and we want to make this feature
+        // available as soon as possible.
+        await this.animationsFront.pauseSome(animations);
+      }
+
+      try {
+        await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
+          {
+            animationsPlayBackRateMultiplier: multiplier,
+          }
+        );
+
+        if (wasRunning) {
+          await this.animationsFront.playSome(animations);
+        }
+        this.inspector.store.dispatch(updatePlaybackRateMultiplier(multiplier));
+        animations = await this.refreshAnimationsState(animations);
+      } catch (e) {
+        // Expected if we've already been destroyed (e.g. this.inspector is null)
+        if (!this.inspector) {
+          console.error(e);
+          return;
+        }
+
+        // Actually throw the error if the animation panel isn't destroyed.
+        throw new Error(e);
+      } finally {
+        this.setAnimationStateChangedListenerEnabled(true);
+      }
+
+      if (animations) {
+        await this.fireUpdateAction(animations);
+      }
+
+      this.emitForTests("playbackrate-multiplier-updated");
+
+      return;
     }
 
     // If we don't have an animationsFront, it means that we don't have visible animations
@@ -512,13 +564,13 @@ class AnimationInspector extends EventEmitter {
       return;
     }
 
-    let animations = this.state.animations;
     // "changed" event on each animation will fire respectively when the playback
     // rate changed. Since for each occurrence of event, change of UI is urged.
     // To avoid this, disable the listeners once in order to not capture the event.
     this.setAnimationStateChangedListenerEnabled(false);
     try {
-      await this.animationsFront.setPlaybackRates(animations, playbackRate);
+      await this.animationsFront.setPlaybackRates(animations, multiplier);
+      this.inspector.store.dispatch(updatePlaybackRateMultiplier(multiplier));
       animations = await this.refreshAnimationsState(animations);
     } catch (e) {
       // Expected if we've already been destroyed or another node has been
@@ -793,8 +845,8 @@ class AnimationInspector extends EventEmitter {
   }
 
   /**
-   * Nullify animationFront, remove the listener that might have been set on it, as well
-   * as listeners on AnimationPlayer fronts.
+   * Nullify animationsFront, remove the listener that might have been set on it, as well
+   * as listeners on Animation fronts.
    *
    * @param {object} options
    * @param {boolean} options.force: Set to true to force updating the panel, even if

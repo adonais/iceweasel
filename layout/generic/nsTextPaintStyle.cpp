@@ -6,6 +6,7 @@
 
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/RelativeLuminanceUtils.h"
+#include "mozilla/dom/Document.h"
 #include "nsCSSColorUtils.h"
 #include "nsCSSRendering.h"
 #include "nsFrameSelection.h"
@@ -458,11 +459,28 @@ bool nsTextPaintStyle::InitSelectionColorsAndShadow() {
   // Use ::selection pseudo class if applicable.
   if (RefPtr<ComputedStyle> style =
           mFrame->ComputeSelectionStyle(selectionStatus)) {
-    mSelectionBGColor =
-        style->GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
-    mSelectionTextColor = style->GetVisitedDependentColor(&nsStyleText::mColor);
     mSelectionPseudoStyle = std::move(style);
-    return true;
+
+    // Currently, there are separate code paths that determine whether to use
+    // native selection colors or author-specified ones, depending on whether
+    // this is web content or chrome content. See bug 2029839.
+    if (!mFrame->PresContext()->Document()->ChromeRulesEnabled()) {
+      mSelectionBGColor = mSelectionPseudoStyle->GetVisitedDependentColor(
+          &nsStyleBackground::mBackgroundColor);
+      mSelectionTextColor =
+          mSelectionPseudoStyle->GetVisitedDependentColor(&nsStyleText::mColor);
+      return true;
+    }
+
+    if (nscolor bgColor = mSelectionPseudoStyle->GetVisitedDependentColor(
+            &nsStyleBackground::mBackgroundColor);
+        mSelectionPseudoStyle->HasAuthorSpecifiedTextColor() ||
+        NS_GET_A(bgColor) > 0) {
+      mSelectionBGColor = bgColor;
+      mSelectionTextColor =
+          mSelectionPseudoStyle->GetVisitedDependentColor(&nsStyleText::mColor);
+      return true;
+    }
   }
 
   mSelectionTextColor =

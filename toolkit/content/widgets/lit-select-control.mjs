@@ -270,6 +270,7 @@ export class SelectControlBaseElement extends MozLitElement {
     }
     if (changedProperties.has("disabled")) {
       this.childElements.forEach(item => {
+        item.parentDisabled = this.disabled;
         item.requestUpdate();
       });
     }

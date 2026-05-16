@@ -37,7 +37,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
 
-#include <functional>
 #include <stdint.h>
 #include <string>
 

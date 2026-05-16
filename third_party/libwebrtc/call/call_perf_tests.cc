@@ -212,7 +212,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
                                       absl::string_view test_label) {
   const char* kSyncGroup = "av_sync";
   const uint32_t kAudioSendSsrc = 1234;
-  const uint32_t kAudioRecvSsrc = 5678;
 
   BuiltInNetworkBehaviorConfig audio_net_config;
   audio_net_config.queue_delay_ms = 500;
@@ -267,7 +266,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
                  });
 
     audio_send_transport = std::make_unique<test::PacketTransport>(
-        task_queue(), sender_call_.get(), observer.get(),
+        send_env_, task_queue(), sender_call_.get(), observer.get(),
         test::PacketTransport::kSender, audio_pt_map,
         std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
@@ -276,7 +275,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     audio_send_transport->SetReceiver(receiver_call_->Receiver());
 
     video_send_transport = std::make_unique<test::PacketTransport>(
-        task_queue(), sender_call_.get(), observer.get(),
+        send_env_, task_queue(), sender_call_.get(), observer.get(),
         test::PacketTransport::kSender, video_pt_map,
         std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
@@ -285,7 +284,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     video_send_transport->SetReceiver(receiver_call_->Receiver());
 
     receive_transport = std::make_unique<test::PacketTransport>(
-        task_queue(), receiver_call_.get(), observer.get(),
+        recv_env_, task_queue(), receiver_call_.get(), observer.get(),
         test::PacketTransport::kReceiver, payload_type_map_,
         std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
@@ -324,7 +323,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
     AudioReceiveStreamInterface::Config audio_recv_config;
     audio_recv_config.rtp.remote_ssrc = kAudioSendSsrc;
-    audio_recv_config.rtp.local_ssrc = kAudioRecvSsrc;
     audio_recv_config.rtcp_send_transport = receive_transport.get();
     audio_recv_config.sync_group = kSyncGroup;
     audio_recv_config.decoder_factory = audio_decoder_factory_;

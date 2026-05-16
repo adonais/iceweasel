@@ -78,6 +78,11 @@ sealed class MenuAction : Action {
     data object FindInPage : MenuAction()
 
     /**
+     * [MenuAction] dispatched to move the current private tab to a non-private tab.
+     */
+    data object MoveToNonPrivateTab : MenuAction()
+
+    /**
      * [MenuAction] dispatched when it's a new installation of Firefox.
      */
     data object MenuBanner : MenuAction()
@@ -197,6 +202,13 @@ sealed class MenuAction : Action {
      * @property state The [SummarizationMenuState] to set up
      */
     data class InitializeSummarizationMenuState(val state: SummarizationMenuState) : MenuAction()
+
+    /**
+     * [MenuAction] dispatched to update the IP protection menu item state.
+     *
+     * @property state The new [IPProtectionMenuState].
+     */
+    data class UpdateIPProtectionMenuState(val state: IPProtectionMenuState) : MenuAction()
 
     /**
      * [MenuAction] dispatched when a navigation event occurs for a specific destination.
@@ -337,5 +349,10 @@ sealed class MenuAction : Action {
          * [Navigate] action dispatched when stopping the current page from loading.
          */
         data object Stop : Navigate()
+
+        /**
+         * [Navigate] action dispatched when navigating to the IP Protection settings screen.
+         */
+        data object IPProtectionSettings : Navigate()
     }
 }

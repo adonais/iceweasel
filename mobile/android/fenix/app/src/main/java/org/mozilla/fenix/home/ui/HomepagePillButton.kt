@@ -139,7 +139,7 @@ private fun StoriesScreenPreviews() {
             Spacer(modifier = Modifier.weight(1f))
             RightChevronPillButton(onClick = {}) {
                 Icon(
-                    painter = painterResource(R.drawable.private_mode_icon),
+                    painter = painterResource(iconsR.drawable.mozac_ic_private_mode_24),
                     contentDescription = stringResource(R.string.content_description_normal_browsing),
                 )
             }

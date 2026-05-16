@@ -10,6 +10,7 @@
 ChromeUtils.defineESModuleGetters(this, {
   ContentBlockingAllowList:
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
+  SiteDataTestUtils: "resource://testing-common/SiteDataTestUtils.sys.mjs",
 });
 
 const TRACKING_PAGE =
@@ -20,6 +21,7 @@ const ETP_ACTIVE_ICON = 'url("chrome://browser/skin/trust-icon-active.svg")';
 const ETP_DISABLED_ICON =
   'url("chrome://browser/skin/trust-icon-disabled.svg")';
 const INSECURE_ICON = 'url("chrome://browser/skin/trust-icon-insecure.svg")';
+const TEST_ORIGIN = "https://example.com";
 
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
@@ -303,7 +305,12 @@ add_task(async function test_about() {
 
   Assert.ok(
     window.document.getElementById("trustpanel-toggle").disabled,
-    "Tracking protection toggle is diabled when not applicable"
+    "Tracking protection toggle is disabled when not applicable"
+  );
+
+  Assert.ok(
+    window.document.getElementById("trustpanel-clear-cookies-button").disabled,
+    "Clear cookies button is disabled when not applicable"
   );
 
   await BrowserTestUtils.removeTab(tab);
@@ -321,5 +328,54 @@ add_task(async function insecure_and_etp_disabled_test() {
   Assert.equal(urlbarIcon(window), INSECURE_ICON, "Showing url insecure icon");
 
   await toggleETP(tab);
+  await BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function clear_cookie_test() {
+  let clearCookieBtn = window.document.getElementById(
+    "trustpanel-clear-cookies-button"
+  );
+  SiteDataTestUtils.addToCookies({
+    origin: TEST_ORIGIN,
+    name: "test1",
+    value: "1",
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: TEST_ORIGIN,
+    waitForLoad: true,
+  });
+
+  await UrlbarTestUtils.openTrustPanel(window);
+  Assert.ok(
+    !clearCookieBtn.disabled,
+    "Clear cookies button is enabled initially"
+  );
+
+  let menuShown = BrowserTestUtils.waitForEvent(
+    window.document.getElementById("trustpanel-clearcookiesView"),
+    "ViewShown"
+  );
+  EventUtils.synthesizeMouseAtCenter(clearCookieBtn, {}, window);
+  await menuShown;
+  let popupHidden = BrowserTestUtils.waitForEvent(
+    window.document,
+    "popuphidden"
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    window.document.getElementById("trustpanel-clear-cookie-clear"),
+    {},
+    window
+  );
+  await popupHidden;
+
+  await UrlbarTestUtils.openTrustPanel(window);
+  Assert.ok(
+    clearCookieBtn.disabled,
+    "Clear cookies button is disabled once cookies are cleared"
+  );
+
+  await UrlbarTestUtils.closeTrustPanel(window);
   await BrowserTestUtils.removeTab(tab);
 });

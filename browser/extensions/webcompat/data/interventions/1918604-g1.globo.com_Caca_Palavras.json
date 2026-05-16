@@ -1,0 +1,17 @@
+{
+  "label": "g1.globo.com Ca\u00e7a Palavras",
+  "bugs": {
+    "1918604": {
+      "issue": "broken-layout",
+      "matches": ["*://g1.globo.com/jogos/caca-palavras/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1918604-g1.globo.com-fix-clipped-buttons.css"]
+      }
+    }
+  ]
+}

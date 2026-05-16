@@ -227,6 +227,7 @@ nsresult ModuleLoader::CompileFetchedModule(
     case JS::ModuleType::CSS:
       return CompileCssModule(aCx, aOptions, aRequest, aModuleOut);
     case JS::ModuleType::Bytes:
+    case JS::ModuleType::Text:
       MOZ_CRASH("Unexpected module type");
   }
 
@@ -378,6 +379,67 @@ nsresult ModuleLoader::CompileJsonModule(
   return NS_OK;
 }
 
+nsresult CreateCssModule(JSContext* aCx, nsIGlobalObject* aGlobal,
+                         const nsACString& aSource, nsIURI* aBaseURI,
+                         JS::MutableHandle<JSObject*> aModuleOut) {
+  // https://html.spec.whatwg.org/#creating-a-css-module-script
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
+  if (!window) {
+    JS_ReportErrorASCII(aCx,
+                        "CSS module scripts not supported when there is no "
+                        "window");
+    return NS_ERROR_FAILURE;
+  }
+
+  Document* constructorDocument = window->GetExtantDoc();
+  if (!constructorDocument) {
+    JS_ReportErrorASCII(aCx,
+                        "CSS module scripts not supported when there is no "
+                        "document");
+    return NS_ERROR_FAILURE;
+  }
+
+  // 5. Let sheet be the result of running the steps to create a constructed
+  // CSSStyleSheet with an empty dictionary as the argument.
+  // Note that according to the specification, the baseURL should be the
+  // baseURL of the document, but that doesn't seem correct (see
+  // https://github.com/whatwg/html/issues/11629).
+  ErrorResult error;
+  CSSStyleSheetInit options;
+  RefPtr<StyleSheet> sheet = StyleSheet::CreateConstructedSheet(
+      *constructorDocument, aBaseURI, options, error);
+  if (error.Failed()) {
+    MOZ_ALWAYS_TRUE(error.MaybeSetPendingException(aCx));
+    return NS_ERROR_FAILURE;
+  }
+
+  // 6. Run the steps to synchronously replace the rules of a CSSStyleSheet on
+  // sheet given source. Ideally we wouldn't run this on the main thread for
+  // large scripts, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987143.
+  sheet->ReplaceSync(aSource, error);
+  if (error.Failed()) {
+    MOZ_ALWAYS_TRUE(error.MaybeSetPendingException(aCx));
+    return NS_ERROR_FAILURE;
+  }
+
+  JS::Rooted<JS::Value> val(aCx, JS::NullValue());
+  if (!GetOrCreateDOMReflector(aCx, sheet, &val) || !val.isObject()) {
+    if (!JS_IsExceptionPending(aCx)) {
+      JS_ReportErrorASCII(aCx, "Internal error");
+    }
+    return NS_ERROR_FAILURE;
+  }
+
+  // Steps 1 - 4 (re-ordered), 7, 8
+  JSObject* cssModule = JS::CreateDefaultExportSyntheticModule(aCx, val);
+  if (!cssModule) {
+    return NS_ERROR_FAILURE;
+  }
+
+  aModuleOut.set(cssModule);
+  return NS_OK;
+}
+
 nsresult ModuleLoader::CompileCssModule(
     JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
     JS::MutableHandle<JSObject*> aModuleOut) {
@@ -390,7 +452,6 @@ nsresult ModuleLoader::CompileCssModule(
                                           aRequest->mLoadContext.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // https://html.spec.whatwg.org/#creating-a-css-module-script
   JS::Rooted<JSObject*> cssModule(aCx, nullptr);
   ErrorResult error;
   auto compile = [&](auto& source) {
@@ -398,58 +459,19 @@ nsresult ModuleLoader::CompileCssModule(
     static_assert(std::is_same_v<T, JS::SourceText<char16_t>&> ||
                   std::is_same_v<T, JS::SourceText<Utf8Unit>&>);
 
-    nsCOMPtr<nsPIDOMWindowInner> window =
-        do_QueryInterface(aRequest->GetGlobalObject());
-    if (!window) {
-      error.ThrowNotSupportedError(
-          "CSS module scripts not supported when there is no window");
-      return;
-    }
-
-    Document* constructorDocument = window->GetExtantDoc();
-    if (!constructorDocument) {
-      error.ThrowNotSupportedError(
-          "CSS module scripts not supported when there is no document");
-      return;
-    }
-
-    // 5. Let sheet be the result of running the steps to create a constructed
-    // CSSStyleSheet
-    //    with an empty dictionary as the argument.
-    // Note that according to the specification, the baseURL should be the
-    // baseURL of the document, but that doesn't seem correct (see
-    // https://github.com/whatwg/html/issues/11629).
-    dom::CSSStyleSheetInit options;
-    RefPtr<StyleSheet> sheet = StyleSheet::CreateConstructedSheet(
-        *constructorDocument, aRequest->BaseURL(), options, error);
-    if (error.Failed()) {
-      return;
-    }
-
-    // 6. Run the steps to synchronously replace the rules of a CSSStyleSheet on
-    // sheet given source. Ideally we wouldn't run this on the main thread for
-    // large scripts, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987143.
+    nsCString text;
     if constexpr (std::is_same_v<T, JS::SourceText<mozilla::Utf8Unit>&>) {
-      nsDependentCSubstring text(source.get(), source.length());
-      sheet->ReplaceSync(text, error);
-    } else if constexpr (std::is_same_v<T, JS::SourceText<char16_t>&>) {
-      nsDependentSubstring text(source.get(), source.length());
-      sheet->ReplaceSync(NS_ConvertUTF16toUTF8(text), error);
-    }
-    if (error.Failed()) {
-      return;
+      text.Assign(source.get(), source.length());
+    } else {
+      CopyUTF16toUTF8(nsDependentSubstring(source.get(), source.length()),
+                      text);
     }
 
-    JS::Rooted<JS::Value> val(aCx, JS::NullValue());
-    if (!GetOrCreateDOMReflector(aCx, sheet, &val) || !val.isObject()) {
-      if (!JS_IsExceptionPending(aCx)) {
-        error.ThrowUnknownError("Internal error");
-      }
-      return;
+    nsresult rv2 = CreateCssModule(aCx, aRequest->GetGlobalObject(), text,
+                                   aRequest->BaseURL(), &cssModule);
+    if (NS_FAILED(rv2) && !JS_IsExceptionPending(aCx)) {
+      error.ThrowUnknownError("Internal error");
     }
-
-    // Steps. 1 - 4 (re-ordered), 7, 8
-    cssModule.set(JS::CreateDefaultExportSyntheticModule(aCx, val));
   };
 
   maybeSource.mapNonEmpty(compile);

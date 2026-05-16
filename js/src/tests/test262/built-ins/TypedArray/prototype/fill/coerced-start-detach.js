@@ -26,6 +26,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.fill(0x77, {valueOf: detachAndReturnIndex}, 10);
   }, "Detachment when coercing start should throw TypeError");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

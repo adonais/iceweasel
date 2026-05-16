@@ -28,13 +28,12 @@ namespace layers {
 
 class MemoryTextureData : public BufferTextureData {
  public:
-  static MemoryTextureData* Create(gfx::IntSize aSize,
-                                   gfx::SurfaceFormat aFormat,
-                                   gfx::BackendType aMoz2DBackend,
-                                   LayersBackend aLayersBackend,
-                                   TextureFlags aFlags,
-                                   TextureAllocationFlags aAllocFlags,
-                                   IShmemAllocator* aAllocator);
+  static MemoryTextureData* Create(
+      gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+      gfx::ColorSpace2 aColorSpace, gfx::TransferFunction aTransferFunction,
+      gfx::BackendType aMoz2DBackend, LayersBackend aLayersBackend,
+      TextureFlags aFlags, TextureAllocationFlags aAllocFlags,
+      IShmemAllocator* aAllocator);
 
   virtual TextureData* CreateSimilar(
       LayersIPCChannel* aAllocator, LayersBackend aLayersBackend,
@@ -77,13 +76,12 @@ class MemoryTextureData : public BufferTextureData {
 
 class ShmemTextureData : public BufferTextureData {
  public:
-  static ShmemTextureData* Create(gfx::IntSize aSize,
-                                  gfx::SurfaceFormat aFormat,
-                                  gfx::BackendType aMoz2DBackend,
-                                  LayersBackend aLayersBackend,
-                                  TextureFlags aFlags,
-                                  TextureAllocationFlags aAllocFlags,
-                                  LayersIPCChannel* aAllocator);
+  static ShmemTextureData* Create(
+      gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+      gfx::ColorSpace2 aColorSpace, gfx::TransferFunction aTransferFunction,
+      gfx::BackendType aMoz2DBackend, LayersBackend aLayersBackend,
+      TextureFlags aFlags, TextureAllocationFlags aAllocFlags,
+      LayersIPCChannel* aAllocator);
 
   virtual TextureData* CreateSimilar(
       LayersIPCChannel* aAllocator, LayersBackend aLayersBackend,
@@ -142,17 +140,18 @@ class ShmemTextureData : public BufferTextureData {
 
 BufferTextureData* BufferTextureData::Create(
     gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+    gfx::ColorSpace2 aColorSpace, gfx::TransferFunction aTransferFunction,
     gfx::BackendType aMoz2DBackend, LayersBackend aLayersBackend,
     TextureFlags aFlags, TextureAllocationFlags aAllocFlags,
     LayersIPCChannel* aAllocator, bool aIsSameProcess) {
   if (!aAllocator || aIsSameProcess) {
-    return MemoryTextureData::Create(aSize, aFormat, aMoz2DBackend,
-                                     aLayersBackend, aFlags, aAllocFlags,
-                                     aAllocator);
+    return MemoryTextureData::Create(
+        aSize, aFormat, aColorSpace, aTransferFunction, aMoz2DBackend,
+        aLayersBackend, aFlags, aAllocFlags, aAllocator);
   } else {
-    return ShmemTextureData::Create(aSize, aFormat, aMoz2DBackend,
-                                    aLayersBackend, aFlags, aAllocFlags,
-                                    aAllocator);
+    return ShmemTextureData::Create(
+        aSize, aFormat, aColorSpace, aTransferFunction, aMoz2DBackend,
+        aLayersBackend, aFlags, aAllocFlags, aAllocator);
   }
 }
 
@@ -188,8 +187,8 @@ BufferTextureData* BufferTextureData::CreateForYCbCr(
     const gfx::IntSize& aYSize, uint32_t aYStride,
     const gfx::IntSize& aCbCrSize, uint32_t aCbCrStride, StereoMode aStereoMode,
     gfx::ColorDepth aColorDepth, gfx::YUVColorSpace aYUVColorSpace,
-    gfx::ColorRange aColorRange, gfx::ChromaSubsampling aSubsampling,
-    TextureFlags aTextureFlags) {
+    gfx::ColorRange aColorRange, gfx::TransferFunction aTransferFunction,
+    gfx::ChromaSubsampling aSubsampling, TextureFlags aTextureFlags) {
   Maybe<uint32_t> bufSize = ImageDataSerializer::ComputeYCbCrBufferSize(
       aDisplay, aYSize, aYStride, aCbCrSize, aCbCrStride, aColorDepth,
       aSubsampling);
@@ -204,10 +203,10 @@ BufferTextureData* BufferTextureData::CreateForYCbCr(
                                            aCbCrSize.height, yOffset, cbOffset,
                                            crOffset);
 
-  YCbCrDescriptor descriptor =
-      YCbCrDescriptor(aDisplay, aYSize, aYStride, aCbCrSize, aCbCrStride,
-                      yOffset, cbOffset, crOffset, aStereoMode, aColorDepth,
-                      aYUVColorSpace, aColorRange, aSubsampling);
+  YCbCrDescriptor descriptor = YCbCrDescriptor(
+      aDisplay, aYSize, aYStride, aCbCrSize, aCbCrStride, yOffset, cbOffset,
+      crOffset, aStereoMode, aColorDepth, aYUVColorSpace, aColorRange,
+      aTransferFunction, aSubsampling);
 
   return CreateInternal(
       aAllocator ? aAllocator->GetTextureForwarder().get() : nullptr,
@@ -254,6 +253,10 @@ Maybe<int32_t> BufferTextureData::GetCbCrStride() const {
   return ImageDataSerializer::CbCrStrideFromBufferDescriptor(mDescriptor);
 }
 
+Maybe<gfx::ColorSpace2> BufferTextureData::GetColorSpace2() const {
+  return ImageDataSerializer::ColorSpace2FromBufferDescriptor(mDescriptor);
+}
+
 Maybe<gfx::YUVColorSpace> BufferTextureData::GetYUVColorSpace() const {
   return ImageDataSerializer::YUVColorSpaceFromBufferDescriptor(mDescriptor);
 }
@@ -269,6 +272,10 @@ Maybe<StereoMode> BufferTextureData::GetStereoMode() const {
 Maybe<gfx::ChromaSubsampling> BufferTextureData::GetChromaSubsampling() const {
   return ImageDataSerializer::ChromaSubsamplingFromBufferDescriptor(
       mDescriptor);
+}
+
+Maybe<gfx::TransferFunction> BufferTextureData::GetTransferFunction() const {
+  return ImageDataSerializer::TransferFunctionFromBufferDescriptor(mDescriptor);
 }
 
 gfx::SurfaceFormat BufferTextureData::GetFormat() const {
@@ -496,13 +503,12 @@ static bool InitBuffer(uint8_t* buf, size_t bufSize, gfx::SurfaceFormat aFormat,
   return true;
 }
 
-MemoryTextureData* MemoryTextureData::Create(gfx::IntSize aSize,
-                                             gfx::SurfaceFormat aFormat,
-                                             gfx::BackendType aMoz2DBackend,
-                                             LayersBackend aLayersBackend,
-                                             TextureFlags aFlags,
-                                             TextureAllocationFlags aAllocFlags,
-                                             IShmemAllocator* aAllocator) {
+MemoryTextureData* MemoryTextureData::Create(
+    gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+    gfx::ColorSpace2 aColorSpace, gfx::TransferFunction aTransferFunction,
+    gfx::BackendType aMoz2DBackend, LayersBackend aLayersBackend,
+    TextureFlags aFlags, TextureAllocationFlags aAllocFlags,
+    IShmemAllocator* aAllocator) {
   // Should have used CreateForYCbCr.
   MOZ_ASSERT(aFormat != gfx::SurfaceFormat::YUV420);
 
@@ -525,7 +531,8 @@ MemoryTextureData* MemoryTextureData::Create(gfx::IntSize aSize,
 
   GfxMemoryImageReporter::DidAlloc(buf);
 
-  BufferDescriptor descriptor = RGBDescriptor(aSize, aFormat);
+  BufferDescriptor descriptor =
+      RGBDescriptor(aSize, aFormat, aColorSpace, aTransferFunction);
 
   // Remote textures are not managed by a texture client, so we need to ensure
   // that memory is freed when the owning MemoryTextureData goes away.
@@ -545,9 +552,12 @@ void MemoryTextureData::Deallocate(LayersIPCChannel*) {
 TextureData* MemoryTextureData::CreateSimilar(
     LayersIPCChannel* aAllocator, LayersBackend aLayersBackend,
     TextureFlags aFlags, TextureAllocationFlags aAllocFlags) const {
-  return MemoryTextureData::Create(GetSize(), GetFormat(), mMoz2DBackend,
-                                   aLayersBackend, aFlags, aAllocFlags,
-                                   aAllocator);
+  const auto colorSpace = GetColorSpace2().valueOr(gfx::ColorSpace2::SRGB);
+  const auto transferFunction =
+      GetTransferFunction().valueOr(gfx::TransferFunction::SRGB);
+  return MemoryTextureData::Create(
+      GetSize(), GetFormat(), colorSpace, transferFunction, mMoz2DBackend,
+      aLayersBackend, aFlags, aAllocFlags, aAllocator);
 }
 
 bool ShmemTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
@@ -562,13 +572,12 @@ bool ShmemTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
   return true;
 }
 
-ShmemTextureData* ShmemTextureData::Create(gfx::IntSize aSize,
-                                           gfx::SurfaceFormat aFormat,
-                                           gfx::BackendType aMoz2DBackend,
-                                           LayersBackend aLayersBackend,
-                                           TextureFlags aFlags,
-                                           TextureAllocationFlags aAllocFlags,
-                                           LayersIPCChannel* aAllocator) {
+ShmemTextureData* ShmemTextureData::Create(
+    gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+    gfx::ColorSpace2 aColorSpace, gfx::TransferFunction aTransferFunction,
+    gfx::BackendType aMoz2DBackend, LayersBackend aLayersBackend,
+    TextureFlags aFlags, TextureAllocationFlags aAllocFlags,
+    LayersIPCChannel* aAllocator) {
   MOZ_ASSERT(aAllocator);
   // Should have used CreateForYCbCr.
   MOZ_ASSERT(aFormat != gfx::SurfaceFormat::YUV420);
@@ -600,7 +609,8 @@ ShmemTextureData* ShmemTextureData::Create(gfx::IntSize aSize,
     return nullptr;
   }
 
-  BufferDescriptor descriptor = RGBDescriptor(aSize, aFormat);
+  BufferDescriptor descriptor =
+      RGBDescriptor(aSize, aFormat, aColorSpace, aTransferFunction);
   bool isClear = (aAllocFlags & ALLOC_CLEAR_BUFFER) || !IsOpaque(aFormat);
   RefPtr<ShmemTextureData::ShmemHolder> shmemHolder =
       new ShmemTextureData::ShmemHolder(aAllocator, shm);
@@ -610,9 +620,12 @@ ShmemTextureData* ShmemTextureData::Create(gfx::IntSize aSize,
 TextureData* ShmemTextureData::CreateSimilar(
     LayersIPCChannel* aAllocator, LayersBackend aLayersBackend,
     TextureFlags aFlags, TextureAllocationFlags aAllocFlags) const {
-  return ShmemTextureData::Create(GetSize(), GetFormat(), mMoz2DBackend,
-                                  aLayersBackend, aFlags, aAllocFlags,
-                                  aAllocator);
+  const auto colorSpace = GetColorSpace2().valueOr(gfx::ColorSpace2::SRGB);
+  const auto transferFunction =
+      GetTransferFunction().valueOr(gfx::TransferFunction::SRGB);
+  return ShmemTextureData::Create(
+      GetSize(), GetFormat(), colorSpace, transferFunction, mMoz2DBackend,
+      aLayersBackend, aFlags, aAllocFlags, aAllocator);
 }
 
 void ShmemTextureData::Deallocate(LayersIPCChannel* aAllocator) {

@@ -20,6 +20,11 @@ enum class Page {
     PrivateTabs,
 
     /**
+     * The page that displays Tab Groups.
+     */
+    TabGroups,
+
+    /**
      * The page that displays Synced Tabs.
      */
     SyncedTabs,
@@ -27,16 +32,29 @@ enum class Page {
 
     companion object {
         /**
+         * Returns the visible [Page]s in tray order.
+         *
+         * @param shouldShowTabGroupsPage Whether the tab groups page should be included.
+         */
+        fun visiblePages(shouldShowTabGroupsPage: Boolean): List<Page> =
+            listOfNotNull(
+                PrivateTabs,
+                NormalTabs,
+                TabGroups.takeIf { shouldShowTabGroupsPage },
+                SyncedTabs,
+            )
+
+        /**
          * Returns the [Page] that corresponds to the [position].
          *
          * @param position The index of the page.
+         * @param shouldShowTabGroupsPage Whether the tab groups page should be included.
          */
-        fun positionToPage(
-            position: Int,
-        ): Page {
-            return when (position) {
-                0 -> PrivateTabs
-                1 -> NormalTabs
+        fun positionToPage(position: Int, shouldShowTabGroupsPage: Boolean = false): Page {
+            return when {
+                position == 0 -> PrivateTabs
+                position == 1 -> NormalTabs
+                shouldShowTabGroupsPage && position == 2 -> TabGroups
                 else -> SyncedTabs
             }
         }
@@ -45,14 +63,14 @@ enum class Page {
          * Returns the visual index that corresponds to the [page].
          *
          * @param page The [Page] whose visual index is being looked-up.
+         * @param shouldShowTabGroupsPage Whether the tab groups page should be included.
          */
-        fun pageToPosition(
-            page: Page,
-        ): Int {
+        fun pageToPosition(page: Page, shouldShowTabGroupsPage: Boolean = false): Int {
             return when (page) {
                 PrivateTabs -> 0
                 NormalTabs -> 1
-                SyncedTabs -> 2
+                TabGroups -> if (shouldShowTabGroupsPage) 2 else 1
+                SyncedTabs -> visiblePages(shouldShowTabGroupsPage).lastIndex
             }
         }
     }

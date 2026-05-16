@@ -204,6 +204,9 @@ bool AV1RateControlRTC::UpdateRateControl(
       rc_cfg.ts_number_layers > AOM_MAX_TS_LAYERS) {
     return false;
   }
+  if (cpi_->svc.number_spatial_layers != rc_cfg.ss_number_layers ||
+      cpi_->svc.number_temporal_layers != rc_cfg.ts_number_layers)
+    av1_free_svc_cyclic_refresh(cpi_);
   const int num_layers = rc_cfg.ss_number_layers * rc_cfg.ts_number_layers;
   if (num_layers > 1 && !av1_alloc_layer_context(cpi_, num_layers)) {
     return false;

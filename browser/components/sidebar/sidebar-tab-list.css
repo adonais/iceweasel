@@ -7,7 +7,7 @@ sidebar-tab-row {
   height: var(--size-item-large);
   align-items: center;
 
-  &:hover {
+  &:hover:not([selected]) {
     background-color: var(--button-background-color-ghost-hover);
     color: var(--button-text-color-ghost-hover);
   }

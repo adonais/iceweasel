@@ -57,6 +57,7 @@ static const VoiceDetails sVoices[] = {
      eFailAtStart},
     {"urn:moz-tts:fake:gottardo", "Gottardo Aldighieri", "it-IT-fail", false,
      eFail},
+    {"urn:moz-tts:fake:toremove", "Voice To Remove", "x-to-remove", false, 0},
 };
 
 // FakeSynthCallback
@@ -237,6 +238,8 @@ static void AddVoices(nsISpeechService* aService, const VoiceDetails* aVoices,
 void nsFakeSynthServices::Init() {
   mSynthService = new FakeSpeechSynth();
   AddVoices(mSynthService, sVoices, std::size(sVoices));
+  nsSynthVoiceRegistry::GetInstance()->RemoveVoice(
+      mSynthService, u"urn:moz-tts:fake:toremove"_ns);
 }
 
 // nsIObserver

@@ -1730,14 +1730,24 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
     nsHtml5String aShadowRootMode, bool aShadowRootIsClonable,
     bool aShadowRootIsSerializable, bool aShadowRootDelegatesFocus,
     bool aShadowRootCustomElementRegistry,
+    nsHtml5String aShadowRootSlotAssignment,
     nsHtml5String aShadowRootReferenceTarget) {
-  mozilla::dom::ShadowRootMode mode;
+  using mozilla::dom::ShadowRootMode;
+  using mozilla::dom::SlotAssignmentMode;
+
+  ShadowRootMode mode;
   if (aShadowRootMode.LowerCaseEqualsASCII("open")) {
-    mode = mozilla::dom::ShadowRootMode::Open;
+    mode = ShadowRootMode::Open;
   } else if (aShadowRootMode.LowerCaseEqualsASCII("closed")) {
-    mode = mozilla::dom::ShadowRootMode::Closed;
+    mode = ShadowRootMode::Closed;
   } else {
     return nullptr;
+  }
+
+  SlotAssignmentMode slotAssignment = SlotAssignmentMode::Named;
+  if (mozilla::StaticPrefs::dom_shadowdom_shadowRootSlotAssignment_enabled() &&
+      aShadowRootSlotAssignment.LowerCaseEqualsASCII("manual")) {
+    slotAssignment = SlotAssignmentMode::Manual;
   }
 
   nsString shadowRootReferenceTarget;
@@ -1747,7 +1757,8 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
     nsIContent* root = nsContentUtils::AttachDeclarativeShadowRoot(
         static_cast<nsIContent*>(aHost), mode, aShadowRootIsClonable,
         aShadowRootIsSerializable, aShadowRootDelegatesFocus,
-        aShadowRootCustomElementRegistry, shadowRootReferenceTarget);
+        aShadowRootCustomElementRegistry, slotAssignment,
+        shadowRootReferenceTarget);
     if (!root) {
       nsContentUtils::LogSimpleConsoleError(
           u"Failed to attach Declarative Shadow DOM."_ns, "DOM"_ns,
@@ -1766,7 +1777,8 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
   opGetShadowRootFromHost operation(
       aHost, fragHandle, aTemplateNode, mode, aShadowRootIsClonable,
       aShadowRootIsSerializable, aShadowRootDelegatesFocus,
-      aShadowRootCustomElementRegistry, shadowRootReferenceTarget);
+      aShadowRootCustomElementRegistry, slotAssignment,
+      shadowRootReferenceTarget);
   treeOp->Init(mozilla::AsVariant(operation));
   return fragHandle;
 }

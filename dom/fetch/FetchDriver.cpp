@@ -505,11 +505,7 @@ nsresult FetchDriver::HttpFetch(
   nsCOMPtr<nsIIOService> ios = do_GetIOService(&rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsAutoCString url;
-  mRequest->GetURL(url);
-  nsCOMPtr<nsIURI> uri;
-  rv = NS_NewURI(getter_AddRefs(uri), url);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIURI> uri = mRequest->GetURL();
 
   // Unsafe requests aren't allowed with when using no-core mode.
   if (mRequest->Mode() == RequestMode::No_cors && mRequest->UnsafeRequest() &&
@@ -543,11 +539,14 @@ nsresult FetchDriver::HttpFetch(
 
       // Copied from AsyncOnChannelRedirect.
       for (const auto& redirect : fetchPreload->Redirects()) {
+        nsCOMPtr<nsIURI> uriNoFragment = redirect.URINoFragment();
         if (redirect.Flags() & nsIChannelEventSink::REDIRECT_INTERNAL) {
-          mRequest->SetURLForInternalRedirect(redirect.Flags(), redirect.Spec(),
+          mRequest->SetURLForInternalRedirect(redirect.Flags(),
+                                              WrapNotNull(uriNoFragment.get()),
                                               redirect.Fragment());
         } else {
-          mRequest->AddURL(redirect.Spec(), redirect.Fragment());
+          mRequest->AddURL(WrapNotNull(uriNoFragment.get()),
+                           redirect.Fragment());
         }
       }
 
@@ -1006,10 +1005,8 @@ nsresult FetchDriver::HttpFetch(
 SafeRefPtr<InternalResponse> FetchDriver::BeginAndGetFilteredResponse(
     SafeRefPtr<InternalResponse> aResponse, bool aFoundOpaqueRedirect) {
   MOZ_ASSERT(aResponse);
-  AutoTArray<nsCString, 4> reqURLList;
-  mRequest->GetURLListWithoutFragment(reqURLList);
-  MOZ_ASSERT(!reqURLList.IsEmpty());
-  aResponse->SetURLList(reqURLList);
+  MOZ_ASSERT(!mRequest->GetURLListWithoutFragment().IsEmpty());
+  aResponse->SetURLList(mRequest->GetURLListWithoutFragment());
   SafeRefPtr<InternalResponse> filteredResponse;
   if (aFoundOpaqueRedirect) {
     filteredResponse = aResponse->OpaqueRedirectResponse();
@@ -1744,11 +1741,6 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  nsCString spec;
-  rv = uriClone->GetSpec(spec);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
   nsCString fragment;
   rv = uri->GetRef(fragment);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1756,11 +1748,12 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   }
 
   if (!(aFlags & nsIChannelEventSink::REDIRECT_INTERNAL)) {
-    mRequest->AddURL(spec, fragment);
+    mRequest->AddURL(WrapNotNull(uriClone.get()), fragment);
   } else {
     // Overwrite the URL only when the request is redirected by a service
     // worker.
-    mRequest->SetURLForInternalRedirect(aFlags, spec, fragment);
+    mRequest->SetURLForInternalRedirect(aFlags, WrapNotNull(uriClone.get()),
+                                        fragment);
   }
 
   // In redirect, httpChannel already took referrer-policy into account, so

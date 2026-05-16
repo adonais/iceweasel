@@ -1614,11 +1614,20 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
     ////////////////////////////////////
     // FEATURE_DX_P010
 
+    ////////////////////////////////////
+    // FEATURE_VIDEO_HDR - ALLOWLIST
+
+    // Bug 2032616: HDR video playback allowed on AMD and NVIDIA drivers, in
+    // future we will unblock others once HLG transfer function workarounds are
+    // implemented.
+    APPEND_TO_DRIVER_BLOCKLIST2(
+        OperatingSystem::Windows, DeviceFamily::AtiAll,
+        nsIGfxInfo::FEATURE_VIDEO_HDR, nsIGfxInfo::FEATURE_ALLOW_ALWAYS,
+        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_ROLLOUT_ATI");
     APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::Windows, DeviceFamily::NvidiaAll,
-        nsIGfxInfo::FEATURE_DX_P010, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-        DRIVER_LESS_THAN, GfxDriverInfo::allDriverVersions,
-        "FEATURE_UNQUALIFIED_P010_NVIDIA");
+        nsIGfxInfo::FEATURE_VIDEO_HDR, nsIGfxInfo::FEATURE_ALLOW_ALWAYS,
+        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_ROLLOUT_NVIDIA");
 
     ////////////////////////////////////
     // FEATURE_HW_DECODED_VIDEO_ZERO_COPY
@@ -1663,13 +1672,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
 
     ////////////////////////////////////
     // FEATURE_HW_DECODED_VIDEO_ZERO_COPY - ALLOWLIST
-#ifdef EARLY_BETA_OR_EARLIER
-    APPEND_TO_DRIVER_BLOCKLIST2(OperatingSystem::Windows, DeviceFamily::All,
-                                nsIGfxInfo::FEATURE_HW_DECODED_VIDEO_ZERO_COPY,
-                                nsIGfxInfo::FEATURE_ALLOW_ALWAYS,
-                                DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0),
-                                "FEATURE_ROLLOUT_ALL");
-#endif
     APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::Windows, DeviceFamily::IntelAll,
         nsIGfxInfo::FEATURE_HW_DECODED_VIDEO_ZERO_COPY,

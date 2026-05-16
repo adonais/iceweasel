@@ -55,6 +55,12 @@ interface nsIPermission : nsISupports
     readonly attribute int64_t modificationTime;
 
     /**
+     * The BrowserId this permission is scoped to, or 0 for global
+     * permissions.
+     */
+    readonly attribute uint64_t browserId;
+
+    /**
      * Test whether a principal would be affected by this permission.
      *
      * @param principal  the principal to test

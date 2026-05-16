@@ -9,7 +9,6 @@
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsBidiPresUtils.h"
 #include "nsContainerFrame.h"
-#include "nsGkAtoms.h"
 #include "nsILineIterator.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"

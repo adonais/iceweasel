@@ -857,7 +857,7 @@ nsresult TextServicesDocument::ScrollSelectionIntoView() {
   const nsCOMPtr selCon = mSelCon;
   return selCon->ScrollSelectionIntoView(
       SelectionType::eNormal, nsISelectionController::SELECTION_FOCUS_REGION,
-      ScrollAxis(), ScrollAxis(), ScrollFlags::None,
+      AxisScrollParams(), AxisScrollParams(), ScrollFlags::None,
       SelectionScrollMode::SyncFlush);
 }
 

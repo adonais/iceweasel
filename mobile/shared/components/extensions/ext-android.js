@@ -479,6 +479,12 @@ class TabContext extends EventEmitter {
 }
 
 class Window extends WindowBase {
+  get type() {
+    // The base implementation may return "popup" in some cases, but on mobile
+    // all tabs are associated with "normal" windowTypes.
+    return "normal";
+  }
+
   get focused() {
     return this.window.document.hasFocus();
   }

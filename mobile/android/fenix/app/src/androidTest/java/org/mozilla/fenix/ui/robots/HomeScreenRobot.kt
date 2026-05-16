@@ -137,121 +137,6 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
-    fun verifyFirstOnboardingCard() {
-        this@HomeScreenRobot.composeTestRule.also {
-            Log.i(TAG, "verifyFirstOnboardingCard: Trying to verify that the first onboarding screen title exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_default_browser_title_nimbus_2),
-            ).assertExists()
-            Log.i(TAG, "verifyFirstOnboardingCard: Verified that the first onboarding screen title exists")
-            Log.i(TAG, "verifyFirstOnboardingCard: Trying to verify that the first onboarding screen description exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_default_browser_description_nimbus_3),
-            ).assertExists()
-            Log.i(TAG, "verifyFirstOnboardingCard: Verified that the first onboarding screen description exists")
-            Log.i(TAG, "verifyFirstOnboardingCard: Trying to verify that the first onboarding \"Set as default browser\" button exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_default_browser_positive_button),
-            ).assertExists()
-            Log.i(TAG, "verifyFirstOnboardingCard: Verified that the first onboarding \"Set as default browser\" button exists")
-            Log.i(TAG, "verifyFirstOnboardingCard: Trying to verify that the first onboarding \"Not now\" button exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_default_browser_negative_button),
-            ).assertExists()
-            Log.i(TAG, "verifyFirstOnboardingCard: Verified that the first onboarding \"Not now\" button exists")
-        }
-    }
-
-    fun verifySecondOnboardingCard() {
-        this@HomeScreenRobot.composeTestRule.also {
-            Log.i(TAG, "verifySecondOnboardingCard: Trying to verify that the second onboarding screen title exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_add_search_widget_title),
-            ).assertExists()
-            Log.i(TAG, "verifySecondOnboardingCard: Verified that the second onboarding screen title exists")
-            Log.i(TAG, "verifySecondOnboardingCard: Trying to verify that the  second onboarding screen description exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_add_search_widget_description),
-            ).assertExists()
-            Log.i(TAG, "verifySecondOnboardingCard: Verified that the second onboarding screen description exists")
-            Log.i(TAG, "verifySecondOnboardingCard: Trying to verify that the first onboarding \"Sign in\" button exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_add_search_widget_positive_button),
-            ).assertExists()
-            Log.i(TAG, "verifySecondOnboardingCard: Verified that the first onboarding \"Add Firefox widget\" button exists")
-            Log.i(TAG, "verifySecondOnboardingCard: Trying to verify that the second onboarding \"Not now\" button exists")
-            it.onNodeWithTag(
-                getStringResource(R.string.juno_onboarding_add_search_widget_title) + "onboarding_card.negative_button",
-            ).assertExists()
-            Log.i(TAG, "verifySecondOnboardingCard: Verified that the second onboarding \"Not now\" button exists")
-        }
-    }
-
-    fun verifyThirdOnboardingCard() {
-        this@HomeScreenRobot.composeTestRule.also {
-            Log.i(TAG, "verifyThirdOnboardingCard: Trying to verify that the third onboarding screen title exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_sign_in_title_2),
-            ).assertExists()
-            Log.i(TAG, "verifyThirdOnboardingCard: Verified that the third onboarding screen title exists")
-            Log.i(TAG, "verifyThirdOnboardingCard: Trying to verify that the  third onboarding screen description exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_sign_in_description_3),
-            ).assertExists()
-            Log.i(TAG, "verifyThirdOnboardingCard: Verified that the third onboarding screen description exists")
-            Log.i(TAG, "verifyThirdOnboardingCard: Trying to verify that the first onboarding \"Sign in\" button exists")
-            it.onNodeWithText(
-                getStringResource(R.string.juno_onboarding_sign_in_positive_button),
-            ).assertExists()
-            Log.i(TAG, "verifyThirdOnboardingCard: Verified that the first onboarding \"Sign in\" button exists")
-            Log.i(TAG, "verifyThirdOnboardingCard: Trying to verify that the third onboarding \"Not now\" button exists")
-            it.onNodeWithTag(
-                getStringResource(R.string.juno_onboarding_sign_in_title_2) + "onboarding_card.negative_button",
-            ).assertExists()
-            Log.i(TAG, "verifySecondOnboardingCard: Verified that the third onboarding \"Not now\" button exists")
-        }
-    }
-
-    fun clickDefaultCardNotNowOnboardingButton() {
-        Log.i(TAG, "clickNotNowOnboardingButton: Trying to click \"Not now\" onboarding button")
-        this@HomeScreenRobot.composeTestRule.onNodeWithTag(
-            getStringResource(R.string.juno_onboarding_default_browser_title_nimbus_2) + "onboarding_card.negative_button",
-        ).performClick()
-        Log.i(TAG, "clickNotNowOnboardingButton: Clicked \"Not now\" onboarding button")
-    }
-
-    fun clickAddSearchWidgetNotNowOnboardingButton() {
-        Log.i(TAG, "clickNotNowOnboardingButton: Trying to click \"Not now\" onboarding button")
-        this@HomeScreenRobot.composeTestRule.onNodeWithTag(
-            getStringResource(R.string.juno_onboarding_add_search_widget_title) + "onboarding_card.negative_button",
-        ).performClick()
-        Log.i(TAG, "clickNotNowOnboardingButton: Clicked \"Not now\" onboarding button")
-    }
-
-    fun clickSyncSignInWidgetNotNowOnboardingButton() {
-        Log.i(TAG, "clickNotNowOnboardingButton: Trying to click \"Not now\" onboarding button")
-        this@HomeScreenRobot.composeTestRule.onNodeWithTag(
-            getStringResource(R.string.juno_onboarding_sign_in_title_2) + "onboarding_card.negative_button",
-        ).performClick()
-        Log.i(TAG, "clickNotNowOnboardingButton: Clicked \"Not now\" onboarding button")
-    }
-
-    fun swipeSecondOnboardingCardToRight() {
-        Log.i(TAG, "swipeSecondOnboardingCardToRight: Trying to perform swipe right action on second onboarding card")
-        mDevice.findObject(
-            UiSelector().textContains(
-                getStringResource(R.string.juno_onboarding_sign_in_title_2),
-            ),
-        ).swipeRight(3)
-        Log.i(TAG, "swipeSecondOnboardingCardToRight: Performed swipe right action on second onboarding card")
-    }
-
-    fun clickCloseButton(testRule: ComposeTestRule) {
-        Log.i(TAG, "clickCloseButton: Trying to click close onboarding button")
-        testRule.onNode(hasContentDescription("Close")).performClick()
-        Log.i(TAG, "clickCloseButton: Clicked close onboarding button")
-    }
-
     @OptIn(ExperimentalTestApi::class)
     fun verifyExistingTopSitesList() {
         Log.i(TAG, "verifyExistingTopSitesList: Waiting for $waitingTime ms until the top sites list exists")
@@ -493,7 +378,7 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyIfInPrivateOrNormalMode: Verified private browsing mode is enabled: $privateBrowsingEnabled")
     }
 
-    fun verifySetAsDefaultBrowserDialogWhileFirefoxIsNotSetAsDefaultBrowser() {
+    fun verifyTheSetAsDefaultBrowserSystemDialog() {
         assertUIObjectExists(
             itemContainingText("Set Firefox Fenix as your default browser app?"),
             itemContainingText(appName),
@@ -504,6 +389,193 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             firefoxOptionSetAsDefaultBrowserDialogRadioButton(),
             isChecked = false,
         )
+    }
+
+    fun clickTheSetAsDefaultBrowserDialogCancelButton() {
+        Log.i(TAG, "clickTheSetAsDefaultBrowserDialogCancelButton: Trying to click the \"Set as default browser\" \"Cancel\" dialog button")
+        itemContainingText("Cancel").click()
+        Log.i(TAG, "clickTheSetAsDefaultBrowserDialogCancelButton: Clicked the \"Set as default browser\" \"Cancel\" dialog button")
+    }
+
+    fun verifyTheTermsOfUseOnboardingCard() {
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" title is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.onboarding_welcome_to_firefox)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" title is displayed")
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" subtitle is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_tou_subtitle)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" subtitle is displayed")
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" first message is displayed")
+        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.nova_onboarding_tou_body_line_1, argument = getStringResource(R.string.nova_onboarding_tou_body_line_1_link_text)) + " " + getStringResource(R.string.a11y_links_available), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" first message is displayed")
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" second message is displayed")
+        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.nova_onboarding_tou_body_line_2, argument = getStringResource(R.string.nova_onboarding_tou_body_line_2_link_text)) + " " + getStringResource(R.string.a11y_links_available), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" second message is displayed")
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" third message is displayed")
+        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.nova_onboarding_tou_body_line_3, argument = getStringResource(R.string.nova_onboarding_tou_body_line_3_link_text)) + " " + getStringResource(R.string.a11y_links_available), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" third message is displayed")
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" \"Continue\" button is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_continue_button)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" \"Continue\" button is displayed")
+    }
+
+    fun clickTheOnboardingCardContinueButton() {
+        Log.i(TAG, "clickTheOnboardingCardContinueButton: Trying to click the \"Continue\" button")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_continue_button), useUnmergedTree = true).performClick()
+        Log.i(TAG, "clickTheOnboardingCardContinueButton: Clicked the \"Continue\" button")
+        Log.i(TAG, "clickTheOnboardingCardContinueButton: Waiting for compose rule to be idle")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "clickTheOnboardingCardContinueButton: Waited for compose rule to be idle")
+    }
+
+    fun verifyTheSetAsDefaultBrowserOnboardingCard() {
+        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card title is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_title_2)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding card title is displayed")
+        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card subtitle is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_subtitle)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding cardsubtitle is displayed")
+        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card button is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_button)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding card button is displayed")
+        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card \"Not now\" button is displayed")
+        assertUIObjectExists(itemContainingText(getStringResource(R.string.nova_onboarding_negative_button)))
+        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding card \"Not now\" button is displayed")
+    }
+
+    fun clickTheSetAsDefaultBrowserOnboardingCardButton() {
+        Log.i(TAG, "clickTheSetAsDefaultBrowserOnboardingCardButton: Trying to click the \"Set as default browser\" onboarding card button")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_button)).performClick()
+        Log.i(TAG, "clickTheSetAsDefaultBrowserOnboardingCardButton: Clicked the \"Set as default browser\" onboarding card button")
+        Log.i(TAG, "clickTheSetAsDefaultBrowserOnboardingCardButton: Waiting for compose rule to be idle")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "clickTheSetAsDefaultBrowserOnboardingCardButton: Waited for compose rule to be idle")
+    }
+
+    fun clickNotNowOnboardingCardButton() {
+        Log.i(TAG, "clickNotNowOnboardingCardButton: Trying to click the \"Not now\" onboarding card button")
+        itemContainingText(getStringResource(R.string.nova_onboarding_negative_button)).click()
+        Log.i(TAG, "clickNotNowOnboardingCardButton: Clicked the \"Not now\" onboarding card button")
+        Log.i(TAG, "clickNotNowOnboardingCardButton: Waiting for compose rule to be idle")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "clickNotNowOnboardingCardButton: Waited for compose rule to be idle")
+    }
+
+    fun verifyTheFirefoxSearchWidgetOnboardingCard() {
+        Log.i(TAG, "verifyTheFirefoxSearchWidgetOnboardingCard: Trying to verify the \"Add search widget\" onboarding card title is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_add_search_widget_title)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheFirefoxSearchWidgetOnboardingCard: Verified the \"Add search widget\" onboarding card title is displayed")
+        Log.i(TAG, "verifyTheFirefoxSearchWidgetOnboardingCard: Trying to verify the \"Add search widget\" onboarding card subtitle is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_add_search_widget_subtitle)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheFirefoxSearchWidgetOnboardingCard: Verified the \"Add search widget\" onboarding card subtitle is displayed")
+        Log.i(TAG, "verifyTheFirefoxSearchWidgetOnboardingCard: Trying to verify the \"Add Firefox widget\" onboarding card button is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_add_search_widget_button)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheFirefoxSearchWidgetOnboardingCard: Verified the \"Add Firefox widget\" onboarding card button is displayed")
+        Log.i(TAG, "verifyTheFirefoxSearchWidgetOnboardingCard: Trying to verify the \"Add Firefox widget\" onboarding card \"Not now\" button is displayed")
+        assertUIObjectExists(itemContainingText(getStringResource(R.string.nova_onboarding_negative_button)))
+        Log.i(TAG, "verifyTheFirefoxSearchWidgetOnboardingCard: Verified the \"Add Firefox widget\" onboarding card \"Not now\" button is displayed")
+    }
+
+    fun verifyTheStartSyncingOnboardingCard() {
+        Log.i(TAG, "verifyTheStartSyncingOnboardingCard: Trying to verify the \"Start syncing\" onboarding card title is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_sync_title)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheStartSyncingOnboardingCard: Verified the \"Start syncing\" onboarding card title is displayed")
+        Log.i(TAG, "verifyTheStartSyncingOnboardingCard: Trying to verify the \"Start syncing\" onboarding card subtitle is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_sync_subtitle)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheStartSyncingOnboardingCard: Verified the \"Start syncing\" onboarding card subtitle is displayed")
+        Log.i(TAG, "verifyTheStartSyncingOnboardingCard: Trying to verify the \"Add Firefox widget\" onboarding card button is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_sync_button)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheStartSyncingOnboardingCard: Verified the \"Start syncing\" onboarding card button is displayed")
+        Log.i(TAG, "verifyTheStartSyncingOnboardingCard: Trying to verify the \"Start syncing\" onboarding card \"Not now\" button is displayed")
+        assertUIObjectExists(itemContainingText(getStringResource(R.string.nova_onboarding_negative_button)))
+        Log.i(TAG, "verifyTheStartSyncingOnboardingCard: Verified the \"Start syncing\" onboarding card \"Not now\" button is displayed")
+    }
+
+    fun swipeRightTheStartSyncingOnboardingCard() {
+        Log.i(TAG, "swipeRightTheStartSyncingOnboardingCard: Trying to perform swipe right action on the \"Start syncing\" onboarding card")
+        mDevice.findObject(
+            UiSelector().textContains(
+                getStringResource(R.string.nova_onboarding_sync_title),
+            ),
+        ).swipeRight(3)
+        Log.i(TAG, "swipeRightTheStartSyncingOnboardingCard: Performed swipe right action on the \"Start syncing\" onboarding card")
+    }
+
+    fun verifyTheTurnOnNotificationsOnboardingCard() {
+        Log.i(TAG, "verifyTheTurnOnNotificationsOnboardingCard: Trying to verify the \"Turn on notifications\" onboarding card title is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_notifications_title)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheTurnOnNotificationsOnboardingCard: Verified the \"Turn on notifications\" onboarding card title is displayed")
+        Log.i(TAG, "verifyTheTurnOnNotificationsOnboardingCard: Trying to verify the \"Turn on notifications\" onboarding card subtitle is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_notifications_subtitle)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheTurnOnNotificationsOnboardingCard: Verified the \"Turn on notifications\" onboarding card subtitle is displayed")
+        Log.i(TAG, "verifyTheTurnOnNotificationsOnboardingCard: Trying to verify the \"Turn on notifications\" onboarding card button is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_notifications_button)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheTurnOnNotificationsOnboardingCard: Verified the \"Turn on notifications\" onboarding card button is displayed")
+        Log.i(TAG, "verifyTheTurnOnNotificationsOnboardingCard: Trying to verify the \"Turn on notifications\" onboarding card \"Not now\" button is displayed")
+        assertUIObjectExists(itemContainingText(getStringResource(R.string.nova_onboarding_negative_button)))
+        Log.i(TAG, "verifyTheTurnOnNotificationsOnboardingCard: Verified the \"Turn on notifications\" onboarding card \"Not now\" button is displayed")
+    }
+
+    fun verifyTheChooseYourAddressBarOnboardingCard() {
+        Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Trying to verify the \"Choose your address bar\" onboarding card title is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_toolbar_selection_title)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Verified the \"Choose your address bar\" onboarding card title is displayed")
+        Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Trying to verify the \"Choose your address bar\" onboarding card subtitle is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_toolbar_selection_top_label)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Verified the \"Choose your address bar\" onboarding card subtitle is displayed")
+        Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Trying to verify the \"Choose your address bar\" onboarding card button is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_toolbar_selection_bottom_label)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Verified the \"Choose your address bar\" onboarding card button is displayed")
+        Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Trying to verify the \"Choose your address bar\" onboarding card \"Continue\" button is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_continue_button)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Verified the \"Choose your address bar\" onboarding card \"Continue\" button is displayed")
+    }
+
+    fun swipeRightTheChooseYourAddressBarOnboardingCard() {
+        Log.i(TAG, "swipeRightTheChooseYourAddressBarOnboardingCard: Trying to perform swipe right action on the \"Start syncing\" onboarding card")
+        mDevice.findObject(
+            UiSelector().textContains(
+                getStringResource(R.string.nova_onboarding_toolbar_selection_title),
+            ),
+        ).swipeRight(3)
+        Log.i(TAG, "swipeRightTheChooseYourAddressBarOnboardingCard: Performed swipe right action on the \"Start syncing\" onboarding card")
+    }
+
+    fun clickTheTurnOnNotificationsOnboardingCardButton() {
+        Log.i(TAG, "clickTheTurnOnNotificationsOnboardingCardButton: Trying to click the \"Turn on notifications\" onboarding card button")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_notifications_button)).performClick()
+        Log.i(TAG, "clickTheTurnOnNotificationsOnboardingCardButton: Clicked the \"Turn on notifications\" onboarding card button")
+        Log.i(TAG, "clickTheTurnOnNotificationsOnboardingCardButton: Waiting for compose rule to be idle")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "clickTheTurnOnNotificationsOnboardingCardButton: Waited for compose rule to be idle")
+    }
+
+    fun clickTheAddressBarOnboardingCardBottomOption() {
+        Log.i(TAG, "clickTheAddressBarOnboardingCardBottomOption: Trying to click the \"Bottom\" onboarding card option")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_toolbar_selection_bottom_label)).performClick()
+        Log.i(TAG, "clickTheAddressBarOnboardingCardBottomOption: Clicked the \"Bottom\" onboarding card option")
+        Log.i(TAG, "clickTheAddressBarOnboardingCardBottomOption: Waiting for compose rule to be idle")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "clickTheAddressBarOnboardingCardBottomOption: Waited for compose rule to be idle")
+    }
+
+    fun swipeRightTheTermsOfUseOnboardingCard() {
+        Log.i(TAG, "swipeRightTheTermsOfUseOnboardingCard: Trying to perform swipe right action on the \"Terms of use\" onboarding card")
+        mDevice.findObject(
+            UiSelector().textContains(
+                getStringResource(R.string.onboarding_welcome_to_firefox),
+            ),
+        ).swipeRight(3)
+        Log.i(TAG, "swipeRightTheTermsOfUseOnboardingCard: Performed swipe right action on the \"Terms of use\" onboarding card")
+    }
+
+    fun swipeRightTheFirefoxSearchWidgetOnboardingCard() {
+        Log.i(TAG, "swipeRightTheFirefoxSearchWidgetOnboardingCard: Trying to perform swipe right action on the \"Add search widget\" onboarding card")
+        mDevice.findObject(
+            UiSelector().textContains(
+                getStringResource(R.string.nova_onboarding_add_search_widget_title),
+            ),
+        ).swipeRight(3)
+        Log.i(TAG, "swipeRightTheFirefoxSearchWidgetOnboardingCard: Performed swipe right action on the \"Add search widget\" onboarding card")
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
@@ -809,6 +881,18 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
                 getStringResource(R.string.juno_onboarding_sign_in_positive_button),
             ).performClick()
             Log.i(TAG, "clickSignInOnboardingButton: Clicked \"Sign in\" onboarding button")
+
+            SettingsSignInToSyncRobot().interact()
+            return SettingsSignInToSyncRobot.Transition(composeTestRule)
+        }
+
+        fun clickTheStartSyncingOnboardingCardButton(interact: SettingsSignInToSyncRobot.() -> Unit): SettingsSignInToSyncRobot.Transition {
+            Log.i(TAG, "clickTheStartSyncingOnboardingCardButton: Trying to click the \"Start syncing\" onboarding card button")
+            composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_sync_button)).performClick()
+            Log.i(TAG, "clickTheStartSyncingOnboardingCardButton: Clicked the \"Start syncing\" onboarding card button")
+            Log.i(TAG, "clickTheStartSyncingOnboardingCardButton: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "clickTheStartSyncingOnboardingCardButton: Waited for compose rule to be idle")
 
             SettingsSignInToSyncRobot().interact()
             return SettingsSignInToSyncRobot.Transition(composeTestRule)

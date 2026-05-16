@@ -445,7 +445,7 @@ class TelemetryMiddlewareTest {
     fun `WHEN uri loaded to engine THEN matching event is sent to metrics`() = runTest {
         store.dispatch(EngineAction.LoadUrlAction("", ""))
 
-        assertTrue(metrics.trackedEvents.contains(Event.GrowthData.FirstUriLoadForDay))
+        assertTrue(metrics.trackedEvents.contains(Event.GrowthData.ConversionEvent3))
     }
 
     @Test

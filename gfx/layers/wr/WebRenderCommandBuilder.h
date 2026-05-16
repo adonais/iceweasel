@@ -15,7 +15,6 @@
 #include "nsDisplayList.h"
 #include "nsIFrame.h"
 #include "nsTHashSet.h"
-#include "DisplayItemCache.h"
 #include "ImgDrawResult.h"
 
 namespace mozilla {

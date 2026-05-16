@@ -29,8 +29,6 @@ const WEBEXT_STORAGE_USER_CONTEXT_ID = -1 >>> 0;
 const IDB_NAME = "webExtensions-storage-local";
 const IDB_DATA_STORENAME = "storage-local-data";
 const IDB_VERSION = 1;
-const IDB_MIGRATE_RESULT_HISTOGRAM =
-  "WEBEXT_STORAGE_LOCAL_IDB_MIGRATE_RESULT_COUNT";
 
 // Whether or not the installed extensions should be migrated to the storage.local IndexedDB backend.
 const BACKEND_ENABLED_PREF =
@@ -742,7 +740,6 @@ async function migrateJSONFileData(extension, storagePrincipal) {
 export var ExtensionStorageIDB = {
   BACKEND_ENABLED_PREF,
   IDB_MIGRATED_PREF_BRANCH,
-  IDB_MIGRATE_RESULT_HISTOGRAM,
 
   // Map<extension-id, Set<Function>>
   listeners: new Map(),

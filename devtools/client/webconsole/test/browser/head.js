@@ -27,7 +27,7 @@ var {
   BrowserConsoleManager,
 } = require("resource://devtools/client/webconsole/browser-console-manager.js");
 
-var WCUL10n = require("resource://devtools/client/webconsole/utils/l10n.js");
+var WCUL10n = require("resource://devtools/shared/webconsole/l10n.js");
 const DOCS_GA_PARAMS = `?${new URLSearchParams({
   utm_source: "devtools",
   utm_medium: "firefox-console-errors",

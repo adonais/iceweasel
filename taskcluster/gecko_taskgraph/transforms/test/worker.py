@@ -69,6 +69,10 @@ WINDOWS_WORKER_TYPES = {
         "virtual-with-gpu": "win11-64-24h2-gpu",
         "hardware": "win11-64-24h2-hw",
     },
+    "windows11-64-24h2-artifact": {
+        "virtual": "win11-64-24h2",
+        "virtual-with-gpu": "win11-64-24h2-gpu",
+    },
     "windows11-64-24h2-ccov": {
         "virtual": "win11-64-24h2",
         "virtual-with-gpu": "win11-64-24h2-gpu",
@@ -99,6 +103,54 @@ WINDOWS_WORKER_TYPES = {
     },
     "windows11-aarch64-24h2-shippable": {
         "virtual": "win11-a64-24h2",
+    },
+    "windows11-32-25h2-mingwclang": {
+        "virtual": "win11-64-25h2",
+        "virtual-with-gpu": "win11-64-25h2-gpu",
+    },
+    "windows11-32-25h2": {
+        "virtual": "win11-64-25h2",
+        "virtual-with-gpu": "win11-64-25h2-gpu",
+    },
+    "windows11-32-25h2-shippable": {
+        "virtual": "win11-64-25h2",
+        "virtual-with-gpu": "win11-64-25h2-gpu",
+    },
+    "windows11-64-25h2": {
+        "virtual": "win11-64-25h2",
+        "virtual-with-gpu": "win11-64-25h2-gpu",
+        "hardware": "win11-64-24h2-hw",
+    },
+    "windows11-64-25h2-ccov": {
+        "virtual": "win11-64-25h2",
+        "virtual-with-gpu": "win11-64-25h2-gpu",
+    },
+    "windows11-64-25h2-devedition": {
+        "virtual": "win11-64-25h2",
+        "virtual-with-gpu": "win11-64-25h2-gpu",
+    },
+    "windows11-64-25h2-shippable": {
+        "virtual": "win11-64-25h2",
+        "virtual-with-gpu": "win11-64-25h2-gpu",
+        "hardware": "win11-64-24h2-hw",
+    },
+    "windows11-64-25h2-asan": {
+        "virtual": "win11-64-25h2",
+        "large": "win11-64-25h2-large",
+        "virtual-with-gpu": "win11-64-25h2-gpu",
+    },
+    "windows11-64-25h2-mingwclang": {
+        "virtual": "win11-64-25h2",
+        "virtual-with-gpu": "win11-64-25h2-gpu",
+    },
+    "windows11-aarch64-25h2": {
+        "virtual": "win11-a64-25h2",
+    },
+    "windows11-aarch64-25h2-devedition": {
+        "virtual": "win11-a64-25h2",
+    },
+    "windows11-aarch64-25h2-shippable": {
+        "virtual": "win11-a64-25h2",
     },
 }
 
@@ -149,6 +201,8 @@ def set_worker_type(config, tasks):
                     win_worker_type_platform = WINDOWS_WORKER_TYPES["windows10-64"]
                 elif test_platform.startswith("windows11-64-24h2"):
                     win_worker_type_platform = WINDOWS_WORKER_TYPES["windows11-64-24h2"]
+                elif test_platform.startswith("windows11-64-25h2"):
+                    win_worker_type_platform = WINDOWS_WORKER_TYPES["windows11-64-25h2"]
                 else:
                     raise Exception(f"Unknown worker type for {test_platform}")
             else:
@@ -166,7 +220,10 @@ def set_worker_type(config, tasks):
             if task["instance-size"].startswith("large") and test_platform.startswith(
                 "windows11-"
             ):
-                task["worker-type"] = "win11-64-24h2-large"
+                if test_platform.startswith("windows11-64-25h2"):
+                    task["worker-type"] = "win11-64-25h2-large"
+                else:
+                    task["worker-type"] = "win11-64-24h2-large"
             else:
                 task["worker-type"] = win_worker_type_platform[task["virtualization"]]
         elif test_platform.startswith("android-hw-p5"):

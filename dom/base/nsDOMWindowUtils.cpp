@@ -2993,8 +2993,8 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
   if (caretInfo.frame) {
     presShell->ScrollFrameIntoView(
         caretInfo.frame, caretInfo.caretRectRelativeToTextFrame,
-        ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
-        ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
+        AxisScrollParams(WhereToScroll::Center, WhenToScroll::IfNotVisible),
+        AxisScrollParams(WhereToScroll::Center, WhenToScroll::IfNotVisible),
         ScrollFlags::ForZoomToFocusedInput);
   }
 
@@ -3464,11 +3464,12 @@ nsDOMWindowUtils::SetVisualViewportSize(float aWidth, float aHeight) {
 }
 
 nsresult nsDOMWindowUtils::RemoteFrameFullscreenChanged(
-    Element* aFrameElement) {
+    Element* aFrameElement, bool aFullscreenKeyboardLockEnabled) {
   nsCOMPtr<Document> doc = GetDocument();
   NS_ENSURE_STATE(doc);
 
-  doc->RemoteFrameFullscreenChanged(aFrameElement);
+  doc->RemoteFrameFullscreenChanged(aFrameElement,
+                                    aFullscreenKeyboardLockEnabled);
   return NS_OK;
 }
 

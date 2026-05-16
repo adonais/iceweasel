@@ -61,7 +61,7 @@ nsresult TCPServerSocket::Init() {
 
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     mServerBridgeChild =
-        new TCPServerSocketChild(this, mPort, mBacklog, mUseArrayBuffers);
+        TCPServerSocketChild::Create(this, mPort, mBacklog, mUseArrayBuffers);
     return NS_OK;
   }
 

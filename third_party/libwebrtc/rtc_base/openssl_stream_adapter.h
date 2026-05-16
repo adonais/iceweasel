@@ -92,6 +92,7 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   [[deprecated]] void SetMode(SSLMode mode) override;
   void SetMaxProtocolVersion(SSLProtocolVersion version) override;
   void SetInitialRetransmissionTimeout(int timeout_ms) override;
+  void UpdateRetransmissionTimeout(int timeout_ms) override;
   void SetMTU(int mtu) override;
 
   StreamResult Read(ArrayView<uint8_t> data, size_t& read, int& error) override;
@@ -109,6 +110,8 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   bool GetSslVersionBytes(int* version) const override;
   // Key Extractor interface
   bool ExportSrtpKeyingMaterial(
+      ZeroOnFreeBuffer<uint8_t>& keying_material) override;
+  bool AppendSrtpKeyingMaterial(
       ZeroOnFreeBuffer<uint8_t>& keying_material) override;
 
   uint16_t GetPeerSignatureAlgorithm() const override;

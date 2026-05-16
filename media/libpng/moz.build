@@ -27,6 +27,7 @@ SOURCES += [
     'pngtrans.c',
     'pngwio.c',
     'pngwrite.c',
+    'pngwtran.c',
 ]
 
 # These source files all define duplicate interlacing symbols (starting at

@@ -135,7 +135,6 @@ void FontFaceImpl::InitializeSourceBuffer(uint8_t* aBuffer, uint32_t aLength) {
     mBufferSource = new FontFaceBufferSource(aBuffer, aLength);
   }
 
-  SetStatus(FontFaceLoadStatus::Loading);
   DoLoad();
 }
 
@@ -309,7 +308,7 @@ void FontFaceImpl::DescriptorUpdated() {
 
 FontFaceLoadStatus FontFaceImpl::Status() { return mStatus; }
 
-void FontFaceImpl::Load(ErrorResult& aRv) {
+void FontFaceImpl::Load() {
   mFontFaceSet->FlushUserFontSet();
 
   // Calling Load on a FontFace constructed with an ArrayBuffer data source,
@@ -319,11 +318,6 @@ void FontFaceImpl::Load(ErrorResult& aRv) {
       mStatus != FontFaceLoadStatus::Unloaded) {
     return;
   }
-
-  // Calling the user font entry's Load method will end up setting our
-  // status to Loading, but the spec requires us to set it to Loading
-  // here.
-  SetStatus(FontFaceLoadStatus::Loading);
 
   DoLoad();
 }
@@ -349,6 +343,8 @@ gfxUserFontEntry* FontFaceImpl::CreateUserFontEntry() {
 }
 
 void FontFaceImpl::DoLoad() {
+  // FIXME(emilio): Should this be set even if we bail out right after?
+  SetStatus(FontFaceLoadStatus::Loading);
   if (!CreateUserFontEntry()) {
     return;
   }

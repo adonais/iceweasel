@@ -12,16 +12,16 @@
 
   <panel id="panel" hidden="true" orient="vertical">
     <vbox id="vbox">
-      <html:textarea id="textbox" cols="20" rows="4" style="font-size: 36px;"/>
+      <html:textarea id="textbox" cols="20" rows="4" style="font-size: 36px; line-height: 2;"/>
     </vbox>
   </panel>
 
 <body  xmlns="http://www.w3.org/1999/xhtml">
 <div id="display">
 <div id="div" style="margin: 0; padding: 0; font-size: 36px;">Here is a text frame.</div>
-<textarea style="margin: 0; font-family: -moz-fixed;" id="textarea" cols="20" rows="4"></textarea><br/>
+<textarea style="margin: 0; font-family: monospace;" id="textarea" cols="20" rows="4"></textarea><br/>
 <iframe id="iframe" width="300" height="150"
-        src="data:text/html,&lt;textarea id='textarea' cols='20' rows='4'&gt;&lt;/textarea&gt;"></iframe><br/>
+        src="data:text/html,&lt;textarea id='textarea' cols='20' style='line-height: 2' rows='4'&gt;&lt;/textarea&gt;"></iframe><br/>
 <iframe id="iframe2" width="300" height="150"
         src="data:text/html,&lt;body onload='document.designMode=%22on%22'&gt;body content&lt;/body&gt;"></iframe><br/>
 <iframe id="iframe3" width="300" height="150"
@@ -411,10 +411,10 @@ function checkRectArray(aQueryTextRectArrayResult, aExpectedTextRectArray, aMess
 
 function checkRectContainsRect(aRect, aContainer, aMessage)
 {
-  let container = { left: Math.ceil(aContainer.left),
-                    top:  Math.ceil(aContainer.top),
-                    width: Math.floor(aContainer.width),
-                    height: Math.floor(aContainer.height) };
+  let container = { left: Math.floor(aContainer.left),
+                    top:  Math.floor(aContainer.top),
+                    width: Math.ceil(aContainer.width),
+                    height: Math.ceil(aContainer.height) };
 
   let ret = container.left <= aRect.left &&
             container.top <= aRect.top &&

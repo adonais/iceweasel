@@ -10,6 +10,7 @@
 
 #include "p2p/dtls/dtls_utils.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -20,14 +21,14 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
 
+namespace webrtc {
+
 namespace {
 // https://datatracker.ietf.org/doc/html/rfc5246#appendix-A.1
 const uint8_t kDtlsChangeCipherSpecRecord = 20;
 const uint8_t kDtlsHandshakeRecord = 22;
 
 }  // namespace
-
-namespace webrtc {
 
 bool IsDtlsPacket(ArrayView<const uint8_t> payload) {
   const uint8_t* u = payload.data();
@@ -77,9 +78,9 @@ void PacketStash::Add(ArrayView<const uint8_t> packet) {
        .buffer = std::make_unique<Buffer>(packet.data(), packet.size())});
 }
 
-void PacketStash::Prune(const absl::flat_hash_set<uint32_t>& hashes) {
+size_t PacketStash::Prune(const absl::flat_hash_set<uint32_t>& hashes) {
   if (hashes.empty()) {
-    return;
+    return 0;
   }
   uint32_t before = packets_.size();
   std::erase_if(packets_,
@@ -89,6 +90,10 @@ void PacketStash::Prune(const absl::flat_hash_set<uint32_t>& hashes) {
   if (pos_ >= removed) {
     pos_ -= removed;
   }
+  if (pos_ >= packets_.size()) {
+    pos_ = packets_.empty() ? 0 : packets_.size() - 1;
+  }
+  return removed;
 }
 
 void PacketStash::Prune(uint32_t max_size) {
@@ -111,6 +116,16 @@ ArrayView<const uint8_t> PacketStash::GetNext() {
   pos_ = (pos + 1) % packets_.size();
   const auto& buffer = packets_[pos].buffer;
   return ArrayView<const uint8_t>(buffer->data(), buffer->size());
+}
+
+std::vector<ArrayView<const uint8_t>> PacketStash::GetAll() const {
+  std::vector<ArrayView<const uint8_t>> ret;
+  ret.reserve(packets_.size());
+  for (const auto& buffer : packets_) {
+    const uint8_t* ptr = buffer.buffer->data();
+    ret.push_back(ArrayView<const uint8_t>(ptr, buffer.buffer->size()));
+  }
+  return ret;
 }
 
 }  // namespace webrtc

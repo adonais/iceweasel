@@ -14,7 +14,7 @@
     @media (-moz-gtk-theme-family) {
       --tabs-navbar-separator-style: none;
       @media (prefers-color-scheme: light) {
-        --urlbar-box-bgcolor: #fafafa;
+        --urlbar-box-background-color: #fafafa;
       }
     }
   }
@@ -147,7 +147,7 @@
 }
 
 /**
- * Override the --arrowpanel-padding so the background extends
+ * Override the --panel-padding so the background extends
  * to the sides and bottom of the panel.
  */
 #UITourTooltipButtons {

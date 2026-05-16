@@ -57,5 +57,7 @@ uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
   return aCacheDomains;
 }
 
+void GetHumanReadableInstantiatorStr(nsAString& aResult) { aResult.Truncate(); }
+
 }  // namespace a11y
 }  // namespace mozilla

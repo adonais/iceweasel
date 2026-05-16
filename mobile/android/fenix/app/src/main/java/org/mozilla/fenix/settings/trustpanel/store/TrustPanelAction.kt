@@ -158,5 +158,10 @@ sealed class TrustPanelAction : Action {
          * [Navigate] action dispatched when navigating to view the QWAC.
          */
         data object QWAC : Navigate()
+
+        /**
+         * [Navigate] action dispatched when navigating to the IP protection settings screen.
+         */
+        data object IPProtectionSettings : Navigate()
     }
 }

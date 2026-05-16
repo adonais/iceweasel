@@ -71,8 +71,8 @@ struct ParamTraits<mozilla::WhereToScroll> {
 };
 
 template <>
-struct ParamTraits<mozilla::ScrollAxis> {
-  typedef mozilla::ScrollAxis paramType;
+struct ParamTraits<mozilla::AxisScrollParams> {
+  typedef mozilla::AxisScrollParams paramType;
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     WriteParam(aWriter, aParam.mWhereToScroll);

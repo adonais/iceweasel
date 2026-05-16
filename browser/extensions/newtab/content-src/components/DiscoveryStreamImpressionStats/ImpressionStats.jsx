@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { getActiveCardSize } from "../../lib/utils";
+import { getActiveCardSize, getNovaColumnLayout } from "../../lib/utils";
 import { TOP_SITES_SOURCE } from "../TopSites/TopSitesConstants";
 import React from "react";
 
@@ -103,7 +103,6 @@ export class ImpressionStats extends React.PureComponent {
           type: props.flightId ? "spoc" : "organic",
           ...(link.shim ? { shim: link.shim } : {}),
           recommendation_id: link.recommendation_id,
-          fetchTimestamp: link.fetchTimestamp,
           corpus_item_id: link.corpus_item_id,
           scheduled_corpus_item_id: link.scheduled_corpus_item_id,
           recommended_at: link.recommended_at,
@@ -118,7 +117,8 @@ export class ImpressionStats extends React.PureComponent {
                   window.innerWidth,
                   link.class_names,
                   link.section,
-                  link.flightId
+                  link.flightId,
+                  getNovaColumnLayout(this.impressionRef.current)
                 ),
               }),
           ...(link.section
@@ -130,7 +130,6 @@ export class ImpressionStats extends React.PureComponent {
               }
             : {}),
         })),
-        firstVisibleTimestamp: props.firstVisibleTimestamp,
       };
 
       props.dispatch(ac.DiscoveryStreamImpressionStats(impressionData));

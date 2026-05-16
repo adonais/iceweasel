@@ -51,7 +51,8 @@ bool MacIOSurfaceTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
   RefPtr<layers::GpuFence> gpuFence;
   aOutDescriptor = SurfaceDescriptorMacIOSurface(
       mSurface->GetIOSurfaceID(), !mSurface->HasAlpha(),
-      mSurface->GetYUVColorSpace(), std::move(gpuFence));
+      mSurface->GetYUVColorSpace(), mSurface->GetTransferFunction(),
+      std::move(gpuFence));
   return true;
 }
 
@@ -60,7 +61,8 @@ void MacIOSurfaceTextureData::GetSubDescriptor(
   RefPtr<layers::GpuFence> gpuFence;
   *aOutDesc = SurfaceDescriptorMacIOSurface(
       mSurface->GetIOSurfaceID(), !mSurface->HasAlpha(),
-      mSurface->GetYUVColorSpace(), std::move(gpuFence));
+      mSurface->GetYUVColorSpace(), mSurface->GetTransferFunction(),
+      std::move(gpuFence));
 }
 
 void MacIOSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const {

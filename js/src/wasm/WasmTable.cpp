@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2016 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -299,13 +297,15 @@ void Table::setNull(uint32_t address) {
   }
 }
 
-bool Table::copy(JSContext* cx, const Table& srcTable, uint32_t dstIndex,
-                 uint32_t srcIndex) {
+void Table::copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex) {
   MOZ_RELEASE_ASSERT(!srcTable.isAsmJS_);
+
+  // Validation for table.copy rejects copying between TableRepr::Func and
+  // TableRepr::Ref.
+  MOZ_RELEASE_ASSERT(srcTable.repr() == repr());
+
   switch (repr()) {
     case TableRepr::Func: {
-      MOZ_RELEASE_ASSERT(elemType().isFuncHierarchy() &&
-                         srcTable.elemType().isFuncHierarchy());
       FunctionTableElem& dst = functions_[dstIndex];
       if (dst.instance) {
         gc::PreWriteBarrier(dst.instance->objectUnbarriered());
@@ -324,28 +324,10 @@ bool Table::copy(JSContext* cx, const Table& srcTable, uint32_t dstIndex,
       }
       break;
     }
-    case TableRepr::Ref: {
-      switch (srcTable.repr()) {
-        case TableRepr::Ref: {
-          setAnyRef(dstIndex, srcTable.getAnyRef(srcIndex));
-          break;
-        }
-        case TableRepr::Func: {
-          MOZ_RELEASE_ASSERT(srcTable.elemType().isFuncHierarchy());
-          // Upcast.
-          RootedFunction fun(cx);
-          if (!srcTable.getFuncRef(cx, srcIndex, &fun)) {
-            // OOM, so just pass it on.
-            return false;
-          }
-          setAnyRef(dstIndex, AnyRef::fromJSObject(*fun));
-          break;
-        }
-      }
+    case TableRepr::Ref:
+      setAnyRef(dstIndex, srcTable.getAnyRef(srcIndex));
       break;
-    }
   }
-  return true;
 }
 
 uint32_t Table::grow(uint32_t delta) {

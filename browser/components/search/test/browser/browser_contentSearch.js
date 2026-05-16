@@ -460,7 +460,16 @@ async function addTab() {
   );
   registerCleanupFunction(() => gBrowser.removeTab(tab));
 
-  return { browser: tab.linkedBrowser };
+  let { linkedBrowser } = tab;
+
+  // The ContentSearch actor is lazily instantiated on the first
+  // ContentSearchClient event. Ensure it exists before returning so that
+  // broadcasts from engine changes reach this tab.
+  let statePromise = await waitForTestMsg(linkedBrowser, "State");
+  sendEventToContent(linkedBrowser, { type: "GetState" });
+  await statePromise.donePromise;
+
+  return { browser: linkedBrowser };
 }
 
 var currentStateObj = async function (hiddenEngine = "") {

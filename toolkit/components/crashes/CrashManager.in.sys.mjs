@@ -471,6 +471,11 @@ CrashManager.prototype = Object.freeze({
 
       if (AppConstants.platform !== "android" && !this._disableGleanPing) {
         this._cleanupPingsResult = await cleanupPings().catch(error => {
+          // The pipes can race (especially if the program exits quickly) and
+          // throw File closed. Don't treat it as an error.
+          if (error.message === "File closed") {
+            return true;
+          }
           console.error(`failed to cleanup Glean crash pings: ${error}`);
           return false;
         });

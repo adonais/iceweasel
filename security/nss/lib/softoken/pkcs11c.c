@@ -310,8 +310,10 @@ NSC_DestroyObject(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hObject)
     }
 
     /* don't destroy a private object if we aren't logged in */
-    if ((!slot->isLoggedIn) && (slot->needLogin) &&
-        (sftk_isTrue(object, CKA_PRIVATE))) {
+    PR_Lock(slot->slotLock);
+    PRBool wouldNeedToLogIn = !slot->isLoggedIn && slot->needLogin;
+    PR_Unlock(slot->slotLock);
+    if (wouldNeedToLogIn && sftk_isTrue(object, CKA_PRIVATE)) {
         sftk_FreeSession(session);
         sftk_FreeObject(object);
         return CKR_USER_NOT_LOGGED_IN;
@@ -554,7 +556,7 @@ sftk_InitGeneric(SFTKSession *session, CK_MECHANISM *pMechanism,
     context->maxLen = 0;
     context->signature = NULL;
     context->isFIPS = sftk_operationIsFIPS(session->slot, pMechanism,
-                                           operation, key);
+                                           operation, key, 0);
     *contextPtr = context;
     return CKR_OK;
 }
@@ -3607,7 +3609,7 @@ NSC_SignFinal(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pSignature,
 {
     SFTKSession *session;
     SFTKSessionContext *context;
-    unsigned int outlen;
+    unsigned int outlen = 0;
     unsigned int maxoutlen = *pulSignatureLen;
     CK_RV crv;
 
@@ -5347,7 +5349,7 @@ NSC_GenerateKey(CK_SESSION_HANDLE hSession,
     /* we need to do this check at the end, so we can check the generated key
      * length against fips requirements */
     sftk_setFIPS(key, sftk_operationIsFIPS(slot, pMechanism, CKA_NSS_GENERATE,
-                                           key));
+                                           key, 0));
     session->lastOpWasFIPS = sftk_hasFIPS(key);
     sftk_FreeSession(session);
     if (crv != CKR_OK) {
@@ -5414,17 +5416,17 @@ sftk_compareKeysEqual(CK_SESSION_HANDLE hSession,
     }
     result = PR_TRUE;
 loser:
-    if (key1obj) {
-        sftk_FreeObject(key1obj);
-    }
-    if (key2obj) {
-        sftk_FreeObject(key2obj);
-    }
     if (att1) {
         sftk_FreeAttribute(att1);
     }
     if (att2) {
         sftk_FreeAttribute(att2);
+    }
+    if (key1obj) {
+        sftk_FreeObject(key1obj);
+    }
+    if (key2obj) {
+        sftk_FreeObject(key2obj);
     }
     return result;
 }
@@ -6450,9 +6452,27 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             key_type = CKK_ML_KEM;
 
         do_ml_kem:
+            sftk_DeleteAttributeType(publicKey, CKA_VALUE);
             sftk_DeleteAttributeType(privateKey, CKA_NSS_DB);
+            sftk_DeleteAttributeType(privateKey, CKA_SEED);
+            sftk_DeleteAttributeType(privateKey, CKA_VALUE);
             SECItem privKey = { siBuffer, NULL, 0 };
             SECItem pubKey = { siBuffer, NULL, 0 };
+            SECItem seed = { siBuffer, NULL, 0 };
+            unsigned char seedData[KYBER_KEYPAIR_COIN_BYTES];
+
+            /* generate the seed here so we can record it with
+             * the private key */
+            seed.data = seedData;
+            seed.len = sizeof(seedData);
+            rv = RNG_GenerateGlobalRandomBytes(seed.data, seed.len);
+            if (rv != SECSuccess) {
+                fprintf(stderr, "Generate bytes failed nbytes=%d err=%d\n",
+                        seed.len, PORT_GetError());
+                crv = sftk_MapCryptError(PORT_GetError());
+                goto kyber_done;
+            }
+
             KyberParams kyberParams = sftk_kyber_PK11ParamToInternal(genParamSet);
             if (!sftk_kyber_AllocPrivKeyItem(kyberParams, &privKey)) {
                 crv = CKR_HOST_MEMORY;
@@ -6462,8 +6482,10 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
                 crv = CKR_HOST_MEMORY;
                 goto kyber_done;
             }
-            rv = Kyber_NewKey(kyberParams, NULL, &privKey, &pubKey);
+            rv = Kyber_NewKey(kyberParams, &seed, &privKey, &pubKey);
             if (rv != SECSuccess) {
+                fprintf(stderr, "Generate Kyber_NewKey failed nbytes=%d err=%d\n",
+                        seed.len, PORT_GetError());
                 crv = sftk_MapCryptError(PORT_GetError());
                 goto kyber_done;
             }
@@ -6483,6 +6505,20 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             if (crv != CKR_OK) {
                 goto kyber_done;
             }
+            crv = sftk_AddAttributeType(privateKey, CKA_SEED,
+                                        sftk_item_expand(&seed));
+            if (crv != CKR_OK) {
+                goto kyber_done;
+            }
+            /* pseudo attribute that says the seed came with the key
+             * so don't try to regenerate the key in handleObject.
+             * it will be removed before the object sees the light of
+             * day. */
+            crv = sftk_AddAttributeType(privateKey, CKA_NSS_SEED_OK,
+                                        NULL, 0);
+            if (crv != CKR_OK) {
+                goto kyber_done;
+            }
             crv = sftk_AddAttributeType(privateKey, CKA_PARAMETER_SET,
                                         &genParamSet,
                                         sizeof(CK_ML_KEM_PARAMETER_SET_TYPE));
@@ -6492,6 +6528,7 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             crv = sftk_AddAttributeType(privateKey, CKA_NSS_DB,
                                         sftk_item_expand(&pubKey));
         kyber_done:
+            PORT_SafeZero(seed.data, seed.len);
             SECITEM_ZfreeItem(&privKey, PR_FALSE);
             SECITEM_FreeItem(&pubKey, PR_FALSE);
             break;
@@ -6743,7 +6780,7 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
      * meets the key length requirements */
     sftk_setFIPS(privateKey, sftk_operationIsFIPS(slot, pMechanism,
                                                   CKA_NSS_GENERATE_KEY_PAIR,
-                                                  privateKey));
+                                                  privateKey, 0));
     session->lastOpWasFIPS = sftk_hasFIPS(privateKey);
     sftk_setFIPS(publicKey, session->lastOpWasFIPS);
     sftk_FreeSession(session);
@@ -6894,6 +6931,55 @@ sftk_PackagePrivateKey(SFTKObject *key, CK_RV *crvp)
 
             algorithm = SEC_OID_ANSIX962_EC_PUBLIC_KEY;
             break;
+        case NSSLOWKEYMLKEMKey: {
+            SECItem seed = { siBuffer, NULL, 0 };
+            SECItem rawKey = { siBuffer, NULL, 0 };
+            dummy = NULL;
+
+            switch (lk->u.mlkem.mlkemParams) {
+                case params_ml_kem768:
+                case params_ml_kem768_test_mode:
+                    algorithm = SEC_OID_ML_KEM_768;
+                    break;
+                case params_ml_kem1024:
+                case params_ml_kem1024_test_mode:
+                    algorithm = SEC_OID_ML_KEM_1024;
+                    break;
+                default:
+                    algorithm = SEC_OID_UNKNOWN;
+                    break;
+            }
+            if (algorithm == SEC_OID_UNKNOWN) {
+                break;
+            }
+            /* save the seed and key items before they are overwritten */
+            if (lk->u.mlkem.seed.len != 0) {
+                seed = lk->u.mlkem.seed;
+            }
+            rawKey = lk->u.mlkem.key;
+            if (lk == key->objectInfo) {
+                /* we have a cached key, and we are about to
+                 * overwrite it, let's get a duplicate first */
+                lk = nsslowkey_CopyPrivateKey(lk);
+                if (lk == NULL) {
+                    break;
+                }
+            }
+            /* this overwrites the mlkem data, but we don't need it any
+             * more because we are discarding lk once we encode. This
+             * allows us to use the same template for mlkem and mldsa
+             * (and presumably other pq algorithms, though mlfn and mlshl
+             * don't have additional seeds) */
+            lk->u.genpq.seedItem = seed;
+            lk->u.genpq.keyItem = rawKey;
+            if (seed.len) {
+                dummy = SEC_ASN1EncodeItem(arena, &pki->privateKey, lk,
+                                           nsslowkey_PQBothSeedAndPrivateKeyTemplate);
+            } else {
+                dummy = SEC_ASN1EncodeItem(arena, &pki->privateKey, lk,
+                                           nsslowkey_PQPrivateKeyTemplate);
+            }
+        } break;
         case NSSLOWKEYMLDSAKey: {
             SECItem seed = { siBuffer, NULL, 0 };
             SECItem keyVal = { siBuffer, NULL, 0 };
@@ -7072,8 +7158,10 @@ NSC_WrapKey(CK_SESSION_HANDLE hSession,
 
             /* Find out if this is a block cipher. */
             crv = sftk_GetContext(hSession, &context, SFTK_ENCRYPT, PR_FALSE, NULL);
-            if (crv != CKR_OK || !context)
+            if (crv != CKR_OK || !context) {
+                sftk_FreeAttribute(attribute);
                 break;
+            }
             if (context->blockSize > 1) {
                 unsigned int remainder = pText.len % context->blockSize;
                 if (!context->doPad && remainder) {
@@ -7087,6 +7175,7 @@ NSC_WrapKey(CK_SESSION_HANDLE hSession,
                         memcpy(pText.data, attribute->attrib.pValue,
                                attribute->attrib.ulValueLen);
                     else {
+                        sftk_FreeAttribute(attribute);
                         crv = CKR_HOST_MEMORY;
                         break;
                     }
@@ -7222,6 +7311,14 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             prepare_low_ec_priv_key_for_asn1(lpk);
             prepare_low_ecparams_for_asn1(&lpk->u.ec.ecParams);
             break;
+        case SEC_OID_ML_KEM_768:
+            paramSet = CKP_ML_KEM_768;
+            goto mlkem_next;
+        case SEC_OID_ML_KEM_1024:
+            paramSet = CKP_ML_KEM_1024;
+        mlkem_next:
+            lpk->keyType = NSSLOWKEYMLKEMKey;
+            goto pq_next;
         case SEC_OID_ML_DSA_44_PUBLIC_KEY:
             paramSet = CKP_ML_DSA_44;
             goto mldsa_next;
@@ -7231,6 +7328,8 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
         case SEC_OID_ML_DSA_87_PUBLIC_KEY:
             paramSet = CKP_ML_DSA_87;
         mldsa_next:
+            lpk->keyType = NSSLOWKEYMLDSAKey;
+        pq_next:
             if (pki->privateKey.data == NULL || pki->privateKey.len == 0) {
                 PORT_SetError(SEC_ERROR_BAD_KEY);
                 goto loser;
@@ -7252,7 +7351,6 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
 
             paramTemplate = NULL;
             paramDest = NULL;
-            lpk->keyType = NSSLOWKEYMLDSAKey;
             /* genpq encodes ocect, not integer, so no need to prep it */
             break;
         default:
@@ -7384,6 +7482,39 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             if (crv != CKR_OK)
                 break;
             break;
+        case NSSLOWKEYMLKEMKey:
+            keyType = CKK_ML_KEM;
+            crv = sftk_AddAttributeType(key, CKA_KEY_TYPE, &keyType,
+                                        sizeof(keyType));
+            if (crv != CKR_OK)
+                break;
+            crv = sftk_AddAttributeType(key, CKA_DECAPSULATE, &cktrue,
+                                        sizeof(CK_BBOOL));
+            if (crv != CKR_OK)
+                break;
+            crv = sftk_AddAttributeType(key, CKA_PARAMETER_SET, &paramSet,
+                                        sizeof(CK_ML_KEM_PARAMETER_SET_TYPE));
+            if (crv != CKR_OK)
+                break;
+            if (lpk->u.genpq.seedItem.len != 0) {
+                crv = sftk_AddAttributeType(key, CKA_SEED,
+                                            sftk_item_expand(&lpk->u.genpq.seedItem));
+                if (crv != CKR_OK)
+                    break;
+            }
+
+            /* if we were given just the seed, we'll regenerate the key
+             * from the seed in handleObject */
+            if (lpk->u.genpq.keyItem.len != 0) {
+                crv = sftk_AddAttributeType(key, CKA_VALUE,
+                                            sftk_item_expand(&lpk->u.genpq.keyItem));
+                /* I know,  this is redundant, but it would be too easy
+                 * for someone to add another sftk_AddAttributeType after
+                 * this without adding this check back because of the if */
+                if (crv != CKR_OK)
+                    break;
+            }
+            break;
         case NSSLOWKEYMLDSAKey:
             keyType = CKK_ML_DSA;
             crv = (sftk_hasAttribute(key, CKA_NSS_DB)) ? CKR_OK : CKR_KEY_TYPE_INCONSISTENT;
@@ -7434,9 +7565,19 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
         /* what about fortezza??? */
         case NSSLOWKEYECKey:
             keyType = CKK_EC;
-            crv = (sftk_hasAttribute(key, CKA_NSS_DB)) ? CKR_OK : CKR_KEY_TYPE_INCONSISTENT;
-            if (crv != CKR_OK)
-                break;
+            /* if we weren't passed the CKA_NSS_DB, get it
+             * from the public key */
+            if (!sftk_hasAttribute(key, CKA_NSS_DB)) {
+                if (lpk->u.ec.publicValue.len == 0) {
+                    crv = CKR_KEY_TYPE_INCONSISTENT;
+                    goto loser;
+                }
+                crv = sftk_AddAttributeType(key, CKA_NSS_DB,
+                                            sftk_item_expand(&lpk->u.ec.publicValue));
+                if (crv != CKR_OK) {
+                    goto loser;
+                }
+            }
             crv = sftk_AddAttributeType(key, CKA_KEY_TYPE, &keyType,
                                         sizeof(keyType));
             if (crv != CKR_OK)
@@ -7498,6 +7639,8 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             crv = CKR_HOST_MEMORY;
             goto loser;
         }
+        pubk.u.rsa.needVerify = PR_FALSE; /* We're just encoding the key from the
+                                           * private key */
 
         if (SEC_ASN1EncodeItem(arena, &spki.subjectPublicKey,
                                &pubk, nsslowkey_RSAPublicKeyTemplate) == NULL) {
@@ -8168,7 +8311,8 @@ sftk_HKDF(CK_HKDF_PARAMS_PTR params, CK_SESSION_HANDLE hSession,
                     mech.ulParameterLen = sizeof(*params);
                     sftk_setFIPS(key, sftk_operationIsFIPS(saltKey->slot,
                                                            &mech, CKA_DERIVE,
-                                                           saltKey));
+                                                           saltKey,
+                                                           keySize * PR_BITS_PER_BYTE));
                 }
                 saltKeySource = saltKey->source;
                 saltKey_att = sftk_FindAttribute(saltKey, CKA_VALUE);
@@ -8485,7 +8629,8 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
         }
     }
     sftk_setFIPS(key, sftk_operationIsFIPS(slot, pMechanism,
-                                           CKA_DERIVE, sourceKey));
+                                           CKA_DERIVE, sourceKey,
+                                           keySize * PR_BITS_PER_BYTE));
 
     switch (mechanism) {
         /* get a public key from a private key. nsslowkey_ConvertToPublickey()
@@ -9344,8 +9489,8 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             if (keySize == 0)
                 keySize = tmpKeySize;
             if (keySize > tmpKeySize) {
-                sftk_FreeObject(paramKey);
                 sftk_FreeAttribute(att2);
+                sftk_FreeObject(paramKey);
                 crv = CKR_TEMPLATE_INCONSISTENT;
                 break;
             }
@@ -10215,12 +10360,13 @@ NSC_DigestKey(CK_SESSION_HANDLE hSession, CK_OBJECT_HANDLE hKey)
     }
     /* get the key value */
     att = sftk_FindAttribute(key, CKA_VALUE);
-    sftk_FreeObject(key);
     if (!att) {
+        sftk_FreeObject(key);
         return CKR_KEY_HANDLE_INVALID;
     }
     crv = NSC_DigestUpdate(hSession, (CK_BYTE_PTR)att->attrib.pValue,
                            att->attrib.ulValueLen);
     sftk_FreeAttribute(att);
+    sftk_FreeObject(key);
     return crv;
 }

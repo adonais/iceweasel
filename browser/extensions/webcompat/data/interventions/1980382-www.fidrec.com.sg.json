@@ -1,0 +1,17 @@
+{
+  "label": "www.fidrec.com.sg",
+  "bugs": {
+    "1980382": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://www.fidrec.com.sg/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1980382-www.fidrec.com.sg-fix-radio-buttons.css"]
+      }
+    }
+  ]
+}

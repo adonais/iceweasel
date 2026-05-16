@@ -207,6 +207,8 @@ interface nsIWebBrowserPersist : nsICancelable
    * with older products that don't support &alpha; and friends.
    */
   const unsigned long ENCODE_FLAGS_ENCODE_BASIC_ENTITIES = 8192;
+  /** Disable wrapping of long lines in output. */
+  const unsigned long ENCODE_FLAGS_DISALLOW_LINE_BREAKING = 16384;
 
   /**
    * Save the specified DOM document to file and optionally all linked files

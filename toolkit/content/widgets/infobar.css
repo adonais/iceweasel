@@ -6,7 +6,7 @@
   --info-bar-background-color: light-dark(var(--color-white), rgb(66, 65, 77));
   --info-bar-text-color: light-dark(var(--color-gray-100), var(--color-gray-05));
   --message-bar-border-color: color-mix(in srgb, currentColor 9%, transparent);
-
+  --message-bar-border-radius: var(--border-radius-small);
   position: relative;
 
   &::before {
@@ -17,8 +17,8 @@
     top: 0;
     inset-inline-start: 0;
     height: 100%;
-    border-start-start-radius: 4px;
-    border-end-start-radius: 4px;
+    border-start-start-radius: var(--message-bar-border-radius);
+    border-end-start-radius: var(--message-bar-border-radius);
   }
 
   .container {

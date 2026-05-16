@@ -30,6 +30,10 @@ urlbar:
         description: >
           Which input was used: fullpage, sidebar, or urlbar.
         type: string
+      window_mode:
+        description: >
+          The window mode: classic, private, or smartwindow.
+        type: string
       interaction:
         description: >
           How the user started the search action. The possible values are:
@@ -102,7 +106,8 @@ urlbar:
           `addon`,
           `ai_chat`,
           `autofill_about`,
-          `autofill_adaptive`,
+          `autofill_adaptive_origin`,
+          `autofill_adaptive_url`,
           `autofill_origin`,
           `autofill_unknown`,
           `autofill_url`,
@@ -116,6 +121,7 @@ urlbar:
           `history`,
           `history_adaptive`,
           `history_adaptive_serp`,
+          `history_autofill_fallback_origin`,
           `history_semantic`,
           `history_semantic_serp`,
           `history_serp`,
@@ -203,6 +209,7 @@ urlbar:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1917992
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2003067
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1800414#c2
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1805717#c4
@@ -210,6 +217,7 @@ urlbar:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1917992
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2003067
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
     data_sensitivity:
       - interaction
     notification_emails:
@@ -229,6 +237,10 @@ urlbar:
       location:
         description: >
           Which input was used: fullpage, sidebar, or urlbar.
+        type: string
+      window_mode:
+        description: >
+          The window mode: classic, private, or smartwindow.
         type: string
       interaction:
         description: >
@@ -332,9 +344,11 @@ urlbar:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1959741
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1959741
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
     data_sensitivity:
       - interaction
     notification_emails:
@@ -359,6 +373,10 @@ urlbar:
       location:
         description: >
           Which input was used: fullpage, sidebar, or urlbar.
+        type: string
+      window_mode:
+        description: >
+          The window mode: classic, private, or smartwindow.
         type: string
       interaction:
         description: >
@@ -434,9 +452,11 @@ urlbar:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960836
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960836
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
     data_sensitivity:
       - interaction
     notification_emails:
@@ -456,6 +476,10 @@ urlbar:
       location:
         description: >
           Which input was used: fullpage, sidebar, or urlbar.
+        type: string
+      window_mode:
+        description: >
+          The window mode: classic, private, or smartwindow.
         type: string
       interaction:
         description: >
@@ -515,7 +539,8 @@ urlbar:
           `addon`,
           `ai_chat`,
           `autofill_about`,
-          `autofill_adaptive`,
+          `autofill_adaptive_origin`,
+          `autofill_adaptive_url`,
           `autofill_origin`,
           `autofill_unknown`,
           `autofill_url`,
@@ -530,6 +555,7 @@ urlbar:
           `history`,
           `history_adaptive`,
           `history_adaptive_serp`,
+          `history_autofill_fallback_origin`,
           `history_semantic`,
           `history_semantic_serp`,
           `history_serp`,
@@ -654,7 +680,8 @@ urlbar:
           `addon`,
           `ai_chat`,
           `autofill_about`,
-          `autofill_adaptive`,
+          `autofill_adaptive_origin`,
+          `autofill_adaptive_url`,
           `autofill_origin`,
           `autofill_unknown`,
           `autofill_url`,
@@ -668,6 +695,7 @@ urlbar:
           `history`,
           `history_adaptive`,
           `history_adaptive_serp`,
+          `history_autofill_fallback_origin`,
           `history_semantic`,
           `history_semantic_serp`,
           `history_serp`,
@@ -744,6 +772,7 @@ urlbar:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2003067
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1797265#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1805717#c4
@@ -751,6 +780,7 @@ urlbar:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2003067
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1583,6 +1613,26 @@ urlbar.unifiedsearchbutton:
       - fx-search-telemetry@mozilla.com
     expires: never
     telemetry_mirror: URLBAR_UNIFIEDSEARCHBUTTON_PICKED
+
+urlbar.autofill:
+  reintegration:
+    type: labeled_counter
+    description: >
+      Counts how many times a blocked autofill result was reintegrated
+      (unblocked) because the user picked the same URL as a non-autofill
+      history result.
+    labels:
+      - origin
+      - url
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019719
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019719
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: never
+    data_sensitivity:
+      - interaction
 
 urlbar.merino:
   latency_by_response_status:

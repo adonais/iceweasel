@@ -42,6 +42,13 @@ nsBMPEncoder::~nsBMPEncoder() {
   }
 }
 
+NS_IMETHODIMP
+nsBMPEncoder::SetColorSpaceInfo(imgIEncoder::CICPColourPrimaries,
+                                imgIEncoder::CICPTransferCharacteristics,
+                                imgIEncoder::CICPMatrixCoefficients, bool) {
+  return NS_OK;
+}
+
 // nsBMPEncoder::InitFromData
 //
 // One output option is supported: bpp=<bpp_value>

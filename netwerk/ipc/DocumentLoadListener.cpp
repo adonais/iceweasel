@@ -2468,19 +2468,35 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
     return;
   }
 
-  // Validate that the target process, if specified, would be allowed to load
-  // this principal, and fail the navigation if it would not.
-  // Don't enforce this requirement for silent error loads, as those never
-  // process switch, and should not result in a document being loaded in the
-  // content process.
-  // System principals are allowed for now, as they are used in some edge-cases.
-  if (!silentErrorLoad && contentParent &&
-      !contentParent->ValidatePrincipal(
-          unsandboxedPrincipal, {ValidatePrincipalOptions::AllowSystem})) {
-    ContentParent::LogAndAssertFailedPrincipalValidationInfo(
-        unsandboxedPrincipal, "TriggerRedirectToRealChannel");
-    RedirectToRealChannelFinished(NS_ERROR_FAILURE);
-    return;
+  // Checks related to loads which will complete in a content process.
+  //
+  // These checks are skipped for silent error loads, as those never process
+  // switch, and should not result in a document being loaded in the content
+  // process.
+  if (contentParent && !silentErrorLoad) {
+    // Validate that the target process, if specified, would be allowed to load
+    // this principal, and fail the navigation if it would not.
+    // System principals are allowed for now, as they are used in some
+    // edge-cases.
+    if (!contentParent->ValidatePrincipal(
+            unsandboxedPrincipal, {ValidatePrincipalOptions::AllowSystem})) {
+      ContentParent::LogAndAssertFailedPrincipalValidationInfo(
+          unsandboxedPrincipal, "TriggerRedirectToRealChannel");
+      RedirectToRealChannelFinished(NS_ERROR_FAILURE);
+      return;
+    }
+
+    // Give ContentParent a chance to transmit information such as permissions
+    // into the content process.
+    rv = contentParent->AboutToLoadDocumentForChild(mChannel);
+    if (NS_FAILED(rv)) {
+      LOG(
+          ("DocumentLoadListener::TriggerRedirectToRealChannel [this=%p] "
+           "AboutToLoadDocumentForChild failed",
+           this));
+      RedirectToRealChannelFinished(rv);
+      return;
+    }
   }
 
   // Ensure that the BrowsingContextGroup which will finish this load has the
@@ -2881,6 +2897,10 @@ nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
     // channels, which may have extra information (e.g. navigation timing) which
     // would be relevant to the content process.
     if (!httpChannel) {
+      // Resume the channel that was suspended above so that the pump
+      // can call OnStopRequest, which breaks the reference cycle between
+      // DocumentLoadListener and ParentChannelListener.
+      mChannel->Resume();
       DisconnectListeners(status, status);
       return NS_OK;
     }

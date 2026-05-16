@@ -89,6 +89,7 @@
 #define ID_DISPLAY_WIDTH            0x54b0
 #define ID_DISPLAY_HEIGHT           0x54ba
 #define ID_COLOUR                   0x55b0
+#define ID_PROJECTION               0x7670
 
 /* Audio Elements */
 #define ID_AUDIO                    0xe1
@@ -135,6 +136,12 @@
 #define ID_WHITE_POINT_CHROMATICITY_Y 0x55d8
 #define ID_LUMINANCE_MAX              0x55d9
 #define ID_LUMINANCE_MIN              0x55da
+
+/* Projection Elements */
+#define ID_PROJECTION_TYPE            0x7671
+#define ID_PROJECTION_POSE_YAW        0x7673
+#define ID_PROJECTION_POSE_PITCH      0x7674
+#define ID_PROJECTION_POSE_ROLL       0x7675
 
 /* Other Elements */
 #define ID_CHAPTERS                   0x1043a770
@@ -296,6 +303,13 @@ struct colour {
   struct mastering_metadata mastering_metadata;
 };
 
+struct projection {
+  struct ebml_type type;
+  struct ebml_type pose_yaw;
+  struct ebml_type pose_pitch;
+  struct ebml_type pose_roll;
+};
+
 struct video {
   struct ebml_type stereo_mode;
   struct ebml_type alpha_mode;
@@ -308,6 +322,7 @@ struct video {
   struct ebml_type display_width;
   struct ebml_type display_height;
   struct colour colour;
+  struct projection projection;
 };
 
 struct audio {
@@ -538,6 +553,14 @@ static struct ebml_element_desc ne_colour_elements[] = {
   E_LAST
 };
 
+static struct ebml_element_desc ne_projection_elements[] = {
+  E_FIELD(ID_PROJECTION_TYPE, TYPE_UINT, struct projection, type),
+  E_FIELD(ID_PROJECTION_POSE_YAW, TYPE_FLOAT, struct projection, pose_yaw),
+  E_FIELD(ID_PROJECTION_POSE_PITCH, TYPE_FLOAT, struct projection, pose_pitch),
+  E_FIELD(ID_PROJECTION_POSE_ROLL, TYPE_FLOAT, struct projection, pose_roll),
+  E_LAST
+};
+
 static struct ebml_element_desc ne_video_elements[] = {
   E_FIELD(ID_STEREO_MODE, TYPE_UINT, struct video, stereo_mode),
   E_FIELD(ID_ALPHA_MODE, TYPE_UINT, struct video, alpha_mode),
@@ -550,6 +573,7 @@ static struct ebml_element_desc ne_video_elements[] = {
   E_FIELD(ID_DISPLAY_WIDTH, TYPE_UINT, struct video, display_width),
   E_FIELD(ID_DISPLAY_HEIGHT, TYPE_UINT, struct video, display_height),
   E_SINGLE_MASTER(ID_COLOUR, TYPE_MASTER, struct video, colour),
+  E_SINGLE_MASTER(ID_PROJECTION, TYPE_MASTER, struct video, projection),
   E_LAST
 };
 
@@ -795,7 +819,7 @@ ne_read_svint(nestegg_io * io, int64_t * value, uint64_t * length)
   r = ne_bare_read_vint(io, &uvalue, &ulength, MASK_FIRST_BIT);
   if (r != 1)
     return r;
-  *value = uvalue - svint_subtr[ulength - 1];
+  *value = (int64_t) uvalue - svint_subtr[ulength - 1];
   if (length)
     *length = ulength;
   return r;
@@ -842,7 +866,7 @@ ne_read_int(nestegg_io * io, int64_t * val, uint64_t length)
     } else {
       base = 0;
     }
-    *val = uval - base;
+    *val = (int64_t) uval - (int64_t) base;
   } else {
     *val = (int64_t) uval;
   }
@@ -1336,6 +1360,9 @@ ne_read_xiph_lace_value(nestegg_io * io, uint64_t * value, size_t * consumed)
       return r;
     *consumed += 1;
     *value += lace;
+    /* Check frame size limit early to defeat crafted lace values. */
+    if (*value > LIMIT_FRAME)
+      return -1;
   }
 
   return 1;
@@ -1369,7 +1396,7 @@ ne_read_ebml_lacing(nestegg_io * io, size_t block, size_t * read, uint64_t n, ui
 {
   int r;
   uint64_t lace, sum, length;
-  int64_t slace;
+  int64_t slace, frame_size;
   size_t i = 0;
 
   r = ne_read_vint(io, &lace, &length);
@@ -1388,7 +1415,10 @@ ne_read_ebml_lacing(nestegg_io * io, size_t block, size_t * read, uint64_t n, ui
     if (r != 1)
       return r;
     *read += length;
-    sizes[i] = sizes[i - 1] + slace;
+    frame_size = (int64_t) sizes[i - 1] + slace;
+    if (frame_size < 0)
+      return -1;
+    sizes[i] = frame_size;
     sum += sizes[i];
     i += 1;
   }
@@ -1399,6 +1429,14 @@ ne_read_ebml_lacing(nestegg_io * io, size_t block, size_t * read, uint64_t n, ui
   /* Last frame is the remainder of the block. */
   sizes[i] = block - *read - sum;
   return 1;
+}
+
+static uint64_t
+ne_saturate_mul_uint64(uint64_t a, uint64_t b)
+{
+  if (b != 0 && a > UINT64_MAX / b)
+    return UINT64_MAX;
+  return a * b;
 }
 
 static uint64_t
@@ -1515,7 +1553,6 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
   nestegg_packet * pkt;
   struct frame * f, * last;
   struct track_entry * entry;
-  double track_scale;
   uint64_t track_number, length, frame_sizes[256], cluster_tc, flags, frames, tc_scale, total,
            encoding_type, encryption_algo, encryption_mode;
   unsigned int i, lacing, track;
@@ -1634,8 +1671,6 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
     return -1;
   }
 
-  track_scale = 1.0;
-
   tc_scale = ne_get_timecode_scale(ctx);
   if (tc_scale == 0)
     return -1;
@@ -1655,7 +1690,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
   if (!pkt)
     return -1;
   pkt->track = track;
-  pkt->timecode = abs_timecode * tc_scale * track_scale;
+  pkt->timecode = ne_saturate_mul_uint64((uint64_t) abs_timecode, tc_scale);
   pkt->keyframe = keyframe;
 
   ctx->log(ctx, NESTEGG_LOG_DEBUG, "%sblock t %lld pts %f f %llx frames: %llu",
@@ -1886,7 +1921,8 @@ ne_buf_read_id(unsigned char const * p, size_t length)
 {
   uint64_t id = 0;
 
-  while (length--) {
+  while (length > 0) {
+    length--;
     id <<= 8;
     id |= *p++;
   }
@@ -2738,6 +2774,22 @@ nestegg_track_video_params(nestegg * ctx, unsigned int track,
   ne_get_uint(entry->video.colour.primaries, &value);
   params->primaries = value;
 
+  value = 0;
+  ne_get_uint(entry->video.projection.type, &value);
+  params->projection_type = value;
+
+  fvalue = 0;
+  ne_get_float(entry->video.projection.pose_yaw, &fvalue);
+  params->projection_pose_yaw = fvalue;
+
+  fvalue = 0;
+  ne_get_float(entry->video.projection.pose_pitch, &fvalue);
+  params->projection_pose_pitch = fvalue;
+
+  fvalue = 0;
+  ne_get_float(entry->video.projection.pose_roll, &fvalue);
+  params->projection_pose_roll = fvalue;
+
   fvalue = strtod("NaN", NULL);
   ne_get_float(entry->video.colour.mastering_metadata.primary_r_chromacity_x, &fvalue);
   params->primary_r_chromacity_x = fvalue;
@@ -3062,7 +3114,7 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
             }
             return -1;
           }
-          block_duration *= tc_scale;
+          block_duration = ne_saturate_mul_uint64(block_duration, tc_scale);
           read_block_duration = 1;
           break;
         }

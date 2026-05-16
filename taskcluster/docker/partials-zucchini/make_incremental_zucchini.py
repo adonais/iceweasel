@@ -262,7 +262,7 @@ def create_patch(from_file, to_file, destination_patch):
             log(f"Zucchini failed to create patch:\n{e.stderr}", "create_patch")
             raise Exception(f"Zucchini exited with code: {e.returncode}")
 
-        xz_cmd(("--compress", "-9", "-e", "-c"), patch_fd.name, destination_patch)
+        xz_cmd(("--compress", "-7", "-e", "-c"), patch_fd.name, destination_patch)
 
 
 def make_partial(

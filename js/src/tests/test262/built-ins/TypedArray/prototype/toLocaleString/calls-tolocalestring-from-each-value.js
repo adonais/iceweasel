@@ -50,6 +50,6 @@ testWithTypedArrayConstructors(function(TA) {
     compareArray(new TA(calls), sample),
     "toLocaleString called for each item"
   );
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

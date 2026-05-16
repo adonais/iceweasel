@@ -39,6 +39,8 @@ export const AboutNewTab = {
   _activityStreamEnabled: false,
   activityStream: null,
   activityStreamDebug: false,
+  activityStreamPromise: null,
+  _activityStreamResolver: null,
 
   _cachedTopSites: null,
 
@@ -52,6 +54,9 @@ export const AboutNewTab = {
     if (this.initialized) {
       return;
     }
+    let { promise, resolve } = Promise.withResolvers();
+    this.activityStreamPromise = promise;
+    this._activityStreamResolver = resolve;
 
     Services.obs.addObserver(this, TOPIC_APP_QUIT);
     if (!AppConstants.RELEASE_OR_BETA) {
@@ -207,6 +212,7 @@ export const AboutNewTab = {
     try {
       this.activityStream = new lazy.ActivityStream(createdInstant);
       Glean.newtab.activityStreamCtorSuccess.set(true);
+      this._activityStreamResolver();
     } catch (error) {
       // Send Activity Stream loading failure telemetry
       // This probe will help to monitor if ActivityStream failure has crossed
@@ -225,19 +231,18 @@ export const AboutNewTab = {
   },
 
   _subscribeToActivityStream() {
-    let unsubscribe = this.activityStream.store.subscribe(() => {
+    const store = this.activityStream.store;
+    let unsubscribe = store.subscribe(() => {
       // If the top sites changed, broadcast "newtab-top-sites-changed". We
       // ignore changes to the `screenshot` property in each site because
       // screenshots are generated at times that are hard to predict and it ends
       // up interfering with tests that rely on "newtab-top-sites-changed".
       // Observers likely don't care about screenshots anyway.
-      let topSites = this.activityStream.store
-        .getState()
-        .TopSites.rows.map(site => {
-          site = { ...site };
-          delete site.screenshot;
-          return site;
-        });
+      let topSites = store.getState().TopSites.rows.map(site => {
+        site = { ...site };
+        delete site.screenshot;
+        return site;
+      });
       if (!lazy.ObjectUtils.deepEqual(topSites, this._cachedTopSites)) {
         this._cachedTopSites = topSites;
         Services.obs.notifyObservers(null, "newtab-top-sites-changed");

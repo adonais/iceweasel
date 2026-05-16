@@ -43,7 +43,6 @@
 #include "nsContentUtils.h"
 #include "nsDragService.h"
 #include "nsFocusManager.h"
-#include "nsGkAtoms.h"
 #include "nsGfxCIID.h"
 #include "nsIDocShellTreeOwner.h"
 #include "nsLayoutUtils.h"

@@ -175,6 +175,29 @@ static bool ReadParams(MessageReader* aReader, Ts&... aArgs) {
     }                                                                        \
   };
 
+// Intended to be used with IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS.
+#define DECLARE_IPC_SERIALIZER(Type)                                    \
+  template <>                                                           \
+  struct ParamTraits<Type> {                                            \
+    typedef Type paramType;                                             \
+    static void Write(MessageWriter* aWriter, const paramType& aParam); \
+    static bool Read(MessageReader* aReader, paramType* aResult);       \
+  };
+
+#define IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(Type, ...)                       \
+  void ParamTraits<Type>::Write(MessageWriter* aWriter,                       \
+                                const paramType& aParam) {                    \
+    WriteParams(aWriter, MOZ_FOR_EACH_SEPARATED(ACCESS_PARAM_FIELD, (, ), (), \
+                                                (__VA_ARGS__)));              \
+  }                                                                           \
+                                                                              \
+  bool ParamTraits<Type>::Read(MessageReader* aReader, paramType* aResult) {  \
+    paramType& aParam = *aResult;                                             \
+    return ReadParams(                                                        \
+        aReader,                                                              \
+        MOZ_FOR_EACH_SEPARATED(ACCESS_PARAM_FIELD, (, ), (), (__VA_ARGS__))); \
+  }
+
 #define DEFINE_IPC_SERIALIZER_WITHOUT_FIELDS(Type) \
   template <>                                      \
   struct ParamTraits<Type> : public EmptyStructSerializer<Type> {};

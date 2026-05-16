@@ -50,7 +50,31 @@ const lazy = XPCOMUtils.declareLazy({
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+  clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
+
+  historyEnabled: {
+    pref: "places.history.enabled",
+    default: true,
+  },
 });
+
+/**
+ * Parses a URL and returns the origin parts needed for moz_origins lookups.
+ * Returns null if the URL is unparseable.
+ *
+ * @param {string} url
+ *   The URL to parse.
+ * @returns {{ prefix: string, host: string } | null}
+ *   The prefix (scheme + "//") and host, or null if parsing failed.
+ */
+function parseOriginParts(url) {
+  let parsed = URL.parse(url);
+  if (!parsed) {
+    return null;
+  }
+  return { prefix: parsed.protocol + "//", host: parsed.host };
+}
 
 export var UrlbarUtils = {
   // Results are categorized into groups to help the muxer compose them.  See
@@ -269,7 +293,7 @@ export var UrlbarUtils = {
         icon: "chrome://browser/skin/bookmark.svg",
         pref: "shortcuts.bookmarks",
         telemetryLabel: "bookmarks",
-        uiLabel: "urlbar-searchmode-bookmarks",
+        uiLabel: "urlbar-searchmode-bookmarks2",
       },
       {
         source: this.RESULT_SOURCE.TABS,
@@ -277,7 +301,7 @@ export var UrlbarUtils = {
         icon: "chrome://browser/skin/tabs.svg",
         pref: "shortcuts.tabs",
         telemetryLabel: "tabs",
-        uiLabel: "urlbar-searchmode-tabs",
+        uiLabel: "urlbar-searchmode-tabs2",
       },
       {
         source: this.RESULT_SOURCE.HISTORY,
@@ -285,7 +309,7 @@ export var UrlbarUtils = {
         icon: "chrome://browser/skin/history.svg",
         pref: "shortcuts.history",
         telemetryLabel: "history",
-        uiLabel: "urlbar-searchmode-history",
+        uiLabel: "urlbar-searchmode-history2",
       },
       {
         source: this.RESULT_SOURCE.ACTIONS,
@@ -293,7 +317,7 @@ export var UrlbarUtils = {
         icon: "chrome://browser/skin/quickactions.svg",
         pref: "shortcuts.actions",
         telemetryLabel: "actions",
-        uiLabel: "urlbar-searchmode-actions",
+        uiLabel: "urlbar-searchmode-actions2",
       },
     ]);
   },
@@ -1029,21 +1053,80 @@ export var UrlbarUtils = {
    *
    * @param {string} url The url to add input history for
    * @param {string} input The associated search term
+   * @returns {Promise<boolean>}
+   *   Whether the row was written. False if the URL is not yet in moz_places
+   *   or history is disabled.
    */
   async addToInputHistory(url, input) {
-    await lazy.PlacesUtils.withConnectionWrapper("addToInputHistory", db => {
-      // use_count will asymptotically approach the max of 10.
-      return db.executeCached(
-        `
-        INSERT OR REPLACE INTO moz_inputhistory
-        SELECT h.id, IFNULL(i.input, :input), IFNULL(i.use_count, 0) * .9 + 1
-        FROM moz_places h
-        LEFT JOIN moz_inputhistory i ON i.place_id = h.id AND i.input = :input
-        WHERE url_hash = hash(:url) AND url = :url
-      `,
-        { url, input: input.toLowerCase() }
-      );
-    });
+    if (!lazy.historyEnabled) {
+      return false;
+    }
+    // use_count will asymptotically approach the max of 10.
+    let rows = await lazy.PlacesUtils.withConnectionWrapper(
+      "addToInputHistory",
+      db => {
+        return db.executeCached(
+          `
+          INSERT OR REPLACE INTO moz_inputhistory
+          SELECT h.id, IFNULL(i.input, :input), IFNULL(i.use_count, 0) * .9 + 1
+          FROM moz_places h
+          LEFT JOIN moz_inputhistory i ON i.place_id = h.id AND i.input = :input
+          WHERE url_hash = hash(:url) AND url = :url
+          RETURNING place_id
+          `,
+          { url, input: input.toLowerCase() }
+        );
+      }
+    );
+    return !!rows.length;
+  },
+
+  /**
+   * Like addToInputHistory, but if the URL is not yet in moz_places
+   * (e.g. an origin derived from a deep-link visit), waits for the
+   * visit to land before writing.
+   *
+   * @param {string} url The url to add input history for
+   * @param {string} input The associated search term
+   */
+  async addToInputHistoryWhenReady(url, input) {
+    if (!lazy.historyEnabled) {
+      return;
+    }
+    // Register the observer before the initial attempt so we can't miss
+    // a visit that lands between the check and the registration.
+    let { promise: visitedPromise, resolve: visitedResolve } =
+      Promise.withResolvers();
+    let listener = events => {
+      for (let event of events) {
+        if (event.type == "page-visited" && event.url == url) {
+          PlacesObservers.removeListener(["page-visited"], listener);
+          visitedResolve(true);
+          return;
+        }
+      }
+    };
+    PlacesObservers.addListener(["page-visited"], listener);
+
+    // Safety timeout so we don't leak the listener forever.
+    let timeoutId = lazy.setTimeout(() => {
+      PlacesObservers.removeListener(["page-visited"], listener);
+      visitedResolve(false);
+    }, 1000);
+
+    // Try immediately, succeeds if the URL is already in moz_places.
+    if (await this.addToInputHistory(url, input)) {
+      PlacesObservers.removeListener(["page-visited"], listener);
+      lazy.clearTimeout(timeoutId);
+      return;
+    }
+
+    // Page not yet in moz_places, wait for the visit to be recorded.
+    let visited = await visitedPromise;
+    lazy.clearTimeout(timeoutId);
+    if (visited) {
+      await this.addToInputHistory(url, input);
+    }
   },
 
   /**
@@ -1067,6 +1150,197 @@ export var UrlbarUtils = {
         { url, input: input.toLowerCase() }
       );
     });
+  },
+
+  /**
+   * Temporarily blocks autofill for the given URL. If the URL is an origin,
+   * blocks origin autofill via blockOriginAutofill. Otherwise, blocks
+   * page-level autofill via blockOriginPageAutofill.
+   *
+   * @param {string} url
+   *   The URL to block from autofill.
+   * @param {number} blockUntilMs
+   *   Epoch timestamp in ms after which the block expires.
+   */
+  async blockAutofill(url, blockUntilMs) {
+    if (this.isOriginUrl(url)) {
+      await this.blockOriginAutofill(url, blockUntilMs);
+    } else {
+      await this.blockOriginPageAutofill(url, blockUntilMs);
+    }
+  },
+
+  /**
+   * Temporarily blocks origin autofill for the given URL's origin and all its
+   * scheme/www variations. For example, blocking https://www.example.com also
+   * blocks http://www.example.com, http://example.com, and
+   * https://example.com. The lookup matches against moz_origins directly, so
+   * the URL need not have a corresponding entry in moz_places.
+   *
+   * This is a no-op if the URL is unparseable.
+   *
+   * @param {string} url
+   *   A URL belonging to the origin to block.
+   * @param {number} blockUntilMs
+   *   Epoch timestamp in ms after which the block expires.
+   */
+  async blockOriginAutofill(url, blockUntilMs) {
+    let origin = parseOriginParts(url);
+    if (!origin) {
+      return;
+    }
+
+    let baseHost = origin.host.replace(/^www\./, "");
+    let wwwHost = "www." + baseHost;
+
+    await lazy.PlacesUtils.withConnectionWrapper("blockOriginAutofill", db => {
+      return db.executeCached(
+        `
+      UPDATE moz_origins SET block_until_ms = :blockUntilMs
+      WHERE host IN (:baseHost, :wwwHost)
+        AND prefix IN ('http://', 'https://')
+      `,
+        { blockUntilMs, baseHost, wwwHost }
+      );
+    });
+  },
+
+  /**
+   * Temporarily blocks page-level autofill for the given URL's origin and all
+   * its scheme/www variations. For example, blocking https://www.example.com
+   * also blocks http://www.example.com, http://example.com, and
+   * https://example.com.
+   *
+   * This is a no-op if the URL is unparseable.
+   *
+   * @param {string} url
+   *   A URL belonging to the origin to block.
+   * @param {number} blockPagesUntilMs
+   *   Epoch timestamp in ms after which the block expires.
+   */
+  async blockOriginPageAutofill(url, blockPagesUntilMs) {
+    let origin = parseOriginParts(url);
+    if (!origin) {
+      return;
+    }
+
+    let baseHost = origin.host.replace(/^www\./, "");
+    let wwwHost = "www." + baseHost;
+
+    await lazy.PlacesUtils.withConnectionWrapper(
+      "blockOriginPageAutofill",
+      db => {
+        return db.executeCached(
+          `
+        UPDATE moz_origins SET block_pages_until_ms = :blockPagesUntilMs
+        WHERE host IN (:baseHost, :wwwHost)
+          AND prefix IN ('http://', 'https://')
+        `,
+          { blockPagesUntilMs, baseHost, wwwHost }
+        );
+      }
+    );
+  },
+
+  /**
+   * Clears an origin-level autofill block for the given URL's origin and all
+   * its scheme/www variations. For example, clearing a block on
+   * http://example.com also clears blocks on https://example.com,
+   * http://www.example.com, and https://www.example.com. The lookup matches
+   * against moz_origins directly, so the URL need not have a corresponding
+   * entry in moz_places.
+   *
+   * This is a no-op if the URL is unparseable or the origin is not
+   * currently blocked.
+   *
+   * @param {string} url
+   *   A URL belonging to the origin to unblock.
+   * @returns {Promise<boolean>}
+   *   True if a block was actually cleared, false otherwise.
+   */
+  async clearOriginAutofillBlock(url) {
+    let origin = parseOriginParts(url);
+    if (!origin) {
+      return false;
+    }
+
+    let baseHost = origin.host.replace(/^www\./, "");
+    let wwwHost = "www." + baseHost;
+
+    let rows = await lazy.PlacesUtils.withConnectionWrapper(
+      "clearOriginAutofillBlock",
+      db => {
+        return db.executeCached(
+          `
+        UPDATE moz_origins SET block_until_ms = NULL
+        WHERE host IN (:baseHost, :wwwHost)
+          AND prefix IN ('http://', 'https://')
+          AND block_until_ms IS NOT NULL
+        RETURNING id
+        `,
+          { baseHost, wwwHost }
+        );
+      }
+    );
+    return !!rows.length;
+  },
+
+  /**
+   * Clears a page-level autofill block for the given URL's origin and all its
+   * scheme/www variations. For example, clearing a block on
+   * http://example.com also clears blocks on https://example.com,
+   * http://www.example.com, and https://www.example.com.
+   *
+   * This is a no-op if the URL is unparseable or the origin's pages are
+   * not currently blocked.
+   *
+   * @param {string} url
+   *   A URL belonging to the origin to unblock.
+   * @returns {Promise<boolean>}
+   *   True if a block was actually cleared, false otherwise.
+   */
+  async clearOriginPageAutofillBlock(url) {
+    let origin = parseOriginParts(url);
+    if (!origin) {
+      return false;
+    }
+
+    let baseHost = origin.host.replace(/^www\./, "");
+    let wwwHost = "www." + baseHost;
+
+    let rows = await lazy.PlacesUtils.withConnectionWrapper(
+      "clearOriginPageAutofillBlock",
+      db => {
+        return db.executeCached(
+          `
+        UPDATE moz_origins SET block_pages_until_ms = NULL
+        WHERE host IN (:baseHost, :wwwHost)
+          AND prefix IN ('http://', 'https://')
+          AND block_pages_until_ms IS NOT NULL
+        RETURNING id
+        `,
+          { baseHost, wwwHost }
+        );
+      }
+    );
+    return !!rows.length;
+  },
+
+  /**
+   * Returns whether a URL is an origin URL, i.e. it has no path beyond "/",
+   * no query string, and no hash.
+   *
+   * @param {string} url
+   *   The URL to check.
+   * @returns {boolean}
+   *   True if the URL is an origin URL, false if it has a path, query, hash,
+   *   or is unparseable.
+   */
+  isOriginUrl(url) {
+    let parsed = URL.parse(url);
+    return (
+      !!parsed && parsed.pathname === "/" && !parsed.search && !parsed.hash
+    );
   },
 
   /**
@@ -1740,6 +2014,9 @@ export var UrlbarUtils = {
         if (result.providerName === "UrlbarProviderClipboard") {
           return "clipboard";
         }
+        if (result.payload.isAutofillFallback) {
+          return "history_autofill_fallback_origin";
+        }
         if (result.source === this.RESULT_SOURCE.BOOKMARKS) {
           return checkForSubType("bookmark", result);
         }
@@ -1973,6 +2250,149 @@ export var UrlbarUtils = {
       numberingSystem: "latn",
     }).format(result);
   },
+
+  /**
+   * Formats a date and time for display. This is not a general formatting
+   * function. It uses some heuristics to generate formatted strings as used in
+   * urlbar UI. The format chosen will depend on the date.
+   *
+   * @param {Date} date
+   *   A JS `Date` object.
+   * @param {object} options
+   *   Options object
+   * @param {boolean} [options.forceAbsoluteDate]
+   *   Pass true to force the formatted date to be absolute ("May 11") when it
+   *   otherwise would be formatted as relative ("tomorrow").
+   * @param {boolean} [options.capitalizeRelativeDate]
+   *   Whether relative dates should be capitalized ("Tomorrow" instead of
+   *   "tomorrow").
+   * @param {boolean} [options.includeTimeZone]
+   *   When a formatted time is generated, it will include the time zone only if
+   *   this param is true.
+   * @returns {FormatDateResult}
+   *   The result.
+   *
+   * @typedef {object} FormatDateResult
+   * @property {string} formattedDate
+   *   The formatted date.
+   * @property {?string} formattedTime
+   *   The formatted time. Depending on the passed-in date, a formatted time
+   *   might not be generated, and in that case this will be undefined.
+   * @property {boolean} isRelative
+   *   Whether the formatted date is relative ("tomorrow") rather than absolute
+   *   ("May 11").
+   * @property {ParseDateResult} parseDateResult
+   *   This function calls `parseDate()` as part of its operation, and the
+   *   result is included here in case it's useful.
+   */
+  formatDate(
+    date,
+    {
+      forceAbsoluteDate = false,
+      capitalizeRelativeDate = false,
+      includeTimeZone = false,
+    } = {}
+  ) {
+    let parseDateResult = this.parseDate(date);
+    let { zonedNow, zonedDate, daysUntil, isFuture } = parseDateResult;
+
+    // First, format the date.
+    let formattedDate;
+    let isRelative = false;
+    if (Math.abs(daysUntil) <= 1) {
+      // The date is recent. Format it as relative, e.g.: "today", "tomorrow"
+      isRelative = true;
+      formattedDate = new Intl.RelativeTimeFormat(undefined, {
+        numeric: "auto",
+      }).format(daysUntil, "day");
+      if (capitalizeRelativeDate) {
+        formattedDate =
+          formattedDate[0].toLocaleUpperCase() + formattedDate.substring(1);
+      }
+    } else {
+      // The date is not recent. Format it with some combination of year, month,
+      // day, and weekday, e.g.: "May 11", "May 11, 2026", "Mon"
+      let opts = {
+        timeZone: zonedNow.timeZoneId,
+      };
+      if (!forceAbsoluteDate && 0 < daysUntil && daysUntil < 7) {
+        // Include only the weekday.
+        opts.weekday = "short";
+      } else {
+        // Include the month and day and the year if it's not this year.
+        opts.month = "short";
+        opts.day = "numeric";
+        if (zonedDate.year != zonedNow.year) {
+          opts.year = "numeric";
+        }
+      }
+      formattedDate = new Intl.DateTimeFormat(undefined, opts).format(date);
+    }
+
+    // Now format the time.
+    let formattedTime;
+    if (isFuture) {
+      formattedTime = new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "numeric",
+        timeZoneName: includeTimeZone ? "short" : undefined,
+        timeZone: zonedNow.timeZoneId,
+      }).format(date);
+    }
+
+    return {
+      isRelative,
+      formattedDate,
+      formattedTime,
+      parseDateResult,
+    };
+  },
+
+  /**
+   * Parses a `Date` and returns some info about it.
+   *
+   * @param {Date} date
+   *   A JS `Date` object.
+   * @returns {ParseDateResult}
+   *   The result.
+   *
+   * @typedef {object} ParseDateResult
+   * @property {typeof Temporal.ZonedDateTime} zonedNow
+   *   The "now" date as a `ZonedDateTime`.
+   * @property {typeof Temporal.ZonedDateTime} zonedDate
+   *   The passed-in date as a `ZonedDateTime`.
+   * @property {boolean} isFuture
+   *   Whether the date is in the future.
+   * @property {number} daysUntil
+   *   The number of calendar days from today to the date. If the date is in the
+   *   future, this number will be positive. If the date is in the past, it will
+   *   be negative. If the date is today, it will be zero.
+   */
+  parseDate(date) {
+    let zonedNow = this._zonedDateTimeISO();
+    let zonedDate = date.toTemporalInstant().toZonedDateTimeISO(zonedNow);
+    let isFuture = Temporal.ZonedDateTime.compare(zonedNow, zonedDate) < 0;
+
+    let today = zonedNow.startOfDay();
+    let dateDay = zonedDate.startOfDay();
+
+    let duration = today.until(dateDay).round("days");
+    let daysUntil = duration.days;
+
+    return {
+      zonedNow,
+      zonedDate,
+      isFuture,
+      daysUntil,
+    };
+  },
+
+  // Thin wrapper around `zonedDateTimeISO` so that tests can easily set a mock
+  // "now" date and time. Use `UrlbarTestUtils.stubNowZonedDateTime()` to stub a
+  // "now".
+  _zonedDateTimeISO() {
+    return Temporal.Now.zonedDateTimeISO();
+  },
 };
 
 ChromeUtils.defineLazyGetter(UrlbarUtils.ICON, "DEFAULT", () => {
@@ -2176,6 +2596,9 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
       iconBlob: {
         type: "object",
+      },
+      isAutofillFallback: {
+        type: "boolean",
       },
       isBlockable: {
         type: "boolean",
@@ -3194,9 +3617,11 @@ export class UrlbarProvider {
    *
    * @param {UrlbarResult} _result
    *   The menu will be shown for this result.
+   * @param {boolean} _isPrivate
+   *   Whether the query was made in a private browsing context.
    * @returns {?UrlbarResultCommand[]}
    */
-  getResultCommands(_result) {
+  getResultCommands(_result, _isPrivate) {
     return null;
   }
 

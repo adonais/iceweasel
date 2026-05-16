@@ -2612,197 +2612,6 @@ security:
       filedetails: Information about the file that triggered the load
       redirects: Comma-separated string listing schemes for URLs that we redirected from
 
-pictureinpicture:
-  create:
-    objects: ["player"]
-    description: >
-      Recorded when the Picture-in-Picture player window is created.
-    extra_keys:
-      width: The width that the window was created at
-      height: The height that the window was created at
-      screenX: The screen X coordinate that the window was created at
-      screenY: The screen Y coordinate that the window was created at
-      ccEnabled: Are subtitles enabled for PiP
-      webVTTSubtitles: Are the subtitles WebVTT
-    notification_emails:
-      - mconley@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1560590
-      - 1678202
-      - 1730039
-      - 1756703
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  resize:
-    objects: ["player"]
-    description: >
-      Recorded when the Picture-in-Picture player window is resized.
-    extra_keys:
-      width: The width that the window was resized to
-      height: The height that the window was resize to
-    notification_emails:
-      - mconley@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1560590
-      - 1678202
-      - 1730039
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  saw_toggle:
-    objects: ["toggle"]
-    description: >
-      Recorded when the Picture-in-Picture toggle is shown
-    extra_keys:
-      firstTime: If the user has used Picture-in-Picture before
-    notification_emails:
-      - mconley@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes: ["main", "content"]
-    bug_numbers:
-      - 1749585
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  opened_method:
-    objects: ["toggle", "contextMenu", "urlBar", "shortcut", "autoPip"]
-    description: >
-      Records the method for opening the Picture-in-Picture window.
-    extra_keys:
-      firstTimeToggle: If the user has used Picture-in-Picture before
-      disableDialog: True when urlbar button opens the disable PiP dialog
-      callout: >
-        Boolean. True if PiP is being shown for the first time within 48 hours
-        of a feature callout message highlighting the urlbar toggle.
-    notification_emails:
-      - mconley@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes: ["main", "content"]
-    bug_numbers:
-      - 1749585
-      - 1834554
-      - 1858471
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  closed_method:
-    objects: ["closeButton", "unpip", "pagehide", "foregrounded", "fullscreen", "setupFailure", "closePlayerShortcut", "contextMenu", "videoElRemove", "videoElEmptied", "urlBar", "shortcut", "browserCrash"]
-    description: >
-      Records the method for closing the Picture-in-Picture window.
-    notification_emails:
-      - mconley@mozilla.com
-      - mtigley@mozilla.com
-      - mhowell@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - "main"
-    bug_numbers:
-      - 1756703
-      - 1834554
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  subtitles_shown:
-    objects: ["subtitles"]
-    description: >
-      Records if subtitles are shown in the Picture-in-Picture window.
-    extra_keys:
-      webVTTSubtitles: Will be true or false
-    notification_emails:
-      - mconley@mozilla.com
-      - mhowell@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - "content"
-    bug_numbers:
-      - 1772546
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  fullscreen:
-    objects: ["player"]
-    extra_keys:
-      enter: true if entering fullscreen, false if exiting fullscreen
-    description: >
-      Recorded when the user clicks the fullscreen button
-    notification_emails:
-      - mconley@mozilla.com
-      - mhowell@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - "main"
-    bug_numbers:
-      - 1822395
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  disrespect_disable:
-    objects: ["urlBar"]
-    description: >
-      Recorded when the user chooses to enable PiP anyway on a PiP disabled video
-    notification_emails:
-      - mconley@mozilla.com
-      - mhowell@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - "main"
-    bug_numbers:
-      - 1834554
-    expiry_version: "never"
-    release_channel_collection: opt-out
-
-pictureinpicture.settings:
-  enable:
-    objects: ["settings"]
-    description: Recorded when Picture-in-Picture is enabled.
-    notification_emails:
-      - mconley@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1639774
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  disable:
-    objects: ["player", "settings"]
-    description: >
-      Recorded with "settings" object when Picture-in-Picture is disabled via settings
-      Recorded with "player" object when Picture-in-Picture is disabled via PiP context menu
-    notification_emails:
-      - mconley@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1639774
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  enable_autotrigger:
-    objects: ["settings"]
-    description: Recorded when the Picture-in-Picture auto-trigger is enabled.
-    notification_emails:
-      - mconley@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1647800
-      - 1910505
-    expiry_version: "never"
-    release_channel_collection: opt-out
-
 launch_on_login:
   last_profile_disable:
     objects: ["startup"]
@@ -3225,7 +3034,7 @@ avif:
 mfcdm:
   eme_playback:
     objects: ["gecko"]
-    bug_numbers: [1873394, 1902169, 1989168]
+    bug_numbers: [1873394, 1902169, 1989168, 2026435]
     description:
       Record the information about the EME playback when using the media engine.
       The value of this event is the key system name.
@@ -3233,7 +3042,7 @@ mfcdm:
       - firefox
     record_in_processes: ["all"]
     release_channel_collection: opt-out
-    expiry_version: "152"
+    expiry_version: "158"
     notification_emails:
       - media-alerts@mozilla.com
     extra_keys:
@@ -3245,7 +3054,7 @@ mfcdm:
       dropped_frames: The amount of video frames don't get rendered but dropped
   error:
     objects: ["gecko"]
-    bug_numbers: [1873394, 1902169, 1989168]
+    bug_numbers: [1873394, 1902169, 1989168, 2026435]
     description:
       Record the error or crash happened while using the media engine playback.
       The value of this event is the name of error.
@@ -3253,7 +3062,7 @@ mfcdm:
       - firefox
     record_in_processes: ["all"]
     release_channel_collection: opt-out
-    expiry_version: "152"
+    expiry_version: "158"
     notification_emails:
       - media-alerts@mozilla.com
     extra_keys:

@@ -396,7 +396,7 @@ ExtensionProtocolHandler::GetSingleton() {
       StaticMutexAutoUnlock unlock(sMutex);
       RefPtr<nsIRunnable> r = NS_NewRunnableFunction(
           "ExtensionProtocolHandler::GetSingleton", []() {
-              StaticMutexAutoLock lock(sMutex);
+            StaticMutexAutoLock lock(sMutex);
             if (!sSingleton) {
               sSingleton = new ExtensionProtocolHandler();
               ClearOnShutdown(&sSingleton);

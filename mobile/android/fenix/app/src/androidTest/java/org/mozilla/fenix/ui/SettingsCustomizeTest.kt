@@ -6,7 +6,6 @@ package org.mozilla.fenix.ui
 
 import android.content.res.Configuration
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SkipLeaks
@@ -14,12 +13,16 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableOrDisableBackGestureNavigationOnDevice
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
+import org.mozilla.fenix.helpers.TestAssetHelper.firstForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.secondForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.restartApp
 import org.mozilla.fenix.helpers.TestHelper.verifyDarkThemeApplied
 import org.mozilla.fenix.helpers.TestHelper.verifyLightThemeApplied
+import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
+import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
 
@@ -191,11 +194,241 @@ class SettingsCustomizeTest {
         }.openCustomizeSubMenu {
             verifyToolbarLayout()
             verifyToolbarLayoutPreference("Simple")
+            scrollToExpandedToolbarOption()
             selectExpandedToolbarLayout()
+            scrollToAddressBarLocation()
             clickBottomToolbarToggle()
             verifyAddressBarPositionPreference("Bottom")
             verifyToolbarLayout()
             verifyToolbarLayoutPreference("Expanded")
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909009
+    @Test
+    fun verifyTheSimpleToolbarShortcutUI() {
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickTopToolbarToggle()
+            verifyToolbarLayout()
+            verifyToolbarLayoutPreference("Simple")
+            scrollToTheScrollToHideToolbarOption()
+            verifyTheSimpleToolbarShortcutOptions()
+            scrollToAddressBarLocation()
+            clickBottomToolbarToggle()
+            scrollToTheScrollToHideToolbarOption()
+            verifyTheSimpleToolbarShortcutOptions()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909001
+    @Test
+    fun verifyTheSimpleToolbarLayoutOpenANewTabShortcut() {
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
+
+        // Disable the back gesture from the edge of the screen on the device.
+        enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
+
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickTopToolbarToggle()
+            verifyToolbarLayoutPreference("Simple")
+            scrollToTheScrollToHideToolbarOption()
+            verifyTheOpenANewTabToolbarShortcutIsSelected()
+            exitMenu()
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNewTabButton(false)
+        }.clickTheNewTabButton(false) {
+            verifySearchBarPlaceholder("Search or enter address")
+        }.submitQuery(secondPage.url.toString()) {
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNewTabButton(false)
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909002
+    @Test
+    fun verifyTheSimpleToolbarLayoutShareShortcut() {
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
+
+        // Disable the back gesture from the edge of the screen on the device.
+        enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
+
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickTopToolbarToggle()
+            verifyToolbarLayoutPreference("Simple")
+            scrollToTheScrollToHideToolbarOption()
+            clickTheShareToolbarShortcut()
+            verifyTheShareToolbarShortcutIsSelected()
+            exitMenu()
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNavigationBarShareButton()
+        }
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(secondPage.url) {
+            swipeNavBarRight(secondPage.url.toString())
+            waitForPageToLoad()
+            verifyUrl(firstPage.url.toString())
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNavigationBarShareButton()
+        }.clickTheNavigationBarShareButton {
+            verifyShareTabLayout()
+            verifySharingWithSelectedApp(
+                appName = "Gmail",
+                content = secondPage.url.toString(),
+                subject = secondPage.title,
+            )
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909003
+    @Test
+    fun verifyTheSimpleToolbarLayoutAddBookmarkShortcut() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickTopToolbarToggle()
+            verifyToolbarLayoutPreference("Simple")
+            scrollToTheScrollToHideToolbarOption()
+            clickTheAddBookmarkToolbarShortcut()
+            verifyTheAddBookmarkToolbarShortcutIsSelected()
+            exitMenu()
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(defaultWebPage.url) {
+        }
+
+        navigationToolbar(composeTestRule) {
+            verifyTheNavigationBarAddBookmarkButton()
+            clickTheNavigationBarAddBookmarkButton()
+        }
+
+        browserScreen(composeTestRule) {
+            waitUntilSnackbarGone()
+        }.openThreeDotMenu {
+        }.clickBookmarksButton {
+            verifyBookmarkedURL(defaultWebPage.url.toString())
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909004
+    @Test
+    fun verifyTheSimpleToolbarLayoutTranslateShortcut() {
+        val firstPage = mockWebServer.firstForeignWebPageAsset
+        val secondPage = mockWebServer.secondForeignWebPageAsset
+
+        // Disable the back gesture from the edge of the screen on the device.
+        enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
+
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickTopToolbarToggle()
+            verifyToolbarLayoutPreference("Simple")
+            scrollToTheScrollToHideToolbarOption()
+            clickTheTranslateToolbarShortcut()
+            verifyTheTranslateToolbarShortcutIsSelected()
+            exitMenu()
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNavigationBarTranslateButton()
+        }.clickTheNavigationBarTranslatePageButton {
+            verifyTranslationSheetIsDisplayed(isDisplayed = true)
+        }.clickTranslateButton {
+            waitForPageToLoad()
+            verifyPageContent("Article of the day")
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(secondPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNavigationBarTranslateButton()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909005
+    @Test
+    fun verifyTheSimpleToolbarLayoutHomepageShortcut() {
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
+
+        // Disable the back gesture from the edge of the screen on the device.
+        enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
+
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickTopToolbarToggle()
+            verifyToolbarLayoutPreference("Simple")
+            scrollToTheScrollToHideToolbarOption()
+            clickTheHomepageToolbarShortcut()
+            verifyTheHomepageToolbarShortcutIsSelected()
+            exitMenu()
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNavigationBarHomepageButton()
+        }.clickTheNavigationBarHomepageButton {
+            verifyHomeWordmark()
+            navigationToolbar(composeTestRule) {
+            }.enterURLAndEnterToBrowser(secondPage.url) {
+            }
+            navigationToolbar(composeTestRule) {
+                verifyTheNavigationBarHomepageButton()
+            }
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3908992
+    @Test
+    fun verifyTheExpandedToolbarShortcutUI() {
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickTopToolbarToggle()
+            verifyToolbarLayout()
+            scrollToExpandedToolbarOption()
+            selectExpandedToolbarLayout()
+            verifyToolbarLayoutPreference("Expanded")
+            scrollToTheScrollToHideToolbarOption()
+            verifyTheExpandedToolbarShortcutOptions()
+            scrollToAddressBarLocation()
+            clickBottomToolbarToggle()
+            selectDarkMode()
+            verifyDarkThemeApplied(getUiTheme())
+            scrollToTheScrollToHideToolbarOption()
+            verifyTheExpandedToolbarShortcutOptions()
         }
     }
 }

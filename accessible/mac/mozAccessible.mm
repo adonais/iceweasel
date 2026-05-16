@@ -14,11 +14,11 @@
 #import "MOXSearchInfo.h"
 #import "MOXTextMarkerDelegate.h"
 #import "MOXWebAreaAccessible.h"
-#import "mozRootAccessible.h"
 #import "mozTextAccessible.h"
 
 #include "LocalAccessible-inl.h"
 #include "nsAccUtils.h"
+#include "nsTextEquivUtils.h"
 #include "DocAccessibleParent.h"
 #include "Relation.h"
 #include "mozilla/a11y/Role.h"
@@ -73,15 +73,30 @@ using namespace mozilla::a11y;
 #pragma mark - mozAccessible widget
 
 - (BOOL)hasRepresentedView {
-  return NO;
+  return [self representedView] != nil;
 }
 
 - (id)representedView {
-  return nil;
+  if (!mGeckoAccessible || !mGeckoAccessible->IsLocal()) {
+    // We only support representedView on local accessibles that
+    // might have associated native widgets.
+    return nil;
+  }
+
+  id view = static_cast<AccessibleWrap*>(mGeckoAccessible->AsLocal())
+                ->GetNativeWidget();
+
+  if (![view hasMozAccessible]) {
+    // The NSView does not have a reciprocal relationship.
+    return nil;
+  }
+
+  return view;
 }
 
 - (BOOL)isRoot {
-  return NO;
+  return mGeckoAccessible && mGeckoAccessible->IsLocal() &&
+         mGeckoAccessible->IsRoot();
 }
 
 #pragma mark -
@@ -163,6 +178,12 @@ using namespace mozilla::a11y;
     NSString* brailleRoleDescription =
         utils::GetAccAttr(self, nsGkAtoms::aria_brailleroledescription);
     return [brailleRoleDescription length] == 0;
+  }
+
+  if (selector == @selector(moxARIABrailleLabel)) {
+    NSString* brailleLabel =
+        utils::GetAccAttr(self, nsGkAtoms::aria_braillelabel);
+    return [brailleLabel length] == 0;
   }
 
   if (selector == @selector(moxExpanded)) {
@@ -657,7 +678,11 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
   if (![self isRoot]) {
     mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
-    if (![parent isRoot]) {
+    if (![parent isRoot] &&
+        [parent respondsToSelector:@selector(disableChild:)]) {
+      // We may end up with an item in an NSChildView that we did not create.
+      // Verify `disableChild` is a valid dispatch, else this will throw an
+      // exception.
       return @(![parent disableChild:self]);
     }
   }
@@ -748,6 +773,10 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
 - (NSString*)moxARIABrailleRoleDescription {
   return utils::GetAccAttr(self, nsGkAtoms::aria_brailleroledescription);
+}
+
+- (NSString*)moxARIABrailleLabel {
+  return utils::GetAccAttr(self, nsGkAtoms::aria_braillelabel);
 }
 
 - (NSString*)moxARIARelevant {
@@ -1029,8 +1058,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   // a random acc with the same ID) by checking:
   //  - The gecko acc is local, our a11y-announcement lives in browser.xhtml
   //  - The ID of the gecko acc is "a11y-announcement"
-  //  - The native acc is a direct descendent of the chrome window (ChildView in
-  //  a non-headless context, mozRootAccessible in a headless context).
+  //  - The native acc is a direct descendent of the chrome window.
   DocAccessible* maybeRoot = mGeckoAccessible->IsLocal()
                                  ? mGeckoAccessible->AsLocal()->Document()
                                  : nullptr;
@@ -1145,10 +1173,31 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
       }
       break;
     }
-    case nsIAccessibleEvent::EVENT_LIVE_REGION_CHANGED:
+    case nsIAccessibleEvent::EVENT_LIVE_REGION_CHANGED: {
       MOZ_ASSERT(mIsLiveRegion);
       [self moxPostNotification:@"AXLiveRegionChanged"];
+      // For live region events originating from local accs, we also want to
+      // post an AXAnnouncementRequested notification. This is because:
+      // - The AXLiveRegionChanged notif above does not support an announcement
+      // string; we have to depend on VO's tree walking to compose the string
+      // correctly, and it often comes up empty which results in no
+      // announcement.
+      // - WebKit posts this notification for _every_ live region change,
+      // indicating perhaps it is necessary for VO to function properly. Chrome
+      // does not.
+      if (mGeckoAccessible->IsLocal()) {
+        if (NSString* announcementText =
+                [self composeAnnouncementMessageFromSubtree]) {
+          nsAutoString live;
+          nsAccUtils::GetLiveRegionSetting(mGeckoAccessible->AsLocal(), live);
+          uint16_t priority = live.EqualsLiteral("assertive")
+                                  ? nsIAccessibleAnnouncementEvent::ASSERTIVE
+                                  : nsIAccessibleAnnouncementEvent::POLITE;
+          [self handleAnnouncementEvent:announcementText priority:priority];
+        }
+      }
       break;
+    }
     case nsIAccessibleEvent::EVENT_ERRORMESSAGE_CHANGED: {
       // aria-errormessage was changed. If aria-invalid != "true", it means that
       // VoiceOver should (a) expose a new message or (b) remove an
@@ -1177,6 +1226,16 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
       }
     }
   }
+}
+
+- (NSString*)composeAnnouncementMessageFromSubtree {
+  nsAutoString text;
+  nsTextEquivUtils::GetTextEquivFromSubtree(mGeckoAccessible, text);
+  if (!text.IsEmpty()) {
+    return nsCocoaUtils::ToNSString(text);
+  }
+  NSString* label = [self moxLabel];
+  return [label length] ? label : nil;
 }
 
 - (void)handleAnnouncementEvent:(NSString*)announcement

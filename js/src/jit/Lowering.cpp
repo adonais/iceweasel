@@ -1,13 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/Lowering.h"
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 
@@ -66,13 +63,13 @@ void LIRGenerator::visitParameter(MParameter* param) {
 
   offset *= sizeof(Value);
 #if defined(JS_NUNBOX32)
-#  if MOZ_BIG_ENDIAN()
-  ins->getDef(0)->setOutput(LArgument(offset));
-  ins->getDef(1)->setOutput(LArgument(offset + 4));
-#  else
-  ins->getDef(0)->setOutput(LArgument(offset + 4));
-  ins->getDef(1)->setOutput(LArgument(offset));
-#  endif
+  if constexpr (std::endian::native == std::endian::big) {
+    ins->getDef(0)->setOutput(LArgument(offset));
+    ins->getDef(1)->setOutput(LArgument(offset + 4));
+  } else {
+    ins->getDef(0)->setOutput(LArgument(offset + 4));
+    ins->getDef(1)->setOutput(LArgument(offset));
+  }
 #elif defined(JS_PUNBOX64)
   ins->getDef(0)->setOutput(LArgument(offset));
 #endif
@@ -541,6 +538,12 @@ void LIRGenerator::visitReturnFromCtor(MReturnFromCtor* ins) {
 
 void LIRGenerator::visitBoxNonStrictThis(MBoxNonStrictThis* ins) {
   MOZ_ASSERT(ins->type() == MIRType::Object);
+
+  if (ins->input()->type() == MIRType::Object) {
+    redefine(ins, ins->input());
+    return;
+  }
+
   MOZ_ASSERT(ins->input()->type() == MIRType::Value);
 
   auto* lir = new (alloc()) LBoxNonStrictThis(useBox(ins->input()));
@@ -5049,16 +5052,6 @@ void LIRGenerator::visitObjectKeysFromIterator(MObjectKeysFromIterator* ins) {
   MOZ_CRASH("ObjectKeysFromIterator is purely for recovery purposes.");
 }
 
-void LIRGenerator::visitObjectKeysLength(MObjectKeysLength* ins) {
-  MOZ_ASSERT(ins->object()->type() == MIRType::Object);
-  MOZ_ASSERT(ins->type() == MIRType::Int32);
-
-  auto* lir =
-      new (alloc()) LObjectKeysLength(useRegisterAtStart(ins->object()));
-  defineReturn(lir, ins);
-  assignSafepoint(lir, ins);
-}
-
 void LIRGenerator::visitStringSplit(MStringSplit* ins) {
   MOZ_ASSERT(ins->type() == MIRType::Object);
   MOZ_ASSERT(ins->string()->type() == MIRType::String);
@@ -7344,52 +7337,6 @@ void LIRGenerator::visitWasmStackResult(MWasmStackResult* ins) {
   addUnchecked(lir, ins);
 }
 
-void LIRGenerator::visitWasmStackSwitchToSuspendable(
-    MWasmStackSwitchToSuspendable* ins) {
-#ifdef ENABLE_WASM_JSPI
-  auto* lir = new (alloc()) LWasmStackSwitchToSuspendable(
-      useFixedAtStart(ins->instance(), InstanceReg),
-      useFixedAtStart(ins->suspender(), ABINonArgReg0),
-      useFixedAtStart(ins->fn(), ABINonArgReg1),
-      useFixedAtStart(ins->data(), ABINonArgReg2));
-
-  add(lir, ins);
-  assignWasmSafepoint(lir);
-#else
-  MOZ_CRASH("NYI");
-#endif
-}
-
-void LIRGenerator::visitWasmStackSwitchToMain(MWasmStackSwitchToMain* ins) {
-#ifdef ENABLE_WASM_JSPI
-  auto* lir = new (alloc())
-      LWasmStackSwitchToMain(useFixedAtStart(ins->instance(), InstanceReg),
-                             useFixedAtStart(ins->suspender(), ABINonArgReg0),
-                             useFixedAtStart(ins->fn(), ABINonArgReg1),
-                             useFixedAtStart(ins->data(), ABINonArgReg2));
-
-  defineReturn(lir, ins);
-  assignWasmSafepoint(lir);
-#else
-  MOZ_CRASH("NYI");
-#endif
-}
-
-void LIRGenerator::visitWasmStackContinueOnSuspendable(
-    MWasmStackContinueOnSuspendable* ins) {
-#ifdef ENABLE_WASM_JSPI
-  auto* lir = new (alloc()) LWasmStackContinueOnSuspendable(
-      useFixedAtStart(ins->instance(), InstanceReg),
-      useRegisterAtStart(ins->suspender()), useRegisterAtStart(ins->result()),
-      tempFixed(ABINonArgReturnReg0), tempFixed(ReturnReg));
-
-  add(lir, ins);
-  assignWasmSafepoint(lir);
-#else
-  MOZ_CRASH("NYI");
-#endif
-}
-
 template <class MWasmCallT>
 void LIRGenerator::visitWasmCall(MWasmCallT ins) {
   auto* lir = allocateVariadic<LWasmCall>(ins->numOperands());
@@ -7445,6 +7392,54 @@ void LIRGenerator::visitWasmReturnCall(MWasmReturnCall* ins) {
 void LIRGenerator::visitWasmCallLandingPrePad(MWasmCallLandingPrePad* ins) {
   add(new (alloc()) LWasmCallLandingPrePad, ins);
 }
+
+#ifdef ENABLE_WASM_JSPI
+void LIRGenerator::visitWasmFindHandler(MWasmFindHandler* ins) {
+  auto* lir = new (alloc()) LWasmFindHandler(
+      useFixedAtStart(ins->instance(), InstanceReg),
+      useRegisterAtStart(ins->tag()), temp(), temp(), temp(), temp());
+  define(lir, ins);
+}
+
+void LIRGenerator::visitWasmSuspend(MWasmSuspend* ins) {
+  // This is a call instruction, all other registers should be spilled
+  // We're not passing params either, so we can just let registers be free
+  auto* lir = new (alloc())
+      LWasmSuspend(useFixedAtStart(ins->instance(), InstanceReg),
+                   useRegisterAtStart(ins->suspendedCont()),
+                   useRegisterAtStart(ins->handler()), tempFixed(ABINonArgReg0),
+                   tempFixed(ABINonArgReg1), tempFixed(ABINonArgReg2));
+
+  add(lir, ins);
+  assignWasmSafepoint(lir);
+}
+
+void LIRGenerator::visitWasmResumeBarrier(MWasmResumeBarrier* ins) {
+  auto* lir = new (alloc()) LWasmResumeBarrier(
+      useFixedAtStart(ins->instance(), InstanceReg),
+      useRegisterAtStart(ins->cont()), tempFixed(ABINonArgReg0));
+
+  add(lir, ins);
+  assignWasmSafepoint(lir);
+}
+
+void LIRGenerator::visitWasmResume(MWasmResume* ins) {
+  // This is a call instruction, all other registers should be spilled
+  // We're not passing params either, so we can just let registers be free
+  LAllocation handlersParamsArea = LAllocation();
+  if (ins->hasHandlersParamsArea()) {
+    handlersParamsArea = useRegisterAtStart(ins->handlersParamsArea());
+  }
+  auto* lir = new (alloc())
+      LWasmResume(useFixedAtStart(ins->instance(), InstanceReg),
+                  useRegisterAtStart(ins->cont()), handlersParamsArea,
+                  tempFixed(ABINonArgReg0), tempFixed(ABINonArgReg1),
+                  tempFixed(ABINonArgReg2));
+
+  add(lir, ins);
+  assignWasmSafepoint(lir);
+}
+#endif  // ENABLE_WASM_JSPI
 
 void LIRGenerator::visitSetDOMProperty(MSetDOMProperty* ins) {
   MDefinition* val = ins->value();
@@ -8982,16 +8977,6 @@ void LIRGenerator::visitTakeDisposeCapability(MTakeDisposeCapability* ins) {
   LTakeDisposeCapability* lir =
       new (alloc()) LTakeDisposeCapability(useRegister(env));
   defineBox(lir, ins);
-  assignSafepoint(lir, ins);
-}
-
-void LIRGenerator::visitCreateSuppressedError(MCreateSuppressedError* ins) {
-  MDefinition* error = ins->error();
-  MDefinition* suppressed = ins->suppressed();
-
-  LCreateSuppressedError* lir = new (alloc())
-      LCreateSuppressedError(useBoxAtStart(error), useBoxAtStart(suppressed));
-  define(lir, ins);
   assignSafepoint(lir, ins);
 }
 #endif

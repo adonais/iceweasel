@@ -1549,6 +1549,13 @@ class GeckoEngine(
                 field = value
             }
 
+        override var useContentBlockingDatabase: Boolean = false
+            set(value) {
+                runtime.settings.contentBlocking.contentBlockingDatabaseStatus = value
+                field = value
+            }
+            get() = runtime.settings.contentBlocking.contentBlockingDatabaseStatus
+
         override var remoteDebuggingEnabled: Boolean
             get() = runtime.settings.remoteDebuggingEnabled
             set(value) { runtime.settings.remoteDebuggingEnabled = value }
@@ -1833,6 +1840,67 @@ class GeckoEngine(
         override var safeBrowsingV5Enabled: Boolean?
             get() = runtime.settings.contentBlocking.safeBrowsingV5Enabled.or(false)
             set(value) { value?.let { runtime.settings.contentBlocking.setSafeBrowsingV5Enabled(value) } }
+
+        override var safeBrowsingGlobalCacheEnabled: Boolean?
+            get() = runtime.settings.contentBlocking.safeBrowsingGlobalCacheEnabled
+            set(value) { value?.let { runtime.settings.contentBlocking.setSafeBrowsingGlobalCacheEnabled(it) } }
+
+        override var safeBrowsingRealTimeEnabled: Boolean?
+            get() = runtime.settings.contentBlocking.safeBrowsingRealTimeEnabled
+            set(value) { value?.let { runtime.settings.contentBlocking.setSafeBrowsingRealTimeEnabled(it) } }
+
+        @ExperimentalAndroidComponentsApi
+        override var safeBrowsingRealTimeSimulationEnabled: Boolean?
+            @OptIn(ExperimentalGeckoViewApi::class)
+            get() = runtime.settings.contentBlocking.safeBrowsingRealTimeSimulationEnabled
+
+            @OptIn(ExperimentalGeckoViewApi::class)
+            set(value) {
+                value?.let { runtime.settings.contentBlocking.setSafeBrowsingRealTimeSimulationEnabled(it) }
+            }
+
+        @ExperimentalAndroidComponentsApi
+        override var safeBrowsingRealTimeSimulationHitProbability: Int?
+            @OptIn(ExperimentalGeckoViewApi::class)
+            get() = runtime.settings.contentBlocking.safeBrowsingRealTimeSimulationHitProbability
+
+            @OptIn(ExperimentalGeckoViewApi::class)
+            set(value) {
+                value?.let { runtime.settings.contentBlocking.setSafeBrowsingRealTimeSimulationHitProbability(it) }
+            }
+
+        @ExperimentalAndroidComponentsApi
+        override var safeBrowsingRealTimeSimulationCacheTTLSec: Int?
+            @OptIn(ExperimentalGeckoViewApi::class)
+            get() = runtime.settings.contentBlocking.safeBrowsingRealTimeSimulationCacheTTLSec
+
+            @OptIn(ExperimentalGeckoViewApi::class)
+            set(value) {
+                value?.let { runtime.settings.contentBlocking.setSafeBrowsingRealTimeSimulationCacheTTLSec(it) }
+            }
+
+        @ExperimentalAndroidComponentsApi
+        override var safeBrowsingRealTimeSimulationNegativeCacheEnabled: Boolean?
+            @OptIn(ExperimentalGeckoViewApi::class)
+            get() =
+              runtime.settings.contentBlocking.safeBrowsingRealTimeSimulationNegativeCacheEnabled
+
+            @OptIn(ExperimentalGeckoViewApi::class)
+            set(value) {
+                value?.let {
+                    runtime.settings.contentBlocking.setSafeBrowsingRealTimeSimulationNegativeCacheEnabled(it)
+                }
+            }
+
+        @ExperimentalAndroidComponentsApi
+        override var safeBrowsingRealTimeSimulationNegativeCacheTTLSec: Int?
+            @OptIn(ExperimentalGeckoViewApi::class)
+            get() = runtime.settings.contentBlocking.safeBrowsingRealTimeSimulationNegativeCacheTTLSec
+
+            @OptIn(ExperimentalGeckoViewApi::class)
+            set(value) {
+                value?.let { runtime.settings.contentBlocking.setSafeBrowsingRealTimeSimulationNegativeCacheTTLSec(it) }
+            }
     }.apply {
         defaultSettings?.let {
             this.javascriptEnabled = it.javascriptEnabled
@@ -1886,6 +1954,16 @@ class GeckoEngine(
             this.crliteChannel = it.crliteChannel
             this.safeBrowsingV5Enabled = it.safeBrowsingV5Enabled
             this.downloadDelegate = it.downloadDelegate
+            this.safeBrowsingGlobalCacheEnabled = it.safeBrowsingGlobalCacheEnabled
+            this.safeBrowsingRealTimeEnabled = it.safeBrowsingRealTimeEnabled
+            this.safeBrowsingRealTimeSimulationEnabled = it.safeBrowsingRealTimeSimulationEnabled
+            this.safeBrowsingRealTimeSimulationHitProbability = it.safeBrowsingRealTimeSimulationHitProbability
+            this.safeBrowsingRealTimeSimulationCacheTTLSec = it.safeBrowsingRealTimeSimulationCacheTTLSec
+            this.safeBrowsingRealTimeSimulationNegativeCacheEnabled =
+                it.safeBrowsingRealTimeSimulationNegativeCacheEnabled
+            this.safeBrowsingRealTimeSimulationNegativeCacheTTLSec =
+                it.safeBrowsingRealTimeSimulationNegativeCacheTTLSec
+            this.useContentBlockingDatabase = it.useContentBlockingDatabase
         }
     }
 

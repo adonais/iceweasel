@@ -449,7 +449,7 @@ ScaleYCbCrToRGB32(const uint8_t* y_buf,
         height, y_pitch, uv_pitch, rgb_pitch, yuv_type, ROTATE_0, filter);
   }
 
-  return ToNSResult(libyuv::YUVToARGBScale(
+  return ToNSResult(YUVToARGBScale(
       y_buf, y_pitch, u_buf, uv_pitch, v_buf, uv_pitch,
       FourCCFromYUVType(yuv_type), yuv_color_space, source_width, source_height,
       rgb_buf, rgb_pitch, width, height, libyuv::kFilterBilinear));

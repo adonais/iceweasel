@@ -474,6 +474,7 @@ const MultiStageAboutWelcome = props => {
       setScreenMultiSelects: setScreenMultiSelects,
       activeMultiSelect: activeMultiSelects[currentScreen.id],
       setActiveMultiSelect: setActiveMultiSelect,
+      advanceOnExperimentLoad: currentScreen.advance_on_experiment_load,
       activeSingleSelectSelections: activeSingleSelectSelections[currentScreen.id],
       setActiveSingleSelectSelection: setActiveSingleSelectSelection,
       textInputs: textInputs[currentScreen.id],
@@ -482,6 +483,7 @@ const MultiStageAboutWelcome = props => {
       langPackInstallPhase: langPackInstallPhase,
       forceHideStepsIndicator: currentScreen.force_hide_steps_indicator,
       ariaRole: props.ariaRole,
+      requireAction: props.requireAction,
       aboveButtonStepsIndicator: currentScreen.above_button_steps_indicator,
       installedAddons: installedAddons,
       setInstalledAddons: setInstalledAddons,
@@ -814,6 +816,14 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     let actionResult;
     if (["OPEN_URL", "SHOW_FIREFOX_ACCOUNTS"].includes(action.type)) {
       this.handleOpenURL(action, props.flowParams, props.UTMTerm);
+    } else if (action.type === "INSTALL_ADDON_FROM_URL") {
+      const url = props.addonURL && props.isRtamo ? props.addonURL : action.data?.url;
+      // Set add-on url in action.data.url property from JSON
+      action.data = {
+        ...action.data,
+        url
+      };
+      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleUserAction(action);
     } else if (action.type) {
       let actionPromise = _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleUserAction(action);
       if (action.needsAwait) {
@@ -823,18 +833,6 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
         _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, actionResult ? "sign_in" : "sign_in_cancel", "FXA_SIGNIN_FLOW", {
           writeInMicrosurvey: props.writeInMicrosurvey
         });
-      }
-      if (action.type === "INSTALL_ADDON_FROM_URL") {
-        const url = props.addonURL;
-        if (!action.data) {
-          return;
-        }
-        // Set add-on url in action.data.url property from JSON
-        action.data = {
-          ...action.data,
-          url
-        };
-        _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleUserAction(action);
       }
       // Wait until migration closes to complete the action
       await this.handleMigrationIfNeeded(action, props);
@@ -1033,8 +1031,10 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       isSingleScreen: this.props.isSingleScreen,
       startsWithCorner: this.props.startsWithCorner,
       autoAdvance: this.props.autoAdvance,
+      advanceOnExperimentLoad: this.props.advanceOnExperimentLoad,
       forceHideStepsIndicator: this.props.forceHideStepsIndicator,
       ariaRole: this.props.ariaRole,
+      requireAction: this.props.requireAction,
       aboveButtonStepsIndicator: this.props.aboveButtonStepsIndicator,
       addonId: this.props.addonId,
       addonType: this.props.addonType,
@@ -1042,6 +1042,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       addonURL: this.props.addonURL,
       addonIconURL: this.props.addonIconURL,
       themeScreenshots: this.props.themeScreenshots,
+      navigate: this.props.navigate,
       isRtamo: this.props.content.isRtamo
     });
   }
@@ -1204,10 +1205,16 @@ const DEFAULT_AUTO_ADVANCE_MS = 20000;
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
+    advanceOnExperimentLoad,
     handleAction,
+    messageId,
+    navigate,
     order
   } = props;
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (!autoAdvance && !advanceOnExperimentLoad) {
+      return () => {};
+    }
     if (autoAdvance) {
       const value = autoAdvance?.actionEl ?? autoAdvance;
       const timeout = autoAdvance?.actionTimeMS ?? DEFAULT_AUTO_ADVANCE_MS;
@@ -1221,8 +1228,80 @@ const MultiStageProtonScreen = props => {
       }, timeout);
       return () => clearTimeout(timer);
     }
-    return () => {};
-  }, [autoAdvance, handleAction, order]);
+
+    // If not doing a standard auto advance, handle auto advancing when experiments load.
+
+    // Defaults for when advance_on_experiment_load is true.
+    const minMsDefault = 3000;
+    const maxMsDefault = 8000;
+    let minMs = advanceOnExperimentLoad?.minDisplayMs ?? minMsDefault;
+    let maxMs = advanceOnExperimentLoad?.maxDisplayMs ?? maxMsDefault;
+
+    // Ensure max ≥ min.
+    if (maxMs < minMs) {
+      maxMs = minMs;
+    }
+    const startTime = performance.now();
+    let cancelled = false;
+    let advanced = false;
+    let minDone = false;
+    let experimentsDone = false;
+    let nimbusResult = null;
+    let maxTimeoutFired = false;
+    const doAdvance = () => {
+      if (cancelled || advanced) {
+        return;
+      }
+      advanced = true;
+      const screen_duration = Math.round(performance.now() - startTime);
+      let reason;
+      if (maxTimeoutFired) {
+        reason = "max_display_timeout";
+      } else if (nimbusResult === "error") {
+        reason = "nimbus_error";
+      } else if (nimbusResult === "timeout") {
+        reason = "nimbus_timeout";
+      } else {
+        reason = "nimbus_ready";
+      }
+      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(messageId, "advance_on_experiment_load", "SPLASH_DISMISSED", {
+        reason,
+        screen_duration
+      });
+      navigate(false);
+    };
+    const maybeAdvance = () => {
+      if (minDone && experimentsDone) {
+        doAdvance();
+      }
+    };
+    const minTimerId = window.setTimeout(() => {
+      minDone = true;
+      maybeAdvance();
+    }, minMs);
+    const maxTimerId = window.setTimeout(() => {
+      maxTimeoutFired = true;
+      doAdvance();
+    }, maxMs);
+
+    // Use an IIFE to keep the effect itself synchronous
+    (async () => {
+      try {
+        if (typeof window.AWWaitForNimbus === "function") {
+          nimbusResult = await window.AWWaitForNimbus();
+        }
+        // If AWWaitForNimbus is missing, treat as "done" immediately.
+      } catch (e) {} finally {
+        experimentsDone = true;
+        maybeAdvance();
+      }
+    })();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(minTimerId);
+      window.clearTimeout(maxTimerId);
+    };
+  }, [autoAdvance, advanceOnExperimentLoad, handleAction, messageId, order, navigate]);
 
   // Set narrow on an outer element to allow for use of SCSS outer selector and
   // consolidation of styles for small screen widths with those for messages
@@ -1279,6 +1358,7 @@ const MultiStageProtonScreen = props => {
     forceHideStepsIndicator: props.forceHideStepsIndicator,
     ariaRole: props.ariaRole,
     aboveButtonStepsIndicator: props.aboveButtonStepsIndicator,
+    requireAction: props.requireAction,
     isWideScreen: isWideScreen
   });
 };
@@ -1290,6 +1370,7 @@ const ProtonScreenActionButtons = props => {
     addonType,
     addonName,
     activeMultiSelect,
+    activeSingleSelectSelections,
     textInputs,
     installedAddons
   } = props;
@@ -1324,6 +1405,14 @@ const ProtonScreenActionButtons = props => {
         }
       }
       return true;
+    }
+    // Only disables the primary button until at least one single-select
+    // option is chosen.
+    if (disabledValue === "hasActiveSingleSelect") {
+      if (!activeSingleSelectSelections) {
+        return true;
+      }
+      return !Object.values(activeSingleSelectSelections).some(val => val && val !== "none");
     }
     if (disabledValue === "hasTextInput") {
       // For text input, we check if the user has entered any text in the
@@ -1397,7 +1486,15 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     if (this.props.content?.position === "callout") {
       return;
     }
-    this.mainContentHeader.focus();
+
+    // For requireAction screens, focus the title heading instead of the
+    // alertdialog container.
+    // Prevents Orca from misreading tab navigated elements.
+    if (this.props.requireAction && this.titleHeader) {
+      this.titleHeader.focus();
+    } else {
+      this.mainContentHeader.focus();
+    }
   }
   getScreenClassName(includeNoodles, isVideoOnboarding, isAddonsPicker) {
     if (isVideoOnboarding) {
@@ -1415,6 +1512,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     title,
     title_logo
   }) {
+    const titleRef = this.props.requireAction ? input => {
+      this.titleHeader = input;
+    } : null;
     if (title_logo) {
       const {
         alignment,
@@ -1428,13 +1528,17 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
         text: title
       }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", {
-        id: "mainContentHeader"
+        id: "mainContentHeader",
+        tabIndex: this.props.requireAction ? -1 : undefined,
+        ref: titleRef
       })));
     }
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: title
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", {
-      id: "mainContentHeader"
+      id: "mainContentHeader",
+      tabIndex: this.props.requireAction ? -1 : undefined,
+      ref: titleRef
     }));
   }
   renderPicture({
@@ -1447,6 +1551,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     height,
     marginBlock,
     marginInline,
+    style,
     className = "logo-container"
   }) {
     function getLoadingStrategy() {
@@ -1457,12 +1562,14 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       }
       return "eager";
     }
+    const pictureStyle = {
+      marginInline,
+      marginBlock,
+      ...style
+    };
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("picture", {
       className: className,
-      style: {
-        marginInline,
-        marginBlock
-      }
+      style: pictureStyle
     }, darkModeReducedMotionImageURL ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
       srcset: darkModeReducedMotionImageURL,
       media: "(prefers-color-scheme: dark) and (prefers-reduced-motion: reduce)"
@@ -1686,6 +1793,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       addonType: this.props.addonType,
       handleAction: this.props.handleAction,
       activeMultiSelect: this.props.activeMultiSelect,
+      activeSingleSelectSelections: this.props.activeSingleSelectSelections,
       textInputs: this.props.textInputs
     }) : null;
   }
@@ -1724,7 +1832,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       layout: content.layout,
       pos: content.position || "center",
       tabIndex: "-1",
-      "aria-labelledby": "mainContentHeader",
+      "aria-labelledby": `mainContentHeader${content.subtitle ? " mainContentSubheader" : ""}`,
+      "aria-describedby": "mainContentInner",
       ref: input => {
         this.mainContentHeader = input;
       },
@@ -1748,6 +1857,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       }
     }, content.logo && !content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && !content.fullscreen ? this.renderRTAMOIcon(addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "main-content-inner",
+      id: "mainContentInner",
       style: combinedStyles
     }, content.logo && content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && content.fullscreen ? this.renderRTAMOIcon(addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, content.title || content.subtitle ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       id: "multi-stage-message-welcome-text",
@@ -2853,12 +2963,13 @@ const AddonsPicker = props => {
   const {
     content,
     installedAddons,
-    layout
+    layout,
+    handleAction
   } = props;
   if (!content) {
     return null;
   }
-  function handleAction(event) {
+  function handleInstallClick(event) {
     const {
       message_id,
       writeInMicrosurvey
@@ -2867,19 +2978,12 @@ const AddonsPicker = props => {
       action,
       source_id
     } = content.tiles.data[event.currentTarget.value];
-    let {
-      type,
-      data
-    } = action;
-    if (type === "INSTALL_ADDON_FROM_URL") {
-      if (!data) {
+    if (action.type === "INSTALL_ADDON_FROM_URL") {
+      if (!action.data) {
         return;
       }
     }
-    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.handleUserAction({
-      type,
-      data
-    });
+    handleAction(event, action);
     _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON", {
       writeInMicrosurvey
     });
@@ -2940,7 +3044,7 @@ const AddonsPicker = props => {
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null, author.name)))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_InstallButton__WEBPACK_IMPORTED_MODULE_3__.InstallButton, {
     key: id,
     addonId: id,
-    handleAction: handleAction,
+    handleAction: handleInstallClick,
     index: index,
     installedAddons: installedAddons,
     install_label: install_label,
@@ -2964,7 +3068,7 @@ const AddonsPicker = props => {
   }))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_InstallButton__WEBPACK_IMPORTED_MODULE_3__.InstallButton, {
     key: id,
     addonId: id,
-    handleAction: handleAction,
+    handleAction: handleInstallClick,
     index: index,
     installedAddons: installedAddons,
     install_label: install_label,
@@ -3571,7 +3675,11 @@ const MultiSelect = ({
     text: description
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
     id: `${id}-description`
-  })) : null)));
+  })) : null)), content.tiles.footer ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: items.some(i => activeMultiSelect?.includes(i.id)) ? content.tiles.footer.checkedLabel : content.tiles.footer.unCheckAllLabel
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h2", {
+    id: "multi-stage-multi-select-footer-label"
+  })) : null);
 };
 
 /***/ }),
@@ -4424,6 +4532,7 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       startScreen: props.startScreen || 0,
       appAndSystemLocaleInfo: props.appAndSystemLocaleInfo,
       ariaRole: props.aria_role,
+      requireAction: props.requireAction,
       gateInitialPaint: true
     });
   }
@@ -4445,6 +4554,17 @@ function ComputeTelemetryInfo(welcomeContent, experimentId, branchId) {
   };
 }
 async function retrieveRenderContent() {
+  // If supported, wait for Nimbus to be ready (or a maximum timeout to be
+  // reached) before loading about:welcome.
+  if (document.location.href === "about:welcome" && window.AWWaitForNimbus) {
+    try {
+      await window.AWWaitForNimbus();
+    } catch (e) {
+      // If Nimbus gating throws, proceed with whatever feature state we
+      // currently have.
+      console.error("AWWaitForNimbus failed", e);
+    }
+  }
   // Feature config includes RTAMO attribution data if exists
   // else below data in order specified
   // user prefs

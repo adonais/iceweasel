@@ -188,7 +188,7 @@ void HTMLScriptElement::GetInnerText(
   if (aError.Failed()) {
     return;
   }
-  aValue.SetAsNullIsEmptyString() = innerText.AsAString();
+  aValue.SetAsNullIsEmptyString() = std::move(innerText);
 }
 
 void HTMLScriptElement::SetInnerText(

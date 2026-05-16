@@ -1,4 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 // Copyright 2012 the V8 project authors. All rights reserved.
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -3200,7 +3199,7 @@ void Simulator::decodeType3(SimInstruction* instr) {
                 // Rev
                 uint32_t rm_val = get_register(instr->rmValue());
 
-                static_assert(MOZ_LITTLE_ENDIAN());
+                static_assert(std::endian::native == std::endian::little);
                 set_register(rd,
                              mozilla::NativeEndian::swapToBigEndian(rm_val));
               } else if (instr->bits(20, 16) == 0b1'1111 &&
@@ -3208,7 +3207,7 @@ void Simulator::decodeType3(SimInstruction* instr) {
                 // Rev16
                 uint32_t rm_val = get_register(instr->rmValue());
 
-                static_assert(MOZ_LITTLE_ENDIAN());
+                static_assert(std::endian::native == std::endian::little);
                 uint32_t hi = mozilla::NativeEndian::swapToBigEndian(
                     uint16_t(rm_val >> 16));
                 uint32_t lo =
@@ -3264,7 +3263,7 @@ void Simulator::decodeType3(SimInstruction* instr) {
                 // Revsh
                 uint32_t rm_val = get_register(instr->rmValue());
 
-                static_assert(MOZ_LITTLE_ENDIAN());
+                static_assert(std::endian::native == std::endian::little);
                 set_register(
                     rd, int32_t(int16_t(mozilla::NativeEndian::swapToBigEndian(
                             uint16_t(rm_val)))));

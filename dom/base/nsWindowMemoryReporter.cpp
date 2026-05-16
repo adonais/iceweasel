@@ -426,6 +426,12 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
                "Number of event listeners in a window, including event "
                "listeners on nodes and other event targets.");
 
+  REPORT_COUNT(
+      "/media/media-source-urls", mMediaSourceURLsCount,
+      "Number of MediaSource object URLs allocated with URL.createObjectURL; "
+      "the referenced data cannot be freed until all URLs for it have been "
+      "explicitly invalidated with URL.revokeObjectURL.");
+
   // There are many different kinds of frames, but it is very likely
   // that only a few matter.  Implement a cutoff so we don't bloat
   // about:memory with many uninteresting entries.

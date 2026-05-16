@@ -11,14 +11,13 @@
 #include "Units.h"                    // for LayoutDeviceIntSize
 #include "mozilla/AlreadyAddRefed.h"  // for already_AddRefed
 #include "mozilla/Assertions.h"  // for AssertionConditionType, MOZ_ASSERT, MOZ_ASSERT_HELPER2
-#include "mozilla/Attributes.h"               // for MOZ_NON_OWNING_REF
-#include "mozilla/RefPtr.h"                   // for RefPtr
-#include "mozilla/TimeStamp.h"                // for TimeStamp
-#include "mozilla/gfx/Point.h"                // for IntSize
-#include "mozilla/gfx/Types.h"                // for SurfaceFormat
-#include "mozilla/layers/CompositorTypes.h"   // for TextureFactoryIdentifier
-#include "mozilla/layers/DisplayItemCache.h"  // for DisplayItemCache
-#include "mozilla/layers/FocusTarget.h"       // for FocusTarget
+#include "mozilla/Attributes.h"              // for MOZ_NON_OWNING_REF
+#include "mozilla/RefPtr.h"                  // for RefPtr
+#include "mozilla/TimeStamp.h"               // for TimeStamp
+#include "mozilla/gfx/Point.h"               // for IntSize
+#include "mozilla/gfx/Types.h"               // for SurfaceFormat
+#include "mozilla/layers/CompositorTypes.h"  // for TextureFactoryIdentifier
+#include "mozilla/layers/FocusTarget.h"      // for FocusTarget
 #include "mozilla/layers/LayersTypes.h"  // for TransactionId, LayersBackend, CompositionPayload (ptr only), LayersBackend::...
 #include "mozilla/layers/RenderRootStateManager.h"  // for RenderRootStateManager
 #include "mozilla/layers/ScrollableLayerGuid.h"  // for ScrollableLayerGuid, ScrollableLayerGuid::ViewID
@@ -58,9 +57,12 @@ class WebRenderLayerManager final : public WindowRenderer {
   NS_INLINE_DECL_REFCOUNTING(WebRenderLayerManager, final)
 
  public:
-  explicit WebRenderLayerManager(nsIWidget* aWidget);
-  bool Initialize(PCompositorBridgeChild* aCBChild, wr::PipelineId aLayersId,
-                  TextureFactoryIdentifier* aTextureFactoryIdentifier,
+  static RefPtr<WebRenderLayerManager> Create(nsIWidget* aWidget,
+                                              PCompositorBridgeChild* aCBChild,
+                                              wr::PipelineId aPipelineId,
+                                              nsCString& aError);
+
+  bool Initialize(TextureFactoryIdentifier* aTextureFactoryIdentifier,
                   nsCString& aError);
 
   void Destroy() override;
@@ -211,6 +213,9 @@ class WebRenderLayerManager final : public WindowRenderer {
 #endif
 
  private:
+  explicit WebRenderLayerManager(
+      nsIWidget* aWidget, already_AddRefed<WebRenderBridgeChild> aWrChild);
+
   /**
    * Take a snapshot of the parent context, and copy
    * it into mTarget.
@@ -265,12 +270,15 @@ class WebRenderLayerManager final : public WindowRenderer {
   WebRenderCommandBuilder mWebRenderCommandBuilder;
 
   RenderRootStateManager mStateManager;
-  DisplayItemCache mDisplayItemCache;
   UniquePtr<wr::DisplayListBuilder> mDLBuilder;
 
   ScrollUpdatesMap mPendingScrollUpdates;
 
   LayoutDeviceIntSize mFlushWidgetSize;
+
+  // When we fail to initialize WebRender, it is useful to know if it has ever
+  // succeeded, or if this is the first attempt.
+  static bool sHasInitialized;
 };
 
 }  // namespace layers

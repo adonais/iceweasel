@@ -58,6 +58,8 @@ const withTabMenu = async function (tab, callback) {
     "context_ungroupSplitView"
   );
   const reverseTabsItem = document.getElementById("context_reverseSplitView");
+  const contextMoveTabToStart = document.getElementById("context_moveToStart");
+  const contextMoveTabToEnd = document.getElementById("context_moveToEnd");
 
   let contextMenuHidden = BrowserTestUtils.waitForPopupEvent(
     tabContextMenu,
@@ -68,7 +70,9 @@ const withTabMenu = async function (tab, callback) {
     unsplitTabItem,
     addSplitViewToNewGroup,
     removeSplitViewFromGroup,
-    reverseTabsItem
+    reverseTabsItem,
+    contextMoveTabToStart,
+    contextMoveTabToEnd
   );
   tabContextMenu.hidePopup();
   info("Hide popup");
@@ -728,6 +732,67 @@ add_task(async function test_contextMenuReverseSplitView() {
   }
 });
 
+add_task(async function test_moveTabToEnd_disabled_in_splitview() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.splitView.enabled", true]],
+  });
+
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+
+  let splitViewCreated = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "SplitViewCreated"
+  );
+  gBrowser.addTabSplitView([tab1, tab2]);
+  await splitViewCreated;
+
+  let tabContainer = document.getElementById("tabbrowser-arrowscrollbox");
+  await BrowserTestUtils.waitForMutationCondition(
+    tabContainer,
+    { childList: true },
+    () =>
+      Array.from(tabContainer.children).some(
+        tabChild => tabChild.tagName === "tab-split-view-wrapper"
+      ) &&
+      tab1.splitview &&
+      tab2.splitview,
+    "Split view wrapper is present"
+  );
+
+  await withTabMenu(
+    tab1,
+    async (
+      _moveTabToNewSplitViewItem,
+      _unsplitTabItem,
+      _addSplitViewToNewGroup,
+      _removeSplitViewFromGroup,
+      _reverseTabsItem,
+      _contextMoveTabToStart,
+      contextMoveTabToEnd
+    ) => {
+      info(`Move to End — disabled=${contextMoveTabToEnd.disabled}`);
+      if (!contextMoveTabToEnd.disabled) {
+        await BrowserTestUtils.waitForMutationCondition(
+          contextMoveTabToEnd,
+          { attributes: true },
+          () => contextMoveTabToEnd.disabled,
+          "Waiting for contextMoveTabToEnd to be disabled"
+        );
+      }
+      Assert.ok(
+        contextMoveTabToEnd.disabled,
+        "Move to End is disabled because split view is already at the end of the tab strip"
+      );
+    }
+  );
+
+  tab1.splitview.close();
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+});
+
 add_task(async function test_new_badge() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -783,6 +848,77 @@ add_task(async function test_new_badge() {
       "separateSplitView has no badge after using split view"
     );
   });
+
+  tab1.splitview.close();
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+});
+
+add_task(async function test_moveTabToStart_disabled_in_splitview() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.splitView.enabled", true]],
+  });
+
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+
+  let tabContainer = document.getElementById("tabbrowser-arrowscrollbox");
+
+  let splitViewCreated = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "SplitViewCreated"
+  );
+  gBrowser.addTabSplitView([tab1, tab2], {
+    insertBefore: tabContainer.children[0],
+  });
+  await splitViewCreated;
+
+  await BrowserTestUtils.waitForMutationCondition(
+    tabContainer,
+    { childList: true },
+    () =>
+      Array.from(tabContainer.children).some(
+        tabChild => tabChild.tagName === "tab-split-view-wrapper"
+      ) &&
+      tab1.splitview &&
+      tab2.splitview,
+    "Split view wrapper is present"
+  );
+
+  const firstChild = tabContainer.children[0];
+  Assert.equal(
+    firstChild.tagName.toLowerCase(),
+    "tab-split-view-wrapper",
+    "Split view wrapper is the first element in the tab strip"
+  );
+
+  await withTabMenu(
+    tab1,
+    async (
+      _moveTabToNewSplitViewItem,
+      _unsplitTabItem,
+      _addSplitViewToNewGroup,
+      _removeSplitViewFromGroup,
+      _reverseTabsItem,
+      contextMoveTabToStart,
+      _contextMoveTabToEnd
+    ) => {
+      info(`Move to Start — disabled=${contextMoveTabToStart.disabled}`);
+      if (!contextMoveTabToStart.disabled) {
+        await BrowserTestUtils.waitForMutationCondition(
+          contextMoveTabToStart,
+          { attributes: true },
+          () => contextMoveTabToStart.disabled,
+          "Waiting for contextMoveTabToStart to be disabled"
+        );
+      }
+      Assert.ok(
+        contextMoveTabToStart.disabled,
+        "Move to Start is disabled because split view is already at the start of the tab strip"
+      );
+    }
+  );
 
   tab1.splitview.close();
   while (gBrowser.tabs.length > 1) {

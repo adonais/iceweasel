@@ -188,7 +188,7 @@ class FontFaceImpl final {
   void SetSizeAdjust(const nsACString& aValue, ErrorResult& aRv);
 
   FontFaceLoadStatus Status();
-  void Load(ErrorResult& aRv);
+  void Load();
 
   void Destroy();
 

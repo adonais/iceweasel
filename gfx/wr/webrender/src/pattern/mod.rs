@@ -5,6 +5,7 @@
 pub mod gradient;
 pub mod box_shadow;
 pub mod repeat;
+pub mod image;
 
 use api::units::{LayoutVector2D, LayoutPoint};
 use api::{ColorF, units::DeviceRect};
@@ -12,7 +13,6 @@ use api::{ColorF, units::DeviceRect};
 use crate::frame_builder::FrameBuilderConfig;
 use crate::render_task_graph::RenderTaskId;
 use crate::renderer::GpuBufferBuilder;
-use crate::scene::SceneProperties;
 use crate::spatial_tree::SpatialTree;
 use crate::transform::TransformPalette;
 
@@ -26,10 +26,11 @@ pub enum PatternKind {
     Repeat = 2,
 
     Mask = 3,
+    BoxShadow = 4,
     // When adding patterns, don't forget to update the NUM_PATTERNS constant.
 }
 
-pub const NUM_PATTERNS: u32 = 4;
+pub const NUM_PATTERNS: u32 = 5;
 
 impl PatternKind {
     pub fn from_u32(val: u32) -> Self {
@@ -76,7 +77,6 @@ impl PatternTextureInput {
 }
 
 pub struct PatternBuilderContext<'a> {
-    pub scene_properties: &'a SceneProperties,
     pub spatial_tree: &'a SpatialTree,
     pub fb_config: &'a FrameBuilderConfig,
     pub prim_origin: LayoutPoint,
@@ -151,3 +151,15 @@ pub const TEXTURED_SHADER_MODE_TEXTURE: i32 = 1;
 // or segment rect.
 pub const TEXTURED_SHADER_MAP_TO_PRIMITIVE: i32 = 0;
 pub const TEXTURED_SHADER_MAP_TO_SEGMENT: i32 = 1;
+
+impl PatternBuilder for ColorF {
+    fn build(
+        &self,
+        _sub_rect: Option<DeviceRect>,
+        _offset: LayoutVector2D,
+        _ctx: &PatternBuilderContext,
+        _state: &mut PatternBuilderState,
+    ) -> Pattern {
+        Pattern::color(*self)
+    }
+}

@@ -210,6 +210,21 @@ crash:
     send_in_pings:
     - crash
     type: string
+  id:
+    bugs:
+    - https://bugzilla.mozilla.org/1993525
+    data_reviews:
+    - https://bugzilla.mozilla.org/1993525
+    data_sensitivity:
+    - technical
+    description: A UUID for the crash event.
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
   ipc_channel_error:
     bugs:
     - https://bugzilla.mozilla.org/1950749
@@ -524,9 +539,8 @@ crash:
     - https://bugzilla.mozilla.org/1950749
     data_sensitivity:
     - technical
-    description: Stack traces extracted from the crash minidump, if available. These
-      are sent in pings, however they are extracted and transformed into a different
-      format. The field in the extra file is meant only for client use.
+    description: Stack traces extracted from the crash minidump, if available. A serialized
+      JSON object (with a structure matching the associated Glean object description).
     expires: never
     notification_emails:
     - crash-reporting-wg@mozilla.org

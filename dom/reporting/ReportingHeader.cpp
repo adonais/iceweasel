@@ -384,12 +384,18 @@ ReportingHeader::ParseReportToHeader(nsIHttpChannel* aChannel, nsIURI* aURI,
   JS::Rooted<JS::Value> jsonValue(cx);
   bool ok = JS_ParseJSON(cx, json.BeginReading(), json.Length(), &jsonValue);
   if (!ok) {
+    // Drop error in favor of logging a generic message, because the error
+    // message's column numbers are confusing due to the prepended characters
+    // above, and a user cannot do much about it anyway (bug 2020662).
+    JS_ClearPendingException(cx);
     LogToConsoleInvalidJSON(aChannel, aURI);
     return nullptr;
   }
 
   RootedDictionary<dom::ReportingHeaderValue> data(cx);
   if (!data.Init(cx, jsonValue)) {
+    // Ignore error in favor of generic message to avoid logspam (bug 2020662).
+    JS_ClearPendingException(cx);
     LogToConsoleInvalidJSON(aChannel, aURI);
     return nullptr;
   }

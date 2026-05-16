@@ -6,7 +6,6 @@
 #include "Matrix.h"
 #include "Tools.h"
 #include <ostream>
-#include <math.h>
 
 namespace mozilla {
 namespace gfx {

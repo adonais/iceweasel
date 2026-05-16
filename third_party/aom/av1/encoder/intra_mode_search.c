@@ -1306,7 +1306,7 @@ int av1_handle_intra_y_mode(IntraModeSearchState *intra_search_state,
   const int mode_cost =
       mode_costs->mbmode_cost[size_group_lookup[bsize]][mode] + ref_frame_cost;
   const int skip_ctx = av1_get_skip_txfm_context(xd);
-  int known_rate = mode_cost + mode_costs->skip_mode_cost[skip_ctx][0];
+  int known_rate = mode_cost + mode_costs->skip_txfm_cost[skip_ctx][0];
   const int64_t known_rd = RDCOST(x->rdmult, known_rate, 0);
   if (known_rd > best_rd) {
     intra_search_state->skip_intra_modes = 1;

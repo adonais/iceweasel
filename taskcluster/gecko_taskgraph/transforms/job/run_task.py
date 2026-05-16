@@ -13,52 +13,14 @@ from typing import Optional as TOptional
 
 from mozpack import path
 from taskgraph.transforms.run.common import support_caches
-from taskgraph.util.schema import LegacySchema, Schema, taskref_or_string_msgspec
+from taskgraph.util.schema import (
+    Schema,
+    taskref_or_string_msgspec,
+)
 from taskgraph.util.yaml import load_yaml
-from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.job import run_job_using
 from gecko_taskgraph.transforms.job.common import add_tooltool, support_vcs_checkout
-from gecko_taskgraph.transforms.task import taskref_or_string
-
-run_task_schema = LegacySchema({
-    Required("using"): "run-task",
-    # Use the specified caches.
-    Optional("use-caches"): Any(bool, [str]),
-    # if true (the default), perform a checkout of gecko on the worker
-    Required("checkout"): bool,
-    Optional(
-        "cwd",
-        description="Path to run command in. If a checkout is present, the path "
-        "to the checkout will be interpolated with the key `checkout`",
-    ): str,
-    # The sparse checkout profile to use. Value is the filename relative to
-    # "sparse-profile-prefix" which defaults to "build/sparse-profiles/".
-    Required("sparse-profile"): Any(str, None),
-    # The relative path to the sparse profile.
-    Optional("sparse-profile-prefix"): str,
-    # Whether to use a shallow clone or not, default True (git only).
-    Optional("shallow-clone"): bool,
-    # if true, perform a checkout of a comm-central based branch inside the
-    # gecko checkout
-    Required("comm-checkout"): bool,
-    # The command arguments to pass to the `run-task` script, after the
-    # checkout arguments.  If a list, it will be passed directly; otherwise
-    # it will be included in a single argument to `bash -cx`.
-    Required("command"): Any([taskref_or_string], taskref_or_string),
-    # Base work directory used to set up the task.
-    Optional("workdir"): str,
-    # If not false, tooltool downloads will be enabled via relengAPIProxy
-    # for either just public files, or all files. Only supported on
-    # docker-worker.
-    Required("tooltool-downloads"): Any(
-        False,
-        "public",
-        "internal",
-    ),
-    # Whether to run as root. (defaults to False)
-    Optional("run-as-root"): bool,
-})
 
 
 class RunTaskSchema(Schema, kw_only=True):
@@ -165,7 +127,7 @@ def script_url(config, script):
 
 
 @run_job_using(
-    "docker-worker", "run-task", schema=run_task_schema, defaults=worker_defaults
+    "docker-worker", "run-task", schema=RunTaskSchema, defaults=worker_defaults
 )
 def docker_worker_run_task(config, job, taskdesc):
     run = job["run"]
@@ -197,7 +159,7 @@ def docker_worker_run_task(config, job, taskdesc):
 
 
 @run_job_using(
-    "generic-worker", "run-task", schema=run_task_schema, defaults=worker_defaults
+    "generic-worker", "run-task", schema=RunTaskSchema, defaults=worker_defaults
 )
 def generic_worker_run_task(config, job, taskdesc):
     run = job["run"]

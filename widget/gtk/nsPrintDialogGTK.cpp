@@ -467,9 +467,9 @@ GtkWidget* nsPrintDialogWidgetGTK::ConstructHeaderFooterDropdown(
                                  "headerFooterPage",  "headerFooterPageTotal",
                                  "headerFooterCustom"};
 
-  for (unsigned int i = 0; i < std::size(hf_options); i++) {
+  for (const auto& hf_option : hf_options) {
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(dropdown), nullptr,
-                              GetUTF8FromBundle(hf_options[i]).get());
+                              GetUTF8FromBundle(hf_option).get());
   }
 
   bool shouldBeCustom = true;

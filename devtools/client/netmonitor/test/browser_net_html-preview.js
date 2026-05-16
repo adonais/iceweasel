@@ -142,7 +142,7 @@ add_task(async function () {
       "#response-panel .html-preview browser"
     );
 
-    await BrowserTestUtils.browserLoaded(browser);
+    await waitForBrowserLoaded(browser);
 
     info("Wait for response content to be loaded");
     await onResponseContent;

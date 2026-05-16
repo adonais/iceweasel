@@ -5,7 +5,8 @@
   text-decoration: none;
   border-radius: var(--border-radius-large);
   padding: var(--space-medium);
-  box-shadow: var(--card-box-shadow);
+  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+  box-shadow: var(--card-box-shadow, var(--box-shadow-card));
   display: flex;
   flex-direction: column;
 
@@ -21,8 +22,6 @@
       width: var(--newtab-card-width-medium);
     }
   }
-
-
 
   --weather-sunny-background-color: light-dark(var(--color-yellow-0), var(--color-yellow-90));
   --weather-cloudy-background-color: light-dark(var(--color-gray-20), var(--color-gray-80));
@@ -40,7 +39,7 @@
       width: 100%;
     }
 
-    h3 {
+    h2 {
       margin-block: 0;
       font-weight: var(--font-weight);
       font-size: var(--font-size-root);
@@ -106,7 +105,7 @@
 
 
   .current-weather-wrapper,
-  &.small-widget .forecast-row-items > li:first-of-type {
+  &.is-small .forecast-row-items > li:first-of-type {
     // Setting background color based on temperature icon
     &:has(.iconId1, .iconId2, .iconId3, .iconId4, .iconId5, .iconId6, .iconId33) {
       background-color: var(--weather-sunny-background-color);
@@ -383,7 +382,7 @@ hr {
 }
 
 // Styles for the small version of Weather Forecast widget
-.small-widget {
+.weather-forecast-widget.is-small {
   height: 100%;
   padding: var(--space-small);
 

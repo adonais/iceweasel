@@ -9,6 +9,7 @@ package org.mozilla.fenix.ui
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.rule.ActivityTestRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.IntentReceiverActivity
@@ -146,8 +147,8 @@ class CustomTabsTest {
 
         browserScreen(composeTestRule) {
         }.clickDownloadLink(downloadFile) {
-            verifyDownloadPrompt(downloadFile)
-        }.clickDownload {
+            verifyDownloadPrompt(composeTestRule, downloadFile)
+        }.clickDownload(composeTestRule) {
             verifyDownloadCompleteSnackbar(fileName = "web_icon.png")
             waitUntilDownloadSnackbarGone()
         }

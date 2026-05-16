@@ -548,6 +548,12 @@ class PrintHelper {
   }
 }
 
+// Synthesized events are not available with native menus
+const nativeSelectEnabled = () =>
+  AppConstants.platform == "macosx" &&
+  Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
+  Services.prefs.getBoolPref("widget.macos.allow-native-select", false);
+
 function waitForPreviewVisible() {
   return BrowserTestUtils.waitForCondition(function () {
     let preview = document.querySelector(".printPreviewBrowser");

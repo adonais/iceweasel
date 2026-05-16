@@ -467,6 +467,10 @@ export const ExperimentAPI = new (class {
     return this.#prefValues.aiFeaturesEnabled === "available";
   }
 
+  get isInitialized() {
+    return this.#initialized;
+  }
+
   /**
    * Return the profile ID.
    *

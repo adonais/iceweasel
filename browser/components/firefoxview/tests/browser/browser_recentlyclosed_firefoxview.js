@@ -469,7 +469,10 @@ add_task(async function test_empty_states() {
       "view-recentlyclosed:not([slot=recentlyclosed])"
     );
 
-    await TestUtils.waitForCondition(() => recentlyClosedComponent.emptyState);
+    await TestUtils.waitForCondition(
+      () => recentlyClosedComponent.emptyState,
+      "Waiting for the recently closed component to be in the empty state"
+    );
     let emptyStateCard = recentlyClosedComponent.emptyState;
     ok(
       emptyStateCard.headerEl.textContent.includes("Closed a tab too soon"),
@@ -488,7 +491,8 @@ add_task(async function test_empty_states() {
     // in about:preferences will require a browser reload
     recentlyClosedComponent.requestUpdate();
     await TestUtils.waitForCondition(
-      () => recentlyClosedComponent.fullyUpdated
+      () => recentlyClosedComponent.fullyUpdated,
+      "The recently closed component to be fully updated"
     );
     emptyStateCard = recentlyClosedComponent.emptyState;
     ok(
@@ -561,9 +565,7 @@ add_task(async function test_search() {
     );
 
     info("Clear the search query.");
-    let clearButton = SpecialPowers.wrap(
-      searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    let clearButton = SpecialPowers.getInputButton(searchTextbox.inputEl);
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await TestUtils.waitForCondition(
       () => listElem.rowEls.length === expectedURLs.length,
@@ -580,9 +582,7 @@ add_task(async function test_search() {
     );
 
     info("Clear the search query.");
-    clearButton = SpecialPowers.wrap(
-      searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    clearButton = SpecialPowers.getInputButton(searchTextbox.inputEl);
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await TestUtils.waitForCondition(
       () => listElem.rowEls.length === expectedURLs.length,

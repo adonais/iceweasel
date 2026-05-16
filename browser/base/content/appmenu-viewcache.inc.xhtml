@@ -78,6 +78,12 @@
                      data-l10n-id="appmenuitem-history"
                      closemenu="none"
                      />
+      <toolbarbutton id="appMenu-tab-groups-button"
+                     class="subviewbutton subviewbutton-nav"
+                     data-l10n-id="appmenuitem-tab-groups"
+                     closemenu="none"
+                     hidden="true"
+                     />
       <toolbarbutton id="appMenu-chats-history-button"
                      class="subviewbutton"
                      data-l10n-id="menu-history-chats"
@@ -439,6 +445,10 @@
                      class="subviewbutton"
                      data-l10n-id="appmenu-customizetoolbar"
                      command="cmd_CustomizeToolbars"/>
+      <toolbarbutton id="appmenu-abouttranslations-button"
+                     class="subviewbutton"
+                     data-l10n-id="appmenu-abouttranslations"
+                     command="cmd_openAboutTranslations"/>
       <toolbarseparator/>
       <html:h2 id="appmenu-developer-tools"
           data-l10n-id="appmenu-developer-tools-subheader"
@@ -658,12 +668,13 @@
                       data-l10n-id="fxa-menu-sync-settings"
                       hidden="true"
                       />
-      <toolbarseparator id="PanelUI-fxa-menu-sendtab-separator" />
+      <toolbarseparator id="PanelUI-fxa-menu-sendtab-separator" hidden="true" />
       <toolbarbutton id="PanelUI-fxa-menu-sendtab-button"
                       class="subviewbutton subviewbutton-nav"
                       data-l10n-id="fxa-menu-send-to-device"
                       data-l10n-args='{"tabCount":1}'
                       closemenu="none"
+                      hidden="true"
                       />
       <toolbarseparator id="PanelUI-sign-out-separator" />
       <toolbarbutton id="PanelUI-fxa-menu-account-signout-button"
@@ -755,27 +766,23 @@
     </vbox>
   </panelview>
 
-  <panelview id="PanelUI-fxa-menu-sendtab-not-configured" class="PanelUI-subView">
-    <vbox id="PanelUI-fxa-sendtab-not-configured" align="center" class="panel-subview-body">
-      <image class="fxaSendToDeviceLogo" role="presentation"/>
-      <label class="PanelUI-fxa-service-description-label" data-l10n-id="fxa-menu-send-tab-to-device-description"></label>
-      <html:moz-button type="primary"
-                       id="PanelUI-fxa-menu-sendtab-not-configured-button"
-                       class="PanelUI-fxa-signin-button"
-                       data-l10n-id="appmenuitem-fxa-sign-in"
-                       />
+  <panelview id="PanelUI-fxa-menu-sendtab-enable-sync" class="PanelUI-subView">
+    <vbox id="PanelUI-fxa-sendtab-enable-sync" class="panel-subview-body">
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-enable-sync-button" class="subviewbutton panel-subview-footer-button"
+                     data-l10n-id="fxa-menu-send-to-mobile-enable-sync2"
+                     />
     </vbox>
   </panelview>
 
-  <panelview id="PanelUI-fxa-menu-sendtab-no-devices" class="PanelUI-subView">
-    <vbox id="PanelUI-fxa-sendtab-no-devices" align="center" class="panel-subview-body">
-      <image class="fxaSendToDeviceLogo" role="presentation"/>
-      <label class="PanelUI-fxa-service-description-label" data-l10n-id="fxa-menu-send-tab-to-device-description"></label>
-      <html:moz-button type="primary"
-                       id="PanelUI-fxa-menu-sendtab-connect-device-button"
-                       class="PanelUI-fxa-signin-button"
-                       data-l10n-id="appmenu-remote-tabs-connectdevice"
-                       />
+  <panelview id="PanelUI-fxa-menu-sendtab-connect-phone" class="PanelUI-subView">
+    <vbox id="PanelUI-fxa-sendtab-connect-phone" class="panel-subview-body">
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-connect-phone-button" class="subviewbutton panel-subview-footer-button"
+                     data-l10n-id="fxa-menu-send-to-mobile-connect-phone2"
+                     />
+      <toolbarseparator id="PanelUI-set-up-connect-phone-separator" />
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-no-phone-button" class="subviewbutton panel-subview-footer-button"
+                     data-l10n-id="fxa-menu-send-to-mobile-device-missing2"
+                     />
     </vbox>
   </panelview>
 
@@ -809,10 +816,10 @@
   <panelview id="reset-pbm-panel" class="PanelUI-subView" role="document">
     <vbox id="reset-pbm-panel-container" role="alertdialog" aria-labelledby="reset-pbm-panel-header">
       <hbox id="reset-pbm-panel-header">
-        <description data-l10n-id="reset-pbm-panel-heading" role="heading" aria-level="2"/>
+        <description data-l10n-id="reset-pbm-panel-heading2" role="heading" aria-level="2"/>
       </hbox>
 
-      <description id="reset-pbm-panel-description" data-l10n-id="reset-pbm-panel-description"/>
+      <description id="reset-pbm-panel-description" data-l10n-id="reset-pbm-panel-description2"/>
       <checkbox id="reset-pbm-panel-checkbox" data-l10n-id="reset-pbm-panel-always-ask-checkbox"/>
 
       <html:moz-button-group id="reset-pbm-panel-footer" class="panel-footer">
@@ -823,7 +830,7 @@
         <button slot="primary"
                 id="reset-pbm-panel-confirm-button"
                 class="footer-button"
-                data-l10n-id="reset-pbm-panel-confirm-button"
+                data-l10n-id="reset-pbm-panel-confirm-button2"
                 ></button>
       </html:moz-button-group>
     </vbox>
@@ -857,19 +864,44 @@
             data-l10n-id="ipprotection-experiment-badge"
           ></html:moz-badge>
         </html:h1>
+        <html:moz-button
+          id="ipprotection-header-button"
+          class="panel-info-button"
+          data-captures-focus="true"
+          type="ghost"
+          iconsrc="chrome://global/skin/icons/info.svg"
+          size="small"
+          data-l10n-id="ipprotection-help-button">
+        </html:moz-button>
     </hbox>
     <toolbarseparator/>
     <vbox id="PanelUI-ipprotection-content" class="panel-subview-body"/>
+  </panelview>
+
+  <panelview id="PanelUI-ipprotection-locations"
+             class="PanelUI-subView"
+             data-l10n-id="ipprotection-locations-subview"
+             data-l10n-attrs="title">
+    <hbox id="PanelUI-ipprotection-locations-header"
+         class="panel-header">
+      <html:h1>
+        <html:span></html:span>
+      </html:h1>
+    </hbox>
+    <toolbarseparator/>
+    <vbox id="PanelUI-ipprotection-locations-content" class="panel-subview-body"/>
   </panelview>
 
   <panelview id="ai-window-toggle-view" class="PanelUI-subView">
     <vbox class="panel-subview-body">
       <toolbarbutton id="ai-window-switch-classic"
                     class="subviewbutton"
+                    type="radio"
                     data-l10n-id="ai-window-toggleview-switch-classic"
                     hidden="true"/>
       <toolbarbutton id="ai-window-switch-ai"
                     class="subviewbutton"
+                    type="radio"
                     hidden="true"
                     aria-describedby="ai-window-switch-ai-badge">
         <image class="toolbarbutton-icon"/>
@@ -878,6 +910,13 @@
         <html:moz-badge id="ai-window-switch-ai-badge"
                         type="beta"/>
       </toolbarbutton>
+    </vbox>
+  </panelview>
+
+  <panelview id="appMenu-tabGroupsListView"
+             class="PanelUI-subView">
+    <vbox class="panel-subview-body">
+      <html:tab-groups-list/>
     </vbox>
   </panelview>
 

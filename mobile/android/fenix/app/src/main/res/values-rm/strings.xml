@@ -19,6 +19,8 @@
   <string name="content_description_menu">Ulteriuras opziuns</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Modus privat</string>
+  <!-- Content description (not visible, for screen readers etc.): "Normal Browsing" menu button. -->
+  <string name="content_description_normal_browsing">Navigaziun normala</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Tschertgar u endatar in\'adressa</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -31,10 +33,6 @@
   <string name="tab_search_hint">Tschertgar en ils tabs</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Endatar ils terms da tschertga</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Tabs averts vegnan mussads qua.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Tabs privats averts vegnan mussads qua.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Modus privat</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -53,8 +51,6 @@
   <string name="tab_tray_select_collection">Tscherner ina collecziun</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Sortir dal modus da tscherna multipla</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Memorisar ils tabs tschernids en ina collecziun</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Va per tabs sin mintga apparat</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -200,8 +196,6 @@
   <string name="browser_menu_stop">Fermar</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Extensiuns</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Ti has extensiuns installadas, ma betg activadas</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Administrar las extensiuns</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -221,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Emprova in’extensiun recumandada</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Infurmaziuns davart il conto</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Agid</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Novaziuns</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Parameters</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Biblioteca</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Per visur grond</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Avrir en in tab normal</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Agiuntar al visur da partenza</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -260,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">CUN TECNOLOGIA DA %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Cun tecnologia da %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Modus da lectura</string>
@@ -273,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Avrir en ina app</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Persunalisar la vista da lectura</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Persunalisar la vista da lectura</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Agiuntar</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Modifitgar</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Persunalisar la pagina da partenza</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">S’annunziar</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -300,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Serrar il menu</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigaziun</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serrar il menu da las extensiuns</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serrar il menu per la memorisaziun</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serrar il menu dals utensils</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Serrar il menu per la persunalisaziun da tabs</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -314,8 +283,14 @@
   <string name="browser_menu_edit_bookmark">Modifitgar il segnapagina</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">Memorisar sco PDF</string>
+  <!-- Browser menu label for moving the current private tab to a non-private tab -->
+  <string name="browser_menu_move_to_non_private_tab">Spustar en in tab betg privat</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Translatar la pagina</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Resumar la pagina</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Nov</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Annunziar problems cun questa website…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -360,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Visur da partenza</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Translatar la pagina</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -368,6 +347,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Pagina translatada per %2$s, l’original è en %1$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Scrola tes apparat per resumar questa pagina en in pèr secundas. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -380,6 +361,56 @@
   <string name="translation_toolbar_expand_action">Avrir la panela da translaziun</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Sbittar quest messadi</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Resumaziuns da paginas</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">Controllas IA</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Ti has adina la tscherna en %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Quai includa la pussaivladad d’utilisar u betg utilisar funcziuns dad intelligenza artifiziala.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Ulteriuras infurmaziuns</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Bloccar funcziuns che sa basan sin l’IA</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Bloccar vul dir che ti na vesas betg funcziuns che sa basan sin IA (novas u existentas) en %s – n’era betg ils messadis pop-up davart las funcziuns.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Vesair tge ch’è inclus e tge betg</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Funcziuns che sa basan sin l’IA èn bloccadas en la configuraziun da standard. Deblochescha funcziuns specificas sutvart.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Funcziuns basadas sin l’IA</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Translaziuns</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Tut las translaziuns restan privatas sin tes apparat.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Ulteriurs parameters da translaziun</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Ulteriurs parameters da las resumaziuns da paginas</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Tschertga vocala</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Audio vegn convertì en text cun agid da Google Speech Services.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Bloccar meglieraziuns che sa basan sin l’IA?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Ti na vegns betg a vesair funcziuns che sa basan sin l’IA (novas u existentas) en %1$s – n’era betg ils messadis pop-up davart las funcziuns. Suenter pos ti debloccar tut las funcziuns che ti vuls vinavant utilisar.\n\nLa bloccada pertutga era las extensiuns che utiliseschan l’IA che %1$s porscha.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Il suandant vegn bloccà:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Interrumper</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Bloccar</string>
   <!--
     Locale Settings Fragment
 
@@ -398,7 +429,11 @@
   <string name="search_scan_button_2">Scannar il code QR</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Parameters da la maschina da tschertgar</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Encollar la colliaziun en l\'archiv provisoric</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Permetter</string>
@@ -571,7 +606,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Cuntinuar</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Ans gida a derasar Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Ans gida a derasar Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Fa a savair ils partenaris da marketing da Mozilla co ti has scuvert Firefox e che ti dovras il program. Questas datas na vegnan mai vendidas.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -610,8 +645,12 @@
 
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Cuntinuar</string>
+  <!-- "Continue browsing" onboarding button. -->
+  <string name="nova_onboarding_continue_browsing_button" tools:ignore="UnusedResources">Cuntinuar a navigar</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Betg ussa</string>
+  <!-- "Skip" onboarding button. -->
+  <string name="nova_onboarding_skip_button" tools:ignore="UnusedResources">Sursiglir</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Ta prepara per navigar en tutta libertad</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
@@ -639,6 +678,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Administrar ils parameters</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Di adia a fastizaders mulestus</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Avra tut tias colliaziuns savend che la protecziun da datas è integrada</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Nus protegin tias datas ed impedin automaticamain che interpresas spiuneschian tes clics.</string>
   <!-- "Set to default" onboarding button. -->
@@ -669,7 +710,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Fa a savair ils partenaris da marketing da Mozilla co ti has scuvert Firefox e che ti dovras il program. Questas datas na vegnan mai vendidas. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Fa a savair ils partenaris da marketing da Mozilla co ti has scuvert Firefox e che ti dovras il program. Questas datas na vegnan mai vendidas. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Co nus utilisain las datas</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -684,6 +725,21 @@
   <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Lantscha mintga tschertga directamain dal visur da partenza, savend che las protecziuns automaticas da Firefox ta defendan.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Agiuntar il widget da Firefox</string>
+  <!-- Customize prompt onboarding title. -->
+  <string name="nova_onboarding_customize_prompt_title" tools:ignore="UnusedResources">Simpel da persunalisar e pli privat cun mintga interacziun</string>
+  <plurals name="nova_onboarding_customize_prompt_body" tools:ignore="UnusedResources">
+    <!--
+      Customize prompt onboarding body.
+      %1$s is replaced by the product name (for example "Firefox"),
+      %2$,d is replaced by the number of trackers blocked. The comma represents the thousand
+      separator (e.g. 1,000 in English), and it will automatically use the correct character
+      for your locale (don't change or remove it).
+    -->
+    <item quantity="one">%1$s ha bloccà %2$,d fastizader durant che ti es navigà en il web.</item>
+    <item quantity="other">%1$s ha bloccà %2$,d fastizaders durant che ti es navigà en il web.</item>
+  </plurals>
+  <!-- Customize prompt onboarding positive button. -->
+  <string name="nova_onboarding_customize_prompt_positive_button" tools:ignore="UnusedResources">Cumenzar a persunalisar</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -1538,18 +1594,10 @@
   <string name="add_tab">Agiuntar in tab</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Agiuntar in tab privat</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privat</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sincronisar</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Tschertgar en tes tabs</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Cundivider tut ils tabs</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Tabs serrads dacurt</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Serrà dacurt</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Parameters dal conto</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1564,12 +1612,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Serrar ils tabs</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Interrumper</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Segnapagina</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Agiuntar segnapaginas per ils tabs tschernids</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Serrar</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Serrar ils tabs tschernids</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -2206,8 +2250,6 @@
   <string name="toast_copy_link_to_clipboard">Copià en l\'archiv provisoric</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">S\'annunziar tar Sync</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">S’annunziar</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Trametter a tut ils apparats</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2364,8 +2406,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Stizzar las datas da navigaziun cun terminar</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Stizza automaticamain las datas da navigaziun cura che ti tschernas «Terminar» en il menu principal</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Terminar</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Interval per stizzar</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2456,10 +2496,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Restrictiv</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Ina protecziun pli severa cunter il fastizar e meglra prestaziun, ma tschertas paginas na funcziunan eventualmain betg endretg.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Permetter a %1$s d’applitgar automaticamain las excepziuns necessarias per evitar problems pli gronds cun websites.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Era applitgar automaticamain excepziuns ch’èn mo necessarias per schliar problems pli pitschens e pussibilitar uschia che funcziuns da confort stettian a disposiziun.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Schliar ils problems ils pli gravants da websites (recumandà)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3077,26 +3113,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Verifitgà da: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Stizzar</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Modifitgar</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Vuls ti propi stizzar quest pled-clav?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Stizzar</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Interrumper</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Opziuns da pleds-clav</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Il champ da text modifitgabel per l’adressa da la website.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Il champ da text modifitgabel per il num d’utilisader.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Il champ da text modifitgabel per il pled-clav.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Memorisar las midadas.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Modifitgar il pled-clav</string>
   <!-- The page title for adding new password. -->
@@ -3265,16 +3287,6 @@
   <string name="experiments_snackbar">Activar la telemetria per trametter datas.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Ir als parameters</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Nus attribuin a mintga recensiun dad in product ina <b>nota en letras</b> dad A enfin F.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[La <b>valitaziun rectifitgada</b> sa basa mo sin recensiuns da las qualas nus cartain ch\'ellas sajan fidablas.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Ils elements <b>accentuads</b> derivan da las recensiun sin %s dals ultims 80 dis che nus tegnain per fidablas.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 

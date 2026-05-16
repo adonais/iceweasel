@@ -1,0 +1,33 @@
+{
+  "label": "Future PLC websites",
+  "bugs": {
+    "1886293": {
+      "issue": "extra-scrollbars",
+      "matches": [
+        "*://*.androidcentral.com/*",
+        "*://*.creativebloq.com/*",
+        "*://*.cyclingnews.com/*",
+        "*://*.gamesradar.com/*",
+        "*://*.imore.com/*",
+        "*://*.itpro.com/*",
+        "*://*.laptopmag.com/*",
+        "*://*.livescience.com/*",
+        "*://*.loudersound.com/*",
+        "*://*.musicradar.com/*",
+        "*://*.pcgamer.com/*",
+        "*://*.space.com/*",
+        "*://*.techradar.com/*",
+        "*://*.tomshardware.com/*",
+        "*://*.windowscentral.com/*"
+      ]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "css": ["bug1886293-futurePLC-sites-trending_scrollbars.css"]
+      }
+    }
+  ]
+}

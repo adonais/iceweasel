@@ -6,20 +6,13 @@
 /**
  * Ensures unsupported detected languages show an info message and the textarea remains visible.
  */
-const UNSUPPORTED_LANGUAGE_PAIRS = [
-  { fromLang: "en", toLang: "fr" },
-  { fromLang: "fr", toLang: "en" },
-  { fromLang: "en", toLang: "de" },
-  { fromLang: "de", toLang: "en" },
-];
-
 const SPANISH_TEXT = "Hola, ¿cómo estás?";
 
 add_task(
   async function test_about_translations_detected_language_unsupported_message_clear_button() {
     const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
       {
-        languagePairs: UNSUPPORTED_LANGUAGE_PAIRS,
+        languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
         autoDownloadFromRemoteSettings: false,
       }
     );
@@ -111,7 +104,7 @@ add_task(
   async function test_about_translations_detected_language_unsupported_message_manual_clear() {
     const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
       {
-        languagePairs: UNSUPPORTED_LANGUAGE_PAIRS,
+        languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
         autoDownloadFromRemoteSettings: false,
       }
     );
@@ -196,7 +189,7 @@ add_task(
   async function test_about_translations_detected_language_unsupported_message_toggle_source_language() {
     const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
       {
-        languagePairs: UNSUPPORTED_LANGUAGE_PAIRS,
+        languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
         autoDownloadFromRemoteSettings: false,
       }
     );

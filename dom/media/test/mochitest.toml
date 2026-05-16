@@ -846,6 +846,10 @@ scheme = "https"
 
 ["test_media_sniffer.html"]
 
+["test_mediacapabilities_drm_power_efficient.html"]
+scheme = "https"
+support-files = ["mediacapabilities_drm_utils.js"]
+
 ["test_mediastream_as_eventarget.html"]
 
 ["test_mediatrack_consuming_mediastream.html"]

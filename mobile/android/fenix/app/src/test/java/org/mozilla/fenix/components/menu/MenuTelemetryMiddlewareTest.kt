@@ -498,6 +498,16 @@ class MenuTelemetryMiddlewareTest {
     }
 
     @Test
+    fun `WHEN moving to a non-private tab THEN record the move to non-private tab browser menu telemetry`() {
+        val store = createStore()
+        assertNull(Events.browserMenuAction.testGetValue())
+
+        store.dispatch(MenuAction.MoveToNonPrivateTab)
+
+        assertTelemetryRecorded(Events.browserMenuAction, item = "move_to_non_private_tab")
+    }
+
+    @Test
     fun `WHEN navigating to web compat reporter THEN record the web compat reporter telemetry`() {
         val store = createStore()
         assertNull(Events.browserMenuAction.testGetValue())

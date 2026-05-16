@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2021 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -648,6 +646,10 @@ inline ValType Decoder::uncheckedReadValType(const TypeContext& types) {
     case uint8_t(TypeCode::NullExternRef):
     case uint8_t(TypeCode::ExnRef):
     case uint8_t(TypeCode::NullExnRef):
+#ifdef ENABLE_WASM_JSPI
+    case uint8_t(TypeCode::ContRef):
+    case uint8_t(TypeCode::NullContRef):
+#endif
       return RefType::fromTypeCode(TypeCode(code), true);
     case uint8_t(TypeCode::Ref):
     case uint8_t(TypeCode::NullableRef): {
@@ -700,6 +702,16 @@ inline bool Decoder::readPackedType(const TypeContext& types,
       *type = RefType::fromTypeCode(TypeCode(code), true);
       return true;
     }
+#ifdef ENABLE_WASM_JSPI
+    case uint8_t(TypeCode::ContRef):
+    case uint8_t(TypeCode::NullContRef): {
+      if (!features.stackSwitching) {
+        return fail("stack switching not enabled");
+      }
+      *type = RefType::fromTypeCode(TypeCode(code), true);
+      return true;
+    }
+#endif  // ENABLE_WASM_JSPI
     case uint8_t(TypeCode::Ref):
     case uint8_t(TypeCode::NullableRef): {
       bool nullable = code == uint8_t(TypeCode::NullableRef);
@@ -767,6 +779,16 @@ inline bool Decoder::readHeapType(const TypeContext& types,
         *type = RefType::fromTypeCode(TypeCode(code), nullable);
         return true;
       }
+#ifdef ENABLE_WASM_JSPI
+      case uint8_t(TypeCode::ContRef):
+      case uint8_t(TypeCode::NullContRef): {
+        if (!features.stackSwitching) {
+          return fail("stack switching not enabled");
+        }
+        *type = RefType::fromTypeCode(TypeCode(code), nullable);
+        return true;
+      }
+#endif  // ENABLE_WASM_JSPI
       case uint8_t(TypeCode::AnyRef):
       case uint8_t(TypeCode::I31Ref):
       case uint8_t(TypeCode::EqRef):

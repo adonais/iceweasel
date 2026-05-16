@@ -26,9 +26,9 @@ sealed class AIFeaturesError(override val cause: Throwable?) : Exception(cause) 
     /** The requested AI feature ID is not recognized. */
     class UnknownFeatureError(override val cause: Throwable?) : AIFeaturesError(cause)
 
-    /** The AI feature could not be enabled or disabled. */
+    /** The AI feature could not be enabled or blocked. */
     class CouldNotSetError(override val cause: Throwable?) : AIFeaturesError(cause)
 
-    /** The AI feature could not be reset to its default state. */
-    class CouldNotResetError(override val cause: Throwable?) : AIFeaturesError(cause)
+    /** The AI feature could not be made available. */
+    class CouldNotMakeAvailableError(override val cause: Throwable?) : AIFeaturesError(cause)
 }

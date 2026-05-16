@@ -3,13 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // @nova-cleanup(merge-styles): Merge nova/activity-stream.scss back to activity-stream.scss after ship
+// @nova-cleanup(remove-file): The CSS switcher in AboutNewTabChild.sys.mjs was removed, but it won't
+// train hop to older Firefox versions. This file is kept so those versions still have a working
+// reference when the switcher swaps to it. Once the switcher removal reaches Release, this file
+// can be removed.
 
+@import 'tokens';
 @import '../normalize';
 @import '../variables';
 @import '../theme';
 @import '../icons';
 @import '../mixins';
-@import 'tokens-temp';
 
 :root {
   font-size: var(--font-size-root);
@@ -146,6 +150,7 @@ input {
 // Components
 // stylelint-disable no-invalid-position-at-import-rule
 @import '../../components/A11yLinkButton/A11yLinkButton';
+@import '../../components/ActivationWindowMessage/ActivationWindowMessage';
 @import '../../components/Base/Base';
 @import '../../components/Base/Grid';
 @import '../../components/ErrorBoundary/ErrorBoundary';
@@ -157,7 +162,6 @@ input {
 @import '../../components/ConfirmDialog/ConfirmDialog';
 @import '../../components/CustomizeMenu/CustomizeMenu';
 @import '../../components/WallpaperCategories/WallpaperCategories';
-@import '../../components/Weather/Weather';
 @import '../../components/DownloadModalToggle/DownloadModalToggle';
 @import '../../components/Card/Card';
 @import '../../components/CollapsibleSection/CollapsibleSection';
@@ -171,7 +175,7 @@ input {
 @import '../../components/Widgets/Widgets';
 @import '../../components/Widgets/Lists/Lists';
 @import '../../components/Widgets/FocusTimer/FocusTimer';
-@import '../../components/Widgets/WeatherForecast/WeatherForecast';
+@import '../../components/Widgets/Weather/Weather';
 
 // Discovery Stream Components
 @import '../../components/DiscoveryStreamComponents/CardGrid/CardGrid';
@@ -198,12 +202,16 @@ input {
 @import '../../components/DiscoveryStreamComponents/AdBanner/AdBanner';
 @import '../../components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu';
 @import '../../components/DiscoveryStreamComponents/PromoCard/PromoCard';
+@import '../../components/DiscoveryStreamComponents/BriefingCard/BriefingCard';
 @import '../../components/DiscoveryStreamComponents/SectionContextMenu/SectionContextMenu';
 @import '../../components/DiscoveryStreamComponents/InterestPicker/InterestPicker';
 @import '../../components/DiscoveryStreamComponents/ReportContent/ReportContent';
 @import '../../components/DiscoveryStreamComponents/PersonalizedCard/PersonalizedCard';
+@import '../../components/MessageWrapper/MessageWrapper';
 
 // Nova Component Styles
 @import 'TopSites';
+@import 'CardSections';
+@import 'DSCard';
 
 // stylelint-enable no-invalid-position-at-import-rule

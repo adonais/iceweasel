@@ -36,11 +36,6 @@ object FeatureFlags {
     val onboardingFeatureEnabled = !Config.channel.isDebug
 
     /**
-     * Enables the "Discover more" stories screen.
-     */
-    const val DISCOVER_MORE_STORIES = true
-
-    /**
      * Enables Firefox Labs.
      */
     const val FIREFOX_LABS = false

@@ -88,7 +88,15 @@ class TabsCleanupFeature(
     }
 
     private fun removeAllTabsAndShowSnackbar(sessionCode: String) {
-        if (sessionCode == ALL_PRIVATE_TABS) {
+        val isPrivate = sessionCode == ALL_PRIVATE_TABS
+
+        val tabsCount = if (isPrivate) {
+            browserStore.state.privateTabs.size
+        } else {
+            browserStore.state.normalTabs.size
+        }
+
+        if (isPrivate) {
             tabsUseCases.removePrivateTabs()
         } else {
             tabsUseCases.removeNormalTabs()
@@ -105,7 +113,9 @@ class TabsCleanupFeature(
         }
 
         showUndoSnackbar(
-            message = context.tabsClosedUndoMessage(private = sessionCode == ALL_PRIVATE_TABS),
+            message = context.tabsClosedUndoMessage(
+                count = tabsCount,
+            ),
             onCancel = {
                 onUndoAllTabsRemoved(tabId)
             },

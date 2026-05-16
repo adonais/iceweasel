@@ -254,8 +254,7 @@ impl DataStores {
                 let prim_data = &self.line_decoration[data_handle];
                 &prim_data.common
             }
-            PrimitiveInstanceKind::LinearGradient { data_handle, .. }
-            | PrimitiveInstanceKind::CachedLinearGradient { data_handle, .. } => {
+            PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
                 let prim_data = &self.linear_grad[data_handle];
                 &prim_data.common
             }

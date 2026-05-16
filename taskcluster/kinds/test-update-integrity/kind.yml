@@ -6,34 +6,38 @@ loader: taskgraph.loader.transform:loader
 
 transforms:
     - taskgraph.transforms.from_deps
-    - gecko_taskgraph.transforms.update_integrity
     - gecko_taskgraph.transforms.release:run_on_releases
+    - gecko_taskgraph.transforms.update_integrity
     - gecko_taskgraph.transforms.job
     - gecko_taskgraph.transforms.task
 
 kind-dependencies:
     - build-signing
     - mar-signing
+    - mar-signing-l10n
     - partials-signing
     - repackage
+    - repackage-l10n
+    - shippable-l10n-signing
     - toolchain
 
 only-for-build-platforms:
     - linux64-shippable/opt
+    - linux64-aarch64-shippable/opt
+    - macosx64-shippable/opt
+    - win32-shippable/opt
+    - win64-shippable/opt
+    - win64-aarch64-shippable/opt
 
 tasks:
     test-update-integrity:
         run-on-repo-type: [hg]
-        run-on-releases: [nightly]
-        attributes:
-            # derived in `from-deps`, but needs to be unset until we're ready
-            # to run it outside of nightly
-            shipping_phase: null
+        run-on-releases: [nightly, beta]
         description: verify update integrity
         worker-type: b-linux
         from-deps:
-            kinds: [mar-signing, partials-signing, repackage, build-signing]
-            group-by: platform-no-l10n
+            kinds: [mar-signing, mar-signing-l10n, partials-signing, repackage, repackage-l10n, build-signing, shippable-l10n-signing]
+            group-by: single-locale
             copy-attributes: true
             fetches:
                 # partials not listed here because the number and naming of them
@@ -43,6 +47,8 @@ tasks:
                 # fetches for these kinds are added in a transform
                 mar-signing:
                     - artifact: target.complete.mar
+                mar-signing-l10n:
+                    - artifact: "{locale}/target.complete.mar"
 
         cert-overrides:
             by-project:
@@ -56,6 +62,11 @@ tasks:
                     - release_secondary.der|dep2.der
                 # no cert overriding is necessary for other releases
                 default: null
+
+        archive-prefix:
+            by-project:
+                try: ftp.stage.mozaws.net/pub
+                default: archive.mozilla.org/pub
 
         treeherder:
             symbol: UpInt({locale})
@@ -77,4 +88,9 @@ tasks:
         use-python: default
         fetches:
             toolchain:
-                - linux64-marannon
+                by-build-platform:
+                    mac.*:
+                        - linux64-marannon
+                        - linux64-libdmg
+                    default:
+                        - linux64-marannon

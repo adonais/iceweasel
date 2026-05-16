@@ -22,6 +22,15 @@
 
 SEC_ASN1_MKSUB(SECOID_AlgorithmIDTemplate)
 
+/* Upper bound on PBE iteration counts accepted from parsed algorithm
+ * parameters.  This prevents denial-of-service from crafted input
+ * (e.g. PKCS#12 files with extreme iteration counts). */
+#ifdef DEBUG
+#define MAX_ITERATION_COUNT 600000
+#else
+#define MAX_ITERATION_COUNT 100000000
+#endif
+
 /* how much a crypto encrypt/decryption may expand a buffer */
 #define MAX_CRYPTO_EXPANSION 64
 
@@ -741,6 +750,11 @@ nsspkcs5_ComputeKeyAndIV(NSSPKCS5PBEParameter *pbe_param, SECItem *pwitem,
         return NULL;
     }
 
+    if (pbe_param->iter > MAX_ITERATION_COUNT) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return NULL;
+    }
+
     key = SECITEM_AllocItem(NULL, NULL, pbe_param->keyLen);
     if (key == NULL) {
         return NULL;
@@ -1152,7 +1166,12 @@ nsspkcs5_AlgidToParam(SECAlgorithmID *algid)
                 if (rv != SECSuccess) {
                     break;
                 }
+                PORT_SetError(0);
                 pbe_param->keyLen = DER_GetInteger(&pbe_param->keyLength);
+                if (PORT_GetError() != 0) {
+                    rv = SECFailure;
+                    break;
+                }
             }
             /* we we are encrypting, save any iv's */
             if (algorithm == SEC_OID_PKCS5_PBES2) {
@@ -1171,7 +1190,12 @@ nsspkcs5_AlgidToParam(SECAlgorithmID *algid)
 loser:
     PORT_Memset(&pbev2_param, 0, sizeof(pbev2_param));
     if (rv == SECSuccess) {
+        PORT_SetError(0);
         pbe_param->iter = DER_GetInteger(&pbe_param->iteration);
+        if (PORT_GetError() != 0) {
+            nsspkcs5_DestroyPBEParameter(pbe_param);
+            pbe_param = NULL;
+        }
     } else {
         nsspkcs5_DestroyPBEParameter(pbe_param);
         pbe_param = NULL;

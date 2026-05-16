@@ -431,6 +431,11 @@ static void encode_superblock(const AV1_COMP *const cpi, TileDataEnc *tile_data,
 
     xd->cfl.store_y = 0;
     if (av1_allow_palette(cm->features.allow_screen_content_tools, bsize)) {
+      // Gather the stats to determine whether to use screen content tools in
+      // function av1_determine_sc_tools_with_encoding().
+      if (mbmi->palette_mode_info.palette_size[0] > 0 &&
+          dry_run == OUTPUT_ENABLED)
+        x->palette_pixels += (block_size_wide[bsize] * block_size_high[bsize]);
       for (int plane = 0; plane < AOMMIN(2, num_planes); ++plane) {
         if (mbmi->palette_mode_info.palette_size[plane] > 0) {
           if (!dry_run) {

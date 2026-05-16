@@ -1798,10 +1798,8 @@ void nsRange::CutContents(DocumentFragment** aFragment,
 
   nsCOMPtr<Document> doc = mStart.GetContainer()->OwnerDoc();
 
-  nsCOMPtr<nsINode> commonAncestor = GetCommonAncestorContainer(
-      aRv, StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
-               ? AllowRangeCrossShadowBoundary::Yes
-               : AllowRangeCrossShadowBoundary::No);
+  nsCOMPtr<nsINode> commonAncestor =
+      GetCommonAncestorContainer(aRv, AllowRangeCrossShadowBoundary::Yes);
   if (aRv.Failed()) {
     return;
   }
@@ -1856,10 +1854,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
 
   RangeSubtreeIterator iter;
 
-  aRv = iter.Init(this,
-                  StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
-                      ? AllowRangeCrossShadowBoundary::Yes
-                      : AllowRangeCrossShadowBoundary::No);
+  aRv = iter.Init(this, AllowRangeCrossShadowBoundary::Yes);
   if (aRv.Failed()) {
     return;
   }
@@ -2997,8 +2992,8 @@ void nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges) {
 }
 
 struct InnerTextAccumulator {
-  explicit InnerTextAccumulator(mozilla::dom::DOMString& aValue)
-      : mString(aValue.AsAString()), mRequiredLineBreakCount(0) {}
+  explicit InnerTextAccumulator(nsAString& aValue)
+      : mString(aValue), mRequiredLineBreakCount(0) {}
   void FlushLineBreaks() {
     while (mRequiredLineBreakCount > 0) {
       // Required line breaks at the start of the text are suppressed.
@@ -3122,7 +3117,7 @@ static bool IsLastNonemptyRowGroupOfTable(nsIFrame* aFrame) {
   return true;
 }
 
-void nsRange::GetInnerTextNoFlush(DOMString& aValue, ErrorResult& aError,
+void nsRange::GetInnerTextNoFlush(nsAString& aValue, ErrorResult& aError,
                                   nsIContent* aContainer) {
   InnerTextAccumulator result(aValue);
 
@@ -3220,10 +3215,6 @@ template <typename SPT, typename SRT, typename EPT, typename ERT>
 void nsRange::CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
     const mozilla::RangeBoundaryBase<SPT, SRT>& aStartBoundary,
     const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary) {
-  if (!StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-    return;
-  }
-
   MOZ_ASSERT(aStartBoundary.IsSetAndValid() && aEndBoundary.IsSetAndValid());
   MOZ_ASSERT(aStartBoundary.GetTreeKind() == aEndBoundary.GetTreeKind());
   MOZ_ASSERT(aStartBoundary.GetTreeKind() == TreeKind::Flat);

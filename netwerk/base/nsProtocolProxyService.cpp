@@ -2164,15 +2164,24 @@ nsresult nsProtocolProxyService::Resolve_Internal(nsIChannel* channel,
     return NS_OK;
   }
 
-  bool mainThreadOnly;
-  if (mSystemProxySettings && mProxyConfig == PROXYCONFIG_SYSTEM &&
-      NS_SUCCEEDED(mSystemProxySettings->GetMainThreadOnly(&mainThreadOnly)) &&
-      !mainThreadOnly) {
-    *usePACThread = true;
-    return NS_OK;
-  }
-
   if (mSystemProxySettings && mProxyConfig == PROXYCONFIG_SYSTEM) {
+    bool mainThreadOnly = false;
+    if (NS_SUCCEEDED(
+            mSystemProxySettings->GetMainThreadOnly(&mainThreadOnly)) &&
+        !mainThreadOnly) {
+      *usePACThread = true;
+      return NS_OK;
+    }
+
+    if (StaticPrefs::network_proxy_fast_path_system_direct()) {
+      bool systemDirect = false;
+      if (NS_SUCCEEDED(
+              mSystemProxySettings->GetSystemProxyDirect(&systemDirect)) &&
+          systemDirect) {
+        return NS_OK;
+      }
+    }
+
     // If the system proxy setting implementation is not threadsafe (e.g
     // linux gconf), we'll do it inline here. Such implementations promise
     // not to block
@@ -2514,6 +2523,30 @@ nsProtocolProxyService::NotifyProxyConfigChangedInternal() {
     callback->OnProxyConfigChanged();
   }
   return NS_OK;
+}
+
+bool nsProtocolProxyService::IsEffectivelyDirect() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!StaticPrefs::network_proxy_fast_path_system_direct()) {
+    return false;
+  }
+
+  if (!mFilters.IsEmpty()) {
+    return false;
+  }
+
+  if (mProxyConfig == PROXYCONFIG_DIRECT) {
+    return true;
+  }
+
+  if (mProxyConfig == PROXYCONFIG_SYSTEM && mSystemProxySettings) {
+    bool systemDirect = false;
+    mSystemProxySettings->GetSystemProxyDirect(&systemDirect);
+    return systemDirect;
+  }
+
+  return false;
 }
 
 }  // namespace net

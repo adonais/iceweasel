@@ -9,6 +9,7 @@ UNIFIED_SOURCES += [
     "TestPolicyContainer.cpp",
     "TestSecureContext.cpp",
     "TestSmartCrashTrimmer.cpp",
+    "TestWAICTHeaderParsing.cpp",
     "TestWAICTManifestValidation.cpp",
 ]
 

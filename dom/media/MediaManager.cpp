@@ -2464,7 +2464,6 @@ MediaManager::MediaManager(already_AddRefed<TaskQueue> aMediaThread)
   mPrefs.mFPS = MediaEnginePrefs::DEFAULT_VIDEO_FPS;
   mPrefs.mUsePlatformProcessing = false;
   mPrefs.mAecOn = false;
-  mPrefs.mUseAecMobile = false;
   mPrefs.mAgcOn = false;
   mPrefs.mHPFOn = false;
   mPrefs.mNoiseOn = false;

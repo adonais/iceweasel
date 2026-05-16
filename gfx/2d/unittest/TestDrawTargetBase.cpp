@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TestDrawTargetBase.h"
-#include <sstream>
 
 using namespace mozilla;
 using namespace mozilla::gfx;

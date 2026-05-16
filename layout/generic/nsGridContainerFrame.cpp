@@ -11,7 +11,9 @@
 #include <functional>
 #include <type_traits>
 
-#include "fmt/format.h"
+#ifdef DEBUG
+#  include "fmt/base.h"
+#endif
 #include "gfxContext.h"
 #include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/AutoRestore.h"
@@ -10314,8 +10316,8 @@ void nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     BuildDisplayListForChild(aBuilder, child, aLists, flags);
   }
 
-  if (GetPrevInFlow()) {
-    DisplayPushedAbsoluteFrames(aBuilder, aLists);
+  if (GetPrevInFlow() || GetNextInFlow()) {
+    DisplayAbsoluteFramesNotBuiltByPlaceholder(aBuilder, aLists);
   }
 }
 

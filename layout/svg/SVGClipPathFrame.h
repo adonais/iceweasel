@@ -120,7 +120,8 @@ class SVGClipPathFrame final : public SVGContainerFrame {
 #endif
 
   SVGBBox GetBBoxForClipPathFrame(const SVGBBox& aBBox,
-                                  const gfxMatrix& aMatrix, uint32_t aFlags);
+                                  const gfxMatrix& aMatrix,
+                                  SVGBBoxFlags aFlags);
 
   /**
    * If the clipPath element transforms its children due to

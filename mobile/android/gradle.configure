@@ -265,7 +265,6 @@ def spotless_projects():
         "geckoview",
         "geckoview_example",
         "annotations",
-        "exoplayer2",
         "messaging_example",
         "port_messaging_example",
         "test_runner",
@@ -385,7 +384,6 @@ def gradle_android_archive_geckoview_tasks(build_config):
         "geckoview:publish{geckoview.variant.name}PublicationToMavenRepository".format(
             geckoview=build_config.geckoview
         ),
-        "exoplayer2:publishDebugPublicationToMavenRepository",
     ]
     return tasks
 

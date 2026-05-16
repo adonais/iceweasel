@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <new>
 #include <numeric>
-#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>

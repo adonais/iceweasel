@@ -7,7 +7,6 @@
 #include <windows.h>
 #include <winternl.h>
 #include <ntstatus.h>
-#include <sstream>
 
 #include "base/command_line.h"
 #include "base/logging.h"

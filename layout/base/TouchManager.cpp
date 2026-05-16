@@ -116,13 +116,27 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
     return aFrame;
   }
 
+  Document* doc = aFrame->PresShell()->GetDocument();
+  const bool renderBlocked =
+      doc && doc->RenderingSuppressedForViewTransitions();
+
   nsIFrame* target = aFrame;
   for (int32_t i = aEvent->mTouches.Length(); i;) {
     --i;
     dom::Touch* touch = aEvent->mTouches[i];
 
     int32_t id = touch->Identifier();
-    if (!TouchManager::HasCapturedTouch(id)) {
+    if (TouchManager::HasCapturedTouch(id)) {
+      // This touch is an old touch, we need to ensure that is not
+      // marked as changed and set its target correctly
+      touch->mChanged = false;
+      RefPtr<dom::Touch> oldTouch = TouchManager::GetCapturedTouch(id);
+      if (oldTouch) {
+        touch->SetTouchTarget(oldTouch->mOriginalTarget);
+      }
+    } else if (MOZ_UNLIKELY(renderBlocked)) {
+      touch->SetTouchTarget(doc->GetRootElement());
+    } else {
       // find the target for this touch
       RelativeTo relativeTo{aFrame};
       nsPoint eventPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(
@@ -135,14 +149,6 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
                                   : nullptr);
       } else {
         aEvent->mTouches.RemoveElementAt(i);
-      }
-    } else {
-      // This touch is an old touch, we need to ensure that is not
-      // marked as changed and set its target correctly
-      touch->mChanged = false;
-      RefPtr<dom::Touch> oldTouch = TouchManager::GetCapturedTouch(id);
-      if (oldTouch) {
-        touch->SetTouchTarget(oldTouch->mOriginalTarget);
       }
     }
   }

@@ -26,7 +26,7 @@ add_task(async function test_enable_backup_encryption_checkbox_confirm() {
       set: [[SCHEDULED_BACKUPS_ENABLED_PREF, true]],
     });
 
-    let settings = browser.contentDocument.querySelector("backup-settings");
+    let settings = await waitForBackupSettings(browser);
 
     /**
      * For this test, we can pretend that browser-settings receives a backupServiceState
@@ -163,7 +163,7 @@ add_task(
           set: [[SCHEDULED_BACKUPS_ENABLED_PREF, true]],
         });
 
-        let settings = browser.contentDocument.querySelector("backup-settings");
+        let settings = await waitForBackupSettings(browser);
         settings.backupServiceState.encryptionEnabled = true;
         await settings.requestUpdate();
         await settings.updateComplete;
@@ -279,7 +279,7 @@ add_task(
  */
 add_task(async function test_turn_on_scheduled_backups_encryption_error() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let settings = browser.contentDocument.querySelector("backup-settings");
+    let settings = await waitForBackupSettings(browser);
 
     await SpecialPowers.pushPrefEnv({
       set: [[SCHEDULED_BACKUPS_ENABLED_PREF, true]],

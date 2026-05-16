@@ -1,0 +1,17 @@
+{
+  "label": "managetrips.jetblue.com",
+  "bugs": {
+    "1994062": {
+      "issue": "broken-printing",
+      "matches": ["*://managetrips.jetblue.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["1994062-managetrips.jetblue.com-fix-print-layout.css"]
+      }
+    }
+  ]
+}

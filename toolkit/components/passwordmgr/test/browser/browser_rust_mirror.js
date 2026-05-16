@@ -609,6 +609,46 @@ add_task(async function test_rust_mirror_addLogin_failure() {
 });
 
 /*
+ * Tests that the pwmgr-origin-failure ping is sent when a login with an
+ * invalid origin is rejected by the Rust mirror.
+ */
+add_task(async function test_origin_failure_ping() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["signon.rustMirror.enabled", true],
+      ["signon.rustMirror.poisoned", false],
+      ["signon.rustMirror.collectFailedOrigins", true],
+    ],
+  });
+
+  Services.fog.testResetFOG();
+
+  const badLogin = LoginTestUtils.testData.formLogin({
+    origin: ".",
+    passwordField: ".",
+  });
+
+  await GleanPings.pwmgrOriginFailure.testSubmission(
+    () => {
+      const events = Glean.pwmgr.rustOriginFailure.testGetValue();
+      Assert.greater(events?.length, 0, "rustOriginFailure event recorded");
+
+      const [evt] = events;
+
+      Assert.equal(evt.extra?.origin, ".", "origin recorded");
+      Assert.ok(evt.extra?.time_created, "time_created recorded");
+      Assert.ok(evt.extra?.time_last_used, "time_last_used recorded");
+    },
+    async () => {
+      await Services.logins.addLoginAsync(badLogin);
+    }
+  );
+
+  LoginTestUtils.clearData();
+  await SpecialPowers.flushPrefEnv();
+});
+
+/*
  * Tests that we store non-ASCII origins get punycoded.
  */
 add_task(async function test_punycode_origin_metric() {

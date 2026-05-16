@@ -14,7 +14,7 @@ info: |
   Perform ? ValidateTypedArray(O).
   ...
 
-includes: [testBigIntTypedArray.js, detachArrayBuffer.js]
+includes: [testTypedArray.js, detachArrayBuffer.js]
 features: [BigInt, TypedArray]
 ---*/
 
@@ -30,6 +30,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, () => {
     sample.join(obj);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

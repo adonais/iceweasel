@@ -31,9 +31,6 @@ class UrlClassifierExceptionList final : public nsIUrlClassifierExceptionList {
   using ExceptionEntryArray =
       nsTArray<RefPtr<nsIUrlClassifierExceptionListEntry>>;
 
-  // A map from (schemeless) site to a list of exception entries.
-  using SiteToEntries = nsTHashMap<nsCStringHashKey, ExceptionEntryArray>;
-
   // Helper method to check if any exception in the array matches the given
   // load.
   static bool ExceptionListMatchesLoad(ExceptionEntryArray* aExceptions,
@@ -47,11 +44,9 @@ class UrlClassifierExceptionList final : public nsIUrlClassifierExceptionList {
   // The feature this exception list is for, e.g. "tracking-protection".
   nsCString mFeature;
 
-  // A two stage hash map to store the (top level) site-specific exception
-  // entries.
-  // The outer hash map key is the top level (schemeless) site.
-  // The inner hash map key is the (schemeless) site of the load to be checked.
-  nsTHashMap<nsCStringHashKey, SiteToEntries> mExceptions;
+  // A hash map to store the (top level) site-specific exception entries.
+  // The hash map key is the top level (schemeless) site.
+  nsTHashMap<nsCStringHashKey, ExceptionEntryArray> mExceptions;
 
   // A map of exception list entries which apply across all top level sites.
   // The hash map key is the (schemeless) site of the load to be checked.

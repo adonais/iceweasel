@@ -181,6 +181,20 @@ const MR_ABOUT_WELCOME_DEFAULT = {
           },
           has_arrow_icon: true,
         },
+        secondary_button_top: {
+          label: {
+            string_id: "mr1-onboarding-sign-in-button-label",
+          },
+          action: {
+            data: {
+              entrypoint: "activity-stream-firstrun",
+              where: "tab",
+            },
+            type: "SHOW_FIREFOX_ACCOUNTS",
+            addFlowParams: true,
+          },
+          targeting: "!isFxASignedIn",
+        },
       },
     },
     {
@@ -1264,6 +1278,20 @@ const MR_ABOUT_WELCOME_DEFAULT = {
           },
           has_arrow_icon: true,
         },
+        secondary_button_top: {
+          label: {
+            string_id: "mr1-onboarding-sign-in-button-label",
+          },
+          action: {
+            data: {
+              entrypoint: "activity-stream-firstrun",
+              where: "tab",
+            },
+            type: "SHOW_FIREFOX_ACCOUNTS",
+            addFlowParams: true,
+          },
+          targeting: "!isFxASignedIn",
+        },
       },
     },
     {
@@ -1304,6 +1332,20 @@ const MR_ABOUT_WELCOME_DEFAULT = {
             navigate: true,
           },
           has_arrow_icon: true,
+        },
+        secondary_button_top: {
+          label: {
+            string_id: "mr1-onboarding-sign-in-button-label",
+          },
+          action: {
+            data: {
+              entrypoint: "activity-stream-firstrun",
+              where: "tab",
+            },
+            type: "SHOW_FIREFOX_ACCOUNTS",
+            addFlowParams: true,
+          },
+          targeting: "!isFxASignedIn",
         },
       },
     },

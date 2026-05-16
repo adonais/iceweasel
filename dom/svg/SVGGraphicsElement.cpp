@@ -86,30 +86,26 @@ already_AddRefed<SVGRect> SVGGraphicsElement::GetBBox(
   if (!NS_SVGNewGetBBoxEnabled()) {
     return do_AddRef(new SVGRect(
         this, ToRect(SVGUtils::GetBBox(
-                  frame, SVGUtils::eBBoxIncludeFillGeometry |
-                             SVGUtils::eUseUserSpaceOfUseElement))));
+                  frame, {SVGBBoxFlag::IncludeFillGeometry,
+                          SVGBBoxFlag::UseUserSpaceOfUseElement}))));
   }
-  uint32_t flags = 0;
+  SVGBBoxFlags flags;
   if (aOptions.mFill) {
-    flags |= SVGUtils::eBBoxIncludeFillGeometry;
+    flags += SVGBBoxFlag::IncludeFillGeometry;
   }
   if (aOptions.mStroke) {
-    flags |= SVGUtils::eBBoxIncludeStroke;
+    flags += SVGBBoxFlag::IncludeStroke;
   }
   if (aOptions.mMarkers) {
-    flags |= SVGUtils::eBBoxIncludeMarkers;
+    flags += {SVGBBoxFlag::IncludeFillGeometry, SVGBBoxFlag::IncludeMarkers};
   }
   if (aOptions.mClipped) {
-    flags |= SVGUtils::eBBoxIncludeClipped;
+    flags += {SVGBBoxFlag::IncludeFillGeometry, SVGBBoxFlag::IncludeClipped};
   }
-  if (flags == 0) {
+  if (flags.isEmpty()) {
     return do_AddRef(new SVGRect(this, {}));
   }
-  if (flags == SVGUtils::eBBoxIncludeMarkers ||
-      flags == SVGUtils::eBBoxIncludeClipped) {
-    flags |= SVGUtils::eBBoxIncludeFillGeometry;
-  }
-  flags |= SVGUtils::eUseUserSpaceOfUseElement;
+  flags += SVGBBoxFlag::UseUserSpaceOfUseElement;
   return do_AddRef(new SVGRect(this, ToRect(SVGUtils::GetBBox(frame, flags))));
 }
 

@@ -6,17 +6,16 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/StaticPtr.h"
 
 class nsComboboxControlFrame;
 class nsPresContext;
 
 namespace mozilla {
 class PresShell;
-class HTMLSelectEventListener;
+
+class WidgetMouseEvent;
 
 namespace dom {
-class Event;
 class HTMLOptionElement;
 class HTMLSelectElement;
 class HTMLOptionsCollection;
@@ -67,7 +66,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
 #endif
 
   void ElementStateChanged(mozilla::dom::ElementState aStates) final;
-  bool ShouldPropagateComputedBSizeToScrolledContent() const final;
 
   // for accessibility purposes
 #ifdef ACCESSIBILITY
@@ -107,11 +105,11 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
    * @note These methods might destroy the frame, pres shell and other objects.
    */
   MOZ_CAN_RUN_SCRIPT
-  nsresult HandleLeftButtonMouseDown(mozilla::dom::Event* aMouseEvent);
+  nsresult HandleLeftButtonMouseDown(const mozilla::WidgetMouseEvent&);
   MOZ_CAN_RUN_SCRIPT
-  nsresult HandleLeftButtonMouseUp(mozilla::dom::Event* aMouseEvent);
+  nsresult HandleLeftButtonMouseUp();
   MOZ_CAN_RUN_SCRIPT
-  nsresult DragMove(mozilla::dom::Event* aMouseEvent);
+  nsresult DragMove(const mozilla::WidgetMouseEvent&);
   MOZ_CAN_RUN_SCRIPT
 
   MOZ_CAN_RUN_SCRIPT
@@ -225,8 +223,8 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
    * @param aPoint the event point, in listcontrolframe coordinates
    * @return NS_OK if it successfully found the selection
    */
-  nsresult GetIndexFromDOMEvent(mozilla::dom::Event* aMouseEvent,
-                                int32_t& aCurIndex);
+  nsresult GetIndexFromEvent(const mozilla::WidgetMouseEvent&,
+                             int32_t& aCurIndex);
 
   bool CheckIfAllFramesHere();
 
@@ -251,8 +249,8 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   bool ExtendedSelection(int32_t aStartIndex, int32_t aEndIndex,
                          bool aClearAll);
   MOZ_CAN_RUN_SCRIPT
-  bool HandleListSelection(mozilla::dom::Event* aDOMEvent,
-                           int32_t selectedIndex);
+  bool HandleListSelection(const mozilla::WidgetMouseEvent&,
+                           int32_t aClickedIndex);
   void InitSelectionRange(int32_t aClickedIndex);
 
  public:
@@ -283,8 +281,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
 
   // True if our reflow got interrupted.
   bool mReflowWasInterrupted : 1;
-
-  RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 };
 
 #endif /* nsListControlFrame_h_ */

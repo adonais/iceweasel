@@ -121,6 +121,12 @@ class SearchOptimizationFragment : PreferenceFragmentCompat(), SystemInsetsPadde
                 onEnable = { settings.shouldShowSearchOptimizationSportCard = true },
                 onDisable = { settings.shouldShowSearchOptimizationSportCard = false },
             ),
+            ChildPreferenceConfig(
+                preference = R.string.pref_key_search_optimization_flights,
+                isChecked = settings.shouldShowSearchOptimizationFlightCard,
+                onEnable = { settings.shouldShowSearchOptimizationFlightCard = true },
+                onDisable = { settings.shouldShowSearchOptimizationFlightCard = false },
+            ),
         )
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_search_optimization_feature).apply {

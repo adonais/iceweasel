@@ -249,7 +249,7 @@ def test_output_asan(flavor, runFailures, runtests, test_name):
 def test_output_assertion(flavor, runFailures, runtests, test_name):
     extra_opts = {}
     results = {
-        "status": 0,
+        "status": 1,
         "tbpl_status": TBPL_WARNING,
         "log_level": WARNING,
         "lines": 1,
@@ -257,7 +257,6 @@ def test_output_assertion(flavor, runFailures, runtests, test_name):
     }
 
     status, lines = runtests(test_name("assertion"), **extra_opts)
-    # TODO: mochitest should return non-zero here
     assert status == results["status"]
 
     tbpl_status, log_level, summary = get_mozharness_status(lines, status)

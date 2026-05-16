@@ -21,7 +21,6 @@ class Http3ConnectionStatsData;
 class DnsData;
 class WebSocketRequest;
 class ConnectionData;
-class RcwnData;
 
 class Dashboard final : public nsIDashboard, public nsIDashboardEventNotifier {
  public:
@@ -83,7 +82,6 @@ class Dashboard final : public nsIDashboard, public nsIDashboardEventNotifier {
   nsresult GetHttp3ConnectionStats(Http3ConnectionStatsData*);
   nsresult GetDNSCacheEntries(DnsData*);
   nsresult GetWebSocketConnections(WebSocketRequest*);
-  nsresult GetRcwnData(RcwnData*);
 
   nsCOMPtr<nsIDNSService> mDnsService;
 };

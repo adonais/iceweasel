@@ -9,7 +9,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 object SettingsHomepageSelectors {
     val SETTINGS_HOMEPAGE_TITLE = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
         value = "Homepage",
         description = "The Homepage Settings menu item",
         groups = listOf("requiredForPage"),

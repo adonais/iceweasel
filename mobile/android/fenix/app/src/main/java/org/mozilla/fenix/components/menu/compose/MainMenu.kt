@@ -60,6 +60,7 @@ import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.MORE_OPTION_CHEVRON
 import org.mozilla.fenix.components.menu.compose.header.MozillaAccountMenuItem
+import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
@@ -95,6 +96,8 @@ import mozilla.components.ui.icons.R as iconsR
  * @param showBanner Whether or not the default browser banner should be shown.
  * @param isDownloadHighlighted `true` if the downloads menu item should be visually highlighted.
  * @param webExtensionMenuCount The number of web extensions.
+ * @param showIPProtection Whether to show the IP Protection menu item.
+ * @param ipProtectionMenuState The current [IPProtectionMenuState] for the IP protection item.
  * @param onMoreMenuClick Invoked when the user clicks on the more menu item.
  * @param onCustomizeReaderViewMenuClick Invoked when the user clicks on the Customize Reader View button.
  * @param onMozillaAccountButtonClick Invoked when the user clicks on Mozilla account button.
@@ -116,6 +119,8 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onForwardButtonClick Invoked when the user clicks on the forward button.
  * @param onRefreshButtonClick Invoked when the user clicks on the refresh button.
  * @param onStopButtonClick Invoked when the user clicks on the stop button.
+ * @param onIPProtectionClick Invoked when the user taps the IP Protection toggle.
+ * @param onIPProtectionNavigate Invoked when the user taps the chevron to open IP Protection settings.
  * @param onShareButtonClick Invoked when the user clicks on the share button.
  * @param extensionsMenuItemDescription The label of extensions menu item description.
  * @param moreSettingsSubmenu The content of more menu item.
@@ -147,6 +152,8 @@ fun MainMenu(
     showBanner: Boolean,
     isDownloadHighlighted: Boolean,
     webExtensionMenuCount: Int,
+    showIPProtection: Boolean,
+    ipProtectionMenuState: IPProtectionMenuState,
     onMoreMenuClick: () -> Unit,
     onCustomizeReaderViewMenuClick: () -> Unit,
     onMozillaAccountButtonClick: () -> Unit,
@@ -167,6 +174,8 @@ fun MainMenu(
     onForwardButtonClick: (longPress: Boolean) -> Unit,
     onRefreshButtonClick: (longPress: Boolean) -> Unit,
     onStopButtonClick: () -> Unit,
+    onIPProtectionClick: () -> Unit,
+    onIPProtectionNavigate: () -> Unit,
     onShareButtonClick: () -> Unit,
     extensionsMenuItemDescription: String?,
     moreSettingsSubmenu: @Composable () -> Unit,
@@ -253,6 +262,16 @@ fun MainMenu(
                     onBannerClick()
                 },
             )
+        }
+
+        if (showIPProtection && accessPoint == MenuAccessPoint.Home) {
+            MenuGroup {
+                IPProtectionMenuItem(
+                    state = ipProtectionMenuState,
+                    onToggle = onIPProtectionClick,
+                    onNavigate = onIPProtectionNavigate,
+                )
+            }
         }
 
         if (accessPoint == MenuAccessPoint.Home) {
@@ -744,6 +763,8 @@ private fun MenuDialogPreview(
                 showBanner = true,
                 isDownloadHighlighted = true,
                 webExtensionMenuCount = 1,
+                showIPProtection = true,
+                ipProtectionMenuState = IPProtectionMenuState(),
                 onMoreMenuClick = {},
                 onCustomizeReaderViewMenuClick = {},
                 onMozillaAccountButtonClick = {},
@@ -765,6 +786,8 @@ private fun MenuDialogPreview(
                 onRefreshButtonClick = {},
                 onStopButtonClick = {},
                 onShareButtonClick = {},
+                onIPProtectionClick = {},
+                onIPProtectionNavigate = {},
                 moreSettingsSubmenu = {},
                 extensionSubmenu = {},
             )
@@ -829,6 +852,10 @@ private fun MenuDialogPrivatePreview(
                 onRefreshButtonClick = {},
                 onStopButtonClick = {},
                 onShareButtonClick = {},
+                showIPProtection = false,
+                ipProtectionMenuState = IPProtectionMenuState(),
+                onIPProtectionClick = {},
+                onIPProtectionNavigate = {},
                 moreSettingsSubmenu = {},
                 extensionSubmenu = {
                     Addons(

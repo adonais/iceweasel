@@ -600,8 +600,7 @@ dom::RTCDataChannelStats RTCDataChannel::GetStats(
 void RTCDataChannel::UnsetWorkerNeedsUs() {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
   mWorkerNeedsUs = false;
-  DC_INFO(("%p: Unsetting mWorkerNeedsUs, clearing worker weak ref", this));
-  mWorkerRef = nullptr;
+  DC_INFO(("%p: Unsetting mWorkerNeedsUs", this));
   UpdateMustKeepAlive();
 }
 

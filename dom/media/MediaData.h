@@ -125,7 +125,7 @@ class AlignedBuffer {
   }
   // Set length of buffer, allocating memory as required.
   // If memory is allocated, additional buffer area is filled with 0.
-  bool SetLength(size_t aLength) {
+  [[nodiscard]] bool SetLength(size_t aLength) {
     if (aLength > mLength && !EnsureCapacity(aLength)) {
       return false;
     }

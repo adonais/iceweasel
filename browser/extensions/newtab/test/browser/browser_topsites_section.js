@@ -1,20 +1,8 @@
 "use strict";
 
-let SearchService;
-/**
- * @backward-compat { version 149 }
- *   The search service was replaced by a singleton in 149. When this is removed
- *   the import above can be made `const`.
- */
-/* eslint-disable mozilla/valid-services */
-if (Services.search) {
-  SearchService = Services.search;
-} else {
-  SearchService = ChromeUtils.importESModule(
-    "moz-src:///toolkit/components/search/SearchService.sys.mjs"
-  ).SearchService;
-}
-/* eslint-enable mozilla/valid-services */
+const { SearchService } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+);
 
 // Check TopSites edit modal and overlay show up.
 test_newtab({
@@ -281,7 +269,7 @@ add_task(async function test_search_topsite_remove_engine() {
       SpecialPowers.spawn(
         browser,
         [],
-        () => content.document.getElementById("root").children.length
+        () => content.document.getElementById("root")?.children.length
       ),
     "Should render activity stream content"
   );

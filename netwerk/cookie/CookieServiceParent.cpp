@@ -308,20 +308,18 @@ void CookieServiceParent::ActorDestroy(ActorDestroyReason aWhy) {
 
 IPCResult CookieServiceParent::RecvSetCookies(
     const nsCString& aBaseDomain, const OriginAttributes& aOriginAttributes,
-    nsIURI* aHost, bool aFromHttp, bool aIsThirdParty,
-    const nsTArray<CookieStruct>& aCookies) {
+    nsIURI* aHost, bool aIsThirdParty, const nsTArray<CookieStruct>& aCookies) {
   if (!ContentProcessHasCookie(aBaseDomain, aOriginAttributes)) {
     return IPC_FAIL(this, "Invalid set-cookie request from content process");
   }
 
-  return SetCookies(aBaseDomain, aOriginAttributes, aHost, aFromHttp,
-                    aIsThirdParty, aCookies);
+  return SetCookies(aBaseDomain, aOriginAttributes, aHost, aIsThirdParty,
+                    aCookies);
 }
 
 IPCResult CookieServiceParent::SetCookies(
     const nsCString& aBaseDomain, const OriginAttributes& aOriginAttributes,
-    nsIURI* aHost, bool aFromHttp, bool aIsThirdParty,
-    const nsTArray<CookieStruct>& aCookies,
+    nsIURI* aHost, bool aIsThirdParty, const nsTArray<CookieStruct>& aCookies,
     dom::BrowsingContext* aBrowsingContext) {
   if (!mCookieService) {
     return IPC_OK();
@@ -339,7 +337,7 @@ IPCResult CookieServiceParent::SetCookies(
 
   nsICookieValidation::ValidationError error =
       mCookieService->SetCookiesFromIPC(aBaseDomain, aOriginAttributes, aHost,
-                                        aFromHttp, aIsThirdParty, aCookies,
+                                        aIsThirdParty, aCookies,
                                         aBrowsingContext);
   MOZ_DIAGNOSTIC_ASSERT(error == nsICookieValidation::eOK);
 

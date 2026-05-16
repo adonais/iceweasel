@@ -1,0 +1,19 @@
+{
+  "label": "online.singaporepools.com",
+  "bugs": {
+    "1930440": {
+      "issue": "unsupported-warning",
+      "matches": ["*://online.singaporepools.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "js": [
+          "bug1930440-online.singaporepools.com-prevent-unsupported-alert.js"
+        ]
+      }
+    }
+  ]
+}

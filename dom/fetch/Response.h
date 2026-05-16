@@ -39,7 +39,12 @@ class Response final : public FetchBody<Response>, public nsWrapperCache {
   }
 
   ResponseType Type() const { return mInternalResponse->Type(); }
-  void GetUrl(nsACString& aUrl) const { aUrl = mInternalResponse->GetURL(); }
+  void GetUrl(nsACString& aUrl) const {
+    aUrl.Truncate();
+    if (nsIURI* uri = mInternalResponse->GetURL()) {
+      MOZ_ALWAYS_SUCCEEDS(uri->GetSpec(aUrl));
+    }
+  }
   bool Redirected() const { return mInternalResponse->IsRedirected(); }
   uint16_t Status() const { return mInternalResponse->GetStatus(); }
 

@@ -2,6 +2,13 @@
 
 "use strict";
 
+const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
+  "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs"
+);
+const { PREFS_CONFIG } = ChromeUtils.importESModule(
+  "resource://newtab/lib/ActivityStream.sys.mjs"
+);
+
 ChromeUtils.defineESModuleGetters(this, {
   actionTypes: "resource://newtab/common/Actions.mjs",
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
@@ -131,15 +138,39 @@ add_setup(async () => {
       originalOnAction.apply(prefsFeed, [action]);
     }
   });
+
+  sandbox
+    .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
+    .returns(
+      "https://example.com/browser/browser/extensions/newtab/test/browser/topstories.json"
+    );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.discoverystream.config",
+        PREFS_CONFIG.get("discoverystream.config").getValue({
+          geo: "US",
+          locale: "en-US",
+        }),
+      ],
+      [
+        "browser.newtabpage.activity-stream.discoverystream.endpoints",
+        "https://example.com",
+      ],
+    ],
+  });
+
   await prefsFeed.store.initialized;
 
-  registerCleanupFunction(() => {
+  registerCleanupFunction(async () => {
     Services.prefs.clearUserPref(
       "browser.newtabpage.activity-stream.activationWindow.enterMessageID"
     );
     Services.prefs.clearUserPref(
       "browser.newtabpage.activity-stream.activationWindow.exitMessageID"
     );
+    await SpecialPowers.popPrefEnv();
     sandbox.restore();
   });
 });
@@ -222,7 +253,6 @@ add_task(async function test_activation_window_entry() {
   }
   await doExperimentCleanup();
   sandbox.restore();
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -292,7 +322,6 @@ add_task(async function test_user_enabling_persists_topsites() {
 
   await doExperimentCleanup();
   sandbox.restore();
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -362,7 +391,6 @@ add_task(async function test_user_enabling_persists_topstories() {
 
   await doExperimentCleanup();
   sandbox.restore();
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -430,7 +458,6 @@ add_task(async function test_user_disabling_persists_topsites() {
 
   await doExperimentCleanup();
   sandbox.restore();
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -501,7 +528,6 @@ add_task(async function test_user_disabling_persists_topstories() {
 
   await doExperimentCleanup();
   sandbox.restore();
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -577,7 +603,6 @@ add_task(async function test_restart_reapplies_defaults() {
   }
   await doExperimentCleanup();
   sandbox.restore();
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -636,7 +661,6 @@ add_task(async function test_defaults_restored_after_exit() {
 
   await doExperimentCleanup();
   sandbox.restore();
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -687,7 +711,7 @@ add_task(async function test_activation_window_variants() {
         }, "Top sites should be hidden during activation window");
 
         const customizeButton = content.document.querySelector(
-          "button.personalize-button"
+          "button.personalize-button, moz-button.open-customization-button"
         );
         Assert.ok(
           customizeButton.classList.contains(
@@ -707,5 +731,4 @@ add_task(async function test_activation_window_variants() {
   }
 
   sandbox.restore();
-  await SpecialPowers.popPrefEnv();
 });

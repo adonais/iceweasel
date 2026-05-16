@@ -97,8 +97,10 @@ class CacheAPIEncryptionPBM(QuotaTestCase):
     def validateBodyFile(self, validator):
         # Ensure response bodies have been flushed to the disk
         self.ensureInvariantHolds(
-            lambda _: self.findDirObj(self.getCacheAPIStoragePath(), "morgue", False)
-            is not None
+            lambda _: (
+                self.findDirObj(self.getCacheAPIStoragePath(), "morgue", False)
+                is not None
+            )
         )
 
         cacheResponseDir = self.findDirObj(
@@ -115,8 +117,9 @@ class CacheAPIEncryptionPBM(QuotaTestCase):
 
         # Ensure bodies have been transferred to '.final' from '.tmp'
         self.ensureInvariantHolds(
-            lambda _: self.findDirObj(cacheResponseBodiesPath, ".final", True)
-            is not None
+            lambda _: (
+                self.findDirObj(cacheResponseBodiesPath, ".final", True) is not None
+            )
         )
         cacheResponseBodyPath = self.findDirObj(cacheResponseBodiesPath, ".final", True)
 
@@ -131,20 +134,24 @@ class CacheAPIEncryptionPBM(QuotaTestCase):
 
     def validateSqlite(self, validator):
         self.ensureInvariantHolds(
-            lambda _: self.findDirObj(
-                self.getCacheAPIStoragePath(), self.cacheDBJournalFileName, True
+            lambda _: (
+                self.findDirObj(
+                    self.getCacheAPIStoragePath(), self.cacheDBJournalFileName, True
+                )
+                is not None
             )
-            is not None
         )
         dbJournalFile = self.findDirObj(
             self.getCacheAPIStoragePath(), self.cacheDBJournalFileName, True
         )
 
         self.ensureInvariantHolds(
-            lambda _: self.findDirObj(
-                self.getCacheAPIStoragePath(), self.cacheDBFileName, True
+            lambda _: (
+                self.findDirObj(
+                    self.getCacheAPIStoragePath(), self.cacheDBFileName, True
+                )
+                is not None
             )
-            is not None
         )
         dbFile = self.findDirObj(
             self.getCacheAPIStoragePath(), self.cacheDBFileName, True

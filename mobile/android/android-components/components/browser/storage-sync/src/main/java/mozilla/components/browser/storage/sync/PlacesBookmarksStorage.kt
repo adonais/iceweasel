@@ -12,8 +12,6 @@ import mozilla.appservices.places.uniffi.PlacesApiException
 import mozilla.components.concept.storage.BookmarkInfo
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarksStorage
-import mozilla.components.concept.sync.SyncAuthInfo
-import mozilla.components.concept.sync.SyncStatus
 import mozilla.components.concept.sync.SyncableStore
 import mozilla.components.concept.toolbar.AutocompleteProvider
 import mozilla.components.concept.toolbar.AutocompleteResult
@@ -220,20 +218,6 @@ open class PlacesBookmarksStorage(
                 crashReporter?.submitCaughtException(e)
                 logger.warn("Ignoring PlacesApiException while running countBookmarksInTrees", e)
                 0U
-            }
-        }
-    }
-
-    /**
-     * Runs syncBookmarks() method on the places Connection
-     *
-     * @param authInfo The authentication information to sync with.
-     * @return Sync status of OK or Error
-     */
-    suspend fun sync(authInfo: SyncAuthInfo): SyncStatus {
-        return withContext(writeScope.coroutineContext) {
-            syncAndHandleExceptions {
-                places.syncBookmarks(authInfo)
             }
         }
     }

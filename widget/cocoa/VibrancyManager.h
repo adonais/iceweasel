@@ -28,7 +28,7 @@ struct MaxContiguousEnumValue<VibrancyType> {
 
 /**
  * VibrancyManager takes care of updating the vibrant regions of a window.
- * Vibrancy is a visual look that was introduced on OS X starting with 10.10.
+ * Vibrancy is a visual look that was introduced on macOS starting with 10.10.
  * An app declares vibrant window regions to the window server, and the window
  * server will display a blurred rendering of the screen contents from behind
  * the window in these areas, behind the actual window contents. Consequently,

@@ -1,5 +1,3 @@
-/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
 /* exported CustomizableUI makeWidgetId focusWindow forceGC
@@ -58,6 +56,14 @@ const { AppUiTestDelegate, AppUiTestInternals } = ChromeUtils.importESModule(
 
 ChromeUtils.defineESModuleGetters(this, {
   Management: "resource://gre/modules/Extension.sys.mjs",
+});
+
+ChromeUtils.defineLazyGetter(this, "SidebarTestUtils", () => {
+  const { SidebarTestUtils: utils } = ChromeUtils.importESModule(
+    "resource://testing-common/SidebarTestUtils.sys.mjs"
+  );
+  utils.init(this);
+  return utils;
 });
 
 var { makeWidgetId, promisePopupShown, getPanelForNode, awaitBrowserLoaded } =
@@ -523,7 +529,7 @@ registerCleanupFunction(async function () {
     !ObjectUtils.deepEqual(SidebarController.getUIState(), initialSidebarState)
   ) {
     info("Restoring to initial sidebar state");
-    await SidebarController.initializeUIState(initialSidebarState);
+    await SidebarController.updateUIState(initialSidebarState);
   }
 });
 

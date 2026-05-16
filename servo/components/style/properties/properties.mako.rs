@@ -24,7 +24,7 @@ use crate::device::Device;
 use crate::parser::ParserContext;
 use crate::selector_parser::PseudoElement;
 use crate::stylist::Stylist;
-use style_traits::{CssStringWriter, CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss, TypedValue, ToTyped};
+use style_traits::{CssStringWriter, CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss, TypedValueList, ToTyped};
 use crate::derives::*;
 use crate::stylesheets::{CssRuleType, CssRuleTypes, Origin};
 use crate::logical_geometry::{LogicalAxis, LogicalCorner, LogicalSide};
@@ -273,13 +273,13 @@ impl PropertyDeclaration {
     }
 
     /// Like the method on ToTyped.
-    pub fn to_typed_value(&self) -> Option<TypedValue> {
+    pub fn to_typed_value_list(&self) -> Option<TypedValueList> {
         use self::PropertyDeclaration::*;
 
         match *self {
             % for ty, vs in groupby(data.declaration_variants, key=lambda x: x["type"]):
             ${" | ".join("{}(ref value)".format(v["name"]) for v in vs)} => {
-                value.to_typed_value()
+                value.to_typed_value_list()
             }
             % endfor
         }
@@ -1649,8 +1649,8 @@ pub struct ComputedValues {
 impl ComputedValues {
     /// Returns the pseudo-element that this style represents.
     #[cfg(feature = "servo")]
-    pub fn pseudo(&self) -> Option<&PseudoElement> {
-        self.pseudo.as_ref()
+    pub fn pseudo(&self) -> Option<PseudoElement> {
+        self.pseudo
     }
 
     /// Returns true if this is the style for a pseudo-element.
@@ -1677,11 +1677,6 @@ impl ComputedValues {
     /// Gets a reference to the custom properties map (if one exists).
     pub fn custom_properties(&self) -> &crate::custom_properties::ComputedCustomProperties {
         &self.custom_properties
-    }
-
-    /// Returns whether we have the same custom properties as another style.
-    pub fn custom_properties_equal(&self, other: &Self) -> bool {
-      self.custom_properties() == other.custom_properties()
     }
 
 % for prop in data.longhands:
@@ -1740,12 +1735,12 @@ impl ComputedValues {
         }
     }
 
-    /// Returns the computed value of the given longhand as a strongly-typed
-    /// `TypedValue`, if supported.
-    pub fn computed_typed_value(
+    /// Returns the computed value of the given longhand as a
+    /// [`TypedValueList`], if supported.
+    pub fn property_value_to_typed_value_list(
         &self,
         property_id: LonghandId,
-    ) -> Option<TypedValue> {
+    ) -> Option<TypedValueList> {
         let property_id = property_id.to_physical(self.writing_mode);
         match property_id {
             % for specified_type, props in groupby(data.longhands, key=lambda x: x.specified_type()):
@@ -1759,7 +1754,7 @@ impl ComputedValues {
                     % endfor
                     _ => unsafe { debug_unreachable!() },
                 };
-                value.to_typed_value()
+                value.to_typed_value_list()
             }
             % endfor
         }
@@ -1986,6 +1981,25 @@ impl ops::DerefMut for ComputedValues {
 
 #[cfg(feature = "servo")]
 impl ComputedValuesInner {
+    /// Share ComputedValues but with different flags.
+    pub fn clone_with_flags(&self, flags: ComputedValueFlags, pseudo: Option<&PseudoElement>) -> Arc<ComputedValues> {
+        Arc::new(ComputedValues {
+            inner: Self {
+                custom_properties: self.custom_properties.clone(),
+                attribute_references: self.attribute_references.clone(),
+                writing_mode: self.writing_mode.clone(),
+                rules: self.rules.clone(),
+                visited_style: self.visited_style.clone(),
+                flags,
+                effective_zoom: self.effective_zoom.clone(),
+                % for style_struct in data.active_style_structs():
+                ${style_struct.ident}: self.${style_struct.ident}.clone(),
+                % endfor
+            },
+            pseudo: pseudo.cloned(),
+        })
+    }
+
     /// Returns the visited style, if any.
     pub fn visited_style(&self) -> Option<&ComputedValues> {
         self.visited_style.as_deref()
@@ -2026,12 +2040,6 @@ impl ComputedValuesInner {
             Content::Normal | Content::None => true,
             Content::Items(ref items) => items.items.is_empty()
         }
-    }
-
-    /// Whether the current style or any of its ancestors is multicolumn.
-    #[inline]
-    pub fn can_be_fragmented(&self) -> bool {
-        self.flags.contains(ComputedValueFlags::CAN_BE_FRAGMENTED)
     }
 
     /// Whether the current style is multicolumn.
@@ -2278,8 +2286,8 @@ pub struct StyleBuilder<'a> {
     /// node.
     pub rules: Option<StrongRuleNode>,
 
-    /// The computed custom properties.
-    pub custom_properties: crate::custom_properties::ComputedCustomProperties,
+    /// The computed custom properties and attributes.
+    pub substitution_functions: crate::custom_properties::ComputedSubstitutionFunctions,
 
     /// The set of attributes used as values in `attr()`
     pub attribute_references: crate::dom::AttributeReferences,
@@ -2350,7 +2358,7 @@ impl<'a> StyleBuilder<'a> {
             rules,
             modified_reset: false,
             is_root_element,
-            custom_properties: crate::custom_properties::ComputedCustomProperties::default(),
+            substitution_functions: crate::custom_properties::ComputedSubstitutionFunctions::default(),
             attribute_references: crate::dom::AttributeReferences::default(),
             invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: inherited_style.writing_mode,
@@ -2383,6 +2391,10 @@ impl<'a> StyleBuilder<'a> {
     ) -> Self {
         let reset_style = device.default_computed_values();
         let inherited_style = parent_style.unwrap_or(reset_style);
+        let map = crate::custom_properties::ComputedSubstitutionFunctions::new(
+            Some(style_to_derive_from.custom_properties().clone()),
+            None,
+        );
         Self {
             device,
             stylist,
@@ -2393,7 +2405,7 @@ impl<'a> StyleBuilder<'a> {
             is_root_element: false,
             rules: None,
             attribute_references: crate::dom::AttributeReferences::default(),
-            custom_properties: style_to_derive_from.custom_properties().clone(),
+            substitution_functions: map,
             invalid_non_custom_properties: LonghandIdSet::default(),
             writing_mode: style_to_derive_from.writing_mode,
             effective_zoom: style_to_derive_from.effective_zoom,
@@ -2431,12 +2443,8 @@ impl<'a> StyleBuilder<'a> {
         self.modified_reset = true;
         self.add_flags(ComputedValueFlags::INHERITS_RESET_STYLE);
 
-        % if property.ident == "content":
-        self.add_flags(ComputedValueFlags::CONTENT_DEPENDS_ON_INHERITED_STYLE);
-        % endif
-
-        % if property.ident == "display":
-        self.add_flags(ComputedValueFlags::DISPLAY_DEPENDS_ON_INHERITED_STYLE);
+        % if property.ident == "content" or property.ident == "display":
+        self.add_flags(ComputedValueFlags::DISPLAY_OR_CONTENT_DEPEND_ON_INHERITED_STYLE);
         % endif
 
         if self.${property.style_struct.ident}.ptr_eq(inherited_struct) {
@@ -2518,7 +2526,7 @@ impl<'a> StyleBuilder<'a> {
             /* rules = */ None,
             /* is_root_element = */ false,
         );
-        ret.custom_properties = custom_properties;
+        ret.substitution_functions.custom_properties = custom_properties;
         ret.visited_style = visited_style;
         ret
     }
@@ -2640,7 +2648,7 @@ impl<'a> StyleBuilder<'a> {
     pub fn build(self) -> Arc<ComputedValues> {
         ComputedValues::new(
             self.pseudo,
-            self.custom_properties,
+            self.substitution_functions.custom_properties,
             self.attribute_references,
             self.writing_mode,
             self.effective_zoom,
@@ -2653,11 +2661,15 @@ impl<'a> StyleBuilder<'a> {
         )
     }
 
-    /// Get the custom properties map if necessary.
-    pub fn custom_properties(&self) -> &crate::custom_properties::ComputedCustomProperties {
-        &self.custom_properties
+    /// Get the substitution function maps if necessary.
+    pub fn substitution_functions(&self) -> &crate::custom_properties::ComputedSubstitutionFunctions {
+        &self.substitution_functions
     }
 
+    /// Get the custom properties map if necessary.
+    pub fn custom_properties(&self) -> &crate::custom_properties::ComputedCustomProperties {
+        &self.substitution_functions.custom_properties
+    }
 
     /// Get the inherited custom properties map.
     pub fn inherited_custom_properties(&self) -> &crate::custom_properties::ComputedCustomProperties {
@@ -2851,7 +2863,7 @@ macro_rules! longhand_properties_idents {
 
 // Large pages generate tens of thousands of ComputedValues.
 #[cfg(feature = "gecko")]
-size_of_test!(ComputedValues, 256);
+size_of_test!(ComputedValues, 248);
 #[cfg(feature = "servo")]
 size_of_test!(ComputedValues, 224);
 
@@ -3100,4 +3112,10 @@ ${generate_descriptors(data.counter_style_descriptors)}
 pub mod property {
     use crate::properties_and_values::rule::*;
 ${generate_descriptors(data.property_descriptors)}
+}
+
+/// Generated code for @view-transition descriptors.
+pub mod view_transition {
+    use crate::stylesheets::view_transition_rule::*;
+${generate_descriptors(data.view_transition_descriptors)}
 }

@@ -168,8 +168,8 @@ void SpeechSynthesis::Cancel() {
     mSpeechQueue.Clear();
   }
 
-  if (mCurrentTask) {
-    mCurrentTask->Cancel();
+  if (RefPtr<nsSpeechTask> task = mCurrentTask) {
+    task->Cancel();
   }
 }
 
@@ -268,6 +268,11 @@ void SpeechSynthesis::ForceEnd() {
   if (mCurrentTask) {
     mCurrentTask->ForceEnd();
   }
+}
+
+void SpeechSynthesis::DisconnectFromOwner() {
+  Cancel();
+  DOMEventTargetHelper::DisconnectFromOwner();
 }
 
 NS_IMETHODIMP

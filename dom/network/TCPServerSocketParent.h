@@ -27,11 +27,8 @@ class TCPServerSocketParent : public mozilla::net::PTCPServerSocketParent,
 
   void Init();
 
-  mozilla::ipc::IPCResult RecvClose();
-  mozilla::ipc::IPCResult RecvRequestDelete();
-
-  void AddIPDLReference();
-  void ReleaseIPDLReference();
+  mozilla::ipc::IPCResult RecvClose() override;
+  mozilla::ipc::IPCResult RecvRequestDelete() override;
 
   void OnConnect(TCPServerSocketEvent* event);
 
@@ -44,7 +41,6 @@ class TCPServerSocketParent : public mozilla::net::PTCPServerSocketParent,
 
   PNeckoParent* mNeckoParent;
   RefPtr<TCPServerSocket> mServerSocket;
-  bool mIPCOpen;
 };
 
 }  // namespace mozilla::dom

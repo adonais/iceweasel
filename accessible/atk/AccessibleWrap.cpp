@@ -757,15 +757,14 @@ static void TranslateStates(uint64_t aState, roles::Role aRole,
 
   // Convert every state to an entry in AtkStateMap
   uint64_t bitMask = 1;
-  for (auto stateIndex = 0U; stateIndex < gAtkStateMapLen; stateIndex++) {
-    if (gAtkStateMap[stateIndex]
-            .atkState) {  // There's potentially an ATK state for this
+  for (auto stateIndex : gAtkStateMap) {
+    if (stateIndex.atkState) {  // There's potentially an ATK state for this
       bool isStateOn = (aState & bitMask) != 0;
-      if (gAtkStateMap[stateIndex].stateMapEntryType == kMapOpposite) {
+      if (stateIndex.stateMapEntryType == kMapOpposite) {
         isStateOn = !isStateOn;
       }
       if (isStateOn) {
-        atk_state_set_add_state(aStateSet, gAtkStateMap[stateIndex].atkState);
+        atk_state_set_add_state(aStateSet, stateIndex.atkState);
       }
     }
     bitMask <<= 1;

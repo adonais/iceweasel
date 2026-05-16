@@ -49,6 +49,13 @@ gfx::ColorRange DMABUFTextureHostOGL::GetColorRange() const {
                                  : gfx::ColorRange::LIMITED;
 }
 
+gfx::TransferFunction DMABUFTextureHostOGL::GetTransferFunction() const {
+  if (!mSurface) {
+    return gfx::TransferFunction::BT709;
+  }
+  return mSurface->GetTransferFunction();
+}
+
 uint32_t DMABUFTextureHostOGL::NumSubTextures() {
   return mSurface ? mSurface->GetTextureCount() : 0;
 }

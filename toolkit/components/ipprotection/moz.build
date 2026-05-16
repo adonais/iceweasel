@@ -7,12 +7,22 @@
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "IP Protection")
 
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    MOZ_SRC_FILES += [
+        "android/IPPAndroidAuthProvider.sys.mjs",
+        "android/IPPAndroidEnroll.sys.mjs",
+        "android/IPPAndroidSignInWatcher.sys.mjs",
+    ]
+
 MOZ_SRC_FILES += [
+    "fxa/IPPEnrollAndEntitleManager.sys.mjs",
+    "fxa/IPPFxaAuthProvider.sys.mjs",
+    "fxa/IPPSignInWatcher.sys.mjs",
     "GuardianClient.sys.mjs",
+    "IPPAuthProvider.sys.mjs",
     "IPPAutoRestore.sys.mjs",
     "IPPAutoStart.sys.mjs",
     "IPPChannelFilter.sys.mjs",
-    "IPPEnrollAndEntitleManager.sys.mjs",
     "IPPExceptionsManager.sys.mjs",
     "IPPNetworkErrorObserver.sys.mjs",
     "IPPNetworkUtils.sys.mjs",
@@ -22,7 +32,6 @@ MOZ_SRC_FILES += [
     "IPProtectionServerlist.sys.mjs",
     "IPProtectionService.sys.mjs",
     "IPPSessionPrefManager.sys.mjs",
-    "IPPSignInWatcher.sys.mjs",
     "IPPStartupCache.sys.mjs",
 ]
 

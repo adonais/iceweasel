@@ -229,14 +229,14 @@ const clickOnInspectIcon = async function (animationInspector, panel, index) {
 };
 
 /**
- * Change playback rate selector to select given rate.
+ * Change playback rate multiplier selector value to given rate.
  *
  * @param {AnimationInspector} animationInspector
  * @param {DOMElement} panel
  *        #animation-container element.
  * @param {number} rate
  */
-const changePlaybackRateSelector = async function (
+const changePlaybackRateMultiplierSelector = async function (
   animationInspector,
   panel,
   rate
@@ -258,8 +258,12 @@ const changePlaybackRateSelector = async function (
 
   const win = selectEl.ownerGlobal;
   while (selectEl.selectedIndex != optionIndex) {
+    const onUpdated = animationInspector.once(
+      "playbackrate-multiplier-updated"
+    );
     const key = selectEl.selectedIndex > optionIndex ? "LEFT" : "RIGHT";
     EventUtils.sendKey(key, win);
+    await onUpdated;
   }
 };
 
@@ -1054,8 +1058,8 @@ async function testKeyframesGraphComputedValuePath(testData) {
 /**
  * Check the adjusted current time and created time from specified two animations.
  *
- * @param {AnimationPlayerFront.state} animation1
- * @param {AnimationPlayerFront.state} animation2
+ * @param {AnimationFront.state} animation1
+ * @param {AnimationFront.state} animation2
  */
 function checkAdjustingTheTime(animation1, animation2) {
   const adjustedCurrentTimeDiff =

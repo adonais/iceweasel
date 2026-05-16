@@ -3,15 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { render, fireEvent } from "@testing-library/react";
-import { Provider } from "react-redux";
+import { WrapWithProvider } from "test/jest/test-utils";
 import {
   actionTypes as at,
   CONTENT_MESSAGE_TYPE,
   MAIN_MESSAGE_TYPE,
 } from "common/Actions.mjs";
-import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
+import { INITIAL_STATE } from "common/Reducers.sys.mjs";
 import { CardSections } from "content-src/components/DiscoveryStreamComponents/CardSections/CardSections";
-import { combineReducers, createStore } from "redux";
 
 const PREF_SECTIONS_PERSONALIZATION_ENABLED =
   "discoverystream.sections.personalization.enabled";
@@ -60,11 +59,6 @@ const DEFAULT_PROPS = {
     url: "https://merino.services.mozilla.com/api/v1/curated-recommendations",
   },
 };
-
-function WrapWithProvider({ children, state = INITIAL_STATE }) {
-  const store = createStore(combineReducers(reducers), state);
-  return <Provider store={store}>{children}</Provider>;
-}
 
 describe("<CardSections />", () => {
   let dispatch;
@@ -163,6 +157,70 @@ describe("<CardSections />", () => {
       </WrapWithProvider>
     );
     expect(container.querySelector(".ds-card.placeholder")).toBeInTheDocument();
+  });
+
+  it("should render DEFAULT_MAX_TILES placeholder cards when spocsLoading is true", () => {
+    const sectionData = [];
+    for (let i = 0; i < 12; i++) {
+      sectionData.push({ id: `card-${i}`, url: `https://example.com/${i}` });
+    }
+    const sectionProps = {
+      ...DEFAULT_PROPS,
+      data: {
+        ...DEFAULT_PROPS.data,
+        sections: [
+          {
+            ...DEFAULT_PROPS.data.sections[0],
+            sectionKey: "section_key_1",
+            data: sectionData,
+          },
+          {
+            ...DEFAULT_PROPS.data.sections[0],
+            sectionKey: "section_key_2",
+            data: sectionData,
+          },
+        ],
+      },
+    };
+
+    const { container: baselineContainer } = render(
+      <WrapWithProvider>
+        <CardSections {...sectionProps} />
+      </WrapWithProvider>
+    );
+    expect(baselineContainer.querySelectorAll("article.ds-card")).toHaveLength(
+      8
+    );
+
+    const { container } = render(
+      <WrapWithProvider>
+        <CardSections {...sectionProps} spocsLoading={true} />
+      </WrapWithProvider>
+    );
+    expect(container.querySelectorAll(".ds-card.placeholder")).toHaveLength(24);
+  });
+
+  it("should render placeholders when responsiveLayouts is empty", () => {
+    const { container } = render(
+      <WrapWithProvider>
+        <CardSections
+          {...DEFAULT_PROPS}
+          data={{
+            ...DEFAULT_PROPS.data,
+            sections: [
+              {
+                ...DEFAULT_PROPS.data.sections[0],
+                layout: { responsiveLayouts: [] },
+                data: [{ placeholder: true }, { placeholder: true }],
+              },
+            ],
+          }}
+        />
+      </WrapWithProvider>
+    );
+    expect(
+      container.querySelectorAll(".ds-card.placeholder").length
+    ).toBeGreaterThan(0);
   });
 
   it("should pass correct props to DSCard", () => {
@@ -323,16 +381,31 @@ describe("<CardSections />", () => {
       },
     });
 
+    expect(dispatch).toHaveBeenNthCalledWith(3, {
+      type: at.SHOW_TOAST_MESSAGE,
+      data: {
+        toastId: "followSectionToast",
+        showNotifications: true,
+        toastData: { l10nId: "newtab-section-toast-follow", topic: "title" },
+      },
+      meta: {
+        from: MAIN_MESSAGE_TYPE,
+        skipMain: true,
+        to: "ActivityStream:Content",
+        toTarget: "ActivityStream:Content",
+      },
+    });
+
     fireEvent.click(
       container.querySelector(".section-follow.following moz-button")
     );
 
-    expect(dispatch).toHaveBeenNthCalledWith(3, {
+    expect(dispatch).toHaveBeenNthCalledWith(4, {
       type: at.SECTION_PERSONALIZATION_SET,
       data: {},
       meta: { from: CONTENT_MESSAGE_TYPE, to: MAIN_MESSAGE_TYPE },
     });
-    expect(dispatch).toHaveBeenNthCalledWith(4, {
+    expect(dispatch).toHaveBeenNthCalledWith(5, {
       type: at.UNFOLLOW_SECTION,
       data: {
         section: "section_key_2",
@@ -343,6 +416,20 @@ describe("<CardSections />", () => {
         from: CONTENT_MESSAGE_TYPE,
         to: MAIN_MESSAGE_TYPE,
         skipLocal: true,
+      },
+    });
+    expect(dispatch).toHaveBeenNthCalledWith(6, {
+      type: at.SHOW_TOAST_MESSAGE,
+      data: {
+        toastId: "unfollowSectionToast",
+        showNotifications: true,
+        toastData: { l10nId: "newtab-section-toast-unfollow", topic: "title" },
+      },
+      meta: {
+        from: MAIN_MESSAGE_TYPE,
+        skipMain: true,
+        to: "ActivityStream:Content",
+        toTarget: "ActivityStream:Content",
       },
     });
   });

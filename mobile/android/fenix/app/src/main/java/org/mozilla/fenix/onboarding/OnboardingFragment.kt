@@ -28,12 +28,14 @@ import mozilla.components.service.nimbus.messaging.use
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.Browsers
+import mozilla.components.support.utils.BuildManufacturerChecker
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.initializeGlean
+import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.components.metrics.installSourcePackage
 import org.mozilla.fenix.components.startMetricsIfEnabled
 import org.mozilla.fenix.compose.LinkTextState
@@ -87,7 +89,9 @@ class OnboardingFragment : Fragment() {
             pagesToDisplay(
                 showDefaultBrowserPage = displayDefaultBrowserPage(this),
                 showNotificationPage = canShowNotificationPage(),
-                showAddWidgetPage = canShowAddSearchWidgetPrompt(AppWidgetManager.getInstance(activity)),
+                showAddWidgetPage = AppWidgetManager.getInstance(requireContext())
+                    ?.let { canShowAddSearchWidgetPrompt(it) }
+                    ?: false,
             ).toMutableList()
         }
     }
@@ -316,6 +320,9 @@ class OnboardingFragment : Fragment() {
                 }
                 telemetryRecorder.onMarketingDataContinueClicked(allowMarketingDataCollection)
             },
+            onMarketingDataSkipClick = {
+                telemetryRecorder.onMarketingDataSkipClicked()
+            },
             currentIndex = { index ->
                 removeMarketingFeature.withFeature { it.currentPageIndex = index }
             },
@@ -363,14 +370,14 @@ class OnboardingFragment : Fragment() {
                 telemetryRecorder.onNotificationPermissionClick(
                     sequenceId = pagesToDisplay.telemetrySequenceId(),
                     sequencePosition =
-                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.NOTIFICATION_PERMISSION),
+                        pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.NOTIFICATION_PERMISSION),
                 )
             },
             onSkipNotificationClick = {
                 telemetryRecorder.onSkipTurnOnNotificationsClick(
                     sequenceId = pagesToDisplay.telemetrySequenceId(),
                     sequencePosition =
-                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.NOTIFICATION_PERMISSION),
+                        pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.NOTIFICATION_PERMISSION),
                 )
             },
             onAddFirefoxWidgetClick = {
@@ -502,6 +509,8 @@ class OnboardingFragment : Fragment() {
             isDailyUsagePingEnabled = false,
         )
 
+        requireComponents.analytics.metrics.track(Event.GrowthData.ConversionEvent6)
+
         findNavController().nav(
             id = R.id.onboardingFragment,
             directions = OnboardingFragmentDirections.actionHome(),
@@ -552,6 +561,7 @@ class OnboardingFragment : Fragment() {
                 showAddWidgetPage,
                 requireContext().settings().isTabStripEnabled.not(),
                 jexlConditions,
+                BuildManufacturerChecker(),
             ) { condition -> jexlHelper.evalJexlSafe(condition) }
         }
     }

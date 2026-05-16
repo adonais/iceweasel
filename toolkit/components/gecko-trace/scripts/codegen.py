@@ -38,7 +38,8 @@ def generate_cpp_events(output_fd, *inputs):
             # Generate a unique hash to prevent include guard conflicts when
             # multiple event files are generated and included together (e.g., in gtests).
             # This ensures each generated header has a distinct include guard.
-            input_hash=hashlib.sha256("".join(inputs).encode())
+            input_hash=hashlib
+            .sha256("".join(inputs).encode())
             .hexdigest()
             .upper()[:15],
         )

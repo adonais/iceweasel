@@ -4,26 +4,42 @@
 "use strict";
 
 describe("setting-pane", () => {
-  let doc, win, testSubPaneButton;
+  let doc, win;
 
   beforeEach(async function setup() {
     await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
     doc = gBrowser.selectedBrowser.contentDocument;
     win = doc.ownerGlobal;
-    testSubPaneButton = doc.createElement("moz-button");
-    testSubPaneButton.hidden = true;
-    testSubPaneButton.setAttribute("data-category", "panePrivacy");
-    testSubPaneButton.textContent = "Go to test pane";
-    testSubPaneButton.addEventListener("click", () =>
-      win.gotoPref("paneTestSubPane")
-    );
-    let privacyHeading = doc.getElementById("browserPrivacyCategory");
-    privacyHeading.insertAdjacentElement("afterend", testSubPaneButton);
+    win.Preferences.addSetting({
+      id: "testLoadSubPane",
+      onUserClick: () => win.gotoPref("paneTestSubPane"),
+    });
+    win.SettingGroupManager.registerGroup("testTopLevelGroup", {
+      l10nId: "home-default-browser-title",
+      headingLevel: 2,
+      items: [
+        {
+          id: "testLoadSubPane",
+          control: "moz-box-button",
+          controlAttrs: {
+            label: "Top level setting",
+          },
+        },
+      ],
+    });
+    win.SettingPaneManager.registerPane("testTopLevel", {
+      l10nId: "home-section",
+      groupIds: ["testTopLevelGroup"],
+    });
+    let generalCategory = doc.getElementById("category-general");
+    let testTopLevelCategory = generalCategory.cloneNode(true);
+    testTopLevelCategory.setAttribute("view", "paneTestTopLevel");
+    generalCategory.insertAdjacentElement("afterend", testTopLevelCategory);
     win.Preferences.addSetting({
       id: "testSetting",
       get: () => true,
     });
-    win.SettingGroupManager.registerGroup("testGroup", {
+    win.SettingGroupManager.registerGroup("testSubGroup", {
       l10nId: "downloads-header-2",
       headingLevel: 2,
       items: [
@@ -36,10 +52,13 @@ describe("setting-pane", () => {
       ],
     });
     win.SettingPaneManager.registerPane("testSubPane", {
-      parent: "privacy",
+      parent: "testTopLevel",
       l10nId: "containers-section-header",
-      groupIds: ["testGroup"],
+      groupIds: ["testSubGroup"],
     });
+    let viewChanged = waitForPaneChange("paneTestTopLevel");
+    win.gotoPref("paneTestTopLevel");
+    await viewChanged;
   });
 
   afterEach(() => BrowserTestUtils.removeTab(gBrowser.selectedTab));
@@ -50,18 +69,13 @@ describe("setting-pane", () => {
     );
     is_element_hidden(pane, "Sub pane is initially hidden");
 
-    // Load the privacy pane
-    let paneLoaded = waitForPaneChange("privacy");
+    // Load the sub pane
+    let paneLoaded = waitForPaneChange("testSubPane");
     EventUtils.synthesizeMouseAtCenter(
-      doc.getElementById("category-privacy"),
+      getSettingControl("testLoadSubPane"),
       {},
       win
     );
-    await paneLoaded;
-
-    // Load the sub pane
-    paneLoaded = waitForPaneChange("testSubPane");
-    EventUtils.synthesizeMouseAtCenter(testSubPaneButton, {}, win);
     await paneLoaded;
 
     is_element_visible(pane, "Page header is visible");
@@ -81,15 +95,6 @@ describe("setting-pane", () => {
     let backButton = pageHeader.backButtonEl;
     ok(backButton, "There is a back button");
 
-    doc.dispatchEvent(
-      new CustomEvent("paneshown", {
-        bubbles: true,
-        cancelable: true,
-        detail: {
-          category: "paneTestSubPane",
-        },
-      })
-    );
     is(
       doc.activeElement,
       pageHeader,
@@ -102,9 +107,94 @@ describe("setting-pane", () => {
     );
 
     // Go back
-    paneLoaded = waitForPaneChange("privacy");
+    paneLoaded = waitForPaneChange("testTopLevel");
     EventUtils.synthesizeMouseAtCenter(backButton, {}, win);
     await paneLoaded;
     is_element_hidden(pane, "Sub pane is hidden again");
+  });
+
+  it("shows breadcrumbs on sub-pane", async () => {
+    let pane = doc.querySelector(
+      'setting-pane[data-category="paneTestSubPane"]'
+    );
+
+    let paneLoaded = waitForPaneChange("testSubPane");
+    EventUtils.synthesizeMouseAtCenter(
+      getSettingControl("testLoadSubPane"),
+      {},
+      win
+    );
+    await paneLoaded;
+    await pane.updateComplete;
+
+    let pageHeader = pane.pageHeaderEl;
+    let breadcrumbGroup = pageHeader.querySelector("moz-breadcrumb-group");
+    ok(breadcrumbGroup, "There is a breadcrumb group");
+
+    let breadcrumbs = breadcrumbGroup.querySelectorAll("moz-breadcrumb");
+    is(breadcrumbs.length, 2, "There are two breadcrumbs");
+
+    is(
+      breadcrumbs[0].dataset.l10nId,
+      "home-section",
+      "First breadcrumb has the parent l10nId"
+    );
+    is(
+      breadcrumbs[0].href,
+      "#testTopLevel",
+      "First breadcrumb links to parent pane"
+    );
+
+    is(
+      breadcrumbs[1].dataset.l10nId,
+      "containers-section-header",
+      "Second breadcrumb has the sub-pane l10nId"
+    );
+    is(
+      breadcrumbs[1].href,
+      "#testSubPane",
+      "Second breadcrumb links to current pane"
+    );
+    is(
+      breadcrumbs[1].getAttribute("aria-current"),
+      "page",
+      "Last breadcrumb has aria-current=page"
+    );
+  });
+
+  it("does not show breadcrumbs on top-level pane", async () => {
+    let pane = doc.querySelector(
+      'setting-pane[data-category="paneTestTopLevel"]'
+    );
+    ok(pane, "Top-level setting-pane exists");
+
+    let pageHeader = pane.pageHeaderEl;
+    let breadcrumbGroup = pageHeader.querySelector("moz-breadcrumb-group");
+    ok(!breadcrumbGroup, "No breadcrumbs on top-level pane");
+  });
+
+  it("breadcrumb navigates to parent pane", async () => {
+    let pane = doc.querySelector(
+      'setting-pane[data-category="paneTestSubPane"]'
+    );
+
+    let paneLoaded = waitForPaneChange("testSubPane");
+    EventUtils.synthesizeMouseAtCenter(
+      getSettingControl("testLoadSubPane"),
+      {},
+      win
+    );
+    await paneLoaded;
+    await pane.updateComplete;
+
+    let pageHeader = pane.pageHeaderEl;
+    let breadcrumbs = pageHeader.querySelectorAll("moz-breadcrumb");
+    let parentBreadcrumb = breadcrumbs[0];
+    let link = parentBreadcrumb.shadowRoot.querySelector("a");
+    ok(link, "Parent breadcrumb has a link");
+
+    paneLoaded = waitForPaneChange("testTopLevel");
+    EventUtils.synthesizeMouseAtCenter(link, {}, win);
+    await paneLoaded;
   });
 });

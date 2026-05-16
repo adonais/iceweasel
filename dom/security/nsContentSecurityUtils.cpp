@@ -1368,6 +1368,7 @@ static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "chrome://browser/content/preferences/dialogs/permissions.xhtml"_ns,
     "chrome://browser/content/preferences/fxaPairDevice.xhtml"_ns,
     "chrome://browser/content/screenshots/screenshots-preview.html"_ns,
+    "chrome://browser/content/sidebar/sidebar-bookmarks.html"_ns,
     "chrome://browser/content/sidebar/sidebar-customize.html"_ns,
     "chrome://browser/content/sidebar/sidebar-history.html"_ns,
     "chrome://browser/content/sidebar/sidebar-syncedtabs.html"_ns,

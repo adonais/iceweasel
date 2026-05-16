@@ -233,7 +233,6 @@ public class WebAuthnCredentialManager {
     final CredentialOption credentialOption =
         new CredentialOption.Builder(TYPE_PUBLIC_KEY_CREDENTIAL, requestBundle, requestBundle)
             .build();
-    final Bundle bundle = new Bundle();
     final GetCredentialRequest request =
         new GetCredentialRequest.Builder(requestBundle)
             .addCredentialOption(credentialOption)
@@ -283,9 +282,13 @@ public class WebAuthnCredentialManager {
 
             @Override
             public void onError(final GetCredentialException exception) {
+              final String errorType = exception.getType();
               if (DEBUG) {
-                final String errorType = exception.getType();
                 Log.d(LOGTAG, "Couldn't get credential. errorType=" + errorType);
+              }
+              if (errorType.equals(GetCredentialException.TYPE_NO_CREDENTIAL)) {
+                result.complete(null);
+                return;
               }
               result.completeExceptionally(new WebAuthnUtils.Exception("UNKNOWN_ERR"));
             }

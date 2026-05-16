@@ -20,6 +20,7 @@ import {
   gNoConnectivity,
   retryThis,
   handleNSSFailure,
+  detectClockSkew,
 } from "chrome://global/content/aboutNetErrorHelpers.mjs";
 import { initializeRegistry } from "chrome://global/content/errors/error-registry.mjs";
 import {
@@ -936,53 +937,15 @@ function setCertErrorDetails() {
     case "MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE": {
       learnMoreLink.href = baseURL + "time-errors";
 
-      // We check against the remote-settings server time first if available, because that allows us
-      // to give the user an approximation of what the correct time is.
       const difference = RPMGetIntPref(
         "services.settings.clock_skew_seconds",
         0
       );
       const lastFetched =
         RPMGetIntPref("services.settings.last_update_seconds", 0) * 1000;
-
-      // This is set to true later if the user's system clock is at fault for this error.
-      let clockSkew = false;
-
       const now = Date.now();
-      const certRange = {
-        notBefore: failedCertInfo.certValidityRangeNotBefore,
-        notAfter: failedCertInfo.certValidityRangeNotAfter,
-      };
-      const approximateDate = now - difference * 1000;
-      // If the difference is more than a day, we last fetched the date in the last 5 days,
-      // and adjusting the date per the interval would make the cert valid, warn the user:
-      if (
-        Math.abs(difference) > 60 * 60 * 24 &&
-        now - lastFetched <= 60 * 60 * 24 * 5 * 1000 &&
-        certRange.notBefore < approximateDate &&
-        certRange.notAfter > approximateDate
-      ) {
-        clockSkew = true;
-        // If there is no clock skew with Kinto servers, check against the build date.
-        // (The Kinto ping could have happened when the time was still right, or not at all)
-      } else {
-        const appBuildID = RPMGetAppBuildID();
-        const year = parseInt(appBuildID.substr(0, 4), 10);
-        const month = parseInt(appBuildID.substr(4, 2), 10) - 1;
-        const day = parseInt(appBuildID.substr(6, 2), 10);
 
-        const buildDate = new Date(year, month, day);
-
-        // We don't check the notBefore of the cert with the build date,
-        // as it is of course almost certain that it is now later than the build date,
-        // so we shouldn't exclude the possibility that the cert has become valid
-        // since the build date.
-        if (buildDate > now && new Date(certRange.notAfter) > buildDate) {
-          clockSkew = true;
-        }
-      }
-
-      if (clockSkew) {
+      if (detectClockSkew(failedCertInfo, now)) {
         document.body.classList.add("clockSkewError");
         document.l10n.setAttributes(bodyTitle, "clockSkewError-title");
         document.l10n.setAttributes(shortDesc, "neterror-clock-skew-error", {
@@ -1302,36 +1265,36 @@ function setFocus(selector, position = "afterbegin") {
   }
 }
 
-async function getErrorCode() {
+async function getCertErrorCode() {
   try {
-    const errorInfo = gIsCertError
-      ? document.getFailedCertSecurityInfo()
-      : document.getNetErrorInfo();
-    return errorInfo.errorCodeString;
+    return document.getFailedCertSecurityInfo().errorCodeString;
   } catch (e) {
     return undefined;
   }
 }
 
-async function retryErrorCode() {
+async function retryCertErrorCode() {
   return new Promise(res => {
     setTimeout(() => {
-      res(getErrorCode());
+      res(getCertErrorCode());
     }, 100);
   });
 }
 
-async function init() {
-  let errorCode = await getErrorCode();
+async function ensureCertErrorCode() {
+  if (!gIsCertError) {
+    return;
+  }
+  let errorCode = await getCertErrorCode();
   let i = 0;
   while (!errorCode && i < 3) {
     i++;
-    errorCode = await retryErrorCode();
+    errorCode = await retryCertErrorCode();
   }
 }
 
 async function main() {
-  await init();
+  await ensureCertErrorCode();
   if (!NetErrorCard.isSupported()) {
     // Initialize the error registry for legacy path
     initializeRegistry();

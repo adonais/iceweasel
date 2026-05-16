@@ -304,9 +304,21 @@ newtab-error-fallback-refresh-link = Inzorne la pagjine par tornâ a provâ.
 
 newtab-custom-shortcuts-title = Scurtis
 newtab-custom-shortcuts-subtitle = Sîts che tu âs salvât o visitât
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Scurtis
     .description = Sîts che tu âs salvât o visitât
+newtab-custom-shortcuts-nova =
+    .label = Scurtis
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } rie
+           *[other] { $num } riis
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -317,9 +329,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Scurtis sponsorizadis
 newtab-custom-pocket-title = Conseâts di { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Contignûts ecezionâi curâts di { -pocket-brand-name }, part de famee { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Storiis conseadis
     .description = Contignûts ecezionâl curât de famee di prodots { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Storiis conseadis
 newtab-custom-stories-personalized-toggle =
     .label = Storiis
 newtab-custom-stories-personalized-checkbox-label = Storiis personalizadis in base ae tô ativitât
@@ -351,8 +366,11 @@ newtab-custom-settings = Gjestìs plui impostazions
 
 newtab-wallpaper-title = Fonts
 newtab-wallpaper-reset = Ripristine predefinît
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Cjame une imagjin
 newtab-wallpaper-custom-color = Sielç un colôr
+newtab-wallpaper-toggle-title =
+    .label = Fonts
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = La imagjin e va fûr de dimension massime ametude ({ $file_size } MB). Prove a cjariâ un file plui piçul.
@@ -375,6 +393,7 @@ newtab-wallpaper-light-fox-anniversary = Une bolp intun cjamp jerbôs cuntun pae
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Colôr solit
 newtab-wallpaper-blue = Blu
 newtab-wallpaper-light-blue = Blu clâr
@@ -644,7 +663,6 @@ newtab-widget-lists-menu-edit = Modifiche non liste
 newtab-widget-lists-menu-create = Cree gnove liste
 newtab-widget-lists-menu-delete = Elimine cheste liste
 newtab-widget-lists-menu-copy = Copie liste intes notis
-newtab-widget-lists-menu-hide = Plate dutis lis listis
 newtab-widget-lists-menu-learn-more = Plui informazions
 newtab-widget-lists-input-add-an-item =
     .placeholder = Zonte un element
@@ -695,7 +713,6 @@ newtab-widget-timer-reset =
     .title = Ripristine
 newtab-widget-timer-menu-notifications = Disative lis notifichis
 newtab-widget-timer-menu-notifications-on = Ative lis notifichis
-newtab-widget-timer-menu-hide = Plate temporizadôr
 newtab-widget-timer-menu-learn-more = Plui informazions
 newtab-widget-message-title = Reste concentrât doprant lis listis e il temporizadôr integrât
 # to-dos stands for "things to do".

@@ -7,6 +7,10 @@ const { TabStateFlusher } = ChromeUtils.importESModule(
   "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
 );
 
+const { ChatStore } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs"
+);
+
 async function addSmartTab(win) {
   const tab = BrowserTestUtils.addTab(win.gBrowser, AIWINDOW_URL);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
@@ -188,8 +192,89 @@ add_task(async function test_smarttab_with_conversation_becomes_classic() {
     "Re-adopted tab should keep its AI window content"
   );
 
+  // waiting for focus stabilizes flaky test here
+  await SimpleTest.promiseFocus(smartWin);
+
+  // Verify the CTA button is functional after re-adoption, testing that the
+  // actor connection and SmartbarInput currentPage guard are both working.
+  await typeInSmartbar(reAdoptedTab.linkedBrowser, "hello");
+
+  await SpecialPowers.spawn(reAdoptedTab.linkedBrowser, [], async () => {
+    const el = content.document.querySelector("ai-window");
+    const smartbar = el.shadowRoot.querySelector("#ai-window-smartbar");
+    await ContentTaskUtils.waitForCondition(
+      () => smartbar.smartbarAction === "chat",
+      "CTA button should show 'chat' action after typing"
+    );
+  });
+
   await BrowserTestUtils.closeWindow(smartWin);
   await BrowserTestUtils.closeWindow(classicWin);
+});
+
+// Drag a smart tab with an active conversation to a classic window and back to a smart window.
+// The conversation should be restored in the re-adopted smart tab.
+add_task(async function test_smarttab_conversation_restored_after_drag() {
+  let classicWin, smartWin;
+  const sb = sinon.createSandbox();
+
+  registerCleanupFunction(async () => {
+    sb.restore();
+    if (classicWin && !classicWin.closed) {
+      await BrowserTestUtils.closeWindow(classicWin);
+    }
+    if (smartWin && !smartWin.closed) {
+      await BrowserTestUtils.closeWindow(smartWin);
+    }
+  });
+
+  const fetchWithHistory = Promise.withResolvers();
+  sb.stub(Chat, "fetchWithHistory").callsFake(({ conversation }) => {
+    fetchWithHistory.resolve(ChatStore.updateConversation(conversation));
+    return fetchWithHistory.promise;
+  });
+  sb.stub(openAIEngine, "build").resolves({
+    loadPrompt: () => Promise.resolve("Mock system prompt"),
+  });
+  sb.stub(AIWindowAccountAuth, "ensureAIWindowAccess").resolves(true);
+
+  smartWin = await openAIWindow();
+  const smartTab = await addSmartTab(smartWin);
+  await BrowserTestUtils.switchTab(smartWin.gBrowser, smartTab);
+
+  await typeInSmartbar(smartTab.linkedBrowser, "hello");
+  await submitSmartbar(smartTab.linkedBrowser);
+
+  await fetchWithHistory.promise;
+
+  const conversationId = smartTab.linkedBrowser.getAttribute(
+    "data-conversation-id"
+  );
+  Assert.ok(
+    conversationId,
+    "Tab should have a conversation ID after submitting"
+  );
+
+  classicWin = await BrowserTestUtils.openNewBrowserWindow({ aiWindow: false });
+  const adoptedTab = await adoptTabToWindow(smartTab, classicWin);
+
+  const conversationRestoredPromise = BrowserTestUtils.waitForEvent(
+    smartWin,
+    "ai-window:opened-conversation"
+  );
+  await adoptTabToWindow(adoptedTab, smartWin);
+  const restoredEvent = await conversationRestoredPromise;
+  Assert.equal(
+    restoredEvent.detail.conversationId,
+    conversationId,
+    "Re-adopted tab should restore the original conversation"
+  );
+  Assert.ok(
+    restoredEvent.detail.conversation.messages.some(
+      m => m.content?.body === "hello"
+    ),
+    "Restored conversation should contain the submitted 'hello' message"
+  );
 });
 
 // Move a smart tab with an active conversation to a smart window and then a classic window.

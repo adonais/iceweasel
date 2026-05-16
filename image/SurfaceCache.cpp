@@ -1941,8 +1941,10 @@ void SurfaceCache::ReleaseImageOnMainThread(
     return;
   }
 
-  // Don't try to dispatch the release after shutdown, we'll just leak the
-  // runnable.
+  // Don't try to dispatch the release after shutdown. This code is
+  // unreachable in release builds (process just terminates). Using
+  // (void)aImage lets the already_AddRefed destructor assert in DEBUG,
+  // helping detect leaks at their source.
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownFinal)) {
     (void)aImage;
     return;

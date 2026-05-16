@@ -141,6 +141,12 @@ void CookieValidation::ValidateForHostInternal(nsIURI* aHostURI,
     return;
   }
 
+  if ((mCookieData.schemeMap() & nsICookie::SCHEME_FILE) &&
+      !mCookieData.host().IsEmpty()) {
+    mResult = eRejectedInvalidDomain;
+    return;
+  }
+
   // if the new cookie is httponly, make sure we're not coming from script
   if (!aFromHttp && mCookieData.isHttpOnly()) {
     mResult = eRejectedHttpOnlyButFromScript;

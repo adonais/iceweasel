@@ -22,7 +22,7 @@ info: |
   7. If end is undefined, let relativeEnd be len; else let relativeEnd be ?
   ToInteger(end).
   ...
-includes: [testBigIntTypedArray.js]
+includes: [testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
@@ -36,6 +36,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(Test262Error, function() {
     sample.copyWithin(0, 0, o1);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

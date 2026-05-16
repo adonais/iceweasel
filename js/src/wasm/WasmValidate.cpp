@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2016 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -914,6 +912,97 @@ bool wasm::ValidateOps(ValidatingOpIter& iter, T& dumper,
         }
         break;
       }
+#ifdef ENABLE_WASM_JSPI
+      case uint16_t(Op::ContNew): {
+        if (!codeMeta.stackSwitchingEnabled()) {
+          return iter.unrecognizedOpcode(&op);
+        }
+        uint32_t contTypeIndex;
+        if (!iter.readContNew(&contTypeIndex, &nothing)) {
+          return false;
+        }
+        dumper.dumpTypeIndex(contTypeIndex);
+        break;
+      }
+      case uint16_t(Op::ContBind): {
+        if (!codeMeta.stackSwitchingEnabled()) {
+          return iter.unrecognizedOpcode(&op);
+        }
+        uint32_t inputContTypeIndex;
+        uint32_t outputContTypeIndex;
+        if (!iter.readContBind(&inputContTypeIndex, &outputContTypeIndex,
+                               &nothings, &nothing)) {
+          return false;
+        }
+        dumper.dumpTypeIndex(inputContTypeIndex);
+        dumper.dumpTypeIndex(outputContTypeIndex);
+        break;
+      }
+      case uint16_t(Op::Suspend): {
+        if (!codeMeta.stackSwitchingEnabled()) {
+          return iter.unrecognizedOpcode(&op);
+        }
+        uint32_t tagIndex;
+        if (!iter.readSuspend(&tagIndex, &nothings)) {
+          return false;
+        }
+        dumper.dumpTagIndex(tagIndex);
+        break;
+      }
+      case uint16_t(Op::Resume): {
+        if (!codeMeta.stackSwitchingEnabled()) {
+          return iter.unrecognizedOpcode(&op);
+        }
+        HandlerExprVector handlers;
+        uint32_t contTypeIndex;
+        if (!iter.readResume(&contTypeIndex, &handlers, &nothings, &nothing)) {
+          return false;
+        }
+        dumper.dumpTypeIndex(contTypeIndex);
+        break;
+      }
+      case uint16_t(Op::ResumeThrow): {
+        if (!codeMeta.stackSwitchingEnabled()) {
+          return iter.unrecognizedOpcode(&op);
+        }
+        HandlerExprVector handlers;
+        uint32_t contTypeIndex;
+        uint32_t tagIndex;
+        if (!iter.readResumeThrow(&contTypeIndex, &tagIndex, &handlers,
+                                  &nothings, &nothing)) {
+          return false;
+        }
+        dumper.dumpTypeIndex(contTypeIndex);
+        dumper.dumpTagIndex(tagIndex);
+        break;
+      }
+      case uint16_t(Op::ResumeThrowRef): {
+        if (!codeMeta.stackSwitchingEnabled()) {
+          return iter.unrecognizedOpcode(&op);
+        }
+        HandlerExprVector handlers;
+        uint32_t contTypeIndex;
+        if (!iter.readResumeThrowRef(&contTypeIndex, &handlers, &nothing,
+                                     &nothing)) {
+          return false;
+        }
+        dumper.dumpTypeIndex(contTypeIndex);
+        break;
+      }
+      case uint16_t(Op::Switch): {
+        if (!codeMeta.stackSwitchingEnabled()) {
+          return iter.unrecognizedOpcode(&op);
+        }
+        uint32_t contTypeIndex;
+        uint32_t tagIndex;
+        if (!iter.readSwitch(&contTypeIndex, &tagIndex, &nothings, &nothing)) {
+          return false;
+        }
+        dumper.dumpTypeIndex(contTypeIndex);
+        dumper.dumpTagIndex(tagIndex);
+        break;
+      }
+#endif  // ENABLE_WASM_JSPI
       case uint16_t(Op::GcPrefix): {
         switch (op.b1) {
           case uint32_t(GcOp::StructNew): {
@@ -2581,6 +2670,26 @@ static bool DecodeArrayType(Decoder& d, CodeMetadata* codeMeta,
   return true;
 }
 
+#ifdef ENABLE_WASM_JSPI
+static bool DecodeContType(Decoder& d, CodeMetadata* codeMeta,
+                           ContType* contType) {
+  uint32_t typeIndex;
+  if (!d.readTypeIndex(&typeIndex)) {
+    return false;
+  }
+
+  if (typeIndex >= codeMeta->types->length()) {
+    return d.fail("type index out of range");
+  }
+
+  // We don't validate that a continuation points at a function type until we've
+  // decoded the whole recursion group.
+  const TypeDef& typeDef = codeMeta->types->type(typeIndex);
+  *contType = ContType(&typeDef);
+  return true;
+}
+#endif  // ENABLE_WASM_JSPI
+
 static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
   MaybeBytecodeRange range;
   if (!d.startSection(SectionId::Type, codeMeta, &range, "type")) {
@@ -2719,6 +2828,19 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
           *typeDef = std::move(arrayType);
           break;
         }
+#ifdef ENABLE_WASM_JSPI
+        case uint8_t(TypeCode::Cont): {
+          if (!codeMeta->stackSwitchingEnabled()) {
+            return d.fail("stack switching is not enabled");
+          }
+          ContType contType;
+          if (!DecodeContType(d, codeMeta, &contType)) {
+            return false;
+          }
+          *typeDef = std::move(contType);
+          break;
+        }
+#endif  // ENABLE_WASM_JSPI
         default:
           return d.fail("expected type form");
       }
@@ -2738,6 +2860,22 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
                                                 superTypeDef, recGroupLength);
       }
     }
+
+#ifdef ENABLE_WASM_JSPI
+    // Continuation types must refer to function types. We can only validate
+    // this after we've decoded all the types in the recursion group though.
+    for (uint32_t recGroupTypeIndex = 0; recGroupTypeIndex < recGroupLength;
+         recGroupTypeIndex++) {
+      TypeDef* typeDef = &recGroup->type(recGroupTypeIndex);
+      if (!typeDef->isContType()) {
+        continue;
+      }
+
+      if (!typeDef->contType().funcTypeDef().isFuncType()) {
+        return d.fail("cont must reference a func type");
+      }
+    }
+#endif  // ENABLE_WASM_JSPI
 
     // Check the super types to make sure they are compatible with their
     // subtypes. This is done in a second iteration to avoid dealing with not
@@ -3020,9 +3158,12 @@ static bool DecodeTagType(Decoder& d, const CodeMetadata* codeMeta,
   if (!(*codeMeta->types)[*funcTypeIndex].isFuncType()) {
     return d.fail("function type index must index a function type");
   }
-  if ((*codeMeta->types)[*funcTypeIndex].funcType().results().length() != 0) {
+  // Stack switching relaxes the restriction that tags cannot have results.
+  if (!codeMeta->stackSwitchingEnabled() &&
+      (*codeMeta->types)[*funcTypeIndex].funcType().results().length() != 0) {
     return d.fail("tag function types must not return anything");
   }
+
   return true;
 }
 
@@ -3372,6 +3513,8 @@ static bool CheckImportsAgainstBuiltinModules(Decoder& d,
         const FuncDesc& func = codeMeta->funcs[importFuncIndex];
         uint32_t funcIndex = importFuncIndex;
         importFuncIndex += 1;
+        MOZ_ASSERT(codeMeta->knownFuncImports[funcIndex] ==
+                   BuiltinModuleFuncId::None);
 
         // Skip this import if it doesn't refer to a builtin module. We do have
         // to increment the import function index regardless though.
@@ -3382,10 +3525,12 @@ static bool CheckImportsAgainstBuiltinModules(Decoder& d,
         // Check if this import refers to a builtin module function
         const BuiltinModuleFunc* builtinFunc = nullptr;
         BuiltinModuleFuncId builtinFuncId;
-        if (!ImportMatchesBuiltinModuleFunc(import.field.utf8Bytes(),
-                                            *builtinModule, &builtinFunc,
-                                            &builtinFuncId)) {
-          return d.fail("unrecognized builtin module field");
+        if (!ImportFieldMatchesBuiltinModuleDefinition(
+                import.field.utf8Bytes(), *builtinModule,
+                DefinitionKind::Function, &builtinFunc, &builtinFuncId)) {
+          // Polyfillability: if the field is not found in the builtin module,
+          // it will be resolved from the imports object at instantiation.
+          continue;
         }
 
         const TypeDef& importTypeDef = (*codeMeta->types)[func.typeIndex];

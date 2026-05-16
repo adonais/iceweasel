@@ -4,7 +4,7 @@
 intended to change the selected view, provide a heading, and have links to external resources.
 
 ```html story
-<moz-page-nav heading="This is a nav" style={{ '--page-nav-margin-top': 0, maxWidth: '20ch', maxHeight: '275px' }}>
+<moz-page-nav heading="This is a nav" style={{ '--page-nav-margin-block-start': 0, maxWidth: '20ch', maxHeight: '275px' }}>
   <moz-page-nav-button
     view="view-one"
     iconSrc="chrome://browser/skin/preferences/category-general.svg"

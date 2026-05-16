@@ -17,6 +17,7 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.bookmarks.controller.BookmarksController
+import org.mozilla.fenix.home.logo.LogoController
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.controller.PocketStoriesController
 import org.mozilla.fenix.home.privatebrowsing.controller.PrivateBrowsingController
@@ -27,6 +28,7 @@ import org.mozilla.fenix.home.recentvisits.controller.RecentVisitsController
 import org.mozilla.fenix.home.search.HomeSearchController
 import org.mozilla.fenix.home.sessioncontrol.DefaultSessionControlController
 import org.mozilla.fenix.home.sessioncontrol.SessionControlInteractor
+import org.mozilla.fenix.home.sports.SportsController
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerController
 import org.mozilla.fenix.home.toolbar.ToolbarController
 import org.mozilla.fenix.home.topsites.controller.TopSiteController
@@ -45,6 +47,8 @@ class SessionControlInteractorTest {
     private val homeSearchController: HomeSearchController = mockk(relaxed = true)
     private val topSiteController: TopSiteController = mockk(relaxed = true)
     private val privacyNoticeBannerController: PrivacyNoticeBannerController = mockk(relaxed = true)
+    private val logoController: LogoController = mockk(relaxed = true)
+    private val sportsController: SportsController = mockk(relaxed = true)
 
     // Note: the recent visits tests are handled in [RecentVisitsInteractorTest] and [RecentVisitsControllerTest]
     private val recentVisitsController: RecentVisitsController = mockk(relaxed = true)
@@ -66,6 +70,8 @@ class SessionControlInteractorTest {
             homeSearchController,
             topSiteController,
             privacyNoticeBannerController,
+            logoController,
+            sportsController,
         )
     }
 
@@ -136,18 +142,6 @@ class SessionControlInteractorTest {
     fun onAddTabsToCollection() {
         interactor.onAddTabsToCollectionTapped()
         verify { controller.handleCreateCollection() }
-    }
-
-    @Test
-    fun onPaste() {
-        interactor.onPaste("text")
-        verify { toolbarController.handlePaste("text") }
-    }
-
-    @Test
-    fun onPasteAndGo() {
-        interactor.onPasteAndGo("text")
-        verify { toolbarController.handlePasteAndGo("text") }
     }
 
     @Test
@@ -281,5 +275,43 @@ class SessionControlInteractorTest {
         every { appState.bookmarks } returns emptyList()
         interactor.reportSessionMetrics(appState)
         verify { controller.handleReportSessionMetrics(appState) }
+    }
+
+    @Test
+    fun `WHEN logo is long clicked THEN logo controller click handler is called`() {
+        interactor.onLogoLongClicked()
+        verify { logoController.handleLogoLongClicked() }
+    }
+
+    @Test
+    fun `GIVEN a set of country codes WHEN countries are selected THEN sports controller handles the selection`() {
+        val countryCodes = setOf("US", "JP", "BR")
+        interactor.onCountriesSelected(countryCodes)
+        verify { sportsController.handleCountriesSelected(countryCodes) }
+    }
+
+    @Test
+    fun `GIVEN an empty set WHEN countries are selected THEN sports controller handles the empty selection`() {
+        val countryCodes = emptySet<String>()
+        interactor.onCountriesSelected(countryCodes)
+        verify { sportsController.handleCountriesSelected(countryCodes) }
+    }
+
+    @Test
+    fun `WHEN the follow team flow is skipped THEN sports controller handles the skip`() {
+        interactor.onSkippedFollowTeam()
+        verify { sportsController.handleSkippedFollowTeam() }
+    }
+
+    @Test
+    fun `WHEN the sports widget is dismissed THEN sports controller handles the dismissal`() {
+        interactor.onSportsWidgetDismissed()
+        verify { sportsController.handleSportsWidgetDismissed() }
+    }
+
+    @Test
+    fun `WHEN the countdown widget is dismissed THEN sports controller handles the dismissal`() {
+        interactor.onCountdownWidgetDismissed()
+        verify { sportsController.handleCountdownWidgetDismissed() }
     }
 }

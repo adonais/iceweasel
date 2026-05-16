@@ -33,7 +33,6 @@
 #include "mozilla/BaseProfilerLabels.h"
 #include "mozilla/TimeStamp.h"
 
-#include <functional>
 #include <string>
 #include <utility>
 

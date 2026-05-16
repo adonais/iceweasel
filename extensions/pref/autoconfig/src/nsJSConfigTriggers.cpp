@@ -9,7 +9,6 @@
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nspr.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"
@@ -28,8 +27,8 @@ using mozilla::dom::AutoJSAPI;
 
 //*****************************************************************************
 
-MOZ_RUNINIT static JS::PersistentRooted<JSObject*> autoconfigSystemSb;
-MOZ_RUNINIT static JS::PersistentRooted<JSObject*> autoconfigSb;
+constinit static JS::PersistentRooted<JSObject*> autoconfigSystemSb;
+constinit static JS::PersistentRooted<JSObject*> autoconfigSb;
 bool sandboxEnabled;
 
 nsresult CentralizedAdminPrefManagerInit(bool aSandboxEnabled) {

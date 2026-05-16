@@ -58,6 +58,7 @@ rtc_library("audio_coding") {
     "../../rtc_base/synchronization:mutex",
     "../../system_wrappers",
     "../../system_wrappers:metrics",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -578,6 +579,7 @@ rtc_library("neteq_tools_minimal") {
     ":neteq",
     "../../api:array_view",
     "../../api:field_trials",
+    "../../api:field_trials_view",
     "../../api:neteq_simulator_api",
     "../../api:rtp_headers",
     "../../api:scoped_refptr",
@@ -1021,7 +1023,6 @@ if (rtc_include_tests) {
                "../../rtc_base:checks",
                "../../test:create_test_field_trials",
                "../../test:fileutils",
-               "../../test:test_main",
                "../../test:test_support",
              ] + audio_coding_deps
 
@@ -1049,6 +1050,7 @@ if (rtc_include_tests) {
         ":neteq_test_tools",
         ":neteq_tools",
         ":neteq_tools_minimal",
+        "../../api:field_trials",
         "../../api:make_ref_counted",
         "../../api:rtp_headers",
         "../../api:scoped_refptr",
@@ -1133,7 +1135,6 @@ if (rtc_include_tests) {
       deps += [
         ":webrtc_opus",
         "../../rtc_base:checks",
-        "../../test:test_main",
         "../../test:test_support",
         "../audio_processing",
         "//testing/gtest",

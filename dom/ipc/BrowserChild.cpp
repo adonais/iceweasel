@@ -1073,7 +1073,8 @@ void BrowserChild::ApplyParentShowInfo(const ParentShowInfo& aInfo) {
   // 0). So better to always set up-to-date values here.
   if (aInfo.dpi() > 0) {
     mPuppetWidget->UpdateBackingScaleCache(aInfo.dpi(), aInfo.widgetRounding(),
-                                           aInfo.defaultScale());
+                                           aInfo.defaultScale(),
+                                           aInfo.desktopToDeviceScale());
   }
 
   if (mDidSetRealShowInfo) {
@@ -1695,7 +1696,7 @@ void BrowserChild::HandleMouseRawUpdateEvent(
   HandleRealMouseButtonEvent(mouseRawUpdateEvent, aGuid, aInputBlockId);
 }
 
-mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEventForTests(
+mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEventNoCompress(
     const WidgetMouseEvent& aEvent, const ScrollableLayerGuid& aGuid,
     const uint64_t& aInputBlockId) {
   return RecvRealMouseMoveEvent(aEvent, aGuid, aInputBlockId);
@@ -1708,7 +1709,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityRealMouseMoveEvent(
 }
 
 mozilla::ipc::IPCResult
-BrowserChild::RecvNormalPriorityRealMouseMoveEventForTests(
+BrowserChild::RecvNormalPriorityRealMouseMoveEventNoCompress(
     const WidgetMouseEvent& aEvent, const ScrollableLayerGuid& aGuid,
     const uint64_t& aInputBlockId) {
   return RecvRealMouseMoveEvent(aEvent, aGuid, aInputBlockId);
@@ -3229,8 +3230,7 @@ void BrowserChild::InitRenderingState(
 
   // Pushing layers transactions directly to a separate
   // compositor context.
-  PCompositorBridgeChild* compositorChild = CompositorBridgeChild::Get();
-  if (!compositorChild) {
+  if (!CompositorBridgeChild::Get()) {
     mLayersConnected = Some(false);
     NS_WARNING("failed to get CompositorBridgeChild instance");
     return;
@@ -3257,7 +3257,7 @@ void BrowserChild::InitRenderingState(
                  layers::LayersBackend::LAYERS_NONE);
   bool success = false;
   if (mLayersConnected == Some(true)) {
-    success = CreateRemoteLayerManager(compositorChild);
+    success = CreateRemoteLayerManager();
   }
 
   if (success) {
@@ -3278,16 +3278,11 @@ void BrowserChild::InitRenderingState(
   }
 }
 
-bool BrowserChild::CreateRemoteLayerManager(
-    mozilla::layers::PCompositorBridgeChild* aCompositorChild) {
-  MOZ_ASSERT(aCompositorChild);
-
+bool BrowserChild::CreateRemoteLayerManager() {
   return mPuppetWidget->CreateRemoteLayerManager(
       [&](WebRenderLayerManager* aLayerManager) -> bool {
         nsCString error;
-        return aLayerManager->Initialize(aCompositorChild,
-                                         wr::AsPipelineId(mLayersId),
-                                         &mTextureFactoryIdentifier, error);
+        return aLayerManager->Initialize(&mTextureFactoryIdentifier, error);
       });
 }
 
@@ -3622,9 +3617,8 @@ void BrowserChild::ReinitRendering() {
   SendEnsureLayersConnected(&options);
   if (options) {
     mCompositorOptions = options;
-    RefPtr<CompositorBridgeChild> cb = CompositorBridgeChild::Get();
-    if (cb) {
-      success = CreateRemoteLayerManager(cb);
+    if (CompositorBridgeChild::Get()) {
+      success = CreateRemoteLayerManager();
     }
   }
 
@@ -3685,10 +3679,12 @@ void BrowserChild::NotifyJankedAnimations(
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvUIResolutionChanged(
-    const float& aDpi, const int32_t& aRounding, const double& aScale) {
+    const float& aDpi, const int32_t& aRounding, const double& aScale,
+    const double& aDesktopToDeviceScale) {
   const LayoutDeviceIntSize oldInnerSize = GetInnerSize();
   if (aDpi > 0) {
-    mPuppetWidget->UpdateBackingScaleCache(aDpi, aRounding, aScale);
+    mPuppetWidget->UpdateBackingScaleCache(aDpi, aRounding, aScale,
+                                           aDesktopToDeviceScale);
   }
 
   const LayoutDeviceIntSize innerSize = GetInnerSize();

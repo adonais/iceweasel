@@ -15,9 +15,26 @@ cargo_target_flag := --target=$(RUST_TARGET)
 
 # Permit users to pass flags to cargo from their mozconfigs (e.g. --color=always).
 cargo_build_flags = $(CARGOFLAGS)
+
+# Megazord libraries use a custom profile with panic=unwind for parity with
+# how app-services is currently built.
+# Other libraries use --release (or default dev profile for debug builds).
+ifneq (,$(findstring megazord,$(RUST_LIBRARY_FILE)))
+ifdef MOZ_DEBUG_RUST
+cargo_build_flags += --profile dev-megazord
+else
+cargo_build_flags += --profile release-megazord
+endif
+else
 ifndef MOZ_DEBUG_RUST
 cargo_build_flags += --release
 endif
+endif
+
+# Megazord Cargo.toml specifies both staticlib and cdylib crate-types for
+# compatibility with app-services builds. Override to staticlib-only here
+# to avoid trying to link a cdylib.
+cargo_crate_type_flag := $(if $(findstring megazord,$(RUST_LIBRARY_FILE)),--crate-type staticlib,)
 
 # The Spidermonkey library can be built from a package tarball outside the
 # tree, so we want to let Cargo create lock files in this case. When built
@@ -136,7 +153,7 @@ ifdef DEVELOPER_OPTIONS
 rustflags_override += -Clto=off
 endif
 
-ifdef MOZ_USING_SCCACHE
+ifneq (,$(or $(MOZ_USING_SCCACHE),$(MOZ_USING_BUILDCACHE)))
 export RUSTC_WRAPPER=$(CCACHE)
 endif
 
@@ -494,16 +511,20 @@ endef
 # dependency chain.
 #
 # Another tricky thing: some dependencies may contain escaped spaces, and they
-# need to be preserved, but $(foreach) splits on spaces, so we replace escaped
-# spaces with some unlikely string for the foreach, and replace them back in the
-# loop itself.
+# need to be preserved, but $(wordlist) and $(foreach) split on spaces, so we
+# replace escaped spaces with some unlikely string, and replace them back after.
+escape_sequence=_^_^_^_
+escape_spaces = $(subst \ ,$(escape_sequence),$(1))
+unescape_spaces = $(subst $(escape_sequence),\ ,$(1))
+
 define make_cargo_rule
-$(notdir $(1))_deps := $$(call normalize_sep,$$(wordlist 2, 10000000, $$(if $$(wildcard $(basename $(1)).d),$$(shell cat $(basename $(1)).d))))
+$(notdir $(1))_deps := $$(call unescape_spaces,$$(call normalize_sep,$$(wordlist 2, 10000000, $$(call escape_spaces,$$(if $$(wildcard $(basename $(1)).d),$$(shell cat $(basename $(1)).d))))))
 $(1): $(CARGO_FILE) $(3) $(topsrcdir)/Cargo.lock $$(if $$($(notdir $(1))_deps),$$($(notdir $(1))_deps),$(2))
 	$$(REPORT_BUILD)
 	$$(if $$($(notdir $(1))_deps),+$(MAKE) $(2),:)
+	@touch $$@
 
-$$(foreach dep, $$(subst \ ,_^_^_^_,$$($(notdir $(1))_deps)),$$(eval $$(call make_default_rule,$$(subst _^_^_^_,\ ,$$(dep)))))
+$$(foreach dep, $$(call escape_spaces,$$($(notdir $(1))_deps)),$$(eval $$(call make_default_rule,$$(call unescape_spaces,$$(dep)))))
 endef
 
 ifdef RUST_LIBRARY_FILE
@@ -524,7 +545,7 @@ endif
 # build.
 force-cargo-library-build:
 	$(call BUILDSTATUS,START_Rust $(notdir $(RUST_LIBRARY_FILE)))
-	$(call CARGO_BUILD) --lib $(cargo_target_flag) $(rust_features_flag) -- $(cargo_rustc_flags)
+	$(call CARGO_BUILD) --lib $(cargo_crate_type_flag) $(cargo_target_flag) $(rust_features_flag) -- $(cargo_rustc_flags)
 	$(call BUILDSTATUS,END_Rust $(notdir $(RUST_LIBRARY_FILE)))
 # When we are building in --enable-release mode; we add an additional check to confirm
 # that we are not importing any networking-related functions in rust code. This reduces

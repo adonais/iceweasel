@@ -78,6 +78,14 @@ static void byte_alignment(struct aom_internal_error_info *error_info,
 
 static uint32_t read_temporal_delimiter_obu(void) { return 0; }
 
+// Returns a boolean that indicates success.
+static int read_bitstream_level(AV1_LEVEL *seq_level_idx,
+                                struct aom_read_bit_buffer *rb) {
+  *seq_level_idx = aom_rb_read_literal(rb, LEVEL_BITS);
+  if (!is_valid_seq_level_idx(*seq_level_idx)) return 0;
+  return 1;
+}
+
 // Returns whether two sequence headers are consistent with each other.
 // Note that the 'op_params' field is not compared per Section 7.5 in the spec:
 //   Within a particular coded video sequence, the contents of
@@ -128,7 +136,11 @@ static uint32_t read_sequence_header_obu(AV1Decoder *pbi,
     seq_params->operating_points_cnt_minus_1 = 0;
     seq_params->operating_point_idc[0] = 0;
     seq_params->has_nonzero_operating_point_idc = false;
-    seq_params->seq_level_idx[0] = aom_rb_read_literal(rb, LEVEL_BITS);
+    if (!read_bitstream_level(&seq_params->seq_level_idx[0], rb)) {
+      aom_internal_error(&pbi->error, AOM_CODEC_UNSUP_BITSTREAM,
+                         "Value %d of seq_level_idx[%d] is not yet defined",
+                         seq_params->seq_level_idx[0], 0);
+    }
     seq_params->tier[0] = 0;
     seq_params->op_params[0].decoder_model_param_present_flag = 0;
     seq_params->op_params[0].display_model_param_present_flag = 0;
@@ -152,7 +164,11 @@ static uint32_t read_sequence_header_obu(AV1Decoder *pbi,
           aom_rb_read_literal(rb, OP_POINTS_IDC_BITS);
       if (seq_params->operating_point_idc[i] != 0)
         seq_params->has_nonzero_operating_point_idc = true;
-      seq_params->seq_level_idx[i] = aom_rb_read_literal(rb, LEVEL_BITS);
+      if (!read_bitstream_level(&seq_params->seq_level_idx[i], rb)) {
+        aom_internal_error(&pbi->error, AOM_CODEC_UNSUP_BITSTREAM,
+                           "Value %d of seq_level_idx[%d] is not yet defined",
+                           seq_params->seq_level_idx[i], i);
+      }
       // This is the seq_level_idx[i] > 7 check in the spec. seq_level_idx 7
       // is equivalent to level 3.3.
       if (seq_params->seq_level_idx[i] >= SEQ_LEVEL_4_0)

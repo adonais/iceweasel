@@ -10,7 +10,6 @@
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsFrameList.h"
-#include "nsGkAtoms.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
 

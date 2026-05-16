@@ -84,17 +84,19 @@ pub struct VertexBufferLayout<'a> {
 #[repr(C)]
 pub struct VertexState<'a> {
     stage: ProgrammableStageDescriptor<'a>,
-    buffers: FfiSlice<'a, VertexBufferLayout<'a>>,
+    buffers: FfiSlice<'a, FfiOption<VertexBufferLayout<'a>>>,
 }
 
 impl VertexState<'_> {
     fn to_wgpu(&self) -> wgc::pipeline::VertexState<'_> {
         let buffer_layouts = unsafe { self.buffers.as_slice() }
             .iter()
-            .map(|vb| wgc::pipeline::VertexBufferLayout {
-                array_stride: vb.array_stride,
-                step_mode: vb.step_mode,
-                attributes: Cow::Borrowed(unsafe { vb.attributes.as_slice() }),
+            .map(|vb| {
+                vb.as_ref().map(|vb| wgc::pipeline::VertexBufferLayout {
+                    array_stride: vb.array_stride,
+                    step_mode: vb.step_mode,
+                    attributes: Cow::Borrowed(unsafe { vb.attributes.as_slice() }),
+                })
             })
             .collect();
         wgc::pipeline::VertexState {
@@ -916,8 +918,15 @@ pub extern "C" fn wgpu_client_create_shader_module(
 }
 
 #[no_mangle]
-pub extern "C" fn wgpu_client_on_submitted_work_done(client: &Client, queue_id: id::QueueId) {
-    let message = Message::QueueOnSubmittedWorkDone(queue_id);
+pub extern "C" fn wgpu_client_on_submitted_work_done(
+    client: &Client,
+    device_id: id::DeviceId,
+    queue_id: id::QueueId,
+) {
+    let message = Message::QueueOnSubmittedWorkDone {
+        device_id,
+        queue_id,
+    };
     client.queue_message(&message);
 }
 
@@ -1250,7 +1259,7 @@ pub extern "C" fn wgpu_device_create_render_bundle_encoder(
         sample_count: desc.sample_count,
         multiview: None,
     };
-    match wgc::command::RenderBundleEncoder::new(&descriptor, device_id) {
+    match wgc::command::RenderBundleEncoder::new(&descriptor, None, device_id) {
         Ok(encoder) => Box::into_raw(Box::new(encoder)),
         Err(e) => {
             let message = format!("Error in `Device::create_render_bundle_encoder`: {}", e);
@@ -2105,7 +2114,7 @@ pub extern "C" fn wgpu_render_bundle_set_pipeline(
 pub extern "C" fn wgpu_render_bundle_set_vertex_buffer(
     bundle: &mut RenderBundleEncoder,
     slot: u32,
-    buffer_id: id::BufferId,
+    buffer_id: Option<id::BufferId>,
     offset: BufferAddress,
     size: Option<&BufferSize>,
 ) {

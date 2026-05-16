@@ -129,11 +129,7 @@ export class SyncedTabsController {
           const win = event.target.ownerGlobal;
           const { switchToTabHavingURI } =
             win.docShell.chromeEventHandler.ownerGlobal;
-          switchToTabHavingURI(
-            "about:preferences?action=choose-what-to-sync#sync",
-            true,
-            {}
-          );
+          switchToTabHavingURI("about:preferences#sync", true, {});
           break;
         }
       }

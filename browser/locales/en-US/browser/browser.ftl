@@ -34,6 +34,8 @@ urlbar-web-notification-anchor =
     .tooltiptext = Change whether you can receive notifications from the site
 urlbar-midi-notification-anchor =
     .tooltiptext = Open MIDI panel
+urlbar-serial-notification-anchor =
+    .tooltiptext = Open Serial panel
 urlbar-eme-notification-anchor =
     .tooltiptext = Manage use of DRM software
 urlbar-web-authn-anchor =
@@ -165,6 +167,8 @@ urlbar-canvas-blocked =
     .tooltiptext = You have blocked canvas data extraction for this website.
 urlbar-midi-blocked =
     .tooltiptext = You have blocked MIDI access for this website.
+urlbar-serial-blocked =
+    .tooltiptext = You have blocked serial port access for this website.
 urlbar-install-blocked =
     .tooltiptext = You have blocked add-on installation for this website.
 
@@ -302,6 +306,10 @@ quickactions-cmd-help = help, support
 # Opens the devtools web inspector
 quickactions-inspector2 = Open Developer Tools
 quickactions-cmd-inspector2 = inspector, devtools, dev tools
+
+# Opens Firefox Library
+quickactions-cmd-library = library
+quickactions-library = Open Library
 
 # Opens about:logins
 quickactions-logins2 = Manage passwords
@@ -509,6 +517,11 @@ sharing-warning-proceed-to-tab =
 sharing-warning-disable-for-session =
   .label = Disable sharing protection for this session
 
+## WebSerial "select a port" popup
+
+webserial-select-port-label = Select a serial port:
+webserial-no-ports-available = No serial ports available
+
 ## URL Bar
 
 # This string is used as an accessible name to the "X" button that cancels a custom search mode (i.e. exits the Amazon.com search mode).
@@ -582,8 +595,8 @@ urlbar-switch-to-tab =
 urlbar-extension =
   .value = Extension:
 
-urlbar-go-button =
-  .tooltiptext = Go to the address in the Location Bar
+urlbar-go-button2 =
+  .title = Go to the address in the Location Bar
 urlbar-page-action-button =
   .tooltiptext = Page actions
 urlbar-revert-button =
@@ -786,46 +799,40 @@ urlbar-result-dates-ends-today = { $name } · Ends today
 # Searchmode Switcher button
 # Variables:
 #   $engine (String): the current default search engine.
-urlbar-searchmode-button2 =
-    .label = { $engine }, pick a search engine
-    .tooltiptext = { $engine }, pick a search engine
-urlbar-searchmode-button-no-engine =
-    .label = No shortcut selected, pick a shortcut
-    .tooltiptext = No shortcut selected, pick a shortcut
+urlbar-searchmode-button3 =
+    .title = { $engine }, pick a search engine
+urlbar-searchmode-button-no-engine2 =
+    .title = No shortcut selected, pick a shortcut
 
 # Refers to the ability to search using keywords in the address bar
-urlbar-searchmode-no-keyword =
-    .label = Keyword search is disabled
-    .tooltiptext = Keyword search is disabled
+urlbar-searchmode-no-keyword2 =
+    .title = Keyword search is disabled
 
-urlbar-searchmode-dropmarker =
-    .tooltiptext = Pick a Search Engine
-urlbar-searchmode-bookmarks =
-    .label = Bookmarks
-urlbar-searchmode-tabs =
-    .label = Tabs
-urlbar-searchmode-history =
-    .label = History
-urlbar-searchmode-actions =
-    .label = Actions
-urlbar-searchmode-exit-button =
-    .tooltiptext = Close
-urlbar-searchmode-default =
-    .tooltiptext = Default search engine
+urlbar-searchmode-dropmarker2 =
+    .title = Pick a Search Engine
+urlbar-searchmode-bookmarks2 = Bookmarks
+urlbar-searchmode-tabs2 = Tabs
+urlbar-searchmode-history2 = History
+urlbar-searchmode-actions2 = Actions
+urlbar-searchmode-exit-button2 =
+    .title = Close
+urlbar-searchmode-default2 =
+    .title = Default search engine
+
+# Shown when adding new search engines from the search mode switcher.
+# Variables:
+#  $engineName (String): The name of the search engine.
+urlbar-searchmode-popup-add-engine = Add “{ $engineName }”
+    .title = Add search engine “{ $engineName }”
 
 # Label shown on the top of Searchmode Switcher popup. After this label, the
 # available search engines will be listed.
-urlbar-searchmode-popup-description-menucaption =
-    .label = This time search with:
+urlbar-searchmode-popup-one-off-header = This time search with:
 # Label shown on the top of Searchmode Switcher popup when the search engine won't automatically
 # reset after submitting.
-urlbar-searchmode-popup-sticky-description-menucaption =
-    .label = Search with:
-urlbar-searchmode-popup-search-settings-menuitem =
-    .label = Search Settings
-
-# Label shown next to a new search engine in the Searchmode Switcher popup to promote it.
-urlbar-searchmode-new = New
+urlbar-searchmode-popup-header = Search with:
+urlbar-searchmode-popup-search-settings-panelitem = Search Settings
+urlbar-searchmode-popup-settings-panelitem = Settings
 
 # Label prompting user to search with a particular search engine.
 #  $engine (String): the name of a search engine that searches a specific site
@@ -934,6 +941,10 @@ fullscreen-warning-no-domain = This document is now full screen
 fullscreen-exit-button = Exit Full Screen (Esc)
 # "esc" is lowercase on mac keyboards, but uppercase elsewhere.
 fullscreen-exit-mac-button = Exit Full Screen (esc)
+
+fullscreen-keyboardlock-exit-button = Exit Full Screen (Press and hold Esc)
+# "esc" is lowercase on mac keyboards, but uppercase elsewhere.
+fullscreen-keyboardlock-exit-mac-button = Exit Full Screen (Press and hold esc)
 
 # Please ensure that the domain stays in the `<span data-l10n-name="domain">` markup.
 # Variables
@@ -1274,17 +1285,17 @@ unified-extensions-button-blocklisted =
 reset-pbm-toolbar-button =
     .label = End Private Session
     .tooltiptext = End Private Session
-reset-pbm-panel-heading = End your private session?
-reset-pbm-panel-description = Close all private tabs and delete history, cookies, and all other site data.
+reset-pbm-panel-heading2 = Clear data and start a fresh private session?
+reset-pbm-panel-description2 = This deletes history, cookies, and all other site data without closing your Private Window.
 reset-pbm-panel-always-ask-checkbox =
      .label = Always ask me
      .accesskey = A
 reset-pbm-panel-cancel-button =
     .label = Cancel
     .accesskey = C
-reset-pbm-panel-confirm-button =
-    .label = Delete session data
-    .accesskey = D
+reset-pbm-panel-confirm-button2 =
+    .label = Clear private session
+    .accesskey = l
 reset-pbm-panel-complete = Private session data deleted
 
 ## Autorefresh blocker
@@ -1550,3 +1561,10 @@ trustpanel-cryptominer-not-blocking-tab-header = { $count ->
   *[other] { -brand-product-name } allowed { $count } cryptominers
 }
 trustpanel-cryptominer-tab-list-header = These sites are trying to cryptomine:
+
+## Reduced Protection Infobar ("ReducedProtectionNotification.sys.mjs")
+
+# "temporarily lower your tracking protection" refers to temporarily decreasing the amount of tracking protection.
+reduced-protection-infobar-message = <strong>Site looks broken?</strong> Reload the page to temporarily lower your tracking protection.
+reduced-protection-infobar-reload-button = Reload
+  .accesskey = R

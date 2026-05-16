@@ -12,6 +12,13 @@ const { BANDWIDTH } = ChromeUtils.importESModule(
   "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
 );
 
+// Populate IPPProxyManager.usageInfo so that new windows can read bandwidth
+// data when initializing their panel. Without this, usageInfo is null because
+// no previous test has gone through the real proxy start flow.
+add_setup(async function () {
+  await IPPProxyManager.refreshUsage();
+});
+
 /**
  * Fires an IPPProxyManager:UsageChanged event with the given remaining/max bytes
  * and waits for IPPUsageHelper to process it.

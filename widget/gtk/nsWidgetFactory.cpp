@@ -24,6 +24,7 @@
 #include "nsGTKToolkit.h"
 #include "WakeLockListener.h"
 
+#include "DMABufDevice.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/widget/ScreenManager.h"
 #include <gtk/gtk.h>
@@ -50,6 +51,7 @@ nsresult nsWidgetGtk2ModuleCtor() { return nsAppShellInit(); }
 
 void nsWidgetGtk2ModuleDtor() {
   // Shutdown all XP level widget classes.
+  DMABufDeviceLock::Shutdown();
   WidgetUtils::Shutdown();
 
   NativeKeyBindings::Shutdown();

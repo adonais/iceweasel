@@ -20,8 +20,8 @@
 extern "C" {
 #endif
 
-#include "./aom_integer.h"
-#include "./aom_tpl.h"
+#include "aom/aom_integer.h"
+#include "aom/aom_tpl.h"
 
 /*!\brief Current ABI version number
  *
@@ -159,6 +159,11 @@ typedef struct aom_sb_parameters {
 typedef struct aom_rc_encodeframe_decision {
   int q_index; /**< Required: Quantizer step index [0..255]*/
   int rdmult;  /**< Required: Frame level Lagrangian multiplier*/
+  // Whether per-superblock delta Q should be used.
+  // The rate control model should set the value pointed to by this member
+  // to 1 if per-superblock delta-Q is used for this frame, or 0 otherwise.
+  // This is a pointer to the flag in cpi->ext_ratectrl.
+  int *use_delta_q;
   /*!
    * Optional: Superblock quantization parameters
    * It is zero initialized by default. It will be set for key and ARF frames

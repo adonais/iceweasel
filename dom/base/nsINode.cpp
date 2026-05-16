@@ -268,6 +268,13 @@ nsINode::nsINode(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
 }
 #endif
 
+void nsINode::SetNamespacePrefix(nsAtom* aPrefix) {
+  MOZ_ASSERT(!GetParentNode(), "Only safe on disconnected nodes");
+  mNodeInfo = mNodeInfo->NodeInfoManager()->GetNodeInfo(
+      mNodeInfo->NameAtom(), aPrefix, mNodeInfo->NamespaceID(),
+      nsINode::ELEMENT_NODE);
+}
+
 nsINode::~nsINode() {
   MOZ_ASSERT(!HasSlots(), "LastRelease was not called?");
   MOZ_ASSERT(mSubtreeRoot == this, "Didn't restore state properly?");
@@ -351,7 +358,6 @@ static const nsINode* GetClosestCommonInclusiveAncestorForRangeInSelection(
   while (aNode &&
          !aNode->IsClosestCommonInclusiveAncestorForRangeInSelection()) {
     const bool isNodeInFlattenedShadowTree =
-        StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
         (aNode->IsInShadowTree() ||
          (aNode->IsContent() && aNode->AsContent()->GetAssignedSlot()));
 
@@ -361,15 +367,11 @@ static const nsINode* GetClosestCommonInclusiveAncestorForRangeInSelection(
       return nullptr;
     }
 
-    if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-      if (aNode->IsContent() && aNode->AsContent()->GetAssignedSlot()) {
-        aNode = aNode->AsContent()->GetAssignedSlot();
-      } else {
-        aNode = aNode->GetParentOrShadowHostNode();
-      }
-      continue;
+    if (aNode->IsContent() && aNode->AsContent()->GetAssignedSlot()) {
+      aNode = aNode->AsContent()->GetAssignedSlot();
+    } else {
+      aNode = aNode->GetParentOrShadowHostNode();
     }
-    aNode = aNode->GetParentNode();
   }
   return aNode;
 }
@@ -395,13 +397,8 @@ class IsItemInRangeComparator {
     auto ComparePoints = [](const nsINode* aNode1, const uint32_t aOffset1,
                             const nsINode* aNode2, const uint32_t aOffset2,
                             nsContentUtils::NodeIndexCache* aCache) {
-      if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-        return nsContentUtils::ComparePointsWithIndices<TreeKind::Flat>(
-            aNode1, aOffset1, aNode2, aOffset2, aCache);
-      }
-      return nsContentUtils::ComparePointsWithIndices<
-          TreeKind::ShadowIncludingDOM>(aNode1, aOffset1, aNode2, aOffset2,
-                                        aCache);
+      return nsContentUtils::ComparePointsWithIndices<TreeKind::Flat>(
+          aNode1, aOffset1, aNode2, aOffset2, aCache);
     };
 
     Maybe<int32_t> cmp = ComparePoints(
@@ -510,11 +507,7 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
         auto ComparePoints = [](const ConstRawRangeBoundary& aBoundary1,
                                 const RangeBoundary& aBoundary2,
                                 nsContentUtils::NodeIndexCache* aCache) {
-          if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-            return nsContentUtils::ComparePoints<TreeKind::Flat>(
-                aBoundary1, aBoundary2, aCache);
-          }
-          return nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          return nsContentUtils::ComparePoints<TreeKind::Flat>(
               aBoundary1, aBoundary2, aCache);
         };
 
@@ -1563,16 +1556,28 @@ EventListenerManager* nsINode::GetExistingListenerManager() const {
   return nsContentUtils::GetExistingListenerManagerForNode(this);
 }
 
+Nullable<WindowProxyHolder> nsINode::GetOwnerDocGlobalForBindings() {
+  return OwnerDoc()->GetOwnerGlobalForBindings();
+}
+
 nsPIDOMWindowOuter* nsINode::GetOwnerGlobalForBindingsInternal() {
-  bool dummy;
   // FIXME(bz): This cast is a bit bogus.  See
   // https://bugzilla.mozilla.org/show_bug.cgi?id=1515709
-  auto* window = static_cast<nsGlobalWindowInner*>(
-      OwnerDoc()->GetScriptHandlingObject(dummy));
+  auto* window = static_cast<nsGlobalWindowInner*>(GetOwnerGlobal());
   return window ? nsPIDOMWindowOuter::GetFromCurrentInner(window) : nullptr;
 }
 
+nsIGlobalObject* nsINode::GetOwnerDocGlobal() const {
+  return OwnerDoc()->GetOwnerGlobal();
+}
+
 nsIGlobalObject* nsINode::GetOwnerGlobal() const {
+  if (auto* wrapper = GetWrapperPreserveColor()) {
+    if (auto* global = xpc::NativeGlobal(wrapper);
+        global && global->IsInnerWindow()) {
+      return global;
+    }
+  }
   bool dummy;
   return OwnerDoc()->GetScriptHandlingObject(dummy);
 }
@@ -3572,10 +3577,6 @@ Element* nsINode::GetNearestInclusiveTargetPopoverForInvoker() const {
 }
 
 nsGenericHTMLElement* nsINode::GetEffectiveCommandForElement() const {
-  if (!StaticPrefs::dom_element_commandfor_enabled()) {
-    return nullptr;
-  }
-
   const auto* formControl =
       nsGenericHTMLFormControlElementWithState::FromNode(this);
   if (!formControl || formControl->IsDisabled() ||
@@ -3693,11 +3694,8 @@ void nsINode::AddAnimationObserverUnlessExists(
 
 already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     nsINode* aNode, bool aClone, bool aDeep,
-    nsNodeInfoManager* aNewNodeInfoManager,
-    JS::Handle<JSObject*> aReparentScope, nsINode* aParent,
+    nsNodeInfoManager* aNewNodeInfoManager, nsINode* aParent,
     ErrorResult& aError) {
-  MOZ_ASSERT((!aClone && aNewNodeInfoManager) || !aReparentScope,
-             "If cloning or not getting a new nodeinfo we shouldn't rewrap");
   MOZ_ASSERT(!aParent || aNode->IsContent(),
              "Can't insert document or attribute nodes into a parent");
 
@@ -3876,33 +3874,8 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
       elem->RecompileScriptEventListeners();
     }
 
-    if (aReparentScope) {
-      AutoJSContext cx;
-      JS::Rooted<JSObject*> wrapper(cx);
-      if ((wrapper = aNode->GetWrapper())) {
-        MOZ_ASSERT(IsDOMObject(wrapper));
-        JSAutoRealm ar(cx, wrapper);
-        UpdateReflectorGlobal(cx, wrapper, aError);
-        if (aError.Failed()) {
-          bool needsRollBack = false;
-          if (wasRegistered) {
-            needsRollBack =
-                newDoc->UnregisterActivityObserver(aNode->AsElement());
-          }
-          if (hadProperties) {
-            // NOTE: When it fails it removes all properties for the node
-            // anyway, so no extra error handling needed.
-            (void)newDoc->PropertyTable().TransferOrRemoveAllPropertiesFor(
-                aNode, oldDoc->PropertyTable());
-          }
-          aNode->mNodeInfo.swap(newNodeInfo);
-          aNode->NodeInfoChanged(newDoc);
-          if (needsRollBack) {
-            oldDoc->RegisterActivityObserver(aNode->AsElement());
-          }
-          return nullptr;
-        }
-      }
+    if (aNode->GetWrapper()) {
+      dom::PreserveWrapper(aNode);
     }
 
     // At this point, a new node is added to the document, and this
@@ -3925,9 +3898,8 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     // aNode's children.
     for (nsIContent* cloneChild = aNode->GetFirstChild(); cloneChild;
          cloneChild = cloneChild->GetNextSibling()) {
-      nsCOMPtr<nsINode> child =
-          CloneAndAdopt(cloneChild, aClone, true, nodeInfoManager,
-                        aReparentScope, clone, aError);
+      nsCOMPtr<nsINode> child = CloneAndAdopt(cloneChild, aClone, true,
+                                              nodeInfoManager, clone, aError);
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
       }
@@ -3959,7 +3931,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
                origChild; origChild = origChild->GetNextSibling()) {
             nsCOMPtr<nsINode> child =
                 CloneAndAdopt(origChild, aClone, aDeep, nodeInfoManager,
-                              aReparentScope, newShadowRoot, aError);
+                              newShadowRoot, aError);
             if (NS_WARN_IF(aError.Failed())) {
               return nullptr;
             }
@@ -3968,9 +3940,8 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
       }
     } else {
       if (ShadowRoot* shadowRoot = aNode->AsElement()->GetShadowRoot()) {
-        nsCOMPtr<nsINode> child =
-            CloneAndAdopt(shadowRoot, aClone, aDeep, nodeInfoManager,
-                          aReparentScope, clone, aError);
+        nsCOMPtr<nsINode> child = CloneAndAdopt(shadowRoot, aClone, aDeep,
+                                                nodeInfoManager, clone, aError);
         if (NS_WARN_IF(aError.Failed())) {
           return nullptr;
         }
@@ -4000,9 +3971,8 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
       for (nsIContent* origChild = originalShadowRoot->GetFirstChild();
            origChild; origChild = origChild->GetNextSibling()) {
-        nsCOMPtr<nsINode> child =
-            CloneAndAdopt(origChild, aClone, true, nodeInfoManager,
-                          aReparentScope, newShadowRoot, aError);
+        nsCOMPtr<nsINode> child = CloneAndAdopt(
+            origChild, aClone, true, nodeInfoManager, newShadowRoot, aError);
         if (NS_WARN_IF(aError.Failed())) {
           return nullptr;
         }
@@ -4026,7 +3996,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
          cloneChild = cloneChild->GetNextSibling()) {
       nsCOMPtr<nsINode> child =
           CloneAndAdopt(cloneChild, aClone, aDeep, ownerNodeInfoManager,
-                        aReparentScope, cloneContent, aError);
+                        cloneContent, aError);
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
       }
@@ -4037,7 +4007,6 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 }
 
 void nsINode::Adopt(nsNodeInfoManager* aNewNodeInfoManager,
-                    JS::Handle<JSObject*> aReparentScope,
                     mozilla::ErrorResult& aError) {
   if (aNewNodeInfoManager) {
     Document* beforeAdoptDoc = OwnerDoc();
@@ -4062,8 +4031,8 @@ void nsINode::Adopt(nsNodeInfoManager* aNewNodeInfoManager,
 
   // Just need to store the return value of CloneAndAdopt in a
   // temporary nsCOMPtr to make sure we release it.
-  nsCOMPtr<nsINode> node = CloneAndAdopt(this, false, true, aNewNodeInfoManager,
-                                         aReparentScope, nullptr, aError);
+  nsCOMPtr<nsINode> node =
+      CloneAndAdopt(this, false, true, aNewNodeInfoManager, nullptr, aError);
 
   nsMutationGuard::DidMutate();
 }
@@ -4071,8 +4040,7 @@ void nsINode::Adopt(nsNodeInfoManager* aNewNodeInfoManager,
 already_AddRefed<nsINode> nsINode::Clone(bool aDeep,
                                          nsNodeInfoManager* aNewNodeInfoManager,
                                          ErrorResult& aError) {
-  return CloneAndAdopt(this, true, aDeep, aNewNodeInfoManager, nullptr, nullptr,
-                       aError);
+  return CloneAndAdopt(this, true, aDeep, aNewNodeInfoManager, nullptr, aError);
 }
 
 void nsINode::GenerateXPath(nsAString& aResult) {
@@ -4160,10 +4128,6 @@ void nsINode::NotifyDevToolsOfRemovalsOfChildren() {
 }
 
 ShadowRoot* nsINode::GetShadowRootForSelection() const {
-  if (!StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-    return nullptr;
-  }
-
   ShadowRoot* shadowRoot = GetShadowRoot();
   if (!shadowRoot) {
     return nullptr;

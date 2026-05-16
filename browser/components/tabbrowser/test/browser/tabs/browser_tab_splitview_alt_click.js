@@ -161,3 +161,25 @@ add_task(async function test_alt_click_when_pref_disabled_does_nothing() {
 
   await SpecialPowers.popPrefEnv();
 });
+
+add_task(async function test_alt_click_when_pref_disabled_selects_tab() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.splitView.enabled", false]],
+  });
+
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+
+  EventUtils.synthesizeMouseAtCenter(tab1, {});
+  Assert.ok(tab1.selected, "tab1 is selected");
+
+  EventUtils.synthesizeMouseAtCenter(tab2, { altKey: true });
+
+  Assert.ok(tab2.selected, "Alt+clicking tab2 with pref disabled selects tab2");
+
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+
+  await SpecialPowers.popPrefEnv();
+});

@@ -71,6 +71,12 @@
   align-items: center;
   outline: none;
   font-family: inherit;
+  margin-block-start: 0;
+}
+
+.panel-trigger-text {
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 panel-item[icon]::part(button) {

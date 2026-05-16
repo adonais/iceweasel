@@ -71,6 +71,11 @@ class TrustPanelNavigationMiddleware(
                     viewCertificate(store.state.websiteInfoState.qwac?.encoded, store.state.sessionState)
                 }
 
+                is TrustPanelAction.Navigate.IPProtectionSettings -> navController.nav(
+                    R.id.trustPanelFragment,
+                    TrustPanelFragmentDirections.actionTrustPanelFragmentToIpProtectionFragment(),
+                )
+
                 else -> Unit
             }
         }

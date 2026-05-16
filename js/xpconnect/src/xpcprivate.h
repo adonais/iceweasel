@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -88,11 +86,11 @@
 
 #include "mozilla/dom/ScriptSettings.h"
 
-#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #include "xpcpublic.h"
+#include "js/friend/CycleCollector.h"
 #include "js/HashTable.h"
 #include "js/GCHashTable.h"
 #include "js/Object.h"              // JS::GetClass, JS::GetCompartment

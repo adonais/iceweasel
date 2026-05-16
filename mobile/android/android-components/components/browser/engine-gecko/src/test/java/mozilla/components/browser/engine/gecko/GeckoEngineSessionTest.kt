@@ -2442,8 +2442,6 @@ class GeckoEngineSessionTest {
             altText,
             typeStr,
             srcUri,
-            // textContent =
-            null,
             // linkText =
             null,
         )

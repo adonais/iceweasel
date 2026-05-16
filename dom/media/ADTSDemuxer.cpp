@@ -310,7 +310,8 @@ TimeUnit ADTSTrackDemuxer::Duration(int64_t aNumFrames) const {
     return TimeUnit::Invalid();
   }
 
-  return TimeUnit(aNumFrames * mSamplesPerFrame, mSamplesPerSecond);
+  return TimeUnit(CheckedInt64(aNumFrames) * mSamplesPerFrame,
+                  mSamplesPerSecond);
 }
 
 const ADTS::Frame& ADTSTrackDemuxer::FindNextFrame(

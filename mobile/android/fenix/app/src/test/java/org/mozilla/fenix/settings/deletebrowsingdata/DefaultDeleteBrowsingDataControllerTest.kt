@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings.deletebrowsingdata
 
+import io.mockk.Ordering
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coJustRun
@@ -88,7 +89,7 @@ class DefaultDeleteBrowsingDataControllerTest {
     fun deleteBrowsingHistory() = runTest(testDispatcher) {
         controller.deleteBrowsingHistory()
 
-        coVerify {
+        coVerify(ordering = Ordering.ORDERED) {
             historyStorage.deleteEverything()
             store.dispatch(EngineAction.PurgeHistoryAction)
             store.dispatch(RecentlyClosedAction.RemoveAllClosedTabAction)

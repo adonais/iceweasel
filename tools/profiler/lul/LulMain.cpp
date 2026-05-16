@@ -1068,8 +1068,8 @@ TaggedUWord EvaluatePfxExpr(int32_t start, const UnwindRegs* aOldRegs,
   // the highest numbered in-use element.
   const int N_STACK = 10;
   TaggedUWord stack[N_STACK];
+  std::fill(std::begin(stack), std::end(stack), TaggedUWord());
   int stackPointer = -1;
-  for (int i = 0; i < N_STACK; i++) stack[i] = TaggedUWord();
 
 #define PUSH(_tuw)                                             \
   do {                                                         \

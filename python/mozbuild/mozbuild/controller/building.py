@@ -167,7 +167,7 @@ class TierStatus:
 def record_cargo_timings(resource_monitor, timings_path):
     cargo_start = 0
     try:
-        with open(timings_path) as fh:
+        with open(timings_path, encoding="utf-8") as fh:
             # Extrace the UNIT_DATA list from the cargo timing HTML file.
             unit_data = dropwhile(lambda l: l.rstrip() != "const UNIT_DATA = [", fh)
             unit_data = islice(unit_data, 1, None)
@@ -267,6 +267,20 @@ class BuildMonitor(MozbuildObject):
         # This should be merged into start() once bug 892342 lands.
         self.resources.start()
         self._resources_started = True
+
+        if "MOZ_AUTOMATION" in os.environ and "UPLOAD_PATH" in os.environ:
+            self._build_resources_profile_path = mozpath.join(
+                os.environ["UPLOAD_PATH"], "profile_build_resources.json"
+            )
+        else:
+            self._ensure_build_log_dir_exists()
+            self._build_resources_profile_path = self._get_build_log_filename(
+                construct_log_filename("profile")
+            )
+        self.resources.start_streaming(self._build_resources_profile_path)
+        print(
+            f"Streaming resource usage profile to: {self._build_resources_profile_path}"
+        )
 
     def on_line(self, line):
         """Consume a line of output from the build system.
@@ -374,22 +388,9 @@ class BuildMonitor(MozbuildObject):
         self.warnings_database.save_to_file(self._warnings_path)
 
     def record_usage(self):
-        build_resources_profile_path = None
         try:
-            # When running on automation, we store the resource usage data in
-            # the upload path, alongside, for convenience, a copy of the HTML
-            # viewer.
-            if "MOZ_AUTOMATION" in os.environ and "UPLOAD_PATH" in os.environ:
-                build_resources_profile_path = mozpath.join(
-                    os.environ["UPLOAD_PATH"], "profile_build_resources.json"
-                )
-            else:
-                self._ensure_build_log_dir_exists()
-                build_resources_profile_path = self._get_build_log_filename(
-                    construct_log_filename("profile")
-                )
             with open(
-                build_resources_profile_path, "w", encoding="utf-8", newline="\n"
+                self._build_resources_profile_path, "w", encoding="utf-8", newline="\n"
             ) as fh:
                 to_write = json.dumps(
                     self.resources.as_profile(), separators=(",", ":")
@@ -402,14 +403,6 @@ class BuildMonitor(MozbuildObject):
                 {"msg": str(e)},
                 "Exception when writing resource usage file: {msg}",
             )
-            try:
-                if build_resources_profile_path and os.path.exists(
-                    build_resources_profile_path
-                ):
-                    os.remove(build_resources_profile_path)
-            except Exception:
-                # In case there's an exception for some reason, ignore it.
-                pass
 
     def _get_finder_cpu_usage(self):
         """Obtain the CPU usage of the Finder app on OS X.
@@ -2037,7 +2030,7 @@ class BuildDriver(MozbuildObject):
         # Copy the original mozconfig to the objdir.
         mozconfig_objdir = mozpath.join(self.topobjdir, ".mozconfig")
         if mozconfig["path"]:
-            with open(mozconfig["path"]) as ifh:
+            with open(mozconfig["path"], "rb") as ifh:
                 with FileAvoidWrite(mozconfig_objdir) as ofh:
                     ofh.write(ifh.read())
         else:

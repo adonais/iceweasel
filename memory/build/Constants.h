@@ -117,6 +117,7 @@ constexpr size_t kCacheLineSize =
     64
 #endif
     ;
+constexpr size_t kCacheLineMask = kCacheLineSize - 1;
 
 // Recycle at most 128 MiB of chunks. This means we retain at most
 // 6.25% of the process address space on a 32-bit OS for later use.

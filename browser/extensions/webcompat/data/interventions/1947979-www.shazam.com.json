@@ -1,0 +1,28 @@
+{
+  "label": "www.shazam.com",
+  "bugs": {
+    "1947979": {
+      "issue": "extra-scrollbars",
+      "matches": ["*://www.shazam.com/song/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "max_version": 150,
+      "content_scripts": {
+        "css": ["bug1947979-shazam.com-hide-extra-scrollbars.css"]
+      }
+    },
+    {
+      "platforms": ["desktop"],
+      "min_version": 151,
+      "pref_check": {
+        "layout.css.fake-webkit-scrollbar.enabled": false
+      },
+      "content_scripts": {
+        "css": ["bug1947979-shazam.com-hide-extra-scrollbars.css"]
+      }
+    }
+  ]
+}

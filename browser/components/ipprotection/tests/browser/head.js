@@ -22,11 +22,11 @@ const { IPProtectionAlertManager } = ChromeUtils.importESModule(
 );
 
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPSignInWatcher.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs"
 );
 
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs"
 );
 
 const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
@@ -60,9 +60,13 @@ const { SpecialMessageActions } = ChromeUtils.importESModule(
 );
 
 // Adapted from devtools/client/performance-new/test/browser/helpers.js
-function waitForPanelEvent(document, eventName) {
+function waitForPanelEvent(
+  document,
+  eventName,
+  viewId = "PanelUI-ipprotection"
+) {
   return BrowserTestUtils.waitForEvent(document, eventName, false, event => {
-    if (event.target.getAttribute("viewId") === "PanelUI-ipprotection") {
+    if (event.target.getAttribute("viewId") === viewId) {
       return true;
     }
     return false;
@@ -288,7 +292,7 @@ let STUBS = {
   isCheckingEntitlement: undefined,
   updateEntitlement: undefined,
   refetchEntitlement: undefined,
-  enroll: undefined,
+  enrollWithFxa: undefined,
   fetchUserInfo: undefined,
   fetchProxyPass: undefined,
   fetchProxyUsage: undefined,
@@ -369,9 +373,17 @@ add_setup(async function setupVPN() {
     Services.prefs.clearUserPref("browser.ipProtection.locationListCache");
     Services.prefs.clearUserPref("browser.ipProtection.usageCache");
     Services.prefs.clearUserPref("browser.ipProtection.onboardingMessageMask");
-    Services.prefs.clearUserPref("browser.ipProtection.egressLocationEnabled");
     Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+    Services.prefs.clearUserPref(
+      "browser.ipProtection.bandwidthWarningDismissedThreshold"
+    );
     Services.prefs.clearUserPref("browser.ipProtection.userEnabled");
+    Services.prefs.clearUserPref(
+      "browser.ipProtection.openedPanelWithLocation"
+    );
+    Services.prefs.clearUserPref(
+      "browser.ipProtection.locationButtonBadgeDismissed"
+    );
   });
 });
 
@@ -401,17 +413,19 @@ function setupStubs(stubs = STUBS) {
     .resolves();
 
   const guardianStub = {
-    enroll: setupSandbox.stub(),
+    enrollWithFxa: setupSandbox.stub(),
     fetchUserInfo: setupSandbox.stub(),
     fetchProxyPass: setupSandbox.stub(),
     fetchProxyUsage: setupSandbox.stub(),
-    isLinkedToGuardian: setupSandbox.stub(),
   };
-  stubs.enroll = guardianStub.enroll;
+  stubs.enrollWithFxa = guardianStub.enrollWithFxa;
   stubs.fetchUserInfo = guardianStub.fetchUserInfo;
   stubs.fetchProxyPass = guardianStub.fetchProxyPass;
   stubs.fetchProxyUsage = guardianStub.fetchProxyUsage;
-  stubs.isLinkedToGuardian = guardianStub.isLinkedToGuardian;
+  stubs.isLinkedToGuardian = setupSandbox.stub(
+    IPPEnrollAndEntitleManager,
+    "isLinkedToGuardian"
+  );
   stubs.fxaSignInFlow = setupSandbox.stub(
     SpecialMessageActions,
     "fxaSignInFlow"
@@ -448,7 +462,7 @@ function setupService(
   }
 
   if (typeof canEnroll != "undefined") {
-    stubs.enroll.resolves({
+    stubs.enrollWithFxa.resolves({
       ok: canEnroll,
     });
   }
@@ -654,3 +668,28 @@ function checkBandwidth(bandwidthEl, bandwidthUsage) {
     `MB used ${bandwidthUsage.mbCount} times`
   );
 }
+
+// Borrowed from browser_PanelMultiView_keyboard.js
+async function expectFocusAfterKey(aKey, aFocus) {
+  let res = aKey.match(/^(Shift\+)?(.+)$/);
+  let shift = Boolean(res[1]);
+  let key;
+  if (res[2].length == 1) {
+    key = res[2]; // Character.
+  } else {
+    key = "KEY_" + res[2]; // Tab, ArrowRight, etc.
+  }
+  info("Waiting for focus on " + aFocus.id);
+  // Attempts to capture a nested button element (ie. inside of a moz-button)
+  let focused = BrowserTestUtils.waitForEvent(
+    aFocus.buttonEl ?? aFocus,
+    "focus"
+  );
+  EventUtils.synthesizeKey(key, { shiftKey: shift });
+  await focused;
+  ok(
+    true,
+    `${aFocus.id || "unidentified element"} focused after [${aKey}] pressed`
+  );
+}
+/* exported expectFocusAfterKey */

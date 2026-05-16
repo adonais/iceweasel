@@ -298,6 +298,7 @@ struct ParamTraits<mozilla::WidgetMouseEvent> {
     WriteParam(aWriter, aParam.mExitFrom);
     WriteParam(aWriter, aParam.mClickCount);
     WriteParam(aWriter, aParam.mCallbackId);
+    WriteParam(aWriter, aParam.mMovement);
 
     // Mark the event as stopped to notify callback.
     const_cast<mozilla::WidgetMouseEvent&>(aParam).mCallbackId.reset();
@@ -314,7 +315,8 @@ struct ParamTraits<mozilla::WidgetMouseEvent> {
            ReadParam(aReader, &aResult->mContextMenuTrigger) &&
            ReadParam(aReader, &aResult->mExitFrom) &&
            ReadParam(aReader, &aResult->mClickCount) &&
-           ReadParam(aReader, &aResult->mCallbackId);
+           ReadParam(aReader, &aResult->mCallbackId) &&
+           ReadParam(aReader, &aResult->mMovement);
   }
 };
 

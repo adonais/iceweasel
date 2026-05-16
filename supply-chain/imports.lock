@@ -93,8 +93,15 @@ user-login = "emilio"
 user-name = "Emilio Cobos Álvarez"
 
 [[publisher.chardetng]]
-version = "0.1.17"
-when = "2021-12-23"
+version = "1.0.0"
+when = "2026-03-30"
+user-id = 4484
+user-login = "hsivonen"
+user-name = "Henri Sivonen"
+
+[[publisher.chardetng_c]]
+version = "1.0.0"
+when = "2026-03-30"
 user-id = 4484
 user-login = "hsivonen"
 user-name = "Henri Sivonen"
@@ -247,15 +254,15 @@ user-login = "jrmuizel"
 user-name = "Jeff Muizelaar"
 
 [[publisher.glean]]
-version = "67.1.0"
-when = "2026-03-12"
+version = "67.2.0"
+when = "2026-04-06"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
 
 [[publisher.glean-core]]
-version = "67.1.0"
-when = "2026-03-12"
+version = "67.2.0"
+when = "2026-04-06"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
@@ -1448,12 +1455,6 @@ criteria = "safe-to-deploy"
 delta = "0.8.5 -> 0.8.9"
 notes = "No new unsafe code, just refactorings."
 
-[[audits.bytecode-alliance.audits.mio]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.8.6 -> 0.8.8"
-notes = "Mostly OS portability updates along with some minor bugfixes."
-
 [[audits.bytecode-alliance.audits.num-traits]]
 who = "Andrew Brown <andrew.brown@intel.com>"
 criteria = "safe-to-deploy"
@@ -2413,30 +2414,30 @@ notes = "No unsafe"
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
 [[audits.google.audits.jxl]]
-who = "Łukasz Anforowicz <lukasza@chromium.org>"
+who = "Luca Versari <veluca@chromium.org>"
 criteria = "safe-to-deploy"
-version = "0.4.0"
-notes = "Delta review from v0.3.0"
+version = "0.4.1"
+notes = "No unsafe differences from v0.4.0"
 aggregated-from = "https://raw.githubusercontent.com/google/rust-crate-audits/main/manual-sources/additional-audits.toml"
 
 [[audits.google.audits.jxl_macros]]
 who = "Luca Versari <veluca@chromium.org>"
 criteria = "safe-to-deploy"
-version = "0.4.0"
+version = "0.4.1"
 notes = "No unsafe code, no fs access outside of test-only functionality"
 aggregated-from = "https://raw.githubusercontent.com/google/rust-crate-audits/main/manual-sources/additional-audits.toml"
 
 [[audits.google.audits.jxl_simd]]
-who = "Łukasz Anforowicz <lukasza@chromium.org>"
+who = "Luca Versari <veluca@chromium.org>"
 criteria = "safe-to-deploy"
-version = "0.4.0"
-notes = "Delta review from v0.3.0"
+version = "0.4.1"
+notes = "No unsafe differences from v0.4.0"
 aggregated-from = "https://raw.githubusercontent.com/google/rust-crate-audits/main/manual-sources/additional-audits.toml"
 
 [[audits.google.audits.jxl_transforms]]
 who = "Luca Versari <veluca@chromium.org>"
 criteria = "safe-to-deploy"
-version = "0.4.0"
+version = "0.4.1"
 notes = "No unsafe code, no fs access"
 aggregated-from = "https://raw.githubusercontent.com/google/rust-crate-audits/main/manual-sources/additional-audits.toml"
 

@@ -302,8 +302,7 @@ void CustomElementCallback::Call(ElementCallbackType aType,
       } else if (owningValue.IsFile()) {
         value.SetValue().SetAsFile() = owningValue.GetAsFile();
       } else {
-        value.SetValue().SetAsUSVString().ShareOrDependUpon(
-            owningValue.GetAsUSVString());
+        value.SetValue().SetAsUSVString() = owningValue.GetAsUSVString();
       }
       static_cast<LifecycleFormStateRestoreCallback*>(aCallback.get())
           ->Call(mThisObject, value, mArgs.mReason);

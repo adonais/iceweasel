@@ -9,10 +9,12 @@ package mozilla.components.concept.engine.ai
  *
  * @property id The unique identifier for this feature.
  * @property isEnabled Whether the feature is actively in use.
- * @property isAllowed Whether the feature is permitted by policy or device support.
+ * @property isAllowed Whether the feature is possible to use.
+ * @property isBlocked Whether the feature is blocked from being used.
  */
 data class AIFeature(
     val id: String,
     val isEnabled: Boolean,
     val isAllowed: Boolean,
+    val isBlocked: Boolean,
 )

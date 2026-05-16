@@ -13,6 +13,7 @@ import posixpath
 import re
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -65,6 +66,16 @@ try:
 except ImportError:
     build_obj = None
     from multiprocessing import cpu_count
+
+
+def _get_available_port(preferred):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(("127.0.0.1", preferred))
+        except OSError:
+            s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
 
 
 def categoriesToRegex(categoryList):
@@ -698,21 +709,18 @@ class RefTest:
         perProcessArgs = [sys.argv[:] for i in range(0, totalJobs)]
 
         host = "localhost"
-        port = 2828
-        if options.marionette:
-            host, port = options.marionette.split(":")
 
         # First job is only needs-focus tests.  Remaining jobs are
         # non-needs-focus and chunked.
         perProcessArgs[0].insert(-1, "--focus-filter-mode=needs-focus")
         for chunkNumber, jobArgs in enumerate(perProcessArgs[1:], start=1):
+            port = _get_available_port(2828)
             jobArgs[-1:-1] = [
                 "--focus-filter-mode=non-needs-focus",
                 "--total-chunks=%d" % jobsWithoutFocus,
                 "--this-chunk=%d" % chunkNumber,
                 "--marionette=%s:%d" % (host, port),
             ]
-            port += 1
 
         for jobArgs in perProcessArgs:
             try:
@@ -924,6 +932,11 @@ class RefTest:
                 host, port = options.marionette.split(":")
                 marionette_args["host"] = host
                 marionette_args["port"] = int(port)
+            else:
+                marionette_port = _get_available_port(preferred=2828)
+                if marionette_port != 2828:
+                    marionette_args["port"] = marionette_port
+                    profile.set_preferences({"marionette.port": marionette_port})
 
             try:
                 marionette = Marionette(**marionette_args)

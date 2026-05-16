@@ -29,7 +29,7 @@
 #include "nsSound.h"
 #include "nsUserIdleServiceX.h"
 #include "NativeKeyBindings.h"
-#include "OSXNotificationCenter.h"
+#include "MacOSNotificationCenter.h"
 
 #include "nsDeviceContextSpecX.h"
 #include "nsPrinterListCUPS.h"
@@ -84,7 +84,7 @@ MAKE_GENERIC_CTOR_INIT(nsPrintSettingsServiceX, nsIPrintSettingsService, Init)
 MAKE_GENERIC_CTOR_INIT(nsPrintDialogServiceX, nsIPrintDialogService, Init)
 MAKE_GENERIC_SINGLETON_CTOR(nsUserIdleServiceX, nsUserIdleServiceX::GetInstance)
 MAKE_GENERIC_SINGLETON_CTOR(ScreenManager, ScreenManager::GetAddRefedSingleton)
-MAKE_GENERIC_CTOR_INIT(OSXNotificationCenter, nsIAlertsService, Init)
+MAKE_GENERIC_CTOR_INIT(MacOSNotificationCenter, nsIAlertsService, Init)
 
 #include "nsMacDockSupport.h"
 MAKE_GENERIC_CTOR(nsMacDockSupport, nsIMacDockSupport)

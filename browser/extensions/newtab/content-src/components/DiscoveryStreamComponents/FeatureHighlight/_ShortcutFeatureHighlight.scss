@@ -54,7 +54,8 @@
     font-size: var(--font-size-small);
 
     .title {
-      font-weight: var(--font-weight-heading);
+      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+      font-weight: var(--font-weight-heading, var(--heading-font-weight));
       margin-block-end: var(--space-xsmall);
       text-align: inherit;
     }

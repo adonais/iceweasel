@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -434,12 +432,12 @@ JSString* ModuleLoaderBase::ImportMetaResolveImpl(
 
 // static
 bool ModuleLoaderBase::HostPopulateImportMeta(JSContext* aCx,
-                                              Handle<Value> aReferencingPrivate,
+                                              Handle<JSObject*> aModuleRecord,
                                               Handle<JSObject*> aMetaObject) {
-  RefPtr<ModuleScript> script =
-      static_cast<ModuleScript*>(aReferencingPrivate.toPrivate());
+  RefPtr<ModuleScript> script = static_cast<ModuleScript*>(
+      JS::GetModulePrivate(aModuleRecord).toPrivate());
+  MOZ_ASSERT(script->ModuleRecord() == aModuleRecord);
   MOZ_ASSERT(script->IsModuleScript());
-  MOZ_ASSERT(GetModulePrivate(script->ModuleRecord()) == aReferencingPrivate);
 
   nsAutoCString url;
   MOZ_DIAGNOSTIC_ASSERT(script->BaseURL());
@@ -472,10 +470,9 @@ bool ModuleLoaderBase::HostPopulateImportMeta(JSContext* aCx,
   // Note: Hold a reference to the module record which in turn keeps the
   // ModuleScript alive when import.resolve is called.
   RootedObject resolveFuncObj(aCx, JS_GetFunctionObject(resolveFunc));
-  RootedObject moduleRecord(aCx, script->ModuleRecord());
   js::SetFunctionNativeReserved(
       resolveFuncObj, static_cast<size_t>(ImportMetaSlots::ModuleRecordSlot),
-      JS::ObjectValue(*moduleRecord));
+      JS::ObjectValue(*aModuleRecord));
 
   return true;
 }
@@ -639,7 +636,7 @@ bool ModuleLoaderBase::IsModuleFetched(const ModuleMapKey& key) const {
 
 nsresult ModuleLoaderBase::GetFetchedModuleURLs(nsTArray<nsCString>& aURLs) {
   for (const auto& entry : mFetchedModules) {
-    nsIURI* uri = entry.GetData()->BaseURL();
+    nsIURI* uri = entry.GetData()->GetURI();
 
     nsAutoCString spec;
     nsresult rv = uri->GetSpec(spec);

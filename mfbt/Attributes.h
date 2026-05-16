@@ -487,6 +487,37 @@
 #endif
 
 /**
+ * MOZ_REINITIALIZES tells static analyser that a call to the associated
+ * method leave it in an initialized state, typically after a std::move.
+ */
+#if defined(__clang__) && defined(__has_cpp_attribute)
+#  if __has_cpp_attribute(clang::reinitializes)
+#    define MOZ_REINITIALIZES [[clang::reinitializes]]
+#  else
+#    define MOZ_REINITIALIZES /* nothing */
+#  endif
+#else
+#  define MOZ_REINITIALIZES /* nothing */
+#endif
+
+/**
+ * MOZ_NULL_AFTER_MOVE indicates that the associated type behaves as
+ * std::unique_ptr once being moved, i.e. it's considered empty/null, and only
+ * calls to opererator*(), operator-> and operator[]() are reported by static
+ * analysis as invalid use-after-move.
+ *
+ * See:
+ * https://clang.llvm.org/extra/clang-tidy/checks/bugprone/use-after-move.html#use
+ */
+#if defined(__clang__)
+#  define MOZ_NULL_AFTER_MOVE                                  \
+    [[clang::annotate("clang-tidy", "bugprone-use-after-move", \
+                      "null_after_move")]]
+#else
+#  define MOZ_NULL_AFTER_MOVE /* nothing */
+#endif
+
+/**
  * MOZ_STANDALONE_DEBUG causes complete debug information to be emitted
  * for a record type when clang would otherwise try to elide some of it.
  * This helps certain third party debugging tools introspect types.
@@ -948,6 +979,7 @@
 #    define MOZ_RUNINIT                                     /* nothing */
 #    define MOZ_GLOBINIT                                    /* nothing */
 #    define MOZ_GLIBCXX_CONSTINIT                           /* nothing */
+#    define MOZ_RELEASE_CONSTINIT                           /* nothing */
 #    define MOZ_STATIC_LOCAL_CLASS                          /* nothing */
 #    define MOZ_STACK_CLASS                                 /* nothing */
 #    define MOZ_NONHEAP_CLASS                               /* nothing */

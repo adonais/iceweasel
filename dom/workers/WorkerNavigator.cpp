@@ -13,6 +13,7 @@
 #include "mozilla/dom/MediaCapabilities.h"
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/Permissions.h"
+#include "mozilla/dom/Serial.h"
 #include "mozilla/dom/ServiceWorkerContainer.h"
 #include "mozilla/dom/StorageManager.h"
 #include "mozilla/dom/WorkerCommon.h"
@@ -50,6 +51,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WorkerNavigator)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocks)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPermissions)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mServiceWorkerContainer)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSerial)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 WorkerNavigator::WorkerNavigator(const NavigatorProperties& aProperties,
@@ -91,6 +93,11 @@ void WorkerNavigator::Invalidate() {
   mPermissions = nullptr;
 
   mServiceWorkerContainer = nullptr;
+
+  if (mSerial) {
+    mSerial->Shutdown();
+    mSerial = nullptr;
+  }
 }
 
 JSObject* WorkerNavigator::WrapObject(JSContext* aCx,
@@ -235,8 +242,6 @@ StorageManager* WorkerNavigator::Storage() {
     MOZ_ASSERT(global);
 
     mStorageManager = new StorageManager(global);
-
-    workerPrivate->NotifyStorageKeyUsed();
   }
 
   return mStorageManager;
@@ -318,6 +323,20 @@ already_AddRefed<ServiceWorkerContainer> WorkerNavigator::ServiceWorker() {
 
   RefPtr<ServiceWorkerContainer> ref = mServiceWorkerContainer;
   return ref.forget();
+}
+
+dom::Serial* WorkerNavigator::Serial() {
+  if (!mSerial) {
+    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+    MOZ_ASSERT(workerPrivate);
+
+    nsIGlobalObject* global = workerPrivate->GlobalScope();
+    MOZ_ASSERT(global);
+
+    mSerial = MakeRefPtr<dom::Serial>(global);
+  }
+
+  return mSerial;
 }
 
 }  // namespace mozilla::dom

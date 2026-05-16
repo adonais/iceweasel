@@ -12,6 +12,7 @@
 #include "GeolocationPosition.h"
 #include "GeolocationSystem.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CallbackObject.h"
 #include "mozilla/dom/GeolocationBinding.h"
@@ -101,7 +102,7 @@ class nsGeolocationService final : public nsIGeolocationUpdate,
   // mGeolocators are not owned here.  Their constructor
   // adds them to this list, and their destructor removes
   // them from this list.
-  nsTArray<mozilla::dom::Geolocation*> mGeolocators;
+  nsTArray<mozilla::WeakPtr<mozilla::dom::Geolocation>> mGeolocators;
 
   // This is the last geo position that we have seen.
   CachedPositionAndAccuracy mLastPosition;
@@ -120,7 +121,9 @@ namespace mozilla::dom {
 /**
  * Can return a geolocation info
  */
-class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
+class Geolocation final : public nsIGeolocationUpdate,
+                          public nsWrapperCache,
+                          public SupportsWeakPtr {
   friend class ::nsGeolocationService;
 
  public:
@@ -240,8 +243,8 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
   // or there is a page change. All requests held by either array are active,
   // that is, they have been allowed and expect to be fulfilled.
 
-  nsTArray<RefPtr<nsGeolocationRequest> > mPendingCallbacks;
-  nsTArray<RefPtr<nsGeolocationRequest> > mWatchingCallbacks;
+  nsTArray<RefPtr<nsGeolocationRequest>> mPendingCallbacks;
+  nsTArray<RefPtr<nsGeolocationRequest>> mWatchingCallbacks;
 
   // window that this was created for.  Weak reference.
   nsWeakPtr mOwner;
@@ -265,7 +268,7 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
   uint32_t mLastWatchId;
 
   // Pending requests are used when the service is not ready
-  nsTArray<RefPtr<nsGeolocationRequest> > mPendingRequests;
+  nsTArray<RefPtr<nsGeolocationRequest>> mPendingRequests;
 
   // Array containing already cleared watch IDs
   nsTArray<int32_t> mClearedWatchIDs;

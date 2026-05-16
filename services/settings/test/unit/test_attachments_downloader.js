@@ -69,6 +69,9 @@ async function clear_state() {
     delete: async id => {
       delete downloader.cache[id];
     },
+    deleteMultiple: async ids => {
+      ids.forEach(id => delete downloader.cache[id]);
+    },
     hasData: async () => {
       return !!Object.keys(downloader.cache).length;
     },

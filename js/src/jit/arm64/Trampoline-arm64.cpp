@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -226,7 +224,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.push(reg_code);
 
     // Initialize the frame, including filling in the slots.
-    using Fn = bool (*)(BaselineFrame* frame, InterpreterFrame* interpFrame,
+    using Fn = void (*)(BaselineFrame* frame, InterpreterFrame* interpFrame,
                         uint32_t numStackValues);
     masm.setupUnalignedABICall(r19);
     masm.passABIArg(framePtrScratch);  // BaselineFrame.
@@ -239,9 +237,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     MOZ_ASSERT(scratch != ReturnReg);
 
     masm.addToStackPtr(Imm32(ExitFrameLayout::SizeWithFooter()));
-
-    Label error;
-    masm.branchIfFalseBool(ReturnReg, &error);
 
     // If OSR-ing, then emit instrumentation for setting lastProfilerFrame
     // if profiler instrumentation is enabled.
@@ -256,15 +251,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     }
 
     masm.jump(scratch);
-
-    // OOM: frame epilogue, load error value, discard return address and return.
-    masm.bind(&error);
-    masm.moveToStackPtr(FramePointer);
-    masm.pop(FramePointer);
-    masm.addToStackPtr(Imm32(sizeof(uintptr_t)));  // Return address.
-    masm.syncStackPtr();
-    masm.moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
-    masm.B(&osrReturnPoint);
 
     masm.bind(&notOsr);
     masm.movePtr(reg_scope, R1_);

@@ -19,6 +19,6 @@ testWithTypedArrayConstructors(function(TA) {
   var sample = new TA(buffer, 8, 1);
   $DETACHBUFFER(sample.buffer);
   assert.sameValue(sample.byteOffset, 0);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

@@ -289,6 +289,13 @@ void av1_highbd_apply_temporal_filter_neon(
     const int *subblock_mses, const int q_factor, const int filter_strength,
     int tf_wgt_calc_lvl, const uint8_t *pred8, uint32_t *accum,
     uint16_t *count) {
+  if (block_size == BLOCK_64X64) {
+    av1_apply_temporal_filter_c(frame_to_filter, mbd, block_size, mb_row,
+                                mb_col, num_planes, noise_levels, subblock_mvs,
+                                subblock_mses, q_factor, filter_strength,
+                                tf_wgt_calc_lvl, pred8, accum, count);
+    return;
+  }
   const int is_high_bitdepth = frame_to_filter->flags & YV12_FLAG_HIGHBITDEPTH;
   assert(TF_WINDOW_LENGTH == 5 && "Only support window length 5 with Neon!");
   assert(num_planes >= 1 && num_planes <= MAX_MB_PLANE);

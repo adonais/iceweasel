@@ -391,7 +391,8 @@ def setup_regression_detector(config, jobs):
 
             base_project = None
             if (
-                config.params.get("try_task_config", {})
+                config.params
+                .get("try_task_config", {})
                 .get("env", {})
                 .get("PERF_BASE_REVISION", None)
                 is not None
@@ -427,6 +428,27 @@ def set_perftest_attributes(config, jobs):
     for job in jobs:
         attributes = job.setdefault("attributes", {})
         attributes["perftest_name"] = job["name"]
+        yield job
+
+
+# Restrict most perftest jobs to Ubuntu 24.04, keeping only allowed exceptions on 18.04.
+transforms.add(linux_perf_platform_restrictions.restrict_perftest_to_2404)
+
+
+@transforms.add
+def setup_autoland_retriggers(config, jobs):
+
+    def _allow_task_duplicates(label):
+        if "hw-a55-aarch64-shippable-startup-fenix" in label:
+            return True
+        return False
+
+    for job in jobs:
+        attrs = job.setdefault("attributes", {})
+        if config.params["project"] == "autoland" and _allow_task_duplicates(
+            job["name"]
+        ):
+            attrs["task_duplicates"] = 4
         yield job
 
 

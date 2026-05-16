@@ -318,10 +318,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   [[nodiscard]] nsresult SpeculativeConnect(nsHttpConnectionInfo* ci,
                                             nsIInterfaceRequestor* callbacks,
                                             uint32_t caps,
-                                            SpeculativeTransaction* aTrans) {
-    RefPtr<nsHttpConnectionInfo> clone = ci->Clone();
-    return mConnMgr->SpeculativeConnect(clone, callbacks, caps, aTrans);
-  }
+                                            SpeculativeTransaction* aTrans);
 
   // Alternate Services Maps are main thread only
   void UpdateAltServiceMapping(AltSvcMapping* map, nsProxyInfo* proxyInfo,

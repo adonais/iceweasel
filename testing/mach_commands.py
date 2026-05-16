@@ -428,6 +428,11 @@ def test(command_context, what, extra_args, **log_args):
     if log_args.get("auto"):
         from itertools import chain
 
+        # The packages required by gecko_taskgraph are only available in the taskgraph virtualenv.
+        # We only switch to it here to avoid network access unless --auto is used.
+        command_context._virtualenv_name = "taskgraph"
+        command_context.activate_virtualenv()
+
         from gecko_taskgraph.util.bugbug import patch_schedules
         from mozversioncontrol.factory import get_specific_repository_object
 

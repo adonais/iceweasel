@@ -43,8 +43,7 @@ XPCOMUtils.defineLazyScriptGetter(
 /**
  * ModuleManager creates and manages GeckoView modules. Each GeckoView module
  * normally consists of a JSM module file with an optional content module file.
- * The module file contains a class that extends GeckoViewModule, and the
- * content module file contains a class that extends GeckoViewChildModule. A
+ * The module file contains a class that extends GeckoViewModule. A
  * module usually pairs with a particular GeckoSessionHandler or delegate on the
  * Java side, and automatically receives module lifetime events such as
  * initialization, change in enabled state, and change in settings.
@@ -96,15 +95,9 @@ var ModuleManager = {
       "GeckoView:UpdateSettings",
     ]);
 
-    this.messageManager.addMessageListener(
-      "GeckoView:ContentModuleLoaded",
-      this
-    );
-
     this._moduleByActorName = new Map();
     this.forEach(module => {
       module.onInit();
-      module.loadInitFrameScript();
       for (const actorName of module.actorNames) {
         this._moduleByActorName[actorName] = module;
       }
@@ -150,10 +143,6 @@ var ModuleManager = {
     return this._browser;
   },
 
-  get messageManager() {
-    return this._browser.messageManager;
-  },
-
   get eventDispatcher() {
     return WindowEventDispatcher;
   },
@@ -194,14 +183,6 @@ var ModuleManager = {
     debug`WillChangeBrowserRemoteness`;
 
     // Now we're switching the remoteness.
-    this.disabledModules = [];
-    this.forEach(module => {
-      if (module.enabled && module.disableOnProcessSwitch) {
-        module.enabled = false;
-        this.disabledModules.push(module);
-      }
-    });
-
     this.forEach(module => {
       module.onDestroyBrowser();
     });
@@ -215,21 +196,6 @@ var ModuleManager = {
         module.impl.onInitBrowser();
       }
     });
-
-    this.messageManager.addMessageListener(
-      "GeckoView:ContentModuleLoaded",
-      this
-    );
-
-    this.forEach(module => {
-      // We're attaching a new browser so we have to reload the frame scripts
-      module.loadInitFrameScript();
-    });
-
-    this.disabledModules.forEach(module => {
-      module.enabled = true;
-    });
-    this.disabledModules = null;
   },
 
   _updateSettings(aSettings) {
@@ -275,27 +241,11 @@ var ModuleManager = {
             module.enabled = initData.modules[name];
           }
         }
-
-        // Notify child of the transfer.
-        this._browser.messageManager.sendAsyncMessage(aEvent);
         break;
       }
 
       case "GeckoView:UpdateSettings": {
         this._updateSettings(aData);
-        break;
-      }
-    }
-  },
-
-  receiveMessage(aMsg) {
-    debug`receiveMessage ${aMsg.name} ${aMsg.data}`;
-    switch (aMsg.name) {
-      case "GeckoView:ContentModuleLoaded": {
-        const module = this._modules.get(aMsg.data.module);
-        if (module) {
-          module.onContentModuleLoaded();
-        }
         break;
       }
     }
@@ -373,13 +323,6 @@ class ModuleInfo {
     this.enabled = this._enabledOnInit;
   }
 
-  /**
-   * Loads the onInit frame script
-   */
-  loadInitFrameScript() {
-    this._loadFrameScript(this._onInitPhase);
-  }
-
   onDestroy() {
     if (this._impl) {
       this._impl.onDestroy();
@@ -408,7 +351,6 @@ class ModuleInfo {
    * Load resource according to a phase object that contains possible keys,
    *
    * "resource": specify the JSM resource to load for this module.
-   * "frameScript": specify a content JS frame script to load for this module.
    */
   _loadResource(aPhase) {
     if (!aPhase || !aPhase.resource || this._impl) {
@@ -419,32 +361,8 @@ class ModuleInfo {
     this._impl = new exports[this._name](this);
   }
 
-  /**
-   * Load frameScript according to a phase object that contains possible keys,
-   *
-   * "frameScript": specify a content JS frame script to load for this module.
-   */
-  _loadFrameScript(aPhase) {
-    if (!aPhase || !aPhase.frameScript || this._contentModuleLoaded) {
-      return;
-    }
-
-    if (this._impl) {
-      this._impl.onLoadContentModule();
-    }
-    this._manager.messageManager.loadFrameScript(aPhase.frameScript, true);
-    this._contentModuleLoaded = true;
-  }
-
   get manager() {
     return this._manager;
-  }
-
-  get disableOnProcessSwitch() {
-    // Only disable while process switching if it has a frameScript
-    return (
-      !!this._onInitPhase?.frameScript || !!this._onEnablePhase?.frameScript
-    );
   }
 
   get name() {
@@ -472,15 +390,12 @@ class ModuleInfo {
 
     if (aEnabled) {
       this._loadResource(this._onEnablePhase);
-      this._loadFrameScript(this._onEnablePhase);
       this._loadActors(this._onEnablePhase);
       if (this._impl) {
         this._impl.onEnable();
         this._impl.onSettingsUpdate();
       }
     }
-
-    this._updateContentModuleState();
   }
 
   receiveMessage(aMessage) {
@@ -494,24 +409,6 @@ class ModuleInfo {
       warn`this._impl.receiveMessage failed ${aMessage.name}`;
       throw error;
     }
-  }
-
-  onContentModuleLoaded() {
-    this._updateContentModuleState();
-
-    if (this._impl) {
-      this._impl.onContentModuleLoaded();
-    }
-  }
-
-  _updateContentModuleState() {
-    this._manager.messageManager.sendAsyncMessage(
-      "GeckoView:UpdateModuleState",
-      {
-        module: this._name,
-        enabled: this.enabled,
-      }
-    );
   }
 }
 

@@ -283,6 +283,8 @@ function getTransferedSizeValue(item) {
     value = -3;
   } else if (typeof item.transferredSize == "number") {
     value = item.transferredSize;
+    // @backward-compat { version 151 } isRacing can be removed once 151 is on
+    // release. It was part of RCWN which was removed in Bug 2020946.
     if (item.isRacing && typeof item.isRacing == "boolean") {
       value = -4;
     }

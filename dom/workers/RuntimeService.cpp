@@ -153,14 +153,6 @@ Atomic<RuntimeService*> gRuntimeService(nullptr);
 // Only true during the call to Init.
 bool gRuntimeServiceDuringInit = false;
 
-class LiteralRebindingCString : public nsDependentCString {
- public:
-  template <int N>
-  void RebindLiteral(const char (&aStr)[N]) {
-    Rebind(aStr, N - 1);
-  }
-};
-
 template <typename T>
 struct PrefTraits;
 
@@ -1208,22 +1200,6 @@ bool RuntimeService::RegisterWorker(WorkerPrivate& aWorkerPrivate) {
   const bool isDedicatedWorker = aWorkerPrivate.IsDedicatedWorker();
   if (isServiceWorker) {
     AssertIsOnMainThread();
-  }
-
-  nsCString sharedWorkerScriptSpec;
-  if (isSharedWorker) {
-    AssertIsOnMainThread();
-
-    nsCOMPtr<nsIURI> scriptURI = aWorkerPrivate.GetResolvedScriptURI();
-    NS_ASSERTION(scriptURI, "Null script URI!");
-
-    nsresult rv = scriptURI->GetSpec(sharedWorkerScriptSpec);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("GetSpec failed?!");
-      return false;
-    }
-
-    NS_ASSERTION(!sharedWorkerScriptSpec.IsEmpty(), "Empty spec!");
   }
 
   bool exemptFromPerDomainMax = false;

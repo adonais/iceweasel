@@ -850,9 +850,13 @@ Tester.prototype = {
     }
     let changedPrefs = [];
     for (let p of failures) {
-      this.structuredLogger.error(
-        // We only report unexpected failures when --compare-preferences is set.
-        `TEST-${gConfig.comparePrefs ? "UN" : ""}EXPECTED-FAIL | ${testPath} | changed preference: ${p}`
+      this.currentTest.addResult(
+        new testResult({
+          name: `changed preference: ${p}`,
+          pass: !gConfig.comparePrefs,
+          todo: !gConfig.comparePrefs,
+          allowFailure: this.currentTest.allowFailure,
+        })
       );
       changedPrefs.push(p);
     }
@@ -1710,9 +1714,11 @@ Tester.prototype = {
               self.nextTest();
             } else {
               await self.notifyProfilerOfTestEnd();
+              // failCount > 1 (not > 0) because the "Test timed out"
+              // result above already incremented failCount by one.
               self.structuredLogger.testEnd(
                 self.currentTest.path,
-                "TIMEOUT",
+                self.currentTest.failCount > 1 ? "FAIL" : "TIMEOUT",
                 "PASS",
                 "Test timed out"
               );

@@ -1,0 +1,17 @@
+{
+  "label": "hall.ssjj.cn",
+  "bugs": {
+    "1982295": {
+      "issue": "broken-layout",
+      "matches": ["*://hall.ssjj.cn/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1982295-hall.ssjj.cn-fix-layout.css"]
+      }
+    }
+  ]
+}

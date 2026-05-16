@@ -2481,6 +2481,7 @@ TEST(GeckoProfiler, Markers)
       aWriter.UniqueStringProperty("unique text", aUniqueText);
       aWriter.UniqueStringProperty("unique text again", aUniqueText);
       aWriter.TimeProperty("time", aTime);
+      aWriter.StringProperty("color", "green");
     }
     static mozilla::MarkerSchema MarkerTypeDisplay() {
       // Note: This is an test function that is not intended to actually output
@@ -2495,6 +2496,7 @@ TEST(GeckoProfiler, Markers)
       schema.SetChartLabel("chart label");
       schema.SetTooltipLabel("tooltip label");
       schema.SetTableLabel("table label");
+      schema.SetColorField("color");
       // All data functions, all formats.
       schema.AddKeyFormat("key with url", MS::Format::Url);
       schema.AddKeyLabelFormat("key with label filePath", "label filePath",
@@ -2518,6 +2520,8 @@ TEST(GeckoProfiler, Markers)
       schema.AddKeyLabelFormat("key with label hidden", "label",
                                MS::Format::String, MS::PayloadFlags::Hidden);
       schema.AddKeyFormat("key hidden", MS::Format::String,
+                          MS::PayloadFlags::Hidden);
+      schema.AddKeyFormat("color", MS::Format::String,
                           MS::PayloadFlags::Hidden);
 
       return schema;
@@ -3191,7 +3195,7 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_EQ(state, S_CustomMarker);
                   state = State(S_CustomMarker + 1);
                   EXPECT_EQ(typeString, "markers-gtest");
-                  EXPECT_EQ(payload.size(), 1u + 9u);
+                  EXPECT_EQ(payload.size(), 1u + 10u);
                   EXPECT_TRUE(payload["null"].isNull());
                   EXPECT_EQ_JSON(payload["bool-false"], Bool, false);
                   EXPECT_EQ_JSON(payload["bool-true"], Bool, true);
@@ -3656,8 +3660,9 @@ TEST(GeckoProfiler, Markers)
             EXPECT_EQ_JSON(schema["chartLabel"], String, "chart label");
             EXPECT_EQ_JSON(schema["tooltipLabel"], String, "tooltip label");
             EXPECT_EQ_JSON(schema["tableLabel"], String, "table label");
+            EXPECT_EQ_JSON(schema["colorField"], String, "color");
 
-            ASSERT_EQ(data.size(), 18u);
+            ASSERT_EQ(data.size(), 19u);
 
             ASSERT_TRUE(data[0u].isObject());
             EXPECT_EQ_JSON(data[0u]["key"], String, "key with url");
@@ -3750,6 +3755,12 @@ TEST(GeckoProfiler, Markers)
             EXPECT_TRUE(data[17u]["label"].isNull());
             EXPECT_EQ_JSON(data[17u]["format"], String, "string");
             EXPECT_EQ_JSON(data[17u]["hidden"], Bool, true);
+
+            ASSERT_TRUE(data[18u].isObject());
+            EXPECT_EQ_JSON(data[18u]["key"], String, "color");
+            EXPECT_TRUE(data[18u]["label"].isNull());
+            EXPECT_EQ_JSON(data[18u]["format"], String, "string");
+            EXPECT_EQ_JSON(data[18u]["hidden"], Bool, true);
 
           } else if (nameString == "markers-gtest-base-unique-string") {
             EXPECT_EQ(display.size(), 2u);

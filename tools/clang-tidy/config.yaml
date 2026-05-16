@@ -31,6 +31,15 @@ clang_checkers:
     reliability: high
   - name: readability-redundant-string-init
     reliability: high
+  - name: modernize-loop-convert
+    reliability: high
+    config:
+      - key: MinConfidence
+        value: safe
+      - key: UseCxx20ReverseRanges
+        value: false
+  - name: bugprone-move-forwarding-reference
+    reliability: high
 
 # clang_checkers:
 #   - name: -*

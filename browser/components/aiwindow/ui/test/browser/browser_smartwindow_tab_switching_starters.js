@@ -8,11 +8,6 @@ const { AIWindowUI } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs"
 );
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  sinon: "resource://testing-common/Sinon.sys.mjs",
-});
-
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -34,7 +29,7 @@ add_task(
     const { restore } = await stubEngineNetworkBoundaries({
       serverOptions: { onRequest: () => resolveFirstRequest() },
     });
-    const sb = lazy.sinon.createSandbox();
+    const sb = sinon.createSandbox();
 
     let tabA, tabB, win;
     try {
@@ -116,23 +111,28 @@ add_task(
 
 add_task(
   async function test_tab_switch_does_not_refresh_starters_for_existing_conversation() {
-    const sb = lazy.sinon.createSandbox();
+    const sb = sinon.createSandbox();
 
-    const { restore } = await stubEngineNetworkBoundaries();
+    let resolveFirstRequest;
+    const firstRequestReceived = new Promise(r => {
+      resolveFirstRequest = r;
+    });
+    const { restore } = await stubEngineNetworkBoundaries({
+      serverOptions: { onRequest: () => resolveFirstRequest() },
+    });
 
     let win, newTab, originalTab;
     try {
-      const updateStarterPromptsSpy = sb.spy(
-        AIWindowUI,
-        "updateStarterPrompts"
-      );
-
       win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
       originalTab = win.gBrowser.selectedTab;
 
       await typeInSmartbar(browser, "hello");
       await submitSmartbar(browser);
+
+      // wait for first request to LLM to prevent promise races during test
+      await firstRequestReceived;
+
       await promiseNavigateAndLoad(browser, "https://example.com/");
 
       Assert.ok(
@@ -149,18 +149,24 @@ add_task(
         "Sidebar should be closed for tab A with messages in fullwindow mode"
       );
 
-      updateStarterPromptsSpy.resetHistory();
-
       await BrowserTestUtils.switchTab(win.gBrowser, originalTab);
       Assert.ok(
         AIWindowUI.isSidebarOpen(win),
         "Sidebar should be open for tab A with messages"
       );
 
-      Assert.equal(
-        updateStarterPromptsSpy.callCount,
+      const sidebarBrowser = win.document.getElementById(AIWindowUI.BROWSER_ID);
+      const sidebarAiWindow =
+        sidebarBrowser.contentDocument.querySelector("ai-window");
+
+      Assert.greater(
+        sidebarAiWindow.conversationMessageCount,
         0,
-        "Switching tabs should not refresh starter prompts for an existing conversation"
+        "Sidebar should be on tab A's conversation with messages"
+      );
+      Assert.ok(
+        !sidebarAiWindow.showStarters,
+        "Starter prompts should not be shown for an existing conversation"
       );
     } finally {
       if (newTab) {

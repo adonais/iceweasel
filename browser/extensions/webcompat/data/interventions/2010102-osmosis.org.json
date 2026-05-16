@@ -1,0 +1,17 @@
+{
+  "label": "osmosis.org",
+  "bugs": {
+    "2010102": {
+      "issue": "broken-layout",
+      "matches": ["*://www.osmosis.org/notes/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug2010102-osmosis.org-center-pages.css"]
+      }
+    }
+  ]
+}

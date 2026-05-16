@@ -15,6 +15,7 @@ import {
   FORMAT,
   AggregateResultKeys,
   DEFAULT_INFERRED_MODEL_DATA,
+  DEFAULT_USER_CTR,
 } from "resource://newtab/lib/InferredModel/InferredConstants.sys.mjs";
 
 import {
@@ -52,6 +53,61 @@ const TEST_MODEL_ID = "TEST";
 
 const OLD_DATA_PRESERVE_DAYS_DEFAULT = 30 * 6;
 const OLD_DATA_CLEAR_CHECK_FREQUENCY_MS = 5 * 3600 * 24 * 1000; // 5 days
+
+const KNOWN_TOPICS = new Set([
+  "t_business",
+  "t_career",
+  "t_arts",
+  "t_food",
+  "t_health",
+  "t_home",
+  "t_finance",
+  "t_government",
+  "t_sports",
+  "t_tech",
+  "t_travel",
+  "t_education",
+  "t_hobbies",
+  "t_society-parenting",
+  "t_education-science",
+  "t_society",
+]);
+
+/**
+ * Computes average CTR from raw interval data, counting only known topic features.
+ *
+ * @param {Array.<Array>} clickDataPerInterval Raw click SQL results per time interval.
+ * @param {Array.<Array>} impressionDataPerInterval Raw impression SQL results per time interval.
+ * @param {{[key: string]: number}} indexSchema Map of keys to indices in each row.
+ * @returns {number} Average CTR, or DEFAULT_USER_CTR if no topic impressions found.
+ */
+export function computeAverageCTRFromTopics(
+  clickDataPerInterval,
+  impressionDataPerInterval,
+  indexSchema
+) {
+  const featureIdx = indexSchema[AggregateResultKeys.FEATURE];
+  const valueIdx = indexSchema[AggregateResultKeys.VALUE];
+
+  function sumTopics(dataPerInterval) {
+    let total = 0;
+    for (const intervalData of dataPerInterval) {
+      for (const row of intervalData) {
+        if (KNOWN_TOPICS.has(row[featureIdx])) {
+          total += row[valueIdx];
+        }
+      }
+    }
+    return total;
+  }
+
+  const impressionsTotal = sumTopics(impressionDataPerInterval);
+  if (impressionsTotal <= 0) {
+    return DEFAULT_USER_CTR;
+  }
+  const clicksTotal = sumTopics(clickDataPerInterval);
+  return clicksTotal / impressionsTotal;
+}
 
 /**
  * A feature that periodically generates a interest vector for inferred personalization.
@@ -228,19 +284,24 @@ export class InferredPersonalizationFeed {
     return features;
   }
 
-  async generateInterestVector() {
-    const inferredModel = await this.getInferredModelData();
-    if (!inferredModel || !inferredModel.model_data) {
-      return {};
-    }
-    const model = FeatureModel.fromJSON(inferredModel.model_data);
-
+  /**
+   * The model computes interest vectors based on aggregated click and impression data over specific time intervals. The feed queries the database for this aggregated data, which is grouped by feature and card format, for each time interval defined by the model. The schema object defines how to interpret the columns of the aggregated data results when computing the interest vectors.
+   *
+   * Parameters:
+   *
+   * @param {FeatureModel} model - The inferred model used to compute interest vectors.
+   * @param {string} modelId - The ID of the inferred model.
+   * @returns {Promise<any>}
+   */
+  async generateInterestVector(model, modelId) {
     const intervals = model.getDateIntervals(this.Date().now());
     const schema = {
       [AggregateResultKeys.FEATURE]: 0,
       [AggregateResultKeys.FORMAT_ENUM]: 1,
       [AggregateResultKeys.VALUE]: 2,
     };
+
+    const model_id = modelId; // Convert to snake case
 
     const aggClickPerInterval = await this.queryDatabaseForTimeIntervals(
       intervals,
@@ -250,7 +311,7 @@ export class InferredPersonalizationFeed {
     const interests = model.computeInterestVectors({
       dataForIntervals: aggClickPerInterval,
       indexSchema: schema,
-      model_id: inferredModel.model_id,
+      model_id,
       applyPostProcessing: isClickModel,
     });
 
@@ -272,22 +333,31 @@ export class InferredPersonalizationFeed {
 
       if (model.modelType === MODEL_TYPE.CTR) {
         // eslint-disable-next-line no-unused-vars
-        const { model_id, ...clickTotals } = interests.inferredInterests;
+        const { model_id: extractModelId, ...clickTotals } =
+          interests.inferredInterests;
         const debugOverrideCoarseValueDictionary =
           await this._getDebugOverrides();
+        const averageCtr = model.hasBayesianSmoothing()
+          ? computeAverageCTRFromTopics(
+              aggClickPerInterval,
+              aggImpressionsPerInterval,
+              schema
+            )
+          : null;
         const inferredInterests = model.computeCTRInterestVectors({
           clicks: clickTotals,
           impressions: ivImpressions,
-          model_id: inferredModel.model_id,
+          model_id,
           timeZoneOffset: lazy.NewTabUtils.getUtcOffset(),
           debugOverrideCoarseValueDictionary,
+          averageCtr,
         });
         return inferredInterests;
       }
       const res = {
         c: interests.inferredInterests,
         i: ivImpressions,
-        model_id: inferredModel.model_id,
+        model_id,
       };
       return { inferredInterests: res };
     }
@@ -304,6 +374,7 @@ export class InferredPersonalizationFeed {
     const interestVectorRefreshHours =
       values?.inferredPersonalizationConfig?.iv_refresh_frequency_hours ||
       INTEREST_VECTOR_UPDATE_HOURS;
+    let inferredTelemetrySettingsOverrides = {};
 
     // If we have nothing in cache, or cache has expired, we can make a fresh fetch.
     if (
@@ -323,8 +394,21 @@ export class InferredPersonalizationFeed {
         );
         lastClearedDB = this.Date().now();
       }
+
+      let interestVectorData = {};
+      const inferredModel = await this.getInferredModelData();
+      if (inferredModel && inferredModel.model_data) {
+        const model = FeatureModel.fromJSON(inferredModel.model_data);
+        interestVectorData = await this.generateInterestVector(
+          model,
+          inferredModel.model_id
+        );
+        inferredTelemetrySettingsOverrides =
+          inferredModel.privacy_overrides ?? {};
+      }
+
       interest_vector = {
-        data: await this.generateInterestVector(),
+        data: interestVectorData,
         lastUpdated: this.Date().now(),
         lastClearedDB,
       };
@@ -340,6 +424,7 @@ export class InferredPersonalizationFeed {
         coarseInferredInterests: interest_vector.data.coarseInferredInterests,
         coarsePrivateInferredInterests:
           interest_vector.data.coarsePrivateInferredInterests,
+        inferredTelemetrySettingsOverrides,
       },
       meta: {
         isStartup,
@@ -541,6 +626,12 @@ export class InferredPersonalizationFeed {
       case at.SYSTEM_TICK:
         if (this.loaded && this.isEnabled()) {
           await this.loadInterestVector();
+        }
+        break;
+      case at.INFERRED_PERSONALIZATION_CLEAR_INTEREST_VECTOR:
+        if (this.cache) {
+          // Clear the interest vector. It will be recalculated on the next tick if the feature is enabled.
+          await this.cache.set("interest_vector", {});
         }
         break;
       case at.INFERRED_PERSONALIZATION_REFRESH:

@@ -7,7 +7,7 @@
 #include "ChannelClassifierService.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-#include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/ScopedPrefs.h"
 #include "mozilla/StaticPtr.h"
 #include "nsIChannel.h"
 #include "nsILoadContext.h"
@@ -90,10 +90,9 @@ UrlClassifierFeatureEmailTrackingProtection::MaybeCreate(nsIChannel* aChannel) {
        aChannel));
 
   // Check if the email tracking protection is enabled.
-  if (!StaticPrefs::privacy_trackingprotection_emailtracking_enabled() &&
-      !(NS_UsePrivateBrowsing(aChannel) &&
-        StaticPrefs::
-            privacy_trackingprotection_emailtracking_pbmode_enabled())) {
+  if (!ScopedPrefs::BoolPrefScoped(
+          ScopedPrefs::PRIVACY_TRACKINGPROTECTION_EMAILTRACKING_ENABLED,
+          aChannel)) {
     return nullptr;
   }
 

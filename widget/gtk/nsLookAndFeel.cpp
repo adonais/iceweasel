@@ -1337,6 +1337,7 @@ bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
       aFontStyle = mDefaultFontStyle;
       break;
   }
+  aFontStyle.systemFont = true;
 
   // Convert GDK pixels to CSS pixels.
   // Note that this is generally a no-op, except when text scale factor is

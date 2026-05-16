@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/array_view.h"
 #include "api/environment/environment.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
@@ -122,8 +123,8 @@ class FakeNetworkInterface : public MediaChannelNetworkInterface {
   AsyncSocketPacketOptions options() const { return options_; }
 
  protected:
-  virtual bool SendPacket(CopyOnWriteBuffer* packet,
-                          const AsyncSocketPacketOptions& options)
+  bool SendPacket(CopyOnWriteBuffer* packet,
+                  const AsyncSocketPacketOptions& options) override
       RTC_LOCKS_EXCLUDED(mutex_) {
     if (!IsRtpPacket(*packet)) {
       return false;
@@ -145,8 +146,8 @@ class FakeNetworkInterface : public MediaChannelNetworkInterface {
     return true;
   }
 
-  virtual bool SendRtcp(CopyOnWriteBuffer* packet,
-                        const AsyncSocketPacketOptions& options)
+  bool SendRtcp(CopyOnWriteBuffer* packet,
+                const AsyncSocketPacketOptions& options) override
       RTC_LOCKS_EXCLUDED(mutex_) {
     MutexLock lock(&mutex_);
     rtcp_packets_.push_back(*packet);
@@ -159,7 +160,9 @@ class FakeNetworkInterface : public MediaChannelNetworkInterface {
     return true;
   }
 
-  virtual int SetOption(SocketType /* type */, Socket::Option opt, int option) {
+  int SetOption(SocketType /* type */,
+                Socket::Option opt,
+                int option) override {
     if (opt == Socket::OPT_SNDBUF) {
       sendbuf_size_ = option;
     } else if (opt == Socket::OPT_RCVBUF) {
@@ -188,7 +191,9 @@ class FakeNetworkInterface : public MediaChannelNetworkInterface {
  private:
   void SetRtpSsrc(uint32_t ssrc, CopyOnWriteBuffer& buffer) {
     RTC_CHECK_GE(buffer.size(), 12);
-    SetBE32(buffer.MutableData() + 8, ssrc);
+    SetBE32(
+        ArrayView<uint8_t>(buffer.MutableData(), buffer.size()).subspan(8, 4),
+        ssrc);
   }
 
   void GetNumRtpBytesAndPackets(uint32_t ssrc, int* bytes, int* packets) {

@@ -19,4 +19,12 @@
   <string name="mozac_compose_base_progress_loading">S’està carregant</string>
   <!-- Content description for the dismiss icon of a Snackbar -->
   <string name="mozac_compose_base_snackbar_dismiss_content_description">Descarta el missatge</string>
+  <!-- Content description for the close icon of a Banner -->
+  <string name="mozac_compose_base_close_button_content_description">Tanca</string>
+  <!-- Title shown in the dialog that lists every clickable link inside a LinkText composable when the text contains more than one link. -->
+  <string name="mozac_compose_base_link_text_links_title">Enllaços</string>
+  <!-- Announcement appended to the LinkText content description so screen readers know that interactive links are present in the text. -->
+  <string name="mozac_compose_base_link_text_links_available">Enllaços disponibles</string>
+  <!-- Label for the button that dismisses the LinkText links dialog without selecting a link. -->
+  <string name="mozac_compose_base_link_text_dismiss">Descarta</string>
 </resources>

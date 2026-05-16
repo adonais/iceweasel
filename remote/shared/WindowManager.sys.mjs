@@ -234,15 +234,14 @@ class WindowManager {
         sizeMatches = false;
       }
 
-      // Wayland doesn't support getting the window position.
       if (
         x !== null &&
         y !== null &&
         (win.screenX !== x || win.screenY !== y)
       ) {
-        if (lazy.AppInfo.isWayland) {
+        if (lazy.AppInfo.isWayland && !lazy.AppInfo.isHeadless) {
           lazy.logger.info(
-            `Wayland doesn't support setting the window position`
+            `Wayland doesn't support setting the window position in headful mode`
           );
         } else {
           posMatches = false;
@@ -281,8 +280,12 @@ class WindowManager {
         promises.push(new lazy.EventPromise(win, "resize", options));
       }
 
-      // Wayland doesn't support setting the window position.
-      const move = !lazy.AppInfo.isWayland && x !== null && y !== null;
+      // Wayland doesn't support setting the window position in headful mode.
+      const move =
+        !(lazy.AppInfo.isWayland && !lazy.AppInfo.isHeadless) &&
+        x !== null &&
+        y !== null;
+
       if (move) {
         promises.push(
           new lazy.EventPromise(win.windowRoot, "MozUpdateWindowPos", options)

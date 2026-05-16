@@ -197,7 +197,9 @@ add_task(async function test_interaction_updates_on_repeat_interaction() {
   pm.removeAll();
 });
 
-add_task(async function test_no_interaction_tracking_when_disabled() {
+// Interaction tracking always runs regardless of the expireUnused pref,
+// so that data is ready when the feature is later enabled.
+add_task(async function test_interaction_tracked_even_when_disabled() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["permissions.expireUnusedTypes", "desktop-notification"],
@@ -224,23 +226,15 @@ add_task(async function test_no_interaction_tracking_when_disabled() {
     async function (browser) {
       await simulateUserInteraction(browser);
 
-      // Give background thread a chance to write (it shouldn't since disabled).
-      // Use a short waitForCondition that we expect to time out, then verify.
-      let appeared = false;
-      try {
-        await BrowserTestUtils.waitForCondition(
-          () => getInteractionCount("https://www.example.com") > 0,
-          "Checking no interaction is written",
-          100,
-          10
-        );
-        appeared = true;
-      } catch {}
+      await BrowserTestUtils.waitForCondition(
+        () => getInteractionTime("https://www.example.com") > 0,
+        "Interaction should be tracked even when feature is disabled"
+      );
 
-      is(
-        appeared,
-        false,
-        "Should not have an interaction record when feature is disabled"
+      Assert.greater(
+        getInteractionTime("https://www.example.com"),
+        0,
+        "Should have an interaction record even when feature is disabled"
       );
     }
   );

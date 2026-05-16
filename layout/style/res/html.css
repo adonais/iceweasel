@@ -982,7 +982,6 @@ dialog:popover-open {
 
 [popover] {
   position: fixed;
-  position-anchor: auto;
   inset: 0;
   width: fit-content;
   height: fit-content;

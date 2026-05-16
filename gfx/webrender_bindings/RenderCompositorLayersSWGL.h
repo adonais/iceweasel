@@ -80,7 +80,6 @@ class RenderCompositorLayersSWGL : public RenderCompositor {
                   wr::ImageRendering aImageRendering,
                   wr::DeviceIntRect aRoundedClipRect,
                   wr::ClipRadius aClipRadius) override;
-  void EnableNativeCompositor(bool aEnable) override {}
   void DeInit() override {}
 
   void MaybeRequestAllowFrameRecording(bool aWillRecord) override;

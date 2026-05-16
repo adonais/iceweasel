@@ -9,6 +9,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/SanitizerBinding.h"
@@ -499,6 +500,15 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
   }
 }
 
+// https://wicg.github.io/sanitizer-api/#built-in-non-replaceable-elements-list
+// The built-in non-replaceable elements list
+static bool IsNonReplaceableElement(const CanonicalElement& aElement) {
+  return aElement ==
+             CanonicalElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml) ||
+         aElement == CanonicalElement(nsGkAtoms::svg, nsGkAtoms::nsuri_svg) ||
+         aElement == CanonicalElement(nsGkAtoms::math, nsGkAtoms::nsuri_mathml);
+}
+
 // https://wicg.github.io/sanitizer-api/#sanitizerconfig-valid
 void Sanitizer::IsValid(ErrorResult& aRv) {
   // Step 1. The config has either an elements or a removeElements key, but
@@ -537,14 +547,16 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
 
   // Step 11. If config["replaceWithChildrenElements"] exists:
   if (mReplaceWithChildrenElements) {
-    // Step 11.1. If configuration["replaceWithChildrenElements"] contains «[
-    // "name" → "html", "namespace" → HTML namespace ]», then return false.
-    CanonicalElement htmlElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml);
-    if (mReplaceWithChildrenElements->Contains(htmlElement)) {
-      aRv.ThrowTypeError(nsFmtCString(
-          "Element {} is not allowed in 'replaceWithChildrenElements'",
-          htmlElement));
-      return;
+    // Step 11.1. For each element of config["replaceWithChildrenElements"]:
+    for (const CanonicalElement& element : *mReplaceWithChildrenElements) {
+      // Step 11.1.1. If the built-in non-replaceable elements list contains
+      // element, then return false.
+      if (IsNonReplaceableElement(element)) {
+        aRv.ThrowTypeError(nsFmtCString(
+            "Element {} is not allowed in 'replaceWithChildrenElements'",
+            element));
+        return;
+      }
     }
 
     // Step 11.2. If config["elements"] exists:
@@ -1180,9 +1192,8 @@ bool Sanitizer::ReplaceElementWithChildren(
   // element.
   CanonicalElement element = CanonicalizeElement(aElement);
 
-  // Step 4. If element["name"] equals "html" and element["namespace"] equals
-  // HTML namespace:
-  if (element == CanonicalElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml)) {
+  // Step 4. If the built-in non-replaceable elements list contains element:
+  if (IsNonReplaceableElement(element)) {
     // Step 4.1. Return false.
     return false;
   }
@@ -1731,6 +1742,16 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     // shadow root with configuration and handleJavascriptNavigationUrls.
     if (RefPtr<ShadowRoot> shadow = child->GetShadowRoot()) {
       SanitizeChildren<IsDefaultConfig>(shadow, aSafe);
+    }
+
+    if constexpr (IsDefaultConfig) {
+      if (CustomElementData* data = child->AsElement()->GetCustomElementData())
+          [[unlikely]] {
+        MOZ_ASSERT(data->GetIs(child->AsElement()),
+                   "Non is= custom elements should have already been removed");
+        (void)data;
+        child->AsElement()->ClearCustomElementData();
+      }
     }
 
     // Step 1.5.7-9.

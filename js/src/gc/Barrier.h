@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -268,7 +266,7 @@
  *
  * BarrieredBase             base class of all barriers
  *  |  |
- *  | WriteBarriered         base class which provides common write operations
+ *  | BarrieredPtrImpl       template class conditionally implementing barriers
  *  |  |  |  |  |
  *  |  |  |  | PreBarriered  provides pre-barriers only
  *  |  |  |  |
@@ -277,12 +275,9 @@
  *  |  | HeapPtr             provides pre- and post-barriers; is relocatable
  *  |  |                     and deletable for use inside C++ managed memory
  *  |  |
- *  | HeapSlot               similar to GCPtr, but tailored to slots storage
+ *  | WeakHeapPtr            provides read barriers only
  *  |
- * ReadBarriered             base class which provides common read operations
- *  |
- * WeakHeapPtr               provides read barriers only
- *
+ * HeapSlot                  similar to GCPtr, but tailored to slots storage
  *
  * The implementation of the barrier logic is implemented in the
  * Cell/TenuredCell base classes, which are called via:
@@ -482,18 +477,21 @@ static inline void AssertTargetIsNotGray(const T& v) {
 // can add pointers to class instances to the store buffer.
 template <typename T>
 class MOZ_NON_MEMMOVABLE BarrieredBase {
- protected:
-  // BarrieredBase is not directly instantiable.
-  explicit BarrieredBase(const T& v) : value(v) {}
-
-  // BarrieredBase subclasses cannot be copy constructed by default.
-  BarrieredBase(const BarrieredBase<T>& other) = default;
-
   // Storage for all barrier classes. |value| must be a GC thing reference
   // type: either a direct pointer to a GC thing or a supported tagged
   // pointer that can reference GC things, such as JS::Value or jsid. Nested
-  // barrier types are NOT supported. See assertTypeConstraints.
+  // barrier types are NOT supported.
   T value;
+
+ protected:
+  // BarrieredBase is not directly instantiable.
+  explicit BarrieredBase(const T& v) : value(v) {}
+  BarrieredBase(const BarrieredBase<T>& other) = default;
+
+  // Accessors without barriers, protected by default. Subclasses implement
+  // public accessors in terms of these.
+  const T& unbarrieredGet() const { return value; }
+  void unbarrieredSet(const T& newValue) { value = newValue; }
 
  public:
   using ElementType = T;
@@ -505,43 +503,189 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
   T* unbarrieredAddress() const { return const_cast<T*>(&value); }
 };
 
-// Base class for barriered pointer types that intercept only writes.
-template <class T>
-class WriteBarriered : public BarrieredBase<T>,
-                       public WrappedPtrOperations<T, WriteBarriered<T>> {
- protected:
-  using BarrieredBase<T>::value;
+namespace gc {
 
-  // WriteBarriered is not directly instantiable.
-  explicit WriteBarriered(const T& v) : BarrieredBase<T>(v) {}
+// Bitfield of options for BarrieredPtrImpl.
+enum BarrierOption : uint32_t {
+  // No barriers will be applied.
+  BarrierOption_None = 0,
+
+  // Pre-write barrier: mark the previous value on write.
+  BarrierOption_PreWriteBarrier = Bit(0),
+
+  // Post-write barrier: maintain store buffer entries for tenured to nursery
+  // edges.
+  BarrierOption_PostWriteBarrier = Bit(1),
+
+  // Read barrier: mark the current value on read.
+  BarrierOption_ReadBarrier = Bit(2),
+
+  // The wrapper has GC lifetime. Since it will only be destroyed by the GC no
+  // pre-write barrier is necessary on destruction.
+  BarrierOption_HasGCLifetime = Bit(3),
+};
+
+// Template class implementing the barriers specified in |barrierOptions| on a
+// wrapped value of type |T|.
+template <typename T, uint32_t barrierOptions = BarrierOption_None>
+class BarrieredPtrImpl
+    : public BarrieredBase<T>,
+      public WrappedPtrOperations<T, BarrieredPtrImpl<T, barrierOptions>> {
+  using Self = BarrieredPtrImpl<T, barrierOptions>;
+  using Base = BarrieredBase<T>;
 
  public:
-  DECLARE_POINTER_CONSTREF_OPS(T);
+  BarrieredPtrImpl() : Base(defaultValue()) {}
 
-  // Use this if the automatic coercion to T isn't working.
-  const T& get() const { return this->value; }
-
-  // Use this if you want to change the value without invoking barriers.
-  // Obviously this is dangerous unless you know the barrier is not needed.
-  void unbarrieredSet(const T& v) { this->value = v; }
-
-  // For users who need to manually barrier the raw types.
-  static void preWriteBarrier(const T& v) {
-    InternalBarrierMethods<T>::preBarrier(v);
+  MOZ_IMPLICIT BarrieredPtrImpl(const T& value) : Base(value) {
+    maybePostWriteBarrier(defaultValue(), value);
+  }
+  Self& operator=(const T& newValue) {
+    set(newValue);
+    return *this;
   }
 
- protected:
-  void pre() { InternalBarrierMethods<T>::preBarrier(this->value); }
-  MOZ_ALWAYS_INLINE void post(const T& prev, const T& next) {
-    InternalBarrierMethods<T>::postBarrier(&this->value, prev, next);
+  BarrieredPtrImpl(const Self& other) : Base(other.unbarrieredGet()) {
+    maybePostWriteBarrier(defaultValue(), this->unbarrieredGet());
+  }
+  Self& operator=(const Self& other) {
+    // There's no read barrier when copying an edge.
+    set(other.unbarrieredGet());
+    return *this;
+  }
+
+  // Conditionally declare move constructor and assignment operator. These are
+  // not declared for wrappers with GC lifetime.
+  //
+  // This introduces a template parameter |opts| to make the method into a
+  // function template, which is required in order to use SFINAE.
+  template <uint32_t opts = barrierOptions,
+            typename = std::enable_if_t<!(opts & BarrierOption_HasGCLifetime)>>
+  explicit BarrieredPtrImpl(Self&& other) : Base(other.release()) {
+    maybePostWriteBarrier(defaultValue(), this->unbarrieredGet());
+  }
+  template <uint32_t opts = barrierOptions,
+            typename = std::enable_if_t<!(opts & BarrierOption_HasGCLifetime)>>
+  Self& operator=(Self&& other) noexcept {
+    uncheckedSet(other.release());
+    return *this;
+  }
+
+  ~BarrieredPtrImpl() {
+    if constexpr (hasOption(BarrierOption_HasGCLifetime)) {
+#ifdef DEBUG
+      // No barriers are necessary as this only happens when the GC is sweeping
+      // or before this has been initialized.
+      checkGCLifetime();
+      Poison(this, JS_FREED_HEAP_PTR_PATTERN, sizeof(*this),
+             MemCheckKind::MakeNoAccess);
+#endif
+    } else {
+      this->maybePreWriteBarrier();
+      this->maybePostWriteBarrier(this->unbarrieredGet(), defaultValue());
+    }
+  }
+
+  DECLARE_POINTER_CONSTREF_OPS(T);
+
+  void init(const T& newValue) {
+    checkValue(newValue);
+    // No pre-barrier is required for init.
+    this->unbarrieredSet(newValue);
+    this->maybePostWriteBarrier(defaultValue(), newValue);
+  }
+
+ public:
+  void set(const T& newValue) {
+    checkValue(newValue);
+    uncheckedSet(newValue);
+  }
+
+ private:
+  void uncheckedSet(const T& newValue) {
+    T oldValue = this->unbarrieredGet();
+    this->maybePreWriteBarrier();
+    this->unbarrieredSet(newValue);
+    this->maybePostWriteBarrier(oldValue, newValue);
+  }
+
+ public:
+  // Public for hash table rekey operations.
+  using Base::unbarrieredSet;
+
+  const T& get() const {
+    this->maybeReadBarrier();
+    return this->unbarrieredGet();
+  }
+
+  explicit operator bool() const {
+    return this->unbarrieredGet() != defaultValue();
+  }
+
+  using Base::unbarrieredGet;
+
+  T release() {
+    // Release skips any read or prebarrier.
+    T oldValue = this->unbarrieredGet();
+    this->unbarrieredSet(defaultValue());
+    this->maybePostWriteBarrier(oldValue, defaultValue());
+    return oldValue;
+  }
+
+  static T defaultValue() { return JS::SafelyInitialized<T>::create(); }
+
+ private:
+  void checkGCLifetime() {
+    // If this assertion fails you may need to make the containing object use a
+    // e.g. HeapPtr instead of GCPtr, as this can be deleted from outside of GC.
+    MOZ_ASSERT(CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing() ||
+               this->unbarrieredGet() == defaultValue());
+  }
+
+  MOZ_ALWAYS_INLINE void checkValue(const T& value) {
+    AssertTargetIsNotGray(value);
+  }
+
+  MOZ_ALWAYS_INLINE void maybeReadBarrier() const {
+    if constexpr (hasOption(BarrierOption_ReadBarrier)) {
+      InternalBarrierMethods<T>::readBarrier(this->unbarrieredGet());
+    }
+  }
+
+  MOZ_ALWAYS_INLINE void maybePreWriteBarrier() const {
+    if constexpr (hasOption(BarrierOption_PreWriteBarrier)) {
+      InternalBarrierMethods<T>::preBarrier(this->unbarrieredGet());
+    }
+  }
+
+  MOZ_ALWAYS_INLINE void maybePostWriteBarrier(const T& prev,
+                                               const T& next) const {
+    if constexpr (hasOption(BarrierOption_PostWriteBarrier)) {
+      T* ptr = this->unbarrieredAddress();
+      InternalBarrierMethods<T>::postBarrier(ptr, prev, next);
+    }
+  }
+
+ public:
+  constexpr static bool hasOption(BarrierOption option) {
+    return barrierOptions & uint32_t(option);
   }
 };
 
-#define DECLARE_POINTER_ASSIGN_AND_MOVE_OPS(Wrapper, T) \
-  DECLARE_POINTER_ASSIGN_OPS(Wrapper, T)                \
-  Wrapper<T>& operator=(Wrapper<T>&& other) noexcept {  \
-    setUnchecked(other.release());                      \
-    return *this;                                       \
+}  // namespace gc
+
+// Declare a barriered pointer template.
+//
+// This is done by inheritance rather than a using declaration so that the name
+// shows up error messages and in the debugger.
+#define DEFINE_BARRIERED_PTR(Name, Options)              \
+  template <typename T>                                  \
+  class Name : public gc::BarrieredPtrImpl<T, Options> { \
+    using Base = gc::BarrieredPtrImpl<T, Options>;       \
+                                                         \
+   public:                                               \
+    using Base::Base;                                    \
+    using Base::operator=;                               \
   }
 
 /*
@@ -553,58 +697,7 @@ class WriteBarriered : public BarrieredBase<T>,
  * This class is useful for example for HashMap keys where automatically
  * updating a moved nursery pointer would break the hash table.
  */
-template <class T>
-class PreBarriered : public WriteBarriered<T> {
- public:
-  PreBarriered() : WriteBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-  /*
-   * Allow implicit construction for use in generic contexts.
-   */
-  MOZ_IMPLICIT PreBarriered(const T& v) : WriteBarriered<T>(v) {}
-
-  explicit PreBarriered(const PreBarriered<T>& other)
-      : WriteBarriered<T>(other.value) {}
-
-  PreBarriered(PreBarriered<T>&& other) noexcept
-      : WriteBarriered<T>(other.release()) {}
-
-  ~PreBarriered() { this->pre(); }
-
-  void init(const T& v) { this->value = v; }
-
-  /* Use to set the pointer to nullptr. */
-  void clear() { set(JS::SafelyInitialized<T>::create()); }
-
-  DECLARE_POINTER_ASSIGN_AND_MOVE_OPS(PreBarriered, T);
-
-  void set(const T& v) {
-    AssertTargetIsNotGray(v);
-    setUnchecked(v);
-  }
-
- private:
-  void setUnchecked(const T& v) {
-    this->pre();
-    this->value = v;
-  }
-
-  T release() {
-    T tmp = this->value;
-    this->value = JS::SafelyInitialized<T>::create();
-    return tmp;
-  }
-};
-
-}  // namespace js
-
-namespace JS::detail {
-template <typename T>
-struct DefineComparisonOps<js::PreBarriered<T>> : std::true_type {
-  static const T& get(const js::PreBarriered<T>& v) { return v.get(); }
-};
-}  // namespace JS::detail
-
-namespace js {
+DEFINE_BARRIERED_PTR(PreBarriered, gc::BarrierOption_PreWriteBarrier);
 
 /*
  * A pre- and post-barriered heap pointer, for use inside the JS engine.
@@ -617,76 +710,9 @@ namespace js {
  * implemented by js::HeapPtr<T> or JS::Heap<T> at the cost of not
  * automatically handling deletion or movement.
  */
-template <class T>
-class GCPtr : public WriteBarriered<T> {
- public:
-  GCPtr() : WriteBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-
-  explicit GCPtr(const T& v) : WriteBarriered<T>(v) {
-    this->post(JS::SafelyInitialized<T>::create(), v);
-  }
-
-  explicit GCPtr(const GCPtr<T>& v) : WriteBarriered<T>(v) {
-    this->post(JS::SafelyInitialized<T>::create(), v);
-  }
-
-#ifdef DEBUG
-  ~GCPtr() {
-    // No barriers are necessary as this only happens when the GC is sweeping or
-    // before this has been initialized (see above comment).
-    //
-    // If this assertion fails you may need to make the containing object use a
-    // HeapPtr instead, as this can be deleted from outside of GC.
-    MOZ_ASSERT(CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing() ||
-               this->value == JS::SafelyInitialized<T>::create());
-
-    Poison(this, JS_FREED_HEAP_PTR_PATTERN, sizeof(*this),
-           MemCheckKind::MakeNoAccess);
-  }
-#endif
-
-  /*
-   * Unlike HeapPtr<T>, GCPtr<T> must be managed with GC lifetimes.
-   * Specifically, the memory used by the pointer itself must be live until
-   * at least the next minor GC. For that reason, move semantics are invalid
-   * and are deleted here. Please note that not all containers support move
-   * semantics, so this does not completely prevent invalid uses.
-   */
-  GCPtr(GCPtr<T>&&) = delete;
-  GCPtr<T>& operator=(GCPtr<T>&&) = delete;
-
-  void init(const T& v) {
-    AssertTargetIsNotGray(v);
-    this->value = v;
-    this->post(JS::SafelyInitialized<T>::create(), v);
-  }
-
-  DECLARE_POINTER_ASSIGN_OPS(GCPtr, T);
-
-  void set(const T& v) {
-    AssertTargetIsNotGray(v);
-    setUnchecked(v);
-  }
-
- private:
-  void setUnchecked(const T& v) {
-    this->pre();
-    T tmp = this->value;
-    this->value = v;
-    this->post(tmp, this->value);
-  }
-};
-
-}  // namespace js
-
-namespace JS::detail {
-template <typename T>
-struct DefineComparisonOps<js::GCPtr<T>> : std::true_type {
-  static const T& get(const js::GCPtr<T>& v) { return v.get(); }
-};
-}  // namespace JS::detail
-
-namespace js {
+DEFINE_BARRIERED_PTR(GCPtr, gc::BarrierOption_PreWriteBarrier |
+                                gc::BarrierOption_PostWriteBarrier |
+                                gc::BarrierOption_HasGCLifetime);
 
 /*
  * A pre- and post-barriered heap pointer, for use inside the JS engine. These
@@ -709,66 +735,8 @@ namespace js {
  * internal pointers to those pointers itself. HeapPtr is only necessary
  * when the relocation would otherwise occur without the GC's knowledge.
  */
-template <class T>
-class HeapPtr : public WriteBarriered<T> {
- public:
-  HeapPtr() : WriteBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-
-  // Implicitly adding barriers is a reasonable default.
-  MOZ_IMPLICIT HeapPtr(const T& v) : WriteBarriered<T>(v) {
-    this->post(JS::SafelyInitialized<T>::create(), this->value);
-  }
-
-  MOZ_IMPLICIT HeapPtr(const HeapPtr<T>& other) : WriteBarriered<T>(other) {
-    this->post(JS::SafelyInitialized<T>::create(), this->value);
-  }
-
-  HeapPtr(HeapPtr<T>&& other) noexcept : WriteBarriered<T>(other.release()) {
-    this->post(JS::SafelyInitialized<T>::create(), this->value);
-  }
-
-  ~HeapPtr() {
-    this->pre();
-    this->post(this->value, JS::SafelyInitialized<T>::create());
-  }
-
-  void init(const T& v) {
-    MOZ_ASSERT(this->value == JS::SafelyInitialized<T>::create());
-    AssertTargetIsNotGray(v);
-    this->value = v;
-    this->post(JS::SafelyInitialized<T>::create(), this->value);
-  }
-
-  DECLARE_POINTER_ASSIGN_AND_MOVE_OPS(HeapPtr, T);
-
-  void set(const T& v) {
-    AssertTargetIsNotGray(v);
-    setUnchecked(v);
-  }
-
-  /* Make this friend so it can access pre() and post(). */
-  template <class T1, class T2>
-  friend inline void BarrieredSetPair(Zone* zone, HeapPtr<T1*>& v1, T1* val1,
-                                      HeapPtr<T2*>& v2, T2* val2);
-
- protected:
-  void setUnchecked(const T& v) {
-    this->pre();
-    postBarrieredSet(v);
-  }
-
-  void postBarrieredSet(const T& v) {
-    T tmp = this->value;
-    this->value = v;
-    this->post(tmp, this->value);
-  }
-
-  T release() {
-    T tmp = this->value;
-    postBarrieredSet(JS::SafelyInitialized<T>::create());
-    return tmp;
-  }
-};
+DEFINE_BARRIERED_PTR(HeapPtr, gc::BarrierOption_PreWriteBarrier |
+                                  gc::BarrierOption_PostWriteBarrier);
 
 /*
  * A pre-barriered heap pointer, for use inside the JS engine.
@@ -804,15 +772,15 @@ class GCStructPtr : public BarrieredBase<T> {
   void init(const T& v) {
     MOZ_ASSERT(this->get() == JS::SafelyInitialized<T>());
     AssertTargetIsNotGray(v);
-    this->value = v;
+    this->unbarrieredSet(v);
   }
 
   void set(JS::Zone* zone, const T& v) {
     pre(zone);
-    this->value = v;
+    this->unbarrieredSet(v);
   }
 
-  T get() const { return this->value; }
+  T get() const { return this->unbarrieredGet(); }
   operator T() const { return get(); }
   T operator->() const { return get(); }
 
@@ -826,30 +794,6 @@ class GCStructPtr : public BarrieredBase<T> {
   }
 };
 
-}  // namespace js
-
-namespace JS::detail {
-template <typename T>
-struct DefineComparisonOps<js::HeapPtr<T>> : std::true_type {
-  static const T& get(const js::HeapPtr<T>& v) { return v.get(); }
-};
-}  // namespace JS::detail
-
-namespace js {
-
-// Base class for barriered pointer types that intercept reads and writes.
-template <typename T>
-class ReadBarriered : public BarrieredBase<T> {
- protected:
-  // ReadBarriered is not directly instantiable.
-  explicit ReadBarriered(const T& v) : BarrieredBase<T>(v) {}
-
-  void read() const { InternalBarrierMethods<T>::readBarrier(this->value); }
-  void post(const T& prev, const T& next) {
-    InternalBarrierMethods<T>::postBarrier(&this->value, prev, next);
-  }
-};
-
 // Incremental GC requires that weak pointers have read barriers. See the block
 // comment at the top of Barrier.h for a complete discussion of why.
 //
@@ -857,130 +801,54 @@ class ReadBarriered : public BarrieredBase<T> {
 // pointers. However, when used as a hashtable key, care must still be taken to
 // insert manual post-barriers on the table for rekeying if the key is based in
 // any way on the address of the object.
-template <typename T>
-class WeakHeapPtr : public ReadBarriered<T>,
-                    public WrappedPtrOperations<T, WeakHeapPtr<T>> {
- protected:
-  using ReadBarriered<T>::value;
 
- public:
-  WeakHeapPtr() : ReadBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-
-  // It is okay to add barriers implicitly.
-  MOZ_IMPLICIT WeakHeapPtr(const T& v) : ReadBarriered<T>(v) {
-    this->post(JS::SafelyInitialized<T>::create(), v);
-  }
-
-  // The copy constructor creates a new weak edge but the wrapped pointer does
-  // not escape, so no read barrier is necessary.
-  explicit WeakHeapPtr(const WeakHeapPtr& other) : ReadBarriered<T>(other) {
-    this->post(JS::SafelyInitialized<T>::create(), value);
-  }
-
-  // Move retains the lifetime status of the source edge, so does not fire
-  // the read barrier of the defunct edge.
-  WeakHeapPtr(WeakHeapPtr&& other) noexcept
-      : ReadBarriered<T>(other.release()) {
-    this->post(JS::SafelyInitialized<T>::create(), value);
-  }
-
-  ~WeakHeapPtr() {
-    this->post(this->value, JS::SafelyInitialized<T>::create());
-  }
-
-  WeakHeapPtr& operator=(const WeakHeapPtr& v) {
-    AssertTargetIsNotGray(v.value);
-    T prior = this->value;
-    this->value = v.value;
-    this->post(prior, v.value);
-    return *this;
-  }
-
-  const T& get() const {
-    if (InternalBarrierMethods<T>::isMarkable(this->value)) {
-      this->read();
-    }
-    return this->value;
-  }
-
-  const T& unbarrieredGet() const { return this->value; }
-
-  explicit operator bool() const { return bool(this->value); }
-
-  operator const T&() const { return get(); }
-
-  const T& operator->() const { return get(); }
-
-  void set(const T& v) {
-    AssertTargetIsNotGray(v);
-    setUnchecked(v);
-  }
-
-  void unbarrieredSet(const T& v) {
-    AssertTargetIsNotGray(v);
-    this->value = v;
-  }
-
- private:
-  void setUnchecked(const T& v) {
-    T tmp = this->value;
-    this->value = v;
-    this->post(tmp, v);
-  }
-
-  T release() {
-    T tmp = value;
-    set(JS::SafelyInitialized<T>::create());
-    return tmp;
-  }
-};
+DEFINE_BARRIERED_PTR(WeakHeapPtr, gc::BarrierOption_ReadBarrier |
+                                      gc::BarrierOption_PostWriteBarrier);
 
 // A wrapper for a bare pointer, with no barriers.
 //
 // This should only be necessary in a limited number of cases. Please don't add
 // more uses of this if at all possible.
-template <typename T>
-class UnsafeBarePtr : public BarrieredBase<T> {
- public:
-  UnsafeBarePtr() : BarrieredBase<T>(JS::SafelyInitialized<T>::create()) {}
-  MOZ_IMPLICIT UnsafeBarePtr(T v) : BarrieredBase<T>(v) {}
-  const T& get() const { return this->value; }
-  void set(T newValue) { this->value = newValue; }
-  DECLARE_POINTER_CONSTREF_OPS(T);
-};
-
-}  // namespace js
-
-namespace JS::detail {
-template <typename T>
-struct DefineComparisonOps<js::WeakHeapPtr<T>> : std::true_type {
-  static const T& get(const js::WeakHeapPtr<T>& v) {
-    return v.unbarrieredGet();
-  }
-};
-}  // namespace JS::detail
-
-namespace js {
+DEFINE_BARRIERED_PTR(UnsafeBarePtr, gc::BarrierOption_None);
 
 // A pre- and post-barriered Value that is specialized to be aware that it
 // resides in a slots or elements vector. This allows it to be relocated in
 // memory, but with substantially less overhead than a HeapPtr.
-class HeapSlot : public WriteBarriered<Value> {
+class HeapSlot : public BarrieredBase<Value>,
+                 public WrappedPtrOperations<Value, HeapSlot> {
  public:
   enum Kind { Slot = 0, Element = 1 };
 
   void init(NativeObject* owner, Kind kind, uint32_t slot, const Value& v) {
-    value = v;
+    this->unbarrieredSet(v);
     post(owner, kind, slot, v);
   }
 
-  void initAsUndefined() { value.setUndefined(); }
+  // Initialization (so no pre-barrier) but where the barriers will be applied
+  // later (e.g. in bulk)
+  void unbarrieredInit(const Value& v) { this->unbarrieredSet(v); }
+
+  void initAsUndefined() { this->unbarrieredSet(UndefinedValue()); }
+
+  DECLARE_POINTER_CONSTREF_OPS(Value);
+
+  // Use this if the automatic coercion to T isn't working.
+  const Value& get() const { return this->unbarrieredGet(); }
+
+  // Use this if you want to change the value without invoking barriers.
+  // Obviously this is dangerous unless you know the barrier is not needed.
+  using BarrieredBase<Value>::unbarrieredSet;
+
+  // For users who need to manually barrier the raw types.
+  static void preWriteBarrier(const Value& v) {
+    InternalBarrierMethods<Value>::preBarrier(v);
+  }
 
   void destroy() { pre(); }
 
   void setUndefinedUnchecked() {
     pre();
-    value.setUndefined();
+    this->unbarrieredSet(UndefinedValue());
   }
 
 #ifdef DEBUG
@@ -994,35 +862,28 @@ class HeapSlot : public WriteBarriered<Value> {
                              const Value& v) {
     MOZ_ASSERT(preconditionForSet(owner, kind, slot));
     pre();
-    value = v;
+    this->unbarrieredSet(v);
     post(owner, kind, slot, v);
   }
 
  private:
+  void pre() {
+    InternalBarrierMethods<Value>::preBarrier(this->unbarrieredGet());
+  }
+
   void post(NativeObject* owner, Kind kind, uint32_t slot,
             const Value& target) {
 #ifdef DEBUG
     assertPreconditionForPostWriteBarrier(owner, kind, slot, target);
 #endif
-    if (this->value.isGCThing()) {
-      gc::Cell* cell = this->value.toGCThing();
+    if (this->unbarrieredGet().isGCThing()) {
+      gc::Cell* cell = this->unbarrieredGet().toGCThing();
       if (cell->storeBuffer()) {
         cell->storeBuffer()->putSlot(owner, kind, slot, 1);
       }
     }
   }
 };
-
-}  // namespace js
-
-namespace JS::detail {
-template <>
-struct DefineComparisonOps<js::HeapSlot> : std::true_type {
-  static const Value& get(const js::HeapSlot& v) { return v.get(); }
-};
-}  // namespace JS::detail
-
-namespace js {
 
 class HeapSlotArray {
   HeapSlot* array;
@@ -1046,23 +907,6 @@ class HeapSlotArray {
     return HeapSlotArray(array + offset);
   }
 };
-
-/*
- * This is a hack for RegExpStatics::updateFromMatch. It allows us to do two
- * barriers with only one branch to check if we're in an incremental GC.
- */
-template <class T1, class T2>
-static inline void BarrieredSetPair(Zone* zone, HeapPtr<T1*>& v1, T1* val1,
-                                    HeapPtr<T2*>& v2, T2* val2) {
-  AssertTargetIsNotGray(val1);
-  AssertTargetIsNotGray(val2);
-  if (T1::needPreWriteBarrier(zone)) {
-    v1.pre();
-    v2.pre();
-  }
-  v1.postBarrieredSet(val1);
-  v2.postBarrieredSet(val2);
-}
 
 // Initialize a field in the heap, with appropriate GC write barriers. This adds
 // a store buffer entry for this specific edge if necessary.
@@ -1236,26 +1080,24 @@ class MOZ_HEAP_CLASS ImmutableTenuredPtr {
 };
 
 // Template to remove any barrier wrapper and get the underlying type.
+// For non-barriered types this is just original type.
 template <typename T>
 struct RemoveBarrier {
   using Type = T;
 };
-template <typename T>
-struct RemoveBarrier<HeapPtr<T>> {
-  using Type = T;
-};
-template <typename T>
-struct RemoveBarrier<GCPtr<T>> {
-  using Type = T;
-};
-template <typename T>
-struct RemoveBarrier<PreBarriered<T>> {
-  using Type = T;
-};
-template <typename T>
-struct RemoveBarrier<WeakHeapPtr<T>> {
-  using Type = T;
-};
+
+#define DEFINE_REMOVE_BARRIER(BarrieredPtr) \
+  template <typename T>                     \
+  struct RemoveBarrier<BarrieredPtr<T>> {   \
+    using Type = T;                         \
+  }
+
+DEFINE_REMOVE_BARRIER(PreBarriered);
+DEFINE_REMOVE_BARRIER(HeapPtr);
+DEFINE_REMOVE_BARRIER(GCPtr);
+DEFINE_REMOVE_BARRIER(WeakHeapPtr);
+
+#undef DEFINE_REMOVE_BARRIER
 
 template <typename T>
 using IsBarriered =
@@ -1266,106 +1108,65 @@ template struct JS_PUBLIC_API StableCellHasher<JSObject*>;
 template struct JS_PUBLIC_API StableCellHasher<JSScript*>;
 #endif
 
-template <typename T>
-struct StableCellHasher<PreBarriered<T>> {
-  using Key = PreBarriered<T>;
-  using Lookup = T;
-
-  static bool maybeGetHash(const Lookup& l, HashNumber* hashOut) {
-    return StableCellHasher<T>::maybeGetHash(l, hashOut);
+// Declare a StableCellHasher specialization to allow use of barriered pointers
+// as keys in a hash table without requiring rekeying when GC cells are
+// moved. Barriers are skipped for hash table lookup.
+//
+// Barriered pointers with GC lifetime are not suitable for use as hashtable
+// keys.
+#define DEFINE_STABLE_CELL_HASHER(BarrieredPtr)                      \
+  template <typename T>                                              \
+  struct StableCellHasher<BarrieredPtr<T>> {                         \
+    using Key = BarrieredPtr<T>;                                     \
+    using Lookup = T;                                                \
+                                                                     \
+    static_assert(!Key::hasOption(gc::BarrierOption_HasGCLifetime)); \
+                                                                     \
+    static bool maybeGetHash(const Lookup& l, HashNumber* hashOut) { \
+      return StableCellHasher<T>::maybeGetHash(l, hashOut);          \
+    }                                                                \
+    static bool ensureHash(const Lookup& l, HashNumber* hashOut) {   \
+      return StableCellHasher<T>::ensureHash(l, hashOut);            \
+    }                                                                \
+    static HashNumber hash(const Lookup& l) {                        \
+      return StableCellHasher<T>::hash(l);                           \
+    }                                                                \
+    static bool match(const Key& k, const Lookup& l) {               \
+      return StableCellHasher<T>::match(k.unbarrieredGet(), l);      \
+    }                                                                \
   }
-  static bool ensureHash(const Lookup& l, HashNumber* hashOut) {
-    return StableCellHasher<T>::ensureHash(l, hashOut);
-  }
-  static HashNumber hash(const Lookup& l) {
-    return StableCellHasher<T>::hash(l);
-  }
-  static bool match(const Key& k, const Lookup& l) {
-    return StableCellHasher<T>::match(k, l);
-  }
-};
 
-template <typename T>
-struct StableCellHasher<HeapPtr<T>> {
-  using Key = HeapPtr<T>;
-  using Lookup = T;
+DEFINE_STABLE_CELL_HASHER(PreBarriered);
+DEFINE_STABLE_CELL_HASHER(HeapPtr);
+DEFINE_STABLE_CELL_HASHER(WeakHeapPtr);
 
-  static bool maybeGetHash(const Lookup& l, HashNumber* hashOut) {
-    return StableCellHasher<T>::maybeGetHash(l, hashOut);
+#undef DEFINE_STABLE_CELL_HASHER
+
+// Declare a hasher struct to allow use of barriered pointers as keys in a
+// rekeyable hash table. Barriers are skipped for hash table lookup and rekey.
+#define DEFINE_BARRIERED_PTR_HASHER(Name, BarrieredPtr)                    \
+  template <class T>                                                       \
+  struct Name {                                                            \
+    using Key = BarrieredPtr<T>;                                           \
+    using Lookup = T;                                                      \
+                                                                           \
+    static_assert(!Key::hasOption(gc::BarrierOption_HasGCLifetime));       \
+                                                                           \
+    static HashNumber hash(Lookup l) { return DefaultHasher<T>::hash(l); } \
+    static bool match(const Key& k, Lookup l) {                            \
+      return k.unbarrieredGet() == l;                                      \
+    }                                                                      \
+    static void rekey(Key& k, const Key& newKey) {                         \
+      k.unbarrieredSet(newKey.unbarrieredGet());                           \
+    }                                                                      \
   }
-  static bool ensureHash(const Lookup& l, HashNumber* hashOut) {
-    return StableCellHasher<T>::ensureHash(l, hashOut);
-  }
-  static HashNumber hash(const Lookup& l) {
-    return StableCellHasher<T>::hash(l);
-  }
-  static bool match(const Key& k, const Lookup& l) {
-    return StableCellHasher<T>::match(k, l);
-  }
-};
 
-template <typename T>
-struct StableCellHasher<WeakHeapPtr<T>> {
-  using Key = WeakHeapPtr<T>;
-  using Lookup = T;
+DEFINE_BARRIERED_PTR_HASHER(PreBarrieredHasher, PreBarriered);
+DEFINE_BARRIERED_PTR_HASHER(HeapPtrHasher, HeapPtr);
+DEFINE_BARRIERED_PTR_HASHER(WeakHeapPtrHasher, WeakHeapPtr);
+DEFINE_BARRIERED_PTR_HASHER(UnsafeBarePtrHasher, UnsafeBarePtr);
 
-  static bool maybeGetHash(const Lookup& l, HashNumber* hashOut) {
-    return StableCellHasher<T>::maybeGetHash(l, hashOut);
-  }
-  static bool ensureHash(const Lookup& l, HashNumber* hashOut) {
-    return StableCellHasher<T>::ensureHash(l, hashOut);
-  }
-  static HashNumber hash(const Lookup& l) {
-    return StableCellHasher<T>::hash(l);
-  }
-  static bool match(const Key& k, const Lookup& l) {
-    return StableCellHasher<T>::match(k.unbarrieredGet(), l);
-  }
-};
-
-/* Useful for hashtables with a HeapPtr as key. */
-template <class T>
-struct HeapPtrHasher {
-  using Key = HeapPtr<T>;
-  using Lookup = T;
-
-  static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
-  static bool match(const Key& k, Lookup l) { return k.get() == l; }
-  static void rekey(Key& k, const Key& newKey) { k.unbarrieredSet(newKey); }
-};
-
-template <class T>
-struct PreBarrieredHasher {
-  using Key = PreBarriered<T>;
-  using Lookup = T;
-
-  static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
-  static bool match(const Key& k, Lookup l) { return k.get() == l; }
-  static void rekey(Key& k, const Key& newKey) { k.unbarrieredSet(newKey); }
-};
-
-/* Useful for hashtables with a WeakHeapPtr as key. */
-template <class T>
-struct WeakHeapPtrHasher {
-  using Key = WeakHeapPtr<T>;
-  using Lookup = T;
-
-  static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
-  static bool match(const Key& k, Lookup l) { return k.unbarrieredGet() == l; }
-  static void rekey(Key& k, const Key& newKey) {
-    k.set(newKey.unbarrieredGet());
-  }
-};
-
-template <class T>
-struct UnsafeBarePtrHasher {
-  using Key = UnsafeBarePtr<T>;
-  using Lookup = T;
-
-  static HashNumber hash(const Lookup& l) { return DefaultHasher<T>::hash(l); }
-  static bool match(const Key& k, Lookup l) { return k.get() == l; }
-  static void rekey(Key& k, const Key& newKey) { k.set(newKey.get()); }
-};
+#undef DEFINE_BARRIERED_PTR_HASHER
 
 // Set up descriptive type aliases.
 template <class T>
@@ -1375,25 +1176,46 @@ using PreAndPostBarrierWrapper = GCPtr<T>;
 
 }  // namespace js
 
-namespace mozilla {
+// Define comparison ops for all barrier wrappers.
 
-template <class T>
-struct DefaultHasher<js::HeapPtr<T>> : js::HeapPtrHasher<T> {};
+namespace JS::detail {
 
-template <class T>
-struct DefaultHasher<js::GCPtr<T>> {
-  // Not implemented. GCPtr can't be used as a hash table key because it has a
-  // post barrier but doesn't support relocation.
+// Define comparison ops for barriered pointer wrappers. Comparisons don't
+// trigger read barriers. See js/public/ComparisonOperators.h for details.
+#define DEFINE_BARRIERED_PTR_COMPARISON_OPS(BarrieredPtr)        \
+  template <typename T>                                          \
+  struct DefineComparisonOps<BarrieredPtr<T>> : std::true_type { \
+    static const T& get(const BarrieredPtr<T>& v) {              \
+      return v.unbarrieredGet();                                 \
+    }                                                            \
+  }
+
+DEFINE_BARRIERED_PTR_COMPARISON_OPS(js::PreBarriered);
+DEFINE_BARRIERED_PTR_COMPARISON_OPS(js::GCPtr);
+DEFINE_BARRIERED_PTR_COMPARISON_OPS(js::HeapPtr);
+DEFINE_BARRIERED_PTR_COMPARISON_OPS(js::WeakHeapPtr);
+
+#undef DEFINE_BARRIERED_PTR_COMPARISON_OPS
+
+template <>
+struct DefineComparisonOps<js::HeapSlot> : std::true_type {
+  static const Value& get(const js::HeapSlot& v) { return v.get(); }
 };
 
-template <class T>
-struct DefaultHasher<js::PreBarriered<T>> : js::PreBarrieredHasher<T> {};
+}  // namespace JS::detail
 
-template <class T>
-struct DefaultHasher<js::WeakHeapPtr<T>> : js::WeakHeapPtrHasher<T> {};
+namespace mozilla {
 
-template <class T>
-struct DefaultHasher<js::UnsafeBarePtr<T>> : js::UnsafeBarePtrHasher<T> {};
+#define DEFINE_DEFAULT_HASHER(BarrieredPtr, Hasher) \
+  template <class T>                                \
+  struct DefaultHasher<BarrieredPtr<T>> : Hasher<T> {}
+
+DEFINE_DEFAULT_HASHER(js::HeapPtr, js::HeapPtrHasher);
+DEFINE_DEFAULT_HASHER(js::PreBarriered, js::PreBarrieredHasher);
+DEFINE_DEFAULT_HASHER(js::WeakHeapPtr, js::WeakHeapPtrHasher);
+DEFINE_DEFAULT_HASHER(js::UnsafeBarePtr, js::UnsafeBarePtrHasher);
+
+#undef DEFINE_DEFAULT_HASHER
 
 }  // namespace mozilla
 

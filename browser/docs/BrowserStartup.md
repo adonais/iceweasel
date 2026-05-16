@@ -7,28 +7,37 @@ The first rule of running code during startup is: don't.
 We take performance very seriously and ideally your component/feature should
 initialize only when needed.
 
-If you have established that you really must run code during startup,
-available entrypoints are:
-
-- registering a `browser-idle-startup` category entry for your JS module (or
-  even a "best effort" user idle task, see `BrowserGlue.sys.mjs`)
-- registering a `browser-window-delayed-startup` category entry for your JS
-  module. **Note that this is invoked for each browser window.**
-- registering a `browser-before-ui-startup` category entry if you really really
-  need to. This will run code before the first browser window appears on the
-  screen and make Firefox seem slow, so please don't do it unless absolutely
-  necessary.
-
+If you have established that you really must run code during startup, register
+a category manager entry in `browser/components/BrowserComponents.manifest`.
 See [the category manager indirection docs](./CategoryManagerIndirection.md) for
-more details on this.
+more details on the mechanism.
+
+### Available category manager entries (in order)
+
+Categories come in two types: per-application (fired once at startup) and
+per-window (fired for each browser window). The following categories
+are listed in the order they fire.
+
+#### Per-application categories (invoked once, not per-window)
+
+| Category | Notes |
+|---|---|
+| `browser-before-ui-startup` | Please don't do it unless absolutely necessary. This will run code before the first browser window appears on the screen and make Firefox seem slow. |
+| `browser-first-window-ready` | After the first browser window's `browser-window-delayed-startup` call. |
+| `browser-idle-startup` | Preferred entrypoint for most startup code. Runs during a user-idle period after startup. |
+| `browser-best-effort-idle-startup` | Like `browser-idle-startup`, but your code **may not run at all** if the browser is shut down quickly. |
+
+#### Per-window categories (invoked for each browser window)
+
+| Category | Notes |
+|---|---|
+| `browser-window-before-initial-xul-layout-document-preparation` | Before XUL layout; before the tab bar visibility update. |
+| `browser-window-before-initial-xul-layout` | Before XUL layout; after the tab bar visibility update and document icon are set. |
+| `browser-window-domcontentloaded-before-tabbrowser` | During `DOMContentLoaded`, before the `Tabbrowser` is created. |
+| `browser-window-domcontentloaded` | During `DOMContentLoaded`, after the `Tabbrowser` is created. |
+| `browser-window-delayed-startup` | After the window's first paint, for code that can run after the window is visible. |
 
 Other useful points in startup are:
-- `BrowserGlue`'s `_onFirstWindowLoaded` (which should be converted to use a
-  category manager call instead), which fires after the first browser window's
-  `browser-window-delayed-startup` call (see above).
-- `BrowserGlue`'s `_scheduleBestEffortUserIdleTasks` as mentioned above.
-  Note that in this case, your code **may not run at all** if the browser is
-  shut down quickly.
 - `BrowserGlue`'s `_onWindowsRestored`, and/or the observer service's
   `sessionstore-windows-restored` topic, and/or a category manager call that
   should replace the `BrowserGlue` list of direct calls. This fires after

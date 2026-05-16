@@ -17,6 +17,7 @@
     <issue id="StringFormatCount" severity="ignore" />
     <issue id="TypographyEllipsis" severity="ignore" />
     <issue id="ExtraTranslation" severity="ignore" />
+    <issue id="Untranslatable" severity="ignore" />
     <issue id="MissingDefaultResource" severity="ignore" />
     <issue id="BrandUsage" severity="error">
         <ignore path="**/values-*/strings.xml" />

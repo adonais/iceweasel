@@ -2610,7 +2610,7 @@ class MediaDecoderStateMachine::BufferingState
     }
     if (mMaster->IsVideoDecoding() && !mMaster->HaveEnoughDecodedVideo() &&
         !mMaster->IsTrackingVideoData()) {
-      mMaster->RequestVideoData(TimeUnit());
+      mMaster->RequestVideoData(mMaster->GetMediaTime());
     }
 
     mMaster->ScheduleStateMachineIn(TimeUnit::FromMicroseconds(USECS_PER_S));
@@ -2635,7 +2635,7 @@ class MediaDecoderStateMachine::BufferingState
   void HandleVideoDecoded(VideoData* aVideo) override {
     mMaster->PushVideo(aVideo);
     if (!mMaster->HaveEnoughDecodedVideo()) {
-      mMaster->RequestVideoData(media::TimeUnit());
+      mMaster->RequestVideoData(mMaster->GetMediaTime());
     }
     // This might be the sample we need to exit buffering.
     // Schedule Step() to check it.
@@ -2645,7 +2645,7 @@ class MediaDecoderStateMachine::BufferingState
   void HandleAudioCanceled() override { mMaster->RequestAudioData(); }
 
   void HandleVideoCanceled() override {
-    mMaster->RequestVideoData(media::TimeUnit());
+    mMaster->RequestVideoData(mMaster->GetMediaTime());
   }
 
   void HandleWaitingForAudio() override {
@@ -2661,7 +2661,7 @@ class MediaDecoderStateMachine::BufferingState
   }
 
   void HandleVideoWaited(MediaData::Type aType) override {
-    mMaster->RequestVideoData(media::TimeUnit());
+    mMaster->RequestVideoData(mMaster->GetMediaTime());
   }
 
   void HandleEndOfAudio() override;

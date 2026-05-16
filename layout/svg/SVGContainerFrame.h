@@ -134,7 +134,7 @@ class SVGDisplayContainerFrame : public SVGContainerFrame,
   void ReflowSVG() override;
   void NotifySVGChanged(ChangeFlags aFlags) override;
   SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                              uint32_t aFlags) override;
+                              SVGBBoxFlags aFlags) override;
   bool IsDisplayContainer() override { return true; }
   gfxMatrix GetCanvasTM() override;
 

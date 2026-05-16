@@ -85,6 +85,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace mozilla {
 
 using std::shared_ptr;
+using ParsedIceServer = IceServerParser::ParsedIceServer;
+using IceTransport = IceServerParser::IceTransport;
 
 TimeStamp nr_socket_short_term_violation_time() {
   return NrSocketBase::short_term_violation_time();
@@ -183,74 +185,82 @@ abort:
 static nr_ice_crypto_vtbl nr_ice_crypto_nss_vtbl = {
     nr_crypto_nss_random_bytes, nr_crypto_nss_hmac, nr_crypto_nss_md5};
 
-nsresult NrIceStunServer::ToNicerStunStruct(nr_ice_stun_server* server) const {
-  int r;
-
-  memset(server, 0, sizeof(nr_ice_stun_server));
-  uint8_t protocol;
-  if (transport_ == kNrIceTransportUdp) {
-    protocol = IPPROTO_UDP;
-  } else if (transport_ == kNrIceTransportTcp) {
+static bool ToNicerStunStruct(const char* aAddrForFqdn,
+                              const ParsedIceServer& aEntry,
+                              nr_ice_stun_server* aResult) {
+  memset(aResult, 0, sizeof(nr_ice_stun_server));
+  bool isTls = aEntry.mUri.IsTls();
+  uint8_t protocol = IPPROTO_UDP;
+  // TLS always uses TCP underneath
+  if (isTls || (aEntry.mUri.mTransport == IceTransport::Tcp)) {
     protocol = IPPROTO_TCP;
-  } else if (transport_ == kNrIceTransportTls) {
-    protocol = IPPROTO_TCP;
-  } else {
-    MOZ_MTLOG(ML_ERROR, "Unsupported STUN server transport: " << transport_);
-    return NS_ERROR_FAILURE;
   }
 
-  if (has_addr_) {
-    if (transport_ == kNrIceTransportTls) {
-      // Refuse to try TLS without an FQDN
-      return NS_ERROR_INVALID_ARG;
-    }
-    r = nr_praddr_to_transport_addr(&addr_, &server->addr, protocol, 0);
-    if (r) {
-      return NS_ERROR_FAILURE;
-    }
-  } else {
-    MOZ_ASSERT(sizeof(server->addr.fqdn) > host_.size());
-    // Dummy information to keep nICEr happy
-    if (use_ipv6_if_fqdn_) {
-      nr_str_port_to_transport_addr("::", port_, protocol, &server->addr);
-    } else {
-      nr_str_port_to_transport_addr("0.0.0.0", port_, protocol, &server->addr);
-    }
-    PL_strncpyz(server->addr.fqdn, host_.c_str(), sizeof(server->addr.fqdn));
-    if (transport_ == kNrIceTransportTls) {
-      server->addr.tls = 1;
-    }
+  if (isTls && !aAddrForFqdn) {
+    // Note: letsencrypt has cooked up super-short-lifetime IP address based
+    // certs. We may want to implement support for that.
+    // See https://bugzilla.mozilla.org/show_bug.cgi?id=2019255
+    MOZ_MTLOG(ML_ERROR, "TLS requires FQDN, not IP address");
+    return false;
   }
 
-  nr_transport_addr_fmt_addr_string(&server->addr);
+  if (aEntry.mUri.mHost.Length() >= sizeof(aResult->addr.fqdn)) {
+    MOZ_MTLOG(ML_ERROR, "FQDN too long: " << aEntry.mUri.mHost.get());
+    return false;
+  }
 
-  return NS_OK;
+  const char* host = aAddrForFqdn ? aAddrForFqdn : aEntry.mUri.mHost.get();
+
+  if (nr_str_port_to_transport_addr(host, aEntry.mUri.mPort, protocol,
+                                    &(aResult->addr))) {
+    MOZ_MTLOG(ML_ERROR, "Failed to init STUN server");
+    return false;
+  }
+
+  if (aAddrForFqdn) {
+    std::strncpy(aResult->addr.fqdn, aEntry.mUri.mHost.get(),
+                 sizeof(aResult->addr.fqdn) - 1);  // Don't stomp trailing null
+  }
+
+  if (isTls) {
+    aResult->addr.tls = 1;
+  }
+
+  nr_transport_addr_fmt_addr_string(&(aResult->addr));
+  return true;
 }
 
-nsresult NrIceTurnServer::ToNicerTurnStruct(nr_ice_turn_server* server) const {
-  memset(server, 0, sizeof(nr_ice_turn_server));
-
-  nsresult rv = ToNicerStunStruct(&server->turn_server);
-  if (NS_FAILED(rv)) return rv;
-
-  if (!(server->username = strdup(username_.c_str())))
-    return NS_ERROR_OUT_OF_MEMORY;
-
-  // TODO(ekr@rtfm.com): handle non-ASCII passwords somehow?
-  // STUN requires they be SASLpreped, but we don't know if
-  // they are at this point.
-
-  // C++03 23.2.4, Paragraph 1 stipulates that the elements
-  // in std::vector must be contiguous, and can therefore be
-  // used as input to functions expecting C arrays.
-  const UCHAR* data = password_.empty() ? nullptr : &password_[0];
-  int r = r_data_create(&server->password, data, password_.size());
-  if (r) {
-    free(server->username);
-    return NS_ERROR_OUT_OF_MEMORY;
+static bool ToNicerTurnStruct(const char* aAddrForFqdn,
+                              const ParsedIceServer& aEntry,
+                              nr_ice_turn_server* aResult) {
+  memset(aResult, 0, sizeof(nr_ice_turn_server));
+  if (!ToNicerStunStruct(aAddrForFqdn, aEntry, &(aResult->turn_server))) {
+    MOZ_MTLOG(ML_ERROR, "Failed to init STUN server");
+    return false;
+  }
+  aResult->username = strdup(aEntry.mUsername.get());
+  if (!aResult->username) {
+    MOZ_MTLOG(ML_ERROR, "Couldn't allocate TURN username");
+    return false;
   }
 
-  return NS_OK;
+  if (aEntry.mPassword.IsEmpty()) {
+    // TODO(https://bugzilla.mozilla.org/show_bug.cgi?id=2021075)
+    // Once we check for this in the validation code, we might consider removing
+    // this check. I'm inclined to keep it though, just in case.
+    MOZ_MTLOG(ML_ERROR, "TURN password is empty");
+    return false;
+  }
+
+  int r = r_data_create(&aResult->password,
+                        reinterpret_cast<const UCHAR*>(aEntry.mPassword.get()),
+                        aEntry.mPassword.Length());
+  if (r) {
+    free(aResult->username);
+    MOZ_MTLOG(ML_ERROR, "Couldn't allocate TURN password");
+    return false;
+  }
+  return true;
 }
 
 NrIceCtx::NrIceCtx(const std::string& name)
@@ -591,6 +601,8 @@ void NrIceCtx::InitializeGlobals(const GlobalConfig& aConfig) {
   // Initialize the crypto callbacks and logging stuff
   if (!initialized) {
     NR_reg_init();
+    // Registers the "stun" logger for r_log.
+    (void)nr_stun_startup();
     nr_crypto_vtbl = &nr_ice_crypto_nss_vtbl;
     initialized = true;
 
@@ -669,8 +681,7 @@ void NrIceCtx::SetStunAddrs(const nsTArray<NrIceStunAddr>& addrs) {
   local_addrs = new nr_local_addr[addrs.Length()];
 
   for (size_t i = 0; i < addrs.Length(); ++i) {
-    nr_local_addr_copy(&local_addrs[i],
-                       const_cast<nr_local_addr*>(&addrs[i].localAddr()));
+    addrs[i].toNrLocalAddr(local_addrs[i]);
   }
   nr_ice_set_local_addresses(ctx_, local_addrs, addrs.Length());
 
@@ -864,59 +875,84 @@ NrIceCtx::Controlling NrIceCtx::GetControlling() {
   return (peer_->controlling) ? ICE_CONTROLLING : ICE_CONTROLLED;
 }
 
-nsresult NrIceCtx::SetStunServers(
-    const std::vector<NrIceStunServer>& stun_servers) {
+nsresult NrIceCtx::SetIceServers(const nsTArray<ParsedIceServer>& aServers,
+                                 bool aTurnDisabled) {
   MOZ_MTLOG(ML_NOTICE, "NrIceCtx(" << name_ << "): " << __func__);
-  // We assume nr_ice_stun_server is memmoveable. That's true right now.
-  std::vector<nr_ice_stun_server> servers;
 
-  for (size_t i = 0; i < stun_servers.size(); ++i) {
-    nr_ice_stun_server server;
-    nsresult rv = stun_servers[i].ToNicerStunStruct(&server);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_MTLOG(ML_ERROR, "Couldn't convert STUN server for '" << name_ << "'");
+  std::vector<nr_ice_stun_server> stunServers;
+  std::vector<nr_ice_turn_server> turnServers;
+
+  for (const auto& entry : aServers) {
+    bool isTurn = entry.mUri.IsTurn();
+
+    if (isTurn && aTurnDisabled) {
+      continue;
+    }
+
+    // Test whether this uses an IP addr, or is an FQDN.
+    // We could use PR_StringToNetAddr instead, but that pulls in an extra
+    // dependency.
+    nr_transport_addr unused;
+    bool isFqdn = !!nr_str_port_to_transport_addr(
+        entry.mUri.mHost.get(), entry.mUri.mPort, IPPROTO_UDP, &unused);
+
+    if (isFqdn) {
+      // Not a parseable IP address -- treat as FQDN.
+      // Create both IPv4 and IPv6 versions with a placeholder address
+      if (isTurn) {
+        nr_ice_turn_server turnServer;
+        if (ToNicerTurnStruct("0.0.0.0", entry, &turnServer)) {
+          turnServers.push_back(turnServer);
+        }
+        if (ToNicerTurnStruct("::", entry, &turnServer)) {
+          turnServers.push_back(turnServer);
+        }
+      } else {
+        nr_ice_stun_server stunServer;
+        if (ToNicerStunStruct("0.0.0.0", entry, &stunServer)) {
+          stunServers.push_back(stunServer);
+        }
+        if (ToNicerStunStruct("::", entry, &stunServer)) {
+          stunServers.push_back(stunServer);
+        }
+      }
     } else {
-      servers.push_back(server);
+      // Parsed as IP address.
+      if (isTurn) {
+        nr_ice_turn_server turnServer;
+        if (ToNicerTurnStruct(nullptr, entry, &turnServer)) {
+          turnServers.push_back(turnServer);
+        }
+      } else {
+        nr_ice_stun_server stunServer;
+        if (ToNicerStunStruct(nullptr, entry, &stunServer)) {
+          stunServers.push_back(stunServer);
+        }
+      }
     }
   }
 
-  int r = nr_ice_ctx_set_stun_servers(ctx_, servers.data(),
-                                      static_cast<int>(servers.size()));
-  if (r) {
+  int r = nr_ice_ctx_set_stun_servers(ctx_, stunServers.data(),
+                                      static_cast<int>(stunServers.size()));
+  if (!r) {
+    r = nr_ice_ctx_set_turn_servers(ctx_, turnServers.data(),
+                                    static_cast<int>(turnServers.size()));
+    if (!r) {
+      // nICEr has taken ownership of the username/credential in these.
+      turnServers.clear();
+    } else {
+      MOZ_MTLOG(ML_ERROR, "Couldn't set TURN servers for '" << name_ << "'");
+    }
+  } else {
     MOZ_MTLOG(ML_ERROR, "Couldn't set STUN servers for '" << name_ << "'");
-    return NS_ERROR_FAILURE;
   }
 
-  return NS_OK;
-}
-
-// TODO(ekr@rtfm.com): This is just SetStunServers with s/Stun/Turn
-// Could we do a template or something?
-nsresult NrIceCtx::SetTurnServers(
-    const std::vector<NrIceTurnServer>& turn_servers) {
-  MOZ_MTLOG(ML_NOTICE, "NrIceCtx(" << name_ << "): " << __func__);
-  // We assume nr_ice_turn_server is memmoveable. That's true right now.
-  std::vector<nr_ice_turn_server> servers;
-
-  for (size_t i = 0; i < turn_servers.size(); ++i) {
-    nr_ice_turn_server server;
-    nsresult rv = turn_servers[i].ToNicerTurnStruct(&server);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_MTLOG(ML_ERROR, "Couldn't convert TURN server for '" << name_ << "'");
-    } else {
-      servers.push_back(server);
-    }
+  for (auto& turn : turnServers) {
+    free(turn.username);
+    r_data_destroy(&turn.password);
   }
 
-  int r = nr_ice_ctx_set_turn_servers(ctx_, servers.data(),
-                                      static_cast<int>(servers.size()));
-  if (r) {
-    MOZ_MTLOG(ML_ERROR, "Couldn't set TURN servers for '" << name_ << "'");
-    // TODO(ekr@rtfm.com): This leaks the username/password. Need to free that.
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
+  return r ? NS_ERROR_FAILURE : NS_OK;
 }
 
 nsresult NrIceCtx::SetResolver(nr_resolver* resolver) {

@@ -725,8 +725,8 @@ void HyperTextAccessible::ScrollSubstringToPoint(int32_t aStartOffset,
 
         nsresult rv = nsCoreUtils::ScrollSubstringTo(
             frame, domRange,
-            ScrollAxis(WhereToScroll(vPercent), WhenToScroll::Always),
-            ScrollAxis(WhereToScroll(hPercent), WhenToScroll::Always));
+            AxisScrollParams(WhereToScroll(vPercent), WhenToScroll::Always),
+            AxisScrollParams(WhereToScroll(hPercent), WhenToScroll::Always));
         if (NS_FAILED(rv)) return;
 
         initialScrolled = true;

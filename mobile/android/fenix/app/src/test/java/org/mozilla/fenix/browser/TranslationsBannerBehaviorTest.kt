@@ -276,16 +276,6 @@ class TranslationsBannerBehaviorTest {
     }
 
     @Test
-    fun `GIVEN just a toolbar layout shown at top WHEN the banner is shown THEN don't anchor it`() {
-        dependency.id = R.id.toolbarLayout
-        val behavior = TranslationsBannerBehavior<View>(testContext, false, false)
-
-        behavior.layoutDependsOn(parent, banner, dependency)
-
-        assertBannerIsPlacedAtTheBottomOfTheScreen()
-    }
-
-    @Test
     fun `GIVEN a bottom toolbar is shown WHEN the banner is shown THEN place the banner above the toolbar`() {
         dependency.id = R.id.toolbar
         val behavior = TranslationsBannerBehavior<View>(testContext, true, false)

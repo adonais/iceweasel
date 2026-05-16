@@ -1224,6 +1224,24 @@ const POLICIES_TESTS = [
     },
   },
 
+  // POLICY: XSLTEnabled
+  {
+    policies: {
+      XSLTEnabled: true,
+    },
+    lockedPrefs: {
+      "dom.xslt.enabled": true,
+    },
+  },
+  {
+    policies: {
+      XSLTEnabled: false,
+    },
+    lockedPrefs: {
+      "dom.xslt.enabled": false,
+    },
+  },
+
   // AIControls - all features locked via Default.Locked
   {
     policies: {

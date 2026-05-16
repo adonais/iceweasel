@@ -1290,7 +1290,8 @@ static const struct wp_image_description_v1_listener
 };
 
 bool WaylandSurface::EnableColorManagementLocked(
-    const WaylandSurfaceLock& aProofOfLock) {
+    const WaylandSurfaceLock& aProofOfLock, gfx::YUVColorSpace aColorSpace,
+    gfx::TransferFunction aTransferFunction) {
   MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
   MOZ_DIAGNOSTIC_ASSERT(!mColorSurface);
 
@@ -1304,10 +1305,48 @@ bool WaylandSurface::EnableColorManagementLocked(
   mColorSurface = wp_color_manager_v1_get_surface(colorManager, mSurface);
 
   auto* params = wp_color_manager_v1_create_parametric_creator(colorManager);
-  wp_image_description_creator_params_v1_set_primaries_named(
-      params, WP_COLOR_MANAGER_V1_PRIMARIES_BT2020);
-  wp_image_description_creator_params_v1_set_tf_named(
-      params, WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ);
+  switch (aColorSpace) {
+    case gfx::YUVColorSpace::BT2020:
+      wp_image_description_creator_params_v1_set_primaries_named(
+          params, WP_COLOR_MANAGER_V1_PRIMARIES_BT2020);
+      break;
+    case gfx::YUVColorSpace::BT709:
+      wp_image_description_creator_params_v1_set_primaries_named(
+          params, WP_COLOR_MANAGER_V1_PRIMARIES_SRGB);
+      break;
+    case gfx::YUVColorSpace::BT601:
+      // Hopefully if this os actually BT601_625 then it was turned into BT709
+      // already by this point...
+      wp_image_description_creator_params_v1_set_primaries_named(
+          params, WP_COLOR_MANAGER_V1_PRIMARIES_NTSC);
+      break;
+    case gfx::YUVColorSpace::Identity:
+      wp_image_description_creator_params_v1_set_primaries_named(
+          params, WP_COLOR_MANAGER_V1_PRIMARIES_SRGB);
+      break;
+  }
+  switch (aTransferFunction) {
+    case gfx::TransferFunction::PQ:
+      wp_image_description_creator_params_v1_set_tf_named(
+          params, WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ);
+      break;
+    case gfx::TransferFunction::HLG:
+      wp_image_description_creator_params_v1_set_tf_named(
+          params, WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG);
+      break;
+    case gfx::TransferFunction::BT709:
+      wp_image_description_creator_params_v1_set_tf_named(
+          params, WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_BT1886);
+      break;
+    case gfx::TransferFunction::SRGB:
+      wp_image_description_creator_params_v1_set_tf_named(
+          params, WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB);
+      break;
+    case gfx::TransferFunction::LINEAR:
+      wp_image_description_creator_params_v1_set_tf_named(
+          params, WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR);
+      break;
+  }
   mImageDescription = wp_image_description_creator_params_v1_create(params);
   // wp_image_description_creator_params_v1_create() consumes params
   params = nullptr;

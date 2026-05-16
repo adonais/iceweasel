@@ -326,7 +326,6 @@
   }
 }
 panel#feature-callout {
-  --panel-color: var(--fc-color);
   --panel-shadow: none;
   --panel-shadow-margin: 6px;
   --panel-arrow-space: calc(var(--panel-shadow-margin) + var(--arrow-visible-height) - 1.5px);
@@ -524,6 +523,90 @@ div#feature-callout.hidden {
 }
 #feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .legal-paragraph .text-link {
   color: var(--fc-color);
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  align-self: stretch;
+  width: 100%;
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container {
+  display: flex;
+  border: 1px solid var(--fc-border);
+  border-radius: 4px;
+  margin: -5px auto;
+  text-align: start;
+  flex-direction: column;
+  width: inherit;
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container .rtamo-icon img {
+  margin: 6px;
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container .rtamo-icon img.brand-logo {
+  height: 24px;
+  padding: 0 4px;
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container .addon-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-inline-start: 32px;
+  margin-block-start: -32px;
+  padding: 0 4px;
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container .addon-description {
+  font-size: 12px;
+  font-weight: 400;
+  margin-inline-start: 8px;
+  padding: 10px 6px;
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container .install-button-wrapper {
+  display: inline-grid;
+  padding: 0 12px 10px;
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container button {
+  align-self: center;
+  padding: 4px;
+  color: var(--fc-primary-button-color);
+  background-color: var(--fc-primary-button-background);
+  border: 1px solid var(--fc-button-border);
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: default;
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container button:hover:not(:disabled), #feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container button[open] {
+  background-color: var(--fc-primary-button-background-hover);
+  color: var(--fc-primary-button-color-hover);
+  border: 1px solid var(--fc-primary-button-border-hover);
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container button:hover:not(:disabled):active, #feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .addon-container button[open]:active {
+  background-color: var(--fc-primary-button-background-active);
+  color: var(--fc-primary-button-color-active);
+  border: 1px solid var(--fc-primary-button-border-active);
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .loader {
+  width: 1em;
+  height: 1em;
+  border: 3px solid var(--fc-primary-button-color);
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+  justify-self: center;
+}
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+#feature-callout .screen[pos=callout] .section-main .main-content .main-content-inner .addons-picker-container .loaderContainer {
+  display: flex;
+  padding: 1.5px 37.5px;
+  margin: auto;
 }
 #feature-callout .screen[pos=callout] .section-main .main-content .steps {
   height: auto;
@@ -2191,7 +2274,6 @@ html {
     margin-inline: auto;
   }
   .onboardingContainer .screen[pos=split][fullscreen] .section-secondary {
-    --mr-secondary-position: center var(--mr-secondary-background-position-y) / 50%;
     height: 250px;
   }
   .onboardingContainer .screen[pos=split][fullscreen] .section-secondary .hero-image img {
@@ -2226,7 +2308,6 @@ html {
   margin-inline: auto;
 }
 [narrow] .onboardingContainer .screen[pos=split][fullscreen] .section-secondary {
-  --mr-secondary-position: center var(--mr-secondary-background-position-y) / 50%;
   height: 250px;
 }
 [narrow] .onboardingContainer .screen[pos=split][fullscreen] .section-secondary .hero-image img {
@@ -2270,8 +2351,7 @@ html {
     width: 400px;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary {
-    --mr-secondary-background-position-y: top;
-    --mr-secondary-position: center var(--mr-secondary-background-position-y) / 75%;
+    --mr-secondary-position: center center / 75%;
     border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
     margin: auto;
     margin-bottom: 0;
@@ -2458,8 +2538,7 @@ html {
   width: 400px;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary {
-  --mr-secondary-background-position-y: top;
-  --mr-secondary-position: center var(--mr-secondary-background-position-y) / 75%;
+  --mr-secondary-position: center center / 75%;
   border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
   margin: auto;
   margin-bottom: 0;

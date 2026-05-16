@@ -34,7 +34,7 @@ export class SmartwindowFooter extends MozLitElement {
           data-l10n-id="smartwindow-footer-history"
           data-l10n-attrs="tooltiptext,aria-label"
           class="footer-action-button"
-          iconsrc="chrome://browser/content/firefoxview/view-history.svg"
+          iconsrc="chrome://browser/skin/history.svg"
           @click=${() => {
             this.handleActionClick("history");
           }}

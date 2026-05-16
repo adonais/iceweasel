@@ -3,6 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
+    worker-type:
+        by-test-platform:
+            windows.*-(32|64).*-asan/.*: win11-64-25h2-large
+            windows.*aarch64.*/.*: win11-a64-25h2
+            windows.*/.*: win11-64-25h2
+            default: default
     suite:
         category: xpcshell
         name: xpcshell
@@ -34,6 +40,7 @@ task-defaults:
                     - unittests/win_unittest.py
         requires-signed-builds:
             by-test-platform:
+                macosx.*-artifact/.*: false
                 macosx1500.*: true
                 windows.*-asan/opt: false    # No XPCShell on ASAN yet
                 windows.*-mingwclang/.*: false
@@ -59,6 +66,7 @@ xpcshell:
         by-variant:
             conditioned_profile:
                 by-test-platform:
+                    .*-artifact.*: []
                     .*-asan.*: []
                     .*-ccov.*: []
                     linux2404-64.*/opt: ['trunk']
@@ -107,8 +115,8 @@ xpcshell:
             macosx1470-64/debug: 6
             macosx1470-64.*/opt: 4
             windows.*/debug: 2
-            windows11-64-24h2-asan/opt: 2
-            windows11-64-24h2-ccov/opt: 3
+            windows11-64-(24h2|25h2)-asan/opt: 2
+            windows11-64-(24h2|25h2)-ccov/opt: 3
             default: 1
     max-run-time:
         by-variant:

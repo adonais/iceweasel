@@ -22,6 +22,10 @@ class ArrayBufferOrView;
 class AutoCheckCannotGC;
 }  // namespace JS
 
+namespace mozilla::dom {
+class IDBTransaction;
+}  // namespace mozilla::dom
+
 namespace mozilla::dom::indexedDB {
 
 class Key {
@@ -144,7 +148,8 @@ class Key {
   // A key return value is indicated by returning `true` whereas `false` means
   // either invalid (if `aRv.Failed()` is `false`) or an exception (otherwise).
   IDBResult<Ok, IDBSpecialValue::Invalid> SetFromJSVal(
-      JSContext* aCx, JS::Handle<JS::Value> aVal);
+      JSContext* aCx, JS::Handle<JS::Value> aVal,
+      mozilla::dom::IDBTransaction* aTransaction = nullptr);
 
   nsresult ToJSVal(JSContext* aCx, JS::MutableHandle<JS::Value> aVal) const;
 

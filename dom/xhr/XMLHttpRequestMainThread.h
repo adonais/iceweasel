@@ -14,6 +14,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/Document.h"
@@ -46,7 +47,6 @@
 #include "nsIURI.h"
 #include "nsJSUtils.h"
 #include "nsTArray.h"
-#include "mozilla/WeakPtr.h"
 
 #ifdef Status
 /* Xlib headers insist on this for some reason... Nuke it because

@@ -23,6 +23,7 @@ import org.mozilla.fenix.browser.StandardSnackbarError
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
+import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.appstate.webcompat.WebCompatState
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.home.bookmarks.Bookmark
@@ -33,6 +34,7 @@ import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTab
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTabState
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
+import org.mozilla.fenix.home.sports.MatchCard
 import org.mozilla.fenix.library.history.PendingDeletionHistory
 import org.mozilla.fenix.messaging.MessagingState
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -376,6 +378,26 @@ sealed class AppAction : Action {
         data class BookmarkOperationResultReported(
             val globalResultReport: BookmarksGlobalResultReport,
         ) : BookmarkAction()
+    }
+
+    /**
+     * [AppAction]s related to Google Lens image search.
+     */
+    sealed class LensAction : AppAction() {
+        /** The user has requested a Lens image search. */
+        data object LensRequested : LensAction()
+
+        /** The Lens request has been consumed and the image chooser launched. */
+        data object LensRequestConsumed : LensAction()
+
+        /** The Lens flow was dismissed or failed. */
+        data object LensDismissed : LensAction()
+
+        /** The Lens image upload completed and a results URL is available. */
+        data class LensResultAvailable(val url: String) : LensAction()
+
+        /** The Lens result URL has been consumed and navigation triggered. */
+        data object LensResultConsumed : LensAction()
     }
 
     /**
@@ -798,4 +820,66 @@ sealed class AppAction : Action {
      * @property count The new count of trackers blocked.
      */
     data class UpdateTrackersBlockedCount(val count: Int) : AppAction()
+
+    /**
+     * [AppAction]s related to the sports widget.
+     */
+    sealed class SportsWidgetAction : AppAction() {
+        /**
+         * Dispatched when countries were selected in the sports widget country selector.
+         *
+         * @property countryCodes Set of ISO codes of the selected countries.
+         */
+        data class CountriesSelected(val countryCodes: Set<String>) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the user skips the "Follow your team" card.
+         */
+        data object FollowTeamSkipped : SportsWidgetAction()
+
+        /**
+         * Dispatched when the sports widget's visibility changes.
+         *
+         * @property isVisible The new visibility state of the sports widget.
+         */
+        data class VisibilityChanged(val isVisible: Boolean) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the countdown widget's visibility changes.
+         *
+         * @property isCountdownVisible The new visibility state of the countdown widget.
+         */
+        data class CountdownVisibilityChanged(val isCountdownVisible: Boolean) : SportsWidgetAction()
+
+        /**
+         * Dispatched when new match card data is available for the homepage sports widget.
+         *
+         * @property matchCardState The new [MatchCard] to display, or null if no match
+         * should be shown.
+         */
+        data class MatchCardStateUpdated(val matchCardState: MatchCard?) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the sport widget's debug tool visibility changes.
+         *
+         * @property visible Whether the debug tool should be displayed.
+         */
+        data class DebugToolVisibilityChanged(val visible: Boolean) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the user toggles the world cup started override setting in the sport widget's debug tool.
+         * This overrides [SportsWidgetState.hasWorldCupStarted] and should be used for debug only.
+         *
+         * @property hasWorldCupStartedOverride Whether the world cup has started.
+         */
+        data class WorldCupStartedOverrideUpdated(val hasWorldCupStartedOverride: Boolean) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the user toggles the skip follow team setting in the sport widget's debug tool.
+         * This should be used for debug only.
+         *
+         * @property hasSkippedFollowTeam Whether the user skipped the "Follow your team" card.
+         */
+        data class SkipFollowTeamUpdated(val hasSkippedFollowTeam: Boolean) : SportsWidgetAction()
+    }
 }

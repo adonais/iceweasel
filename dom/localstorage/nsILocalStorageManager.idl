@@ -18,9 +18,9 @@ interface nsILocalStorageManager : nsISupports
 
   /**
    * Trigger preload of LocalStorage for the given principal.  For use by
-   * ContentParent::AboutToLoadHttpDocumentForChild to maximize the
-   * amount of time we have to load the data off disk before the page might
-   * attempt to touch LocalStorage.
+   * ContentParent::AboutToLoadDocumentForChild to maximize the amount of time
+   * we have to load the data off disk before the page might attempt to touch
+   * LocalStorage.
    *
    * This method will not create a QuotaManager-managed directory on disk if
    * one does not already exist for the principal.

@@ -10,7 +10,6 @@ MOCHITEST_CHROME_MANIFESTS += ["test/chrome.toml"]
 
 UNIFIED_SOURCES += [
     "ButtonControlFrame.cpp",
-    "HTMLSelectEventListener.cpp",
     "InputButtonControlFrame.cpp",
     "ListMutationObserver.cpp",
     "nsCheckboxRadioFrame.cpp",

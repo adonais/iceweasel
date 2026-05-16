@@ -46,7 +46,7 @@ def main():
     )
     parser.add_argument(
         "--tool-version",
-        default="11.0.0",
+        default="12.2.1",
         help="The playback tool version to use (default: %(default)s)",
     )
     parser.add_argument(

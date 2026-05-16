@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -37,20 +35,6 @@
 #include "vm/StringType-inl.h"
 
 inline void js::BaseScript::traceChildren(JSTracer* trc) {
-  traceChildrenCommon(trc);
-  warmUpData_.trace(trc);
-}
-inline void js::BaseScript::traceChildrenConcurrently(JSTracer* trc,
-                                                      bool* skippedJitScript) {
-  traceChildrenCommon(trc);
-
-  ScriptWarmUpData warmUpData = warmUpData_;
-  if (!warmUpData.isJitScript()) {
-    warmUpData.trace(trc);
-  }
-  *skippedJitScript = warmUpData.isJitScript();
-}
-inline void js::BaseScript::traceChildrenCommon(JSTracer* trc) {
   TraceNullableEdge(trc, &function_, "function");
   TraceEdge(trc, &sourceObject_, "sourceObject");
 
@@ -58,6 +42,8 @@ inline void js::BaseScript::traceChildrenCommon(JSTracer* trc) {
     TraceBufferEdge(trc, this, &data_, "PrivateScriptData");
     data_->trace(trc);
   }
+
+  warmUpData_.trace(trc);
 }
 
 inline void js::Shape::traceChildren(JSTracer* trc) {
@@ -123,7 +109,7 @@ inline void JSString::traceChildren(JSTracer* trc) {
 template <uint32_t opts>
 void js::GCMarker::eagerlyMarkChildren(JSString* str) {
   uint32_t flags = str->flags();
-  if (flags & JSString::LINEAR_BIT) {
+  if (flags & js::StringFlags::LINEAR_BIT) {
     eagerlyMarkChildren<opts>(static_cast<JSLinearString*>(str));
   } else {
     eagerlyMarkChildren<opts>(static_cast<JSRope*>(str));

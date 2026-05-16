@@ -87,6 +87,7 @@ internal class DataChoicesMiddleware(
             }
             is StudiesLoaded -> {}
             is SettingsLoaded -> {}
+            is ChoiceAction.ScrolledToItem -> {}
         }
     }
 

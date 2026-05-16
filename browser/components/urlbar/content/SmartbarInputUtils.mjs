@@ -141,6 +141,16 @@ const getAnchorPos = (range, view) => {
 function setupContextMentionsButton(smartbarInput, panelList) {
   const contextButton = smartbarInput.querySelector("context-icon-button");
 
+  panelList.addEventListener("shown", () => {
+    if (panelList.getAttribute("data-triggered-by") === "context-mention") {
+      contextButton.setAttribute("active", "");
+    }
+  });
+
+  panelList.addEventListener("hidden", () => {
+    contextButton.removeAttribute("active");
+  });
+
   contextButton.addEventListener("aiwindow-context-button:on-click", () => {
     const contextMentionSearch = new lazy.SmartbarMentionsPanelSearch(
       // @ts-ignore topChromeWindow global
@@ -178,6 +188,15 @@ function setupMentionsPlugin(editorElement, panelList) {
   let mentionChangeTimer = null;
   let mentionSearch = null;
   let latestMentionData = null;
+
+  document.l10n
+    .formatValue("smartbar-mention-typing-placeholder")
+    .then(text => {
+      editorElement.style.setProperty(
+        "--multiline-editor-mention-placeholder",
+        `" ${text}"`
+      );
+    });
 
   const handleMentionsChange = () => {
     if (!latestMentionData || !mentionSearch) {
@@ -228,6 +247,7 @@ function setupMentionsPlugin(editorElement, panelList) {
       panelList.groups = groups;
       panelList.setAttribute("data-triggered-by", "inline-mention");
       panelList.show();
+      editorElement.setAttribute("data-mention-placeholder", "");
 
       const { chat_id, message_seq } = smartbarInput.conversationTelemetryInfo;
       Glean.smartWindow.mentionStart.record({
@@ -240,6 +260,11 @@ function setupMentionsPlugin(editorElement, panelList) {
     onChange: mentionData => {
       latestMentionData = mentionData;
 
+      editorElement.toggleAttribute(
+        "data-mention-placeholder",
+        mentionData.text.length <= 1
+      );
+
       if (!mentionChangeTimer) {
         mentionChangeTimer = new lazy.SkippableTimer({
           name: "SmartbarMentionsChange",
@@ -251,6 +276,7 @@ function setupMentionsPlugin(editorElement, panelList) {
     onExit: () => {
       isHandlingMentions = false;
       panelList.hide();
+      editorElement.removeAttribute("data-mention-placeholder");
 
       // Cancel pending queries
       if (mentionChangeTimer) {
@@ -296,9 +322,8 @@ function setupMentionsPlugin(editorElement, panelList) {
         chat_id,
         location: smartbarInput.sapLocation,
         message_seq: String(message_seq),
-        tabs_available: panelList.groups.reduce(
-          (sum, group) => sum + group.items.length,
-          0
+        tabs_available: String(
+          panelList.groups.reduce((sum, group) => sum + group.items.length, 0)
         ),
         tabs_preselected: String(tabsPreselected),
         tabs_selected: String(smartbarInput.contextWebsitesCount),

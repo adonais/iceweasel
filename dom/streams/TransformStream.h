@@ -94,19 +94,6 @@ class TransformStream final : public nsISupports, public nsWrapperCache {
   RefPtr<WritableStream> mWritable;
 };
 
-namespace streams_abstract {
-
-MOZ_CAN_RUN_SCRIPT void TransformStreamErrorWritableAndUnblockWrite(
-    JSContext* aCx, TransformStream* aStream, JS::Handle<JS::Value> aError,
-    ErrorResult& aRv);
-
-MOZ_CAN_RUN_SCRIPT void TransformStreamError(JSContext* aCx,
-                                             TransformStream* aStream,
-                                             JS::Handle<JS::Value> aError,
-                                             ErrorResult& aRv);
-
-}  // namespace streams_abstract
-
 }  // namespace mozilla::dom
 
 #endif  // DOM_STREAMS_TRANSFORMSTREAM_H_

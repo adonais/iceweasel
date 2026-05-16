@@ -1,0 +1,19 @@
+{
+  "label": "fbo.fubon.com",
+  "bugs": {
+    "2006036": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://fbo.fubon.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "not_platforms": ["linux"],
+      "content_scripts": {
+        "all_frames": true,
+        "js": ["bug2006036-fbo.fubon.com-unblock-firefox.js"]
+      },
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

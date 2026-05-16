@@ -5,8 +5,6 @@
 #ifndef MOZILLA_GFX_PRINTTARGET_H
 #define MOZILLA_GFX_PRINTTARGET_H
 
-#include <functional>
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "nsISupportsImpl.h"

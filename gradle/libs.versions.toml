@@ -6,18 +6,18 @@ android-lint = "31.13.2"
 # Kotlin
 coroutines = "1.10.2"
 kotlin = "2.3.20"
-serialization = "1.10.0"
+serialization = "1.11.0"
 
 # AndroidX
 activity = "1.13.0"
-annotation = "1.9.1"
-annotation-experimental = "1.5.1"
+annotation = "1.10.0"
+annotation-experimental = "1.6.0"
 appcompat = "1.7.1"
 arch = "2.2.0"
 autofill = "1.3.0"
 benchmark = "1.4.1"
 biometric = "1.1.0"
-browser = "1.9.0"
+browser = "1.10.0"
 cardview = "1.0.0"
 collection = "1.6.0"
 compose-bom = "2026.02.01"
@@ -28,14 +28,16 @@ coordinatorlayout = "1.3.0"
 core = "1.18.0"
 core-splashscreen = "1.2.0"
 datastore = "1.2.1"
+datastore-core = "1.2.1"
 documentfile = "1.1.0"
 drawerlayout = "1.2.0"
 emoji2 = "1.6.0"
 fragment = "1.8.9"
 lifecycle = "2.10.0"
 media = "1.7.1"
+media3 = "1.9.3"
 navigation = "2.9.7"
-navigation3 = "1.0.1"
+navigation3 = "1.1.0"
 paging = "3.4.1"
 palette = "1.0.0"
 preferences = "1.2.1"
@@ -48,7 +50,7 @@ swiperefreshlayout = "1.2.0"
 transition = "1.7.0"
 viewpager2 = "1.1.0"
 window = "1.5.1"
-work = "2.11.1"
+work = "2.11.2"
 
 # Google other
 accompanist = "0.37.3"
@@ -63,16 +65,16 @@ play-review = "2.0.2"
 play-services-ads-id = "18.3.0"
 play-services-base = "18.10.0"
 play-services-fido = "21.2.0"
-protobuf = "4.33.2" # Keep Protobuf in sync with the version used by AppServices.
+protobuf = "4.34.1" # Keep Protobuf in sync with the version used by AppServices.
 
 # Gradle plugins
-dependency-analysis = "3.6.1"
+dependency-analysis = "3.7.0"
 jacoco = "0.8.14"
 kaml = "0.104.0"
 kotlin-dsl = "6.5.2"
 protobuf-plugin = "0.9.6"
 python-envs-plugin = "0.0.31"
-semanticdb-javac = "0.11.1"
+semanticdb-javac = "0.12.0"
 semanticdb-kotlinc = "0.9.0"
 tomlj = "1.1.1"
 
@@ -83,7 +85,7 @@ ktlint = "1.8.0"
 spotless = "8.4.0"
 
 # Mozilla
-glean = "67.1.0"
+glean = "67.2.0"
 
 # Testing libraries
 androidx-test = "1.7.0"
@@ -101,7 +103,7 @@ mockk = "1.14.9"
 robolectric = "4.16"
 
 # Third party libraries
-adjust = "5.5.1"
+adjust = "5.6.1"
 androidsvg = "1.4"
 disklrucache = "2.0.2"
 jetbrains-markdown = "0.7.3"
@@ -109,7 +111,7 @@ jna = "5.18.1"
 json = "20251224"
 okhttp = "5.3.2"
 okio = "3.17.0"
-sentry = "8.36.0"
+sentry = "8.39.1"
 zxing = "3.5.4"
 
 [libraries]
@@ -152,6 +154,7 @@ androidx-core = { module = "androidx.core:core", version.ref = "core" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "core-splashscreen" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+androidx-datastore-core = { group = "androidx.datastore", name = "datastore-core", version.ref = "datastore-core" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
 androidx-drawerlayout = { module = "androidx.drawerlayout:drawerlayout", version.ref = "drawerlayout" }
@@ -169,6 +172,11 @@ androidx-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", 
 androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-media = { module = "androidx.media:media", version.ref = "media" }
+androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3" }
+androidx-media3-datasource = { module = "androidx.media3:media3-datasource", version.ref = "media3" }
+androidx-media3-decoder = { module = "androidx.media3:media3-decoder", version.ref = "media3" }
+androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
+androidx-media3-exoplayer-hls = { module = "androidx.media3:media3-exoplayer-hls", version.ref = "media3" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 androidx-navigation-fragment = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation" }
 androidx-navigation-safeargs = { module = "androidx.navigation:navigation-safe-args-gradle-plugin", version.ref = "navigation" }

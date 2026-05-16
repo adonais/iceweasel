@@ -36,6 +36,6 @@ testWithTypedArrayConstructors(function(TA) {
   });
 
   assert.sameValue(calledOffset, 1);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

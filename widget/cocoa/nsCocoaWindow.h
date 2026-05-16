@@ -121,13 +121,13 @@ class TextInputHandler;
 @interface NSWindow (Undocumented)
 - (NSDictionary*)shadowParameters;
 
-// Present in the same form on OS X since at least OS X 10.5.
+// Present in the same form on macOS since at least macOS 10.5.
 - (NSRect)contentRectForFrameRect:(NSRect)windowFrame
                         styleMask:(NSUInteger)windowStyle;
 - (NSRect)frameRectForContentRect:(NSRect)windowContentRect
                         styleMask:(NSUInteger)windowStyle;
 
-// Present since at least OS X 10.5.  The OS calls this method on NSWindow
+// Present since at least macOS 10.5.  The OS calls this method on NSWindow
 // (and its subclasses) to find out which NSFrameView subclass to instantiate
 // to create its "frame view".
 + (Class)frameViewClassForStyleMask:(NSUInteger)styleMask;
@@ -253,11 +253,7 @@ class nsCocoaWindow final : public nsIWidget {
 
   nsresult SynthesizeNativeMouseMove(
       LayoutDeviceIntPoint aPoint,
-      nsISynthesizedEventCallback* aCallback) override {
-    return SynthesizeNativeMouseEvent(
-        aPoint, NativeMouseMessage::Move, mozilla::MouseButton::eNotPressed,
-        nsIWidget::Modifiers::NO_MODIFIERS, aCallback);
-  }
+      nsISynthesizedEventCallback* aCallback) override;
   nsresult SynthesizeNativeMouseScrollEvent(
       LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
       double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
@@ -359,6 +355,7 @@ class nsCocoaWindow final : public nsIWidget {
   LayoutDeviceIntRect GetClientBounds() override;
   LayoutDeviceIntRect GetScreenBounds() override;
   LayoutDeviceIntRect GetBounds() override { return mBounds; }
+  [[nodiscard]] nsresult GetRestoredBounds(LayoutDeviceIntRect& aRect) override;
   void ReportMoveEvent();
   void ReportSizeEvent();
   bool WidgetTypeSupportsAcceleration() override { return true; }
@@ -383,7 +380,7 @@ class nsCocoaWindow final : public nsIWidget {
   void HandleMainThreadCATransaction();
 
 #ifdef ACCESSIBILITY
-  already_AddRefed<mozilla::a11y::LocalAccessible> GetDocumentAccessible();
+  already_AddRefed<mozilla::a11y::LocalAccessible> GetWindowAccessible();
 #endif
 
   bool WidgetPaintsBackground() override { return true; }
@@ -504,6 +501,12 @@ class nsCocoaWindow final : public nsIWidget {
   // since fullscreen to-and-from zoomed windows won't necessarily trigger
   // a resize.
   bool HandleUpdateFullscreenOnResize();
+
+  void LockNativePointer() override;
+  void UnlockNativePointer() override;
+
+  static bool IsNativePointerLocked();
+  static LayoutDeviceIntPoint GetNativeLockedPoint();
 
  protected:
   virtual ~nsCocoaWindow();
@@ -656,6 +659,13 @@ class nsCocoaWindow final : public nsIWidget {
 
   LayoutDeviceIntRect mBounds;
 
+  // The window bounds saved just before the window last left nsSizeMode_Normal
+  // (for fullscreen, maximized, or minimized). Used by GetRestoredBounds() so
+  // that we can persist the pre-transition position/size while the window is
+  // not in normal mode. Nothing() until the first transition out of normal
+  // mode occurs.
+  mozilla::Maybe<LayoutDeviceIntRect> mRestoredBounds;
+
   mozilla::widget::PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate =
       nullptr;
 
@@ -669,6 +679,10 @@ class nsCocoaWindow final : public nsIWidget {
   // to EndOurNativeTransition() when the native transition is complete.
   bool CanStartNativeTransition();
   void EndOurNativeTransition();
+
+  // This is class state for tracking native pointer lock state.
+  static bool sIsNativePointerLocked;
+  static LayoutDeviceIntPoint sNativeLockedPoint;
 };
 
 #endif  // nsCocoaWindow_h_

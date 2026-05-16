@@ -46,7 +46,6 @@ add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["network.lna.blocking", true],
-      ["network.http.rcwn.enabled", false],
       [
         "captivedetect.canonicalURL",
         `http://127.0.0.1:${gHttpServer.identity.primaryPort}/`,

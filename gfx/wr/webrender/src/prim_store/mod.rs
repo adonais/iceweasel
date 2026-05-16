@@ -24,6 +24,7 @@ use crate::picture::PicturePrimitive;
 use crate::render_task_graph::RenderTaskId;
 use crate::resource_cache::ImageProperties;
 use std::{hash, u32, usize};
+use crate::scratch_buffer::{ScratchBuffer, ScratchHandle};
 use crate::util::Recycler;
 use crate::internal_types::{FastHashSet, LayoutPrimitiveInfo};
 use crate::visibility::PrimitiveVisibility;
@@ -42,7 +43,7 @@ mod storage;
 
 use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle};
 use borders::{ImageBorderDataHandle, NormalBorderDataHandle};
-use gradient::{LinearGradientPrimitive, LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
+use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
 use image::{ImageDataHandle, ImageInstance, YuvImageDataHandle};
 use line_dec::LineDecorationDataHandle;
 use picture::PictureDataHandle;
@@ -409,19 +410,6 @@ impl From<WorldPoint> for PointKey {
 }
 
 /// A hashable float for using as a key during primitive interning.
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq)]
-pub struct FloatKey(f32);
-
-impl Eq for FloatKey {}
-
-impl hash::Hash for FloatKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.0.to_bits().hash(state);
-    }
-}
-
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -500,14 +488,6 @@ pub struct VisibleMaskImageTile {
     pub tile_offset: TileOffset,
     pub tile_rect: LayoutRect,
     pub task_id: RenderTaskId,
-}
-
-#[derive(Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct VisibleGradientTile {
-    pub address: GpuBufferAddress,
-    pub local_rect: LayoutRect,
-    pub local_clip_rect: LayoutRect,
 }
 
 /// Information about how to cache a border segment,
@@ -769,20 +749,12 @@ pub enum PrimitiveInstanceKind {
     LineDecoration {
         /// Handle to the common interned data for this primitive.
         data_handle: LineDecorationDataHandle,
-        // TODO(gw): For now, we need to store some information in
-        //           the primitive instance that is created during
-        //           prepare_prims and read during the batching pass.
-        //           Once we unify the prepare_prims and batching to
-        //           occur at the same time, we can remove most of
-        //           the things we store here in the instance, and
-        //           use them directly. This will remove cache_handle,
-        //           but also the opacity, clip_task_id etc below.
-        render_task: Option<RenderTaskId>,
+        scratch_handle: ScratchHandle<RenderTaskId>,
     },
     NormalBorder {
         /// Handle to the common interned data for this primitive.
         data_handle: NormalBorderDataHandle,
-        render_task_ids: storage::Range<RenderTaskId>,
+        scratch_handle: ScratchHandle<borders::NormalBorderScratch>,
     },
     ImageBorder {
         /// Handle to the common interned data for this primitive.
@@ -793,7 +765,6 @@ pub enum PrimitiveInstanceKind {
         data_handle: RectangleDataHandle,
         segment_instance_index: SegmentInstanceIndex,
         color_binding_index: ColorBindingIndex,
-        use_legacy_path: bool,
     },
     YuvImage {
         /// Handle to the common interned data for this primitive.
@@ -807,32 +778,17 @@ pub enum PrimitiveInstanceKind {
         image_instance_index: ImageInstanceIndex,
         compositor_surface_kind: CompositorSurfaceKind,
     },
-    /// Always rendered directly into the picture. This tends to be
-    /// faster with SWGL.
     LinearGradient {
         /// Handle to the common interned data for this primitive.
         data_handle: LinearGradientDataHandle,
-        visible_tiles_range: GradientTileRange,
-        use_legacy_path: bool,
-    },
-    /// Always rendered via a cached render task. Usually faster with
-    /// a GPU.
-    CachedLinearGradient {
-        /// Handle to the common interned data for this primitive.
-        data_handle: LinearGradientDataHandle,
-        visible_tiles_range: GradientTileRange,
     },
     RadialGradient {
         /// Handle to the common interned data for this primitive.
         data_handle: RadialGradientDataHandle,
-        visible_tiles_range: GradientTileRange,
-        use_legacy_path: bool,
     },
     ConicGradient {
         /// Handle to the common interned data for this primitive.
         data_handle: ConicGradientDataHandle,
-        visible_tiles_range: GradientTileRange,
-        use_legacy_path: bool,
     },
     /// Render a portion of a specified backdrop.
     BackdropCapture {
@@ -844,6 +800,7 @@ pub enum PrimitiveInstanceKind {
     },
     BoxShadow {
         data_handle: BoxShadowDataHandle,
+        render_task: Option<RenderTaskId>,
     },
 }
 
@@ -922,9 +879,6 @@ impl PrimitiveInstance {
             PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
                 data_handle.uid()
             }
-            PrimitiveInstanceKind::CachedLinearGradient { data_handle, .. } => {
-                data_handle.uid()
-            }
             PrimitiveInstanceKind::NormalBorder { data_handle, .. } => {
                 data_handle.uid()
             }
@@ -952,6 +906,7 @@ impl PrimitiveInstance {
             PrimitiveInstanceKind::BoxShadow { data_handle, .. } => {
                 data_handle.uid()
             }
+
         }
     }
 }
@@ -968,16 +923,12 @@ pub type TextRunIndex = storage::Index<TextRunPrimitive>;
 pub type TextRunStorage = storage::Storage<TextRunPrimitive>;
 pub type ColorBindingIndex = storage::Index<PropertyBinding<ColorU>>;
 pub type ColorBindingStorage = storage::Storage<PropertyBinding<ColorU>>;
-pub type BorderHandleStorage = storage::Storage<RenderTaskId>;
 pub type SegmentStorage = storage::Storage<BrushSegment>;
 pub type SegmentsRange = storage::Range<BrushSegment>;
 pub type SegmentInstanceStorage = storage::Storage<SegmentedInstance>;
 pub type SegmentInstanceIndex = storage::Index<SegmentedInstance>;
 pub type ImageInstanceStorage = storage::Storage<ImageInstance>;
 pub type ImageInstanceIndex = storage::Index<ImageInstance>;
-pub type GradientTileStorage = storage::Storage<VisibleGradientTile>;
-pub type GradientTileRange = storage::Range<VisibleGradientTile>;
-pub type LinearGradientStorage = storage::Storage<LinearGradientPrimitive>;
 
 /// Contains various vecs of data that is used only during frame building,
 /// where we want to recycle the memory each new display list, to avoid constantly
@@ -985,6 +936,9 @@ pub type LinearGradientStorage = storage::Storage<LinearGradientPrimitive>;
 /// and read during batching.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveScratchBuffer {
+    /// Per-frame bump arena for heterogeneous prepare-to-batch data.
+    pub arena: ScratchBuffer,
+
     /// Contains a list of clip mask instance parameters
     /// per segment generated.
     pub clip_mask_instances: Vec<ClipMaskKind>,
@@ -992,10 +946,6 @@ pub struct PrimitiveScratchBuffer {
     /// List of glyphs keys that are allocated by each
     /// text run instance.
     pub glyph_keys: GlyphKeyStorage,
-
-    /// List of render task handles for border segment instances
-    /// that have been added this frame.
-    pub border_cache_handles: BorderHandleStorage,
 
     /// A list of brush segments that have been built for this scene.
     pub segments: SegmentStorage,
@@ -1005,9 +955,6 @@ pub struct PrimitiveScratchBuffer {
     /// removed in favor of segment building during primitive interning.
     pub segment_instances: SegmentInstanceStorage,
 
-    /// A list of visible tiles that tiled gradients use to store
-    /// per-tile information.
-    pub gradient_tiles: GradientTileStorage,
 
     /// List of debug display items for rendering.
     pub debug_items: Vec<DebugItem>,
@@ -1031,12 +978,11 @@ pub struct PrimitiveScratchBuffer {
 impl Default for PrimitiveScratchBuffer {
     fn default() -> Self {
         PrimitiveScratchBuffer {
+            arena: ScratchBuffer::new(),
             clip_mask_instances: Vec::new(),
             glyph_keys: GlyphKeyStorage::new(0),
-            border_cache_handles: BorderHandleStorage::new(0),
             segments: SegmentStorage::new(0),
             segment_instances: SegmentInstanceStorage::new(0),
-            gradient_tiles: GradientTileStorage::new(0),
             debug_items: Vec::new(),
             messages: Vec::new(),
             required_sub_graphs: FastHashSet::default(),
@@ -1050,12 +996,11 @@ impl Default for PrimitiveScratchBuffer {
 
 impl PrimitiveScratchBuffer {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
+        self.arena.recycle(recycler);
         recycler.recycle_vec(&mut self.clip_mask_instances);
         self.glyph_keys.recycle(recycler);
-        self.border_cache_handles.recycle(recycler);
         self.segments.recycle(recycler);
         self.segment_instances.recycle(recycler);
-        self.gradient_tiles.recycle(recycler);
         recycler.recycle_vec(&mut self.debug_items);
         recycler.recycle_vec(&mut self.quad_direct_segments);
         recycler.recycle_vec(&mut self.quad_color_segments);
@@ -1063,6 +1008,8 @@ impl PrimitiveScratchBuffer {
     }
 
     pub fn begin_frame(&mut self) {
+        self.arena.clear();
+
         // Clear the clip mask tasks for the beginning of the frame. Append
         // a single kind representing no clip mask, at the ClipTaskIndex::INVALID
         // location.
@@ -1072,13 +1019,10 @@ impl PrimitiveScratchBuffer {
         self.quad_color_segments.clear();
         self.quad_indirect_segments.clear();
 
-        self.border_cache_handles.clear();
-
         // TODO(gw): As in the previous code, the gradient tiles store GPU cache
         //           handles that are cleared (and thus invalidated + re-uploaded)
         //           every frame. This maintains the existing behavior, but we
         //           should fix this in the future to retain handles.
-        self.gradient_tiles.clear();
 
         self.required_sub_graphs.clear();
 
@@ -1209,7 +1153,6 @@ pub struct PrimitiveStoreStats {
     picture_count: usize,
     text_run_count: usize,
     image_count: usize,
-    linear_gradient_count: usize,
     color_binding_count: usize,
 }
 
@@ -1219,7 +1162,6 @@ impl PrimitiveStoreStats {
             picture_count: 0,
             text_run_count: 0,
             image_count: 0,
-            linear_gradient_count: 0,
             color_binding_count: 0,
         }
     }
@@ -1229,8 +1171,6 @@ impl PrimitiveStoreStats {
 pub struct PrimitiveStore {
     pub pictures: Vec<PicturePrimitive>,
     pub text_runs: TextRunStorage,
-    pub linear_gradients: LinearGradientStorage,
-
     /// A list of image instances. These are stored separately as
     /// storing them inline in the instance makes the structure bigger
     /// for other types.
@@ -1247,7 +1187,6 @@ impl PrimitiveStore {
             text_runs: TextRunStorage::new(stats.text_run_count),
             images: ImageInstanceStorage::new(stats.image_count),
             color_bindings: ColorBindingStorage::new(stats.color_binding_count),
-            linear_gradients: LinearGradientStorage::new(stats.linear_gradient_count),
         }
     }
 
@@ -1256,7 +1195,6 @@ impl PrimitiveStore {
         self.text_runs.clear();
         self.images.clear();
         self.color_bindings.clear();
-        self.linear_gradients.clear();
     }
 
     pub fn get_stats(&self) -> PrimitiveStoreStats {
@@ -1264,7 +1202,6 @@ impl PrimitiveStore {
             picture_count: self.pictures.len(),
             text_run_count: self.text_runs.len(),
             image_count: self.images.len(),
-            linear_gradient_count: self.linear_gradients.len(),
             color_binding_count: self.color_bindings.len(),
         }
     }

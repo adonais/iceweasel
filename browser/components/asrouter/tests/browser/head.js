@@ -148,7 +148,12 @@ const clickCTA = async doc => {
  */
 async function withTestMessage(sandbox, message, taskFn) {
   let handleMessageRequestStub = sandbox.stub(ASRouter, "handleMessageRequest");
-  handleMessageRequestStub.resolves([message]);
+  handleMessageRequestStub.callsFake(async ({ template, returnAll } = {}) => {
+    if (!template || template === message.template) {
+      return returnAll ? [message] : message;
+    }
+    return returnAll ? [] : null;
+  });
 
   let messagesEnabledInAutomationStub = sandbox.stub(
     ASRouter,

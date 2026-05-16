@@ -4,7 +4,7 @@
 
 typedef (unrestricted double or boolean or DOMString or Node or sequence<Node> or XPathResult) XSLTParameterValue;
 
-[Exposed=Window]
+[Exposed=Window, Pref="dom.xslt.enabled"]
 interface XSLTProcessor {
     [UseCounter]
     constructor();

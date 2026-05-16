@@ -8,7 +8,7 @@
 const ICONS = {
   active: "chrome://browser/skin/trust-icon-active.svg",
   insecure: "chrome://browser/skin/trust-icon-insecure.svg",
-  file: "chrome://global/skin/icons/page-portrait.svg",
+  warning: "chrome://browser/skin/trust-icon-warning.svg",
   secure: "chrome://global/skin/icons/security.svg",
   broken: "chrome://global/skin/icons/security-broken.svg",
   failure: "chrome://global/skin/icons/info.svg",
@@ -43,7 +43,7 @@ const TESTS = [
   },
   {
     url: "about:neterror",
-    icon: ICONS.active,
+    icon: ICONS.warning,
     connectionIcon: ICONS.failure,
     descriptionSection: "trustpanel-header-enabled",
   },

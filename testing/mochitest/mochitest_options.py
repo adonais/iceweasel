@@ -949,6 +949,15 @@ class MochitestArguments(ArgumentContainer):
             },
         ],
         [
+            ["--restart-between-tests"],
+            {
+                "action": "store_true",
+                "dest": "restartBetweenTests",
+                "default": False,
+                "help": "Restart the browser between each test to identify tests with undocumented dependencies.",
+            },
+        ],
+        [
             ["--variant"],
             {
                 "dest": "variant",

@@ -617,8 +617,6 @@ impl YamlWriter {
                     DisplayItem::SetFilterData => {}
                     DisplayItem::SetPoints => {}
                     DisplayItem::PopAllShadows => {}
-                    DisplayItem::ReuseItems(..) => {}
-                    DisplayItem::RetainedItems(..) => {}
                     DisplayItem::RepeatingImage(..) => {}
                     DisplayItem::YuvImage(..) => {}
                     DisplayItem::BackdropFilter(..) => {}

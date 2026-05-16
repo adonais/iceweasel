@@ -146,6 +146,9 @@ newtab-menu-report = Reportar
 newtab-menu-section-block = Blocar
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Non plus sequer
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Non plus sequer le argumento
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -307,9 +310,23 @@ newtab-error-fallback-refresh-link = Refresca le pagina pro tentar de novo.
 
 newtab-custom-shortcuts-title = Accessos directe
 newtab-custom-shortcuts-subtitle = Sitos que tu salva o visita
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Accessos directe
     .description = Sitos que tu salva o visita
+newtab-custom-shortcuts-nova =
+    .label = Accessos directe
+newtab-custom-row-description =
+    .description = Numero de rangos
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } linea
+           *[other] { $num } lineas
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -320,9 +337,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Accessos directe sponsorisate
 newtab-custom-pocket-title = Recommendate per { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Contento exceptional a cura de { -pocket-brand-name }, parte del familia { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Historias recommendate
     .description = Exceptional contento curate per le familia de { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Historias recommendate
 newtab-custom-stories-personalized-toggle =
     .label = Historias
 newtab-custom-stories-personalized-checkbox-label = Historias personalisate basate sur tu activitate
@@ -356,8 +376,12 @@ newtab-custom-settings = Gerer altere parametros
 
 newtab-wallpaper-title = Fundos
 newtab-wallpaper-reset = Restaurar le predefinition
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Incargar un imagine
+newtab-wallpaper-add-an-image = Adder un imagine
 newtab-wallpaper-custom-color = Eliger un color
+newtab-wallpaper-toggle-title =
+    .label = Fundos
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Le dimension del imagine excede le limite de { $file_size }MB. Tenta incargar un file minus grande.
@@ -380,7 +404,9 @@ newtab-wallpaper-light-fox-anniversary = Un vulpe in un prato con un brumose pai
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Colores unite
+newtab-wallpaper-colors = Colores
 newtab-wallpaper-blue = Blau
 newtab-wallpaper-light-blue = Blau clar
 newtab-wallpaper-light-purple = Purpuree clar
@@ -486,7 +512,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Passar a Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Passar a Celsius
-newtab-weather-menu-hide-weather-v2 = Celar meteo
 newtab-weather-menu-hide-weather = Celar meteo sur Nove scheda
 newtab-weather-menu-learn-more = Pro saper plus
 newtab-weather-menu-detect-my-location = Deteger mi position
@@ -497,8 +522,18 @@ newtab-weather-opt-in-not-now =
     .label = Non ora
 newtab-weather-opt-in-yes =
     .label = Si
+newtab-weather-opt-in-headline = Obtene tu prevision del conditiones meteorologic local
+newtab-weather-opt-in-use-location =
+    .label = Usar position
+newtab-weather-opt-in-choose-location = Eliger position
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Citate de Nove York
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Alte
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Basse
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -572,6 +607,7 @@ newtab-section-confirm-block-topic-p2 = Le topicos blocate non apparera plus in 
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Blocar { $topic }
+newtab-section-block-cancel-button = Cancellar
 
 ## Strings for custom wallpaper highlight
 
@@ -635,6 +671,18 @@ newtab-toast-thanks-for-reporting =
     .message = Gratias pro iste reporto.
 newtab-toast-widgets-hidden =
     .message = Selige le icone de stilo pro quandocunque re-adder widgets
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Tu ora seque { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Tu cessava de sequer { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Tu non videra plus historias re { $topic }.
 
 ## Strings for task / to-do list productivity widget
 
@@ -654,7 +702,6 @@ newtab-widget-lists-menu-edit = Modificar le nomine del lista
 newtab-widget-lists-menu-create = Crear un nove lista
 newtab-widget-lists-menu-delete = Deler iste lista
 newtab-widget-lists-menu-copy = Copiar lista al area de transferentia
-newtab-widget-lists-menu-hide = Celar tote le listas
 newtab-widget-lists-menu-learn-more = Pro saper plus
 newtab-widget-lists-input-add-an-item =
     .placeholder = Adder un elemento
@@ -676,6 +723,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = Nove lista
 newtab-widget-section-title = Widgets
 newtab-widget-menu-hide = Celar widget
+newtab-widget-menu-change-size = Cambiar dimension
+newtab-widget-size-small = Parve
+newtab-widget-size-medium = Medie
+newtab-widget-size-large = Grande
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Celar widgets
@@ -707,7 +758,6 @@ newtab-widget-timer-reset =
     .title = Reinitialisar
 newtab-widget-timer-menu-notifications = Disactivar notificationes
 newtab-widget-timer-menu-notifications-on = Activar notificationes
-newtab-widget-timer-menu-hide = Celar temporisator
 newtab-widget-timer-menu-learn-more = Pro saper plus
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Titulos principal
@@ -718,6 +768,12 @@ newtab-daily-briefing-card-timestamp = Actualisate desde { $minutes } min
 newtab-widget-message-title = Remane concentrate con le listas e un temporisator integrate
 # to-dos stands for "things to do".
 newtab-widget-message-copy = De rememorationes a travalios, de concentration a relaxation – resta attente e a tempore.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Face tue { -brand-product-name }
+newtab-promo-card-body-addons = Impedi al VPN integrate de esser disponibile al usatores.
+newtab-promo-card-cta-addons = Proba lo subito
 newtab-promo-card-title = Supporta { -brand-product-name }
 newtab-promo-card-body = Nostre patrocinatores supporta nostre mission pro construer un web melior
 newtab-promo-card-cta = Pro saper plus

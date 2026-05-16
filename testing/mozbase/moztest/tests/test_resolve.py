@@ -456,6 +456,30 @@ def test_resolve_metadata(resolver):
     ]
 
 
+def test_resolve_metadata_root_path(resolver):
+    """Test that a suite's root_path resolves as a suite dispatch."""
+    suites, tests = resolver.resolve_metadata(["mobile/android/fenix"])
+    assert suites == {"fenix"}
+    assert tests == []
+
+
+def test_resolve_metadata_subdir_not_suite(resolver):
+    """Test that a subdirectory within a suite root resolves individual tests."""
+    suites, tests = resolver.resolve_metadata(["banana/currant"])
+    assert suites == set()
+    assert len(tests) == 2
+    for t in tests:
+        assert t["file_relpath"].startswith("banana/currant")
+
+
+def test_resolve_metadata_file_not_suite(resolver):
+    """Test that a specific file within a suite root resolves as a test."""
+    suites, tests = resolver.resolve_metadata(["apple/test_a11y.html"])
+    assert suites == set()
+    assert len(tests) == 1
+    assert tests[0]["file_relpath"] == "apple/test_a11y.html"
+
+
 def test_ancestor_manifest_defaults(resolver, topsrcdir, defaults):
     """Test that defaults from ancestor manifests are found."""
     tests = list(resolver._resolve(paths=["carrot/test_included.js"]))

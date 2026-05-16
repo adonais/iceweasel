@@ -562,16 +562,14 @@ static void MaybeClearAffectsDirAutoSlot(nsIContent* aContent) {
 
 void SlotAssignedNodeAdded(HTMLSlotElement* aSlot, nsIContent& aAssignedNode) {
   MOZ_ASSERT(aSlot);
-  if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-    if (aSlot->IsMaybeSelected()) {
-      // Normally it's nsRange::ContentAppended's responsibility to
-      // mark new descendants, however this doesn't work for slotted
-      // content because nsRange observes the common ancestor of
-      // start/end, whereas slotted element may not have the same
-      // ancestor as them.
-      dom::AbstractRange::UpdateDescendantsInFlattenedTree(
-          aAssignedNode, true /* aMarkDesendants*/);
-    }
+  if (aSlot->IsMaybeSelected()) {
+    // Normally it's nsRange::ContentAppended's responsibility to
+    // mark new descendants, however this doesn't work for slotted
+    // content because nsRange observes the common ancestor of
+    // start/end, whereas slotted element may not have the same
+    // ancestor as them.
+    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
+        aAssignedNode, true /* aMarkDesendants*/);
   }
 
   if (aSlot->HasDirAuto()) {
@@ -583,8 +581,7 @@ void SlotAssignedNodeAdded(HTMLSlotElement* aSlot, nsIContent& aAssignedNode) {
 
 void SlotAssignedNodeRemoved(HTMLSlotElement* aSlot,
                              nsIContent& aUnassignedNode) {
-  if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled() &&
-      aUnassignedNode.IsMaybeSelected()) {
+  if (aUnassignedNode.IsMaybeSelected()) {
     // Normally, this shouldn't happen because nsRange::ContentRemoved
     // should be called for content removal, and then
     // AbstractRange::UnmarkDescendants will be used to clear the flags.
@@ -789,7 +786,50 @@ void ResetDirectionSetByTextNode(Text* aTextNode,
   FindDirAutoElementsFrom(unboundFrom, autoElements);
   for (Element* autoElement : autoElements) {
     if (autoElement->GetDirectionality() != dir) {
-      // it's dir was not determined by this text node
+      // its dir was not determined by this text node
+      continue;
+    }
+    ResetAutoDirection(autoElement, /* aNotify = */ true);
+  }
+}
+
+void ResetDirectionSetBySlotHost(HTMLSlotElement* aSlot,
+                                 dom::UnbindContext& aContext,
+                                 ShadowRoot* aOldContainingShadow) {
+  // https://html.spec.whatwg.org/#contained-text-auto-directionality
+  // Dynamic update for step 1.2. If descendant is a slot element whose root is
+  // a shadow root, then return the directionality of that shadow root's host.
+
+  MOZ_ASSERT(!aSlot->IsInComposedDoc(), "Should be disconnected already");
+  if (!AffectsDirAutoElement(aSlot) || EstablishesOwnDirection(aSlot)) {
+    return;
+  }
+  AutoTArray<Element*, 4> autoElements;
+  bool answerIsDefinitive = FindDirAutoElementsFrom(aSlot, autoElements);
+
+  if (answerIsDefinitive) {
+    // All dir=auto elements are in our (now detached) subtree. We're done, as
+    // nothing really changed for our purposes.
+    return;
+  }
+  auto* unboundFrom =
+      nsIContent::FromNodeOrNull(aContext.GetOriginalSubtreeParent());
+  if (!unboundFrom || !AffectsDirAutoElement(unboundFrom)) {
+    return;
+  }
+
+  // Slot provides host direction to dir=auto ancestors. Determine what it was.
+  Element* host = aOldContainingShadow->GetHost();
+  Directionality dir = host ? host->GetDirectionality() : Directionality::Unset;
+  if (dir == Directionality::Unset) {
+    return;
+  }
+
+  autoElements.Clear();
+  FindDirAutoElementsFrom(unboundFrom, autoElements);
+  for (Element* autoElement : autoElements) {
+    if (autoElement->GetDirectionality() != dir) {
+      // its dir was not determined by this slot's host
       continue;
     }
     ResetAutoDirection(autoElement, /* aNotify = */ true);
@@ -907,7 +947,7 @@ void SetDirOnBind(Element* aElement, nsIContent* aParent) {
     if (aParent->AffectsDirAutoSlot()) {
       aElement->SetAffectsDirAutoSlot();
     }
-    DownwardPropagateDirAutoFlags(aElement);
+    // Flags propagate to children when they are recursively bound.
 
     if (aElement->GetFirstChild() ||
         (aElement->IsInShadowTree() && !aElement->HasValidDir() &&

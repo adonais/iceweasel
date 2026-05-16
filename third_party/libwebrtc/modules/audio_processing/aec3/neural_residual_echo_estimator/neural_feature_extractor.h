@@ -24,16 +24,17 @@ namespace webrtc {
 class FeatureExtractor {
  public:
   enum class ModelInputEnum {
-    kModelState = 0,
-    kMic = 1,
-    kLinearAecOutput = 2,
-    kAecRef = 3,
+    kMic = 0,
+    kLinearAecOutput = 1,
+    kAecRef = 2,
+    kModelState = 3,
     kNumInputs = 4
   };
   enum class ModelOutputEnum {
     kEchoMask = 0,
-    kModelState = 1,
-    kNumOutputs = 2
+    kUnboundedEchoMask = 1,
+    kModelState = 2,
+    kNumOutputs = 3
   };
 
   virtual ~FeatureExtractor() = default;
@@ -50,12 +51,17 @@ class FeatureExtractor {
   // Uses the internal buffer data for producing the model input tensors.
   virtual void PrepareModelInput(ArrayView<float> model_input,
                                  ModelInputEnum input_type) = 0;
+
+  // Resets the internal state of the feature extractor.
+  virtual void Reset() = 0;
 };
 
 class TimeDomainFeatureExtractor : public FeatureExtractor {
  public:
   explicit TimeDomainFeatureExtractor(int step_size);
   ~TimeDomainFeatureExtractor() override;
+
+  void Reset() override;
 
   bool ReadyForInference() const override;
 
@@ -74,7 +80,9 @@ class TimeDomainFeatureExtractor : public FeatureExtractor {
 class FrequencyDomainFeatureExtractor : public FeatureExtractor {
  public:
   explicit FrequencyDomainFeatureExtractor(int step_size);
-  ~FrequencyDomainFeatureExtractor();
+  ~FrequencyDomainFeatureExtractor() override;
+
+  void Reset() override;
 
   bool ReadyForInference() const override;
 

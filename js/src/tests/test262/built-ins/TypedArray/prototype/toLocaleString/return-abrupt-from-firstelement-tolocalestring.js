@@ -33,13 +33,13 @@ Number.prototype.toLocaleString = function() {
 
 var arr = [42, 0];
 
-testWithTypedArrayConstructors(function(TA, N) {
+testWithTypedArrayConstructors(function(TA) {
   calls = 0;
   var sample = new TA(arr);
   assert.throws(Test262Error, function() {
     sample.toLocaleString();
   });
   assert.sameValue(calls, 1, "abrupt from first element");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

@@ -183,6 +183,12 @@ class MenuTelemetryMiddleware(
                 )
             }
 
+            MenuAction.MoveToNonPrivateTab -> Events.browserMenuAction.record(
+                Events.BrowserMenuActionExtra(
+                    item = "move_to_non_private_tab",
+                ),
+            )
+
             MenuAction.DeleteBrowsingDataAndQuit -> Events.browserMenuAction.record(
                 Events.BrowserMenuActionExtra(
                     item = "quit",
@@ -293,7 +299,9 @@ class MenuTelemetryMiddleware(
             is MenuAction.UpdateAvailableAddons,
             is MenuAction.OnSummarizationMenuExposed,
             is MenuAction.InitializeSummarizationMenuState,
+            is MenuAction.UpdateIPProtectionMenuState,
             is MenuAction.OnMoreMenuClicked,
+            is MenuAction.Navigate.IPProtectionSettings,
             -> Unit
         }
     }

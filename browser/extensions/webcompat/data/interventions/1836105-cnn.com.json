@@ -1,0 +1,17 @@
+{
+  "label": "cnn.com",
+  "bugs": {
+    "1830307": {
+      "issue": "broken-printing",
+      "matches": ["*://*.cnn.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1836105-cnn.com-fix-blank-pages-when-printing.css"]
+      }
+    }
+  ]
+}

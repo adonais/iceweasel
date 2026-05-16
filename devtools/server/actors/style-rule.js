@@ -71,6 +71,19 @@ loader.lazyRequireGetter(
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
+const lazy = {};
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs",
+  { global: "contextual" }
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "layoutCssAttrEnabled",
+  "layout.css.attr.enabled",
+  false
+);
+
 /**
  * An actor that represents a CSS style object on the protocol.
  *
@@ -722,10 +735,20 @@ class StyleRuleActor extends Actor {
       } else if (ruleClassName === "CSSContainerRule") {
         ancestorData.push({
           type,
-          // Send containerName and containerQuery separately (instead of conditionText)
+          // send the array of conditions (e.g. their name and query instead of conditionText)
           // so the client has more flexibility to display the information.
-          containerName: rawRule.containerName,
-          containerQuery: rawRule.containerQuery,
+          conditions: Array.from(rawRule.conditions).map((condition, i) => ({
+            containerName: condition.name,
+            containerQuery: condition.query,
+            matched: rawRule.queryConditionMatchesElement(
+              this.currentlySelectedElement,
+              i
+            ),
+            hasContainer: !!rawRule.queryContainerFor(
+              this.currentlySelectedElement,
+              i
+            ),
+          })),
         });
       } else if (ruleClassName === "CSSSupportsRule") {
         ancestorData.push({
@@ -738,7 +761,10 @@ class StyleRuleActor extends Actor {
           start: rawRule.start,
           end: rawRule.end,
         });
-      } else if (ruleClassName === "CSSStartingStyleRule") {
+      } else if (
+        ruleClassName === "CSSStartingStyleRule" ||
+        ruleClassName === "CSSAppearanceBaseRule"
+      ) {
         ancestorData.push({
           type,
         });
@@ -1414,14 +1440,17 @@ class StyleRuleActor extends Actor {
    *
    * @param {number} ancestorRuleIndex: The index of the @container rule in this.ancestorRules
    * @param {NodeActor} nodeActor: The nodeActor for which we want to retrieve the query container
+   * @param {number} conditionIndex: The index of <container-condition> in the @container rule
    * @returns {object} An object with the following properties:
    *          - node: {NodeActor|null} The nodeActor representing the query container,
    *            null if none were found
+   *          - containerName: {string} The computed `containerType` value of the query container
+   *            when there's one, or the rule's condition `name`.
    *          - containerType: {string} The computed `containerType` value of the query container
-   *          - inlineSize: {string} The computed `inlineSize` value of the query container (e.g. `120px`)
-   *          - blockSize: {string} The computed `blockSize` value of the query container (e.g. `812px`)
+   *          - queryFeatures: {array<object>} An array of the properties used in the
+   *            query and their values.
    */
-  getQueryContainerForNode(ancestorRuleIndex, nodeActor) {
+  getQueryContainerForNode(ancestorRuleIndex, nodeActor, conditionIndex) {
     const ancestorRule = this.ancestorRules[ancestorRuleIndex];
     if (!ancestorRule) {
       console.error(
@@ -1431,23 +1460,159 @@ class StyleRuleActor extends Actor {
     }
 
     const containerEl = ancestorRule.rawRule.queryContainerFor(
-      nodeActor.rawNode
+      nodeActor.rawNode,
+      conditionIndex
     );
+    const condition = ancestorRule.rawRule.conditions[conditionIndex];
 
-    // queryContainerFor returns null when the container name wasn't find in any ancestor.
-    // In practice this shouldn't happen, as if the rule is applied, it means that an
-    // elligible container was found.
+    // queryContainerFor returns null when the container name wasn't find in any ancestor,
+    // which can happen for rules with multiple conditions.
     if (!containerEl) {
-      return { node: null };
+      return {
+        node: null,
+        containerName: condition?.name,
+      };
     }
 
     const computedStyle = CssLogic.getComputedStyle(containerEl);
+
     return {
       node: this.pageStyle.walker.getNode(containerEl),
       containerType: computedStyle.containerType,
-      inlineSize: computedStyle.inlineSize,
-      blockSize: computedStyle.blockSize,
+      containerName:
+        computedStyle.containerName !== "none"
+          ? computedStyle.containerName
+          : null,
+      queryFeatures: this.#getFeaturesForContainerQueryConditions({
+        condition,
+        computedStyle,
+        containerEl,
+      }),
     };
+  }
+
+  /**
+   * Get the different features (i.e. the properties used in the condition) of a given
+   * container query condition.
+   *
+   * @param {object} param
+   * @param {object} param.condition
+   * @param {object} param.computedStyle
+   * @param {Element} param.containerEl
+   * @returns Array<object>
+   */
+  #getFeaturesForContainerQueryConditions({
+    condition,
+    computedStyle,
+    containerEl,
+  }) {
+    const queryFeatures = [];
+    // We only want to send unique type/name/value entries (e.g. if a given variable is
+    // mentioned twice, we should only send it once).
+    const addQueryFeature = (type, name, value) => {
+      if (
+        queryFeatures.some(
+          // we don't need to check for `value`, as type/name should represent a unique
+          // attribute/variable/property , and we'll always get the same value for a
+          // given (type|name) pair.
+          feature => feature.name === name && feature.type === type
+        )
+      ) {
+        return;
+      }
+      queryFeatures.push({ type, name, value });
+    };
+    const parser = new InspectorCSSParser(condition.query);
+    let token;
+    const stack = [];
+    while ((token = parser.nextToken())) {
+      const lastStack = stack.at(-1);
+      if (token.tokenType === "Function") {
+        stack.push({
+          tokenType: token.tokenType,
+          functionName: token.value.toLowerCase(),
+        });
+        continue;
+      }
+      if (token.tokenType === "ParenthesisBlock") {
+        stack.push({ tokenType: token.tokenType });
+        continue;
+      }
+      if (token.tokenType === "CloseParenthesis") {
+        stack.pop();
+        continue;
+      }
+
+      if (token.tokenType === "Ident") {
+        let ident = token.text;
+        if (ident === "and" || ident === "or" || ident === "not") {
+          continue;
+        }
+
+        let propertyValue = computedStyle.getPropertyValue(ident);
+
+        // if we're in style() or var() and the ident starts with "--", it's most likely
+        // a reference to a CSS variable, so let's get its value
+        if (
+          lastStack.tokenType === "Function" &&
+          (lastStack.functionName === "style" ||
+            lastStack.functionName === "var") &&
+          ident.startsWith("--")
+        ) {
+          // the variable name is the first ident after the function token
+          if (!lastStack.varNameFound) {
+            // we want to return the ident if the variable is not defined, so we can display
+            // specific text for it
+            addQueryFeature(
+              "var",
+              ident,
+              // Use computedStyle.hasLonghandProperty(ident), so we can return an empty
+              // string for empty variables (e.g. `--x: ;`), and null when the variables isn't set.
+              computedStyle.hasLonghandProperty(ident) ? propertyValue : null
+            );
+            lastStack.varNameFound = true;
+          }
+          continue;
+        }
+        if (
+          lastStack.tokenType === "Function" &&
+          lastStack.functionName === "attr" &&
+          // only include attribute name/values if they would actually be matched.
+          // With the pref set to false, the rule still parses, but the condition will
+          // be unmatched, and showing the attributes could lead to confusion
+          lazy.layoutCssAttrEnabled
+        ) {
+          // the attribute name is the first ident after the function token
+          if (!lastStack.attrNameFound) {
+            // we want to return the attribute if it's not defined, so we can display
+            // specific text for it
+            addQueryFeature("attr", ident, containerEl.getAttribute(ident));
+            lastStack.attrNameFound = true;
+          }
+          continue;
+        }
+        if (lastStack.tokenType === "ParenthesisBlock") {
+          // if the value for the ident wasn't found, we may have some legacy syntax
+          // features (e.g. `max-height: 100px`, `min-width: 800px`)
+          if (!propertyValue) {
+            // Try to remove the leading min/max so we get the actual property name
+            ident = ident.replace(/(min|max)-/, "");
+            propertyValue = computedStyle.getPropertyValue(ident);
+          }
+
+          // If we couldn't still get the value, don't include anything for that ident
+          if (!propertyValue) {
+            continue;
+          }
+
+          // if we're not directly in a function, we might have regular size features,
+          // e.g. (inline-size > 1px and height < 80px). Let's return the value for those.
+          addQueryFeature("size", ident, propertyValue);
+        }
+      }
+    }
+
+    return queryFeatures;
   }
 
   /**

@@ -1,0 +1,15 @@
+{
+  "label": "www.editoracontexto.com.br",
+  "bugs": {
+    "1919004": {
+      "issue": "desktop-layout-not-mobile",
+      "matches": ["*://www.editoracontexto.com.br/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "ua_string": ["Chrome"]
+    }
+  ]
+}

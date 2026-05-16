@@ -97,7 +97,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   }
 
   void RemoveConnectionAttempt(ConnectionAttempt* sock, bool abandon);
-  void CloseAllConnectionAttempts();
+  void CloseAllConnectionAttempts(bool aReenqueueTransaction = false);
 
   HttpRetParams GetConnectionData();
   Http3ConnectionStatsParams GetHttp3ConnectionStatsData();

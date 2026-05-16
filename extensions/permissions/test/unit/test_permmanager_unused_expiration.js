@@ -602,7 +602,9 @@ add_task(async function test_glean_by_type_multiple_types() {
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
 });
 
-add_task(async function test_interaction_not_tracked_when_disabled() {
+// Interaction tracking always runs regardless of the expireUnused pref,
+// so that data is ready when the feature is later enabled.
+add_task(async function test_interaction_tracked_even_when_disabled() {
   Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
   Services.prefs.setCharPref(
     "permissions.expireUnusedTypes",
@@ -629,8 +631,8 @@ add_task(async function test_interaction_not_tracked_when_disabled() {
 
   Assert.equal(
     getInteractionCount("https://visitdisabled.example.com"),
-    0,
-    "Should not have a interaction record when feature is disabled"
+    1,
+    "Should have an interaction record even when feature is disabled"
   );
 
   pm.removeAll();

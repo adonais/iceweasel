@@ -60,9 +60,6 @@ skip-if = [
 ]
 
 ["browser_preferences.js"]
-fail-if = [
-  "a11y_checks", # Bug 1955503
-]
 
 ["browser_refresh_button.js"]
 

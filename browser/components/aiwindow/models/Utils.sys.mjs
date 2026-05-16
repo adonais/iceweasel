@@ -35,24 +35,6 @@ const GENERIC_MODEL_NAME = "generic";
 export const DEFAULT_ENGINE_ID = "smart-openai";
 
 /**
- * Service types for different AI Window features
- */
-export const SERVICE_TYPES = Object.freeze({
-  AI: "ai",
-  MEMORIES: "memories",
-});
-
-/**
- * Purposes for different AI Window features, used to track usage and performance in telemetry
- */
-export const PURPOSES = Object.freeze({
-  CHAT: "chat",
-  TITLE_GENERATION: "title-generation",
-  CONVERSATION_STARTERS_SIDEBAR: "convo-starters-sidebar",
-  MEMORY_GENERATION: "memory-generation",
-});
-
-/**
  * Observer for model preference changes.
  * Invalidates the Remote Settings client cache when user changes their model preference.
  */
@@ -134,6 +116,43 @@ export const DEFAULT_MODEL = Object.freeze({
 });
 
 /**
+ * Service types for different AI Window features
+ */
+export const SERVICE_TYPES = Object.freeze({
+  AI: "ai",
+  MEMORIES: "memories",
+});
+
+/**
+ * Purposes for different AI Window features, used to track usage and performance in telemetry
+ */
+export const PURPOSES = Object.freeze({
+  CHAT: "chat",
+  TITLE_GENERATION: "title-generation",
+  CONVERSATION_STARTERS_SIDEBAR: "convo-starters-sidebar",
+  MEMORY_GENERATION: "memory-generation",
+});
+
+/**
+ * Default purposes for different AI Window features, used to track usage and performance in telemetry
+ * (purposes are now defined in remote-settings)
+ */
+export const DEFAULT_PURPOSE = "default";
+export const FEATURE_PURPOSES = Object.freeze({
+  DEFAULT_PURPOSE: PURPOSES.CHAT,
+  [MODEL_FEATURES.CHAT]: PURPOSES.CHAT,
+  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]:
+    PURPOSES.CONVERSATION_STARTERS_SIDEBAR,
+  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]:
+    PURPOSES.CONVERSATION_STARTERS_SIDEBAR,
+  [MODEL_FEATURES.TITLE_GENERATION]: PURPOSES.TITLE_GENERATION,
+  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]:
+    PURPOSES.MEMORY_GENERATION,
+  [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]:
+    PURPOSES.MEMORY_GENERATION,
+});
+
+/**
  * Major version compatibility requirements for each feature.
  * When incrementing a feature's major version:
  * - Update this constant
@@ -172,6 +191,11 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
  * @property {boolean} [is_default] - Whether this is the default config for the feature
  * @property {object} [parameters] - Optional inference parameters (e.g., temperature)
  * @property {string[]} [additional_components] - Optional list of dependent feature configs
+ */
+
+/**
+ * @typedef {object} RemoteSettingsClient
+ * @property {() => Promise<object[]>} get - Function to get records from remote settings
  */
 
 /**
@@ -534,13 +558,21 @@ export class openAIEngine {
       majorVersion
     );
 
-    const hasCustomEndpoint = Services.prefs.prefHasUserValue(ENDPOINT_PREF);
-    if (hasCustomEndpoint) {
+    if (openAIEngine.hasCustomEndpoint()) {
       if (feature === MODEL_FEATURES.CHAT) {
         this._loadGenericChatPrompt(featureConfigs, majorVersion);
       }
       this._applyCustomEndpointModel();
     }
+  }
+
+  /**
+   * Checks whether a custom endpoint is configured via pref.
+   *
+   * @returns {boolean} True if the endpoint pref has a user-set value.
+   */
+  static hasCustomEndpoint() {
+    return Services.prefs.prefHasUserValue(ENDPOINT_PREF);
   }
 
   /**
@@ -551,7 +583,31 @@ export class openAIEngine {
    */
   getConfig(feature) {
     const targetFeature = feature || this.feature;
-    return this.#configs?.[targetFeature] || null;
+    // load custom prompt pref if exists
+    // custom prompts should be entered as { feature_name: prompt }
+    const prefPromptRaw = Services.prefs.getStringPref(
+      "browser.smartwindow.customPrompts",
+      ""
+    );
+    let prefPrompt = null;
+    if (prefPromptRaw) {
+      try {
+        prefPrompt = JSON.parse(prefPromptRaw);
+      } catch (e) {
+        console.warn(
+          "browser.smartwindow.customPrompts contains invalid JSON. Expecting: { feature: prompt }",
+          e
+        );
+      }
+    }
+    const prefPromptMapping = prefPrompt?.[targetFeature]
+      ? { prompts: prefPrompt[targetFeature] }
+      : null;
+
+    return {
+      ...this.#configs?.[targetFeature],
+      ...prefPromptMapping,
+    };
   }
 
   /**
@@ -576,40 +632,32 @@ export class openAIEngine {
    *
    * @param {string} feature
    *   The feature name to use to retrieve remote settings for prompts.
-   * @param {string} engineId
-   *   The engine ID for MLEngine creation. Defaults to DEFAULT_ENGINE_ID.
-   * @param {string} serviceType
-   *   The type of message to be sent ("ai", "memories", "s2s").
-   *   Defaults to SERVICE_TYPES.AI.
-   * @param {string} purpose
-   *   The purpose of the request, used for telemetry tracking.
-   *   Defaults to PURPOSES.CHAT.
    * @param {string | null} [flowId]
    *   Flow ID for correlating frontend and backend telemetry.
    * @returns {Promise<object>}
    *   Promise that will resolve to the configured engine instance.
    */
-  static async build(
-    feature,
-    engineId = DEFAULT_ENGINE_ID,
-    serviceType = SERVICE_TYPES.AI,
-    purpose = PURPOSES.CHAT,
-    flowId = null
-  ) {
+  static async build(feature, flowId = null) {
     const engine = new openAIEngine();
 
     await engine.loadConfig(feature);
 
+    const config = engine.getConfig(feature);
+    const engineId = `${DEFAULT_ENGINE_ID}-${feature}`;
     engine.#engineId = engineId;
-    engine.#serviceType = serviceType;
-    engine.#purpose = purpose;
+    engine.#serviceType =
+      config?.service_type ?? getDefaultServiceType(feature);
+    engine.#purpose =
+      config?.purpose ??
+      FEATURE_PURPOSES[feature] ??
+      FEATURE_PURPOSES[DEFAULT_PURPOSE];
     engine.#feature = feature;
     engine.#flowId = flowId;
 
     engine.engineInstance = await openAIEngine.#createOpenAIEngine(
       engineId,
-      serviceType,
-      purpose,
+      engine.#serviceType,
+      engine.#purpose,
       engine.model,
       flowId,
       feature
@@ -669,9 +717,9 @@ export class openAIEngine {
 
     try {
       const engineInstance = await openAIEngine._createEngine({
-        apiKey: Services.prefs.getStringPref(APIKEY_PREF, ""),
+        apiKey: this.hasCustomEndpoint() ? this.apiKey : "",
         backend: "openai",
-        baseURL: Services.prefs.getStringPref(ENDPOINT_PREF, ""),
+        baseURL: this.endpoint,
         engineId,
         featureId,
         flowId,
@@ -710,7 +758,9 @@ export class openAIEngine {
     try {
       return await this.engineInstance.run(content);
     } catch (ex) {
-      if (!this._is401Error(ex)) {
+      // Skip the token retry flow when using a custom endpoint,
+      // as the retry logic only applies to FxAccounts tokens.
+      if (!this._is401Error(ex) || openAIEngine.hasCustomEndpoint()) {
         throw ex;
       }
 
@@ -805,7 +855,9 @@ export class openAIEngine {
         yield chunk;
       }
     } catch (ex) {
-      if (!this._is401Error(ex)) {
+      // Skip the token retry flow when using a custom endpoint,
+      // as the retry logic only applies to FxAccounts tokens.
+      if (!this._is401Error(ex) || openAIEngine.hasCustomEndpoint()) {
         throw ex;
       }
 
@@ -862,6 +914,64 @@ export class openAIEngine {
   }
 }
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  openAIEngine,
+  "endpoint",
+  ENDPOINT_PREF,
+  ""
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(openAIEngine, "apiKey", APIKEY_PREF, "");
+
+/**
+ * Resolves chat model metadata for a given choice ID from Remote Settings.
+ *
+ * @param {string} choiceId - Model choice ID (e.g., "1", "2", "3")
+ * @param {number} [maxMajorVersion] - Maximum major version to include
+ * @returns {Promise<{model: string, ownerName: string}|null>}
+ *   Returns null if choice ID not found in Remote Settings
+ */
+export async function resolveChatModelChoice(
+  choiceId,
+  maxMajorVersion = FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]
+) {
+  if (choiceId === "0") {
+    // Custom model - no RS lookup needed
+    return {
+      model: "custom-model",
+      ownerName: "",
+    };
+  }
+
+  try {
+    const client = openAIEngine.getRemoteClient();
+    const allRecords = await client.get();
+
+    const record = selectMainConfig(
+      allRecords.filter(r => r.feature === MODEL_FEATURES.CHAT),
+      {
+        majorVersion: maxMajorVersion,
+        feature: MODEL_FEATURES.CHAT,
+        modelChoiceId: choiceId,
+      }
+    );
+    if (!record) {
+      return null;
+    }
+
+    return {
+      model: record.model,
+      ownerName: record.owner_name ?? "",
+    };
+  } catch (error) {
+    console.warn(
+      "Failed to resolve chat model choice from Remote Settings:",
+      error
+    );
+    return null;
+  }
+}
+
 /**
  * Renders a prompt from a string, replacing placeholders with provided strings.
  *
@@ -878,4 +988,11 @@ export function renderPrompt(rawPromptContent, stringsToReplace = {}) {
   }
 
   return finalPromptContent;
+}
+
+function getDefaultServiceType(feature) {
+  if (feature.startsWith("memories")) {
+    return SERVICE_TYPES.MEMORIES;
+  }
+  return SERVICE_TYPES.AI;
 }

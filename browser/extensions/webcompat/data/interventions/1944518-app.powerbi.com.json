@@ -1,0 +1,30 @@
+{
+  "label": "app.powerbi.com",
+  "bugs": {
+    "1944518": {
+      "issue": "broken-scrolling",
+      "matches": ["*://app.powerbi.com/view*"]
+    },
+    "1911423": {
+      "issue": "broken-zooming",
+      "matches": ["*://app.powerbi.com/view*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["mac"],
+      "ua_string": ["add_Chrome"],
+      "content_scripts": {
+        "all_frames": true,
+        "css": ["bug1944518-app.powerbi.com-webkit-scrollbar-css-fixes.css"]
+      }
+    },
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "all_frames": true,
+        "js": ["bug1911423-app.powerbi.com-emulate-mousewheel-events.js"]
+      }
+    }
+  ]
+}

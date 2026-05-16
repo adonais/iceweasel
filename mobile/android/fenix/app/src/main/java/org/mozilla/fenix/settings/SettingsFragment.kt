@@ -60,6 +60,7 @@ import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.navigateToNotificationsSettings
+import org.mozilla.fenix.ext.openInNewTab
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
@@ -152,7 +153,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 getString(R.string.pref_key_search_bookmarks),
                 getString(R.string.pref_key_search_browsing_history),
                 getString(R.string.pref_key_show_clipboard_suggestions),
-                getString(R.string.pref_key_show_search_engine_shortcuts),
                 getString(R.string.pref_key_open_links_in_a_private_tab),
                 getString(R.string.pref_key_sync_logins),
                 getString(R.string.pref_key_sync_bookmarks),
@@ -184,6 +184,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
         findPreference<Preference>(
             getPreferenceKey(R.string.pref_key_page_summaries),
         )?.isVisible = components.settings.shakeToSummarizeFeatureFlagEnabled
+
+        findPreference<Preference>(
+            getPreferenceKey(R.string.pref_key_ai_controls),
+        )?.isVisible = requireContext().settings().aiControlsFeatureFlagEnabled
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -400,6 +404,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 SettingsFragmentDirections.actionSettingsFragmentToPageSummariesSettingsFragment()
             }
 
+            resources.getString(R.string.pref_key_ai_controls) -> {
+                SettingsFragmentDirections.actionSettingsFragmentToAiControlsFragment()
+            }
+
             // Privacy and security preferences
             resources.getString(R.string.pref_key_private_browsing) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToPrivateBrowsingFragment()
@@ -407,6 +415,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
 
             resources.getString(R.string.pref_key_https_only_settings) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToHttpsOnlyFragment()
+            }
+
+            resources.getString(R.string.pref_key_ip_protection_settings) -> {
+                SettingsFragmentDirections.actionSettingsFragmentToIpProtectionFragment()
             }
 
             resources.getString(R.string.pref_key_tracking_protection_settings) -> {
@@ -520,7 +532,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
 
             // About preferences
             resources.getString(R.string.pref_key_rate) -> {
-                components.playStoreReviewPromptController.tryLaunchPlayStoreReview(requireActivity())
+                components.playStoreReviewPromptController.tryLaunchPlayStoreReview(requireActivity(), ::openInNewTab)
                 null
             }
 
@@ -618,6 +630,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
         )
         setupGeckoLogsPreference(settings)
         setupHttpsOnlyPreferences(settings)
+        setupIPProtectionPreferences(settings)
         setupNotificationPreference(
             NotificationManagerCompat.from(requireContext()).areNotificationsEnabled(),
         )
@@ -832,6 +845,15 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                     getString(R.string.preferences_https_only_on_private)
                 else -> null
             }
+    }
+
+    private fun setupIPProtectionPreferences(settings: Settings) {
+        findPreference<IPProtectionPreference>(
+            getPreferenceKey(R.string.pref_key_ip_protection_settings),
+        )?.apply {
+            isVisible = settings.isIPProtectionAvailable
+            showBetaBadge = FxNimbus.features.ipProtection.value().showBetaBadge
+        }
     }
 
     private fun updateProfilerUI(profilerStatus: Boolean) {

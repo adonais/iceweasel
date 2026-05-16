@@ -78,24 +78,28 @@ struct HitTestClipNode {
 impl HitTestClipNode {
     fn new(
         item: &ClipItemKey,
+        clip_rect_origin: LayoutPoint,
         interners: &Interners,
         parent: ClipNodeId,
         spatial_node_index: SpatialNodeIndex,
     ) -> Self {
         let region = match item.kind {
-            ClipItemKeyKind::Rectangle(rect, mode) => {
-                HitTestRegion::Rectangle(rect.into(), mode)
+            ClipItemKeyKind::Rectangle(size, mode) => {
+                let rect = LayoutRect::from_origin_and_size(clip_rect_origin, size.into());
+                HitTestRegion::Rectangle(rect, mode)
             }
-            ClipItemKeyKind::RoundedRectangle(rect, radius, mode) => {
-                HitTestRegion::RoundedRectangle(rect.into(), radius.into(), mode)
+            ClipItemKeyKind::RoundedRectangle(size, radius, mode) => {
+                let rect = LayoutRect::from_origin_and_size(clip_rect_origin, size.into());
+                HitTestRegion::RoundedRectangle(rect, radius.into(), mode)
             }
-            ClipItemKeyKind::ImageMask(rect, _, polygon_handle) => {
+            ClipItemKeyKind::ImageMask(size, _, polygon_handle) => {
+                let rect = LayoutRect::from_origin_and_size(clip_rect_origin, size.into());
                 if let Some(handle) = polygon_handle {
                     // Retrieve the polygon data from the interner.
                     let polygon = &interners.polygon[handle];
-                    HitTestRegion::Polygon(rect.into(), *polygon)
+                    HitTestRegion::Polygon(rect, *polygon)
                 } else {
-                    HitTestRegion::Rectangle(rect.into(), ClipMode::Clip)
+                    HitTestRegion::Rectangle(rect, ClipMode::Clip)
                 }
             }
             ClipItemKeyKind::BoxShadow(..) => HitTestRegion::Invalid,
@@ -207,6 +211,7 @@ impl HitTestingScene {
 
             let clip_node = HitTestClipNode::new(
                 &clip_item.key,
+                src_clip_node.clip_rect_origin,
                 interners,
                 src_clip_node.parent,
                 src_clip_node.spatial_node_index,

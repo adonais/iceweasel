@@ -49,8 +49,8 @@ bool SVGTests::HasExtension(const nsAString& aExtension) const {
 
 bool SVGTests::IsConditionalProcessingAttribute(
     const nsAtom* aAttribute) const {
-  for (uint32_t i = 0; i < std::size(sStringListNames); i++) {
-    if (aAttribute == sStringListNames[i]) {
+  for (auto sStringListName : sStringListNames) {
+    if (aAttribute == sStringListName) {
       return true;
     }
   }

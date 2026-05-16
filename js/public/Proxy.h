@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -707,9 +705,10 @@ class JS_PUBLIC_API AutoWaivePolicy : public AutoEnterPolicy {
   }
 };
 #else
-class JS_PUBLIC_API AutoWaivePolicy{
-  public : AutoWaivePolicy(JSContext * cx, JS::HandleObject proxy,
-                           JS::HandleId id, BaseProxyHandler::Action act){}
+class JS_PUBLIC_API AutoWaivePolicy {
+ public:
+  AutoWaivePolicy(JSContext* cx, JS::HandleObject proxy, JS::HandleId id,
+                  BaseProxyHandler::Action act) {}
 };
 #endif
 
@@ -770,11 +769,6 @@ constexpr unsigned CheckProxyFlags() {
 // access. This will run the proxy's finalizer to perform clean-up before the
 // conversion happens.
 JS_PUBLIC_API void NukeNonCCWProxy(JSContext* cx, JS::HandleObject proxy);
-
-// This is a variant of js::NukeNonCCWProxy() for CCWs. It should only be called
-// on CCWs that have been removed from CCW tables.
-JS_PUBLIC_API void NukeRemovedCrossCompartmentWrapper(JSContext* cx,
-                                                      JSObject* wrapper);
 
 } /* namespace js */
 

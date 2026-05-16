@@ -499,11 +499,11 @@ static void ReportAnalysis(dom::Document* aDocument,
   if (!aIsSolved) {
     // Build parameter array needed by console message.
     AutoTArray<nsString, NotificationAndReportStringId::maxReportParams> params;
-    for (int i = 0; i < NotificationAndReportStringId::maxReportParams; ++i) {
-      if (aNotification.mReportParams[i] == ReportParam::None) {
+    for (auto mReportParam : aNotification.mReportParams) {
+      if (mReportParam == ReportParam::None) {
         break;
       }
-      switch (aNotification.mReportParams[i]) {
+      switch (mReportParam) {
         case ReportParam::Formats:
           params.AppendElement(aFormats);
           break;

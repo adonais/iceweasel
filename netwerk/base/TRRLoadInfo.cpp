@@ -356,6 +356,12 @@ TRRLoadInfo::GetLoadTriggeredFromExternal(bool* aLoadTriggeredFromExternal) {
 }
 
 NS_IMETHODIMP
+TRRLoadInfo::GetServiceWorkerTaintingSynthesized(
+    bool* aServiceWorkerTaintingSynthesized) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
 TRRLoadInfo::GetTainting(uint32_t* aTaintingOut) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }

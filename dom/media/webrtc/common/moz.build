@@ -5,6 +5,8 @@ include("/dom/media/webrtc/third_party_build/webrtc.mozbuild")
 
 EXPORTS.mozilla.dom += ["CandidateInfo.h"]
 
+EXPORTS.mozilla += ["IceServerParser.h"]
+
 LOCAL_INCLUDES += [
     "!/dist/include/libwebrtc_overrides",
     "/dom/media/webrtc/transport/third_party/nrappkit/src/util/libekr",
@@ -15,6 +17,7 @@ LOCAL_INCLUDES += [
 UNIFIED_SOURCES += [
     "browser_logging/CSFLog.cpp",
     "browser_logging/WebRtcLog.cpp",
+    "IceServerParser.cpp",
     "time_profiling/timecard.c",
     "YuvStamper.cpp",
 ]

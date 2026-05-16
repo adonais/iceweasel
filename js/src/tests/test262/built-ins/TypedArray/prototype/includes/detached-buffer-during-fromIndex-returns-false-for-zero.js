@@ -44,6 +44,6 @@ testWithTypedArrayConstructors(function(TA) {
   };
 
   assert.sameValue(sample.includes(0, fromIndex), false);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

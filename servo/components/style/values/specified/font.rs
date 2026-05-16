@@ -140,7 +140,6 @@ pub const MAX_FONT_WEIGHT: f32 = 1000.;
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub enum FontWeight {
     /// `<font-weight-absolute>`
     Absolute(AbsoluteFontWeight),
@@ -205,7 +204,6 @@ impl ToComputedValue for FontWeight {
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub enum AbsoluteFontWeight {
     /// A `<number>`, with the additional constraints specified in:
     ///
@@ -371,6 +369,7 @@ impl SpecifiedFontStyle {
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 #[allow(missing_docs)]
+#[typed(todo_derive_fields)]
 pub enum FontStyle {
     Specified(SpecifiedFontStyle),
     #[css(skip)]
@@ -409,7 +408,6 @@ impl ToComputedValue for FontStyle {
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub enum FontStretch {
     Stretch(NonNegativePercentage),
     Keyword(FontStretchKeyword),
@@ -563,7 +561,6 @@ impl Default for FontSizeKeyword {
     ToTyped,
 )]
 #[cfg_attr(feature = "servo", derive(Serialize, Deserialize))]
-#[typed_value(derive_fields)]
 /// Additional information for keyword-derived font sizes.
 pub struct KeywordInfo {
     /// The keyword used
@@ -629,7 +626,6 @@ impl SpecifiedValueInfo for KeywordInfo {
 }
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
-#[typed_value(derive_fields)]
 /// A specified font-size value
 pub enum FontSize {
     /// A length; e.g. 10px.
@@ -657,6 +653,7 @@ pub enum FontSize {
 /// Specifies a prioritized list of font family names or generic family names.
 #[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem, ToTyped)]
 #[cfg_attr(feature = "servo", derive(Hash))]
+#[typed(todo_derive_fields)]
 pub enum FontFamily {
     /// List of `font-family`
     #[css(comma)]
@@ -743,7 +740,6 @@ impl Parse for FamilyName {
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
-#[typed_value(derive_fields)]
 pub enum FontSizeAdjustFactor {
     /// An explicitly-specified number.
     Number(NonNegativeNumber),
@@ -1154,6 +1150,7 @@ pub enum VariantAlternates {
     ToTyped,
 )]
 #[repr(transparent)]
+#[typed(todo_derive_fields)]
 /// List of Variant Alternates
 pub struct FontVariantAlternates(
     #[css(if_empty = "normal", iterable)] crate::OwnedSlice<VariantAlternates>,
@@ -1599,6 +1596,7 @@ pub enum FontSynthesisStyle {
     ToTyped,
 )]
 #[repr(C)]
+#[typed(todo_derive_fields)]
 /// Allows authors to choose a palette from those supported by a color font
 /// (and potentially @font-palette-values overrides).
 pub struct FontPalette(Atom);

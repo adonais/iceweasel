@@ -256,7 +256,7 @@ inline void nsAttrValue::ToString(mozilla::dom::DOMString& aResult) const {
       break;
     }
     default: {
-      ToString(aResult.AsAString());
+      ToString(static_cast<nsAString&>(aResult));
     }
   }
 }

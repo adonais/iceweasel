@@ -65,7 +65,9 @@ class SharedTexture {
 
   virtual void onBeforeQueueSubmit(RawId aQueueId) {}
 
-  virtual void CleanForRecycling() {}
+  virtual void CleanForRecycling() { mSubmissionIndex = 0; }
+
+  virtual bool IsSubmitted() { return mSubmissionIndex > 0; }
 
   const uint32_t mWidth;
   const uint32_t mHeight;

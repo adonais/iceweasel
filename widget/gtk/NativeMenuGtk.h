@@ -31,9 +31,9 @@ class NativeMenuGtk : public NativeMenu {
   explicit NativeMenuGtk(dom::Element* aElement);
 
   // NativeMenu
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void ShowMenuAnchored(
-      nsIFrame* aClickedFrame, const CSSIntRect& aRect,
-      const nsAString& aPosition) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void ShowMenuAnchored(nsIFrame* aClickedFrame,
+                                                    const CSSIntRect& aRect,
+                                                    int8_t aPosition) override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void ShowMenuAtPosition(
       nsIFrame* aClickedFrame, const CSSIntPoint& aPosition,
       bool aIsContextMenu) override;

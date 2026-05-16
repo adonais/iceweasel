@@ -73,6 +73,17 @@ bool GPUProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
     mPrefSerializer = nullptr;
     return false;
   }
+
+  WhenProcessHandleReady()->Then(
+      XRE_GetAsyncIOEventTarget(), __func__,
+      [](const ipc::ProcessHandlePromise::ResolveOrRejectValue& aResult) {
+        if (!aResult.IsReject()) {
+          return;
+        }
+        const auto& err = aResult.RejectValue();
+        gfxCriticalNote << "GPU proc launch error " << err.FunctionName().get()
+                        << " " << err.ErrorCode();
+      });
   return true;
 }
 

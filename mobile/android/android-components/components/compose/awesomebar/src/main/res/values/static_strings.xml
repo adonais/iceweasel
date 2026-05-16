@@ -2,17 +2,7 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
-    <!-- Description for the sport suggestion card when the game is final after over time.
-         "OT" is the abbreviation for "overtime". “Overtime” means the extra period(s) played
-         after regular time when the score is tied to determine a winner. Use the standard sports
-         term and abbreviation for this in your locale.  -->
-    <string name="mozac_browser_awesomebar_sport_suggestion_final_over_time" translatable="false" tools:ignore="UnusedResources" moz:removedIn="150">Final(OT)</string>
-    <!-- Description for the sport suggestion card when the game is final after a penalty shoot out.
-         "SO" is the abbreviation for "shootout". “Shootout” is a tie-breaking method used to
-         determine a winner when a match remains tied after regular play and any extra time.
-         Use the standard sports term and abbreviation for this in your locale.  -->
-    <string name="mozac_browser_awesomebar_sport_suggestion_final_shoot_out" translatable="false" tools:ignore="UnusedResources" moz:removedIn="150">Final(SO)</string>
+<resources>
     <!-- Description for the sport suggestion card when the game is live. -->
     <string name="mozac_browser_awesomebar_sport_suggestion_live" translatable="false">LIVE</string>
     <!-- Description for the sport suggestion card when the game is scheduled. -->
@@ -43,4 +33,25 @@
       %1$s and %2$s are placeholders that will be replaced by the team names e.g. Yankees versus Lakers.
     -->
     <string name="mozac_browser_awesomebar_sport_suggestion_talkback_team_description_no_score" translatable="false">%1$s versus %2$s</string>
+    <!-- Description for the flight suggestion card when the flight is delayed. -->
+    <string name="mozac_browser_awesomebar_flight_suggestion_delayed" translatable="false">DELAYED</string>
+    <!-- Description for the flight suggestion card when the flight is canceled. -->
+    <string name="mozac_browser_awesomebar_flight_suggestion_canceled" translatable="false">CANCELED</string>
+    <!-- Description for the flight suggestion card when the flight is on time. -->
+    <string name="mozac_browser_awesomebar_flight_suggestion_on_time" translatable="false">ON TIME</string>
+    <!-- Description for the flight suggestion card when the flight is in the air. -->
+    <string name="mozac_browser_awesomebar_flight_suggestion_in_flight" translatable="false">IN FLIGHT</string>
+    <!-- Description for the flight suggestion card when the flight has arrived. -->
+    <string name="mozac_browser_awesomebar_flight_suggestion_arrived" translatable="false">ARRIVED</string>
+    <!--
+      The description for the flight suggestion card to be read by talkback when a flight is en route.
+      %s is a placeholder that will be replaced by the flight progress percentage.
+    -->
+    <string name="mozac_browser_awesomebar_flight_suggestion_progress" translatable="false">%s percent complete</string>
+    <!--
+      The description for the flight schedule to be read by talkback when a flight is canceled and the text is struck through.
+      %1$s is a placeholder that will be replaced by the flight time e.g. 5:00 PM or 17:00 depending on the locale.
+      %2$s is a placeholder that will be replaced by the flight date.
+    -->
+    <string name="mozac_browser_awesomebar_flight_suggestion_canceled_schedule" translatable="false">Strike-through on %1$s and %2$s</string>
 </resources>

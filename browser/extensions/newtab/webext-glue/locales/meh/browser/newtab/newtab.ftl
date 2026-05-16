@@ -219,9 +219,20 @@ newtab-error-fallback-refresh-link = Nachu´un página je nakajie´e tuku.
 
 newtab-custom-shortcuts-title = Da acceso ñama
 newtab-custom-shortcuts-subtitle = Da nuu chuva´anu a xíín ne´yanu
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Da acceso ñama
     .description = Da nuu chuva´anu a xíín ne´yanu
+newtab-custom-shortcuts-nova =
+    .label = Da acceso ñama
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+           *[other] { $num } filas
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =

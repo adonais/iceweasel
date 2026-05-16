@@ -28,6 +28,7 @@
 #include "NonCustomCSSPropertyId.h"
 #include "PLDHashTable.h"
 #include "PseudoStyleType.h"
+#include "SharedLcpMarkerState.h"
 #include "StorageAccessPermissionRequest.h"
 #include "ThirdPartyUtil.h"
 #include "domstubs.h"
@@ -154,6 +155,7 @@
 #include "mozilla/dom/Comment.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/CustomElementRegistry.h"
+#include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/DOMImplementation.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/DOMStringList.h"
@@ -2173,20 +2175,10 @@ void Document::RecordPageLoadEventTelemetry() {
   // Sending a glean ping must be done on the parent process.
   if (ContentChild* cc = ContentChild::GetSingleton()) {
     if (GetNavigationTiming()) {
-      uint64_t androidAppLinkLoadIdentifier = 0;
-#ifdef ANDROID
-      if (BrowsingContext* bc = GetBrowsingContext()) {
-        Maybe<uint64_t> contextAppLinkLoadIdentifier =
-            bc->GetAndroidAppLinkLoadIdentifier();
-        if (contextAppLinkLoadIdentifier.isSome()) {
-          androidAppLinkLoadIdentifier = contextAppLinkLoadIdentifier.value();
-        }
-      }
-#endif
       cc->SendRecordPageLoadEvent(
           mPageloadEventData,
           GetNavigationTiming()->GetNavigationStartTimeStamp(),
-          androidAppLinkLoadIdentifier);
+          GetBrowsingContext());
     }
   }
 }
@@ -2508,6 +2500,8 @@ Document::~Document() {
     mDocGroup->GetBrowsingContextGroup()->RemoveDocument(this, mDocGroup);
   }
 
+  DocumentOrShadowRoot::Unlink(this);
+
   UnlinkOriginalDocumentIfStatic();
 
   UnregisterFromMemoryReportingForDataDocument();
@@ -2588,6 +2582,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
 
   // Traverse all Document pointer members.
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSecurityInfo)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedAncestorOrigins)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDisplayDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReadyForIdle)
@@ -2736,6 +2731,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   }
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSecurityInfo)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCachedAncestorOrigins)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDisplayDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLazyLoadObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAutoSizeImageObserver)
@@ -4851,9 +4847,7 @@ static void NotifyEditableStateChange(Document& aDoc) {
 #endif
   for (nsIContent* node = aDoc.GetNextNode(&aDoc); node;
        node = node->GetNextNode(&aDoc)) {
-    if (auto* element = Element::FromNode(node)) {
-      element->UpdateEditableState(true);
-    }
+    node->UpdateEditableState(true);
   }
   MOZ_DIAGNOSTIC_ASSERT(!g.Mutated(0));
 }
@@ -10949,27 +10943,7 @@ nsINode* Document::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv,
 
   nsCOMPtr<Document> oldDocument = adoptedNode->OwnerDoc();
   bool sameDocument = oldDocument == this;
-
-  AutoJSContext cx;
-  JS::Rooted<JSObject*> newScope(cx, nullptr);
-  if (!sameDocument) {
-    newScope = GetWrapper();
-    if (!newScope && GetScopeObject() && GetScopeObject()->HasJSGlobal()) {
-      // Make sure cx is in a semi-sane compartment before we call WrapNative.
-      // It's kind of irrelevant, given that we're passing aAllowWrapping =
-      // false, and documents should always insist on being wrapped in an
-      // canonical scope. But we try to pass something sane anyway.
-      JSObject* globalObject = GetScopeObject()->GetGlobalJSObject();
-      JSAutoRealm ar(cx, globalObject);
-      JS::Rooted<JS::Value> v(cx);
-      rv = nsContentUtils::WrapNative(cx, ToSupports(this), this, &v,
-                                      /* aAllowWrapping = */ false);
-      if (rv.Failed()) return nullptr;
-      newScope = &v.toObject();
-    }
-  }
-
-  adoptedNode->Adopt(sameDocument ? nullptr : mNodeInfoManager, newScope, rv);
+  adoptedNode->Adopt(sameDocument ? nullptr : mNodeInfoManager, rv);
   if (rv.Failed()) {
     // Disconnect all nodes from their parents, since some have the old document
     // as their ownerDocument and some have this as their ownerDocument.
@@ -13518,7 +13492,23 @@ bool Document::HasBeenScrolledSince(
 }
 
 bool Document::CanRewriteURL(nsIURI* aTargetURL, bool aReportErrors) const {
-  if (nsContentUtils::URIIsLocalFile(aTargetURL)) {
+  // Cannot rewrite URL such that it changes the scheme.
+  nsAutoCString scheme;
+  nsresult rv = mDocumentURI->GetScheme(scheme);
+  NS_ENSURE_SUCCESS(rv, false);
+  if (!aTargetURL || !aTargetURL->SchemeIs(scheme.get())) {
+    return false;
+  }
+
+  // If the URI only differs in the fragment, it is allowed for all schemes.
+  bool equal = false;
+  rv = mDocumentURI->EqualsExceptRef(aTargetURL, &equal);
+  NS_ENSURE_SUCCESS(rv, false);
+  if (equal) {
+    return true;
+  }
+
+  if (scheme == "file"_ns) {
     // It's a file:// URI
     nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
     if (aReportErrors) {
@@ -13526,6 +13516,14 @@ bool Document::CanRewriteURL(nsIURI* aTargetURL, bool aReportErrors) const {
           aTargetURL, false, InnerWindowID()));
     }
     return NS_SUCCEEDED(principal->CheckMayLoad(aTargetURL, false));
+  }
+
+  // If the URI isn't allowed to change path with pushState, we know it doesn't
+  // match (as we checked EqualsExceptRef above), so return immediately.
+  if (scheme != "http"_ns && scheme != "https"_ns &&
+      scheme != "moz-extension"_ns && scheme != "chrome"_ns &&
+      scheme != "resource"_ns) {
+    return false;
   }
 
   nsCOMPtr<nsIScriptSecurityManager> secMan =
@@ -14200,12 +14198,10 @@ static void CachePrintSelectionRanges(const Document& aSourceDoc,
       continue;
     }
 
-    RefPtr<nsRange> clonedRange = nsRange::Create(
-        startNode, range->MayCrossShadowBoundaryStartOffset(), endNode,
-        range->MayCrossShadowBoundaryEndOffset(), IgnoreErrors(),
-        StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
-            ? AllowRangeCrossShadowBoundary::Yes
-            : AllowRangeCrossShadowBoundary::No);
+    RefPtr<nsRange> clonedRange =
+        nsRange::Create(startNode, range->MayCrossShadowBoundaryStartOffset(),
+                        endNode, range->MayCrossShadowBoundaryEndOffset(),
+                        IgnoreErrors(), AllowRangeCrossShadowBoundary::Yes);
     if (clonedRange &&
         !clonedRange->AreNormalRangeAndCrossShadowBoundaryRangeCollapsed()) {
       printRanges->AppendElement(std::move(clonedRange));
@@ -15529,7 +15525,7 @@ bool Document::IsFullscreenLeaf() {
   return Fullscreen() && CountFullscreenSubDocuments(*this) == 0;
 }
 
-static Document* GetFullscreenLeaf(Document& aDoc) {
+/* static */ Document* Document::GetFullscreenLeaf(Document& aDoc) {
   if (aDoc.IsFullscreenLeaf()) {
     return &aDoc;
   }
@@ -15544,7 +15540,7 @@ static Document* GetFullscreenLeaf(Document& aDoc) {
   return leaf;
 }
 
-static Document* GetFullscreenLeaf(Document* aDoc) {
+/* static */ Document* Document::GetFullscreenLeaf(Document* aDoc) {
   if (Document* leaf = GetFullscreenLeaf(*aDoc)) {
     return leaf;
   }
@@ -15653,6 +15649,31 @@ static void DispatchFullscreenNewOriginEvent(Document* aDoc) {
   asyncDispatcher->PostDOMEvent();
 }
 
+static void DispatchFullscreenUpdateKeyboardLockEvent(Document* aDoc) {
+  // Dispatch an event to update the fullscreen keyboard lock status
+  // to that of the new fullscreen document and display a warning if the
+  // status has changed.
+  aDoc->Dispatch(NS_NewRunnableFunction(
+      "DispatchFullscreenUpdateKeyboardLockEvent", [doc = RefPtr{aDoc}]() {
+        AutoJSAPI jsapi;
+        if (!jsapi.Init(doc->GetOwnerGlobal())) {
+          return;
+        }
+        JSContext* cx = jsapi.cx();
+        JS::Rooted<JS::Value> detail(cx);
+        if (!ToJSValue(cx, doc->GetFullscreenKeyboardLockStatus(), &detail)) {
+          return;
+        }
+        RefPtr event = NS_NewDOMCustomEvent(doc, nullptr, nullptr);
+        event->InitCustomEvent(cx, u"MozDOMFullscreen:UpdateKeyboardLock"_ns,
+                               /* aCanBubble */ true,
+                               /* aCancelable */ false, detail);
+        event->SetTrusted(true);
+        event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
+        doc->DispatchEvent(*event);
+      }));
+}
+
 void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
   NS_ASSERTION(!Fullscreen() || !FullscreenRoots::IsEmpty(),
                "Should have at least 1 fullscreen root when fullscreen!");
@@ -15723,6 +15744,7 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
     DebugOnly<bool> removedFullscreenElement = lastDoc->PopFullscreenElement();
     MOZ_ASSERT(removedFullscreenElement);
     newFullscreenDoc = lastDoc;
+    DispatchFullscreenUpdateKeyboardLockEvent(newFullscreenDoc);
   } else {
     lastDoc->CleanupFullscreenState();
     newFullscreenDoc = lastDoc->GetInProcessParentDocument();
@@ -15770,9 +15792,11 @@ void Document::CleanupFullscreenState() {
 
   UpdateViewportScrollbarOverrideForFullscreen(this);
   mFullscreenRoot = nullptr;
+  SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock::None);
 
   // Restore the zoom level that was in place prior to entering fullscreen.
   if (PresShell* presShell = GetPresShell()) {
+    presShell->CleanupFullscreenState();
     if (presShell->GetMobileViewportManager()) {
       presShell->SetResolutionAndScaleTo(
           mSavedResolution, ResolutionChangeOrigin::MainThreadRestore);
@@ -15790,7 +15814,8 @@ bool Document::PopFullscreenElement(UpdateViewport aUpdateViewport) {
   }
 
   MOZ_ASSERT(removedElement->State().HasState(ElementState::FULLSCREEN));
-  removedElement->RemoveStates(ElementState::FULLSCREEN | ElementState::MODAL);
+  removedElement->RemoveStates(ElementState::FULLSCREEN | ElementState::MODAL |
+                               ElementState::FULLSCREEN_KEYBOARD_LOCK);
   NotifyFullScreenChangedForMediaElement(*removedElement);
   // Reset iframe fullscreen flag.
   if (auto* iframe = HTMLIFrameElement::FromNode(removedElement)) {
@@ -16499,11 +16524,13 @@ bool IsInActiveTab(Document* aDoc) {
   return bc->IsActive();
 }
 
-void Document::RemoteFrameFullscreenChanged(Element* aFrameElement) {
+void Document::RemoteFrameFullscreenChanged(
+    Element* aFrameElement, bool aFullscreenKeyboardLockEnabled) {
   // Ensure the frame element is the fullscreen element in this document.
   // If the frame element is already the fullscreen element in this document,
   // this has no effect.
-  auto request = FullscreenRequest::CreateForRemote(aFrameElement);
+  auto request = FullscreenRequest::CreateForRemote(
+      aFrameElement, aFullscreenKeyboardLockEnabled);
   RequestFullscreen(std::move(request), XRE_IsContentProcess());
 }
 
@@ -16574,7 +16601,8 @@ static bool ElementIsRemoteFrame(Element* aElement) {
   return loader && loader->IsRemoteFrame();
 }
 
-bool Document::FullscreenElementReadyCheck(FullscreenRequest& aRequest) {
+Document::ElementReadyCheckResult Document::FullscreenElementReadyCheck(
+    FullscreenRequest& aRequest) {
   Element* elem = aRequest.Element();
   // Strictly speaking, this isn't part of the fullscreen element ready
   // check in the spec, but per steps in the spec, when an element which
@@ -16593,44 +16621,57 @@ bool Document::FullscreenElementReadyCheck(FullscreenRequest& aRequest) {
     // instance. Note: this is just for JSWA not the platform-only fullscreen
     // implementation.
     if (ElementIsRemoteFrame(elem)) {
+      // XXXsfarre: ApplyFullscreen will not complete for this chrome document.
+      // But we must update the keyboard lock state before
+      // PropagateFullscreenRequest runs, because it will force a warning to be
+      // displayed, and it can temporarily be wrong, if we don't pre-set the
+      // kblock value here. JSWA-only problem.
+      if (XRE_IsParentProcess()) {
+        SetFullscreenKeyboardLockStatus(aRequest.mFullscreenKeyboardLock);
+      }
       PropagateFullscreenRequest(this, elem);
     }
-    aRequest.MayResolvePromise();
-    return false;
+
+    // Parent process need not dispatch kblock event, it's already set.
+    return (aRequest.mFullscreenKeyboardLock ==
+                GetFullscreenKeyboardLockStatus() ||
+            XRE_IsParentProcess())
+               ? ElementReadyCheckResult::eSame
+               : ElementReadyCheckResult::eKeyboardLockOnly;
   }
   if (!elem->IsInComposedDoc()) {
     aRequest.Reject("FullscreenDeniedNotInDocument");
-    return false;
+    return ElementReadyCheckResult::eErrorPromiseRejected;
   }
   if (elem->IsPopoverOpen()) {
     aRequest.Reject("FullscreenDeniedPopoverOpen");
-    return false;
+    return ElementReadyCheckResult::eErrorPromiseRejected;
   }
   if (elem->OwnerDoc() != this) {
     aRequest.Reject("FullscreenDeniedMovedDocument");
-    return false;
+    return ElementReadyCheckResult::eErrorPromiseRejected;
   }
   if (!GetWindow()) {
     aRequest.Reject("FullscreenDeniedLostWindow");
-    return false;
+    return ElementReadyCheckResult::eErrorPromiseRejected;
   }
   if (const char* msg = GetFullscreenError(aRequest.mCallerType)) {
     aRequest.Reject(msg);
-    return false;
+    return ElementReadyCheckResult::eErrorPromiseRejected;
   }
   if (HasFullscreenSubDocument(*this)) {
     aRequest.Reject("FullscreenDeniedSubDocFullScreen");
-    return false;
+    return ElementReadyCheckResult::eErrorPromiseRejected;
   }
   if (elem->IsHTMLElement(nsGkAtoms::dialog)) {
     aRequest.Reject("FullscreenDeniedHTMLDialog");
-    return false;
+    return ElementReadyCheckResult::eErrorPromiseRejected;
   }
   if (!nsContentUtils::IsChromeDoc(this) && !IsInFocusedTab(this)) {
     aRequest.Reject("FullscreenDeniedNotFocusedTab");
-    return false;
+    return ElementReadyCheckResult::eErrorPromiseRejected;
   }
-  return true;
+  return ElementReadyCheckResult::eOk;
 }
 
 static nsCOMPtr<nsPIDOMWindowOuter> GetRootWindow(Document* aDoc) {
@@ -16697,15 +16738,28 @@ void Document::RequestFullscreen(UniquePtr<FullscreenRequest> aRequest,
   }
 }
 
+static void SetKeyboardLockStatusAndMaybeDispatchEvent(
+    Document* aDoc, const FullscreenRequest& aRequest) {
+  aDoc->SetFullscreenKeyboardLockStatus(aRequest.mFullscreenKeyboardLock);
+  if (aRequest.ShouldDispatchKeyboardLockEvent()) {
+    DispatchFullscreenUpdateKeyboardLockEvent(aDoc);
+  }
+}
+
 void Document::RequestFullscreenInContentProcess(
     UniquePtr<FullscreenRequest> aRequest, bool aApplyFullscreenDirectly) {
   MOZ_ASSERT(XRE_IsContentProcess());
-
   // If we are in the content process, we can apply the fullscreen
   // state directly only if we have been in DOM fullscreen, because
   // otherwise we always need to notify the chrome.
+
   if (aApplyFullscreenDirectly ||
       nsContentUtils::GetInProcessSubtreeRootDocument(this)->Fullscreen()) {
+    // This optimization causes edge case behaviors, due to not going via the
+    // parent process. We must make sure that we update keyboard lock state for
+    // this scenario.
+    aRequest->SetShouldDispatchKeyboardLockEvent(aRequest->GetPromise() &&
+                                                 aRequest->Document() == this);
     ApplyFullscreen(std::move(aRequest));
     return;
   }
@@ -16717,21 +16771,43 @@ void Document::RequestFullscreenInContentProcess(
 
   // We don't need to check element ready before this point, because
   // if we called ApplyFullscreen, it would check that for us.
-  if (!FullscreenElementReadyCheck(*aRequest)) {
-    return;
+  switch (FullscreenElementReadyCheck(*aRequest)) {
+    case ElementReadyCheckResult::eSame:
+      aRequest->MayResolvePromise();
+      [[fallthrough]];
+    case ElementReadyCheckResult::eErrorPromiseRejected:
+      return;
+    default:
+      break;
   }
 
+  auto fullscreenKeyboardLock = aRequest->mFullscreenKeyboardLock;
   PendingFullscreenChangeList::Add(std::move(aRequest));
   // If we are not the top level process, dispatch an event to make
   // our parent process go fullscreen first.
   Dispatch(NS_NewRunnableFunction(
-      "Document::RequestFullscreenInContentProcess", [self = RefPtr{this}] {
+      "Document::RequestFullscreenInContentProcess",
+      [self = RefPtr{this}, fullscreenKeyboardLock] {
         if (!self->HasPendingFullscreenRequests()) {
           return;
         }
-        nsContentUtils::DispatchEventOnlyToChrome(
-            self, self, u"MozDOMFullscreen:Request"_ns, CanBubble::eYes,
-            Cancelable::eNo, /* DefaultAction */ nullptr);
+
+        AutoJSAPI jsapi;
+        if (!jsapi.Init(self->GetOwnerGlobal())) {
+          return;
+        }
+        JSContext* cx = jsapi.cx();
+        JS::Rooted<JS::Value> detail(cx);
+        if (!ToJSValue(cx, fullscreenKeyboardLock, &detail)) {
+          return;
+        }
+        RefPtr event = NS_NewDOMCustomEvent(self, nullptr, nullptr);
+        event->InitCustomEvent(cx, u"MozDOMFullscreen:Request"_ns,
+                               /* aCanBubble */ true,
+                               /* aCancelable */ false, detail);
+        event->SetTrusted(true);
+        event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
+        self->DispatchEvent(*event);
       }));
 }
 
@@ -16763,11 +16839,16 @@ void Document::RequestFullscreenInParentProcess(
     rootWin->SetFullscreenInternal(FullscreenReason::ForFullscreenAPI, true);
     return;
   }
-
   // We don't need to check element ready before this point, because
   // if we called ApplyFullscreen, it would check that for us.
-  if (!FullscreenElementReadyCheck(*aRequest)) {
-    return;
+  switch (FullscreenElementReadyCheck(*aRequest)) {
+    case ElementReadyCheckResult::eSame:
+      aRequest->MayResolvePromise();
+      [[fallthrough]];
+    case ElementReadyCheckResult::eErrorPromiseRejected:
+      return;
+    default:
+      break;
   }
 
   PendingFullscreenChangeList::Add(std::move(aRequest));
@@ -16830,11 +16911,21 @@ bool Document::HasPendingFullscreenRequests() {
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY
 bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
-  if (!FullscreenElementReadyCheck(*aRequest)) {
-    return false;
-  }
-
   Element* elem = aRequest->Element();
+
+  switch (FullscreenElementReadyCheck(*aRequest)) {
+    case ElementReadyCheckResult::eOk:
+      break;
+    case ElementReadyCheckResult::eKeyboardLockOnly:
+      SetKeyboardLockStatusAndMaybeDispatchEvent(this, *aRequest);
+      aRequest->MayResolvePromise();
+      return true;
+    case ElementReadyCheckResult::eSame:
+      aRequest->MayResolvePromise();
+      [[fallthrough]];
+    case ElementReadyCheckResult::eErrorPromiseRejected:
+      return false;
+  }
 
   // Hide auto popovers until the topmost auto ancestor (or document if none).
   RefPtr<nsINode> hideUntil = elem->GetTopmostPopoverAncestor(
@@ -16934,6 +17025,8 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   }
 
   FullscreenRoots::Add(this);
+
+  SetKeyboardLockStatusAndMaybeDispatchEvent(this, *aRequest);
 
   // If it is the first entry of the fullscreen, trigger an event so
   // that the UI can response to this change, e.g. hide chrome, or
@@ -17126,19 +17219,23 @@ void Document::Reveal() {
 
   // Step 3, Let transition be the result of resolving inbound cross-document
   // view-transition for document.
-  // TODO
+  Maybe<RefPtr<ViewTransition>> vt =
+      ResolveInboundCrossDocumentViewTransition();
 
-  // Step 4
+  // Step 4, Fire pagereveal.
   PageRevealEventInit init;
-  // init.mViewTransition = TODO
+  init.mViewTransition = vt.valueOr(nullptr);
 
   RefPtr<PageRevealEvent> event =
       PageRevealEvent::Constructor(win, u"pagereveal"_ns, init);
   event->SetTrusted(true);
   win->DispatchEvent(*event);
 
-  // Step 5, If transition is not null, then:
-  // TODO
+  // Step 5, If transition is not null, then: Activate transition.
+  if (vt.isSome()) {
+    nsAutoMicroTask mt;
+    vt.ref()->Activate();
+  }
 }
 
 void Document::MaybeActiveMediaComponents() {
@@ -17640,7 +17737,8 @@ void Document::ReportLCP() {
   if (profiler_thread_is_being_profiled_for_markers()) {
     MarkerInnerWindowId innerWindowID =
         MarkerInnerWindowIdFromDocShell(GetDocShell());
-    GetNavigationTiming()->MaybeAddLCPProfilerMarker(innerWindowID);
+    GetNavigationTiming()->GetSharedLcpMarkerState()->MaybeAddLCPProfilerMarker(
+        innerWindowID);
   }
 }
 
@@ -18204,18 +18302,21 @@ void Document::UpdateLastRememberedSizes() {
 void Document::SetAncestorOriginsList(
     nsTArray<nsString>&& aAncestorOriginsList) {
   mAncestorOriginsList = std::move(aAncestorOriginsList);
+  mCachedAncestorOrigins = nullptr;
 }
 
 Span<const nsString> Document::GetAncestorOriginsList() const {
   return mAncestorOriginsList;
 }
 
-already_AddRefed<DOMStringList> Document::AncestorOrigins() const {
-  RefPtr<DOMStringList> list = new DOMStringList();
-  for (const auto& origin : mAncestorOriginsList) {
-    list->Add(origin);
+already_AddRefed<DOMStringList> Document::AncestorOrigins() {
+  if (!mCachedAncestorOrigins) {
+    mCachedAncestorOrigins = new DOMStringList(ToSupports(this));
+    for (const auto& origin : mAncestorOriginsList) {
+      mCachedAncestorOrigins->Add(origin);
+    }
   }
-  return list.forget();
+  return do_AddRef(mCachedAncestorOrigins);
 }
 
 void Document::NotifyLayerManagerRecreated() {
@@ -18295,6 +18396,16 @@ nsAutoSyncOperation::nsAutoSyncOperation(Document* aDoc,
     ccjs->EnterSyncOperation();
   }
   if (aDoc) {
+    // Record the current time as a fallback for any in-flight event timing
+    // entry. This sync operation is about to provide visual feedback to the
+    // user (e.g. a modal dialog or sync XHR), so this time acts as the
+    // effective processingEnd rather than waiting for the next paint.
+    // https://github.com/w3c/event-timing/issues/154
+    if (nsPIDOMWindowInner* inner = aDoc->GetInnerWindow()) {
+      if (Performance* perf = inner->GetPerformance()) {
+        perf->RecordModalFallbackTime();
+      }
+    }
     mBrowsingContext = aDoc->GetBrowsingContext();
     if (InputTaskManager::CanSuspendInputEvent()) {
       if (auto* bcg = aDoc->GetDocGroup()->GetBrowsingContextGroup()) {
@@ -19282,6 +19393,85 @@ void Document::PerformPendingViewTransitionOperations() {
 
 void Document::EnsureViewTransitionOperationsHappen() {
   MaybeScheduleRenderingPhases({RenderingPhase::ViewTransitionOperations});
+}
+
+Maybe<nsTArray<RefPtr<nsAtom>>> Document::ResolveViewTransitionRule() {
+  // Step 1. Skip if hidden
+  if (Hidden()) {
+    return Nothing();
+  }
+
+  // Step 2. Let matchingRule be the last '@view-transition' rule in document
+  RefPtr<StyleViewTransitionRule> matchingRule =
+      EnsureStyleSet().GetLastViewTransitionRule();
+
+  // Step 3. Skip if no rule
+  if (!matchingRule) {
+    return Nothing();
+  }
+
+  // Step 4. Skip if navigation: none;
+  const StyleNavigationType nav =
+      Servo_ViewTransitionRule_GetNavigationDescriptor(matchingRule);
+  if (nav == StyleNavigationType::None) {
+    return Nothing();
+  }
+
+  // Step 5. Assert navigation: auto;
+  MOZ_ASSERT(nav == StyleNavigationType::Auto);
+
+  // Step 6-9. Return matchingRule's types descriptor
+  AutoTArray<nsAtom*, 8> atoms;
+  Servo_ViewTransitionRule_GetTypes(matchingRule, &atoms);
+  ViewTransition::TypeList types;
+  types.AppendElements(atoms);
+
+  return Some(std::move(types));
+}
+
+Maybe<RefPtr<ViewTransition>>
+Document::ResolveInboundCrossDocumentViewTransition() {
+  // Step 1, 2. Assert fully active and revealed.
+  MOZ_ASSERT(IsFullyActive());
+  MOZ_ASSERT(mHasBeenRevealed);
+
+  // TODO Step 3. Update opt-in state for outbound transitions.
+  // XXX Maybe we don't need that flag and can just check the rule directly.
+
+  // Step 4. Let inboundViewTransitionParams be document's inbound params.
+  // Step 6. Set document's inbound params to null.
+  auto inboundParams = std::move(mInboundViewTransitionParams);
+
+  // Step 5. If inboundViewTransitionParams is null, return null.
+  if (!inboundParams) {
+    return Nothing();
+  }
+
+  // Step 7. If active view transition is not null, return null.
+  if (mActiveViewTransition) {
+    return Nothing();
+  }
+
+  // Step 8. Let resolvedRule be the result of resolving the @view-transition
+  // rule for document.
+  auto resolvedRule = ResolveViewTransitionRule();
+
+  // Step 9. If resolvedRule is skip transition, then return null.
+  if (resolvedRule.isNothing()) {
+    return Nothing();
+  }
+
+  // Steps 10-14. Set active view transition to a new ViewTransition ...
+  mActiveViewTransition = ViewTransition::CreateCrossDocument(
+      *this, std::move(inboundParams), resolvedRule.extract());
+
+  // Step 15. Return transition.
+  return Some(mActiveViewTransition);
+}
+
+void Document::SetInboundViewTransitionParams(
+    UniquePtr<ViewTransitionParams> aParams) {
+  mInboundViewTransitionParams = std::move(aParams);
 }
 
 Selection* Document::GetSelection(ErrorResult& aRv) {
@@ -20977,6 +21167,29 @@ void Document::GetAllInProcessDocuments(
   for (Document* doc : AllDocumentsList()) {
     aAllDocuments.AppendElement(doc);
   }
+}
+
+void Document::SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus) {
+  Element* elem = GetUnretargetedFullscreenElement();
+  MOZ_ASSERT(elem || aStatus == FullscreenKeyboardLock::None);
+
+  if (elem) {
+    elem->SetStates(ElementState::FULLSCREEN_KEYBOARD_LOCK,
+                    aStatus == FullscreenKeyboardLock::Browser, false);
+  }
+}
+
+FullscreenKeyboardLock Document::GetFullscreenKeyboardLockStatus() const {
+  Element* elem = GetUnretargetedFullscreenElement();
+  return (elem &&
+          elem->State().HasState(ElementState::FULLSCREEN_KEYBOARD_LOCK))
+             ? FullscreenKeyboardLock::Browser
+             : FullscreenKeyboardLock::None;
+}
+
+bool Document::HasFullscreenKeyboardLockEnabled() {
+  Element* elem = GetUnretargetedFullscreenElement();
+  return elem && elem->State().HasState(ElementState::FULLSCREEN_KEYBOARD_LOCK);
 }
 
 }  // namespace mozilla::dom

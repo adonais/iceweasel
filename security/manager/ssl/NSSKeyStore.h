@@ -26,7 +26,6 @@ class NSSKeyStore final : public AbstractOSKeyStore {
   virtual ~NSSKeyStore();
 
  private:
-  nsresult InitToken();
   mozilla::UniquePK11SlotInfo mSlot = nullptr;
 };
 

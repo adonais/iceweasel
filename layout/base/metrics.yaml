@@ -99,14 +99,13 @@ layout:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1235908
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1511919
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025565
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1235908
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1511919
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
-      - chutten@mozilla.com
     expires: never
-    telemetry_mirror: INPUT_EVENT_RESPONSE_MS
 
   input_event_response_coalesced:
     type: timing_distribution
@@ -120,15 +119,13 @@ layout:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1357457
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1489524
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025565
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1357457
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1489524
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
-      - chutten@mozilla.com
-      - gfritzsche@mozilla.com
     expires: never
-    telemetry_mirror: INPUT_EVENT_RESPONSE_COALESCED_MS
 
   load_input_event_response:
     type: timing_distribution
@@ -141,12 +138,12 @@ layout:
     time_unit: millisecond
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1298101
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025565
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1298101
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: LOAD_INPUT_EVENT_RESPONSE_MS
 
   long_reflow_interruptible:
     type: labeled_counter

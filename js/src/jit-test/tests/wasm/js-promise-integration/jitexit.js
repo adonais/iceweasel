@@ -70,7 +70,7 @@
   assertEq(i.foo(0), 42);
   assertEq(i.foo(1337), 0);
 
-  // Test on suspendable stack.
+  // Test on cont stack.
   var f = WebAssembly.promising(i.foo);
   assertEq(await f(0), 42);
 

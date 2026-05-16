@@ -14,6 +14,8 @@
   flex-direction: column;
   height: 100%;
   --smart-window-fade-size: var(--size-item-xlarge);
+  /* space between chat bubbles + spacing around the header + header size */
+  --smart-window-top-spacing-chat: calc(var(--space-large) * 2 + var(--space-small) * 2 + var(--button-size-icon));
   position: relative;
 }
 
@@ -23,7 +25,6 @@
   flex-direction: column;
   min-height: 0;
   overflow-y: auto;
-  padding-block: var(--space-large);
   width: 100%;
 
   &[overflowing] {
@@ -57,10 +58,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-small);
+  padding-block-start: var(--smart-window-top-spacing-chat);
   padding-inline: max(var(--space-medium), calc((100% - var(--smartwindow-content-max-width)) / 2));
   --content-height: 100%;
   min-height: var(--content-height);
   width: 100%;
+
+  & > :last-child {
+    padding-block-end: var(--smart-window-fade-size);
+  }
 }
 
 .assistant-response-announcer {
@@ -82,11 +88,17 @@
 }
 
 .chat-bubble-user {
+  --chat-bubble-inset-color: color-mix(in srgb, var(--color-violet-30) 12%, transparent);
+
   align-self: flex-end;
   background: light-dark(white, var(--color-violet-110));
   border-radius: var(--space-medium);
-  box-shadow: var(--smartwindow-shadow);
-  max-width: 100%;
+  box-shadow:
+    var(--smartwindow-shadow, var(--box-shadow-level-2)),
+    inset 0 0 5px var(--chat-bubble-inset-color, var(--box-shadow-color-lighter-layer-1));
+  gap: var(--space-medium);
+  max-width: 75%;
+  overflow-wrap: anywhere;
   padding-inline: var(--space-large);
   width: fit-content;
 }
@@ -98,10 +110,9 @@
 
 moz-button.jump-to-bottom-button {
   --button-border-radius: var(--border-radius-large);
-  --button-background-color: light-dark(var(--color-white), var(--color-violet-110));
-  --button-text-color: light-dark(var(--color-violet-90), var(--color-violet-0));
-  --button-background-color-hover: light-dark(var(--color-violet-20), var(--color-violet-90));
-  --button-background-color-active: light-dark(var(--color-violet-30), var(--color-violet-80));
+  --button-background-color: light-dark(var(--color-white), var(--color-gray-80));
+  --button-text-color: light-dark(var(--color-gray-70), var(--color-white));
+  --button-background-color-hover: light-dark(var(--color-violet-0), var(--color-gray-70));
   --button-opacity-disabled: 1;
   bottom: var(--space-large);
   inset-inline: 0;

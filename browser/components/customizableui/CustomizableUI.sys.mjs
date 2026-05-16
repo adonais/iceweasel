@@ -4,7 +4,6 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { SearchWidgetTracker } from "moz-src:///browser/components/customizableui/SearchWidgetTracker.sys.mjs";
 
 const lazy = {};
 
@@ -68,7 +67,7 @@ const kSubviewEvents = ["ViewShowing", "ViewHiding"];
  * The current version. We can use this to auto-add new default widgets as necessary.
  * (would be const but isn't because of testing purposes)
  */
-var kVersion = 23;
+var kVersion = 24;
 
 /**
  * Buttons removed from built-ins by version they were removed. kVersion must be
@@ -443,8 +442,6 @@ var CustomizableUIInternal = {
 
     this.initializeForTabsOrientation(CustomizableUI.verticalTabsEnabled);
 
-    SearchWidgetTracker.init();
-
     Services.obs.addObserver(this, "browser-set-toolbar-visibility");
 
     Services.prefs.addObserver(kPrefSidebarVerticalTabsEnabled, this);
@@ -808,18 +805,6 @@ var CustomizableUIInternal = {
       ];
     }
 
-    // Add the PBM reset button as the right most button item
-    if (currentVersion < 20) {
-      let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
-      // Place the button as the first item to the left of the hamburger menu
-      if (
-        navbarPlacements &&
-        !navbarPlacements.includes("reset-pbm-toolbar-button")
-      ) {
-        navbarPlacements.push("reset-pbm-toolbar-button");
-      }
-    }
-
     if (currentVersion < 21) {
       // If the vertical-spacer has not yet been added, ensure its to the left of the urlbar initially
       let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
@@ -853,6 +838,18 @@ var CustomizableUIInternal = {
       let buttonIndex = navbarPlacements.indexOf("save-to-pocket-button");
       if (buttonIndex != -1) {
         navbarPlacements.splice(buttonIndex, 1);
+      }
+    }
+
+    // Add the PBM reset button as the right most button item
+    if (currentVersion < 24) {
+      let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
+      // Place the button as the first item to the left of the hamburger menu
+      if (
+        navbarPlacements &&
+        !navbarPlacements.includes("reset-pbm-toolbar-button")
+      ) {
+        navbarPlacements.push("reset-pbm-toolbar-button");
       }
     }
   },

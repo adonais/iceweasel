@@ -2103,7 +2103,7 @@ void MediaFormatReader::DecodeDemuxedSamples(TrackType aTrack,
 
   decoder.StartRecordDecodingPerf(aTrack, aSample);
   if (aSample->mCrypto.IsEncrypted() &&
-      (mMediaEngineId || (mCDMProxy && !!mCDMProxy->AsRemoteCDMChild()))) {
+      (mMediaEngineId || (mCDMProxy && !!mCDMProxy->AsRemoteCDMProxy()))) {
     aSample->mShouldCopyCryptoToRemoteRawData = true;
   }
   decoder.mDecoder->Decode(aSample)

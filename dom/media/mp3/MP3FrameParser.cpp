@@ -570,9 +570,12 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
 }
 
 bool FrameParser::VBRHeader::Parse(BufferReader* aReader, size_t aFrameSize) {
-  auto res = std::make_pair(ParseVBRI(aReader), ParseXing(aReader, aFrameSize));
-  const bool rv = (res.first.isOk() && res.first.unwrap()) ||
-                  (res.second.isOk() && res.second.unwrap());
+  auto xing = ParseXing(aReader, aFrameSize);
+  bool rv = xing.isOk() && xing.unwrap();
+  if (!rv) {
+    auto vbri = ParseVBRI(aReader);
+    rv = vbri.isOk() && vbri.unwrap();
+  }
   if (rv) {
     MP3LOG(
         "VBRHeader::Parse found valid VBR/CBR header: type=%s"

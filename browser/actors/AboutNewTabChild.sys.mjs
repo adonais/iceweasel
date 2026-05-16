@@ -1,4 +1,3 @@
-/* vim: set ts=2 sw=2 sts=2 et tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -21,14 +20,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-// @nova-cleanup(remove-pref): Remove NOVA_ENABLED pref getter
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "NOVA_ENABLED",
-  "browser.newtabpage.activity-stream.nova.enabled",
-  false
-);
-
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "NEWTAB_SELF_LOADING",
@@ -36,10 +27,17 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "NEWTAB_REMOTE_RENDERER_ENABLED",
+  "browser.newtabpage.activity-stream.remote-renderer.enabled",
+  false
+);
+
 let gNextPortID = 0;
 
 export class AboutNewTabChild extends RemotePageChild {
-  handleEvent(event) {
+  async handleEvent(event) {
     if (event.type == "DOMDocElementInserted") {
       let portID = Services.appinfo.processID + ":" + ++gNextPortID;
 
@@ -47,6 +45,11 @@ export class AboutNewTabChild extends RemotePageChild {
         portID,
         url: this.contentWindow.document.documentURI.replace(/[\#|\?].*$/, ""),
       });
+
+      if (lazy.NEWTAB_REMOTE_RENDERER_ENABLED) {
+        let xrayedWin = Cu.waiveXrays(this.contentWindow);
+        xrayedWin.__REMOTE_RENDERER__ = true;
+      }
     } else if (event.type == "load") {
       this.sendAsyncMessage("Load");
     } else if (event.type == "DOMContentLoaded") {
@@ -54,19 +57,46 @@ export class AboutNewTabChild extends RemotePageChild {
         return; // about:newtab is a blank page
       }
 
-      // @nova-cleanup(remove-conditional): Remove Nova CSS swapping logic
-      if (lazy.NOVA_ENABLED) {
-        const doc = this.contentWindow.document;
-        const styleLinks = doc.querySelectorAll('link[rel="stylesheet"]');
-        for (const link of styleLinks) {
-          if (link.href.includes("activity-stream.css")) {
-            link.href = link.href.replace(
-              "activity-stream.css",
-              "nova/activity-stream.css"
+      if (lazy.NEWTAB_REMOTE_RENDERER_ENABLED) {
+        // We asynchronously request the parent to assign the right renderer
+        // version to us, so that we can guarantee that the parent has locked
+        // a particular version in place for us by the time we request styles
+        // and scripts via the moz-newtab-remote-renderer prototol.
+        const appProps = await this.sendQuery("AssignRenderer");
+
+        const protocol = "moz-newtab-remote-renderer";
+        const { document } = this.contentWindow;
+
+        const frag = document.createDocumentFragment();
+        const styleTag = document.createElement("link");
+        styleTag.rel = "stylesheet";
+        styleTag.href = `${protocol}://style`;
+        frag.appendChild(styleTag);
+
+        const scriptTag = document.createElement("script");
+        scriptTag.src = `${protocol}://script`;
+        frag.appendChild(scriptTag);
+
+        let xrayedWin = Cu.waiveXrays(this.contentWindow);
+
+        scriptTag.addEventListener(
+          "load",
+          () => {
+            xrayedWin.__APP_PROPS__ = Cu.cloneInto(
+              appProps,
+              this.contentWindow
             );
-            break;
-          }
-        }
+            this.contentWindow.dispatchEvent(
+              new this.contentWindow.CustomEvent("NewTab:RendererReady", {
+                bubbles: true,
+              })
+            );
+          },
+          { once: true }
+        );
+
+        document.head.appendChild(frag);
+        return;
       }
 
       if (!lazy.NEWTAB_SELF_LOADING) {

@@ -241,9 +241,9 @@ Modifiers UIEvent::ComputeModifierState(const nsAString& aModifiersList) {
   aModifiersList.BeginReading(listStart);
   aModifiersList.EndReading(listEnd);
 
-  for (uint32_t i = 0; i < std::size(kPairs); i++) {
+  for (auto entry : kPairs) {
     nsAString::const_iterator start(listStart), end(listEnd);
-    if (!FindInReadable(NS_ConvertASCIItoUTF16(kPairs[i].name), start, end)) {
+    if (!FindInReadable(NS_ConvertASCIItoUTF16(entry.name), start, end)) {
       continue;
     }
 
@@ -251,7 +251,7 @@ Modifiers UIEvent::ComputeModifierState(const nsAString& aModifiersList) {
         (end != listEnd && !NS_IsAsciiWhitespace(*(end)))) {
       continue;
     }
-    modifiers |= kPairs[i].modifier;
+    modifiers |= entry.modifier;
   }
 
   return modifiers;

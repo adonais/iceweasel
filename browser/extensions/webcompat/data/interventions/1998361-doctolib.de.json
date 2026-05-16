@@ -1,0 +1,18 @@
+{
+  "label": "doctolib.de",
+  "bugs": {
+    "1998361": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://*.doctolib.de/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "css": ["1998361_doctolib.de-hide-app-recommendation.css"]
+      },
+      "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
+    }
+  ]
+}

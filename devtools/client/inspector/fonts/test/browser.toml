@@ -5,10 +5,13 @@ prefs = ["devtools.inspector.activeSidebar=fontinspector"]
 support-files = [
   "devtools-mono.otf",
   "doc_browser_fontinspector.html",
+  "doc_browser_fontinspector-variable.html",
   "doc_browser_fontinspector_iframe.html",
   "test_iframe.html",
   "ostrich-black.ttf",
   "ostrich-regular.ttf",
+  "Inter.var.subset.ttf",
+  "FloatPrecisionTest.ttf",
   "head.js",
   "!/devtools/client/inspector/test/head.js",
   "!/devtools/client/inspector/test/shared-head.js",
@@ -35,6 +38,8 @@ skip-if = [
 ["browser_fontinspector_editor-letter-spacing-conversion.js"]
 
 ["browser_fontinspector_editor-values.js"]
+
+["browser_fontinspector_editor-variable.js"]
 
 ["browser_fontinspector_expand-css-code.js"]
 

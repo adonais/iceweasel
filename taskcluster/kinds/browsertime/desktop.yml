@@ -213,6 +213,17 @@ browsertime-responsiveness:
 browsertime-tp6-essential:
     <<: *tp6-defaults
     <<: &tp6-essential-defaults
+        limit-platforms:
+            by-app:
+                chrome:
+                    - linux.*shippable.*
+                    - windows.*shippable.*
+                    - macosx1470.*shippable.*
+                custom-car:
+                    - macosx1470.*shippable.*
+                    - linux.*shippable.*
+                    - windows.*-64.*shippable.*
+                default: []
         mozharness:
             extra-options:
                 by-test-platform:
@@ -232,7 +243,6 @@ browsertime-tp6-essential:
             run-visual-metrics:
                 by-test-platform:
                     macosx1400.*shippable.*: false
-                    macosx1500.*shippable.*: false
                     # Bug 1845014 Resolve osx 1300 vismet permafails
                     default: true
             subtests:
@@ -249,7 +259,8 @@ browsertime-tp6-essential:
             by-app:
                 firefox:
                     by-test-platform:
-                        .*64(?!.*nightlyasrelease).*shippable.*: [trunk]
+                        macosx1500.*shippable.*: [mozilla-central]
+                        (?!macosx1500).*64(?!.*nightlyasrelease).*shippable.*: [trunk]
                         default: []
                 default: []
         tier:
@@ -544,15 +555,24 @@ browsertime-benchmark:
             default: 900
     mozharness:
         extra-options:
-            by-test-platform:
-                macosx1400.*shippable.*:
-                    - --extra-profiler-run
-                    - --page-timeout=900000
-                macosx1500.*shippable.*:
-                    - --extra-profiler-run
-                    - --page-timeout=900000
+            by-subtest:
+                jetstream3:
+                    by-test-platform:
+                        macosx1400.*shippable.*:
+                            - --page-timeout=900000
+                        macosx1500.*shippable.*:
+                            - --page-timeout=900000
+                        default: []
                 default:
-                    - --extra-profiler-run
+                    by-test-platform:
+                        macosx1400.*shippable.*:
+                            - --extra-profiler-run
+                            - --page-timeout=900000
+                        macosx1500.*shippable.*:
+                            - --extra-profiler-run
+                            - --page-timeout=900000
+                        default:
+                            - --extra-profiler-run
 
 browsertime-benchmark-wasm:
     description: Raptor (browsertime) WASM benchmarks
@@ -954,15 +974,15 @@ browsertime-network-bench:
         by-app:
             firefox:
                 by-test-platform:
-                    linux.*shippable-qr.*: [mozilla-central]
+                    linux.*shippable.*: [mozilla-central]
                     default: []
             chrome:
                 by-test-platform:
-                    linux.*shippable-qr.*: [mozilla-central]
+                    linux.*shippable.*: [mozilla-central]
                     default: []
             custom-car:
                 by-test-platform:
-                    linux.*shippable-qr.*: [mozilla-central]
+                    linux.*shippable.*: [mozilla-central]
                     default: []
             default: []
     tier:

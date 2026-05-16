@@ -244,9 +244,23 @@ newtab-error-fallback-refresh-link = Ath-nuadhaich an duilleag airson fheuchainn
 
 newtab-custom-shortcuts-title = Ath-ghoiridean
 newtab-custom-shortcuts-subtitle = Làraichean a shàbhail thu no a thadhail thu orra
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Ath-ghoiridean
     .description = Làraichean a shàbhail thu no a thadhail thu orra
+newtab-custom-shortcuts-nova =
+    .label = Ath-ghoiridean
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } ràgh
+            [two] { $num } ràgh
+            [few] { $num } ràghan
+           *[other] { $num } ràgh
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =

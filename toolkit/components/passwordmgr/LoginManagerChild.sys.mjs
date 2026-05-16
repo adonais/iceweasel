@@ -10,7 +10,7 @@
 /* eslint-disable mozilla/use-ownerGlobal */
 
 const PASSWORD_INPUT_ADDED_COALESCING_THRESHOLD_MS = 1;
-// The amount of time a context menu event supresses showing a
+// The amount of time a context menu event suppresses showing a
 // popup from a focus event in ms. This matches the threshold in
 // toolkit/components/satchel/nsFormFillController.cpp
 const AUTOCOMPLETE_AFTER_RIGHT_CLICK_THRESHOLD_MS = 400;

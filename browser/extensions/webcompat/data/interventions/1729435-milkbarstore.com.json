@@ -1,0 +1,17 @@
+{
+  "label": "milkbarstore.com",
+  "bugs": {
+    "1729435": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://milkbarstore.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "css": ["1729435_milkbarstore.com-fix-cart-quantity-counts.css"]
+      }
+    }
+  ]
+}

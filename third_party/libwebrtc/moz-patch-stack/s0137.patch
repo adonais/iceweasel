@@ -1,39 +1,22 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Mon, 19 Jan 2026 13:10:00 -0600
-Subject: Bug 2010312 - (fix-d167fe9296) fix linux builds for constexpr
- containing std::string. r?ng!
+Date: Thu, 26 Mar 2026 10:16:00 -0500
+Subject: Bug 2025559 - (fix-72a64cb437) readd the api/audio:aec3_factory build
+ dep
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ece87d91b514ab155e600e067b4a99601bddbffc
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/17f6c61e65b9ac586e6022278094ea039eab8b46
 ---
- .../linux/wayland/shared_screencast_stream.cc        | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ BUILD.gn | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-index 72f85e0432..0b4939b8d6 100644
---- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-+++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-@@ -78,12 +78,24 @@ constexpr int CursorMetaSize(int w, int h) {
-           w * h * kCursorBpp);
- }
- 
-+#if defined(__GNUC__) && defined(WEBRTC_MOZILLA_BUILD)
-+// Mozilla linux builds are using -std=gnu++20, which doesn't approve
-+// of using std::string in a constexpr.  PipewireVersion now contains
-+// std::string as of libwebrtc commit d167fe9296.
-+static const PipeWireVersion kDmaBufModifierMinVersion = {.major = 0,
-+                                                          .minor = 3,
-+                                                          .micro = 33};
-+static const PipeWireVersion kDropSingleModifierMinVersion = {.major = 0,
-+                                                              .minor = 3,
-+                                                              .micro = 40};
-+#else
- constexpr PipeWireVersion kDmaBufModifierMinVersion = {.major = 0,
-                                                        .minor = 3,
-                                                        .micro = 33};
- constexpr PipeWireVersion kDropSingleModifierMinVersion = {.major = 0,
-                                                            .minor = 3,
-                                                            .micro = 40};
-+#endif
- 
- class SharedScreenCastStreamPrivate {
-  public:
+diff --git a/BUILD.gn b/BUILD.gn
+index 33eecadcc1..afc1321a2d 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -601,6 +601,7 @@ if (!build_with_chromium) {
+       # Added when we removed deps in other places to avoid building
+       # unreachable sources.  See Bug 1820869.
+       deps += [
++        "api/audio:aec3_factory",
+         "api/video_codecs:video_codecs_api",
+         "api/video_codecs:rtc_software_fallback_wrappers",
+         "media:rtc_simulcast_encoder_adapter",

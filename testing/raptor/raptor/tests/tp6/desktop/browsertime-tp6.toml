@@ -10,7 +10,7 @@ page_cycles = 25
 page_timeout = 60000
 playback = "mitmproxy"
 playback_pageset_manifest = "mitm7-linux-firefox-{subtest}.manifest"
-playback_version = "11.0.0"
+playback_version = "12.2.1"
 type = "pageload"
 unit = "ms"
 use_live_sites = false
@@ -21,7 +21,7 @@ support_class = "browsertime_pageload.py"
 
 [amazon]
 playback_pageset_manifest_backup = "mitm8-linux-firefox-amazon.manifest"
-playback_pageset_manifest = "mitm11-windows-firefox-amazon.manifest"
+playback_pageset_manifest = "mitm12-windows-firefox-amazon.manifest"
 benchmark_page = false
 test_url = "https://www.amazon.com/s?k=laptop&ref=nb_sb_noss_1"
 secondary_url = "https://www.amazon.com/Acer-A515-46-R14K-Quad-Core-Processor-Backlit/dp/B08VKNVDDR/ref=sr_1_3?dchild=1&keywords=laptop&qid=1627047187&sr=8-3"
@@ -39,7 +39,7 @@ test_url = "https://www.buzzfeed.com/"
 
 [cnn]
 playback_pageset_manifest_backup = "mitm8-linux-firefox-cnn.manifest"
-playback_pageset_manifest = "mitm11-windows-firefox-cnn.manifest"
+playback_pageset_manifest = "mitm12-darwin-firefox-cnn.manifest"
 secondary_url = "https://www.cnn.com/weather"
 test_url = "https://www.cnn.com/2021/03/22/weather/climate-change-warm-waters-lake-michigan/index.html"
 
@@ -76,7 +76,7 @@ test_url = "https://www.fandom.com/articles/fallout-76-will-live-and-die-on-the-
 
 [google-docs]
 playback_pageset_manifest_backup = "mitm8-linux-firefox-google-docs.manifest"
-playback_pageset_manifest = "mitm11-windows-firefox-google-docs.manifest"
+playback_pageset_manifest = "mitm12-darwin-firefox-google-docs.manifest"
 page_complete_wait_time = 8000
 secondary_url = "https://docs.google.com/document/d/1vUnn0ePU-ynArE1OdxyEHXR2G0sl74ja_st_4OOzlgE/preview"
 test_url = "https://docs.google.com/document/d/1US-07msg12slQtI_xchzYxcKlTs6Fp7WqIc6W5GK5M8/edit?usp=sharing"
@@ -87,6 +87,8 @@ playback_pageset_manifest = "mitm5-linux-firefox-google-mail.manifest"
 test_url = "https://mail.google.com/"
 
 [google-search]
+# Bug 1974848 - permafail with mitmproxy 12.x
+playback_version = "11.0.0"
 playback_pageset_manifest_backup = "mitm8-linux-firefox-google-search.manifest"
 playback_pageset_manifest = "mitm11-windows-firefox-google-search.manifest"
 test_url = "https://www.google.com/search?hl=en&q=barack+obama&cad=h"
@@ -193,9 +195,12 @@ playback_pageset_manifest = "mitm5-linux-firefox-twitter.manifest"
 test_url = "https://twitter.com/BarackObama"
 
 [wikia]
+# Bug 1974848 - permafail with mitmproxy 12.x
+playback_version = "11.0.0"
 benchmark_page = false
 secondary_url = "https://marvel.fandom.com/wiki/Celestials"
 test_url = "https://marvel.fandom.com/wiki/Black_Panther"
+playback_pageset_manifest_backup = "mitm7-linux-firefox-wikia.manifest"
 
 [wikipedia]
 playback_pageset_manifest_backup = "mitm7-linux-firefox-wikipedia.manifest"

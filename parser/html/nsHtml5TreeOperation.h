@@ -285,20 +285,20 @@ struct opGetShadowRootFromHost {
   nsIContent** mTemplateNode;
   nsString mShadowRootReferenceTarget;
   mozilla::dom::ShadowRootMode mShadowRootMode;
+  mozilla::dom::SlotAssignmentMode mShadowRootSlotAssignment;
   bool mShadowRootIsClonable;
   bool mShadowRootIsSerializable;
   bool mShadowRootDelegatesFocus;
   bool mShadowRootCustomElementRegistry;
 
-  explicit opGetShadowRootFromHost(nsIContentHandle* aHost,
-                                   nsIContentHandle* aFragHandle,
-                                   nsIContentHandle* aTemplateNode,
-                                   mozilla::dom::ShadowRootMode aShadowRootMode,
-                                   bool aShadowRootIsClonable,
-                                   bool aShadowRootIsSerializable,
-                                   bool aShadowRootDelegatesFocus,
-                                   bool aShadowRootCustomElementRegistry,
-                                   nsAString& aShadowRootReferenceTarget) {
+  explicit opGetShadowRootFromHost(
+      nsIContentHandle* aHost, nsIContentHandle* aFragHandle,
+      nsIContentHandle* aTemplateNode,
+      mozilla::dom::ShadowRootMode aShadowRootMode, bool aShadowRootIsClonable,
+      bool aShadowRootIsSerializable, bool aShadowRootDelegatesFocus,
+      bool aShadowRootCustomElementRegistry,
+      mozilla::dom::SlotAssignmentMode aShadowRootSlotAssignment,
+      nsAString& aShadowRootReferenceTarget) {
     mHost = static_cast<nsIContent**>(aHost);
     mFragHandle = static_cast<nsIContent**>(aFragHandle);
     mTemplateNode = static_cast<nsIContent**>(aTemplateNode);
@@ -307,6 +307,7 @@ struct opGetShadowRootFromHost {
     mShadowRootIsSerializable = aShadowRootIsSerializable;
     mShadowRootDelegatesFocus = aShadowRootDelegatesFocus;
     mShadowRootCustomElementRegistry = aShadowRootCustomElementRegistry;
+    mShadowRootSlotAssignment = aShadowRootSlotAssignment;
     mShadowRootReferenceTarget = aShadowRootReferenceTarget;
   }
 };

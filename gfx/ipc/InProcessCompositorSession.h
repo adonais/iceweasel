@@ -14,18 +14,16 @@ namespace mozilla {
 namespace layers {
 
 class CompositorOptions;
-class WebRenderLayerManager;
 
 // A CompositorSession where both the child and parent CompositorBridge reside
 // in the same process.
 class InProcessCompositorSession final : public CompositorSession {
  public:
   static RefPtr<InProcessCompositorSession> Create(
-      nsIWidget* baseWidget, WebRenderLayerManager* aLayerManager,
-      const LayersId& aRootLayerTreeId, CSSToLayoutDeviceScale aScale,
-      const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
-      const gfx::IntSize& aSurfaceSize, uint32_t aNamespace,
-      uint64_t aInnerWindowId);
+      nsIWidget* baseWidget, const LayersId& aRootLayerTreeId,
+      CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
+      bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
+      uint32_t aNamespace, uint64_t aInnerWindowId);
 
   CompositorBridgeParent* GetInProcessBridge() const override;
   void SetContentController(GeckoContentController* aController) override;

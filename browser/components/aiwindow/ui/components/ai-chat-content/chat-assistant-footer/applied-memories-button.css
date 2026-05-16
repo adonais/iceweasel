@@ -12,8 +12,13 @@
   --memories-accent-bg-active: rgba(191, 143, 204, 0.26);
   --memories-accent-border: var(--button-border-color-ghost);
   --aiwindow-callout-text-color: light-dark(var(--color-violet-60), var(--color-violet-20));
+  --aiwindow-callout-description-color: light-dark(var(--color-violet-60), var(--color-white));
   --aiwindow-callout-text-color-hover: light-dark(var(--color-violet-70), var(--color-violet-10));
   --aiwindow-callout-border-color: light-dark(transparent, var(--color-violet-50));
+  --aiwindow-callout-background: light-dark(
+    linear-gradient(97deg, rgba(50, 27, 253, 0.05) -7.07%, rgba(207, 48, 226, 0.05) 64.52%, rgba(255, 153, 0, 0.05) 101%, rgba(245, 196, 81, 0.05) 121.66%),
+    linear-gradient(63deg, rgba(114, 57, 255, 0.2) -3.99%, rgba(238, 231, 255, 0.2) 98.46%)
+  );
   --aiwindow-remove-btn-opacity: 0;
   --aiwindow-remove-btn-pointer-events: none;
   --aiwindow-memory-item-bg-action-hover: var(--aiwindow-memory-item-bg);
@@ -27,6 +32,11 @@
   }
 
   @media (forced-colors) {
+    --aiwindow-callout-description-color: var(--text-color);
+    --aiwindow-callout-text-color: var(--text-color);
+    --aiwindow-callout-text-color-hover: var(--text-color);
+    --aiwindow-callout-border-color: var(--border-color);
+    --aiwindow-callout-background: var(--background-color-box);
     --aiwindow-popover-bg: var(--background-color-canvas);
     --aiwindow-memory-item-bg: var(--background-color-canvas);
     --memories-accent-bg-hover: var(--button-background-color-ghost-hover);
@@ -133,16 +143,13 @@ moz-button.memories-trigger:not([disabled]):focus-within::part(moz-button-label)
   border-radius: var(--border-radius-medium);
   border: var(--border-width) solid;
   border-color: var(--aiwindow-callout-border-color);
-  background: light-dark(
-    linear-gradient(97deg, rgba(50, 27, 253, 0.05) -7.07%, rgba(207, 48, 226, 0.05) 64.52%, rgba(255, 153, 0, 0.05) 101%, rgba(245, 196, 81, 0.05) 121.66%),
-    linear-gradient(63deg, rgba(114, 57, 255, 0.5) -3.99%, rgba(238, 231, 255, 0.5) 98.46%)
-  );
+  background: var(--aiwindow-callout-background);
 }
 
 .memories-callout-description {
   margin: 0;
   font-size: var(--font-size-small, 13px);
-  color: var(--aiwindow-callout-text-color);
+  color: var(--aiwindow-callout-description-color);
 }
 
 .memories-callout-learn-more {

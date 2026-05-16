@@ -976,8 +976,11 @@ impl Renderer {
                     combined_dirty_rect = combined_dirty_rect.union(&rect);
                 }
 
+                let device_rect = DeviceRect::from_size(device_size.to_f32());
+                let clipped_dirty_rect = combined_dirty_rect.intersection_unchecked(&device_rect);
+
                 partial_present_mode = Some(PartialPresentMode::Single {
-                    dirty_rect: combined_dirty_rect,
+                    dirty_rect: clipped_dirty_rect,
                 });
             } else {
                 partial_present_mode = None;

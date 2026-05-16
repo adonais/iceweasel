@@ -76,6 +76,8 @@ class OffscreenCanvasDisplayHelper final {
   UniquePtr<uint8_t[]> GetImageBuffer(
       CanvasUtils::ImageExtraction aExtractionBehavior, int32_t* aOutFormat,
       gfx::IntSize* aOutImageSize);
+  void MaybeRandomizePixels(CanvasUtils::ImageExtraction aExtractionBehavior,
+                            uint8_t* aData, gfx::IntSize aSize);
 
  private:
   ~OffscreenCanvasDisplayHelper();

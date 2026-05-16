@@ -414,7 +414,7 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameLocal(
     return IPC_OK();
   }
 
-  if (NS_WARN_IF(embedderElt->GetOwnerGlobal() != GetWindowGlobal())) {
+  if (NS_WARN_IF(embedderElt->GetOwnerDocGlobal() != GetWindowGlobal())) {
     return IPC_OK();
   }
 
@@ -480,7 +480,7 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
     return IPC_OK();
   }
 
-  if (NS_WARN_IF(embedderElt->GetOwnerGlobal() != GetWindowGlobal())) {
+  if (NS_WARN_IF(embedderElt->GetOwnerDocGlobal() != GetWindowGlobal())) {
     return IPC_OK();
   }
 

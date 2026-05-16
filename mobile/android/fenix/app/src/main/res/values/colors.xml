@@ -261,7 +261,6 @@
     <color name="suggestion_highlight_color">#5C592ACB</color>
     <color name="sync_error_background_color">#FFF36E</color>
     <color name="sync_error_text_color">@color/photonYellow90</color>
-    <color name="bottom_bar_shadow">#1A000000</color>
     <color name="preference_scroll_highlight">@color/fx_mobile_surface_container_highest</color>
 
     <!-- Prompt colors -->

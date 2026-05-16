@@ -259,9 +259,11 @@ export var PopupAndRedirectBlockerObserver = {
       document.l10n.setAttributes(menuitem, "popup-show-popup-menuitem", {
         popupURI: blockedPopup.popupWindowURISpec,
       });
-      menuitem.setAttribute("popupReportIndex", i);
+      // The report index is the index into the blocked popup list
+      // maintained by the window where this popup was blocked.
+      menuitem.setAttribute("popupReportIndex", blockedPopup.reportIndex);
       // Store the source inner window id, so we can check if the document
-      // that triggered the redirect is still the same.
+      // that triggered the popup is still the same.
       menuitem.setAttribute("popupInnerWindowId", blockedPopup.innerWindowId);
       // Store the browser for the current tab. The active tab may change,
       // so we keep a reference to it.
@@ -341,12 +343,12 @@ export var PopupAndRedirectBlockerObserver = {
   showBlockedPopup(aEvent) {
     const { browser, browsingContext } = aEvent.target;
     const innerWindowId = aEvent.target.getAttribute("popupInnerWindowId");
-    const popupReportIndex = aEvent.target.getAttribute("popupReportIndex");
+    const reportIndex = aEvent.target.getAttribute("popupReportIndex");
 
     browser.popupAndRedirectBlocker.unblockPopup(
       browsingContext,
       innerWindowId,
-      popupReportIndex
+      reportIndex
     );
   },
 

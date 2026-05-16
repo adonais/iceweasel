@@ -163,8 +163,22 @@ async function waitForHttp3Route(
 ) {
   let listenerRef;
 
+  let firstAttempt = true;
   // Function to (re)open the channel using the same listener instance.
   const retry = () => {
+    if (!firstAttempt) {
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      do_timeout(1000, () => {
+        Services.obs.notifyObservers(null, "net:cancel-all-connections");
+        const chan = makeChan(uri);
+        if (altSvc) {
+          chan.setRequestHeader("x-altsvc", altSvc, false);
+        }
+        chan.asyncOpen(listenerRef);
+      });
+      return;
+    }
+    firstAttempt = false;
     const chan = makeChan(uri);
     if (altSvc) {
       chan.setRequestHeader("x-altsvc", altSvc, false);

@@ -440,6 +440,14 @@ ParsedRtcEventLog::ParseStatus StoreRtpPackets(
     } else {
       RTC_PARSE_CHECK_OR_RETURN(!proto.has_voice_activity());
     }
+    std::optional<uint16_t> base_rtx_osn = std::nullopt;
+    if (proto.has_rtx_original_sequence_number()) {
+      RTC_PARSE_CHECK_OR_RETURN(IsValueInRangeForNumericType<uint16_t>(
+          proto.rtx_original_sequence_number()));
+      base_rtx_osn =
+          static_cast<uint16_t>(proto.rtx_original_sequence_number());
+    }
+
     LoggedType logged_packet(
         Timestamp::Millis(proto.timestamp_ms()), header, proto.header_size(),
         proto.payload_size() + header.headerLength + header.paddingLength);
@@ -447,6 +455,7 @@ ParsedRtcEventLog::ParseStatus StoreRtpPackets(
       logged_packet.rtp.dependency_descriptor_wire_format =
           dependency_descriptor_wire_format[0];
     }
+    logged_packet.rtp.rtx_original_sequence_number = base_rtx_osn;
     (*rtp_packets_map)[header.ssrc].push_back(std::move(logged_packet));
   }
 
@@ -577,6 +586,18 @@ ParsedRtcEventLog::ParseStatus StoreRtpPackets(
                                  number_of_deltas);
   }
 
+  // RTX original sequence number.
+  std::vector<std::optional<uint64_t>> rtx_osn_values;
+  {
+    const std::optional<uint32_t> base_rtx_osn =
+        proto.has_rtx_original_sequence_number()
+            ? proto.rtx_original_sequence_number()
+            : std::optional<uint32_t>();
+    rtx_osn_values = DecodeDeltas(proto.rtx_original_sequence_number_deltas(),
+                                  base_rtx_osn, number_of_deltas);
+    RTC_PARSE_CHECK_OR_RETURN_EQ(rtx_osn_values.size(), number_of_deltas);
+  }
+
   // Populate events from decoded deltas
   for (size_t i = 0; i < number_of_deltas; ++i) {
     RTC_PARSE_CHECK_OR_RETURN(timestamp_ms_values[i].has_value());
@@ -665,6 +686,12 @@ ParsedRtcEventLog::ParseStatus StoreRtpPackets(
       RTC_PARSE_CHECK_OR_RETURN(voice_activity_values.size() <= i ||
                                 !voice_activity_values[i].has_value());
     }
+    std::optional<uint16_t> rtx_osn = std::nullopt;
+    if (rtx_osn_values.size() > i && rtx_osn_values[i].has_value()) {
+      RTC_PARSE_CHECK_OR_RETURN(
+          IsValueInRangeForNumericType<uint16_t>(rtx_osn_values[i].value()));
+      rtx_osn = static_cast<uint16_t>(rtx_osn_values[i].value());
+    }
     LoggedType logged_packet(Timestamp::Millis(timestamp_ms), header,
                              header.headerLength,
                              payload_size_values[i].value() +
@@ -673,6 +700,7 @@ ParsedRtcEventLog::ParseStatus StoreRtpPackets(
       logged_packet.rtp.dependency_descriptor_wire_format =
           dependency_descriptor_wire_format[i + 1];
     }
+    logged_packet.rtp.rtx_original_sequence_number = rtx_osn;
     (*rtp_packets_map)[header.ssrc].push_back(std::move(logged_packet));
   }
   return ParsedRtcEventLog::ParseStatus::Success();
@@ -2630,6 +2658,25 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
                       PacketDirection::kOutgoingPacket);
   }
   process.ProcessEventsInOrder();
+
+  if (!ccfb_indices.empty()) {
+    // The log stores RTP packets by stream (with millisecond timestamps), but
+    // doesn't guarantee the order between packets sent or received at the same
+    // time on different SSRCs. We don't have transport sequence numbers when
+    // CCFB is used, so the order can't be reconstructed using those.
+    // process.ProcessEventsInOrder() will set log feedback time per packet
+    // based on when feedback was originally received/sent for a packet, and we
+    // can use that to ensure packets are at least ordered as originally seen in
+    // feedback.
+    std::stable_sort(packets.begin(), packets.end(),
+                     [](const LoggedPacketInfo& a, const LoggedPacketInfo& b) {
+                       if (a.log_packet_time == b.log_packet_time) {
+                         return a.log_feedback_time < b.log_feedback_time;
+                       }
+                       return a.log_packet_time < b.log_packet_time;
+                     });
+  }
+
   return packets;
 }
 

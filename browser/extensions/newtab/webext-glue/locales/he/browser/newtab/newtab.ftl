@@ -145,6 +145,9 @@ newtab-menu-report = דיווח
 newtab-menu-section-block = חסימה
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = ביטול המעקב
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = ביטול המעקב אחרי הנושא
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -305,9 +308,23 @@ newtab-error-fallback-refresh-link = נא לרענן את הדף כדי לנסו
 
 newtab-custom-shortcuts-title = קיצורי דרך
 newtab-custom-shortcuts-subtitle = אתרים ששמרת או ביקרת בהם
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = קיצורי דרך
     .description = אתרים ששמרת או ביקרת בהם
+newtab-custom-shortcuts-nova =
+    .label = קיצורי דרך
+newtab-custom-row-description =
+    .description = מספר שורות
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] שורה אחת
+           *[other] { $num } שורות
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -318,9 +335,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = קיצורי דרך ממומנים
 newtab-custom-pocket-title = מומלץ על־ידי { -pocket-brand-name }
 newtab-custom-pocket-subtitle = תוכן יוצא דופן שנבחר בקפידה על־ידי { -pocket-brand-name }, חלק ממשפחת { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = סיפורים מומלצים
     .description = תוכן יוצא דופן שנבחר בקפידה על־ידי משפחת { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = סיפורים מומלצים
 newtab-custom-stories-personalized-toggle =
     .label = סיפורים
 newtab-custom-stories-personalized-checkbox-label = סיפורים מותאמים אישית המבוססים על הפעילות שלך
@@ -354,8 +374,12 @@ newtab-custom-settings = ניהול הגדרות נוספות
 
 newtab-wallpaper-title = תמונות רקע
 newtab-wallpaper-reset = איפוס לברירת מחדל
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = העלאת תמונה
+newtab-wallpaper-add-an-image = הוספת תמונה
 newtab-wallpaper-custom-color = בחירת צבע
+newtab-wallpaper-toggle-title =
+    .label = תמונות רקע
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = התמונה חרגה ממגבלת גודל הקובץ של { $file_size } מ״ב. נא לנסות להעלות קובץ קטן יותר.
@@ -378,7 +402,9 @@ newtab-wallpaper-light-fox-anniversary = שועל בשדה עשב עם נוף ה
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = צבעים אחידים
+newtab-wallpaper-colors = צבעים
 newtab-wallpaper-blue = כחול
 newtab-wallpaper-light-blue = כחול בהיר
 newtab-wallpaper-light-purple = סגול בהיר
@@ -484,7 +510,6 @@ newtab-weather-menu-temperature-option-fahrenheit = פרנהייט
 newtab-weather-menu-temperature-option-celsius = צלזיוס
 newtab-weather-menu-change-temperature-units-fahrenheit = מעבר לפרנהייט
 newtab-weather-menu-change-temperature-units-celsius = מעבר לצלזיוס
-newtab-weather-menu-hide-weather-v2 = הסתרת מזג האוויר
 newtab-weather-menu-hide-weather = הסתרת מזג האוויר בלשונית החדשה
 newtab-weather-menu-learn-more = מידע נוסף
 newtab-weather-menu-detect-my-location = זיהוי המיקום שלי
@@ -495,8 +520,18 @@ newtab-weather-opt-in-not-now =
     .label = לא כעת
 newtab-weather-opt-in-yes =
     .label = כן
+newtab-weather-opt-in-headline = קבלת תחזית מזג האוויר המקומית שלך
+newtab-weather-opt-in-use-location =
+    .label = שימוש במיקום
+newtab-weather-opt-in-choose-location = בחירת מיקום
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = גבוה
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = נמוך
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -570,6 +605,7 @@ newtab-section-confirm-block-topic-p2 = נושאים חסומים לא יופי�
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = חסימת { $topic }
+newtab-section-block-cancel-button = ביטול
 
 ## Strings for custom wallpaper highlight
 
@@ -633,6 +669,18 @@ newtab-toast-thanks-for-reporting =
     .message = תודה שדיווחת על זה.
 newtab-toast-widgets-hidden =
     .message = ניתן ללחוץ על סמל העיפרון כדי להוסיף ווידג’טים בחזרה בכל עת.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = התחלת לעקוב אחרי { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = הפסקת לעקוב אחרי { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = לא יוצגו יותר סיפורים בנושא { $topic }.
 
 ## Strings for task / to-do list productivity widget
 
@@ -652,7 +700,6 @@ newtab-widget-lists-menu-edit = עריכת שם הרשימה
 newtab-widget-lists-menu-create = יצירת רשימה חדשה
 newtab-widget-lists-menu-delete = מחיקת רשימה זו
 newtab-widget-lists-menu-copy = העתקת הרשימה ללוח העריכה
-newtab-widget-lists-menu-hide = הסתרת כל הרשימות
 newtab-widget-lists-menu-learn-more = מידע נוסף
 newtab-widget-lists-input-add-an-item =
     .placeholder = הוספת פריט
@@ -674,6 +721,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = רשימה חדשה
 newtab-widget-section-title = ווידג’טים
 newtab-widget-menu-hide = הסתרת הווידג׳ט
+newtab-widget-menu-change-size = שינוי גודל
+newtab-widget-size-small = קטן
+newtab-widget-size-medium = בינוני
+newtab-widget-size-large = גדול
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = הסתרת ווידג׳טים
@@ -705,7 +756,6 @@ newtab-widget-timer-reset =
     .title = איפוס
 newtab-widget-timer-menu-notifications = כיבוי התרעות
 newtab-widget-timer-menu-notifications-on = הפעלת התרעות
-newtab-widget-timer-menu-hide = הסתרת שעון עצר
 newtab-widget-timer-menu-learn-more = מידע נוסף
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = כותרות מובילות
@@ -720,6 +770,12 @@ newtab-daily-briefing-card-timestamp =
 newtab-widget-message-title = להישאר מרוכז בעזרת רשימות ושעון עצר מובנה
 # to-dos stands for "things to do".
 newtab-widget-message-copy = מתזכורות מהירות ועד למשימות יומיות, מזמני התמקדות ועד להפסקות להתמתחות - כך ניתן להספיק את המשימות בזמן.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = להפוך את { -brand-product-name } לשלך
+newtab-promo-card-body-addons = ניתן לבחור תמונת רקע מהאוסף שלנו, או ליצור אחד משלך.
+newtab-promo-card-cta-addons = לנסות עכשיו
 newtab-promo-card-title = תמיכה ב־{ -brand-product-name }
 newtab-promo-card-body = נותני החסות שלנו תומכים במשימה שלנו לבנות אינטרנט טוב יותר
 newtab-promo-card-cta = מידע נוסף

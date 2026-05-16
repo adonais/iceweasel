@@ -93,6 +93,6 @@ nsresult BlobImpl::GetSendInfo(nsIInputStream** aBody, uint64_t* aContentLength,
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(BlobImpl, BlobImpl)
+NS_IMPL_QUERY_INTERFACE(BlobImpl, BlobImpl)
 
 }  // namespace mozilla::dom

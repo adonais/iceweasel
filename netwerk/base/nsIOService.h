@@ -102,15 +102,6 @@ class nsIOService final : public nsIIOService,
   // it) into one which we can expose to the user, for example on the URL bar.
   static already_AddRefed<nsIURI> CreateExposableURI(nsIURI*);
 
-  // Used to count the total number of HTTP requests made
-  void IncrementRequestNumber() { mTotalRequests++; }
-  uint32_t GetTotalRequestNumber() { return mTotalRequests; }
-  // Used to keep "race cache with network" stats
-  void IncrementCacheWonRequestNumber() { mCacheWon++; }
-  uint32_t GetCacheWonRequestNumber() { return mCacheWon; }
-  void IncrementNetWonRequestNumber() { mNetWon++; }
-  uint32_t GetNetWonRequestNumber() { return mNetWon; }
-
   // Used to trigger a recheck of the captive portal status
   nsresult RecheckCaptivePortal();
 
@@ -253,9 +244,6 @@ class nsIOService final : public nsIIOService,
   nsTHashMap<nsCString, RuntimeProtocolHandler> mRuntimeProtocolHandlers
       MOZ_GUARDED_BY(mLock);
 
-  uint32_t mTotalRequests{0};
-  uint32_t mCacheWon{0};
-  uint32_t mNetWon{0};
   static uint32_t sSocketProcessCrashedCount;
 
   // These timestamps are needed for collecting telemetry on PR_Connect,

@@ -92,6 +92,9 @@ https_first_disabled = true
 ["browser_policy_extensionsettings2.js"]
 
 ["browser_policy_firefoxhome.js"]
+support-files = [
+  "../../../../extensions/newtab/test/browser/topstories.json",
+]
 
 ["browser_policy_firefoxsuggest.js"]
 

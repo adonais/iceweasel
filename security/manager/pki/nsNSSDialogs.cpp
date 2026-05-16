@@ -34,7 +34,7 @@ nsNSSDialogs::nsNSSDialogs() = default;
 
 nsNSSDialogs::~nsNSSDialogs() = default;
 
-NS_IMPL_ISUPPORTS(nsNSSDialogs, nsITokenPasswordDialogs, nsICertificateDialogs)
+NS_IMPL_ISUPPORTS(nsNSSDialogs, nsICertificateDialogs)
 
 nsresult nsNSSDialogs::Init() {
   nsresult rv;
@@ -45,49 +45,6 @@ nsresult nsNSSDialogs::Init() {
 
   rv = service->CreateBundle(PIPSTRING_BUNDLE_URL,
                              getter_AddRefs(mPIPStringBundle));
-  return rv;
-}
-
-NS_IMETHODIMP
-nsNSSDialogs::SetPassword(nsIInterfaceRequestor* ctx, nsIPK11Token* token,
-                          /*out*/ bool* canceled) {
-  // |ctx| is allowed to be null.
-  NS_ENSURE_ARG(canceled);
-
-  *canceled = false;
-
-  // Get the parent window for the dialog
-  nsCOMPtr<mozIDOMWindowProxy> parent = do_GetInterface(ctx);
-
-  nsCOMPtr<nsIDialogParamBlock> block =
-      do_CreateInstance(NS_DIALOGPARAMBLOCK_CONTRACTID);
-  if (!block) return NS_ERROR_FAILURE;
-
-  nsCOMPtr<nsIMutableArray> objects = nsArrayBase::Create();
-  if (!objects) {
-    return NS_ERROR_FAILURE;
-  }
-  nsresult rv = objects->AppendElement(token);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  rv = block->SetObjects(objects);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  rv = nsNSSDialogHelper::openDialog(
-      parent, "chrome://pippki/content/changepassword.xhtml", block);
-
-  if (NS_FAILED(rv)) return rv;
-
-  int32_t status;
-
-  rv = block->GetInt(1, &status);
-  if (NS_FAILED(rv)) return rv;
-
-  *canceled = (status == 0);
-
   return rv;
 }
 

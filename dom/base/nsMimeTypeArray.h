@@ -78,13 +78,13 @@ class nsMimeType final : public nsWrapperCache {
 
   // MimeType WebIDL methods
   void GetDescription(mozilla::dom::DOMString& retval) const {
-    retval.SetKnownLiveString(kMimeDescription);
+    retval.AssignLiteral(u"Portable Document Format");
   }
 
   already_AddRefed<nsPluginElement> EnabledPlugin() const;
 
   void GetSuffixes(mozilla::dom::DOMString& retval) const {
-    retval.SetKnownLiveString(kMimeSuffix);
+    retval.AssignLiteral(u"pdf");
   }
 
   void GetType(nsString& retval) const { retval = mName; }
@@ -92,10 +92,6 @@ class nsMimeType final : public nsWrapperCache {
 
  protected:
   virtual ~nsMimeType();
-
-  static constexpr nsLiteralString kMimeDescription =
-      u"Portable Document Format"_ns;
-  static constexpr nsLiteralString kMimeSuffix = u"pdf"_ns;
 
   // Note that this creates an explicit reference cycle:
   //

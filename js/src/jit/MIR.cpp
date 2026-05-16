@@ -1,12 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/MIR.h"
 
-#include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
@@ -1309,18 +1306,18 @@ void MConstant::assertInitializedPayload() const {
   switch (type()) {
     case MIRType::Int32:
     case MIRType::Float32:
-#  if MOZ_LITTLE_ENDIAN()
-      MOZ_ASSERT((payload_.asBits >> 32) == 0);
-#  else
-      MOZ_ASSERT((payload_.asBits << 32) == 0);
-#  endif
+      if constexpr (std::endian::native == std::endian::little) {
+        MOZ_ASSERT((payload_.asBits >> 32) == 0);
+      } else {
+        MOZ_ASSERT((payload_.asBits << 32) == 0);
+      }
       break;
     case MIRType::Boolean:
-#  if MOZ_LITTLE_ENDIAN()
-      MOZ_ASSERT((payload_.asBits >> 1) == 0);
-#  else
-      MOZ_ASSERT((payload_.asBits & ~(1ULL << 56)) == 0);
-#  endif
+      if constexpr (std::endian::native == std::endian::little) {
+        MOZ_ASSERT((payload_.asBits >> 1) == 0);
+      } else {
+        MOZ_ASSERT((payload_.asBits & ~(1ULL << 56)) == 0);
+      }
       break;
     case MIRType::Double:
     case MIRType::Int64:
@@ -1331,11 +1328,11 @@ void MConstant::assertInitializedPayload() const {
     case MIRType::BigInt:
     case MIRType::IntPtr:
     case MIRType::Shape:
-#  if MOZ_LITTLE_ENDIAN()
-      MOZ_ASSERT_IF(JS_BITS_PER_WORD == 32, (payload_.asBits >> 32) == 0);
-#  else
-      MOZ_ASSERT_IF(JS_BITS_PER_WORD == 32, (payload_.asBits << 32) == 0);
-#  endif
+      if constexpr (std::endian::native == std::endian::little) {
+        MOZ_ASSERT_IF(JS_BITS_PER_WORD == 32, (payload_.asBits >> 32) == 0);
+      } else {
+        MOZ_ASSERT_IF(JS_BITS_PER_WORD == 32, (payload_.asBits << 32) == 0);
+      }
       break;
     default:
       MOZ_ASSERT(IsNullOrUndefined(type()) || IsMagicType(type()));
@@ -4270,6 +4267,11 @@ static void AssertKnownClass(TempAllocator& alloc, MInstruction* ins,
 
 MDefinition* MBoxNonStrictThis::foldsTo(TempAllocator& alloc) {
   MDefinition* in = input();
+
+  // BoxNonStrictThis is a no-op on objects.
+  if (in->type() == MIRType::Object) {
+    return in;
+  }
 
   if (!in->isBox()) {
     return this;
@@ -7597,123 +7599,6 @@ MInlineArgumentsSlice* MInlineArgumentsSlice::New(
   }
 
   return ins;
-}
-
-MDefinition* MArrayLength::foldsTo(TempAllocator& alloc) {
-  // Object.keys() is potentially effectful, in case of Proxies. Otherwise, when
-  // it is only computed for its length property, there is no need to
-  // materialize the Array which results from it and it can be marked as
-  // recovered on bailout as long as no properties are added to / removed from
-  // the object.
-  MDefinition* elems = elements();
-  if (!elems->isElements()) {
-    return this;
-  }
-
-  MDefinition* guardshape = elems->toElements()->object();
-  if (!guardshape->isGuardShape()) {
-    return this;
-  }
-
-  // The Guard shape is guarding the shape of the object returned by
-  // Object.keys, this guard can be removed as knowing the function is good
-  // enough to infer that we are returning an array.
-  MDefinition* keys = guardshape->toGuardShape()->object();
-  if (!keys->isObjectKeys()) {
-    return this;
-  }
-
-  // Object.keys() inline cache guards against proxies when creating the IC. We
-  // rely on this here as we are looking to elide `Object.keys(...)` call, which
-  // is only possible if we know for sure that no side-effect might have
-  // happened.
-  MDefinition* noproxy = keys->toObjectKeys()->object();
-  if (!noproxy->isGuardIsNotProxy()) {
-    // The guard might have been replaced by an assertion, in case the class is
-    // known at compile time. IF the guard has been removed check whether check
-    // has been removed.
-    MOZ_RELEASE_ASSERT(GetObjectKnownClass(noproxy) != KnownClass::None);
-    MOZ_RELEASE_ASSERT(!GetObjectKnownJSClass(noproxy)->isProxyObject());
-  }
-
-  // Check if both the elements and the Object.keys() have a single use. We only
-  // check for live uses, and are ok if a branch which was previously using the
-  // keys array has been removed since.
-  if (!elems->hasOneLiveDefUse() || !guardshape->hasOneLiveDefUse() ||
-      !keys->hasOneLiveDefUse()) {
-    return this;
-  }
-
-  // Check that the latest active resume point is the one from Object.keys(), in
-  // order to steal it. If this is not the latest active resume point then some
-  // side-effect might happen which updates the content of the object, making
-  // any recovery of the keys exhibit a different behavior than expected.
-  if (keys->toObjectKeys()->resumePoint() != block()->activeResumePoint(this)) {
-    return this;
-  }
-
-  // Verify whether any resume point captures the keys array after any aliasing
-  // mutations. If this were to be the case the recovery of ObjectKeys on
-  // bailout might compute a version which might not match with the elided
-  // result.
-  //
-  // Iterate over the resume point uses of ObjectKeys, and check whether the
-  // instructions they are attached to are aliasing Object fields. If so, skip
-  // this optimization.
-  AliasSet enumKeysAliasSet = AliasSet::Load(AliasSet::Flag::ObjectFields);
-  for (auto* use : UsesIterator(keys)) {
-    if (!use->consumer()->isResumePoint()) {
-      // There is only a single use, and this is the length computation as
-      // asserted with `hasOneLiveDefUse`.
-      continue;
-    }
-
-    MResumePoint* rp = use->consumer()->toResumePoint();
-    if (!rp->instruction()) {
-      // If there is no instruction, this is a resume point which is attached to
-      // the entry of a block. Thus no risk of mutating the object on which the
-      // keys are queried.
-      continue;
-    }
-
-    MInstruction* ins = rp->instruction();
-    if (ins == keys) {
-      continue;
-    }
-
-    // Check whether the instruction can potentially alias the object fields of
-    // the object from which we are querying the keys.
-    AliasSet mightAlias = ins->getAliasSet() & enumKeysAliasSet;
-    if (!mightAlias.isNone()) {
-      return this;
-    }
-  }
-
-  // Flag every instructions since Object.keys(..) as recovered on bailout, and
-  // make Object.keys(..) be the recovered value in-place of the shape guard.
-  setRecoveredOnBailout();
-  elems->setRecoveredOnBailout();
-  guardshape->replaceAllUsesWith(keys);
-  guardshape->block()->discard(guardshape->toGuardShape());
-  keys->setRecoveredOnBailout();
-
-  // Steal the resume point from Object.keys, which is ok as we confirmed that
-  // there is no other resume point in-between.
-  MObjectKeysLength* keysLength = MObjectKeysLength::New(alloc, noproxy);
-  keysLength->stealResumePoint(keys->toObjectKeys());
-
-  // Set the dependency of the newly created instruction. Unfortunately
-  // MObjectKeys (keys) is an instruction with a Store(Any) alias set, as it
-  // could be used with proxies which can re-enter JavaScript.
-  //
-  // Thus, the loadDependency field of MObjectKeys is null. On the other hand
-  // MObjectKeysLength has a Load alias set. Thus, instead of reconstructing the
-  // Alias Analysis by updating every instructions which depends on MObjectKeys
-  // and finding the matching store instruction, we reuse the MObjectKeys as any
-  // store instruction, despite it being marked as recovered-on-bailout.
-  keysLength->setDependency(keys);
-
-  return keysLength;
 }
 
 MDefinition* MNormalizeSliceTerm::foldsTo(TempAllocator& alloc) {

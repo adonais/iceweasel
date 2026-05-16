@@ -86,6 +86,22 @@ static void WriteDigits(CheckedIncrement<char*>& b, size_t i,
   } while (x > 0);
 }
 
+static void WriteHexDigits(CheckedIncrement<char*>& b, uintptr_t i) {
+  int x = sizeof(intptr_t) * 8;
+  bool wrote_msb = false;
+  do {
+    x -= 4;
+    uintptr_t hex_digit = i >> x & 0xf;
+    if (hex_digit || wrote_msb) {
+      *(b++) = "0123456789abcdef"[hex_digit];
+      wrote_msb = true;
+    }
+  } while (x > 0);
+  if (!wrote_msb) {
+    *(b++) = '0';
+  }
+}
+
 int VSNPrintf(char* aBuf, size_t aSize, const char* aFormat, va_list aArgs) {
   CheckedIncrement<char*> b(aBuf, aSize);
   CheckedIncrement<const char*> f(aFormat, strlen(aFormat) + 1);
@@ -108,17 +124,31 @@ int VSNPrintf(char* aBuf, size_t aSize, const char* aFormat, va_list aArgs) {
         f.advance(end);
 
         switch (*f) {
-          case 'z': {
-            if (*(++f) == 'u') {
-              size_t i = va_arg(aArgs, size_t);
+          case 'z':
+          case 'l':
+          case 'u':
+          case 'x': {
+            size_t i;
+            if (*f == 'z') {
+              i = va_arg(aArgs, size_t);
+              f++;
+            } else if (*f == 'l') {
+              i = size_t(va_arg(aArgs, unsigned long));
+              f++;
+            } else {
+              i = size_t(va_arg(aArgs, unsigned));
+            }
 
+            if (*f == 'u') {
               size_t num_digits = NumDigits(i);
               LeftPad(b, width > num_digits ? width - num_digits : 0);
               WriteDigits(b, i, num_digits);
+            } else if (*f == 'x') {
+              WriteHexDigits(b, i);
             } else {
-              // If the format specifier is unknown then write out '%' and
-              // rewind to the beginning of the specifier causing it to be
-              // printed normally.
+              // A length was combined with a format specifier that has no
+              // lnegth.  Write out '%' and rewind to the beginning of the
+              // specifier causing it to be printed normally.
               *(b++) = '%';
               f.rewind(start);
             }
@@ -129,19 +159,7 @@ int VSNPrintf(char* aBuf, size_t aSize, const char* aFormat, va_list aArgs) {
             intptr_t ptr = va_arg(aArgs, intptr_t);
             *(b++) = '0';
             *(b++) = 'x';
-            int x = sizeof(intptr_t) * 8;
-            bool wrote_msb = false;
-            do {
-              x -= 4;
-              size_t hex_digit = ptr >> x & 0xf;
-              if (hex_digit || wrote_msb) {
-                *(b++) = "0123456789abcdef"[hex_digit];
-                wrote_msb = true;
-              }
-            } while (x > 0);
-            if (!wrote_msb) {
-              *(b++) = '0';
-            }
+            WriteHexDigits(b, ptr);
             break;
           }
 

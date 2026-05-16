@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -776,7 +774,7 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
 
   // Found a wasm catch handler, restore state and jump to it.
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, rbx);
+  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, rbx, rcx);
 }
 
 void MacroAssemblerX64::profilerEnterFrame(Register framePtr,
@@ -996,8 +994,8 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
 }
 
 static bool IsIntArgReg(Register reg) {
-  for (uint32_t i = 0; i < NumIntArgRegs; i++) {
-    if (IntArgRegs[i] == reg) {
+  for (auto IntArgReg : IntArgRegs) {
+    if (IntArgReg == reg) {
       return true;
     }
   }

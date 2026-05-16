@@ -15,7 +15,6 @@
 #include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/gfx/2D.h"
-#include "nsGkAtoms.h"
 #include "nsLineBreaker.h"
 #include "nsSpecialCasingData.h"
 #include "nsStyleConsts.h"

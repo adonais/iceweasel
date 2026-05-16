@@ -3,7 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gtest/gtest.h"
-#include <math.h>
 
 #include "mozilla/Array.h"
 #include "mozilla/Tainting.h"

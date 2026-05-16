@@ -2925,9 +2925,9 @@ void gfxFcPlatformFontList::GetSampleLangForGroup(nsAtom* aLanguage,
   if (aLanguage != nsGkAtoms::x_math ||
       StaticPrefs::mathml_font_family_math_enabled()) {
     // -- look it up in the list of moz lang groups
-    for (unsigned int i = 0; i < std::size(MozLangGroups); ++i) {
-      if (aLanguage == MozLangGroups[i].mozLangGroup) {
-        mozLangGroup = &MozLangGroups[i];
+    for (const auto& MozLangGroup : MozLangGroups) {
+      if (aLanguage == MozLangGroup.mozLangGroup) {
+        mozLangGroup = &MozLangGroup;
         break;
       }
     }

@@ -160,7 +160,10 @@ class Mitmproxy(Playback):
 
     def generate_mitmdump_path(self):
         mitmdump_path_tail = ["mitmdump"]
-        if self.config["playback_version"] == "11.0.0" and sys.platform == "darwin":
+        if (
+            self.config["playback_version"] in ("11.0.0", "12.2.1")
+            and sys.platform == "darwin"
+        ):
             # For MacOS newer versions have a different folder structure.
             # Prepend this new path
             mitmdump_path_tail = [
@@ -351,7 +354,7 @@ class Mitmproxy(Playback):
             )
         # playback mode
         elif len(self.playback_files) > 0:
-            if self.config["playback_version"] in ["8.1.1", "11.0.0"]:
+            if self.config["playback_version"] in ["8.1.1", "11.0.0", "12.2.1"]:
                 command.extend([
                     "--set",
                     "websocket=false",

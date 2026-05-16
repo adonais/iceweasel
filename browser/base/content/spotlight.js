@@ -53,6 +53,7 @@ function renderMultistage(ready) {
     window.close();
   };
   window.AWWaitForMigrationClose = receive("WAIT_FOR_MIGRATION_CLOSE");
+  window.AWWaitForNimbus = receive("WAIT_FOR_NIMBUS");
   window.AWEvaluateScreenTargeting = receive("EVALUATE_SCREEN_TARGETING");
   window.AWEvaluateAttributeTargeting = receive("EVALUATE_ATTRIBUTE_TARGETING");
   window.AWPredictRemoteType = ({ browserEl, url }) => {

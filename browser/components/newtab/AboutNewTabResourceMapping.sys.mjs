@@ -337,6 +337,7 @@ export var AboutNewTabResourceMapping = {
         // may have Fluent files or Glean pings/metrics to register dynamically.
         this.registerFluentSources(rootURI);
         this.registerMetricsFromJson();
+        this.reevaluateNimbusRecipes();
       }
       lazy.aboutRedirector.wrappedJSObject.notifyBuiltInAddonInitialized();
       Glean.newtab.addonReadySuccess.set(true);
@@ -380,6 +381,27 @@ export var AboutNewTabResourceMapping = {
         `Error on registering fluent files from ${rootURI.spec}:`,
         e
       );
+    }
+  },
+
+  /**
+   * This is run during `init` after the addonVersion has been updated, and only
+   * if an XPI is being used. We tell Nimbus to re-evaluate any recipes in case
+   * the XPI is being used for an experiment.
+   *
+   * @returns {Promise<void>}
+   */
+  async reevaluateNimbusRecipes() {
+    // Tell Experimenter to re-evaluate experiment recipe targeting in case we
+    // just installed an XPI.
+    try {
+      await lazy.ExperimentAPI._rsLoader.finishedUpdating();
+      await lazy.ExperimentAPI._rsLoader.updateRecipes("newtab-trainhop", {
+        onlyFeatureIds: new Set(["newtabTrainhop"]),
+      });
+    } catch (e) {
+      // TODO: consider if we should collect this in telemetry.
+      this.logger.error("Error when re-evaluating Nimbus recipes:", e);
     }
   },
 
@@ -839,12 +861,6 @@ export var AboutNewTabResourceMapping = {
     await lazy.AddonManager.readyPromise;
     await this.updateTrainhopAddonState(true /* forceRestartlessInstall */);
 
-    // Tell Experimenter to re-evaluate experiment recipe targeting in case we
-    // just installed an XPI.
-    await lazy.ExperimentAPI._rsLoader.finishedUpdating();
-    await lazy.ExperimentAPI._rsLoader.updateRecipes("newtab-trainhop", {
-      onlyFeatureIds: new Set(["newtabTrainhop"]),
-    });
     this.logger.debug("First startup - new profile done");
   },
 };

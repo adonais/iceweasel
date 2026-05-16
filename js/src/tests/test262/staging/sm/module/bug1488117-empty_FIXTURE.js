@@ -1,4 +1,3 @@
-// |reftest| skip -- not a test file
 // |reftest| skip -- support file
 /*
  * Any copyright is dedicated to the Public Domain.

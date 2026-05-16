@@ -112,6 +112,16 @@ class PerformanceEventTiming final
 
   void FinalizeEventTiming(const WidgetEvent* aEvent);
 
+  // Records the time of first modal dialog appearance during event processing.
+  // Only the earliest time is kept to handle sequential or nested dialogs.
+  void SetFallbackTimeIfNotSet(DOMHighResTimeStamp aTime) {
+    if (mFallbackTime.isNothing()) {
+      mFallbackTime = Some(aTime);
+    }
+  }
+
+  Maybe<DOMHighResTimeStamp> GetFallbackTime() const { return mFallbackTime; }
+
   EventMessage GetMessage() const { return mMessage; }
 
  private:
@@ -142,6 +152,8 @@ class PerformanceEventTiming final
   bool mCancelable;
 
   Maybe<uint64_t> mInteractionId;
+
+  Maybe<DOMHighResTimeStamp> mFallbackTime;
 
   EventMessage mMessage;
 };

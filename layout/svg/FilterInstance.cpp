@@ -1536,8 +1536,8 @@ FilterInstance::FilterInstance(
     MOZ_ASSERT(mTargetFrame,
                "Need to supply a frame when there's no aOverrideBBox");
     mTargetBBox =
-        SVGUtils::GetBBox(mTargetFrame, SVGUtils::eUseFrameBoundsForOuterSVG |
-                                            SVGUtils::eBBoxIncludeFillGeometry);
+        SVGUtils::GetBBox(mTargetFrame, {SVGBBoxFlag::UseFrameBoundsForOuterSVG,
+                                         SVGBBoxFlag::IncludeFillGeometry});
   }
 
   // Compute user space to filter space transforms.

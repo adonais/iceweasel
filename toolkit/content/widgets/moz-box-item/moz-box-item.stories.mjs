@@ -67,6 +67,7 @@ const Template = ({
   slottedActions,
   slottedActionsStart,
   supportPage,
+  slottedSupportLink,
   slottedDescription,
 }) => html`
   <style>
@@ -97,7 +98,10 @@ const Template = ({
     >
       ${slottedContent
         ? html`<div class="slotted">
-            <img src="chrome://global/skin/illustrations/security-error.svg" />
+            <img
+              src="chrome://global/skin/illustrations/security-error.svg"
+              alt="Confused Kit is looking at an orange exclamation mark"
+            />
             <span>This is an example message</span>
             <span class="text-deemphasized">
               Message description would go down here
@@ -133,6 +137,9 @@ const Template = ({
             ></moz-button>
           `
         : ""}
+      ${slottedSupportLink
+        ? html`<a slot="support-link" href="www.example.com">Click me!</a>`
+        : ""}
       ${slottedDescription
         ? html`<span slot="description"
             >This is a slotted description
@@ -153,6 +160,7 @@ Default.args = {
   slottedActionsStart: false,
   supportPage: "",
   slottedDescription: false,
+  slottedSupportLink: false,
   layout: "default",
 };
 
@@ -210,4 +218,10 @@ WithSupportPage.args = {
   ...Default.args,
   supportPage: "test",
   iconSrc: "chrome://global/skin/icons/info.svg",
+};
+
+export const WithSlottedSupportLink = Template.bind({});
+WithSlottedSupportLink.args = {
+  ...Default.args,
+  slottedSupportLink: true,
 };

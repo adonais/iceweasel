@@ -914,9 +914,9 @@ bool ShaderProgramOGL::Initialize() {
 
   mProgramState = STATE_OK;
 
-  for (uint32_t i = 0; i < KnownUniform::KnownUniformCount; ++i) {
-    mProfile.mUniforms[i].mLocation =
-        mGL->fGetUniformLocation(mProgram, mProfile.mUniforms[i].mNameString);
+  for (auto& mUniform : mProfile.mUniforms) {
+    mUniform.mLocation =
+        mGL->fGetUniformLocation(mProgram, mUniform.mNameString);
   }
 
   return true;

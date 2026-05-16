@@ -141,7 +141,7 @@ export class AmpSuggestions extends SuggestProvider {
     return new lazy.UrlbarResult({
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-      isNovaSuggestion: true,
+      isBottomUrlSuggestion: true,
       isBestMatch: isTopPick,
       richSuggestionIconSize,
       payload: {

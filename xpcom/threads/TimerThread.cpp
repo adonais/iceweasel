@@ -19,7 +19,6 @@
 #include "mozilla/glean/XpcomMetrics.h"
 
 #include <bit>
-#include <math.h>
 
 using namespace mozilla;
 

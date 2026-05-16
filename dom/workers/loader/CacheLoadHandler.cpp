@@ -312,7 +312,7 @@ void CacheLoadHandler::Load(Cache* aCache) {
   }
 
   mozilla::dom::RequestOrUTF8String request;
-  request.SetAsUTF8String().ShareOrDependUpon(loadContext->mFullURL);
+  request.SetAsUTF8String() = loadContext->mFullURL;
 
   mozilla::dom::CacheQueryOptions params;
 

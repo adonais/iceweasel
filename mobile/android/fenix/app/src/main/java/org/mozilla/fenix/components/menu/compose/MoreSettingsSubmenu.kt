@@ -44,6 +44,7 @@ internal fun MoreSettingsSubmenu(
     showShortcuts: Boolean,
     isAndroidAutomotiveAvailable: Boolean,
     summarizationMenuState: SummarizationMenuState,
+    isPrivate: Boolean,
     onWebCompatReporterClick: () -> Unit,
     onSummarizePageMenuExposed: () -> Unit,
     onSummarizePageClick: () -> Unit,
@@ -53,6 +54,7 @@ internal fun MoreSettingsSubmenu(
     onSaveAsPDFMenuClick: () -> Unit,
     onPrintMenuClick: () -> Unit,
     onOpenInAppMenuClick: () -> Unit,
+    onMoveToNonPrivateTabMenuClick: () -> Unit,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -65,6 +67,10 @@ internal fun MoreSettingsSubmenu(
             summarizationMenuState = summarizationMenuState,
             onSummarizePageMenuExposed = onSummarizePageMenuExposed,
             onSummarizePageClick = onSummarizePageClick,
+        )
+        MoveToNonPrivateTabMenuItem(
+            isPrivate = isPrivate,
+            onMoveToNonPrivateTabMenuClick = onMoveToNonPrivateTabMenuClick,
         )
         WebCompatReporterMenuItem(
             isWebCompatReporterSupported = isWebCompatReporterSupported,
@@ -138,6 +144,13 @@ private fun SummarizationMenuItem(
         } else {
             MenuItemState.DISABLED
         }
+
+        val containerColor = if (summarizationMenuState.enabled) {
+            MaterialTheme.colorScheme.information
+        } else {
+            MaterialTheme.colorScheme.information.copy(alpha = 0.38f)
+        }
+
         MenuItem(
             label = stringResource(id = R.string.browser_menu_summarize_page),
             labelModifier = Modifier.wrapContentWidth(),
@@ -148,7 +161,7 @@ private fun SummarizationMenuItem(
             afterContent = {
                 if (summarizationMenuState.showNewFeatureBadge) {
                     StatusBadge(
-                        containerColor = MaterialTheme.colorScheme.information,
+                        containerColor = containerColor,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                         status = stringResource(R.string.browser_menu_summarize_page_badge),
                     )
@@ -216,6 +229,20 @@ private fun SaveToCollectionMenuItem(
         beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_collection_24),
         onClick = onSaveToCollectionMenuClick,
     )
+}
+
+@Composable
+private fun MoveToNonPrivateTabMenuItem(
+    isPrivate: Boolean,
+    onMoveToNonPrivateTabMenuClick: () -> Unit,
+) {
+    if (isPrivate) {
+        MenuItem(
+            label = stringResource(id = R.string.browser_menu_move_to_non_private_tab),
+            beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_open_in),
+            onClick = onMoveToNonPrivateTabMenuClick,
+        )
+    }
 }
 
 @Composable
@@ -360,6 +387,7 @@ private fun MoreSettingsSubmenuPreview(
                         highlighted = true,
                         showNewFeatureBadge = true,
                     ),
+                    isPrivate = true,
                     onWebCompatReporterClick = {},
                     onSummarizePageMenuExposed = {},
                     onSummarizePageClick = {},
@@ -369,6 +397,7 @@ private fun MoreSettingsSubmenuPreview(
                     onSaveAsPDFMenuClick = {},
                     onPrintMenuClick = {},
                     onOpenInAppMenuClick = {},
+                    onMoveToNonPrivateTabMenuClick = {},
                 )
             }
         }
@@ -407,6 +436,7 @@ private fun MoreSettingsSubmenuDisabledOpenPreview(
                     showShortcuts = true,
                     isAndroidAutomotiveAvailable = false,
                     summarizationMenuState = SummarizationMenuState.Default,
+                    isPrivate = false,
                     onWebCompatReporterClick = {},
                     onSummarizePageMenuExposed = {},
                     onSummarizePageClick = {},
@@ -416,6 +446,7 @@ private fun MoreSettingsSubmenuDisabledOpenPreview(
                     onSaveAsPDFMenuClick = {},
                     onPrintMenuClick = {},
                     onOpenInAppMenuClick = {},
+                    onMoveToNonPrivateTabMenuClick = {},
                 )
             }
         }

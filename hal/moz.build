@@ -19,6 +19,11 @@ EXPORTS.mozilla += [
     "HalWakeLockInformation.h",
 ]
 
+if CONFIG["OS_TARGET"] == "Linux":
+    EXPORTS.mozilla += [
+        "linux/UdevLib.h",
+    ]
+
 UNIFIED_SOURCES += [
     "HalWakeLock.cpp",
     "sandbox/SandboxHal.cpp",

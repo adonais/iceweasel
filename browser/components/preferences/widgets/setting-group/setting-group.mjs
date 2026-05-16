@@ -39,6 +39,7 @@ const CLICK_HANDLERS = new Set([
   "moz-button",
   "moz-box-group",
   "moz-message-bar",
+  "a",
 ]);
 const DISMISS_HANDLERS = new Set(["moz-message-bar"]);
 const REORDER_HANDLERS = new Set(["moz-box-group"]);
@@ -113,8 +114,14 @@ export class SettingGroup extends SettingElement {
     if (!this.srdEnabled) {
       this.classList.toggle("subcategory", this.config?.headingLevel == 1);
     }
-    this.toggleAttribute(HiddenAttr.Search, !!this.config?.hiddenFromSearch);
-    this.toggleAttribute(HiddenAttr.Self, !!this.config?.hidden);
+    // Only set/remove attributes when explicitly defined in config
+    // This allows handleVisibilityChange to manage visibility independently
+    if (this.config?.hiddenFromSearch !== undefined) {
+      this.toggleAttribute(HiddenAttr.Search, !!this.config.hiddenFromSearch);
+    }
+    if (this.config?.hidden !== undefined) {
+      this.toggleAttribute(HiddenAttr.Self, this.config.hidden);
+    }
   }
 
   async handleVisibilityChange() {

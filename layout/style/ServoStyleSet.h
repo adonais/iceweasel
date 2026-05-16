@@ -393,6 +393,8 @@ class ServoStyleSet {
 
   void AppendFontFaceRules(nsTArray<nsFontFaceRuleContainer>& aArray);
 
+  already_AddRefed<StyleViewTransitionRule> GetLastViewTransitionRule();
+
   const StyleLockedCounterStyleRule* CounterStyleRuleForName(nsAtom* aName);
 
   // Get all the currently-active font feature values set.

@@ -19,6 +19,12 @@
     <string name="pref_key_firefox_labs" translatable="false">pref_key_firefox_labs</string>
     <string name="pref_key_language" translatable="false">pref_key_language</string>
     <string name="pref_key_translation" translatable="false">pref_key_translation</string>
+    <string name="pref_key_ai_controls" translatable="false">pref_key_ai_controls</string>
+    <string name="pref_key_import_bookmarks" translatable="false">pref_key_import_bookmarks</string>
+    <string name="pref_key_enable_ai_controls" translatable="false">pref_key_enable_ai_controls</string>
+    <string name="pref_key_enable_import_bookmarks" translatable="false">pref_key_enable_import_bookmarks</string>
+    <string name="pref_key_enable_ip_protection" translatable="false">pref_key_enable_ip_protection</string>
+    <string name="pref_key_ip_protection_settings" translatable="false">pref_key_ip_protection_settings</string>
     <string name="pref_key_data_choices" translatable="false">pref_key_data_choices</string>
     <string name="pref_key_delete_browsing_data" translatable="false">pref_key_delete_browsing_data</string>
     <string name="pref_key_delete_browsing_data_on_quit_preference" translatable="false">pref_key_delete_browsing_data_on_quit_preference</string>
@@ -141,7 +147,7 @@
 
     <!-- Search Settings -->
     <string name="pref_key_search_engine_list" translatable="false">pref_key_search_engine_list</string>
-    <string name="pref_key_show_search_engine_shortcuts" translatable="false">pref_key_show_search_engine_shortcuts</string>
+    <string name="pref_key_private_search_engine_list" translatable="false">pref_key_private_search_engine_list</string>
     <string name="pref_key_show_search_suggestions" translatable="false">pref_key_show_search_suggestions</string>
     <string name="pref_key_show_clipboard_suggestions" translatable="false">pref_key_show_clipboard_suggestions</string>
     <string name="pref_key_search_browsing_history" translatable="false">pref_key_search_browsing_history</string>
@@ -223,6 +229,7 @@
     <string name="pref_key_customization_category_app_icon" translatable="false">pref_key_customization_category_app_icon</string>
     <string name="pref_key_customization_category_toolbar_shortcut" translatable="false">pref_key_customization_category_toolbar_shortcut</string>
     <string name="pref_key_toolbar_simple_shortcut" translatable="false">pref_key_toolbar_simple_shortcut</string>
+    <string name="pref_key_toolbar_simple_no_shortcut" translatable="false">pref_key_toolbar_simple_no_shortcut</string>
     <string name="pref_key_toolbar_expanded_shortcut" translatable="false">pref_key_toolbar_expanded_shortcut</string>
 
     <!-- HTTPS Only Settings -->
@@ -264,6 +271,7 @@
     <string name="pref_key_tracking_protection_redirect_trackers" translatable="false">pref_key_tracking_protection_redirect_trackers</string>
     <string name="pref_key_tracking_protection_suspected_fingerprinters" translatable="false">pref_key_tracking_protection_suspected_fingerprinters</string>
     <string name="pref_key_tracking_protection_suspected_fingerprinters_select" translatable="false">pref_key_tracking_protection_suspected_fingerprinters_select</string>
+    <string name="pref_key_tracking_protection_database_status" translatable="false">pref_key_tracking_protection_database_status</string>
 
     <!-- Logins Settings -->
     <string name="pref_key_save_logins_settings" translatable="false">pref_key_save_logins_settings</string>
@@ -412,8 +420,6 @@
 
     <!-- Adjust Activated User values-->
     <string name="pref_key_growth_user_activated_sent" translatable="false">pref_key_growth_user_activated_sent</string>
-    <string name="pref_key_growth_early_browse_count" translatable="false">pref_key_growth_early_browse_count</string>
-    <string name="pref_key_growth_early_browse_count_last_increment" translatable="false">pref_key_growth_early_browse_count_last_increment</string>
     <string name="pref_key_growth_early_search" translatable="false">pref_key_growth_early_search</string>
 
     <!-- Tabs Settings -->
@@ -454,12 +460,16 @@
     <string name="pref_key_enable_homepage_searchbar" translatable="false">pref_key_enable_homepage_searchbar</string>
     <string name="pref_key_should_show_custom_tab_extensions" translatable="false">pref_key_should_show_custom_tab_extensions</string>
     <string name="pref_key_enable_homepage_as_new_tab" translatable="false">pref_key_enable_homepage_as_new_tab</string>
-    <string name="pref_key_enable_discover_more_stories" translatable="false">pref_key_enable_discover_more_stories</string>
+    <string name="pref_key_enable_homepage_sports_widget" translatable="false">pref_key_enable_homepage_sports_widget</string>
+    <string name="pref_key_show_homepage_sports_widget" translatable="false">pref_key_show_homepage_sports_widget</string>
+    <string name="pref_key_show_homepage_countdown_widget" translatable="false">pref_key_show_homepage_countdown_widget</string>
     <string name="pref_key_enable_mozilla_ads_client" translatable="false">pref_key_enable_mozilla_ads_client</string>
     <string name="pref_key_enable_firefox_labs" translatable="false">pref_key_enable_firefox_labs</string>
+    <string name="pref_key_enable_add_shortcuts_improvement" translatable="false">pref_key_enable_add_shortcuts_improvement</string>
     <string name="pref_key_enable_merino_client" translatable="false">pref_key_enable_merino_client</string>
+    <string name="pref_key_enable_merino_manifest" translatable="false">pref_key_enable_merino_manifest</string>
     <string name="pref_key_enable_unified_trust_panel" translatable="false">pref_key_enable_unified_trust_panel</string>
-    <string name="pref_key_enable_composable_toolbar" translatable="false">pref_key_enable_composable_toolbar</string>"
+    <string name="pref_key_enable_compose_wallpaper" translatable="false">pref_key_enable_compose_wallpaper</string>
     <string name="pref_key_use_minimal_bottom_toolbar_while_entering_text" translatable="false">pref_key_use_minimal_bottom_toolbar_while_entering_text</string>"
     <string name="pref_key_enable_toolbar_redesign" translatable="false">pref_key_enable_toolbar_redesign</string>"
     <string name="pref_key_enable_address_sync" translatable="false">pref_key_enable_address_sync</string>"
@@ -564,6 +574,13 @@
     <string name="pref_key_external_download_manager" translatable="false">pref_key_external_download_manager</string>
     <string name="pref_key_downloads_clean_up_files_automatically" translatable="false">pref_key_downloads_clean_up_files_automatically</string>
 
+    <!-- Downloads Settings Radio Button-->
+    <string name="pref_key_downloads_delete_or_remove_downloads_category" translatable="false">pref_key_downloads_delete_or_remove_downloads_category</string>
+    <string name="pref_key_downloads_delete_from_device" translatable="false">pref_key_downloads_delete_from_device</string>
+    <string name="pref_key_downloads_remove_from_downloads_history" translatable="false">pref_key_downloads_remove_from_downloads_history</string>
+    <string name="pref_key_downloads_ask_when_to_delete_files" translatable="false">pref_key_downloads_ask_when_to_delete_files</string>
+    <string name="pref_key_downloads_delete_behavior" translatable="false">pref_key_downloads_delete_behavior</string>
+
     <!-- Tab Manager-->
     <string name="pref_key_tab_manager_opening_animation" translatable="false">pref_key_tab_manager_opening_animation</string>
 
@@ -577,6 +594,7 @@
 
     <!-- Tab Groups -->
     <string name="pref_key_tab_groups" translatable="false">pref_key_tab_groups_feature</string>
+    <string name="pref_key_tab_groups_drag_and_drop" translatable="false">pref_key_tab_groups_drag_and_drop</string>
 
     <!-- Native Share Sheet -->
     <string name="pref_key_native_share_sheet" translatable="false">pref_key_native_share_sheet</string>
@@ -584,6 +602,12 @@
     <!-- Longfox -->
     <string name="pref_key_enable_longfox" translatable="false">pref_key_enable_longfox</string>
 
+    <!-- Sports Widget -->
+    <string name="pref_key_sports_selected_countries" translatable="false">pref_key_sports_selected_countries</string>
+    <string name="pref_key_sports_has_skipped_follow_team" translatable="false">pref_key_sports_has_skipped_follow_team</string>
+
+    <!-- Google Lens Integration -->
+    <string name="pref_key_google_lens_integration" translatable="false">pref_key_google_lens_integration</string>
     <!--  Search Optimization Cards  -->
     <string name="pref_key_search_optimization" translatable="false">pref_key_search_optimization</string>
     <string name="pref_key_search_optimization_feature" translatable="false">pref_key_search_optimization_feature</string>

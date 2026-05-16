@@ -10,4 +10,5 @@
 <suppressions>
   <suppress id="checkstyle:javadocmethod"
     files="org[/\\]mozilla[/\\]gecko[/\\]"/>
+  <suppress files="org[\\/]mozilla[\\/]gecko[\\/]util[\\/]GeckoHttpDataSource.java" checks=".*"/>
 </suppressions>

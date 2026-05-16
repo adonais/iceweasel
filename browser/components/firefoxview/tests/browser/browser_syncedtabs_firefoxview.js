@@ -51,7 +51,7 @@ add_task(async function test_unconfigured_initial_state() {
     // Test telemetry for signing into Firefox Accounts.
     await clearAllParentTelemetryEvents();
     EventUtils.synthesizeMouseAtCenter(
-      emptyState.querySelector(`button[data-action="sign-in"]`),
+      emptyState.querySelector(`moz-button[data-action="sign-in"]`).buttonEl,
       {},
       browser.contentWindow
     );
@@ -96,7 +96,10 @@ add_task(async function test_signed_in() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "Waiting for the synced tabs component to be fully updated"
+    );
     let emptyState =
       syncedTabsComponent.shadowRoot.querySelector("fxview-empty-state");
     ok(
@@ -142,7 +145,7 @@ add_task(async function test_signed_in() {
     // Test telemetry for adding a device.
     await clearAllParentTelemetryEvents();
     EventUtils.synthesizeMouseAtCenter(
-      emptyState.querySelector(`button[data-action="add-device"]`),
+      emptyState.querySelector(`moz-button[data-action="add-device"]`).buttonEl,
       {},
       browser.contentWindow
     );
@@ -197,7 +200,10 @@ add_task(async function test_no_synced_tabs() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "Waiting for the synced tabs component to be fully updated"
+    );
     let emptyState =
       syncedTabsComponent.shadowRoot.querySelector("fxview-empty-state");
     ok(
@@ -237,7 +243,10 @@ add_task(async function test_no_error_for_two_desktop() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "Waiting for the synced tabs component to be fully updated"
+    );
     let emptyState =
       syncedTabsComponent.shadowRoot.querySelector("fxview-empty-state");
     is(emptyState, null, "No empty state should be shown");
@@ -281,7 +290,10 @@ add_task(async function test_empty_state() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "Waiting for the synced tabs component to be fully updated"
+    );
     let noTabs = syncedTabsComponent.shadowRoot.querySelectorAll(".notabs");
     is(noTabs.length, 2, "Should be 2 empty devices");
 
@@ -329,7 +341,10 @@ add_task(async function test_tabs() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "Waiting for the synced tabs component to be fully updated"
+    );
 
     let headers =
       syncedTabsComponent.shadowRoot.querySelectorAll("h3[slot=header]");
@@ -347,7 +362,7 @@ add_task(async function test_tabs() {
     let tabLists = syncedTabsComponent.tabLists;
     await TestUtils.waitForCondition(() => {
       return tabLists[0].rowEls.length;
-    });
+    }, "Waiting for the first synced tab list to have row elements");
     let tabRow1 = tabLists[0].rowEls;
     ok(
       tabRow1[0].shadowRoot.textContent.includes,
@@ -417,7 +432,10 @@ add_task(async function test_empty_desktop_same_name() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "Waiting for the synced tabs component to be fully updated"
+    );
     let noTabs = syncedTabsComponent.shadowRoot.querySelectorAll(".notabs");
     is(noTabs.length, 1, "Should be 1 empty devices");
 
@@ -465,7 +483,10 @@ add_task(async function test_empty_desktop_same_name_three() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "Waiting for the synced tabs component to be fully updated"
+    );
     let noTabs = syncedTabsComponent.shadowRoot.querySelectorAll(".notabs");
     is(noTabs.length, 2, "Should be 2 empty devices");
 
@@ -508,7 +529,10 @@ add_task(async function search_synced_tabs() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(() => syncedTabsComponent.fullyUpdated);
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "Waiting for the synced tabs component to be fully updated"
+    );
 
     is(syncedTabsComponent.cardEls.length, 2, "There are two device cards.");
     await TestUtils.waitForCondition(
@@ -559,9 +583,9 @@ add_task(async function search_synced_tabs() {
     );
 
     info("Clear the search query.");
-    let clearButton = SpecialPowers.wrap(
+    let clearButton = SpecialPowers.getInputButton(
       syncedTabsComponent.searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    );
     info(`CLEAR BUTTON: ${clearButton}`);
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await TestUtils.waitForCondition(
@@ -625,9 +649,9 @@ add_task(async function search_synced_tabs() {
     );
 
     info("Clear the search query.");
-    clearButton = SpecialPowers.wrap(
+    clearButton = SpecialPowers.getInputButton(
       syncedTabsComponent.searchTextbox.inputEl
-    ).openOrClosedShadowRoot.querySelector("button");
+    );
     EventUtils.synthesizeMouseAtCenter(clearButton, {}, content);
     await TestUtils.waitForCondition(
       () => syncedTabsComponent.fullyUpdated,
@@ -776,8 +800,10 @@ add_task(async function search_synced_tabs_recent_browsing() {
     );
 
     info("Click the Show All link.");
-    const showAllLink = await TestUtils.waitForCondition(() =>
-      slot.shadowRoot.querySelector("[data-l10n-id='firefoxview-show-all']")
+    const showAllLink = await TestUtils.waitForCondition(
+      () =>
+        slot.shadowRoot.querySelector("[data-l10n-id='firefoxview-show-all']"),
+      "The show all link to be available in the slot's shadow root"
     );
     is(showAllLink.role, "link", "The show all control is a link.");
     EventUtils.synthesizeMouseAtCenter(showAllLink, {}, content);
@@ -1016,9 +1042,13 @@ add_task(async function test_tab_sync_enabled() {
     );
 
     const actionButton = syncedTabsComponent.emptyState?.querySelector(
-      "button[data-action=sync-tabs-disabled]"
+      "moz-button[data-action=sync-tabs-disabled]"
     );
-    EventUtils.synthesizeMouseAtCenter(actionButton, {}, browser.contentWindow);
+    EventUtils.synthesizeMouseAtCenter(
+      actionButton.buttonEl,
+      {},
+      browser.contentWindow
+    );
     await TestUtils.waitForCondition(
       () => syncedTabsComponent.fullyUpdated,
       "Synced tabs component is fully updated."

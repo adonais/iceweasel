@@ -214,8 +214,8 @@ class TestEmitterBasic(unittest.TestCase):
             flags.flags["VISIBILITY"], reader.config.substs["VISIBILITY_FLAGS"]
         )
         self.assertEqual(flags.flags["WARNINGS_AS_ERRORS"], ["-Werror"])
-        self.assertEqual(flags.flags["MOZBUILD_CFLAGS"], ["-Wall", "-funroll-loops"])
-        self.assertEqual(flags.flags["MOZBUILD_CXXFLAGS"], ["-funroll-loops", "-Wall"])
+        self.assertEqual(flags.flags["MOZBUILD_CFLAGS"], ["-Os", "-funroll-loops"])
+        self.assertEqual(flags.flags["MOZBUILD_CXXFLAGS"], ["-funroll-loops", "-Os"])
 
     def test_asflags(self):
         reader = self.reader("asflags", extra_substs={"ASFLAGS": ["-safeseh"]})

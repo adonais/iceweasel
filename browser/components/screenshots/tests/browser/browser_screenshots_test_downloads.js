@@ -57,8 +57,8 @@ function waitForFilePickerCancel() {
     MockFilePicker.showCallback = () => {
       MockFilePicker.showCallback = null;
       ok(true, "Saw the file picker");
-      MockFilePicker.returnValue = MockFilePicker.returnCancel;
       resolve();
+      return MockFilePicker.returnCancel;
     };
   });
 }

@@ -176,6 +176,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   24 * 3600 * 1000 // 24 hours
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "webserialGated",
+  "dom.webserial.gated",
+  true
+);
+
 /**
  * PermissionPrompt should be subclassed by callers that
  * want to display prompts to the user. See each method and property
@@ -765,6 +772,44 @@ class PermissionPromptForRequest extends PermissionPrompt {
  * addon install flow.
  */
 class SitePermsAddonInstallRequest extends PermissionPromptForRequest {
+  /**
+   * Triggers the addon install flow and calls the appropriate callback based on the result.
+   * This method encapsulates the common logic for installing a SitePermsAddon and handling
+   * success/failure cases, including error logging.
+   *
+   * @param {Function} onSuccess - Callback to invoke if the addon is installed successfully
+   * @param {Function} onError - Callback to invoke if the addon installation fails
+   */
+  async installSitePermAddon(onSuccess, onError) {
+    try {
+      await lazy.AddonManager.installSitePermsAddonFromWebpage(
+        this.browser,
+        this.principal,
+        this.permName
+      );
+      onSuccess();
+    } catch (err) {
+      onError();
+
+      let scriptErrorClass = Cc["@mozilla.org/scripterror;1"];
+      let errorMessage =
+        this.getInstallErrorMessage(err) ||
+        `${this.permName} access was rejected: ${err.message}`;
+
+      let scriptError = scriptErrorClass.createInstance(Ci.nsIScriptError);
+      scriptError.initWithWindowID(
+        errorMessage,
+        null,
+        0,
+        0,
+        0,
+        "content javascript",
+        this.browser.browsingContext.currentWindowGlobal.innerWindowId
+      );
+      Services.console.logMessage(scriptError);
+    }
+  }
+
   prompt() {
     // fallback to regular permission prompt for localhost,
     // or when the SitePermsAddonProvider is not enabled.
@@ -774,34 +819,12 @@ class SitePermsAddonInstallRequest extends PermissionPromptForRequest {
     }
 
     // Otherwise, we'll use the addon install flow.
-    lazy.AddonManager.installSitePermsAddonFromWebpage(
-      this.browser,
-      this.principal,
-      this.permName
-    ).then(
+    this.installSitePermAddon(
       () => {
         this.allow();
       },
-      err => {
+      () => {
         this.cancel();
-
-        // Print an error message in the console to give more information to the developer.
-        let scriptErrorClass = Cc["@mozilla.org/scripterror;1"];
-        let errorMessage =
-          this.getInstallErrorMessage(err) ||
-          `${this.permName} access was rejected: ${err.message}`;
-
-        let scriptError = scriptErrorClass.createInstance(Ci.nsIScriptError);
-        scriptError.initWithWindowID(
-          errorMessage,
-          null,
-          0,
-          0,
-          0,
-          "content javascript",
-          this.browser.browsingContext.currentWindowGlobal.innerWindowId
-        );
-        Services.console.logMessage(scriptError);
       }
     );
   }
@@ -1762,6 +1785,272 @@ class MIDIPermissionPrompt extends SitePermsAddonInstallRequest {
   }
 }
 
+/**
+ * Creates a PermissionPrompt for a nsIContentPermissionRequest for
+ * the WebSerial API.
+ *
+ * @param request (nsIContentPermissionRequest)
+ *        The request for a permission from content.
+ */
+class SerialPermissionPrompt extends SitePermsAddonInstallRequest {
+  constructor(request) {
+    super();
+    this.request = request;
+    this.permName = "serial";
+  }
+
+  get type() {
+    return "serial";
+  }
+
+  get permissionKey() {
+    return this.permName;
+  }
+
+  get popupOptions() {
+    return {
+      displayURI: false,
+      name: this.getPrincipalName(),
+      // Don't offer "always remember" action
+      checkbox: false,
+    };
+  }
+
+  _populateDeviceList(notification) {
+    let document = notification.browser.ownerDocument;
+    let menulist = document.getElementById("webSerial-selectPort-menulist");
+    let menupopup = document.getElementById("webSerial-selectPort-menupopup");
+    let noPortsMsg = document.getElementById("webSerial-no-ports-available");
+
+    if (!menulist || !menupopup || !noPortsMsg) {
+      console.error("[WebSerial] Failed to find required UI elements");
+      return;
+    }
+
+    // Clear existing items
+    while (menupopup.firstChild) {
+      menupopup.firstChild.remove();
+    }
+
+    // Get port data from the permission request's options array
+    let types = this.request.types.QueryInterface(Ci.nsIArray);
+    let perm = types.queryElementAt(0, Ci.nsIContentPermissionType);
+    let options = perm.options.QueryInterface(Ci.nsIArray);
+
+    let ports = [];
+    this._autoselect = false;
+    for (let i = 0; i < options.length; i++) {
+      let optionStr = options.queryElementAt(i, Ci.nsISupportsString).data;
+      let parsed = JSON.parse(optionStr);
+      if (parsed.__autoselect__) {
+        this._autoselect = true;
+        continue;
+      }
+      ports.push(parsed);
+    }
+
+    // Handle no devices case
+    const anyPorts = ports.length !== 0;
+    menulist.hidden = !anyPorts;
+    noPortsMsg.hidden = anyPorts;
+    notification.mainAction.disabled = !anyPorts;
+    if (!anyPorts) {
+      return;
+    }
+
+    // Populate menulist with devices
+    for (let i = 0; i < ports.length; i++) {
+      let menuitem = document.createXULElement("menuitem");
+      let port = ports[i];
+      let label = this._getDeviceDisplayName(port);
+      menuitem.setAttribute("label", label);
+      menuitem.setAttribute("value", i.toString());
+      menupopup.appendChild(menuitem);
+    }
+
+    // Select first item by default
+    menulist.selectedIndex = 0;
+  }
+
+  _getDeviceDisplayName(port) {
+    if (port.friendlyName?.length) {
+      return port.friendlyName;
+    }
+    let path = port.path;
+    let vid = port.usbVendorId;
+    let pid = port.usbProductId;
+
+    // If USB device, show VID/PID
+    if (vid != null && pid != null && vid !== 0 && pid !== 0) {
+      let vidHex = vid.toString(16).padStart(4, "0");
+      let pidHex = pid.toString(16).padStart(4, "0");
+      return `${path} (${vidHex}:${pidHex})`;
+    }
+
+    return path;
+  }
+
+  async prompt() {
+    // For localhost or file or when addon provider is disabled, show device picker directly
+    if (
+      this.principal.isLoopbackHost ||
+      this.principal.schemeIs("file") ||
+      !lazy.sitePermsAddonsProviderEnabled
+    ) {
+      this._showDevicePicker();
+      return;
+    }
+
+    let hasAddon =
+      Services.perms.testPermissionFromPrincipal(
+        this.principal,
+        this.permName
+      ) === Services.perms.ALLOW_ACTION;
+
+    if (hasAddon || !lazy.webserialGated) {
+      // Addon already installed, just show device picker
+      this._showDevicePicker();
+      return;
+    }
+
+    // Need to install addon first
+    this.installSitePermAddon(
+      () => {
+        // Addon installed successfully, now show device picker
+        this._showDevicePicker();
+      },
+      () => {
+        this.cancel();
+      }
+    );
+  }
+
+  _showDevicePicker() {
+    // Show device picker doorhanger
+    try {
+      let selectAction = {
+        label: lazy.gBrowserBundle.GetStringFromName("serial.allow.label"),
+        accessKey: lazy.gBrowserBundle.GetStringFromName(
+          "serial.allow.accesskey"
+        ),
+        callback: () => {
+          // Get selected device index from menulist
+          let document = this.browser.ownerDocument;
+
+          let menulist = document.getElementById(
+            "webSerial-selectPort-menulist"
+          );
+
+          let selectedIndex = menulist.selectedIndex;
+
+          // Call allow with selected device index
+          // TranslateChoices expects the permission type as the key
+          let choices = { serial: selectedIndex.toString() };
+          this.allow(choices);
+        },
+      };
+
+      let cancelAction = {
+        label: lazy.gBrowserBundle.GetStringFromName("serial.block.label"),
+        accessKey: lazy.gBrowserBundle.GetStringFromName(
+          "serial.block.accesskey"
+        ),
+        callback: () => {
+          this.cancel();
+        },
+      };
+
+      let notification;
+      let promptInstance = this;
+      let options = {
+        displayURI: false,
+        name: this.getPrincipalName(),
+        persistent: true,
+        hideClose: true,
+        popupIconURL: "chrome://browser/skin/notification-icons/serial.svg",
+        eventCallback(topic) {
+          if (topic === "showing") {
+            try {
+              promptInstance._populateDeviceList(this);
+
+              // Auto-select first port if testing autoselect is enabled
+              if (promptInstance._autoselect) {
+                // Auto-select first port after short delay to ensure UI is ready
+                lazy.setTimeout(() => {
+                  let document = promptInstance.browser.ownerDocument;
+                  let menulist = document.getElementById(
+                    "webSerial-selectPort-menulist"
+                  );
+                  if (menulist && menulist.itemCount > 0) {
+                    selectAction.callback();
+                  } else {
+                    // No items in list, so auto-cancel
+                    cancelAction.callback();
+                  }
+                  // We're calling these callbacks directly, so remove the notification
+                  notification.remove();
+                }, 100);
+              }
+            } catch (ex) {
+              console.error("[WebSerial] Failed to populate device list:", ex);
+            }
+          } else if (topic === "removed") {
+            // PopupNotifications removes the notification on location change
+            // and other non-user-driven teardown paths. Cancel the underlying
+            // request so the content-process requestPort() promise settles
+            // instead of waiting for the destructor fallback.
+            promptInstance.cancel();
+          }
+        },
+      };
+
+      let chromeWin = this.browser.ownerGlobal;
+      notification = chromeWin.PopupNotifications.show(
+        this.browser,
+        this.notificationID,
+        this.message,
+        this.anchorID,
+        selectAction,
+        [cancelAction],
+        options
+      );
+    } catch (ex) {
+      console.error("[WebSerial] Failed to show device picker:", ex);
+      this.cancel();
+    }
+  }
+
+  get notificationID() {
+    return "webSerial-choosePort";
+  }
+
+  get anchorID() {
+    return "serial-notification-icon";
+  }
+
+  get message() {
+    let message;
+    if (this.principal.schemeIs("file")) {
+      message = lazy.gBrowserBundle.GetStringFromName("serial.shareWithFile");
+    } else {
+      message = lazy.gBrowserBundle.formatStringFromName(
+        "serial.shareWithSite",
+        ["<>"]
+      );
+    }
+    return message;
+  }
+
+  /**
+   * @override
+   * @param {Components.Exception} err
+   * @returns {string}
+   */
+  getInstallErrorMessage(err) {
+    return `WebSerial access request was denied: ❝${err.message}❞. See https://developer.mozilla.org/en-US/docs/Web/API/Serial/requestPort for more information`;
+  }
+}
+
 class StorageAccessPermissionPrompt extends PermissionPromptForRequest {
   #permissionKey;
 
@@ -1903,6 +2192,7 @@ export const PermissionUI = {
   DesktopNotificationPermissionPrompt,
   PersistentStoragePermissionPrompt,
   MIDIPermissionPrompt,
+  SerialPermissionPrompt,
   StorageAccessPermissionPrompt,
   LoopbackNetworkPermissionPrompt,
   LocalNetworkPermissionPrompt,

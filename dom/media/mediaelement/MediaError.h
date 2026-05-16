@@ -5,11 +5,13 @@
 #ifndef mozilla_dom_MediaError_h
 #define mozilla_dom_MediaError_h
 
-#include "mozilla/dom/HTMLMediaElement.h"
 #include "nsISupports.h"
+#include "nsString.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla::dom {
+
+class HTMLMediaElement;
 
 class MediaError final : public nsISupports, public nsWrapperCache {
   ~MediaError() = default;

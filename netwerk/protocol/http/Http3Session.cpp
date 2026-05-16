@@ -124,12 +124,12 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
   }
 
   // Create security control and info object for quic.
-  mSocketControl =
-      new QuicSocketControl(isOuterConnection ? aConnInfo->ProxyInfo()->Host()
-                                              : aConnInfo->GetOrigin(),
-                            isOuterConnection ? aConnInfo->ProxyInfo()->Port()
-                                              : aConnInfo->OriginPort(),
-                            aProviderFlags, this);
+  mSocketControl = new QuicSocketControl(
+      isOuterConnection ? aConnInfo->ProxyInfo()->Host()
+                        : aConnInfo->GetOrigin(),
+      isOuterConnection ? aConnInfo->ProxyInfo()->Port()
+                        : aConnInfo->OriginPort(),
+      aProviderFlags, aConnInfo->GetOriginAttributes(), this);
   const nsCString& alpn = isOuterConnection ? aConnInfo->GetProxyNPNToken()
                                             : aConnInfo->GetNPNToken();
 
@@ -177,8 +177,8 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
         StaticPrefs::network_http_http3_max_data(),
         StaticPrefs::network_http_http3_max_stream_data(),
         StaticPrefs::network_http_http3_version_negotiation_enabled(),
-        mConnInfo->GetWebTransport(), gHttpHandler->Http3QlogDir(),
-        aProviderFlags, idleTimeout, fastPto, getter_AddRefs(mHttp3Connection));
+        mConnInfo->GetWebTransport(), gHttpHandler->Http3QlogDir(), idleTimeout,
+        fastPto, getter_AddRefs(mHttp3Connection));
   } else {
     rv = NeqoHttp3Conn::Init(
         mSocketControl->GetHostName(), alpn, selfAddr, peerAddr,
@@ -187,9 +187,9 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
         StaticPrefs::network_http_http3_max_data(),
         StaticPrefs::network_http_http3_max_stream_data(),
         StaticPrefs::network_http_http3_version_negotiation_enabled(),
-        mConnInfo->GetWebTransport(), gHttpHandler->Http3QlogDir(),
-        aProviderFlags, idleTimeout, fastPto, socket->GetFileDescriptor(),
-        isOuterConnection, getter_AddRefs(mHttp3Connection));
+        mConnInfo->GetWebTransport(), gHttpHandler->Http3QlogDir(), idleTimeout,
+        fastPto, socket->GetFileDescriptor(), isOuterConnection,
+        getter_AddRefs(mHttp3Connection));
   }
   if (NS_FAILED(rv)) {
     return rv;
@@ -1087,7 +1087,7 @@ nsresult Http3Session::ProcessEvents() {
         break;
     }
     // Delete previous content of data
-    data.TruncateLength(0);
+    data.ClearAndRetainStorage();
     rv = mHttp3Connection->GetEvent(&event, data);
     if (NS_FAILED(rv)) {
       LOG(("Http3Session::ProcessEvents [this=%p] rv=%" PRIx32, this,

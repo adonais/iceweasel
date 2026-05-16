@@ -73,11 +73,13 @@ void PopoverData::DestroyCloseWatcher() {
 
 PopoverToggleEventTask::PopoverToggleEventTask(nsWeakPtr aElement,
                                                nsWeakPtr aSource,
-                                               PopoverVisibilityState aOldState)
+                                               PopoverVisibilityState aOldState,
+                                               PopoverVisibilityState aNewState)
     : Runnable("PopoverToggleEventTask"),
       mElement(std::move(aElement)),
       mSource(std::move(aSource)),
-      mOldState(aOldState) {}
+      mOldState(aOldState),
+      mNewState(aNewState) {}
 
 NS_IMETHODIMP
 PopoverToggleEventTask::Run() {
@@ -87,8 +89,7 @@ PopoverToggleEventTask::Run() {
     return NS_OK;
   }
   if (auto* htmlElement = nsGenericHTMLElement::FromNode(element)) {
-    MOZ_KnownLive(htmlElement)
-        ->RunPopoverToggleEventTask(this, mOldState, source);
+    MOZ_KnownLive(htmlElement)->RunPopoverToggleEventTask(this, source);
   }
   return NS_OK;
 };

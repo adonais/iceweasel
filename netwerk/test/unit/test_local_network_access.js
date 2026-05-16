@@ -303,6 +303,8 @@ add_task(async function lna_blocking_tests_localhost_prompt() {
 
 add_task(async function lna_blocking_tests_local_network() {
   // add override such that target servers is considered as local network (and not localhost)
+  // Include both IPv4 and IPv6 loopback addresses since Happy Eyeballs may
+  // connect via [::1] (IPv6) instead of 127.0.0.1 (IPv4).
   var override_value =
     "127.0.0.1" +
     ":" +
@@ -310,6 +312,10 @@ add_task(async function lna_blocking_tests_local_network() {
     "," +
     "127.0.0.1" +
     ":" +
+    server.port() +
+    ",::1:" +
+    httpServer.identity.primaryPort +
+    ",::1:" +
     server.port();
 
   Services.prefs.setCharPref(
@@ -385,7 +391,9 @@ add_task(async function lna_domain_skip_tests() {
   override.addIPOverride("api.dev.local", "127.0.0.1");
 
   // Add override such that target servers are considered as local network (and not localhost)
-  // This includes all the domains we're testing with
+  // This includes all the domains we're testing with.
+  // Include both IPv4 and IPv6 loopback addresses since Happy Eyeballs may
+  // connect via [::1] (IPv6) instead of 127.0.0.1 (IPv4).
   var override_value =
     "127.0.0.1" +
     ":" +
@@ -393,6 +401,10 @@ add_task(async function lna_domain_skip_tests() {
     "," +
     "127.0.0.1" +
     ":" +
+    server.port() +
+    ",::1:" +
+    httpServer.identity.primaryPort +
+    ",::1:" +
     server.port();
 
   Services.prefs.setCharPref(

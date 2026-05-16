@@ -56,7 +56,7 @@ void RemoteAccessible::Shutdown() {
     xpcDoc->NotifyOfShutdown(static_cast<RemoteAccessible*>(this));
   }
 
-  if (IsTable() || IsTableCell()) {
+  if (IsTable() || IsTableRow() || IsTableCell()) {
     CachedTableAccessible::Invalidate(this);
   }
 

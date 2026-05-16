@@ -5,6 +5,7 @@
 package org.mozilla.fenix.e2e
 
 /**
- * Marker interface for application fragments that want to be shown as edge to edge.
+ * Marker interface for application fragments that will have their content padded with the heights of the
+ * system bars to mimic the UI of an application not shown as edge-to-edge.
  */
 interface SystemInsetsPaddedFragment

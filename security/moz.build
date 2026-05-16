@@ -6,6 +6,7 @@ with Files("**"):
     BUG_COMPONENT = ("Core", "Security: PSM")
 
 DIRS += [
+    "/security/lockstore",
     "/security/mls",
 ]
 

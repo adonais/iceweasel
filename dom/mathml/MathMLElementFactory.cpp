@@ -4,7 +4,6 @@
 
 #include "mozilla/dom/MathMLElement.h"
 #include "nsContentCreatorFunctions.h"
-#include "nsGkAtoms.h"
 
 using namespace mozilla::dom;
 

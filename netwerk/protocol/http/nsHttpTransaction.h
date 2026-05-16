@@ -141,6 +141,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     mDoNotResetIPFamilyPreference = true;
   }
   void DisableHttp3(bool aAllowRetryHTTPSRR) override;
+  void RemoveAltSvcUsedHeader();
+  void Deactivate();
 
   nsHttpTransaction* QueryHttpTransaction() override { return this; }
 
@@ -163,6 +165,14 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   // restart - this indicates that state for dev tools
   void Refused0RTT();
 
+  bool Connected() const { return mConnected; }
+
+  void SetHappyEyeballsProxy(nsAHttpTransaction* aProxy) {
+    mHappyEyeballsProxy = aProxy;
+  }
+  nsAHttpTransaction* HappyEyeballsProxy() const {
+    return mHappyEyeballsProxy.get();
+  }
   uint64_t BrowserId() override { return mBrowserId; }
 
   void SetHttpTrailers(nsCString& aTrailers);
@@ -299,6 +309,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     TRANSACTION_RESTART_POSSIBLE_0RTT_ERROR
   };
   void SetRestartReason(TRANSACTION_RESTART_REASON aReason);
+  bool MaybeForceRestart(const char* aLogMessage);
 
   bool HandleWebTransportResponse(uint16_t aStatus);
 
@@ -621,6 +632,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   nsCOMPtr<WebTransportSessionEventListener> mWebTransportSessionEventListener;
 
   nsAutoCString mUrl;
+  RefPtr<nsAHttpTransaction> mHappyEyeballsProxy;
 };
 
 }  // namespace mozilla::net

@@ -1187,8 +1187,15 @@ std::unique_ptr<IceMessage> Connection::BuildPingRequest(
 
   if (delta) {
     RTC_DCHECK(delta->type() == STUN_ATTR_GOOG_DELTA);
-    RTC_LOG(LS_INFO) << "Sending GOOG_DELTA: len: " << delta->length();
-    message->AddAttribute(std::move(delta));
+    size_t msg_length = message->length();
+    if (msg_length + kStunAttributeHeaderSize + delta->length() <
+        kMaxStunBindingLength) {
+      RTC_LOG(LS_INFO) << "Sending GOOG_DELTA: len: " << delta->length();
+      message->AddAttribute(std::move(delta));
+    } else {
+      RTC_LOG(LS_WARNING) << "Not sending GOOG_DELTA, request full: len: "
+                          << delta->length() << " msg_length: " << msg_length;
+    }
   }
 
   MaybeAddDtlsPiggybackingAttributes(message.get());
@@ -1929,6 +1936,22 @@ int ProxyConnection::Send(const void* data,
 
 int ProxyConnection::GetError() {
   return error_;
+}
+
+// This method is used by the FakeIceLiteAgent
+// to pretend that a Connection is writable so
+// P2PTransportChannel/FakeIceLiteAgent can be used
+// to simulate a ICE Lite agent.
+bool Connection::set_writable_for_fake_ice_lite() const {
+  if (write_state() != STATE_WRITABLE) {
+    Timestamp now = env_.clock().CurrentTime();
+    auto con = const_cast<Connection*>(this);
+    con->UpdateReceiving(now);
+    con->set_write_state(STATE_WRITABLE);
+    con->set_state(IceCandidatePairState::SUCCEEDED);
+    return true;
+  }
+  return false;
 }
 
 }  // namespace webrtc

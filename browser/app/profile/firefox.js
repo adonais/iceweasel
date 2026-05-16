@@ -1,6 +1,5 @@
 #filter dumbComments emptyLines substitution
 
-// -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -297,6 +296,7 @@ pref("browser.shell.checkDefaultPDF.silencedByUser", false);
 // Whether or not the user should be shown the guidance notifications when
 // setting Firefox as their default browser.
 pref("browser.shell.setDefaultGuidanceNotifications", true);
+pref("browser.shell.focusSetDefaultBrowserButton", false);
 #endif
 
 
@@ -312,15 +312,6 @@ pref("browser.startup.firstrunSkipsHomepage", true);
 
 // Whether we should show the session-restore infobar on startup
 pref("browser.startup.couldRestoreSession.count", 0);
-
-// Show an about:blank window as early as possible for quick startup feedback.
-// Held to nightly on Linux due to bug 1450626.
-// Disabled on Mac because the bouncing dock icon already provides feedback.
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)
-  pref("browser.startup.blankWindow", true);
-#else
-  pref("browser.startup.blankWindow", false);
-#endif
 
 // Show a skeleton UI window prior to loading libxul. Only visible for windows
 // users as it is not implemented anywhere else.
@@ -378,10 +369,15 @@ pref("browser.urlbar.autoFill", true);
 pref("browser.urlbar.autoFill.adaptiveHistory.enabled", false);
 
 // Duration in ms to block after backspace penalty. Default: 2 days.
-pref("browser.urlbar.autoFill.adaptiveHistory.backspaceBlockDurationMs", 172800000);
+pref("browser.urlbar.autoFill.backspaceBlockDurationMs", 172800000);
+
+// How many times the user must consecutively backspace away an autofill
+// suggestion before we penalize and temporarily suppress it from autofilling.
+// The result may still appear as a regular history result.
+pref("browser.urlbar.autoFill.backspaceThreshold", 3);
 
 // Duration in ms to block an origin/URL after dismiss. Default: 7 days.
-pref("browser.urlbar.autoFill.adaptiveHistory.dismissalBlockDurationMs", 604800000);
+pref("browser.urlbar.autoFill.dismissalBlockDurationMs", 604800000);
 
 // Minimum char length of the user's search string to enable adaptive history
 // autofill.
@@ -822,8 +818,9 @@ pref("browser.urlbar.suggest.sports", true);
 // urlbar searches.
 pref("browser.urlbar.lastUrlbarSearchSeconds", 0);
 
-// Feature gate pref for Nova UI in the urlbar.
-pref("browser.urlbar.nova.featureGate", false);
+// When selecting and hovering over certain types of urlbar results, replace
+// their URLs with strings that explain why they're shown.
+pref("browser.urlbar.resultExplanations.featureGate", false);
 
 pref("browser.altClickSave", false);
 
@@ -1509,46 +1506,6 @@ pref("places.loglevel", "Error");
 // Whether or not diacritics must match in history text searches.
 pref("places.search.matchDiacritics", false);
 
-// the (maximum) number of the recent visits to sample
-// when calculating frecency
-pref("places.frecency.numVisits", 10);
-
-// buckets (in days) for frecency calculation
-pref("places.frecency.firstBucketCutoff", 4);
-pref("places.frecency.secondBucketCutoff", 14);
-pref("places.frecency.thirdBucketCutoff", 31);
-pref("places.frecency.fourthBucketCutoff", 90);
-
-// weights for buckets for frecency calculations
-pref("places.frecency.firstBucketWeight", 100);
-pref("places.frecency.secondBucketWeight", 70);
-pref("places.frecency.thirdBucketWeight", 50);
-pref("places.frecency.fourthBucketWeight", 30);
-pref("places.frecency.defaultBucketWeight", 10);
-
-// bonus (in percent) for visit transition types for frecency calculations
-pref("places.frecency.embedVisitBonus", 0);
-pref("places.frecency.framedLinkVisitBonus", 0);
-pref("places.frecency.linkVisitBonus", 100);
-pref("places.frecency.typedVisitBonus", 2000);
-// The bookmarks bonus is always added on top of any other bonus, including
-// the redirect source and the typed ones.
-pref("places.frecency.bookmarkVisitBonus", 75);
-// The redirect source bonus overwrites any transition bonus.
-// 0 would hide these pages, instead we want them low ranked.  Thus we use
-// linkVisitBonus - bookmarkVisitBonus, so that a bookmarked source is in par
-// with a common link.
-pref("places.frecency.redirectSourceVisitBonus", 25);
-pref("places.frecency.downloadVisitBonus", 0);
-// The perm/temp redirects here relate to redirect targets, not sources.
-pref("places.frecency.permRedirectVisitBonus", 50);
-pref("places.frecency.tempRedirectVisitBonus", 40);
-pref("places.frecency.reloadVisitBonus", 0);
-pref("places.frecency.defaultVisitBonus", 0);
-
-// bonus (in percent) for place types for frecency calculations
-pref("places.frecency.unvisitedBookmarkBonus", 140);
-pref("places.frecency.unvisitedTypedBonus", 200);
 
 // Enables alternative frecency calculation for origins.
 pref("places.frecency.origins.alternative.featureGate", false);
@@ -1703,7 +1660,6 @@ pref("services.sync.prefs.sync.browser.ctrlTab.sortByRecentlyUsed", true);
 pref("services.sync.prefs.sync.browser.download.useDownloadDir", true);
 pref("services.sync.prefs.sync.browser.firefox-view.feature-tour", true);
 pref("services.sync.prefs.sync.browser.formfill.enable", true);
-pref("services.sync.prefs.sync.browser.ipProtection.enabled", true);
 pref("services.sync.prefs.sync.browser.link.open_newwindow", true);
 pref("services.sync.prefs.sync.browser.menu.showViewImageInfo", true);
 pref("services.sync.prefs.sync.browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", true);
@@ -2110,6 +2066,9 @@ pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "mfadid=a
 // Communicates to AboutNewTabChild whether or not it should load the classic scripts or do nothing.
 pref("browser.newtabpage.activity-stream.selfLoading.enabled", true);
 
+// Enables the Nova UI refresh for the new tab page.
+pref("browser.newtabpage.activity-stream.nova.enabled", true);
+
 // Set to true to enable debug logging for AboutNewTabResourceMapping.
 pref("browser.newtabpage.resource-mapping.log", false);
 
@@ -2122,9 +2081,23 @@ pref("browser.newtabpage.sponsor-protection.enabled", true);
 pref("browser.aboutwelcome.enabled", false);
 // Used to set multistage welcome UX
 pref("browser.aboutwelcome.screens", "");
+// Whether to gate loading about:welcome on Nimbus experiments having loaded.
+// Currently limited to Mac where a blocking preonboarding modal is shown with a
+// splash screen that advances after experiments load. On non-MSIX Windows,
+// experiments are loaded early enough that this isn't required.
+#if defined(XP_MACOSX)
+  pref("browser.aboutwelcome.experimentsGate.enabled", true);
+#endif
+// Whether to skip showing the experiment loading splash screen if Nimbus is
+// already initialized when the preonboarding modal's screen targeting is
+// evaluated.
+pref("browser.aboutwelcome.experimentsGate.skipSplashIfLoaded", true);
+// Minimum and maximum time (ms) to display the experiment-loading splash screen.
+pref("browser.aboutwelcome.experimentsGate.minDisplayMs", 3000);
+pref("browser.aboutwelcome.experimentsGate.maxDisplayMs", 8000);
 
-// Override design tokens for a given theme
-pref("browser.design-tokens.nova", false);
+// Global Nova enabled pref
+pref("browser.nova.enabled", false);
 
 // Disable singleProfile messaging mitigation (Bug 1963213) for multiProfile feature users
 pref("messaging-system.profile.singleProfileMessaging.disable", true);
@@ -2135,6 +2108,7 @@ pref("messaging-system.log", "warn");
 pref("messaging-system.rsexperimentloader.collection_id", "nimbus-desktop-experiments");
 pref("nimbus.debug", false);
 pref("nimbus.validation.enabled", false);
+pref("nimbus.firstUpdateComplete", false);
 
 // Should Nimbus write to the shared ProfilesDatastoreService? Only used by tests.
 // TODO(bug 1967779): Require the ProfileDatastoreService by default and remove
@@ -2222,6 +2196,7 @@ pref("sidebar.expandOnHover", true);
 pref("sidebar.old-sidebar.has-used", false);
 pref("sidebar.new-sidebar.has-used", false);
 pref("sidebar.history.sortOption", "date");
+pref("sidebar.updatedBookmarks.enabled", false);
 
 pref("sidebar.notification.badge.aichat", false);
 
@@ -2278,11 +2253,19 @@ pref("browser.smartwindow.model", "");
 pref("browser.smartwindow.preferences.endpoint", "");
 pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/en-US/smart-window/?v=product");
 
+// Smart Window: Merino World Cup Soccer tool call (bug 2038266)
+pref("browser.smartwindow.worldcup.enabled", true);
+pref("browser.smartwindow.worldcup.endpointURL", "https://merino.services.mozilla.com");
+pref("browser.smartwindow.worldcup.timeoutMs", 2000);
+
 // Smart Window Logging
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
 pref("browser.smartwindow.chatStore.loglevel", "Error");
 pref("browser.smartwindow.conversation.logLevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
+
+//Smart Window Nova
+pref("browser.smartwindow.nova.enabled", false);
 
 // Block insecure active content on https pages
 pref("security.mixed_content.block_active_content", true);
@@ -2334,6 +2317,7 @@ pref("identity.fxaccounts.autoconfig.uri", "");
 
 // URL for help link about Send Tab.
 pref("identity.sendtabpromo.url", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/send-tab");
+pref("identity.sendtab.deviceissues.url", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/send-tab#w_i-dont-see-my-device-listed");
 
 // URLs for promo links to mobile browsers. Note that consumers are expected to
 // append a value for utm_campaign.
@@ -2495,9 +2479,6 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 //   Restrict relaxing default referrer policy for top navigation:
 //     "rpTop": Restrict relaxing default referrer policy enabled
 //     "-rpTop": Restrict relaxing default referrer policy disabled
-//   OCSP cache partitioning:
-//     "ocsp": OCSP cache partitioning enabled
-//     "-ocsp": OCSP cache partitioning disabled
 //   Query parameter stripping:
 //     "qps": Query parameter stripping enabled
 //     "-qps": Query parameter stripping disabled
@@ -2534,7 +2515,7 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 //     "lna": LNA enabled
 //     "-lna": LNA disabled
 // One value from each section must be included in the browser.contentblocking.features.strict pref.
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,ocsp,qps,qpsPBM,fpp,fppPrivate,btp,lna");
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,qps,qpsPBM,fpp,fppPrivate,btp,lna");
 
 // Enable Protections report's Lockwise card by default.
 pref("browser.contentblocking.report.lockwise.enabled", true);
@@ -2760,7 +2741,6 @@ pref("browser.migrate.chromium-edge.enabled", true);
 pref("browser.migrate.chromium-edge-beta.enabled", true);
 pref("browser.migrate.edge.enabled", true);
 pref("browser.migrate.firefox.enabled", true);
-pref("browser.migrate.ie.enabled", false);
 pref("browser.migrate.opera.enabled", true);
 pref("browser.migrate.opera-gx.enabled", true);
 pref("browser.migrate.safari.enabled", true);
@@ -3010,6 +2990,7 @@ pref("devtools.command-button-rulers.enabled", false);
 pref("devtools.command-button-measure.enabled", false);
 pref("devtools.command-button-noautohide.enabled", false);
 pref("devtools.command-button-errorcount.enabled", true);
+pref("devtools.command-button-jstracer.enabled", false);
 #ifndef MOZILLA_OFFICIAL
   pref("devtools.command-button-experimental-prefs.enabled", true);
 #endif
@@ -3053,6 +3034,8 @@ pref("devtools.inspector.simple-highlighters-reduced-motion", false);
 // Wheter or not Enter on inplace editor in the Rules view moves focus and activates
 // next inplace editor.
 pref("devtools.inspector.rule-view.focusNextOnEnter", true);
+// Enable Rules view CSS explainers
+pref("devtools.inspector.css-explainers", false);
 
 // Whether or not the box model panel is opened in the layout view
 pref("devtools.layout.boxmodel.opened", true);
@@ -3427,17 +3410,13 @@ pref("browser.places.interactions.enabled", true);
 pref("browser.firefox-view.feature-tour", "{\"screen\":\"FIREFOX_VIEW_SPOTLIGHT\",\"complete\":false}");
 // Number of times the user visited about:firefoxview via the button/hidden tab in the past 30 days
 pref("browser.firefox-view.button-clicks", "{\"count\":0,\"lastCountTime\":\"\"}");
-// Maximum number of rows to show on the "History" page (0 = unlimited).
-pref("browser.firefox-view.max-history-rows", 0);
+
 // Enables virtual list functionality in Firefox View.
 pref("browser.firefox-view.virtual-list.enabled", true);
 
 // If the user has seen the pdf.js feature tour this value reflects the tour
 // message id, the id of the last screen they saw, and whether they completed the tour
 pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
-
-
-pref("cookiebanners.ui.desktop.enabled", false);
 
 // When true, shows a one-time feature callout for cookie banner blocking.
 pref("cookiebanners.ui.desktop.showCallout", false);
@@ -3487,12 +3466,9 @@ pref("ui.new-webcompat-reporter.reason-dropdown", 2);
 
 pref("ui.new-webcompat-reporter.reason-dropdown.randomized", true);
 
-// Reset Private Browsing Session feature
-#if defined(NIGHTLY_BUILD)
-  pref("browser.privatebrowsing.resetPBM.enabled", true);
-#else
-  pref("browser.privatebrowsing.resetPBM.enabled", false);
-#endif
+// Reset Private Browsing Session feature a.k.a "Fire Button"
+pref("browser.privatebrowsing.resetPBM.enabled", true);
+
 // Whether the reset private browsing panel should ask for confirmation before
 // performing the clear action.
 pref("browser.privatebrowsing.resetPBM.showConfirmationDialog", true);
@@ -3514,8 +3490,7 @@ pref("browser.backup.enabled", true);
 pref("browser.backup.scheduled.enabled", false);
 
 // Prefs to control visibility and usability of the create backup and restore from backup features.
-// Currently, backup and restore is only enabled on Windows devices
-#ifdef XP_WIN
+#ifndef XP_MACOSX
   pref("browser.backup.archive.enabled", true);
   pref("browser.backup.restore.enabled", true);
 #else
@@ -3589,6 +3564,8 @@ pref("browser.ipProtection.userEnabled", false);
 pref("browser.ipProtection.userEnableCount", 0);
 // Pref to track if user has ever opened the VPN panel
 pref("browser.ipProtection.everOpenedPanel", false);
+// Pref to track if user has opened the VPN panel since location controls were introduced
+pref("browser.ipProtection.openedPanelWithLocation", false);
 // Pref to enable support for site exceptions
 pref("browser.ipProtection.features.siteExceptions", true);
 // Pref to show confirmation hints for site exceptions
@@ -3598,15 +3575,21 @@ pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
 pref("browser.ipProtection.added", false);
 // Pref to track whether the user has upgraded to Mozilla VPN
 pref("browser.ipProtection.hasUpgraded", false);
+// Pref to disable upgrade-related messaging when VPN upgrade is not available
+pref("browser.ipProtection.upgradeNotAvailable", false);
 // Pref that enables bandwidth usage feature
 pref("browser.ipProtection.bandwidth.enabled", true);
-// Pref that displays egress location in VPN panel
-pref("browser.ipProtection.egressLocationEnabled", false);
+// Pref for messaging the maximum bandwidth allowance in GB
+pref("browser.ipProtection.bandwidth.maxInGb", 50);
+// Pref that stores the current egress location for the VPN
+pref("browser.ipProtection.egressLocation", "");
 // Pref that flips at 50%, 75%, and 90% bandwidth usage thresholds
 pref("browser.ipProtection.bandwidthThreshold", 0);
-// Tracks the highest bandwidth warning threshold (75 or 90) the user has dismissed.
-// Reset to 0 when bandwidth usage resets.
-pref("browser.ipProtection.bandwidthWarningDismissedThreshold", 0);
+// Tracks the highest bandwidth warning threshold (75 or 90) dismissed per surface.
+// Stored as JSON: { infobar: <number>, panel: <number> }. Reset when bandwidth resets.
+pref("browser.ipProtection.bandwidthWarningDismissedThreshold", "");
+// Pref to track if the "NEW" badge on the location selection button should be visible.
+pref("browser.ipProtection.locationButtonBadgeDismissed", false);
 
 // Pref to enable aboug:glean redesign.
 pref("about.glean.redesign.enabled", false);
@@ -3629,3 +3612,9 @@ pref("browser.settings-redesign.enabled", false);
 #if defined(MOZ_WIDGET_GTK)
 pref("widget.support-xdg-config", true, locked);
 #endif
+
+// A preference that enables Content Sharing
+pref("browser.contentsharing.enabled", false);
+
+// Controls whether the "New" badge is shown on the content sharing menu items
+pref("browser.contentsharing.newBadge.enabled", true);

@@ -9,6 +9,7 @@
 #include "Tools.h"
 #include "Blur.h"
 #include <map>
+#include <numeric>
 #include "FilterProcessing.h"
 #include "Logging.h"
 #include "mozilla/PodOperations.h"
@@ -1762,18 +1763,17 @@ void FilterNodeComponentTransferSoftware::SetAttribute(uint32_t aIndex,
 }
 
 void FilterNodeComponentTransferSoftware::GenerateLookupTable(
-    ptrdiff_t aComponent, uint8_t aTables[4][256], bool aDisabled) {
+    ptrdiff_t aComponent, LookupTables& aTables, bool aDisabled) {
   if (aDisabled || !FillLookupTable(aComponent, aTables[aComponent])) {
-    for (int32_t i = 0; i < 256; ++i) {
-      aTables[aComponent][i] = i;
-    }
+    std::iota(aTables[aComponent].begin(), aTables[aComponent].end(), 0);
   }
 }
 
 template <uint32_t BytesPerPixel>
 static void TransferComponents(
     DataSourceSurface* aInput, DataSourceSurface* aTarget,
-    const uint8_t aLookupTables[BytesPerPixel][256]) {
+    const std::array<FilterNodeComponentTransferSoftware::LookupTable,
+                     BytesPerPixel>& aLookupTables) {
   MOZ_ASSERT(aInput->GetFormat() == aTarget->GetFormat(), "different formats");
   IntSize size = aInput->GetSize();
 
@@ -1806,13 +1806,10 @@ static void TransferComponents(
   }
 }
 
-static bool IsAllZero(const uint8_t aLookupTable[256]) {
-  for (int32_t i = 0; i < 256; i++) {
-    if (aLookupTable[i] != 0) {
-      return false;
-    }
-  }
-  return true;
+static bool IsAllZero(
+    const FilterNodeComponentTransferSoftware::LookupTable& aLookupTable) {
+  return std::all_of(aLookupTable.begin(), aLookupTable.end(),
+                     [](uint8_t i) { return i == 0; });
 }
 
 already_AddRefed<DataSourceSurface> FilterNodeComponentTransferSoftware::Render(
@@ -1821,7 +1818,7 @@ already_AddRefed<DataSourceSurface> FilterNodeComponentTransferSoftware::Render(
     return GetInputDataSourceSurface(IN_TRANSFER_IN, aRect);
   }
 
-  uint8_t lookupTables[4][256];
+  LookupTables lookupTables;
   GenerateLookupTable(B8G8R8A8_COMPONENT_BYTEOFFSET_R, lookupTables, mDisableR);
   GenerateLookupTable(B8G8R8A8_COMPONENT_BYTEOFFSET_G, lookupTables, mDisableG);
   GenerateLookupTable(B8G8R8A8_COMPONENT_BYTEOFFSET_B, lookupTables, mDisableB);
@@ -1863,8 +1860,12 @@ already_AddRefed<DataSourceSurface> FilterNodeComponentTransferSoftware::Render(
   }
 
   if (format == SurfaceFormat::A8) {
-    TransferComponents<1>(input, target,
-                          &lookupTables[B8G8R8A8_COMPONENT_BYTEOFFSET_A]);
+    // We're calling a 1-dimensional version of TransferComponents,
+    // so we need to pass in a single-member std::array containing
+    // the array lookupTables[B8G8R8A8_COMPONENT_BYTEOFFSET_A].
+    TransferComponents<1>(
+        input, target,
+        std::to_array({lookupTables[B8G8R8A8_COMPONENT_BYTEOFFSET_A]}));
   } else {
     TransferComponents<4>(input, target, lookupTables);
   }
@@ -1924,7 +1925,7 @@ void FilterNodeTableTransferSoftware::SetAttribute(uint32_t aIndex,
 }
 
 bool FilterNodeTableTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
-                                                      uint8_t aTable[256]) {
+                                                      LookupTable& aTable) {
   switch (aComponent) {
     case B8G8R8A8_COMPONENT_BYTEOFFSET_R:
       return FillLookupTableImpl(mTableR, aTable);
@@ -1941,13 +1942,13 @@ bool FilterNodeTableTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
 }
 
 bool FilterNodeTableTransferSoftware::FillLookupTableImpl(
-    const std::vector<Float>& aTableValues, uint8_t aTable[256]) {
+    const std::vector<Float>& aTableValues, LookupTable& aTable) {
   uint32_t tvLength = aTableValues.size();
   if (tvLength < 1) {
     return false;
   }
 
-  for (size_t i = 0; i < 256; i++) {
+  for (size_t i = 0; i < aTable.size(); i++) {
     uint32_t k = (i * (tvLength - 1)) / 255;
     Float v1 = aTableValues[k];
     Float v2 = aTableValues[std::min(k + 1, tvLength - 1)];
@@ -1982,7 +1983,7 @@ void FilterNodeDiscreteTransferSoftware::SetAttribute(uint32_t aIndex,
 }
 
 bool FilterNodeDiscreteTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
-                                                         uint8_t aTable[256]) {
+                                                         LookupTable& aTable) {
   switch (aComponent) {
     case B8G8R8A8_COMPONENT_BYTEOFFSET_R:
       return FillLookupTableImpl(mTableR, aTable);
@@ -1999,13 +2000,13 @@ bool FilterNodeDiscreteTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
 }
 
 bool FilterNodeDiscreteTransferSoftware::FillLookupTableImpl(
-    const std::vector<Float>& aTableValues, uint8_t aTable[256]) {
+    const std::vector<Float>& aTableValues, LookupTable& aTable) {
   uint32_t tvLength = aTableValues.size();
   if (tvLength < 1) {
     return false;
   }
 
-  for (size_t i = 0; i < 256; i++) {
+  for (size_t i = 0; i < aTable.size(); i++) {
     uint32_t k = (i * tvLength) / 255;
     k = std::min(k, tvLength - 1);
     Float v = aTableValues[k];
@@ -2059,7 +2060,7 @@ void FilterNodeLinearTransferSoftware::SetAttribute(uint32_t aIndex,
 }
 
 bool FilterNodeLinearTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
-                                                       uint8_t aTable[256]) {
+                                                       LookupTable& aTable) {
   switch (aComponent) {
     case B8G8R8A8_COMPONENT_BYTEOFFSET_R:
       return FillLookupTableImpl(mSlopeR, mInterceptR, aTable);
@@ -2076,8 +2077,8 @@ bool FilterNodeLinearTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
 }
 
 bool FilterNodeLinearTransferSoftware::FillLookupTableImpl(
-    Float aSlope, Float aIntercept, uint8_t aTable[256]) {
-  for (size_t i = 0; i < 256; i++) {
+    Float aSlope, Float aIntercept, LookupTable& aTable) {
+  for (size_t i = 0; i < aTable.size(); i++) {
     int32_t val = NS_lround(aSlope * i + 255 * aIntercept);
     aTable[i] = std::clamp(val, 0, 255);
   }
@@ -2144,7 +2145,7 @@ void FilterNodeGammaTransferSoftware::SetAttribute(uint32_t aIndex,
 }
 
 bool FilterNodeGammaTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
-                                                      uint8_t aTable[256]) {
+                                                      LookupTable& aTable) {
   switch (aComponent) {
     case B8G8R8A8_COMPONENT_BYTEOFFSET_R:
       return FillLookupTableImpl(mAmplitudeR, mExponentR, mOffsetR, aTable);
@@ -2163,8 +2164,8 @@ bool FilterNodeGammaTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
 bool FilterNodeGammaTransferSoftware::FillLookupTableImpl(Float aAmplitude,
                                                           Float aExponent,
                                                           Float aOffset,
-                                                          uint8_t aTable[256]) {
-  for (size_t i = 0; i < 256; i++) {
+                                                          LookupTable& aTable) {
+  for (size_t i = 0; i < aTable.size(); i++) {
     int32_t val =
         NS_lround(255 * (aAmplitude * pow(i / 255.0f, aExponent) + aOffset));
     aTable[i] = std::clamp(val, 0, 255);

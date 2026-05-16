@@ -29,14 +29,14 @@
     "lighter": {
       "layer-1": {
         "value": {
-          "light": "rgba(0, 0, 0, 0.05)",
-          "dark": "rgba(0, 0, 0, 0.2)"
+          "light": "rgba(0, 0, 0, 0.03)",
+          "dark": "rgba(0, 0, 0, 0.15)"
         }
       },
       "layer-2": {
         "value": {
-          "light": "rgba(0, 0, 0, 0.1)",
-          "dark": "rgba(0, 0, 0, 0.4)"
+          "light": "rgba(0, 0, 0, 0.05)",
+          "dark": "rgba(0, 0, 0, 0.2)"
         }
       }
     }

@@ -28,7 +28,11 @@ enum class Limit : uint8_t {
   MaxDynamicStorageBuffersPerPipelineLayout,
   MaxSampledTexturesPerShaderStage,
   MaxSamplersPerShaderStage,
+  MaxStorageBuffersInVertexStage,
+  MaxStorageBuffersInFragmentStage,
   MaxStorageBuffersPerShaderStage,
+  MaxStorageTexturesInVertexStage,
+  MaxStorageTexturesInFragmentStage,
   MaxStorageTexturesPerShaderStage,
   MaxUniformBuffersPerShaderStage,
   MaxUniformBufferBindingSize,
@@ -52,7 +56,7 @@ enum class Limit : uint8_t {
 };
 
 uint64_t GetLimit(const ffi::WGPULimits&, Limit);
-void SetLimit(ffi::WGPULimits*, Limit, double);
+void SetLimit(ffi::WGPULimits*, Limit, uint64_t);
 
 class SupportedLimits final : public nsWrapperCache, public ChildOf<Adapter> {
  public:
@@ -75,7 +79,11 @@ class SupportedLimits final : public nsWrapperCache, public ChildOf<Adapter> {
   _(MaxDynamicStorageBuffersPerPipelineLayout)
   _(MaxSampledTexturesPerShaderStage)
   _(MaxSamplersPerShaderStage)
+  _(MaxStorageBuffersInVertexStage)
+  _(MaxStorageBuffersInFragmentStage)
   _(MaxStorageBuffersPerShaderStage)
+  _(MaxStorageTexturesInVertexStage)
+  _(MaxStorageTexturesInFragmentStage)
   _(MaxStorageTexturesPerShaderStage)
   _(MaxUniformBuffersPerShaderStage)
   _(MaxUniformBufferBindingSize)

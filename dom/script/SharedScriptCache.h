@@ -284,6 +284,10 @@ class SharedScriptCache final
   void OnProfileBeforeChange();
   void AccumulateEverHitTelemetry(uint32_t aRate);
 
+  void SetDiskCacheTimer();
+  void ClearDiskCacheTimer();
+  void OnDiskCacheTimer();
+
   class EncodeItem {
    public:
     EncodeItem(JS::Stencil* aStencil, JS::TranscodeBuffer&& aSRI,
@@ -309,6 +313,11 @@ class SharedScriptCache final
   //
   // This field is used only on the parent process.
   bool mPreparedEverHitMap = false;
+
+  // True if the disk cache timer should be rescheduled.
+  // This is set to true if another activity happens during the timer
+  // is set.
+  bool mRetryDiskCacheTimer = false;
 
   // The initial value for mLastEverHitRatio, which is outside of the
   // valid range.
@@ -342,6 +351,8 @@ class SharedScriptCache final
 
   Mutex mEncodeMutex{"SharedScriptCache::mEncodeMutex"};
   Vector<EncodeItem> mEncodeItems MOZ_GUARDED_BY(mEncodeMutex);
+
+  nsCOMPtr<nsITimer> mDiskCacheTimer;
 };
 
 }  // namespace dom

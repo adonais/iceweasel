@@ -321,6 +321,7 @@ interface mixin CanvasPathDrawingStyles {
 
 interface mixin CanvasTextDrawingStyles {
   // text
+  attribute DOMString lang; // default: "inherit"
   [SetterThrows]
   attribute UTF8String font; // (default 10px sans-serif)
   attribute CanvasTextAlign textAlign; // (default: "start")

@@ -27,8 +27,8 @@ constexpr uint32_t kMaxHaptics = 2;
 constexpr uint32_t kMaxLightIndicator = 2;
 constexpr uint32_t kMaxTouchEvents = 4;
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(GamepadServiceTest, DOMEventTargetHelper,
-                                   mWindow)
+NS_IMPL_CYCLE_COLLECTION_WEAK_PTR_INHERITED(GamepadServiceTest,
+                                            DOMEventTargetHelper, mWindow)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(GamepadServiceTest)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)

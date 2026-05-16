@@ -39,8 +39,7 @@ already_AddRefed<MozSrcProtocolHandler> MozSrcProtocolHandler::GetSingleton() {
     } else {
       NS_DispatchToMainThread(NS_NewRunnableFunction(
           "MozSrcProtocolHandler::RunOnShutdown",
-          [prevent_shutdown_race =
-               std::move(prevent_shutdown_race)]() mutable {
+          [prevent_shutdown_race = std::move(prevent_shutdown_race)]() mutable {
             RunOnShutdown(std::move(prevent_shutdown_race));
           }));
     }

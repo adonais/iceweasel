@@ -204,25 +204,44 @@ const CONFIG_PANES = Object.freeze({
     visible: () =>
       Services.prefs.getBoolPref("browser.preferences.aiControls", false),
   },
+  connectionSecurity: {
+    parent: "privacy",
+    l10nId: "preferences-connection-header",
+    groupIds: [
+      "httpsOnly",
+      "networkProxy",
+      "browsingProtection",
+      "certificates",
+    ],
+    replaces: "privacy",
+  },
   dnsOverHttps: {
     parent: "privacy",
     l10nId: "preferences-doh-header2",
     groupIds: ["dnsOverHttpsAdvanced"],
+    replaces: "privacy",
   },
   etp: {
     parent: "privacy",
     l10nId: "preferences-etp-header",
     groupIds: ["etpBanner", "etpAdvanced"],
+    replaces: "privacy",
   },
   etpCustomize: {
     parent: "etp",
     l10nId: "preferences-etp-customize-header",
     groupIds: ["etpCustomize", "etpReset"],
+    replaces: "privacy",
+  },
+  general: {
+    l10nId: "pane-general-title",
+    groupIds: [],
   },
   history: {
     parent: "privacy",
     l10nId: "history-header2",
     groupIds: ["historyAdvanced"],
+    replaces: "privacy",
   },
   home: {
     l10nId: "home-section",
@@ -236,6 +255,7 @@ const CONFIG_PANES = Object.freeze({
     l10nId: "autofill-addresses-manage-addresses-title",
     groupIds: ["manageAddresses"],
     iconSrc: "chrome://browser/skin/notification-icons/geo.svg",
+    replaces: "privacy",
   },
   manageMemories: {
     parent: "personalizeSmartWindow",
@@ -249,9 +269,10 @@ const CONFIG_PANES = Object.freeze({
     l10nId: "autofill-payment-methods-manage-payments-title",
     groupIds: ["managePayments"],
     iconSrc: "chrome://browser/skin/payment-methods-16.svg",
+    replaces: "privacy",
   },
-  paneProfiles: {
-    parent: "general",
+  profiles: {
+    parent: srdSectionEnabled("sync") ? "sync" : "general",
     l10nId: "preferences-profiles-group-header",
     groupIds: ["profilePane"],
   },
@@ -262,6 +283,59 @@ const CONFIG_PANES = Object.freeze({
     badge: "beta",
     groupIds: ["assistantDefaultGroup", "assistantModelGroup", "memoriesGroup"],
     module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
+  },
+  search: {
+    l10nId: "search-section",
+    groupIds: [
+      "defaultEngine",
+      "searchShortcuts",
+      "searchSuggestions",
+      "firefoxSuggest",
+    ],
+    iconSrc: "chrome://browser/skin/preferences/category-search.svg",
+    module: "chrome://browser/content/preferences/config/search.mjs",
+    replaces: "search",
+  },
+  privacy: {
+    l10nId: "pane-privacy-section",
+    iconSrc: "chrome://browser/skin/preferences/category-privacy-security.svg",
+    groupIds: [
+      "securityPrivacyStatus",
+      "securityPrivacyWarnings",
+      "etpStatus",
+      "ipprotection",
+      "cookiesAndSiteData2",
+      // Bug 1968111: move this elsewhere
+      "passwords",
+      // Bug 1968111: move this elsewhere
+      "addresses",
+      // Bug 1968111: move this elsewhere
+      "payments",
+      "history2",
+      // Bug 1968118: move these elsewhere
+      "permissions",
+      // Bug 1968118: move these elsewhere
+      "dataCollection",
+      "nonTechnicalPrivacy2",
+      "dnsOverHttps",
+      "connectionLink",
+    ],
+    module: "chrome://browser/content/preferences/config/privacy.mjs",
+    replaces: "privacy",
+  },
+  sync: {
+    l10nId: "account-sync-section",
+    iconSrc: "chrome://browser/skin/fxa/avatar-empty.svg",
+    groupIds: [
+      "defaultBrowserSync",
+      "account",
+      "sync",
+      "importBrowserData",
+      "profiles",
+      "backup",
+    ],
+    module: "chrome://browser/content/preferences/config/account-sync.mjs",
+    replaces: "sync",
   },
   translations: {
     parent: "general",
@@ -327,27 +401,6 @@ function init_all() {
   register_module("paneIceweasel", gIceweaselPane);
   register_module("paneContainers", gContainersPane);
 
-  let redesignEnabled = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled"
-  );
-  for (let [id, config] of Object.entries(CONFIG_PANES)) {
-    if (!redesignEnabled && config.replaces) {
-      continue;
-    }
-    SettingPaneManager.registerPane(id, config);
-  }
-
-  // customHomepage is registered separately because its groups are set up by
-  // AboutPreferences.observe(), which only fires in the redesign path.
-  if (redesignEnabled) {
-    SettingPaneManager.registerPane("customHomepage", {
-      parent: "home",
-      l10nId: "home-custom-homepage-subpage",
-      groupIds: ["customHomepage"],
-      module: "chrome://browser/content/preferences/config/home-startup.mjs",
-    });
-  }
-
   if (ExperimentAPI.labsEnabled) {
     // Set hidden based on previous load's hidden value or if Nimbus is
     // disabled.
@@ -376,19 +429,35 @@ function init_all() {
     register_module("paneSync", gSyncPane);
   }
   register_module("paneSearchResults", gSearchResultsPane);
+
+  let redesignEnabled = Services.prefs.getBoolPref(
+    "browser.settings-redesign.enabled"
+  );
+  for (let [id, config] of Object.entries(CONFIG_PANES)) {
+    if (!redesignEnabled && config.replaces) {
+      continue;
+    }
+
+    SettingPaneManager.registerPane(id, config);
+  }
+
+  // customHomepage is registered separately because its groups are set up by
+  // AboutPreferences.observe(), which only fires in the redesign path.
+  if (redesignEnabled) {
+    SettingPaneManager.registerPane("customHomepage", {
+      parent: "home",
+      l10nId: "home-custom-homepage-subpage",
+      groupIds: ["customHomepage"],
+      module: "chrome://browser/content/preferences/config/home-startup.mjs",
+    });
+  }
+
   gSearchResultsPane.init();
   gMainPane.preInit();
 
   let categories = document.getElementById("categories");
-  categories.addEventListener("select", event => gotoPref(event.target.value));
-
-  document.documentElement.addEventListener("keydown", function (event) {
-    if (event.keyCode == KeyEvent.DOM_VK_TAB) {
-      categories.setAttribute("keyboard-navigation", "true");
-    }
-  });
-  categories.addEventListener("mousedown", function () {
-    this.removeAttribute("keyboard-navigation");
+  categories.addEventListener("change-view", event => {
+    gotoPref(event.target.view);
   });
 
   window.addEventListener("hashchange", onHashChange);
@@ -492,12 +561,16 @@ async function gotoPref(
     }
 
     item = /** @type {HTMLElement} */ (
-      categories.querySelector(".category[value=" + CSS.escape(category) + "]")
+      categories.querySelector(
+        'moz-page-nav-button[view="' + CSS.escape(category) + '"]'
+      )
     );
     if (!item || item.hidden) {
       unknownCategory = true;
       category = kDefaultCategoryInternalName;
-      item = categories.querySelector(".category[value=" + category + "]");
+      item = categories.querySelector(
+        'moz-page-nav-button[view="' + category + '"]'
+      );
     }
   }
 
@@ -521,17 +594,11 @@ async function gotoPref(
       document.location.hash = friendlyName;
     }
   }
-  // Need to set the gLastCategory before setting categories.selectedItem since
-  // the categories 'select' event will re-enter the gotoPref codepath.
+  // Need to set the gLastCategory before setting categories.currentView since
+  // the change-view event will re-enter the gotoPref codepath.
   gLastCategory.category = category;
   gLastCategory.subcategory = subcategory;
-  if (item) {
-    // @ts-ignore MozElements.RichListBox
-    categories.selectedItem = item;
-  } else {
-    // @ts-ignore MozElements.RichListBox
-    categories.clearSelection();
-  }
+  categories.currentView = item ? item.getAttribute("view") : category;
   window.history.replaceState(category, document.title);
 
   let categoryInfo = gCategoryInits.get(category);
@@ -774,25 +841,11 @@ function appendSearchKeywords(aId, keywords) {
   element.setAttribute("searchkeywords", keywords.join(" "));
 }
 
-async function ensureScrollPadding() {
-  let stickyContainer = document.querySelector(".sticky-container");
-  let height = await window.browsingContext.topChromeWindow
-    .promiseDocumentFlushed(() => stickyContainer.clientHeight)
-    .catch(console.error); // Can reject if the window goes away.
-
-  // Make it a bit more, to ensure focus rectangles etc. don't get cut off.
-  // This being 8px causes us to end up with 90px if the policies container
-  // is not visible (the common case), which matches the CSS and thus won't
-  // cause a style change, repaint, or other changes.
-  height += 8;
-  stickyContainer
-    .closest(".main-content")
-    .style.setProperty("scroll-padding-top", height + "px");
-}
-
 function maybeDisplayPoliciesNotice() {
   if (Services.policies.status == Services.policies.ACTIVE) {
     document.getElementById("policies-container").removeAttribute("hidden");
+    document
+      .getElementById("policies-container-content")
+      .removeAttribute("hidden");
   }
-  ensureScrollPadding();
 }

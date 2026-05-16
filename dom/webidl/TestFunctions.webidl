@@ -71,7 +71,7 @@ interface TestFunctions {
   DOMString getShortLiteralString();
 
   // Get a medium (long enough to not be a JS inline, but short enough
-  // to fit in a FakeString inline buffer) literal string.
+  // to fit in an nsAutoString inline buffer) literal string.
   DOMString getMediumLiteralString();
 
   // Get a long (long enough to not fit in any inline buffers) literal string.

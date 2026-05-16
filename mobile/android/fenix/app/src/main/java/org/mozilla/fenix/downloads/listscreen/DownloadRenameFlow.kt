@@ -167,8 +167,18 @@ fun DownloadRenameDialog(
     }
 }
 
+/**
+ * A text field component used within the [DownloadRenameDialog].
+ * It handles displaying the current file name, validation errors,
+ * and supporting text for character limits.
+ *
+ * @param fileNameState The current state of the text input including selection.
+ * @param onFileNameChange Callback for when the user edits the text.
+ * @param currentError The specific [RenameFileError] to display, if any.
+ * @param modifier Modifier for layout adjustments.
+ */
 @Composable
-private fun DownloadRenameDialogTextField(
+fun DownloadRenameDialogTextField(
     fileNameState: TextFieldValue,
     onFileNameChange: (TextFieldValue) -> Unit,
     currentError: RenameFileError?,

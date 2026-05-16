@@ -53,10 +53,161 @@ add_task(async function selected_result_autofill_adaptive() {
 
     assertEngagementTelemetry([
       {
-        selected_result: "autofill_adaptive",
+        selected_result: "autofill_adaptive_url",
         selected_position: 1,
         provider: "UrlbarProviderAutofill",
-        results: "autofill_adaptive",
+        results: "autofill_adaptive_url",
+      },
+    ]);
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function selected_result_dismiss_autofill_adaptive_origin() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
+      ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
+      ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+    ],
+  });
+
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits({
+      url: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
+    await UrlbarUtils.addToInputHistory("https://example.com/", "exa");
+
+    await openPopup("exa");
+    await UrlbarTestUtils.openResultMenuAndClickItem(
+      window,
+      "dismiss_autofill",
+      {
+        resultIndex: 0,
+      }
+    );
+    await UrlbarTestUtils.promiseSearchComplete(window);
+
+    assertEngagementTelemetry([
+      {
+        selected_result: "autofill_adaptive_origin",
+        selected_position: 1,
+        provider: "UrlbarProviderAutofill",
+        results: "autofill_adaptive_origin",
+      },
+    ]);
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function selected_result_dismiss_autofill_adaptive_url() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
+      ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
+      ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+    ],
+  });
+
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits({
+      url: "https://example.com/test",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
+    await UrlbarUtils.addToInputHistory("https://example.com/test", "exa");
+
+    await openPopup("exa");
+    await UrlbarTestUtils.openResultMenuAndClickItem(
+      window,
+      "dismiss_autofill",
+      {
+        resultIndex: 0,
+      }
+    );
+    await UrlbarTestUtils.promiseSearchComplete(window);
+
+    assertEngagementTelemetry([
+      {
+        selected_result: "autofill_adaptive_url",
+        selected_position: 1,
+        provider: "UrlbarProviderAutofill",
+      },
+    ]);
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(
+  async function selected_result_dismiss_autofill_adaptive_url_history() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
+        ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
+        ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+      ],
+    });
+
+    await doTest(async () => {
+      await PlacesTestUtils.addVisits({
+        url: "https://example.com/test",
+        transition: PlacesUtils.history.TRANSITION_TYPED,
+      });
+      await UrlbarUtils.addToInputHistory("https://example.com/test", "exa");
+
+      await openPopup("exa");
+      await UrlbarTestUtils.openResultMenuAndClickItem(window, "dismiss", {
+        resultIndex: 0,
+      });
+      await UrlbarTestUtils.promiseSearchComplete(window);
+
+      assertEngagementTelemetry([
+        {
+          selected_result: "autofill_adaptive_url",
+          selected_position: 1,
+          provider: "UrlbarProviderAutofill",
+        },
+      ]);
+    });
+
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+add_task(async function selected_result_dismiss_autofill_origin() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
+      ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
+      ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
+    ],
+  });
+
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits({
+      url: "https://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
+    await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+
+    await openPopup("exa");
+    await UrlbarTestUtils.openResultMenuAndClickItem(
+      window,
+      "dismiss_autofill",
+      {
+        resultIndex: 0,
+      }
+    );
+    await UrlbarTestUtils.promiseSearchComplete(window);
+
+    assertEngagementTelemetry([
+      {
+        selected_result: "autofill_origin",
+        selected_position: 1,
+        provider: "UrlbarProviderAutofill",
       },
     ]);
   });

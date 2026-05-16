@@ -17,7 +17,6 @@
 #include "mozilla/StaticPrefs_content.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsGkAtoms.h"
 #include "nsICSSLoaderObserver.h"
 #include "nsIContentSink.h"
 #include "nsITimer.h"

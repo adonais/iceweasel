@@ -21,7 +21,6 @@
 #include "nsContentCreatorFunctions.h"
 #include "nsDOMString.h"
 #include "nsError.h"
-#include "nsGkAtoms.h"
 #include "nsIContentInlines.h"
 #include "nsNameSpaceManager.h"
 #include "nsTextNode.h"

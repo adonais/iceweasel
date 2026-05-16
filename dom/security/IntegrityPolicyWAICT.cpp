@@ -26,9 +26,10 @@ using mozilla::waict::gWaictLog;
 NS_IMPL_ISUPPORTS(IntegrityPolicyWAICT, nsIStreamLoaderObserver)
 
 IntegrityPolicyWAICT::IntegrityPolicyWAICT(Document* aDocument)
+    // do_GetWeakReference internally guards against null aDocument.
     : mDocument(do_GetWeakReference(aDocument)),
-      mDocumentURI(aDocument->GetDocumentURI()),
-      mPrincipal(aDocument->NodePrincipal()) {}
+      mDocumentURI(aDocument ? aDocument->GetDocumentURI() : nullptr),
+      mPrincipal(aDocument ? aDocument->NodePrincipal() : nullptr) {}
 
 IntegrityPolicyWAICT::~IntegrityPolicyWAICT() {
   if (mPromise) {
@@ -190,7 +191,7 @@ nsresult IntegrityPolicyWAICT::ParseHeader(const nsACString& aHeader) {
     nsTArray<nsString> params = {NS_ConvertUTF8toUTF16(aHeader), u"max-age"_ns};
     ReportMessage(nsIScriptError::errorFlag, "WAICT"_ns,
                   "WAICTHeaderFieldParseError", params);
-    return rv;
+    return maxAgeResult.unwrapErr();
   }
   mMaxAge = maxAgeResult.unwrap();
 
@@ -200,7 +201,7 @@ nsresult IntegrityPolicyWAICT::ParseHeader(const nsACString& aHeader) {
     ReportMessage(nsIScriptError::errorFlag, "WAICT"_ns,
                   "WAICTHeaderFieldParseError", params);
 
-    return rv;
+    return modeResult.unwrapErr();
   }
   mEnforce = modeResult.unwrap() == waict::WaictMode::Enforce;
 
@@ -212,7 +213,7 @@ nsresult IntegrityPolicyWAICT::ParseHeader(const nsACString& aHeader) {
     ReportMessage(nsIScriptError::errorFlag, "WAICT"_ns,
                   "WAICTHeaderManifestParseError", params);
 
-    return rv;
+    return manifestURLResult.unwrapErr();
   }
   mManifestURL = manifestURLResult.unwrap();
 

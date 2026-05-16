@@ -73,6 +73,8 @@ support-files = [
 
 ["browser_rules_anchor-names-autocomplete.js"]
 
+["browser_rules_at_appearance-base.js"]
+
 ["browser_rules_at_scope.js"]
 
 ["browser_rules_at_starting-style.js"]

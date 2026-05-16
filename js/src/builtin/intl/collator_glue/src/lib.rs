@@ -20,6 +20,7 @@ use icu_locale_core::subtags::script;
 use icu_locale_core::subtags::Language;
 use icu_locale_core::DataLocale;
 use icu_locale_core::Locale;
+use tinystr::tinystr;
 use tinystr::TinyAsciiStr;
 use writeable::Writeable;
 
@@ -304,6 +305,48 @@ pub unsafe extern "C" fn mozilla_collator_glue_collator_free(
     let _ = Box::from_raw(collator);
 }
 
+/// Returns the resolved options of the collator.
+#[no_mangle]
+pub unsafe extern "C" fn mozilla_collator_glue_collator_resolved_options(
+    collator: *const CollatorBorrowed<'static>,
+) -> CollatorOptions {
+    let resolved = (*collator).resolved_options();
+
+    CollatorOptions {
+        sensitivity: match resolved.strength {
+            Strength::Primary => match resolved.case_level {
+                CaseLevel::Off => CollatorSensitivity::Base,
+                CaseLevel::On => CollatorSensitivity::Case,
+                _ => panic!("unexpected case level: unknown"),
+            },
+            Strength::Secondary => CollatorSensitivity::Accent,
+            Strength::Tertiary => CollatorSensitivity::Variant,
+            Strength::Quaternary => panic!("unexpected strength: quaternary"),
+            Strength::Identical => panic!("unexpected strength: identical"),
+            _ => panic!("unexpected strength: unknown"),
+        },
+
+        case_first: match resolved.case_first {
+            CollationCaseFirst::Upper => CollatorCaseFirst::Upper,
+            CollationCaseFirst::Lower => CollatorCaseFirst::Lower,
+            CollationCaseFirst::False => CollatorCaseFirst::False,
+            _ => panic!("unexpected case first: unknown"),
+        },
+
+        ignore_punctuation: match resolved.alternate_handling {
+            AlternateHandling::Shifted => CollatorIgnorePunctuation::On,
+            AlternateHandling::NonIgnorable => CollatorIgnorePunctuation::Off,
+            _ => panic!("unexpected alternate handling: unknown"),
+        },
+
+        numeric: match resolved.numeric {
+            CollationNumericOrdering::True => CollatorNumeric::On,
+            CollationNumericOrdering::False => CollatorNumeric::Off,
+            _ => panic!("unexpected numeric ordering: unknown"),
+        },
+    }
+}
+
 /// Compares UTF-16 strings.
 ///
 /// Unpaired surrogates are treated as the REPLACEMENT CHARACTER.
@@ -386,25 +429,8 @@ pub unsafe extern "C" fn mozilla_collator_glue_is_supported_collation(
     )
 }
 
-/// Checks if a given collation is supported for a given language.
-fn is_supported_collation(locale: &[u8], collation: &[u8]) -> bool {
-    let Ok(locale) = Locale::try_from_utf8(locale) else {
-        return false;
-    };
-    // We could be fancy and actually check if `eor` and `emoji`
-    // data was generated, but it's supposed to be generated,
-    // and tests will catch the actual behavior.
-    if collation == b"eor" || collation == b"emoji" {
-        return true;
-    }
-    // Currently all collation identifiers attach to language without
-    // region or script qualifiers.
-    let lang = locale.id.language;
-    let Ok(coll) = TinyCollationStr::try_from_utf8(collation) else {
-        return false;
-    };
-    let langcoll = LangColl::new(lang, coll);
-    let combinations = LANG_COLL_COMBINATIONS.get_or_init(|| {
+fn get_lang_coll_combinations() -> &'static [LangColl] {
+    LANG_COLL_COMBINATIONS.get_or_init(|| {
         let mut set: HashSet<LangColl> = HashSet::new();
         #[cfg(debug_assertions)]
         let mut eor_seen = false;
@@ -464,66 +490,30 @@ fn is_supported_collation(locale: &[u8], collation: &[u8]) -> bool {
             }
         });
         arr
-    });
-    combinations
+    })
+}
+
+/// Checks if a given collation is supported for a given language.
+fn is_supported_collation(locale: &[u8], collation: &[u8]) -> bool {
+    let Ok(locale) = Locale::try_from_utf8(locale) else {
+        return false;
+    };
+    // We could be fancy and actually check if `eor` and `emoji`
+    // data was generated, but it's supposed to be generated,
+    // and tests will catch the actual behavior.
+    if collation == b"eor" || collation == b"emoji" {
+        return true;
+    }
+    // Currently all collation identifiers attach to language without
+    // region or script qualifiers.
+    let lang = locale.id.language;
+    let Ok(coll) = TinyCollationStr::try_from_utf8(collation) else {
+        return false;
+    };
+    let langcoll = LangColl::new(lang, coll);
+    get_lang_coll_combinations()
         .iter()
         .any(|combination| combination == &langcoll)
-}
-
-// This function should go away in https://bugzilla.mozilla.org/show_bug.cgi?id=2018920 .
-// In principle this should be #[cfg(feature = "gecko_debug")], but the feature isn't
-// properly connected to the build system in the case of standalone SpiderMonkey builds.
-#[no_mangle]
-pub unsafe extern "C" fn mozilla_collator_glue_locale_is_upper_first(
-    locale: *const c_char,
-    locale_len: usize,
-) -> bool {
-    if locale_len == 0 {
-        return false;
-    }
-    let prefs: CollatorPreferences = if let Ok(locale) =
-        Locale::try_from_utf8(core::slice::from_raw_parts(locale as *const u8, locale_len))
-    {
-        locale.into()
-    } else {
-        return false;
-    };
-    // `unwrap` is OK below, because `CollatorBorrowed::try_new`` never
-    // fails with properly-generated baked data.
-    // See https://github.com/unicode-org/icu4x/issues/6634
-    CollatorBorrowed::try_new(prefs, icu_collator::options::CollatorOptions::default())
-        .unwrap()
-        .resolved_options()
-        .case_first
-        == CollationCaseFirst::Upper
-}
-
-// This function should go away in https://bugzilla.mozilla.org/show_bug.cgi?id=2018920 .
-// In principle this should be #[cfg(feature = "gecko_debug")], but the feature isn't
-// properly connected to the build system in the case of standalone SpiderMonkey builds.
-#[no_mangle]
-pub unsafe extern "C" fn mozilla_collator_glue_locale_ignores_punctuation(
-    locale: *const c_char,
-    locale_len: usize,
-) -> bool {
-    if locale_len == 0 {
-        return false;
-    }
-    let prefs: CollatorPreferences = if let Ok(locale) =
-        Locale::try_from_utf8(core::slice::from_raw_parts(locale as *const u8, locale_len))
-    {
-        locale.into()
-    } else {
-        return false;
-    };
-    // `unwrap` is OK below, because `CollatorBorrowed::try_new`` never
-    // fails with properly-generated baked data.
-    // See https://github.com/unicode-org/icu4x/issues/6634
-    CollatorBorrowed::try_new(prefs, icu_collator::options::CollatorOptions::default())
-        .unwrap()
-        .resolved_options()
-        .alternate_handling
-        == AlternateHandling::Shifted
 }
 
 /// Data holder for enumerating supported locales.
@@ -600,10 +590,15 @@ pub struct CollationList {
 /// List the supported collation identifiers excluding `standard` and `search`.
 fn list_collations() -> CollationList {
     let mut collations: HashSet<TinyCollationStr> = HashSet::new();
-    for (_, collation) in icu_collator::provider::list_locales() {
-        if !collation.is_empty() && collation.as_str() != "search" {
-            let _ = collations.insert(collation);
-        }
+
+    // We could be fancy and actually check if `eor` and `emoji` data was
+    // generated, but it's supposed to be generated, and tests will catch
+    // the actual behavior.
+    let _ = collations.insert(tinystr!(8, "emoji"));
+    let _ = collations.insert(tinystr!(8, "eor"));
+
+    for langcoll in get_lang_coll_combinations() {
+        let _ = collations.insert(langcoll.coll);
     }
     CollationList {
         vec: collations.iter().copied().collect(),

@@ -469,9 +469,8 @@ void nsDocumentViewer::PrepareToStartLoad() {
   mClosingWhilePrinting = false;
 
   // Make sure we have destroyed it and cleared the data member
-  if (mPrintJob) {
-    mPrintJob->Destroy();
-    mPrintJob = nullptr;
+  if (RefPtr job = std::move(mPrintJob)) {
+    job->Destroy();
   }
 
 #endif  // NS_PRINTING
@@ -528,13 +527,13 @@ NS_INTERFACE_MAP_END
 nsDocumentViewer::~nsDocumentViewer() {
   if (mDocument) {
     Close();
-    mDocument->Destroy();
+    nsCOMPtr doc = std::move(mDocument);
+    doc->Destroy();
   }
 
 #ifdef NS_PRINTING
-  if (mPrintJob) {
-    mPrintJob->Destroy();
-    mPrintJob = nullptr;
+  if (RefPtr job = std::move(mPrintJob)) {
+    job->Destroy();
   }
 #endif
 
@@ -812,9 +811,8 @@ nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
       Hide();
     } else {
       // Avoid leaking the old viewer.
-      if (mPreviousViewer) {
-        mPreviousViewer->Destroy();
-        mPreviousViewer = nullptr;
+      if (nsCOMPtr prev = std::move(mPreviousViewer)) {
+        prev->Destroy();
       }
     }
   }
@@ -1470,9 +1468,8 @@ nsDocumentViewer::Destroy() {
   if (mPresShell) {
     DestroyPresShell();
   }
-  if (mDocument) {
-    mDocument->Destroy();
-    mDocument = nullptr;
+  if (nsCOMPtr doc = std::move(mDocument)) {
+    doc->Destroy();
   }
 
   // All callers are supposed to call destroy to break circular
@@ -1481,8 +1478,7 @@ nsDocumentViewer::Destroy() {
   // used from JS.
 
 #ifdef NS_PRINTING
-  if (mPrintJob) {
-    RefPtr<nsPrintJob> printJob = std::move(mPrintJob);
+  if (RefPtr printJob = std::move(mPrintJob)) {
     if (printJob->CreatedForPrintPreview()) {
       printJob->FinishPrintPreview();
     }
@@ -1763,12 +1759,8 @@ nsDocumentViewer::Show() {
 
   // We don't need the previous viewer anymore since we're not
   // displaying it.
-  if (mPreviousViewer) {
-    // This little dance *may* only be to keep
-    // PresShell::EndObservingDocument happy, but I'm not sure.
-    nsCOMPtr<nsIDocumentViewer> prevViewer(mPreviousViewer);
-    mPreviousViewer = nullptr;
-    prevViewer->Destroy();
+  if (nsCOMPtr prev = std::move(mPreviousViewer)) {
+    prev->Destroy();
   }
 
   // Hold on to the document so we can use it after the script blocker below
@@ -1834,9 +1826,8 @@ nsDocumentViewer::Hide() {
   NS_ASSERTION(mPresContext, "Can't have a presshell and no prescontext!");
 
   // Avoid leaking the old viewer.
-  if (mPreviousViewer) {
-    mPreviousViewer->Destroy();
-    mPreviousViewer = nullptr;
+  if (nsCOMPtr prev = std::move(mPreviousViewer)) {
+    prev->Destroy();
   }
 
   if (mIsSticky) {
@@ -2812,8 +2803,8 @@ nsDocumentViewer::ExitPrintPreview() {
     return NS_OK;
   }
 
-  mPrintJob->Destroy();
-  mPrintJob = nullptr;
+  RefPtr printJob = std::move(mPrintJob);
+  printJob->Destroy();
 
   // Since the print preview implementation discards the window that was used
   // to show the print preview, we skip certain cleanup that we would otherwise
@@ -2921,17 +2912,19 @@ void nsDocumentViewer::DecrementDestroyBlockedCount() {
 //
 void nsDocumentViewer::OnDonePrinting() {
 #ifdef NS_PRINTING
-  // If Destroy() has been called during calling nsPrintJob::Print() or
-  // nsPrintJob::PrintPreview(), mPrintJob is already nullptr here.
-  // So, the following clean up does nothing in such case.
-  // (Do we need some of this for that case?)
-  if (mPrintJob) {
-    RefPtr<nsPrintJob> printJob = std::move(mPrintJob);
-    if (GetIsPrintPreview()) {
-      printJob->DestroyPrintingData();
-    } else {
-      printJob->Destroy();
-    }
+  RefPtr printJob = std::move(mPrintJob);
+  if (!printJob) {
+    // If Destroy() has been called during calling nsPrintJob::Print() or
+    // nsPrintJob::PrintPreview(), mPrintJob is already nullptr here.
+    // So, the following clean up does nothing in such case.
+    // (Do we need some of this for that case?)
+    return;
+  }
+  if (GetIsPrintPreview()) {
+    printJob->DestroyPrintingData();
+  } else {
+    printJob->Destroy();
+  }
 
 // We are done printing, now clean up.
 //
@@ -2943,25 +2936,23 @@ void nsDocumentViewer::OnDonePrinting() {
 //
 // Otherwise the front-end code is responsible for cleaning the UI.
 #  ifdef ANDROID
-    // Android doesn't support Content Analysis and prints in a different way,
-    // so use different logic to clean up.
-    bool closeWindowAfterPrint = !printJob->CreatedForPrintPreview();
+  // Android doesn't support Content Analysis and prints in a different way,
+  // so use different logic to clean up.
+  bool closeWindowAfterPrint = !printJob->CreatedForPrintPreview();
 #  else
-    bool closeWindowAfterPrint = GetCloseWindowAfterPrint();
+  bool closeWindowAfterPrint = GetCloseWindowAfterPrint();
 #  endif
-    if (closeWindowAfterPrint) {
-      if (mContainer) {
-        if (nsCOMPtr<nsPIDOMWindowOuter> win = mContainer->GetWindow()) {
-          win->Close();
-        }
+  if (closeWindowAfterPrint) {
+    if (mContainer) {
+      if (nsCOMPtr<nsPIDOMWindowOuter> win = mContainer->GetWindow()) {
+        win->Close();
       }
-    } else if (mClosingWhilePrinting) {
-      if (mDocument) {
-        mDocument->Destroy();
-        mDocument = nullptr;
-      }
-      mClosingWhilePrinting = false;
     }
+  } else if (mClosingWhilePrinting) {
+    if (nsCOMPtr doc = std::move(mDocument)) {
+      doc->Destroy();
+    }
+    mClosingWhilePrinting = false;
   }
 #endif  // NS_PRINTING
 }
@@ -3079,8 +3070,8 @@ void nsDocumentViewer::DestroyPresShell() {
     selection->RemoveSelectionListener(mSelectionListener);
   }
 
-  mPresShell->Destroy();
-  mPresShell = nullptr;
+  RefPtr ps = std::move(mPresShell);
+  ps->Destroy();
 }
 
 void nsDocumentViewer::InvalidatePotentialSubDocDisplayItem() {

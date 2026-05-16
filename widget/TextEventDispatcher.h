@@ -70,9 +70,13 @@ class TextEventDispatcher final {
    * EndInputTransaction() should be called when the listener stops using
    * the TextEventDispatcher.
    *
+   * FYI: This is marked as MOZ_CAN_RUN_SCRIPT but it's for the safety in the
+   * future because of calling a callback which can do anything unexpected.
+   *
    * @param aListener       The listener using the TextEventDispatcher instance.
    */
-  void EndInputTransaction(TextEventDispatcherListener* aListener);
+  MOZ_CAN_RUN_SCRIPT void EndInputTransaction(
+      TextEventDispatcherListener* aListener);
 
   /**
    * OnDestroyWidget() is called when mWidget is being destroyed.

@@ -840,7 +840,9 @@ class Editor extends EventEmitter {
       codeFolding({
         placeholderText: "↔",
       }),
-      this.#compartments.foldGutterCompartment.of([]),
+      this.#compartments.foldGutterCompartment.of(
+        this.config.enableCodeFolding ? this.#foldGutterConfiguration() : []
+      ),
       syntaxHighlighting(lezerHighlight.classHighlighter),
       EditorView.updateListener.of(v => {
         if (!cm.isDocumentLoadComplete) {
@@ -1629,6 +1631,26 @@ class Editor extends EventEmitter {
     });
   }
 
+  #foldGutterConfiguration() {
+    const {
+      codemirrorLanguage: { foldGutter },
+    } = this.#CodeMirror6;
+
+    return foldGutter({
+      class: "cm6-dt-foldgutter",
+      markerDOM: open => {
+        if (!this.#ownerDoc) {
+          return null;
+        }
+        const button = this.#ownerDoc.createElement("button");
+        button.classList.add("cm6-dt-foldgutter__toggle-button");
+        button.setAttribute("aria-expanded", open);
+        return button;
+      },
+      domEventHandlers: this.#gutterDOMEventHandlers,
+    });
+  }
+
   /**
    * This enables the gutter and sets up all the
    * event listeners for the various panels in the gutter.
@@ -1643,7 +1665,6 @@ class Editor extends EventEmitter {
     const cm = editors.get(this);
     const {
       codemirrorView: { lineNumbers },
-      codemirrorLanguage: { foldGutter },
     } = this.#CodeMirror6;
 
     for (const eventName in domEventHandlers) {
@@ -1654,25 +1675,16 @@ class Editor extends EventEmitter {
       };
     }
 
+    this.config.lineNumbers = true;
+    this.config.enableCodeFolding = true;
+
     cm.dispatch({
       effects: [
         this.#compartments.lineNumberCompartment.reconfigure(
           lineNumbers({ domEventHandlers: this.#gutterDOMEventHandlers })
         ),
         this.#compartments.foldGutterCompartment.reconfigure(
-          foldGutter({
-            class: "cm6-dt-foldgutter",
-            markerDOM: open => {
-              if (!this.#ownerDoc) {
-                return null;
-              }
-              const button = this.#ownerDoc.createElement("button");
-              button.classList.add("cm6-dt-foldgutter__toggle-button");
-              button.setAttribute("aria-expanded", open);
-              return button;
-            },
-            domEventHandlers: this.#gutterDOMEventHandlers,
-          })
+          this.#foldGutterConfiguration()
         ),
       ],
     });
@@ -1683,6 +1695,8 @@ class Editor extends EventEmitter {
    */
   disableGutter() {
     const cm = editors.get(this);
+    this.config.lineNumbers = false;
+    this.config.enableCodeFolding = false;
     cm.dispatch({
       effects: [
         this.#compartments.lineNumberCompartment.reconfigure([]),
@@ -2776,7 +2790,7 @@ class Editor extends EventEmitter {
         }
         effects.push(
           this.#compartments.lineNumberCompartment.reconfigure(
-            lineNumbers(lineNumbersConfig)
+            this.config.lineNumbers ? lineNumbers(lineNumbersConfig) : []
           )
         );
       }

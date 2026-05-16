@@ -1940,6 +1940,7 @@ def writeAllLocalesSupportedTest(topsrcdir):
     unsupported_all = [
         ("ach", "Acoli"),
         ("an", "Aragonese"),
+        ("bqi", "Bakhtiari"),
         ("cak", "Cakchiquel; Kaqchikel"),
         ("gn", "Guarani"),
         ("hye", "Armenian (Eastern)"),
@@ -3611,18 +3612,8 @@ def readICUDataFilterForUnits(data_filter_file):
 
 def writeSanctionedSimpleUnitIdentifiersFiles(all_units, sanctioned_units):
     js_src_builtin_intl_dir = os.path.dirname(os.path.abspath(__file__))
-    intl_components_src_dir = os.path.join(
-        js_src_builtin_intl_dir, "../../../../intl/components/src"
-    )
 
-    def find_unit_type(unit):
-        result = [
-            unit_type for (unit_type, unit_name) in all_units if unit_name == unit
-        ]
-        assert result and len(result) == 1
-        return result[0]
-
-    sanctioned_h_file = os.path.join(intl_components_src_dir, "MeasureUnitGenerated.h")
+    sanctioned_h_file = os.path.join(js_src_builtin_intl_dir, "MeasureUnitGenerated.h")
     with open(sanctioned_h_file, mode="w", encoding="utf-8", newline="") as f:
         println = partial(print, file=f)
 
@@ -3630,34 +3621,33 @@ def writeSanctionedSimpleUnitIdentifiersFiles(all_units, sanctioned_units):
 
         println(
             """
-#ifndef intl_components_MeasureUnitGenerated_h
-#define intl_components_MeasureUnitGenerated_h
+#ifndef builtin_intl_MeasureUnitGenerated_h
+#define builtin_intl_MeasureUnitGenerated_h
 
-namespace mozilla::intl {
+namespace js::intl {
 
 struct SimpleMeasureUnit {
-  const char* const type;
   const char* const name;
 };
 
 /**
  * The list of currently supported simple unit identifiers.
  *
- * The list must be kept in alphabetical order of |name|.
+ * The list must be kept in alphabetical order.
  */
 inline constexpr SimpleMeasureUnit simpleMeasureUnits[] = {
     // clang-format off"""
         )
 
         for unit_name in sorted(sanctioned_units):
-            println(f'  {{"{find_unit_type(unit_name)}", "{unit_name}"}},')
+            println(f'  {{"{unit_name}"}},')
 
         println(
             """
     // clang-format on
 };
 
-}  // namespace mozilla::intl
+}  // namespace js::intl
 
 #endif
 """.strip("\n")

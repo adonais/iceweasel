@@ -70,7 +70,8 @@ class nsFilePicker final : public nsBaseWinFilePicker {
   nsFilePicker();
 
   NS_IMETHOD Init(mozilla::dom::BrowsingContext* aBrowsingContext,
-                  const nsAString& aTitle, nsIFilePicker::Mode aMode) override;
+                  const nsAString& aTitle, nsIFilePicker::Mode aMode,
+                  nsISupports* aGlobal) override;
 
   NS_DECL_ISUPPORTS
 

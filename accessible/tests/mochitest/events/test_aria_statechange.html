@@ -138,10 +138,8 @@
         };
       });
 
-      gQueue.push(new expandNode("section", true));
-      gQueue.push(new expandNode("section", false));
-      gQueue.push(new expandNode("div", true));
-      gQueue.push(new expandNode("div", false));
+      gQueue.push(new expandNode("tab", true));
+      gQueue.push(new expandNode("tab", false));
 
       gQueue.push(new busyify("aria_doc", true));
       gQueue.push(new busyify("aria_doc", false));
@@ -209,8 +207,7 @@
   <div id="eventdump"></div>
 
   <!-- aria-expanded -->
-  <div id="section" role="section" aria-expanded="false">expandable section</div>
-  <div id="div" aria-expanded="false">expandable native div</div>
+  <div id="tab" role="tab" aria-expanded="false">expandable tab</div>
 
   <!-- aria-busy -->
   <div id="aria_doc" role="document" tabindex="0">A document</div>

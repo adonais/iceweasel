@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -140,8 +138,8 @@ WeakMap<K, V, AP>::WeakMap(JS::Zone* zone)
 template <class K, class V, class AP>
 /* static */
 MOZ_ALWAYS_INLINE void WeakMap<K, V, AP>::staticAssertions() {
-  static_assert(std::is_same_v<typename RemoveBarrier<K>::Type, K>);
-  static_assert(std::is_same_v<typename RemoveBarrier<V>::Type, V>);
+  static_assert(!IsBarriered<K>::value, "Don't use barriered types");
+  static_assert(!IsBarriered<V>::value, "Don't use barriered types");
 
   // The object's TraceKind needs to be added to CC graph if this object is
   // used as a WeakMap key, otherwise the key is considered to be pointed from

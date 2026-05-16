@@ -2217,7 +2217,7 @@ class nsIFrame : public nsQueryFrame {
   void ComputePreserve3DChildrenOverflow(
       mozilla::OverflowAreas& aOverflowAreas);
 
-  void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame);
+  bool RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame);
 
   /**
    * Returns whether z-index applies to this frame.
@@ -2540,11 +2540,13 @@ class nsIFrame : public nsQueryFrame {
    */
   bool HasAnyStateBits(nsFrameState aBits) const { return mState & aBits; }
 
- private:
+ protected:
   /**
    * Called when this frame becomes primary for mContent.
    */
-  void InitPrimaryFrame();
+  virtual void InitPrimaryFrame();
+
+ private:
   /**
    * Called when the primary frame style changes.
    *
@@ -3956,14 +3958,14 @@ class nsIFrame : public nsQueryFrame {
    * the overflow areas changed.
    */
   bool FinishAndStoreOverflow(mozilla::OverflowAreas& aOverflowAreas,
-                              nsSize aNewSize, nsSize* aOldSize = nullptr,
+                              nsSize aNewSize,
                               const nsStyleDisplay* aStyleDisplay = nullptr);
 
   bool FinishAndStoreOverflow(ReflowOutput* aMetrics,
                               const nsStyleDisplay* aStyleDisplay = nullptr) {
     return FinishAndStoreOverflow(aMetrics->mOverflowAreas,
                                   nsSize(aMetrics->Width(), aMetrics->Height()),
-                                  nullptr, aStyleDisplay);
+                                  aStyleDisplay);
   }
 
   /**

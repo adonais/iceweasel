@@ -76,6 +76,20 @@
       </popupnotificationcontent>
     </popupnotification>
 
+    <popupnotification id="webSerial-choosePort-notification" hidden="true">
+      <popupnotificationcontent id="webSerial-selectPort" orient="vertical">
+        <label id="webSerial-selectPort-label"
+               data-l10n-id="webserial-select-port-label"
+               control="webSerial-selectPort-menulist"/>
+        <menulist id="webSerial-selectPort-menulist" size="large">
+          <menupopup id="webSerial-selectPort-menupopup"/>
+        </menulist>
+        <description id="webSerial-no-ports-available"
+                     hidden="true"
+                     data-l10n-id="webserial-no-ports-available"/>
+      </popupnotificationcontent>
+    </popupnotification>
+
     <popupnotification id="servicesInstall-notification" hidden="true">
       <popupnotificationcontent orient="vertical" align="start">
         <!-- XXX bug 974146, tests are looking for this, can't remove yet. -->

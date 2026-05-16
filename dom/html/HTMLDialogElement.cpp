@@ -4,6 +4,7 @@
 
 #include "mozilla/dom/HTMLDialogElement.h"
 
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/CloseWatcher.h"
 #include "mozilla/dom/CloseWatcherManager.h"
@@ -169,6 +170,7 @@ void HTMLDialogElement::Close(Element* aSource,
   // 6. If is modal of subject is true, then request an element to be removed
   // from the top layer given subject.
   // 7. Let wasModal be the value of subject's is modal flag.
+  bool wasModal = IsInTopLayer();
   // 8. Set is modal of subject to false.
   RemoveFromTopLayerIfNeeded();
 
@@ -200,10 +202,29 @@ void HTMLDialogElement::Close(Element* aSource,
     // anchor is a shadow-including inclusive descendant of subject, or wasModal
     // is true, then run the focusing steps for element; the viewport should not
     // be scrolled by doing this step.
-    FocusOptions options;
-    options.mPreventScroll = true;
-    previouslyFocusedElement->Focus(options, CallerType::NonSystem,
-                                    IgnoredErrorResult());
+    bool resetFocus = true;
+    if (!wasModal) {
+      resetFocus = false;
+      if (auto* focusedContent = OwnerDoc()->GetUnretargetedFocusedContent()) {
+        // Actually use flat tree instead of shadow-including traversal to be
+        // consistent with Chrome:
+        // https://github.com/web-platform-tests/wpt/pull/39579#issuecomment-2666758496
+        for (auto* dialog :
+             focusedContent
+                 ->InclusiveFlatTreeAncestorsOfType<HTMLDialogElement>()) {
+          if (dialog == this) {
+            resetFocus = true;
+            break;
+          }
+        }
+      }
+    }
+    if (resetFocus) {
+      FocusOptions options;
+      options.mPreventScroll = true;
+      previouslyFocusedElement->Focus(options, CallerType::NonSystem,
+                                      IgnoredErrorResult());
+    }
   }
 
   // 13. Queue an element task on the user interaction task source given the

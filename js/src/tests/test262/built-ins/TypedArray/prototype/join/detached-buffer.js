@@ -30,6 +30,6 @@ testWithTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, () => {
     sample.join(obj);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

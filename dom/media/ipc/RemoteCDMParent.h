@@ -43,6 +43,7 @@ class RemoteCDMParent : public PRemoteCDMParent, public PRemoteCDMActor {
 
   // PRemoteCDMActor
   PRemoteCDMParent* AsPRemoteCDMParent() final { return this; }
+  RemoteCDMProxy* AsRemoteCDMProxy() final { return nullptr; }
   RemoteMediaIn GetLocation() const final;
 
  protected:

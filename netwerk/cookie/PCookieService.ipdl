@@ -34,7 +34,6 @@ parent:
   [Nested=inside_cpow] async SetCookies(nsCString baseDomain,
                                         OriginAttributes attrs,
                                         nullable nsIURI host,
-                                        bool fromHttp,
                                         bool isThirdParty,
                                         CookieStruct[] cookies);
 

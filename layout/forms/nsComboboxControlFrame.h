@@ -10,7 +10,6 @@
 
 namespace mozilla {
 class PresShell;
-class HTMLSelectEventListener;
 class ComboboxLabelFrame;
 namespace dom {
 class HTMLSelectElement;
@@ -71,8 +70,6 @@ class nsComboboxControlFrame final : public mozilla::ButtonControlFrame {
   // The inline size of our display area. Used by that frame's reflow to size to
   // the full inline size except the drop-marker.
   nscoord mDisplayISize = 0;
-  // TODO(emilio, bug 2023453): Move this to HTMLSelectElement.cpp
-  RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 };
 
 #endif

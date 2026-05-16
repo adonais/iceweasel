@@ -195,7 +195,7 @@ private fun sampleStockItem(
     query = query,
     name = name,
     ticker = ticker,
-    changePercToday = changePercToday,
+    todaysChangePerc = changePercToday,
     lastPrice = lastPrice,
     exchange = exchange,
     imageUrl = "",

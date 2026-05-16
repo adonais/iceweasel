@@ -23,10 +23,9 @@
 
 #include "mozilla/gfx/Types.h"
 
-#ifdef __cplusplus
-namespace libyuv {
-extern "C" {
-#endif
+using namespace libyuv;
+
+namespace mozilla::gfx {
 
 // YUV to RGB conversion and scaling functions were implemented by referencing
 // scale_argb.cc
@@ -1128,7 +1127,4 @@ int YUVToARGBScale(const uint8_t* src_y, int src_stride_y,
   return 0;
 }
 
-#ifdef __cplusplus
-}  // extern "C"
-}  // namespace libyuv
-#endif
+}  // namespace mozilla::gfx

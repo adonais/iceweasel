@@ -81,7 +81,7 @@ static const struct arg_enum_list matrix_coefficients_enum[] = {
   { "fcc73", AOM_CICP_MC_FCC },
   { "bt470bg", AOM_CICP_MC_BT_470_B_G },
   { "bt601", AOM_CICP_MC_BT_601 },
-  { "smpte240", AOM_CICP_CP_SMPTE_240 },
+  { "smpte240", AOM_CICP_MC_SMPTE_240 },
   { "ycgco", AOM_CICP_MC_SMPTE_YCGCO },
   { "bt2020ncl", AOM_CICP_MC_BT_2020_NCL },
   { "bt2020cl", AOM_CICP_MC_BT_2020_CL },
@@ -89,6 +89,9 @@ static const struct arg_enum_list matrix_coefficients_enum[] = {
   { "chromncl", AOM_CICP_MC_CHROMAT_NCL },
   { "chromcl", AOM_CICP_MC_CHROMAT_CL },
   { "ictcp", AOM_CICP_MC_ICTCP },
+  { "ipt-c2", AOM_CICP_MC_IPT_C2 },
+  { "ycgco-re", AOM_CICP_MC_YCGCO_RE },
+  { "ycgco-ro", AOM_CICP_MC_YCGCO_RO },
   { NULL, 0 }
 };
 
@@ -107,7 +110,7 @@ static const struct arg_enum_list tune_content_enum[] = {
 };
 
 static const struct arg_enum_list transfer_characteristics_enum[] = {
-  { "unspecified", AOM_CICP_CP_UNSPECIFIED },
+  { "unspecified", AOM_CICP_TC_UNSPECIFIED },
   { "bt709", AOM_CICP_TC_BT_709 },
   { "bt470m", AOM_CICP_TC_BT_470_M },
   { "bt470bg", AOM_CICP_TC_BT_470_B_G },
@@ -326,7 +329,7 @@ const av1_codec_arg_definitions_t g_av1_codec_arg_defs = {
   .enable_tpl_model = ARG_DEF(NULL, "enable-tpl-model", 1,
                               "RDO based on frame temporal dependency "
                               "(0: off, 1: backward source based); "
-                              "required for deltaq mode"),
+                              "required for --deltaq-mode=1"),
   .enable_keyframe_filtering = ARG_DEF(
       NULL, "enable-keyframe-filtering", 1,
       "Apply temporal filtering on key frame "
@@ -557,7 +560,7 @@ const av1_codec_arg_definitions_t g_av1_codec_arg_defs = {
               "Delta qindex mode (0: off, 1: deltaq objective (default), "
               "2: deltaq placeholder, 3: key frame visual quality, 4: user "
               "rating based visual quality optimization, 5: HDR video, 6: "
-              "Variance Boost all intra); requires --enable-tpl-model=1"),
+              "Variance Boost); --deltaq-mode=1 requires --enable-tpl-model=1"),
   .deltaq_strength = ARG_DEF(NULL, "deltaq-strength", 1,
                              "Deltaq strength for"
                              " --deltaq-mode=4 and --deltaq-mode=6 (%)"),

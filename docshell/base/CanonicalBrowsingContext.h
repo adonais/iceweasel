@@ -406,6 +406,15 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   bool IsReplaced() const { return mIsReplaced; }
 
+#ifdef ANDROID
+  uint32_t GetAndroidAppLinkLaunchType() const {
+    return mAndroidAppLinkLaunchType;
+  }
+  void SetAndroidAppLinkLaunchType(uint32_t aType) {
+    mAndroidAppLinkLaunchType = aType;
+  }
+#endif
+
   const JS::Heap<JS::Value>& PermanentKey() { return mPermanentKey; }
   void ClearPermanentKey() { mPermanentKey.setNull(); }
   void MaybeSetPermanentKey(Element* aEmbedder);
@@ -686,6 +695,12 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   uint32_t mDocumentPiPWindowCount = 0;
 
   bool mIsReplaced = false;
+
+#ifdef ANDROID
+  // App link launch type for the current load; 0 means not an app link.
+  // Stored here so it survives process switches and COOP-triggered BC swaps.
+  uint32_t mAndroidAppLinkLaunchType = 0;
+#endif
 
   // A Promise created when cloning documents for printing.
   RefPtr<GenericNonExclusivePromise> mClonePromise;

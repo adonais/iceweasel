@@ -25,7 +25,6 @@
 #include "nsXULAppAPI.h"
 #include "ProfilerCodeAddressService.h"
 
-#include <ostream>
 #include <type_traits>
 
 using namespace mozilla;
@@ -1109,8 +1108,7 @@ void ProfileBuffer::MaybeStreamExecutionTraceToJSON(
 
   for (const JS::ExecutionTrace::TracedJSContext& context : trace.contexts) {
     Maybe<StreamingParametersForThread> streamingParameters =
-        std::forward<GetStreamingParametersForThreadCallback>(
-            aGetStreamingParametersForThreadCallback)(context.id);
+        aGetStreamingParametersForThreadCallback(context.id);
 
     // Ignore samples that are for the wrong thread.
     if (!streamingParameters) {
@@ -1338,8 +1336,7 @@ ProfilerThreadId ProfileBuffer::DoStreamSamplesAndMarkersToJSON(
       e.Next();
 
       Maybe<StreamingParametersForThread> streamingParameters =
-          std::forward<GetStreamingParametersForThreadCallback>(
-              aGetStreamingParametersForThreadCallback)(threadId);
+          aGetStreamingParametersForThreadCallback(threadId);
 
       // Ignore samples that are for the wrong thread.
       if (!streamingParameters) {

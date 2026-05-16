@@ -38,7 +38,7 @@ add_task(async function () {
   );
 
   info("Adding a new property to the new rule");
-  await testAddingProperty(view, 1);
+  await addProperty(view, 1, "font-weight", "bold");
 
   info("Editing existing selector field");
   await testEditSelector(view, "span");
@@ -47,46 +47,20 @@ add_task(async function () {
   await selectNode("span", inspector);
 
   info("Check new rule and property exist in the modified element");
-  await checkModifiedElement(view, "span", 1);
+  checkModifiedElement(view, "span", 1);
 });
 
-function testAddingProperty(view, index) {
-  const ruleEditor = getRuleViewRuleEditorAt(view, index);
-  ruleEditor.addProperty("font-weight", "bold", "", true);
-  const textProps = ruleEditor.rule.textProps;
-  const lastRule = textProps[textProps.length - 1];
-  is(lastRule.name, "font-weight", "Last rule name is font-weight");
-  is(lastRule.value, "bold", "Last rule value is bold");
-}
-
-async function testEditSelector(view, name) {
+async function testEditSelector(view, newSelector) {
   const idRuleEditor = getRuleViewRuleEditorAt(view, 1);
 
-  info("Focusing an existing selector name in the rule-view");
-  const editor = await focusEditableField(view, idRuleEditor.selectorText);
-
-  is(
-    inplaceEditor(idRuleEditor.selectorText),
-    editor,
-    "The selector editor got focused"
-  );
-
-  info("Entering a new selector name: " + name);
-  editor.input.value = name;
-
-  info("Waiting for rule view to update");
-  const onRuleViewChanged = once(view, "ruleview-changed");
-
-  info("Entering the commit key");
-  EventUtils.synthesizeKey("KEY_Enter");
-  await onRuleViewChanged;
+  await editSelectorForRuleEditor(view, idRuleEditor, newSelector);
 
   assertDisplayedRulesCount(view, 3);
 }
 
-function checkModifiedElement(view, name, index) {
+function checkModifiedElement(view, selector, index) {
   assertDisplayedRulesCount(view, 2);
-  ok(getRuleViewRule(view, name), "Rule with " + name + " selector exists.");
+  ok(getRuleViewRule(view, selector), `Rule with ${selector} selector exists.`);
 
   const idRuleEditor = getRuleViewRuleEditorAt(view, index);
   const textProps = idRuleEditor.rule.textProps;

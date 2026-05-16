@@ -157,7 +157,7 @@ class BrowserParent final : public PBrowserParent,
    */
   already_AddRefed<nsIWidget> GetTextInputHandlingWidget() const;
 
-  nsIXULBrowserWindow* GetXULBrowserWindow();
+  already_AddRefed<nsIXULBrowserWindow> GetXULBrowserWindow();
 
   static uint32_t GetMaxTouchPoints(Element* aElement);
   uint32_t GetMaxTouchPoints() { return GetMaxTouchPoints(mFrameElement); }
@@ -413,8 +413,8 @@ class BrowserParent final : public PBrowserParent,
       const mozilla::WidgetTouchEvent& aEvent);
 
   mozilla::ipc::IPCResult RecvScrollRectIntoView(
-      const nsRect& aRect, const ScrollAxis& aVertical,
-      const ScrollAxis& aHorizontal, const ScrollFlags& aScrollFlags,
+      const nsRect& aRect, const AxisScrollParams& aVertical,
+      const AxisScrollParams& aHorizontal, const ScrollFlags& aScrollFlags,
       const int32_t& aAppUnitsPerDevPixel);
 
   already_AddRefed<PColorPickerParent> AllocPColorPickerParent(
@@ -587,10 +587,7 @@ class BrowserParent final : public PBrowserParent,
 
   bool SendSelectionEvent(mozilla::WidgetSelectionEvent& aEvent);
 
-  // TODO(bug 2028623): Mark this function and callers as MOZ_CAN_RUN_SCRIPT.
-  // Current callers hold a strong reference to `this` but MOZ_CAN_RUN_SCRIPT
-  // would enforce that via static analysis.
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool SendHandleTap(
+  MOZ_CAN_RUN_SCRIPT bool SendHandleTap(
       TapType aType, const LayoutDevicePoint& aPoint, Modifiers aModifiers,
       const ScrollableLayerGuid& aGuid, uint64_t aInputBlockId,
       const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics);
@@ -925,6 +922,7 @@ class BrowserParent final : public PBrowserParent,
   float mDPI;
   int32_t mRounding;
   CSSToLayoutDeviceScale mDefaultScale;
+  DesktopToLayoutDeviceScale mDesktopToDeviceScale;
   bool mUpdatedDimensions;
   nsSizeMode mSizeMode;
   LayoutDeviceIntPoint mClientOffset;
@@ -963,12 +961,12 @@ class BrowserParent final : public PBrowserParent,
   nsTArray<nsString> mVerifyDropLinks;
 
 #ifdef DEBUG
-  int32_t mActiveSupressDisplayportCount = 0;
+  int32_t mActiveSuppressDisplayportCount = 0;
 #endif
 
-  // When true, we've initiated normal shutdown and notified our managing
-  // PContent.
-  bool mMarkedDestroying : 1;
+  // When true, we're holding a KeepAlive on mBrowsingContext->Group() which
+  // must be cleared in ActorDestroy.
+  bool mHoldingGroupKeepAlive : 1;
   // When true, the BrowserParent is invalid and we should not send IPC
   // messages anymore.
   bool mIsDestroyed : 1;

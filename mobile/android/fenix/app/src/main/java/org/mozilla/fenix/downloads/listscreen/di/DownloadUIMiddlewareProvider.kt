@@ -23,6 +23,8 @@ import org.mozilla.fenix.downloads.listscreen.middleware.DownloadsServiceCommuni
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.utils.Settings.DeleteDownloadBehavior
 import org.mozilla.fenix.utils.getUndoDelay
 
 internal object DownloadUIMiddlewareProvider {
@@ -38,17 +40,23 @@ internal object DownloadUIMiddlewareProvider {
         provideUIMapperMiddleware(applicationContext, coroutineScope),
         provideShareMiddleware(applicationContext),
         provideTelemetryMiddleware(),
-        provideDeleteMiddleware(applicationContext.getUndoDelay(), applicationContext.components),
+        provideDeleteMiddleware(applicationContext.getUndoDelay(), applicationContext.components) {
+            applicationContext.settings().deleteDownloadBehavior
+        },
         provideDownloadsServiceCommunicationMiddleware(applicationContext),
         provideDownloadNavigationMiddleware(navController),
         provideRenameMiddleware(applicationContext, coroutineScope),
     )
 
-    private fun provideDeleteMiddleware(undoDelay: Long, components: Components) =
-        DownloadDeleteMiddleware(
-            undoDelay = undoDelay,
-            removeDownloadUseCase = components.useCases.downloadUseCases.removeDownload,
-        )
+    private fun provideDeleteMiddleware(
+        undoDelay: Long,
+        components: Components,
+        deleteBehaviorProvider: () -> DeleteDownloadBehavior,
+    ) = DownloadDeleteMiddleware(
+        undoDelay = undoDelay,
+        removeDownloadUseCase = components.useCases.downloadUseCases.removeDownload,
+        deleteBehaviorProvider = deleteBehaviorProvider,
+    )
 
     private fun provideShareMiddleware(applicationContext: Context) =
         DownloadUIShareMiddleware(applicationContext = applicationContext)
@@ -58,6 +66,7 @@ internal object DownloadUIMiddlewareProvider {
         coroutineScope: CoroutineScope,
     ) = DownloadUIMapperMiddleware(
         browserStore = applicationContext.components.core.store,
+        publicSuffixList = applicationContext.components.publicSuffixList,
         scope = coroutineScope,
         fileItemDescriptionProvider = DefaultFileItemDescriptionProvider(
             context = applicationContext,

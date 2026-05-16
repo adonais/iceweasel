@@ -44,6 +44,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://devtools/client/shared/inplace-editor-utils/autocomplete-anchor-function.mjs",
   getAutocompleteDataForAnchorSizeFunction:
     "resource://devtools/client/shared/inplace-editor-utils/autocomplete-anchor-size-function.mjs",
+  getAutocompleteDataForLinearGradientFunction:
+    "resource://devtools/client/shared/inplace-editor-utils/autocomplete-linear-gradient-function.mjs",
 });
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -1988,7 +1990,10 @@ class InplaceEditor extends EventEmitter {
     }
 
     if (functionName.includes("gradient")) {
-      return this.#getAutocompleteDataForGradientFunction();
+      return this.#getAutocompleteDataForGradientFunction(
+        functionName,
+        functionStackEntry
+      );
     }
 
     if (functionName === "color") {
@@ -2029,7 +2034,7 @@ class InplaceEditor extends EventEmitter {
   }
 
   /**
-   * Compute the autocomplete data for gradient functions.
+   * Compute the autocomplete data for the passed gradient function.
    *
    * @param {string} functionName: The gradient function we want the autocomplete items for
    * @param {object} functionStackEntry
@@ -2039,11 +2044,23 @@ class InplaceEditor extends EventEmitter {
    * @returns {object} Returns an object of the following shape:
    *            - {Array<string>} list: The list of autocomplete items
    */
-  #getAutocompleteDataForGradientFunction() {
-    // For gradient functions we want to display named colors and color functions,
-    // but only if the user didn't already entered a color token after the last comma.
-    const list = this.#getCSSValuesForPropertyName("color");
-    return { list };
+  #getAutocompleteDataForGradientFunction(functionName, functionStackEntry) {
+    const { tokens } = functionStackEntry;
+    if (
+      functionName === "linear-gradient" ||
+      // repeating-linear-gradient() takes the same values as linear-gradient
+      functionName === "repeating-linear-gradient"
+    ) {
+      return lazy.getAutocompleteDataForLinearGradientFunction({
+        functionTokens: tokens,
+        getCSSValuesForPropertyName:
+          this.#getCSSValuesForPropertyName.bind(this),
+      });
+    }
+
+    // For the other gradient function, provide the list of colors
+    // Eventually we should also properly autocomplete them
+    return { list: this.#getCSSValuesForPropertyName("color") };
   }
 
   /**

@@ -5,9 +5,7 @@ This document describes the types of data that Normandy collects.
 Uptake
 ------
 Normandy monitors the execution of recipes and reports to
-:ref:`telemetry` the amount of successful and failed runs. This data
-is reported using :ref:`telemetry/collection/uptake` under the
-``normandy`` namespace.
+:ref:`telemetry` the amount of successful and failed runs.
 
 Runner Status
 ^^^^^^^^^^^^^
@@ -122,7 +120,7 @@ reported under the key ``normandy/recipe/<recipe id>``:
    Normandy failed to verify the signature of the recipe.
 
 
-Additionally, Normandy reports a :ref:`keyed scalar <Scalars>` to measure recipe
+Additionally, Normandy reports a keyed scalar to measure recipe
 freshness. This scalar is called ``normandy.recipe_freshness``, and it
 corresponds to the ``last_modified`` date of each recipe (using its ID
 as the key), reported as seconds since 1970 in UTC.

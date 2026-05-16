@@ -7,7 +7,6 @@
 #include "MediaPipeline.h"
 
 #include <inttypes.h>
-#include <math.h>
 
 #include <sstream>
 #include <utility>

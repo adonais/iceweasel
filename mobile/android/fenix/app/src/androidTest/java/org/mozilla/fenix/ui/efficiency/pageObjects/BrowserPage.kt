@@ -11,6 +11,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SearchBarSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 
@@ -45,6 +46,13 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
                 NavigationStep.EnterText(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE),
                 NavigationStep.PressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE),
             ),
+        )
+
+        // Use UIAutomator selector to avoid Compose sync hanging when GeckoView is active.
+        NavigationRegistry.register(
+            from = pageName,
+            to = "MainMenuPage",
+            steps = listOf(NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR)),
         )
     }
 

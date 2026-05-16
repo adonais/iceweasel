@@ -1,0 +1,18 @@
+{
+  "label": "news.yahoo.co.jp",
+  "bugs": {
+    "1724868": {
+      "issue": "broken-videos",
+      "matches": ["*://news.yahoo.co.jp/articles/*", "*://s.yimg.jp/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["linux", "android"],
+      "content_scripts": {
+        "all_frames": true,
+        "js": ["bug1724868-news.yahoo.co.jp-ua-override.js"]
+      }
+    }
+  ]
+}

@@ -100,6 +100,14 @@ gfx::ColorRange GPUVideoTextureHost::GetColorRange() const {
   return mWrappedTextureHost->GetColorRange();
 }
 
+gfx::TransferFunction GPUVideoTextureHost::GetTransferFunction() const {
+  MOZ_ASSERT(mWrappedTextureHost, "Image isn't valid yet");
+  if (!mWrappedTextureHost) {
+    return TextureHost::GetTransferFunction();
+  }
+  return mWrappedTextureHost->GetTransferFunction();
+}
+
 gfx::IntSize GPUVideoTextureHost::GetSize() const {
   MOZ_ASSERT(mWrappedTextureHost, "Image isn't valid yet");
   if (!mWrappedTextureHost) {

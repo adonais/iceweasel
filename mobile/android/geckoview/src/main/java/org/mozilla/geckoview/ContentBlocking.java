@@ -416,6 +416,19 @@ public class ContentBlocking {
         getSettings().setAllowListConvenienceTrackingProtection(enabled);
         return this;
       }
+
+      /**
+       * Set whether the content blocking database is enabled. When enabled, Gecko persists tracking
+       * protection blocking events to a database that can be queried for aggregate statistics
+       * (e.g., total trackers blocked, events by date range).
+       *
+       * @param enabled A boolean indicating whether to enable the content blocking database.
+       * @return The Builder instance.
+       */
+      public @NonNull Builder contentBlockingDatabase(final boolean enabled) {
+        getSettings().setContentBlockingDatabaseStatus(enabled);
+        return this;
+      }
     }
 
     /* package */ final Pref<String> mAt =
@@ -448,6 +461,20 @@ public class ContentBlocking {
         new Pref<Boolean>("browser.safebrowsing.phishing.enabled", true);
     /* package */ final Pref<Boolean> mSbHarmfulAddon =
         new Pref<Boolean>("privacy.trackingprotection.harmfuladdon.enabled", true);
+    /* package */ final Pref<Boolean> mSbGlobalCacheEnabled =
+        new Pref<Boolean>("browser.safebrowsing.globalCache.enabled", false);
+    /* package */ final Pref<Boolean> mSbRealTimeEnabled =
+        new Pref<Boolean>("browser.safebrowsing.realTime.enabled", false);
+    /* package */ final Pref<Boolean> mSbRealTimeSimulationEnabled =
+        new Pref<Boolean>("browser.safebrowsing.realTime.simulation.enabled", false);
+    /* package */ final Pref<Integer> mSbRealTimeSimulationHitProbability =
+        new Pref<Integer>("browser.safebrowsing.realTime.simulation.hitProbability", 5);
+    /* package */ final Pref<Integer> mSbRealTimeSimulationCacheTTLSec =
+        new Pref<Integer>("browser.safebrowsing.realTime.simulation.cacheTTLSec", 300);
+    /* package */ final Pref<Boolean> mSbRealTimeSimulationNegativeCacheEnabled =
+        new Pref<Boolean>("browser.safebrowsing.realTime.simulation.negativeCacheEnabled", false);
+    /* package */ final Pref<Integer> mSbRealTimeSimulationNegativeCacheTTLSec =
+        new Pref<Integer>("browser.safebrowsing.realTime.simulation.negativeCacheTTLSec", 300);
     /* package */ final Pref<Integer> mCookieBehavior =
         new Pref<Integer>(
             "network.cookie.cookieBehavior", CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS);
@@ -465,6 +492,9 @@ public class ContentBlocking {
 
     /* package */ final Pref<String> mEtpCategory =
         new Pref<String>("browser.contentblocking.category", "standard");
+
+    /* package */ final Pref<Boolean> mContentBlockingDatabase =
+        new Pref<Boolean>("browser.contentblocking.database.enabled", false);
 
     /* package */ final Pref<Boolean> mAllowListBaselineTrackingProtection =
         new Pref<Boolean>("privacy.trackingprotection.allow_list.baseline.enabled", true);
@@ -647,6 +677,159 @@ public class ContentBlocking {
       }
 
       provider.mEnabled.commit(enabled);
+      return this;
+    }
+
+    /**
+     * Get whether Safe Browsing Global Cache is enabled.
+     *
+     * @return Whether the Global Cache is enabled.
+     */
+    public boolean getSafeBrowsingGlobalCacheEnabled() {
+      return mSbGlobalCacheEnabled.get();
+    }
+
+    /**
+     * Set whether Safe Browsing Global Cache is enabled.
+     *
+     * @param enabled Whether to enable the Global Cache.
+     * @return This {@link Settings} instance.
+     */
+    public @NonNull Settings setSafeBrowsingGlobalCacheEnabled(final boolean enabled) {
+      mSbGlobalCacheEnabled.commit(enabled);
+      return this;
+    }
+
+    /**
+     * Get whether Safe Browsing Real-Time lookup is enabled.
+     *
+     * @return Whether Real-Time lookup is enabled.
+     */
+    public boolean getSafeBrowsingRealTimeEnabled() {
+      return mSbRealTimeEnabled.get();
+    }
+
+    /**
+     * Set whether Safe Browsing Real-Time lookup is enabled.
+     *
+     * @param enabled Whether to enable Real-Time lookup.
+     * @return This {@link Settings} instance.
+     */
+    public @NonNull Settings setSafeBrowsingRealTimeEnabled(final boolean enabled) {
+      mSbRealTimeEnabled.commit(enabled);
+      return this;
+    }
+
+    /**
+     * Get whether Safe Browsing Real-Time simulation is enabled.
+     *
+     * @return Whether Real-Time simulation is enabled.
+     */
+    @ExperimentalGeckoViewApi
+    public boolean getSafeBrowsingRealTimeSimulationEnabled() {
+      return mSbRealTimeSimulationEnabled.get();
+    }
+
+    /**
+     * Set whether Safe Browsing Real-Time simulation is enabled.
+     *
+     * @param enabled Whether to enable Real-Time simulation.
+     * @return This {@link Settings} instance.
+     */
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationEnabled(final boolean enabled) {
+      mSbRealTimeSimulationEnabled.commit(enabled);
+      return this;
+    }
+
+    /**
+     * Get the hit probability for Safe Browsing Real-Time simulation.
+     *
+     * @return The hit probability.
+     */
+    @ExperimentalGeckoViewApi
+    public int getSafeBrowsingRealTimeSimulationHitProbability() {
+      return mSbRealTimeSimulationHitProbability.get();
+    }
+
+    /**
+     * Set the hit probability for Safe Browsing Real-Time simulation.
+     *
+     * @param hitProbability The hit probability.
+     * @return This {@link Settings} instance.
+     */
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationHitProbability(
+        final int hitProbability) {
+      mSbRealTimeSimulationHitProbability.commit(hitProbability);
+      return this;
+    }
+
+    /**
+     * Get the cache TTL in seconds for Safe Browsing Real-Time simulation.
+     *
+     * @return The cache TTL in seconds.
+     */
+    @ExperimentalGeckoViewApi
+    public int getSafeBrowsingRealTimeSimulationCacheTTLSec() {
+      return mSbRealTimeSimulationCacheTTLSec.get();
+    }
+
+    /**
+     * Set the cache TTL in seconds for Safe Browsing Real-Time simulation.
+     *
+     * @param cacheTTLSec The cache TTL in seconds.
+     * @return This {@link Settings} instance.
+     */
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationCacheTTLSec(final int cacheTTLSec) {
+      mSbRealTimeSimulationCacheTTLSec.commit(cacheTTLSec);
+      return this;
+    }
+
+    /**
+     * Get whether the negative cache for Safe Browsing Real-Time simulation is enabled.
+     *
+     * @return Whether the negative cache is enabled.
+     */
+    @ExperimentalGeckoViewApi
+    public boolean getSafeBrowsingRealTimeSimulationNegativeCacheEnabled() {
+      return mSbRealTimeSimulationNegativeCacheEnabled.get();
+    }
+
+    /**
+     * Set whether the negative cache for Safe Browsing Real-Time simulation is enabled.
+     *
+     * @param enabled Whether to enable the negative cache.
+     * @return This {@link Settings} instance.
+     */
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationNegativeCacheEnabled(
+        final boolean enabled) {
+      mSbRealTimeSimulationNegativeCacheEnabled.commit(enabled);
+      return this;
+    }
+
+    /**
+     * Get the negative cache TTL in seconds for Safe Browsing Real-Time simulation.
+     *
+     * @return The negative cache TTL in seconds.
+     */
+    @ExperimentalGeckoViewApi
+    public int getSafeBrowsingRealTimeSimulationNegativeCacheTTLSec() {
+      return mSbRealTimeSimulationNegativeCacheTTLSec.get();
+    }
+
+    /**
+     * Set the negative cache TTL in seconds for Safe Browsing Real-Time simulation.
+     *
+     * @param negativeCacheTTLSec The negative cache TTL in seconds.
+     * @return This {@link Settings} instance.
+     */
+    @ExperimentalGeckoViewApi
+    public @NonNull Settings setSafeBrowsingRealTimeSimulationNegativeCacheTTLSec(
+        final int negativeCacheTTLSec) {
+      mSbRealTimeSimulationNegativeCacheTTLSec.commit(negativeCacheTTLSec);
       return this;
     }
 
@@ -1207,6 +1390,27 @@ public class ContentBlocking {
      */
     public @NonNull Settings setAllowListConvenienceTrackingProtection(final boolean enabled) {
       mAllowListConvenienceTrackingProtection.commit(enabled);
+      return this;
+    }
+
+    /**
+     * Get whether the content blocking database is enabled.
+     *
+     * @return A boolean indicating whether the content blocking database is enabled.
+     */
+    public boolean getContentBlockingDatabaseStatus() {
+      return mContentBlockingDatabase.get();
+    }
+
+    /**
+     * Enable or disable the content blocking database. When enabled, Gecko persists tracking
+     * protection blocking events to a database that can be queried for aggregate statistics.
+     *
+     * @param enabled A boolean indicating whether to enable the content blocking database.
+     * @return This Settings instance.
+     */
+    public @NonNull Settings setContentBlockingDatabaseStatus(final boolean enabled) {
+      mContentBlockingDatabase.commit(enabled);
       return this;
     }
   }

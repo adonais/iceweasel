@@ -171,8 +171,6 @@ class RendererOGL {
   wr::WindowId mWindowId;
   TimeStamp mFrameStartTime;
 
-  bool mDisableNativeCompositor;
-
 #ifdef MOZ_WIDGET_ANDROID
   struct ScreenPixelsRequest {
     gfx::IntRect mSourceRect;

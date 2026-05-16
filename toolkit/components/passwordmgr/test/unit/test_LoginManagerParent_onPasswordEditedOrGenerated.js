@@ -501,7 +501,7 @@ add_task(async function test_addUsernameBeforeAutoSaveEdit() {
   info("Add a username to the auto-saved login in storage");
   let loginWithUsername = login.clone();
   loginWithUsername.username = "added_username";
-  LoginManagerPrompter._updateLogin(login, loginWithUsername);
+  await LoginManagerPrompter._updateLogin(login, loginWithUsername);
 
   info("Edit the password");
   const newPassword = generatedPassword + "🔥";

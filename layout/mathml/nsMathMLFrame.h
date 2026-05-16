@@ -110,14 +110,6 @@ class nsMathMLFrame : public nsIMathMLFrame {
   static void GetEmbellishDataFrom(nsIFrame* aFrame,
                                    nsEmbellishData& aEmbellishData);
 
-  // helper to get the presentation data of a frame. If aClimbTree is
-  // set to true and the frame happens to be surrounded by non-MathML
-  // helper frames needed for its support, we walk up the frame hierarchy
-  // until we reach a MathML ancestor or the <root> math element.
-  static void GetPresentationDataFrom(nsIFrame* aFrame,
-                                      nsPresentationData& aPresentationData,
-                                      bool aClimbTree = true);
-
   // utilities to parse and retrieve numeric values in CSS units
   // All values are stored in twips.
   // @pre  aLengthValue is the default length value of the attribute.

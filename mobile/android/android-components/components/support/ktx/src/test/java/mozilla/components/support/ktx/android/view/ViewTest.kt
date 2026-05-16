@@ -9,7 +9,6 @@ import android.content.Context
 import android.os.Looper.getMainLooper
 import android.view.View
 import android.view.WindowManager
-import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
@@ -20,7 +19,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.base.android.Padding
 import mozilla.components.support.test.any
-import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -52,19 +50,6 @@ class ViewTest {
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
 
         assertTrue(view.hasFocus())
-    }
-
-    @Test
-    fun `hideKeyboard should hide soft keyboard`() {
-        val view = mock<View>()
-        val context = mock<Context>()
-        val imm = mock<InputMethodManager>()
-        `when`(view.context).thenReturn(context)
-        `when`(context.getSystemService(InputMethodManager::class.java)).thenReturn(imm)
-
-        view.hideKeyboard()
-
-        verify(imm).hideSoftInputFromWindow(view.windowToken, 0)
     }
 
     @Test

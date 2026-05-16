@@ -18,7 +18,6 @@ from datetime import datetime, timedelta
 here = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(1, os.path.dirname(here))
 
-import threading
 
 from mozfile import load_source
 from mozharness.base.errors import BaseErrorList
@@ -35,6 +34,7 @@ from mozharness.mozilla.testing.codecoverage import (
 from mozharness.mozilla.testing.errors import HarnessErrorList
 from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_options
 from mozharness.mozilla.testing.unittest import DesktopUnittestOutputParser
+from mozharness.mozilla.testing.video_test_recorder import VideoTestRecorder
 
 SUITE_CATEGORIES = [
     "gtest",
@@ -747,6 +747,9 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
             if c["restartAfterFailure"]:
                 base_cmd.append("--restart-after-failure")
 
+            if c.get("restartBetweenTests"):
+                base_cmd.append("--restart-between-tests")
+
             # Ignore chunking if we have user specified test paths
             if not (self.verify_enabled or self.per_test_coverage):
                 test_paths = self._get_mozharness_test_paths(suite_category, suite)
@@ -1314,61 +1317,6 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
         executed_too_many_tests = False
         xpcshell_selftests = 0
 
-        def do_gnome_video_recording(suite_name, upload_dir, ev):
-            import os
-
-            import dbus
-
-            target_file = os.path.join(
-                upload_dir,
-                f"video_{suite_name}.webm",
-            )
-
-            self.info(f"Recording suite {suite_name} to {target_file}")
-
-            session_bus = dbus.SessionBus()
-            session_bus.call_blocking(
-                "org.gnome.Shell.Screencast",
-                "/org/gnome/Shell/Screencast",
-                "org.gnome.Shell.Screencast",
-                "Screencast",
-                signature="sa{sv}",
-                args=[
-                    target_file,
-                    {"draw-cursor": True, "framerate": 35},
-                ],
-            )
-
-            ev.wait()
-
-            session_bus.call_blocking(
-                "org.gnome.Shell.Screencast",
-                "/org/gnome/Shell/Screencast",
-                "org.gnome.Shell.Screencast",
-                "StopScreencast",
-                signature="",
-                args=[],
-            )
-
-        def do_macos_video_recording(suite_name, upload_dir, ev):
-            import os
-            import subprocess
-
-            target_file = os.path.join(
-                upload_dir,
-                f"video_{suite_name}.mov",
-            )
-            self.info(f"Recording suite {suite_name} to {target_file}")
-
-            process = subprocess.Popen(
-                ["/usr/sbin/screencapture", "-v", "-k", target_file],
-                stdin=subprocess.PIPE,
-            )
-            ev.wait()
-            process.stdin.write(b"p")
-            process.stdin.flush()
-            process.wait()
-
         if suites:
             self.info("#### Running %s suites" % suite_category)
             for suite in suites:
@@ -1523,41 +1471,17 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
 
                     final_env = copy.copy(env)
 
-                    finish_video = threading.Event()
-                    video_recording_thread = None
-                    if os.getenv("MOZ_RECORD_TEST"):
-                        video_recording_target = None
-                        if sys.platform == "linux":
-                            video_recording_target = do_gnome_video_recording
-                        elif sys.platform == "darwin":
-                            video_recording_target = do_macos_video_recording
-
-                        if video_recording_target:
-                            video_recording_thread = threading.Thread(
-                                target=video_recording_target,
-                                args=(
-                                    suite,
-                                    env["MOZ_UPLOAD_DIR"],
-                                    finish_video,
-                                ),
-                            )
-                            self.info(f"Starting recording thread {suite}")
-                            video_recording_thread.start()
-                        else:
-                            self.warning(
-                                "Screen recording not implemented for this platform"
-                            )
-
                     if self.per_test_coverage:
                         self.set_coverage_env(final_env)
 
-                    return_code = self.run_command(
-                        final_cmd,
-                        cwd=dirs["abs_work_dir"],
-                        output_timeout=cmd_timeout,
-                        output_parser=parser,
-                        env=final_env,
-                    )
+                    with VideoTestRecorder(suite, self):
+                        return_code = self.run_command(
+                            final_cmd,
+                            cwd=dirs["abs_work_dir"],
+                            output_timeout=cmd_timeout,
+                            output_parser=parser,
+                            env=final_env,
+                        )
 
                     if self.per_test_coverage:
                         self.add_per_test_coverage_report(
@@ -1573,12 +1497,6 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     # 2) if num_errors is 0 then we look in the subclassed 'parser'
                     #    findings for harness/suite errors <- DesktopUnittestOutputParser
                     # 3) checking to see if the return code is in success_codes
-
-                    if video_recording_thread:
-                        self.info(f"Stopping recording thread {suite}")
-                        finish_video.set()
-                        video_recording_thread.join()
-                        self.info(f"Stopped recording thread {suite}")
 
                     success_codes = None
                     tbpl_status, log_level, summary = parser.evaluate_parser(

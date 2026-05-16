@@ -40,7 +40,7 @@ describe("ActivityStream", () => {
       DEFAULT_SITES,
       AboutPreferences,
       DefaultPrefs,
-      NewTabActorRegistry: { init: () => {} },
+      NewTabActorRegistry: { init: () => {}, uninit: () => {} },
       NewTabInit,
       SectionsFeed,
       PlacesFeed,
@@ -363,6 +363,51 @@ describe("ActivityStream", () => {
       sandbox.stub(global.Services.locale, "appLocaleAsBCP47").get(() => "fr");
       as._updateDynamicPrefs();
       assert.isFalse(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
+    });
+  });
+  describe("getWeatherWidgetSize", () => {
+    let getBoolPrefStub;
+    let getStringPrefStub;
+    const PREF = "widgets.weather.size";
+    const FORECAST_PREF =
+      "browser.newtabpage.activity-stream.widgets.system.weatherForecast.enabled";
+    const MAXIMIZED_PREF =
+      "browser.newtabpage.activity-stream.widgets.maximized";
+    const DISPLAY_PREF = "browser.newtabpage.activity-stream.weather.display";
+
+    beforeEach(() => {
+      getBoolPrefStub = sandbox.stub(global.Services.prefs, "getBoolPref");
+      getBoolPrefStub.withArgs(FORECAST_PREF, false).returns(false);
+      getBoolPrefStub.withArgs(MAXIMIZED_PREF, true).returns(true);
+      getStringPrefStub = sandbox
+        .stub(global.Services.prefs, "getStringPref")
+        .callsFake((_pref, defaultVal) => defaultVal);
+      getStringPrefStub.withArgs(DISPLAY_PREF, "detailed").returns("detailed");
+    });
+
+    it("should return small when forecast system pref is disabled", () => {
+      as._updateDynamicPrefs();
+      assert.equal(PREFS_CONFIG.get(PREF).value, "small");
+    });
+
+    it("should return small when forecast is enabled but display is not detailed", () => {
+      getBoolPrefStub.withArgs(FORECAST_PREF, false).returns(true);
+      getStringPrefStub.withArgs(DISPLAY_PREF, "detailed").returns("simple");
+      as._updateDynamicPrefs();
+      assert.equal(PREFS_CONFIG.get(PREF).value, "small");
+    });
+
+    it("should return large when forecast is enabled and widgets are maximized", () => {
+      getBoolPrefStub.withArgs(FORECAST_PREF, false).returns(true);
+      as._updateDynamicPrefs();
+      assert.equal(PREFS_CONFIG.get(PREF).value, "large");
+    });
+
+    it("should return medium when forecast is enabled but widgets are not maximized", () => {
+      getBoolPrefStub.withArgs(FORECAST_PREF, false).returns(true);
+      getBoolPrefStub.withArgs(MAXIMIZED_PREF, true).returns(false);
+      as._updateDynamicPrefs();
+      assert.equal(PREFS_CONFIG.get(PREF).value, "medium");
     });
   });
   describe("showTopicsSelection", () => {

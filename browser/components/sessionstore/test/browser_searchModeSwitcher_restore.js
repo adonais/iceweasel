@@ -82,16 +82,12 @@ add_task(async function () {
   // Search mode switcher icon update will trigger once.
   await BrowserTestUtils.waitForCondition(() => updateCalled == 1);
 
-  let searchModeSwitcherButton = win.gURLBar.querySelector(
-    ".searchmode-switcher-icon"
-  );
-  let regex = /url\("([^"]+)"\)/;
-  let searchModeSwitcherIconUrl = win
-    .getComputedStyle(searchModeSwitcherButton)
-    .listStyleImage.match(regex);
+  let searchModeSwitcherIconUrl = win.gURLBar
+    .querySelector(".searchmode-switcher")
+    .getAttribute("iconsrc");
 
   Assert.equal(
-    searchModeSwitcherIconUrl[1],
+    searchModeSwitcherIconUrl,
     BOOKMARKS_ICON_URL,
     "Search mode switcher should display bookmarks icon."
   );

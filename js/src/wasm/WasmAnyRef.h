@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2023 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -377,6 +375,7 @@ class WrappedPtrOperations<wasm::AnyRef, Wrapper> {
   bool isI31() const { return value().isI31(); }
   bool isJSObject() const { return value().isJSObject(); }
   bool isJSString() const { return value().isJSString(); }
+  JS::Value toJSValue() const { return value().toJSValue(); }
   JSObject& toJSObject() const { return value().toJSObject(); }
   JSString* toJSString() const { return value().toJSString(); }
 };

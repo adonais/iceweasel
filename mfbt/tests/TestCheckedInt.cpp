@@ -165,14 +165,20 @@ void test() {
   VERIFY_IS_VALID(max % max);
   if (isTSigned) {
     const CheckedInt<T> minusOne = zero - one;
-    VERIFY_IS_INVALID(minusOne % minusOne);
-    VERIFY_IS_INVALID(zero % minusOne);
-    VERIFY_IS_INVALID(one % minusOne);
-    VERIFY_IS_INVALID(minusOne % one);
 
-    VERIFY_IS_INVALID(min % min);
-    VERIFY_IS_INVALID(zero % min);
-    VERIFY_IS_INVALID(min % one);
+    // Check that min % -1 is invalid
+    VERIFY_IS_INVALID(min % minusOne);
+
+    // Check that the test for mod by -1 isn't banning other numerators than min
+    VERIFY_IS_VALID(minusOne % minusOne);
+    VERIFY_IS_VALID(zero % minusOne);
+    VERIFY_IS_VALID(one % minusOne);
+    VERIFY_IS_VALID(minusOne % one);
+    VERIFY_IS_VALID(max % minusOne);
+
+    VERIFY_IS_VALID(min % min);
+    VERIFY_IS_VALID(zero % min);
+    VERIFY_IS_VALID(min % one);
   }
 
   /* Unary operator- checks */
@@ -510,7 +516,6 @@ void test() {
   typedef long long longLong;
   typedef unsigned long long unsignedLongLong;
 
-  VERIFY_CONSTRUCTION_FROM_INTEGER_TYPE(char)
   VERIFY_CONSTRUCTION_FROM_INTEGER_TYPE(signedChar)
   VERIFY_CONSTRUCTION_FROM_INTEGER_TYPE(unsignedChar)
   VERIFY_CONSTRUCTION_FROM_INTEGER_TYPE(short)
@@ -563,7 +568,6 @@ int main() {
   test<int64_t>();
   test<uint64_t>();
 
-  test<char>();
   test<signed char>();
   test<unsigned char>();
   test<short>();

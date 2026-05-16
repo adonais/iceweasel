@@ -472,3 +472,227 @@ add_task(async function test_send_mobile_submenu_text() {
     }
   });
 });
+
+add_task(async function test_send_mobile_fxa_disabled_submenu_text() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["identity.fxaccounts.enabled", false]],
+  });
+
+  const sandbox = setupMocks({
+    state: UIState.STATUS_NOT_CONFIGURED,
+    fxaDevices: [
+      {
+        id: 1,
+        name: "This Device",
+        isCurrentDevice: true,
+        type: "desktop",
+        tabs: [],
+      },
+    ],
+  });
+  sandbox.stub(gSync, "getSendTabTargets").callsFake(() => []);
+
+  await withFirefoxView({}, async () => {
+    // TEST_URL2 is our only tab, left over from previous test
+    Assert.deepEqual(
+      getVisibleTabURLs(),
+      [TEST_URL2],
+      `We initially have a single ${TEST_URL2} tab`
+    );
+
+    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+    let [cards, rows] = await moreMenuSetup([TEST_URL3]);
+
+    let firstTab = rows[0];
+    let panelList = await openContextMenuForItem(firstTab, cards[0]);
+
+    let sendTabPanelItem = panelList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile]"
+    );
+
+    ok(
+      !sendTabPanelItem,
+      "Send tabs to mobile submenu panel item does not exist"
+    );
+
+    sandbox.restore();
+    TabsSetupFlowManager.resetInternalState();
+    while (gBrowser.tabs.length > 1) {
+      BrowserTestUtils.removeTab(gBrowser.tabs[0]);
+    }
+  });
+});
+
+add_task(async function test_send_mobile_signed_out_submenu_text() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["identity.fxaccounts.enabled", true]],
+  });
+
+  const sandbox = setupMocks({
+    state: UIState.STATUS_NOT_CONFIGURED,
+    fxaDevices: [
+      {
+        id: 1,
+        name: "This Device",
+        isCurrentDevice: true,
+        type: "desktop",
+        tabs: [],
+      },
+    ],
+  });
+  sandbox.stub(gSync, "getSendTabTargets").callsFake(() => []);
+
+  await withFirefoxView({}, async () => {
+    // TEST_URL3 is our only tab, left over from previous test
+    Assert.deepEqual(
+      getVisibleTabURLs(),
+      [TEST_URL3],
+      `We initially have a single ${TEST_URL3} tab`
+    );
+
+    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+    let [cards, rows] = await moreMenuSetup([TEST_URL2]);
+
+    let firstTab = rows[0];
+    let panelList = await openContextMenuForItem(firstTab, cards[0]);
+
+    let sendTabPanelItem = panelList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile]"
+    );
+
+    ok(sendTabPanelItem, "Send tabs to mobile submenu panel item exists");
+
+    sandbox.restore();
+    TabsSetupFlowManager.resetInternalState();
+    while (gBrowser.tabs.length > 1) {
+      BrowserTestUtils.removeTab(gBrowser.tabs[0]);
+    }
+  });
+});
+
+add_task(
+  async function test_send_mobile_signed_in_sync_disabled_submenu_text() {
+    const sandbox = setupMocks({
+      state: UIState.STATUS_SIGNED_IN,
+      fxaDevices: [
+        {
+          id: 1,
+          name: "This Device",
+          isCurrentDevice: true,
+          type: "desktop",
+          tabs: [],
+        },
+      ],
+    });
+    sandbox.stub(gSync, "getSendTabTargets").callsFake(() => []);
+    sandbox.stub(gSync, "isSignedInWithSyncDisabled").get(() => true);
+
+    await withFirefoxView({}, async () => {
+      // TEST_URL2 is our only tab, left over from previous test
+      Assert.deepEqual(
+        getVisibleTabURLs(),
+        [TEST_URL2],
+        `We initially have a single ${TEST_URL2} tab`
+      );
+
+      Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+      let [cards, rows] = await moreMenuSetup([TEST_URL3]);
+
+      let firstTab = rows[0];
+      let panelList = await openContextMenuForItem(firstTab, cards[0]);
+
+      let sendTabPanelItem = panelList.querySelector(
+        "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile]"
+      );
+
+      ok(sendTabPanelItem, "Send tabs to mobile panel item exists");
+
+      let sendTabSubmenuList = sendTabPanelItem.shadowRoot.querySelector(
+        "panel-list[id=send-tab-menu1]"
+      );
+      ok(sendTabSubmenuList, "Send tabs to mobile submenu panel list exists");
+
+      let enableSyncPanelItem = sendTabSubmenuList.querySelector(
+        "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-enable-sync2]"
+      );
+
+      ok(
+        enableSyncPanelItem,
+        "Send tabs to mobile enable sync panel item exists"
+      );
+
+      sandbox.restore();
+      TabsSetupFlowManager.resetInternalState();
+      while (gBrowser.tabs.length > 1) {
+        BrowserTestUtils.removeTab(gBrowser.tabs[0]);
+      }
+    });
+  }
+);
+
+add_task(async function test_send_mobile_single_device_submenu_text() {
+  const sandbox = setupMocks({
+    state: UIState.STATUS_SIGNED_IN,
+    fxaDevices: [
+      {
+        id: 1,
+        name: "This Device",
+        isCurrentDevice: true,
+        type: "desktop",
+        tabs: [],
+      },
+    ],
+  });
+  sandbox.stub(gSync, "getSendTabTargets").callsFake(() => []);
+  sandbox.stub(gSync, "hasNoSendTabTargets").get(() => true);
+
+  await withFirefoxView({}, async () => {
+    // TEST_URL3 is our only tab, left over from previous test
+    Assert.deepEqual(
+      getVisibleTabURLs(),
+      [TEST_URL3],
+      `We initially have a single ${TEST_URL3} tab`
+    );
+
+    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+    let [cards, rows] = await moreMenuSetup([TEST_URL2]);
+
+    let firstTab = rows[0];
+    let panelList = await openContextMenuForItem(firstTab, cards[0]);
+
+    let sendTabPanelItem = panelList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile]"
+    );
+
+    ok(sendTabPanelItem, "Send tabs to mobile panel item exists");
+
+    let sendTabSubmenuList = sendTabPanelItem.shadowRoot.querySelector(
+      "panel-list[id=send-tab-menu2]"
+    );
+    ok(sendTabSubmenuList, "Send tabs to mobile submenu panel list exists");
+
+    let connectPhonePanelItem = sendTabSubmenuList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-connect-phone2]"
+    );
+
+    ok(
+      connectPhonePanelItem,
+      "Send tabs to mobile connect phone panel item exists"
+    );
+
+    let deviceMissingPanelItem = sendTabSubmenuList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-device-missing2]"
+    );
+
+    ok(
+      deviceMissingPanelItem,
+      "Send tabs to mobile device missing panel item exists"
+    );
+
+    sandbox.restore();
+    TabsSetupFlowManager.resetInternalState();
+    while (gBrowser.tabs.length > 1) {
+      BrowserTestUtils.removeTab(gBrowser.tabs[0]);
+    }
+  });
+});

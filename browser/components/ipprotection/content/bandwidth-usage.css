@@ -58,7 +58,7 @@
 #progress-container {
   position: relative;
 
-  & > #min-progress {
+  #min-progress {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: var(--progress-height);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -70,6 +70,26 @@
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/use-size-tokens */
     top: var(--progress-border-width);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/use-size-tokens */
-    left: var(--progress-border-width);
+    inset-inline-start: var(--progress-border-width);
+  }
+
+  @media (forced-colors) {
+    #progress-bar {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      background-color: SelectedItemText;
+      border-color: var(--border-color);
+
+      &::-moz-progress-bar {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        background-color: SelectedItem;
+        border-color: var(--border-color);
+        box-shadow: none;
+      }
+    }
+
+    #min-progress {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      background-color: SelectedItem;
+    }
   }
 }

@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -38,13 +36,9 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
 
   void AddBounceHost(const nsACString& aHost);
 
-  void AddStorageAccessHost(const nsACString& aHost);
-
   void AddUserActivationHost(const nsACString& aHost);
 
   const nsTHashSet<nsCStringHashKey>& GetBounceHosts() const;
-
-  const nsTHashSet<nsCStringHashKey>& GetStorageAccessHosts() const;
 
   const nsTHashSet<nsCStringHashKey>& GetUserActivationHosts() const;
 
@@ -61,10 +55,6 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
   // A set of sites' hosts. All server-side and client-side redirects hit during
   // this extended navigation.
   nsTHashSet<nsCStringHashKey> mBounceHosts;
-
-  // A set of sites' hosts. All sites which accessed storage during this
-  // extended navigation.
-  nsTHashSet<nsCStringHashKey> mStorageAccessHosts;
 
   // A set of sites' hosts. All sites which received user activation during
   // this extended navigation.
@@ -90,9 +80,9 @@ struct fmt::formatter<mozilla::BounceTrackingRecord>
     return fmt::format_to(
         out,
         "{{mInitialHost:{}, mFinalHost:{}, mBounceHosts:[{}], "
-        "mStorageAccessHosts:[{}], mUserActivationHosts:[{}]}}",
+        "mUserActivationHosts:[{}]}}",
         aRec.mInitialHost, aRec.mFinalHost, aRec.mBounceHosts,
-        aRec.mStorageAccessHosts, aRec.mUserActivationHosts);
+        aRec.mUserActivationHosts);
   }
 };
 

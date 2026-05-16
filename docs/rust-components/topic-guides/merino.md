@@ -1,27 +1,66 @@
-# Curated Recommendations Client
+---
+myst:
+  enable_extensions: ["colon_fence"]
+---
 
-Fetches personalized content recommendations from the Merino Service. [Merino Curated Recommendations API Docs](https://merino.services.mozilla.com/docs#/default/curated_content_api_v1_curated_recommendations_post)
+# Merino
 
-The API for the `CuratedRecommendationsClient` can be found in the Mozilla Rust components [Kotlin API Reference](https://mozilla.github.io/application-services/kotlin/kotlin-components-docs/mozilla.appservices.merino/index.html) and [Swift API Reference](https://mozilla.github.io/application-services/swift/Classes/CuratedRecommendationsClient.html).
+The Merino component provides two clients for interacting with the [Merino service](https://merino.services.mozilla.com/docs):
 
+- **`CuratedRecommendationsClient`** — Fetches personalized content recommendations, powering features like Firefox's New Tab page.
+- **`SuggestClient`** — Fetches search suggestions, powering features like Firefox's address bar.
 
 ## Prerequisites
 
 Ensure that {doc}`viaduct` is initialized during application startup, as it is used for making network requests.
 
+The `SuggestClient` additionally requires the OHTTP channel to be configured before making requests:
+
+:::{tab-set-code}
+```kotlin
+import mozilla.appservices.viaduct.OhttpConfig
+import mozilla.appservices.viaduct.configureOhttpChannel
+
+configureOhttpChannel(
+    channel = "merino",
+    config = OhttpConfig(
+        relayUrl = "https://ohttp-merino.mozilla.fastly-edge.com",
+        gatewayHost = "ohttp-gateway-merino.services.mozilla.com",
+    ),
+)
+```
+
+```swift
+// Configure the OHTTP channel before using SuggestClient
+let config = OhttpConfig(
+    relayUrl: "https://ohttp-merino.mozilla.fastly-edge.com",
+    gatewayHost: "ohttp-gateway-merino.services.mozilla.com"
+)
+try configureOhttpChannel(channelId: "merino", config: config)
+```
+:::
+
 ## Async
 
-The Curated Recommendations API is synchronous, meaning calling it directly will block the current thread. To mitigate this, consumers should wrap the API in an async implementation.
+Both clients are synchronous — calling them directly will block the current thread. Consumers should wrap calls in an async implementation.
+
+---
+
+## Curated Recommendations Client
+
+Fetches personalized content recommendations from the Merino Service. [Merino Curated Recommendations API Docs](https://merino.services.mozilla.com/docs#/default/curated_content_api_v1_curated_recommendations_post)
+
+The API for the `CuratedRecommendationsClient` can be found in the Mozilla Rust components [Kotlin API Reference](https://mozilla.github.io/application-services/kotlin/kotlin-components-docs/mozilla.appservices.merino/-curated-recommendations-client/index.html) and [Swift API Reference](https://mozilla.github.io/application-services/swift/Classes/CuratedRecommendationsClient.html).
 
 ## Importing the Client
 
 :::{tab-set-code}
 
 ```kotlin
-import mozilla.appservices.merino.curatedrecommendations.CuratedRecommendationsClient
-import mozilla.appservices.merino.curatedrecommendations.CuratedRecommendationsRequest
-import mozilla.appservices.merino.curatedrecommendations.CuratedRecommendationsResponse
-import mozilla.appservices.merino.curatedrecommendations.CuratedRecommendationsError
+import mozilla.appservices.merino.CuratedRecommendationsClient
+import mozilla.appservices.merino.CuratedRecommendationsRequest
+import mozilla.appservices.merino.CuratedRecommendationsResponse
+import mozilla.appservices.merino.CuratedRecommendationsApiException
 ```
 
 
@@ -178,6 +217,185 @@ func fetchCuratedRecommendations() {
         print("Network error when fetching Curated Recommendations: \(reason)")
         scheduleRetry(seconds: 300)
     } catch CuratedRecommendationsError.Other(let code, let reason) {
+        switch code {
+        case 400:
+            print("Bad Request: \(reason)")
+        case 422:
+            print("Validation Error: \(reason)")
+        case 500...599:
+            print("Server Error: \(reason)")
+        default:
+            print("Unexpected Error: \(reason)")
+        }
+    }
+}
+
+```
+:::
+
+---
+
+## Suggest Client
+
+Fetches search suggestions from the Merino suggest endpoint. [Merino Suggest API Docs](https://merino.services.mozilla.com/docs#/default/suggest_api_v1_suggest_get)
+
+The API for the `SuggestClient` can be found in the Mozilla Rust components [Kotlin API Reference](https://mozilla.github.io/application-services/kotlin/kotlin-components-docs/mozilla.appservices.merino/-suggest-client/index.html) and [Swift API Reference](https://mozilla.github.io/application-services/swift/Classes/SuggestClient.html).
+
+## Importing the Client
+
+:::{tab-set-code}
+
+```kotlin
+import mozilla.appservices.merino.SuggestClient
+import mozilla.appservices.merino.SuggestConfig
+import mozilla.appservices.merino.SuggestOptions
+import mozilla.appservices.merino.MerinoSuggestApiException
+```
+
+```swift
+import MozillaAppServices
+```
+:::
+
+## Initializing the Suggest Client
+
+The `SuggestClient` is initialized using a `SuggestConfig` object with an optional `baseHost`. If not provided, it defaults to the production host.
+
+:::{tab-set-code}
+```kotlin
+
+val config = SuggestConfig(
+    baseHost = null // defaults to https://merino.services.mozilla.com
+)
+
+val client = SuggestClient(config)
+
+```
+
+```swift
+
+let config = SuggestConfig(baseHost: nil) // defaults to https://merino.services.mozilla.com
+
+let client = try SuggestClient(config: config)
+
+```
+:::
+
+## Fetching Suggestions
+
+The `getSuggestions()` method returns a raw JSON string containing the Merino suggest response. Callers are responsible for deserializing the response.
+
+:::{tab-set-code}
+```kotlin
+
+val options = SuggestOptions(
+    providers = listOf("wikipedia", "adm"),
+    source = "urlbar",
+    country = "US",
+    region = "CA",
+    city = "San Francisco",
+    clientVariants = null,
+    requestType = null,
+    acceptLanguage = "en-US"
+)
+
+try {
+    val json: String = client.getSuggestions(query = "firefox", options = options)
+    // parse json as needed
+} catch (e: MerinoSuggestApiException) {
+    println("Error fetching suggestions: ${e.message}")
+}
+
+```
+
+```swift
+
+let options = SuggestOptions(
+    providers: ["wikipedia", "adm"],
+    source: "urlbar",
+    country: "US",
+    region: "CA",
+    city: "San Francisco",
+    clientVariants: nil,
+    requestType: nil,
+    acceptLanguage: "en-US"
+)
+
+do {
+    let json: String = try client.getSuggestions(query: "firefox", options: options)
+    // parse json as needed
+} catch {
+    print("Error fetching suggestions: \(error)")
+}
+
+```
+:::
+
+## Data Models
+
+### SuggestConfig
+
+| **Field** | **Type** | **Description** |
+|-----------|---------|----------------|
+| `baseHost` | `string (optional)` | The base host for the Merino endpoint. Defaults to `https://merino.services.mozilla.com`. |
+
+### SuggestOptions
+
+All fields are optional — omitted fields are not sent to Merino.
+
+| **Field** | **Type** | **Description** |
+|-----------|---------|----------------|
+| `providers` | `array<string> (optional)` | List of suggestion providers to query (e.g. `["wikipedia", "adm"]`). An empty list is treated the same as omitting the field. |
+| `source` | `string (optional)` | Identifier of which part of Firefox the request comes from (e.g. `"urlbar"`, `"newtab"`). |
+| `country` | `string (optional)` | ISO 3166-1 country code (e.g. `"US"`). |
+| `region` | `string (optional)` | Subdivision code(s) (e.g. `"CA"`). |
+| `city` | `string (optional)` | City name (e.g. `"San Francisco"`). |
+| `clientVariants` | `array<string> (optional)` | List of active experiments or rollouts affecting the client's Suggest experience. An empty list is treated the same as omitting the field. |
+| `requestType` | `string (optional)` | For the AccuWeather provider: `"location"` for location completion or `"weather"` for weather suggestions. Defaults to weather if omitted. |
+| `acceptLanguage` | `string (optional)` | The `Accept-Language` header value to forward to Merino (e.g. `"en-US"`). |
+
+### Response
+
+`getSuggestions()` returns the raw JSON response body as a string. The response follows the [Merino suggest API schema](https://merino.services.mozilla.com/docs#/default/suggest_api_v1_suggest_get).
+
+## Error Handling
+
+The Suggest component defines the following error hierarchy:
+- **`MerinoSuggestApiError`**: Base error
+    - **`Network(reason: string)`**: A network-level failure (e.g. no connectivity, OHTTP not configured).
+    - **`Other(code: integer (optional), reason: string)`**: An HTTP error or unexpected failure, with an optional status code.
+
+### Handling Errors in Kotlin and Swift
+
+:::{tab-set-code}
+
+```kotlin
+fun fetchSuggestions() {
+    try {
+        val json = client.getSuggestions(query = "firefox", options = options)
+    } catch (e: MerinoSuggestApiException.Network) {
+        // Log and retry
+        Log.w("Network error when fetching suggestions: ${e.reason}")
+    } catch (e: MerinoSuggestApiException.Other) {
+        when (e.code) {
+            400 -> Log.e("Bad Request: ${e.reason}")
+            422 -> Log.e("Validation Error: ${e.reason}")
+            in 500..599 -> Log.e("Server Error: ${e.reason}")
+            else -> Log.e("Unexpected Error: ${e.reason}")
+        }
+    }
+}
+
+```
+
+```swift
+func fetchSuggestions() {
+    do {
+        let json = try client.getSuggestions(query: "firefox", options: options)
+    } catch MerinoSuggestApiError.network(let reason) {
+        // Log and retry
+        print("Network error when fetching suggestions: \(reason)")
+    } catch MerinoSuggestApiError.other(let code, let reason) {
         switch code {
         case 400:
             print("Bad Request: \(reason)")

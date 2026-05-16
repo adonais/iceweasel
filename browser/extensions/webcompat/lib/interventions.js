@@ -24,6 +24,7 @@ class InterventionsWebRequestListener {
   #interventionsByTLD = new Map();
   #matchPatternCache = new Map();
   #matchPatternsForInterventions = new Map();
+  #excludePatternsForInterventions = new Map();
   #eventName = undefined;
   #listener = undefined;
   #opts = undefined;
@@ -35,20 +36,29 @@ class InterventionsWebRequestListener {
   }
 
   getMatchingInterventions(url, type) {
-    return [...this.#interventionsByTLD.get(getTLDForUrl(url))].filter(
-      intervention => {
-        // Matching the TLD may not be enough, so also check the MatchPatterns.
-        for (const {
-          pattern,
-          types,
-        } of this.#matchPatternsForInterventions.get(intervention)) {
-          if ((!types || types.includes(type)) && pattern.matches(url)) {
-            return true;
-          }
+    const interventions = this.#interventionsByTLD.get(getTLDForUrl(url));
+    if (!interventions) {
+      return [];
+    }
+    return [...interventions].filter(intervention => {
+      // Matching the TLD may not be enough, so also check the MatchPatterns.
+      for (const {
+        pattern,
+        types,
+      } of this.#excludePatternsForInterventions.get(intervention) ?? []) {
+        if ((!types || types.includes(type)) && pattern.matches(url)) {
+          return false;
         }
-        return false;
       }
-    );
+      for (const { pattern, types } of this.#matchPatternsForInterventions.get(
+        intervention
+      )) {
+        if ((!types || types.includes(type)) && pattern.matches(url)) {
+          return true;
+        }
+      }
+      return false;
+    });
   }
 
   restartListener() {
@@ -98,6 +108,20 @@ class InterventionsWebRequestListener {
     set.add(intervention);
   }
 
+  interventionExcludesMatchPattern(intervention, infoOrPatternString) {
+    const patternString = infoOrPatternString.url ?? infoOrPatternString;
+    const actualMatchPatternInstance =
+      this.#getMatchPatternInstance(patternString);
+
+    let set = this.#excludePatternsForInterventions.get(intervention);
+    if (!set) {
+      set = new Set();
+      this.#excludePatternsForInterventions.set(intervention, set);
+    }
+    const types = infoOrPatternString.types;
+    set.add({ pattern: actualMatchPatternInstance, types });
+  }
+
   interventionNoLongerHandlesMatchPattern(intervention, infoOrPatternString) {
     const patternString = infoOrPatternString.url ?? infoOrPatternString;
     const actualMatchPatternInstance =
@@ -117,6 +141,20 @@ class InterventionsWebRequestListener {
       set.delete(intervention);
       if (!set.size) {
         this.#interventionsByTLD.delete(tld);
+      }
+    }
+  }
+
+  interventionNoLongerExcludesMatchPattern(intervention, infoOrPatternString) {
+    const patternString = infoOrPatternString.url ?? infoOrPatternString;
+    const actualMatchPatternInstance =
+      this.#getMatchPatternInstance(patternString);
+
+    let set = this.#excludePatternsForInterventions.get(intervention);
+    if (set) {
+      set.delete(actualMatchPatternInstance);
+      if (!set.size) {
+        this.#excludePatternsForInterventions.delete(intervention);
       }
     }
   }
@@ -176,9 +214,9 @@ class Interventions {
 
   constructor(availableInterventions, customFunctions) {
     this.#customFunctions = customFunctions;
-    this.#originalInterventions = availableInterventions;
     let interventions = availableInterventions;
     if (browser.appConstants.isInAutomation()) {
+      this.#originalInterventions = structuredClone(availableInterventions);
       const override = browser.aboutConfigPrefs.getPref("test_interventions");
       if (override) {
         interventions = JSON.parse(override);
@@ -230,7 +268,9 @@ class Interventions {
   }
 
   async resetToDefaultInterventions() {
-    await this.replaceAllInterventions(this.#originalInterventions);
+    await this.replaceAllInterventions(
+      structuredClone(this.#originalInterventions)
+    );
   }
 
   bindAboutCompatBroker(broker) {
@@ -299,6 +339,10 @@ class Interventions {
     return this.#availableInterventions;
   }
 
+  getAllOriginalInterventions() {
+    return this.#originalInterventions;
+  }
+
   getInterventionsByIds(ids) {
     return this.#availableInterventions.filter(({ id }) => ids?.includes(id));
   }
@@ -334,6 +378,14 @@ class Interventions {
         .map(bug => bug.blocks)
         .flat()
         .filter(v => v !== undefined),
+      excludeBlocks: Object.values(bugs)
+        .map(bug => bug.exclude_blocks)
+        .flat()
+        .filter(v => v !== undefined),
+      excludeMatches: Object.values(bugs)
+        .map(bug => bug.exclude_matches)
+        .flat()
+        .filter(v => v !== undefined),
       matches: Object.values(bugs)
         .map(bug => bug.matches)
         .flat()
@@ -354,7 +406,8 @@ class Interventions {
         continue;
       }
 
-      const { blocks, matches } = this.getBlocksAndMatchesFor(config);
+      const { blocks, excludeBlocks, excludeMatches, matches } =
+        this.getBlocksAndMatchesFor(config);
 
       for (const intervention of interventions) {
         if (!intervention.enabled) {
@@ -374,12 +427,24 @@ class Interventions {
               matchPattern
             );
           }
+          for (const matchPattern of excludeMatches) {
+            this.#uaOverridesListener.interventionNoLongerExcludesMatchPattern(
+              intervention,
+              matchPattern
+            );
+          }
         }
 
         if (blocks.length) {
           requestBlocksChanged = true;
           for (const matchPattern of blocks) {
             this.#requestBlocksListener.interventionNoLongerHandlesMatchPattern(
+              intervention,
+              matchPattern
+            );
+          }
+          for (const matchPattern of excludeBlocks) {
+            this.#requestBlocksListener.interventionNoLongerExcludesMatchPattern(
               intervention,
               matchPattern
             );
@@ -576,7 +641,8 @@ class Interventions {
             `force-disabled by pref extensions.webcompat.${disablingPref}`,
           ]);
         } else {
-          const { blocks, matches } = this.getBlocksAndMatchesFor(config);
+          const { blocks, excludeBlocks, excludeMatches, matches } =
+            this.getBlocksAndMatchesFor(config);
 
           let uaOverridesEnabled = false;
           let requestBlocksEnabled = false;
@@ -623,7 +689,8 @@ class Interventions {
                 this.buildContentScriptRegistrations(
                   config.label,
                   intervention,
-                  matches
+                  matches,
+                  excludeMatches
                 );
               this.#contentScriptsPerIntervention.set(
                 intervention,
@@ -640,12 +707,24 @@ class Interventions {
                   matchPattern
                 );
               }
+              for (const matchPattern of excludeMatches) {
+                this.#uaOverridesListener.interventionExcludesMatchPattern(
+                  intervention,
+                  matchPattern
+                );
+              }
             }
 
             if (blocks.length) {
               requestBlocksEnabled = true;
               for (const matchPattern of blocks) {
                 this.#requestBlocksListener.interventionHandlesMatchPattern(
+                  intervention,
+                  matchPattern
+                );
+              }
+              for (const matchPattern of excludeBlocks) {
+                this.#requestBlocksListener.interventionExcludesMatchPattern(
                   intervention,
                   matchPattern
                 );
@@ -839,9 +918,15 @@ class Interventions {
     }
   }
 
-  buildContentScriptRegistrations(label, intervention, matches) {
+  buildContentScriptRegistrations(
+    label,
+    intervention,
+    matches,
+    excludeMatches
+  ) {
     const registration = {
       matches,
+      excludeMatches,
     };
 
     let { all_frames, css, isolated, js, match_origin_as_fallback, run_at } =

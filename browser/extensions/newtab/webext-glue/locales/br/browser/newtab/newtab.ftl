@@ -271,9 +271,24 @@ newtab-error-fallback-refresh-link = Adkargit ar bajenn evit klask en-dro.
 
 newtab-custom-shortcuts-title = Berradennoù
 newtab-custom-shortcuts-subtitle = Lec'hiennoù bet enrollet pe gweladennet ganeoc'h
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Berradennoù
     .description = Lec'hiennoù bet enrollet pe gweladennet ganeoc'h
+newtab-custom-shortcuts-nova =
+    .label = Berradennoù
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } renk
+            [two] { $num } renk
+            [few] { $num } renk
+            [many] { $num } a renkoù
+           *[other] { $num } renk
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -297,8 +312,11 @@ newtab-custom-settings = Merañ muioc'h a arventennoù
 ## New Tab Wallpapers
 
 newtab-wallpaper-title = Drekleurioù
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Kas ur skeudenn
 newtab-wallpaper-custom-color = Dibab ul liv
+newtab-wallpaper-toggle-title =
+    .label = Drekleurioù
 newtab-wallpaper-light-red-panda = Panda ruz
 newtab-wallpaper-light-mountain = Menez gwenn
 newtab-wallpaper-light-sky = Oabl gant koumoul limestra ha roz

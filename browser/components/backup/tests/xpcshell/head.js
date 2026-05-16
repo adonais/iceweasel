@@ -205,7 +205,29 @@ async function assertFilesExist(parentPath, testFilesArray) {
     let copiedFileName = PathUtils.join(parentPath, ...[].concat(path));
     Assert.ok(
       await IOUtils.exists(copiedFileName),
-      `${copiedFileName} should exist in the staging folder`
+      `${copiedFileName} should exist`
+    );
+  }
+}
+
+/**
+ * Checks that files do not exist within a particular folder. The filesize is
+ * not checked.
+ *
+ * @param {string} parentPath
+ *   The path to the parent directory where the files should not exist.
+ * @param {TestFileObject[]} testFilesArray
+ *   An array of TestFileObjects describing what test files to search for within
+ *   parentPath.
+ * @see TestFileObject
+ * @returns {Promise<undefined>}
+ */
+async function assertFilesDoNotExist(parentPath, testFilesArray) {
+  for (let { path } of testFilesArray) {
+    let copiedFileName = PathUtils.join(parentPath, ...[].concat(path));
+    Assert.ok(
+      !(await IOUtils.exists(copiedFileName)),
+      `${copiedFileName} should not exist`
     );
   }
 }

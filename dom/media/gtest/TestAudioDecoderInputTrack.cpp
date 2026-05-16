@@ -99,9 +99,7 @@ class TestAudioDecoderInputTrack : public testing::Test {
     // before the `Destroy()`.
     mTrack->Close();
     mTrack->Destroy();
-    // Remove the reference of the track from the mock graph, and then release
-    // the self-reference of mock graph.
-    mGraph->RemoveTrackGraphThread(mTrack);
+    // Release the self-reference of mock graph.
     mGraph->Destroy();
   }
 

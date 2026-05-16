@@ -289,6 +289,81 @@ add_task(async function test_chat_tool_call_get_page_content() {
   }
 });
 
+add_task(async function test_chat_tool_call_get_navigation_info() {
+  const { SmartWindowNavigationInfo } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/SmartWindowNavigationInfo.sys.mjs"
+  );
+
+  const FAKE_NAV_RESULTS = [
+    {
+      url: "about:preferences#manageMemories",
+      label: "Manage memories",
+      breadcrumb: "Settings > AI Controls > Smart Window > Manage memories",
+      description: "Memories are what Smart Window learns from your activity.",
+      similarity: 0.85,
+    },
+  ];
+
+  const sb = sinon.createSandbox();
+  sb.stub(SmartWindowNavigationInfo, "getRelevantNavigation").resolves(
+    FAKE_NAV_RESULTS
+  );
+
+  try {
+    await withServer(
+      {
+        toolCall: {
+          name: "get_navigation_info",
+          args: JSON.stringify({ query: "manage memories" }),
+        },
+        followupChunks: ["Navigation ready."],
+      },
+      async () => {
+        const conversation = new ChatConversation({
+          title: "chat title",
+          description: "chat desc",
+          pageUrl: new URL("https://example.com"),
+          pageMeta: {},
+        });
+        conversation.addUserMessage(
+          "How do I manage memories?",
+          "https://example.com",
+          0
+        );
+        conversation.addAssistantMessage("text", "");
+
+        const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+
+        await Chat.fetchWithHistory({ conversation, engineInstance });
+
+        Assert.equal(
+          getLastAssistantResponse(conversation).content.body,
+          "Navigation ready.",
+          "Assistant should stream follow-up text"
+        );
+
+        const toolMessages = conversation.messages.filter(
+          message => message.role === MESSAGE_ROLE.TOOL
+        );
+        Assert.equal(toolMessages.length, 1, "Tool result recorded");
+
+        const navResults = toolMessages[0].content.body;
+        info("got nav results: " + JSON.stringify(navResults));
+        Assert.equal(navResults.length, 1, "Returns the stubbed nav entry");
+        Assert.equal(
+          navResults[0].url,
+          "about:preferences#manageMemories",
+          "Nav entry url flows through"
+        );
+        Assert.ok(navResults[0].label, "Nav entry has label");
+        Assert.ok(navResults[0].breadcrumb, "Nav entry has breadcrumb");
+      }
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
 add_task(async function test_chat_tool_call_get_user_memories() {
   // Clear existing memories
   const preTestMemories = await MemoryStore.getMemories({

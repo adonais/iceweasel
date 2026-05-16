@@ -132,7 +132,7 @@ const DecodeParam kAV1InvalidFileTests[] = {
   { 1, "invalid-google-142530197-1.ivf", nullptr },
   { 4, "invalid-oss-fuzz-9463.ivf", "invalid-oss-fuzz-9463.ivf.res.2" },
   { 1, "invalid-oss-fuzz-9720.ivf", nullptr },
-  { 1, "invalid-oss-fuzz-10389.ivf", "invalid-oss-fuzz-10389.ivf.res.5" },
+  { 1, "invalid-oss-fuzz-10389.ivf", "invalid-oss-fuzz-10389.ivf.res.4" },
 #if !defined(CHROMIUM) && !CONFIG_SIZE_LIMIT ||         \
     (CONFIG_SIZE_LIMIT && DECODE_WIDTH_LIMIT >= 5120 && \
      DECODE_HEIGHT_LIMIT >= 180)
@@ -152,7 +152,11 @@ const DecodeParam kAV1InvalidFileTests[] = {
   { 1, "invalid-oss-fuzz-10227.ivf", nullptr },
   { 4, "invalid-oss-fuzz-10555.ivf", nullptr },
   { 1, "invalid-oss-fuzz-10705.ivf", nullptr },
+#if CONFIG_CWG_C013
   { 1, "invalid-oss-fuzz-10723.ivf", "invalid-oss-fuzz-10723.ivf.res.3" },
+#else
+  { 1, "invalid-oss-fuzz-10723.ivf", "invalid-oss-fuzz-10723.ivf.res.2" },
+#endif
   { 1, "invalid-oss-fuzz-10779.ivf", nullptr },
   { 1, "invalid-oss-fuzz-11477.ivf", nullptr },
   { 1, "invalid-oss-fuzz-11479.ivf", "invalid-oss-fuzz-11479.ivf.res.2" },

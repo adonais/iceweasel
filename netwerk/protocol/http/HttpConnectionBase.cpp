@@ -47,12 +47,19 @@ void HttpConnectionBase::SetDnsBootstrapTimings(TimeStamp domainLookupStart,
   mBootstrappedTimings.domainLookupEnd = domainLookupEnd;
 }
 
-void HttpConnectionBase::SetConnectBootstrapTimings(TimeStamp connectStart,
-                                                    TimeStamp tcpConnectEnd) {
+void HttpConnectionBase::SetConnectBootstrapTimings(
+    TimeStamp connectStart, TimeStamp tcpConnectEnd,
+    TimeStamp secureConnectionStart, TimeStamp connectEnd) {
   mBootstrappedTimingsSet = true;
   mBootstrappedTimings.connectStart = connectStart;
   if (!tcpConnectEnd.IsNull()) {
     mBootstrappedTimings.tcpConnectEnd = tcpConnectEnd;
+  }
+  if (!secureConnectionStart.IsNull()) {
+    mBootstrappedTimings.secureConnectionStart = secureConnectionStart;
+  }
+  if (!connectEnd.IsNull()) {
+    mBootstrappedTimings.connectEnd = connectEnd;
   }
 }
 

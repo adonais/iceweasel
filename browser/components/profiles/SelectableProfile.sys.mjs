@@ -8,6 +8,7 @@ import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 import { ProfilesDatastoreService } from "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs";
 import { SelectableProfileService } from "resource:///modules/profiles/SelectableProfileService.sys.mjs";
 import { BackupService } from "resource:///modules/backup/BackupService.sys.mjs";
+import { ArchiveEncryptionState } from "resource:///modules/backup/ArchiveEncryptionState.sys.mjs";
 
 const lazy = {};
 
@@ -535,20 +536,16 @@ export class SelectableProfile {
 
     const backupServiceInstance = new BackupService();
 
-    let encState = await backupServiceInstance.loadEncryptionState(this.path);
-    let createdEncState = false;
-    if (!encState) {
-      // If we don't have encryption enabled, temporarily create encryption so
-      // we can copy resources that require encryption
-      await backupServiceInstance.enableEncryption(
-        Services.uuid.generateUUID().toString().slice(1, -1),
-        this.path
-      );
-      encState = await backupServiceInstance.loadEncryptionState(this.path);
-      createdEncState = true;
-    }
+    // We want to copy everything, which means telling the BackupService that
+    // encryption is enabled. We instantiate a new ArchiveEncryptionState with
+    // a randomized passphrase (passing nothing to initialize causes a random
+    // one to be generated). Since we don't actually encrypt or decrypt the
+    // backup (since we're just staging, and then recovering from staging),
+    // we can forget the generated passphrase.
+    let { instance: encState } = await ArchiveEncryptionState.initialize();
     let result = await backupServiceInstance.createAndPopulateStagingFolder(
-      this.path
+      this.path,
+      encState
     );
 
     // Clear the pref now that the copied profile has inherited it.
@@ -564,10 +561,6 @@ export class SelectableProfile {
         true, // shouldLaunch
         this // copiedProfile
       );
-
-    if (createdEncState) {
-      await backupServiceInstance.disableEncryption(this.path);
-    }
 
     copiedProfile.theme = this.theme;
     await copiedProfile.setAvatar(this.avatar);

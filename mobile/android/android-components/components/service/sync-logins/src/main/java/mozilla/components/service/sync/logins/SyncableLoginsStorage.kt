@@ -58,14 +58,6 @@ typealias SyncTelemetryPing = mozilla.appservices.sync15.SyncTelemetryPing
 typealias LoginsApiException = mozilla.appservices.logins.LoginsApiException
 
 /**
- * This indicates that the authentication information (e.g. the [SyncUnlockInfo])
- * provided to [AsyncLoginsStorage.sync] is invalid. This often indicates that it's
- * stale and should be refreshed with FxA (however, care should be taken not to
- * get into a loop refreshing this information).
- */
-typealias SyncAuthInvalidException = mozilla.appservices.logins.LoginsApiException.SyncAuthInvalid
-
-/**
  * This is thrown if `update()` is performed with a record whose GUID
  * does not exist.
  */

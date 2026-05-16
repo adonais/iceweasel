@@ -683,7 +683,7 @@ add_task(async function test_drag_and_drop_split_view() {
       ["unknown", 1, 3, 4, 2, 5],
       "after dragging split view, both tabs should appear together in the new position"
     );
-    newWindow.gBrowser.unsplitTabs(splitview);
+    splitview.unsplitTabs();
   });
 });
 
@@ -759,6 +759,51 @@ add_task(async function test_drag_cannot_drop_between_splitview_tabs() {
       ["unknown", 1, 5, 3, 4, 2],
       "dragging onto the top half of the second splitview tab should place the drop after both splitview tabs"
     );
-    newWindow.gBrowser.unsplitTabs(splitview);
+    splitview.unsplitTabs();
+  });
+});
+
+add_task(async function test_move_split_view_from_tab_list_to_tab_bar() {
+  await testWithNewWindow(async function (newWindow) {
+    const tabsListNode = newWindow.gTabsPanel.allTabsPanel.containerNode;
+
+    const tab1 = newWindow.gBrowser.tabs.at(1);
+    const tab2 = newWindow.gBrowser.tabs.at(2);
+    const splitview = newWindow.gBrowser.addTabSplitView([tab1, tab2], {
+      insertBefore: tab1,
+    });
+    await newWindow.gTabsPanel.allTabsPanel.domRefreshComplete;
+
+    assertOrder(
+      getTabsListOrderedIds(tabsListNode),
+      ["unknown", 1, 2, 3, 4, 5],
+      "after creating split view, order should be unchanged"
+    );
+
+    info("drag split view from all tabs list to before tab5 in the tab strip");
+    const rows = tabsListNode.querySelectorAll("toolbaritem");
+    const tab5 = newWindow.gBrowser.tabs.at(5);
+    const tab5Rect = tab5.getBoundingClientRect();
+    EventUtils.synthesizeDrop(
+      rows[1],
+      tab5,
+      null,
+      "move",
+      newWindow,
+      newWindow,
+      {
+        clientX: tab5Rect.left + 1,
+        clientY: tab5Rect.top + tab5Rect.height * 0.25,
+      }
+    );
+    await newWindow.gTabsPanel.allTabsPanel.domRefreshComplete;
+
+    assertOrder(
+      getTabStripOrderedIds(newWindow),
+      ["unknown", 3, 4, 1, 2, 5],
+      "split view should be dropped before tab5, not before tab4"
+    );
+
+    splitview.unsplitTabs();
   });
 });

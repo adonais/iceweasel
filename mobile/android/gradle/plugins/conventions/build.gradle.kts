@@ -33,6 +33,12 @@ gradlePlugin {
     }
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        allWarningsAsErrors.set(true)
+    }
+}
+
 dependencies {
     implementation(libs.kaml)
     compileOnly(libs.android.gradle.plugin)

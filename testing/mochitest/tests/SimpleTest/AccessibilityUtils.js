@@ -228,6 +228,32 @@ this.AccessibilityUtils = (function () {
   }
 
   /**
+   * Determine if an accessible is a button that is purposefully non-focusable.
+   *
+   * The Go button in the Url Bar is an example of a purposefully
+   * non-focusable image toolbar button that provides an mouse/touch-only
+   * control for the search query submission, while a keyboard user could
+   * press `Enter` to do it. Similarly, two scroll buttons that appear when
+   * toolbar is overflowing, and keyboard-only users would actually scroll
+   * tabs in the toolbar while trying to navigate to these controls. When
+   * toolbarbuttons are redundant for keyboard users, we do not want to
+   * create an extra tab stop for such controls, thus we are expecting the
+   * button markup to include `keyNav="false"` attribute to flag it.
+   */
+  function isNoKeyNavButton(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal || node.getAttribute("keyNav") != "false") {
+      return false;
+    }
+
+    const ariaRoles = getAriaRoles(accessible);
+    return (
+      ariaRoles.includes("button") ||
+      accessible.role == Ci.nsIAccessibleRole.ROLE_PUSHBUTTON
+    );
+  }
+
+  /**
    * Determine if an accessible is a keyboard focusable browser toolbar button.
    * Browser toolbar buttons aren't keyboard focusable in the usual way.
    * Instead, focus is managed by JS code which sets tabindex on a single
@@ -244,22 +270,6 @@ this.AccessibilityUtils = (function () {
       node.flattenedTreeParentNode.closest("toolbar");
     if (!toolbar || toolbar.getAttribute("keyNav") != "true") {
       return false;
-    }
-    // The Go button in the Url Bar is an example of a purposefully
-    // non-focusable image toolbar button that provides an mouse/touch-only
-    // control for the search query submission, while a keyboard user could
-    // press `Enter` to do it. Similarly, two scroll buttons that appear when
-    // toolbar is overflowing, and keyboard-only users would actually scroll
-    // tabs in the toolbar while trying to navigate to these controls. When
-    // toolbarbuttons are redundant for keyboard users, we do not want to
-    // create an extra tab stop for such controls, thus we are expecting the
-    // button markup to include `keyNav="false"` attribute to flag it.
-    if (node.getAttribute("keyNav") == "false") {
-      const ariaRoles = getAriaRoles(accessible);
-      return (
-        ariaRoles.includes("button") ||
-        accessible.role == Ci.nsIAccessibleRole.ROLE_PUSHBUTTON
-      );
     }
     return node.ownerGlobal.ToolbarKeyboardNavigator._isButton(node);
   }
@@ -838,6 +848,7 @@ this.AccessibilityUtils = (function () {
     if (
       gEnv.mustBeEnabled &&
       gEnv.focusableRule &&
+      !isNoKeyNavButton(accessible) &&
       !isKeyboardFocusable(accessible)
     ) {
       const ariaRoles = getAriaRoles(accessible);

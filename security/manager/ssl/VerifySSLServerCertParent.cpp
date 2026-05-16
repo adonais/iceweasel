@@ -12,6 +12,7 @@
 #include "SSLServerCertVerification.h"
 #include "nsNSSIOLayer.h"
 #include "nsISocketProvider.h"
+#include "mozilla/Components.h"
 
 extern mozilla::LazyLogModule gPIPNSSLog;
 
@@ -114,6 +115,11 @@ bool VerifySSLServerCertParent::Dispatch(
     const uint32_t& aProviderFlags, const uint32_t& aCertVerifierFlags) {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("VerifySSLServerCertParent::Dispatch"));
 
+  nsCOMPtr<nsIEventTarget> sts = components::SocketTransport::Service();
+  if (!sts) {
+    return false;
+  }
+
   mBackgroundThread = GetCurrentSerialEventTarget();
 
   nsTArray<nsTArray<uint8_t>> peerCertBytes;
@@ -141,14 +147,29 @@ bool VerifySSLServerCertParent::Dispatch(
 
   RefPtr<IPCServerCertVerificationResult> resultTask =
       new IPCServerCertVerificationResult(mBackgroundThread, this);
-  SECStatus status = SSLServerCertVerificationJob::Dispatch(
-      0, nullptr, std::move(peerCertBytes), aHostName, aPort, aOriginAttributes,
-      stapledOCSPResponse, sctsFromTLSExtension, dcInfo, aProviderFlags, Now(),
-      aCertVerifierFlags, resultTask);
 
-  if (status != SECWouldBlock) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("VerifySSLServerCertParent::Dispatch - dispatch failed"));
+  nsresult rv = sts->Dispatch(NS_NewRunnableFunction(
+      "VerifySSLServerCertParent::Dispatch",
+      [peerCertBytes = std::move(peerCertBytes),
+       hostName = nsCString(aHostName), aPort, aOriginAttributes,
+       stapledOCSPResponse = std::move(stapledOCSPResponse),
+       sctsFromTLSExtension = std::move(sctsFromTLSExtension),
+       dcInfo = std::move(dcInfo), aProviderFlags, aCertVerifierFlags,
+       resultTask = std::move(resultTask)]() mutable {
+        SECStatus status = SSLServerCertVerificationJob::Dispatch(
+            0, nullptr, std::move(peerCertBytes), hostName, aPort,
+            aOriginAttributes, stapledOCSPResponse, sctsFromTLSExtension,
+            dcInfo, aProviderFlags, Now(), aCertVerifierFlags, resultTask);
+        if (status != SECWouldBlock) {
+          MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+                  ("VerifySSLServerCertParent::Dispatch - "
+                   "SSLServerCertVerificationJob::Dispatch failed on STS"));
+        }
+      }));
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(
+        gPIPNSSLog, LogLevel::Debug,
+        ("VerifySSLServerCertParent::Dispatch - failed to dispatch to STS"));
     return false;
   }
 

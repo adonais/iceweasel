@@ -19,7 +19,7 @@
 
 class ClearKeyCDM final : public cdm::ContentDecryptionModule_11 {
  private:
-  RefPtr<ClearKeySessionManager> mSessionManager;
+  const RefPtr<ClearKeySessionManager> mSessionManager;
 #ifdef ENABLE_WMF
   RefPtr<VideoDecoder> mVideoDecoder;
 #endif

@@ -57,19 +57,19 @@ const toolkitVariableMap = [
     },
   ],
   [
-    "--arrowpanel-background",
+    "--panel-background",
     {
       lwtProperty: "popup",
     },
   ],
   [
-    "--arrowpanel-color",
+    "--panel-color",
     {
       lwtProperty: "popup_text",
     },
   ],
   [
-    "--arrowpanel-border-color",
+    "--panel-border-color",
     {
       lwtProperty: "popup_border",
     },
@@ -218,6 +218,10 @@ const toolkitVariableMap = [
     },
   ],
 ];
+
+LightweightThemeConsumer.init = function (window) {
+  new LightweightThemeConsumer(window.document);
+};
 
 export function LightweightThemeConsumer(aDocument) {
   this._doc = aDocument;

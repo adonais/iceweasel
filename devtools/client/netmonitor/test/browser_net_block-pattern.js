@@ -71,7 +71,7 @@ add_task(async function () {
   await wait;
 
   // Wait till there are four resources rendered in the results
-  await waitForDOMIfNeeded(document, ".request-list-item", 4);
+  await waitForDOM(document, ".request-list-item", 4);
 
   let requestItems = document.querySelectorAll(".request-list-item");
   // Ensure that test1 item was blocked and test2 item wasn't
@@ -115,7 +115,7 @@ add_task(async function () {
   );
   await wait;
 
-  await waitForDOMIfNeeded(document, ".request-list-item", 5);
+  await waitForDOM(document, ".request-list-item", 5);
   requestItems = document.querySelectorAll(".request-list-item");
   ok(
     !checkRequestListItemBlocked(requestItems[4]),

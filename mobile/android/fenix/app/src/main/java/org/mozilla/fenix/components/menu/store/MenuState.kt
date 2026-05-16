@@ -21,6 +21,7 @@ import org.mozilla.fenix.components.menu.MenuAccessPoint
  * an external access point, and null otherwise.
  * @property extensionMenuState The [ExtensionMenuState] to display.
  * @property summarizationMenuState The [SummarizationMenuState] that handles summarization menu item
+ * @property ipProtectionMenuState The [IPProtectionMenuState] for the IP protection menu item.
  * @property isMoreMenuExpanded Whether or not the "more menu" is expanded.
  * @property isDesktopMode Whether or not the desktop mode is enabled for the currently visited
  * page.
@@ -30,6 +31,7 @@ data class MenuState(
     val customTabSessionId: String? = null,
     val extensionMenuState: ExtensionMenuState = ExtensionMenuState(),
     val summarizationMenuState: SummarizationMenuState = SummarizationMenuState.Default,
+    val ipProtectionMenuState: IPProtectionMenuState = IPProtectionMenuState(),
     val isMoreMenuExpanded: Boolean = false,
     val isDesktopMode: Boolean = false,
 ) : State {
@@ -189,4 +191,37 @@ data class TranslationInfo(
     val isTranslated: Boolean,
     val translatedLanguage: String,
     val onTranslatePageMenuClick: () -> Unit,
+)
+
+/**
+ * Represents the possible display states of the IP protection menu item badge.
+ */
+enum class IPProtectionMenuStatus {
+    /** Proxy is ready but not active. */
+    Off,
+
+    /** Proxy is active and protecting traffic. */
+    On,
+
+    /** Proxy is in the process of activating. */
+    Activating,
+
+    /** Proxy is paused. */
+    Paused,
+
+    /** Proxy encountered an error. */
+    Error,
+
+    /** User needs to authenticate before IP protection can be used. */
+    NeedsAuthentication,
+}
+
+/**
+ * Represents the state of the IP protection menu item.
+ *
+ * @property status The current [IPProtectionMenuStatus] shown in the badge.
+ */
+@Immutable
+data class IPProtectionMenuState(
+    val status: IPProtectionMenuStatus = IPProtectionMenuStatus.Off,
 )

@@ -129,8 +129,7 @@ StylePropertyMap* nsStyledElement::AttributeStyleMap() {
   nsDOMSlots* slots = DOMSlots();
 
   if (!slots->mAttributeStyleMap) {
-    slots->mAttributeStyleMap =
-        MakeRefPtr<StylePropertyMap>(this, /* aComputed */ false);
+    slots->mAttributeStyleMap = MakeRefPtr<StylePropertyMap>(this);
   }
 
   return slots->mAttributeStyleMap;

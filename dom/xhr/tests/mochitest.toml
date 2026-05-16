@@ -230,6 +230,9 @@ skip-if = [
 ]
 
 ["test_worker_xhr_timeout.html"]
+skip-if = [
+"os == 'win'", # bug 1868894
+]
 
 ["test_xhr_abort_after_load.html"]
 

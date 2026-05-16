@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -1812,6 +1810,17 @@ static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
 
     // Check whether another property along the prototype chain became
     // visible as a result of this deletion.
+    //
+    // Use pure lookups to avoid re-entrancy: proxy traps can run arbitrary JS
+    // that may close iterators and modify the iterator list we're currently
+    // traversing in SuppressDeletedPropertyHelper. If pure lookup is not
+    // possible (e.g. the object is a proxy with a dynamic prototype, or the
+    // object has a resolve hook that might resolve this property), we
+    // conservatively suppress the property.
+    //
+    // Note that the spec does not precisely define the observable behavior of
+    // property deletion during for-in.
+    // See https://tc39.es/ecma262/#sec-enumerate-object-properties
     if (obj->hasStaticPrototype()) {
       JSObject* proto = obj->staticPrototype();
       if (proto) {

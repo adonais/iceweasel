@@ -176,11 +176,13 @@ def get_transformer(path, ret_members=False):
 
     members = inspect.getmembers(
         module,
-        lambda c: inspect.isclass(c)
-        and hasattr(c, "transform")
-        and hasattr(c, "merge")
-        and callable(c.transform)
-        and callable(c.merge),
+        lambda c: (
+            inspect.isclass(c)
+            and hasattr(c, "transform")
+            and hasattr(c, "merge")
+            and callable(c.transform)
+            and callable(c.merge)
+        ),
     )
 
     if not members and not ret_members:

@@ -206,22 +206,7 @@ add_task(async function () {
   info("Check that jump to definition works well with pseudo elements");
   await selectNode("h2", inspector);
 
-  info("Expand the pseudo element section");
-  const pseudoElementToggle = view.styleDocument.querySelector(
-    `[aria-controls="pseudo-elements-container"]`
-  );
-  // sanity check
-  is(
-    pseudoElementToggle.ariaExpanded,
-    "false",
-    "pseudo element section is collapsed at first"
-  );
-  pseudoElementToggle.click();
-  is(
-    pseudoElementToggle.ariaExpanded,
-    "true",
-    "pseudo element section is now expanded"
-  );
+  expandPseudoElementContainer(view);
 
   rule = getRuleViewRuleEditorAt(view, 0).rule;
   is(rule.selectorText, "h2::after", "First rule is h2::after");

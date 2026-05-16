@@ -33,6 +33,9 @@ skip-if = [
 ["test_crash_backgroundtask_moz_crash.js"]
 
 ["test_crash_exc_guard.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
+]
 run-if = [
   "os == 'mac'",
 ]

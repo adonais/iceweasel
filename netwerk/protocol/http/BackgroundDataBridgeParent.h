@@ -14,7 +14,8 @@ class BackgroundDataBridgeParent final : public PBackgroundDataBridgeParent {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BackgroundDataBridgeParent, override)
 
-  static already_AddRefed<BackgroundDataBridgeParent> Create(uint64_t aChannelID);
+  static already_AddRefed<BackgroundDataBridgeParent> Create(
+      uint64_t aChannelID);
   void ActorDestroy(ActorDestroyReason aWhy) override;
   already_AddRefed<nsISerialEventTarget> GetBackgroundThread();
   void Destroy();

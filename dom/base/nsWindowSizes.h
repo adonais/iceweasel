@@ -191,6 +191,7 @@ class nsWindowSizes {
   explicit nsWindowSizes(mozilla::SizeOfState& aState)
       : FOR_EACH_SIZE(ZERO_SIZE) mDOMEventTargetsCount(0),
         mDOMEventListenersCount(0),
+        mMediaSourceURLsCount(0),
         mState(aState) {}
 
   void addToTabSizes(nsTabSizes* aSizes) const {
@@ -215,6 +216,8 @@ class nsWindowSizes {
 
   uint32_t mDOMEventTargetsCount;
   uint32_t mDOMEventListenersCount;
+
+  uint32_t mMediaSourceURLsCount;
 
   nsDOMSizes mDOMSizes;
 

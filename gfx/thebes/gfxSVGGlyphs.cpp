@@ -112,10 +112,9 @@ gfxSVGGlyphsDocument* gfxSVGGlyphs::FindOrCreateGlyphsDocument(
 
   unsigned int length;
   const uint8_t* data = (const uint8_t*)hb_blob_get_data(mSVGData, &length);
-  if (entry->mDocOffset > 0 &&
-      uint64_t(mHeader->mDocIndexOffset) + entry->mDocOffset +
-              entry->mDocLength <=
-          length) {
+  if (entry->mDocOffset > 0 && uint64_t(mHeader->mDocIndexOffset) +
+                                       entry->mDocOffset + entry->mDocLength <=
+                                   length) {
     auto doc = MakeUnique<gfxSVGGlyphsDocument>(
         data + mHeader->mDocIndexOffset + entry->mDocOffset, entry->mDocLength,
         this);

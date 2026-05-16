@@ -358,6 +358,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   // paints to one per vsync (see CanDoExtraTick).
   void FinishedVsyncTick() { mAttemptedExtraTickSinceLastVsync = false; }
 
+  bool HasReasonsToTick() const;
+
  private:
   using RequestTable = nsTHashSet<RefPtr<imgIRequest>>;
   struct ImageStartData {
@@ -441,9 +443,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void UpdateAnimatedImages(mozilla::TimeStamp aPreviousRefresh,
                             mozilla::TimeStamp aNowTime);
 
-  bool HasReasonsToTick() const {
-    return GetReasonsToTick() != TickReasons::None;
-  }
   TickReasons GetReasonsToTick() const;
   void AppendTickReasonsToString(TickReasons aReasons, nsACString& aStr) const;
 

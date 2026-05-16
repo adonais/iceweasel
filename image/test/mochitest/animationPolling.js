@@ -413,7 +413,7 @@ AnimationTest.prototype.enableDisplay = function (element) {
   if (!this.xulTest) {
     element.style.display = "";
   } else {
-    element.setAttribute("hidden", "false");
+    element.removeAttribute("hidden");
   }
 };
 

@@ -241,22 +241,22 @@ WebTransportSessionProxy::CloseSession(uint32_t status,
       nsCOMPtr<nsIChannel> channel = mChannel;
       mChannel = nullptr;
       ChangeState(WebTransportSessionProxyState::DONE);
-      NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "WebTransportSessionProxy::CancelChannel",
-          [channel = std::move(channel)]() {
-            channel->Cancel(NS_ERROR_ABORT);
-          }));
+      NS_DispatchToMainThread(
+          NS_NewRunnableFunction("WebTransportSessionProxy::CancelChannel",
+                                 [channel = std::move(channel)]() {
+                                   channel->Cancel(NS_ERROR_ABORT);
+                                 }));
       break;
     }
     case WebTransportSessionProxyState::NEGOTIATING_SUCCEEDED: {
       nsCOMPtr<nsIChannel> channel = mChannel;
       mChannel = nullptr;
       ChangeState(WebTransportSessionProxyState::SESSION_CLOSE_PENDING);
-      NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "WebTransportSessionProxy::CancelChannel",
-          [channel = std::move(channel)]() {
-            channel->Cancel(NS_ERROR_ABORT);
-          }));
+      NS_DispatchToMainThread(
+          NS_NewRunnableFunction("WebTransportSessionProxy::CancelChannel",
+                                 [channel = std::move(channel)]() {
+                                   channel->Cancel(NS_ERROR_ABORT);
+                                 }));
       CloseSessionInternal();
       break;
     }

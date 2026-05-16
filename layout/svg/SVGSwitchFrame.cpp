@@ -52,7 +52,7 @@ class SVGSwitchFrame final : public SVGGFrame {
   nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) override;
   void ReflowSVG() override;
   SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                              uint32_t aFlags) override;
+                              SVGBBoxFlags aFlags) override;
 
  private:
   nsIFrame* GetActiveChildFrame();
@@ -224,7 +224,7 @@ void SVGSwitchFrame::ReflowSVG() {
 }
 
 SVGBBox SVGSwitchFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                                            uint32_t aFlags) {
+                                            SVGBBoxFlags aFlags) {
   auto* kid = GetActiveChildFrame();
   if (ISVGDisplayableFrame* svgKid = do_QueryFrame(kid)) {
     nsIContent* content = kid->GetContent();

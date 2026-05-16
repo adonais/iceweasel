@@ -95,7 +95,10 @@ class GridReorderState internal constructor(
     private val onExitLongPress: () -> Unit = {},
     private val ignoredItems: List<Any> = emptyList(),
 ) {
-    internal var draggingItemKey by mutableStateOf<Any?>(null)
+    internal var draggingItemKey by mutableStateOf<GridItemKey?>(null)
+        private set
+
+    internal var hoveredItemKey by mutableStateOf<GridItemKey?>(null)
         private set
 
     private var draggingItemCumulatedOffset by mutableStateOf(Offset.Zero)
@@ -115,7 +118,7 @@ class GridReorderState internal constructor(
     private val draggingItemLayoutInfo: LazyGridItemInfo?
         get() = gridState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == draggingItemKey }
 
-    internal var previousKeyOfDraggedItem by mutableStateOf<Any?>(null)
+    internal var previousKeyOfDraggedItem by mutableStateOf<GridItemKey?>(null)
         private set
     internal var previousItemOffset = Animatable(Offset.Zero, Offset.VectorConverter)
         private set
@@ -215,10 +218,10 @@ class GridReorderState internal constructor(
 @Suppress("MagicNumber")
 fun LazyGridItemScope.DragItemContainer(
     state: GridReorderState,
-    key: Any,
+    key: GridItemKey,
     position: Int,
     swipingActive: Boolean,
-    content: @Composable () -> Unit,
+    content: @Composable (interactionState: TabItemInteractionState) -> Unit,
 ) {
     val modifier = Modifier.zIndex(
         if (swipingActive) {
@@ -249,7 +252,12 @@ fun LazyGridItemScope.DragItemContainer(
     )
 
     Box(modifier = modifier, propagateMinConstraints = true) {
-        content()
+        content(
+            TabItemInteractionState(
+                isHoveredByItem = key == state.hoveredItemKey,
+                isDragged = key == state.draggingItemKey,
+            ),
+        )
     }
 }
 
@@ -303,3 +311,5 @@ fun Modifier.detectGridPressAndDragGestures(
         )
     }
 }
+
+typealias GridItemKey = Any

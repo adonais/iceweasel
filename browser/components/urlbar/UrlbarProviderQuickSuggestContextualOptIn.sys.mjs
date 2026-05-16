@@ -235,7 +235,7 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
     // Remove the "Learn More" link.
     decription.firstElementChild?.remove();
     alertText += ". " + decription.textContent;
-    row.ownerGlobal.A11yUtils.announce({ raw: alertText });
+    row.ariaNotify(alertText);
   }
 
   onImpression(state, _queryContext, _controller, _resultsAndIndexes, details) {

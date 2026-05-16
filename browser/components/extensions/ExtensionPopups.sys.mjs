@@ -1,20 +1,20 @@
-/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim: set sts=2 sw=2 et tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
+import { ExtensionCommon } from "resource://gre/modules/ExtensionCommon.sys.mjs";
+import { ExtensionUtils } from "resource://gre/modules/ExtensionUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
-});
 
-import { ExtensionCommon } from "resource://gre/modules/ExtensionCommon.sys.mjs";
-import { ExtensionUtils } from "resource://gre/modules/ExtensionUtils.sys.mjs";
+  // Delay defaults to 500 ms via modules/libpref/init/all.js, for all builds:
+  delayBeforeEnablingButtons: { pref: "security.notification_enable_delay" },
+});
 
 var { DefaultWeakMap, promiseEvent } = ExtensionUtils;
 
@@ -36,6 +36,33 @@ function promisePopupShown(popup) {
       );
     }
   });
+}
+
+function addPanelHidingHandler(panel) {
+  function handleClick(event) {
+    if (
+      event.target.closest(
+        "panel:not(#unified-extensions-panel),#notifications-toolbar"
+      )
+    ) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      Services.console.logStringMessage(
+        "Ignored click shortly after extension popup was closed"
+      );
+    }
+  }
+  panel.addEventListener(
+    "popuphiding",
+    () => {
+      const window = panel.ownerGlobal;
+      window.addEventListener("click", handleClick, true);
+      window.setTimeout(() => {
+        window.removeEventListener("click", handleClick, true);
+      }, lazy.delayBeforeEnablingButtons);
+    },
+    { once: true, capture: true }
+  );
 }
 
 const REMOTE_PANEL_ID = "webextension-remote-preload-panel";
@@ -119,8 +146,8 @@ export class BasePopup {
         panel.removeEventListener("popuppositioned", this, { capture: true });
       }
       if (panel && panel.id !== REMOTE_PANEL_ID) {
-        panel.style.removeProperty("--arrowpanel-background");
-        panel.style.removeProperty("--arrowpanel-border-color");
+        panel.style.removeProperty("--panel-background");
+        panel.style.removeProperty("--panel-border-color");
         panel.removeAttribute("remote");
       }
 
@@ -434,12 +461,12 @@ export class BasePopup {
       background = "#fff";
     }
     if (this.panel.id != "widget-overflow") {
-      this.panel.style.setProperty("--arrowpanel-background", background);
+      this.panel.style.setProperty("--panel-background", background);
     }
     if (background == "#fff") {
       // Set a usable default color that work with the default background-color.
       this.panel.style.setProperty(
-        "--arrowpanel-border-color",
+        "--panel-border-color",
         "hsla(210,4%,10%,.15)"
       );
     }
@@ -480,6 +507,7 @@ export class PanelPopup extends BasePopup {
       },
       { once: true }
     );
+    addPanelHidingHandler(panel);
 
     super(extension, panel, popupURL, browserStyle);
   }
@@ -588,6 +616,7 @@ export class ViewPopup extends BasePopup {
       once: true,
       capture: true,
     });
+    addPanelHidingHandler(this.panel);
     if (this.extension.remote) {
       this.panel.setAttribute("remote", "true");
     }

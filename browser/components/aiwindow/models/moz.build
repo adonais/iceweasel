@@ -19,13 +19,16 @@ MOZ_SRC_FILES += [
     "ChatUtils.sys.mjs",
     "ConversationSuggestions.sys.mjs",
     "IntentClassifier.sys.mjs",
+    "PreferencesNavMap.sys.mjs",
     "PromptOptimizer.sys.mjs",
     "SearchBrowsingHistory.sys.mjs",
     "SearchBrowsingHistoryDomainBoost.sys.mjs",
     "SecurityProperties.sys.mjs",
+    "SmartWindowNavigationInfo.sys.mjs",
     "TitleGeneration.sys.mjs",
     "Tools.sys.mjs",
     "Utils.sys.mjs",
+    "WCSMerinoClient.sys.mjs",
 ]
 
 XPCSHELL_TESTS_MANIFESTS += [

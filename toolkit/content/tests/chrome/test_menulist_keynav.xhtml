@@ -165,8 +165,12 @@ function tabAndScroll()
     list.appendItem("Item" + i, "item" + i);
   }
   list.open = true;
-  is(list.getBoundingClientRect().width, list.menupopup.getBoundingClientRect().width - 2 * inputMargin(list.menupopup),
-     "menu and popup width match");
+
+  // Allow for minor, subpixel differences from relative units
+  const menuWidth = list.getBoundingClientRect().width;
+  const popupWidth = list.menupopup.getBoundingClientRect().width - 2 * inputMargin(list.menupopup);
+  const diff = Math.abs(menuWidth - popupWidth);
+  is(true, diff < 1, "menu and popup width match");
   var minScrollbarWidth = window.matchMedia("(-moz-overlay-scrollbars)").matches ? 0 : 3;
   ok(list.getBoundingClientRect().width >= list.getItemAtIndex(0).getBoundingClientRect().width + minScrollbarWidth,
      "menuitem width accounts for scrollbar");

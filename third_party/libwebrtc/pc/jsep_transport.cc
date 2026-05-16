@@ -13,21 +13,21 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-#include "api/array_view.h"
 #include "api/candidate.h"
+#include "api/dtls_transport_interface.h"
 #include "api/ice_transport_interface.h"
 #include "api/jsep.h"
 #include "api/make_ref_counted.h"
 #include "api/rtc_error.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
-#include "call/payload_type_picker.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
@@ -57,18 +57,15 @@ JsepTransportDescription::JsepTransportDescription() {}
 JsepTransportDescription::JsepTransportDescription(
     bool rtcp_mux_enabled,
     const std::vector<int>& encrypted_header_extension_ids,
-    int rtp_abs_sendtime_extn_id,
     const TransportDescription& transport_desc)
     : rtcp_mux_enabled(rtcp_mux_enabled),
       encrypted_header_extension_ids(encrypted_header_extension_ids),
-      rtp_abs_sendtime_extn_id(rtp_abs_sendtime_extn_id),
       transport_desc(transport_desc) {}
 
 JsepTransportDescription::JsepTransportDescription(
     const JsepTransportDescription& from)
     : rtcp_mux_enabled(from.rtcp_mux_enabled),
       encrypted_header_extension_ids(from.encrypted_header_extension_ids),
-      rtp_abs_sendtime_extn_id(from.rtp_abs_sendtime_extn_id),
       transport_desc(from.transport_desc) {}
 
 JsepTransportDescription::~JsepTransportDescription() = default;
@@ -80,7 +77,6 @@ JsepTransportDescription& JsepTransportDescription::operator=(
   }
   rtcp_mux_enabled = from.rtcp_mux_enabled;
   encrypted_header_extension_ids = from.encrypted_header_extension_ids;
-  rtp_abs_sendtime_extn_id = from.rtp_abs_sendtime_extn_id;
   transport_desc = from.transport_desc;
 
   return *this;
@@ -91,8 +87,7 @@ JsepTransport::JsepTransport(
     std::unique_ptr<RtpTransport> rtp_transport,
     scoped_refptr<DtlsTransport> rtp_dtls_transport,
     std::unique_ptr<SctpTransportInternal> sctp_transport,
-    absl::AnyInvocable<void()> rtcp_mux_active_callback,
-    PayloadTypePicker& suggester)
+    absl::AnyInvocable<void()> rtcp_mux_active_callback)
     : local_certificate_(local_certificate),
       rtp_transport_(std::move(rtp_transport)),
       rtp_dtls_transport_(std::move(rtp_dtls_transport)),
@@ -101,12 +96,14 @@ JsepTransport::JsepTransport(
                                 std::move(sctp_transport),
                                 rtp_dtls_transport_)
                           : nullptr),
-      rtcp_mux_active_callback_(std::move(rtcp_mux_active_callback)),
-      remote_payload_types_(suggester),
-      local_payload_types_(suggester) {
+      rtcp_mux_active_callback_(std::move(rtcp_mux_active_callback)) {
   TRACE_EVENT0("webrtc", "JsepTransport::JsepTransport");
   RTC_DCHECK(rtp_dtls_transport_);
   RTC_DCHECK(rtp_transport_);
+  dtls_transport_internal()->SubscribeDtlsTransportState(
+      this, [this](DtlsTransportInternal* transport, DtlsTransportState state) {
+        rtp_dtls_transport_->OnInternalDtlsState(transport);
+      });
 }
 
 JsepTransport::~JsepTransport() {
@@ -117,7 +114,9 @@ JsepTransport::~JsepTransport() {
 
   // Clear all DtlsTransports. There may be pointers to these from
   // other places, so we can't assume they'll be deleted by the destructor.
-  rtp_dtls_transport_->Clear();
+  DtlsTransportInternal* internal = dtls_transport_internal();
+  internal->UnsubscribeDtlsTransportState(this);
+  rtp_dtls_transport_->Clear(internal);
 
   // ICE will be the last transport to be deleted.
 }
@@ -167,9 +166,8 @@ RTCError JsepTransport::SetLocalJsepTransportDescription(
       return error;
     }
   }
-  RTC_DCHECK(rtp_dtls_transport_->internal());
-  rtp_dtls_transport_->internal()->ice_transport()->SetIceParameters(
-      ice_parameters);
+  RTC_DCHECK(dtls_transport_internal());
+  dtls_transport_internal()->ice_transport()->SetIceParameters(ice_parameters);
 
   if (rtcp_dtls_transport()) {
     RTC_DCHECK(rtcp_dtls_transport());
@@ -220,8 +218,6 @@ RTCError JsepTransport::SetRemoteJsepTransportDescription(
   if (auto* dtls_srtp_transport = rtp_transport_->AsDtlsSrtpTransport()) {
     dtls_srtp_transport->UpdateSendEncryptedHeaderExtensionIds(
         jsep_description.encrypted_header_extension_ids);
-    dtls_srtp_transport->CacheRtpAbsSendTimeHeaderExtension(
-        jsep_description.rtp_abs_sendtime_extn_id);
   }
 
   remote_description_.reset(new JsepTransportDescription(jsep_description));
@@ -284,9 +280,9 @@ void JsepTransport::SetNeedsIceRestartFlag() {
 std::optional<SSLRole> JsepTransport::GetDtlsRole() const {
   RTC_DCHECK_RUN_ON(&transport_sequence_);
   RTC_DCHECK(rtp_dtls_transport_);
-  RTC_DCHECK(rtp_dtls_transport_->internal());
+  RTC_DCHECK(dtls_transport_internal());
   SSLRole dtls_role;
-  if (!rtp_dtls_transport_->internal()->GetDtlsRole(&dtls_role)) {
+  if (!dtls_transport_internal()->GetDtlsRole(&dtls_role)) {
     return std::optional<SSLRole>();
   }
 
@@ -298,8 +294,8 @@ bool JsepTransport::GetStats(TransportStats* stats) const {
   RTC_DCHECK_RUN_ON(&transport_sequence_);
   stats->transport_name = name();
   stats->channel_stats.clear();
-  RTC_DCHECK(rtp_dtls_transport_->internal());
-  bool ret = GetTransportStats(rtp_dtls_transport_->internal(),
+  RTC_DCHECK(dtls_transport_internal());
+  bool ret = GetTransportStats(dtls_transport_internal(),
                                ICE_CANDIDATE_COMPONENT_RTP, stats);
 
   if (rtcp_dtls_transport()) {
@@ -333,34 +329,6 @@ RTCError JsepTransport::VerifyCertificateFingerprint(
   desc << fp_tmp->ToString();
   desc << " Got: " << fingerprint->ToString();
   return RTCError(RTCErrorType::INVALID_PARAMETER, std::string(desc.str()));
-}
-
-RTCError JsepTransport::RecordPayloadTypes(bool local,
-                                           SdpType type,
-                                           const ContentInfo& content) {
-  RTC_DCHECK_RUN_ON(&transport_sequence_);
-  if (local) {
-    local_payload_types_.DisallowRedefinition();
-  } else {
-    remote_payload_types_.DisallowRedefinition();
-  }
-  RTCError result = RTCError::OK();
-  for (auto codec : content.media_description()->codecs()) {
-    if (local) {
-      result = local_payload_types_.AddMapping(codec.id, codec);
-    } else {
-      result = remote_payload_types_.AddMapping(codec.id, codec);
-    }
-    if (!result.ok()) {
-      break;
-    }
-  }
-  if (local) {
-    local_payload_types_.ReallowRedefinition();
-  } else {
-    remote_payload_types_.ReallowRedefinition();
-  }
-  return result;
 }
 
 void JsepTransport::SetRemoteIceParameters(
@@ -465,7 +433,7 @@ RTCError JsepTransport::NegotiateAndSetDtlsParameters(
   } else {
     // We are not doing DTLS
     remote_fingerprint =
-        std::make_unique<SSLFingerprint>("", ArrayView<const uint8_t>());
+        std::make_unique<SSLFingerprint>("", std::span<const uint8_t>());
   }
   // Now that we have negotiated everything, push it downward.
   // Note that we cache the result so that if we have race conditions

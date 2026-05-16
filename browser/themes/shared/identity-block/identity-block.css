@@ -49,15 +49,15 @@
   outline-offset: var(--toolbarbutton-outline-offset);
 
   &:hover:not([open="true"]) {
-    background-color: var(--urlbar-box-hover-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-hover);
+    color: var(--urlbar-box-text-color-hover);
     outline-color: var(--toolbarbutton-hover-outline-color);
   }
 
   &:hover:active,
   &[open="true"] {
-    background-color: var(--urlbar-box-active-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-active);
+    color: var(--urlbar-box-text-color-hover);
     outline-color: var(--toolbarbutton-active-outline-color);
   }
 
@@ -87,7 +87,7 @@
 
 #identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage) > .identity-box-button,
 #urlbar-label-box {
-  background-color: var(--urlbar-box-bgcolor);
+  background-color: var(--urlbar-box-background-color);
   color: var(--urlbar-box-text-color);
   padding-inline: 8px;
   border-radius: var(--urlbar-inner-border-radius);
@@ -96,19 +96,19 @@
 #urlbar[focused] {
   #identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage) > .identity-box-button:not(:hover, [open]),
   #urlbar-label-box {
-    background-color: var(--urlbar-box-focus-bgcolor);
+    background-color: var(--urlbar-box-background-color-focus);
   }
 }
 
 #identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage) > .identity-box-button {
   &:hover:not([open]) {
-    background-color: var(--urlbar-box-hover-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-hover);
+    color: var(--urlbar-box-text-color-hover);
   }
 
   &:is(:hover:active, [open]) {
-    background-color: var(--urlbar-box-active-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-active);
+    color: var(--urlbar-box-text-color-hover);
   }
 }
 
@@ -246,6 +246,12 @@
   list-style-image: url("chrome://browser/skin/notification-icons/geo.svg");
 }
 
+#serial-sharing-icon[sharing] {
+  list-style-image: url("chrome://browser/skin/notification-icons/serial.svg");
+  -moz-context-properties: fill;
+  fill: rgb(224, 41, 29);
+}
+
 .sharing-icon:not([sharing]) {
   display: none;
 }
@@ -325,7 +331,7 @@
        on the state of the connection, the further clauses may override that. */
     &:where(.insecure) {
       list-style-image: url(chrome://browser/skin/trust-icon-insecure.svg);
-      background-color: var(--urlbar-box-bgcolor);
+      background-color: var(--urlbar-box-background-color);
       color: var(--urlbar-box-text-color);
     }
 

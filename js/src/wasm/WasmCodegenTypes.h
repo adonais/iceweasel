@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2021 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -832,6 +830,9 @@ class CodeRange {
     DebugStub,                 // calls C++ to handle debug event
     RequestTierUpStub,         // calls C++ to request tier-2 compilation
     UpdateCallRefMetricsStub,  // updates a CallRefMetrics
+#ifdef ENABLE_WASM_JSPI
+    ContBaseFrame,  // base frame for a cont stack
+#endif
     FarJumpIsland,  // inserted to connect otherwise out-of-range insns
     Throw           // special stack-unwinding stub jumped to by other stubs
   };
@@ -923,6 +924,9 @@ class CodeRange {
   bool isJitEntry() const { return kind() == JitEntry; }
   bool isInterpEntry() const { return kind() == InterpEntry; }
   bool isEntry() const { return isInterpEntry() || isJitEntry(); }
+#ifdef ENABLE_WASM_JSPI
+  bool isContBaseFrame() const { return kind() == ContBaseFrame; }
+#endif
   bool hasFuncIndex() const {
     return isFunction() || isImportExit() || isEntry();
   }

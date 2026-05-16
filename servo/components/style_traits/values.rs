@@ -601,6 +601,73 @@ pub mod specified {
     }
 }
 
+/// A single segment of an unparsed Typed OM value.
+///
+/// This corresponds to the `CSSUnparsedSegment` union in the Typed OM
+/// specification. Unparsed values are represented as a list of string
+/// fragments and variable references.
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub enum UnparsedSegment {
+    /// A string fragment.
+    ///
+    /// This corresponds to the string branch of `CSSUnparsedSegment` and is
+    /// used for the non-variable parts of a `CSSUnparsedValue`.
+    String(CssString),
+
+    /// A `var()` reference segment.
+    ///
+    /// This corresponds to `CSSVariableReferenceValue` in the Typed OM
+    /// specification.
+    VariableReference(VariableReferenceValue),
+}
+
+/// An unparsed value used by the Typed OM.
+///
+/// This corresponds to `CSSUnparsedValue` in the Typed OM specification. It
+/// is used for values that cannot be reified into a more specific
+/// property-agnostic representation and therefore need to preserve their
+/// token-like structure as a sequence of string fragments and variable
+/// references.
+///
+/// The underlying list of segments corresponds to the `[[tokens]]` internal
+/// slot of `CSSUnparsedValue`.
+///
+/// This is represented as a type alias over `ThinVec<UnparsedSegment>` rather
+/// than a dedicated struct. This avoids the need for additional wrapper types
+/// when embedding unparsed values within other structures, while still
+/// allowing recursive representations via the segment list.
+pub type UnparsedValue = ThinVec<UnparsedSegment>;
+
+/// A variable reference inside an unparsed Typed OM value.
+///
+/// This corresponds to `CSSVariableReferenceValue` in the Typed OM
+/// specification.
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct VariableReferenceValue {
+    /// The referenced custom property name.
+    ///
+    /// This corresponds to the `variable` attribute of
+    /// `CSSVariableReferenceValue`.
+    pub variable: CssString,
+
+    /// The fallback value, if present.
+    ///
+    /// This corresponds to the `fallback` attribute of
+    /// `CSSVariableReferenceValue`. When `has_fallback` is false, this value
+    /// must be ignored. When `has_fallback` is true, this contains the
+    /// fallback tokens (which may be empty).
+    pub fallback: UnparsedValue,
+
+    /// Whether a fallback was explicitly provided.
+    ///
+    /// This is needed to distinguish between the absence of a fallback
+    /// (`var(--a)`) and an explicitly empty fallback (`var(--a,)`), which are
+    /// observable via Typed OM.
+    pub has_fallback: bool,
+}
+
 /// A keyword value used by the Typed OM.
 ///
 /// This corresponds to `CSSKeywordValue` in the Typed OM specification.
@@ -641,7 +708,7 @@ pub struct MathSum {
 ///
 /// This corresponds to `CSSNumericValue` and its subclasses in the Typed OM
 /// specification. It represents numbers that can appear in CSS values,
-/// including both simple unit quantities and composite expressions..
+/// including both simple unit quantities and composite expressions.
 ///
 /// Unlike the parser-level representation, `NumericValue` is property-agnostic
 /// and suitable for conversion to or from the `CSSNumericValue` family of DOM
@@ -668,6 +735,12 @@ pub enum NumericValue {
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum TypedValue {
+    /// An unparsed value consisting of string fragments and variable
+    /// references.
+    ///
+    /// This corresponds to `CSSUnparsedValue` in the Typed OM specification.
+    Unparsed(UnparsedValue),
+
     /// A keyword value such as `"block"`, `"none"`, or `"thin"`.
     ///
     /// This corresponds to `CSSKeywordValue` in the Typed OM specification.
@@ -682,15 +755,27 @@ pub enum TypedValue {
     Numeric(NumericValue),
 }
 
+/// A list of property-agnostic values used by the Typed OM.
+///
+/// `TypedValueList` is the internal counterpart of CSS value lists exposed by
+/// Typed OM. It stores one or more [`TypedValue`] items in source order and
+/// is used when a value reifies to multiple property-agnostic components.
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct TypedValueList {
+    /// The list of reified values.
+    pub values: ThinVec<TypedValue>,
+}
+
 /// Reifies a value into its Typed OM representation.
 ///
 /// This trait is the Typed OM analogue of [`ToCss`]. Instead of serializing
 /// values into CSS syntax, it converts them into [`TypedValue`]s that can be
 /// exposed to the DOM as `CSSStyleValue` subclasses.
 ///
-/// Most consumers should use [`ToTyped::to_typed_value`]. At the moment,
-/// consumers only use the first reified value. The ability to expose multiple
-/// values is infrastructure-only for now.
+/// Most consumers should use [`ToTyped::to_typed_value`] or
+/// [`ToTyped::to_typed_value_list`], depending on whether they need a single
+/// reified value or the full list of reified values.
 ///
 /// This trait is derivable with `#[derive(ToTyped)]`. The derived
 /// implementation currently supports:
@@ -699,38 +784,34 @@ pub enum TypedValue {
 ///   automatically reified as [`TypedValue::Keyword`], using the same
 ///   serialization logic as [`ToCss`].
 ///
-/// * Structs and data-carrying variants: When the
-///   `#[typed_value(derive_fields)]` attribute is present, the derive
-///   attempts to call `.to_typed()` recursively on supported fields or
-///   variant payloads, producing [`TypedValue`]s when possible.
+/// * Structs and data-carrying variants: By default, the derive attempts to
+///   call `.to_typed()` recursively on supported fields or variant payloads,
+///   producing [`TypedValue`]s when possible. This recursion can be disabled
+///   with `#[typed(skip_derive_fields)]`.
 ///
-/// * Other cases: If no automatic mapping is defined or recursion is not
-///   enabled, the derived implementation falls back to the default method
-///   (which returns `Err(())`, and thus `to_typed_value()` returns `None`)
-///
-/// The `derive_fields` attribute is intentionally opt-in for now to avoid
-/// forcing types that do not participate in reification to implement
-/// [`ToTyped`]. Once Typed OM coverage stabilizes, this behavior is expected
-/// to become the default (see the corresponding follow-up bug).
+/// * Other cases: If no automatic mapping is defined, or recursion is
+///   explicitly disabled, the derived implementation falls back to the
+///   default method (which returns `Err(())`, and thus `to_typed_value()`
+///   returns `None`).
 ///
 /// Over time, the derive may be extended to handle additional CSS value
 /// categories such as numeric, color, and transform types.
 ///
 /// Summary of derive attributes recognized by `#[derive(ToTyped)]`:
 ///
-/// * `#[typed_value(derive_fields)]` on the type enables limited recursion
-///   for structs and data-carrying enum variants.
+/// * `#[typed(skip_derive_fields)]` on the type disables recursion for
+///   structs and data-carrying enum variants.
 ///
-/// * `#[css(skip)]`, `#[typed_value(skip)]`, or `#[typed_value(todo)]` on a
-///   variant cause that variant to be treated as unsupported (the derived
-///   implementation returns `Err(())`).
+/// * `#[css(skip)]`, `#[typed(skip)]`, or `#[typed(todo)]` on a variant cause
+///   that variant to be treated as unsupported (the derived implementation
+///   returns `Err(())`).
 ///
 /// * `#[css(skip)]` on a field causes that field to be ignored during
 ///   reification.
 ///
-/// * `#[typed_value(skip_if = "...")]` on a field conditionally disables
-///   reification for that field. If the provided function returns `true` for
-///   the field value, the field is ignored.
+/// * `#[typed(skip_if = "...")]` on a field conditionally disables reification
+///   for that field. If the provided function returns `true` for the field
+///   value, the field is ignored.
 ///
 /// * `#[css(keyword = "...")]` on a unit variant overrides the keyword that
 ///   would otherwise be derived from the Rust identifier.
@@ -752,7 +833,8 @@ pub trait ToTyped {
     ///
     /// Implementations append any resulting values to `dest`. This is the
     /// low-level entry point used by the Typed OM reification infrastructure.
-    /// Most callers should prefer [`ToTyped::to_typed_value`].
+    /// Most callers should prefer [`ToTyped::to_typed_value`] or
+    /// [`ToTyped::to_typed_value_list`].
     ///
     /// Returning `Err(())` indicates that the value cannot be represented as
     /// a property-agnostic Typed OM value.
@@ -762,14 +844,26 @@ pub trait ToTyped {
 
     /// Attempt to convert `self` into a [`TypedValue`].
     ///
-    /// Returns `Some(TypedValue)` if the value can be reified into a
-    /// property-agnostic CSSStyleValue subclass. Returns `None` if the value
-    /// is unrepresentable, in which case consumers produce a property-tied
-    /// CSSStyleValue instead.
+    /// Returns the first reified value as `Some(TypedValue)` if the value can
+    /// be reified into a property-agnostic CSSStyleValue subclass. Returns
+    /// `None` if the value is unrepresentable, in which case consumers
+    /// produce a property-tied CSSStyleValue instead.
     fn to_typed_value(&self) -> Option<TypedValue> {
         let mut dest = ThinVec::new();
         self.to_typed(&mut dest).ok()?;
         dest.into_iter().next()
+    }
+
+    /// Attempt to convert `self` into a [`TypedValueList`].
+    ///
+    /// Returns `Some(TypedValueList)` if the value can be reified into one or
+    /// more property-agnostic Typed OM values. Returns `None` if the value is
+    /// unrepresentable, in which case consumers produce a property-tied
+    /// `CSSStyleValue` instead.
+    fn to_typed_value_list(&self) -> Option<TypedValueList> {
+        let mut dest = ThinVec::new();
+        self.to_typed(&mut dest).ok()?;
+        Some(TypedValueList { values: dest })
     }
 }
 
@@ -783,6 +877,15 @@ where
 }
 
 impl<T> ToTyped for Box<T>
+where
+    T: ?Sized + ToTyped,
+{
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        (**self).to_typed(dest)
+    }
+}
+
+impl<T> ToTyped for Arc<T>
 where
     T: ?Sized + ToTyped,
 {

@@ -178,6 +178,7 @@
 #include "nsIURI.h"
 #include "nsImageFrame.h"
 #include "nsLayoutUtils.h"
+#include "nsListControlFrame.h"
 #include "nsMenuPopupFrame.h"
 #include "nsNameSpaceManager.h"  // for Pref-related rule management (bugs 22963,20760,31816)
 #include "nsNetUtil.h"
@@ -727,7 +728,9 @@ PresShell::PresShell(Document* aDocument)
       mHasTriedFastUnsuppress(false),
       mProcessingReflowCommands(false),
       mPendingDidDoReflow(false),
-      mHasSeenAnchorPos(false) {
+      mHasSeenAnchorPos(false),
+      mHasShownFullscreenWarningForCurrentEscapeKeyLongPress(false),
+      mEscapeKeyDownCountForFullscreenKeyboardLockWarning(0) {
   MOZ_LOG(gLog, LogLevel::Debug, ("PresShell::PresShell this=%p", this));
   MOZ_ASSERT(aDocument);
 
@@ -3156,14 +3159,15 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
         MOZ_TRY(ScrollSelectionIntoView(
             SelectionType::eTargetText,
             nsISelectionController::SELECTION_ANCHOR_REGION,
-            ScrollAxis(WhereToScroll::Center, WhenToScroll::Always),
-            ScrollAxis(),
+            AxisScrollParams(WhereToScroll::Center, WhenToScroll::Always),
+            AxisScrollParams(WhereToScroll::Center, WhenToScroll::Always),
             ScrollFlags::AnchorScrollFlags | aAdditionalScrollFlags,
             SelectionScrollMode::SyncFlush));
       } else {
         MOZ_TRY(ScrollContentIntoView(
-            target, ScrollAxis(WhereToScroll::Start, WhenToScroll::Always),
-            ScrollAxis(),
+            target,
+            AxisScrollParams(WhereToScroll::Start, WhenToScroll::Always),
+            AxisScrollParams(),
             ScrollFlags::AnchorScrollFlags | aAdditionalScrollFlags));
       }
       if (ScrollContainerFrame* rootScroll = GetRootScrollContainerFrame()) {
@@ -3292,14 +3296,16 @@ nsresult PresShell::ScrollToAnchor() {
       return NS_OK;
     }
     return ScrollContentIntoView(
-        lastAnchor, ScrollAxis(WhereToScroll::Start, WhenToScroll::Always),
-        ScrollAxis(), ScrollFlags::AnchorScrollFlags);
+        lastAnchor,
+        AxisScrollParams(WhereToScroll::Start, WhenToScroll::Always),
+        AxisScrollParams(), ScrollFlags::AnchorScrollFlags);
   }
 
   return ScrollSelectionIntoView(
       SelectionType::eTargetText,
       nsISelectionController::SELECTION_ANCHOR_REGION,
-      ScrollAxis(WhereToScroll::Center, WhenToScroll::Always), ScrollAxis(),
+      AxisScrollParams(WhereToScroll::Center, WhenToScroll::Always),
+      AxisScrollParams(WhereToScroll::Center, WhenToScroll::Always),
       ScrollFlags::AnchorScrollFlags, SelectionScrollMode::SyncFlush);
 }
 
@@ -3403,28 +3409,24 @@ static bool ComputeNeedToScroll(WhenToScroll aWhenToScroll, nscoord aLineSize,
 
 static nscoord ComputeWhereToScroll(WhereToScroll aWhereToScroll,
                                     nscoord aOriginalCoord, nscoord aRectMin,
-                                    nscoord aRectMax, nscoord aViewMin,
-                                    nscoord aViewMax, nscoord* aRangeMin,
-                                    nscoord* aRangeMax) {
+                                    nscoord aRectMax, nscoord aViewSize,
+                                    nscoord aScrollMin, nscoord aScrollMax) {
   nscoord resultCoord = aOriginalCoord;
-  nscoord scrollPortLength = aViewMax - aViewMin;
   if (!aWhereToScroll.mPercentage) {
     // Scroll the minimum amount necessary to show as much as possible of the
     // frame. If the frame is too large, don't hide any initially visible part
     // of it.
-    nscoord min = std::min(aRectMin, aRectMax - scrollPortLength);
-    nscoord max = std::max(aRectMin, aRectMax - scrollPortLength);
+    nscoord min = std::min(aRectMin, aRectMax - aViewSize);
+    nscoord max = std::max(aRectMin, aRectMax - aViewSize);
     resultCoord = std::clamp(aOriginalCoord, min, max);
   } else {
     float percent = aWhereToScroll.mPercentage.value() / 100.0f;
     nscoord frameAlignCoord =
         NSToCoordRound(aRectMin + (aRectMax - aRectMin) * percent);
-    resultCoord = NSToCoordRound(frameAlignCoord - scrollPortLength * percent);
+    resultCoord = NSToCoordRound(frameAlignCoord - aViewSize * percent);
   }
-  // Force the scroll range to extend to include resultCoord.
-  *aRangeMin = std::min(resultCoord, aRectMax - scrollPortLength);
-  *aRangeMax = std::max(resultCoord, aRectMin);
-  return resultCoord;
+  // Clamp scroll offset to the viable range.
+  return std::clamp(resultCoord, aScrollMin, aScrollMax);
 }
 
 static WhereToScroll GetApplicableWhereToScroll(
@@ -3470,6 +3472,25 @@ static ScrollMode GetScrollModeForScrollIntoView(
   return aScrollContainerFrame->ScrollModeForScrollBehavior(behavior);
 }
 
+struct ScrollPointRange {
+  nscoord mCoord;
+  nscoord mMin;
+  nscoord mMax;
+};
+
+static ScrollPointRange ComputeWhereToScrollAndRange(
+    WhereToScroll aWhereToScroll, nscoord aOriginalCoord, nscoord aRectMin,
+    nscoord aRectMax, nscoord aViewSize, nscoord aScrollMin,
+    nscoord aScrollMax) {
+  const auto coord =
+      ComputeWhereToScroll(aWhereToScroll, aOriginalCoord, aRectMin, aRectMax,
+                           aViewSize, aScrollMin, aScrollMax);
+
+  const auto min = std::min(coord, aRectMax - aViewSize);
+  const auto max = std::max(coord, aRectMin) - min;
+  return ScrollPointRange{coord, min, max};
+}
+
 /**
  * This function takes a scroll container frame, a rect in the coordinate system
  * of the scrolled frame, and a desired percentage-based scroll
@@ -3482,8 +3503,8 @@ static Maybe<nsPoint> ScrollToShowRect(
     ScrollContainerFrame* aScrollContainerFrame,
     const nsIFrame* aScrollableFrame, const nsIFrame* aTarget,
     const nsRect& aRect, const Sides aScrollPaddingSkipSides,
-    const nsMargin& aMargin, ScrollAxis aVertical, ScrollAxis aHorizontal,
-    ScrollFlags aScrollFlags) {
+    const nsMargin& aMargin, AxisScrollParams aVertical,
+    AxisScrollParams aHorizontal, ScrollFlags aScrollFlags) {
   nsPoint scrollPt = aScrollContainerFrame->GetVisualViewportOffset();
   const nsPoint originalScrollPt = scrollPt;
   const nsRect visibleRect(scrollPt,
@@ -3512,8 +3533,8 @@ static Maybe<nsPoint> ScrollToShowRect(
     lineSize = aScrollContainerFrame->GetLineScrollAmount();
   }
   ScrollStyles ss = aScrollContainerFrame->GetScrollStyles();
-  nsRect allowedRange(scrollPt, nsSize(0, 0));
-
+  nsRect scrollRange(scrollPt, nsSize(0, 0));
+  const auto scrollConstraint = aScrollContainerFrame->GetVisualScrollRange();
   if ((aScrollFlags & ScrollFlags::ScrollOverflowHidden) ||
       ss.mVertical != StyleOverflow::Hidden) {
     if (ComputeNeedToScroll(aVertical.mWhenToScroll, lineSize.height, aRect.y,
@@ -3524,12 +3545,13 @@ static Maybe<nsPoint> ScrollToShowRect(
           aScrollContainerFrame, aScrollableFrame, aTarget,
           ScrollDirection::eVertical, aVertical.mWhereToScroll);
 
-      nscoord maxHeight;
-      scrollPt.y = ComputeWhereToScroll(
+      const auto result = ComputeWhereToScrollAndRange(
           whereToScroll, scrollPt.y, rectToScrollIntoView.y,
-          rectToScrollIntoView.YMost(), visibleRect.y, visibleRect.YMost(),
-          &allowedRange.y, &maxHeight);
-      allowedRange.height = maxHeight - allowedRange.y;
+          rectToScrollIntoView.YMost(), visibleRect.height, scrollConstraint.y,
+          scrollConstraint.YMost());
+      scrollPt.y = result.mCoord;
+      scrollRange.y = result.mMin;
+      scrollRange.height = result.mMax;
     }
   }
 
@@ -3543,12 +3565,13 @@ static Maybe<nsPoint> ScrollToShowRect(
           aScrollContainerFrame, aScrollableFrame, aTarget,
           ScrollDirection::eHorizontal, aHorizontal.mWhereToScroll);
 
-      nscoord maxWidth;
-      scrollPt.x = ComputeWhereToScroll(
+      const auto result = ComputeWhereToScrollAndRange(
           whereToScroll, scrollPt.x, rectToScrollIntoView.x,
-          rectToScrollIntoView.XMost(), visibleRect.x, visibleRect.XMost(),
-          &allowedRange.x, &maxWidth);
-      allowedRange.width = maxWidth - allowedRange.x;
+          rectToScrollIntoView.XMost(), visibleRect.width, scrollConstraint.x,
+          scrollConstraint.XMost());
+      scrollPt.x = result.mCoord;
+      scrollRange.x = result.mMin;
+      scrollRange.width = result.mMax;
     }
   }
 
@@ -3562,7 +3585,7 @@ static Maybe<nsPoint> ScrollToShowRect(
       GetScrollModeForScrollIntoView(aScrollContainerFrame, aScrollFlags);
   nsIFrame* frame = do_QueryFrame(aScrollContainerFrame);
   AutoWeakFrame weakFrame(frame);
-  aScrollContainerFrame->ScrollTo(scrollPt, scrollMode, &allowedRange,
+  aScrollContainerFrame->ScrollTo(scrollPt, scrollMode, &scrollRange,
                                   ScrollSnapFlags::IntendedEndPosition,
                                   aScrollFlags & ScrollFlags::TriggeredByScript
                                       ? ScrollTriggeredByScript::Yes
@@ -3571,8 +3594,8 @@ static Maybe<nsPoint> ScrollToShowRect(
 }
 
 nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
-                                          ScrollAxis aVertical,
-                                          ScrollAxis aHorizontal,
+                                          AxisScrollParams aVertical,
+                                          AxisScrollParams aHorizontal,
                                           ScrollFlags aScrollFlags) {
   NS_ENSURE_TRUE(aContent, NS_ERROR_NULL_POINTER);
   RefPtr<Document> composedDoc = aContent->GetComposedDoc();
@@ -3732,8 +3755,8 @@ static bool NeedToVisuallyScroll(const nsSize& aLayoutViewportSize,
 
 void PresShell::ScrollFrameIntoVisualViewport(
     Maybe<nsPoint>& aDestination, const nsRect& aPositionFixedRect,
-    const nsIFrame* aPositionFixedFrame, ScrollAxis aVertical,
-    ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
+    const nsIFrame* aPositionFixedFrame, AxisScrollParams aVertical,
+    AxisScrollParams aHorizontal, ScrollFlags aScrollFlags) {
   PresShell* root = GetRootPresShell();
   if (!root) {
     return;
@@ -3794,24 +3817,21 @@ void PresShell::ScrollFrameIntoVisualViewport(
     // position. Otherwise if we've already scrolled, this scrollIntoView
     // operation will jump back to near (0, 0) position.
     nsPoint layoutOffset = rootScrollContainer->GetScrollPosition();
+    const auto scrollRange = rootScrollContainer->GetVisualScrollRange();
 
     const nsRect visibleRect(layoutOffset, visualViewportSize);
-    nscoord unusedRangeMinOutparam;
-    nscoord unusedRangeMaxOutparam;
     nscoord x = ComputeWhereToScroll(
         aScrollFlags & ScrollFlags::ForZoomToFocusedInput
             ? WhereToScroll::Nearest
             : aHorizontal.mWhereToScroll,
         layoutOffset.x, aPositionFixedRect.x, aPositionFixedRect.XMost(),
-        visibleRect.x, visibleRect.XMost(), &unusedRangeMinOutparam,
-        &unusedRangeMaxOutparam);
+        visibleRect.width, scrollRange.x, scrollRange.XMost());
     nscoord y = ComputeWhereToScroll(
         aScrollFlags & ScrollFlags::ForZoomToFocusedInput
             ? WhereToScroll::Nearest
             : aVertical.mWhereToScroll,
         layoutOffset.y, aPositionFixedRect.y, aPositionFixedRect.YMost(),
-        visibleRect.y, visibleRect.YMost(), &unusedRangeMinOutparam,
-        &unusedRangeMaxOutparam);
+        visibleRect.height, scrollRange.y, scrollRange.YMost());
 
     layoutOffset.x += x;
     layoutOffset.y += y;
@@ -3827,7 +3847,8 @@ void PresShell::ScrollFrameIntoVisualViewport(
 
 bool PresShell::ScrollFrameIntoView(
     nsIFrame* aTargetFrame, const Maybe<nsRect>& aKnownRectRelativeToTarget,
-    ScrollAxis aVertical, ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
+    AxisScrollParams aVertical, AxisScrollParams aHorizontal,
+    ScrollFlags aScrollFlags) {
   // If the AxesAreLogical flag is set, the aVertical and aHorizontal params
   // actually refer to block and inline axes respectively, so we resolve them
   // to physical axes/directions here.
@@ -5016,11 +5037,8 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
     ancestorFrame = rootFrame;
   } else {
     nsINode* ancestor =
-        StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
-            ? nsContentUtils::GetClosestCommonShadowIncludingInclusiveAncestor(
-                  startContainer, endContainer)
-            : nsContentUtils::GetClosestCommonInclusiveAncestor(startContainer,
-                                                                endContainer);
+        nsContentUtils::GetClosestCommonShadowIncludingInclusiveAncestor(
+            startContainer, endContainer);
     NS_ASSERTION(!ancestor || ancestor->IsContent(),
                  "common ancestor is not content");
 
@@ -5054,9 +5072,7 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
   info->mBuilder.EnterPresShell(ancestorFrame);
 
   ContentSubtreeIterator subtreeIter;
-  nsresult rv = StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
-                    ? subtreeIter.InitWithAllowCrossShadowBoundary(aRange)
-                    : subtreeIter.Init(aRange);
+  nsresult rv = subtreeIter.InitWithAllowCrossShadowBoundary(aRange);
   if (NS_FAILED(rv)) {
     return nullptr;
   }
@@ -7845,6 +7861,12 @@ nsIFrame* PresShell::EventHandler::GetFrameToHandleNonTouchEvent(
     return nullptr;
   }
 
+  Document* doc = GetDocument();
+  if (MOZ_UNLIKELY(doc && doc->RenderingSuppressedForViewTransitions())) {
+    Element* root = doc->GetRootElement();
+    return root ? root->GetPrimaryFrame() : nullptr;
+  }
+
   ViewportType viewportType = ViewportType::Layout;
   if (aWeakRootFrameToHandleEvent->Type() == LayoutFrameType::Viewport) {
     nsPresContext* pc = aWeakRootFrameToHandleEvent->PresContext();
@@ -8621,10 +8643,31 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEvent(
     return rootFrameToHandleEvent;
   }
 
-  // If we have capturing content, let's compute root frame with it again.
-  return ComputeRootFrameToHandleEventWithCapturingContent(
-      rootFrameToHandleEvent, aCapturingContent, aIsCapturingContentIgnored,
-      aIsCaptureRetargeted);
+  *aIsCapturingContentIgnored = false;
+  *aIsCaptureRetargeted = false;
+
+  // If a capture is active, determine if the BrowsingContext is active. If
+  // not, clear the capture and target the mouse event normally instead. This
+  // would occur if the mouse button is held down while a tab change occurs.
+  // If the BrowsingContext is active, look for a scrolling container.
+  BrowsingContext* bc = GetPresContext()->Document()->GetBrowsingContext();
+  if (!bc || !bc->IsActive()) {
+    ClearMouseCapture();
+    *aIsCapturingContentIgnored = true;
+    return rootFrameToHandleEvent;
+  }
+
+  *aIsCaptureRetargeted = !!PresShell::sCapturingContentInfo.mRetargetToElement;
+
+  // As a special case, if a listbox is capturing, return its scrolled frame,
+  // see bug 519693.
+  // FIXME(emilio): This is super inconsistent, there should be a better way of
+  // making that work.
+  if (nsListControlFrame* lcf =
+          do_QueryFrame(aCapturingContent->GetPrimaryFrame())) {
+    return lcf->GetScrolledFrame();
+  }
+  return rootFrameToHandleEvent;
 }
 
 nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
@@ -8678,46 +8721,6 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
   }
 
   return aRootFrameToHandleEvent;
-}
-
-nsIFrame*
-PresShell::EventHandler::ComputeRootFrameToHandleEventWithCapturingContent(
-    nsIFrame* aRootFrameToHandleEvent, nsIContent* aCapturingContent,
-    bool* aIsCapturingContentIgnored, bool* aIsCaptureRetargeted) {
-  MOZ_ASSERT(aRootFrameToHandleEvent);
-  MOZ_ASSERT(aCapturingContent);
-  MOZ_ASSERT(aIsCapturingContentIgnored);
-  MOZ_ASSERT(aIsCaptureRetargeted);
-
-  *aIsCapturingContentIgnored = false;
-  *aIsCaptureRetargeted = false;
-
-  // If a capture is active, determine if the BrowsingContext is active. If
-  // not, clear the capture and target the mouse event normally instead. This
-  // would occur if the mouse button is held down while a tab change occurs.
-  // If the BrowsingContext is active, look for a scrolling container.
-  BrowsingContext* bc = GetPresContext()->Document()->GetBrowsingContext();
-  if (!bc || !bc->IsActive()) {
-    ClearMouseCapture();
-    *aIsCapturingContentIgnored = true;
-    return aRootFrameToHandleEvent;
-  }
-
-  if (PresShell::sCapturingContentInfo.mRetargetToElement) {
-    *aIsCaptureRetargeted = true;
-    return aRootFrameToHandleEvent;
-  }
-
-  nsIFrame* captureFrame = aCapturingContent->GetPrimaryFrame();
-  if (!captureFrame) {
-    return aRootFrameToHandleEvent;
-  }
-
-  // scrollable frames should use the scrolling container as the root instead
-  // of the document
-  ScrollContainerFrame* scrollFrame = do_QueryFrame(captureFrame);
-  return scrollFrame ? scrollFrame->GetScrolledFrame()
-                     : aRootFrameToHandleEvent;
 }
 
 nsresult
@@ -9370,6 +9373,7 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
   MOZ_ASSERT(aKeyboardEvent);
 
   if (aKeyboardEvent->mKeyCode != NS_VK_ESCAPE) {
+    mPresShell->CleanupFullscreenState();
     return;
   }
 
@@ -9380,6 +9384,62 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
                       : nullptr;
   Document* root = nsContentUtils::GetInProcessSubtreeRootDocument(doc);
   if (root && root->GetFullscreenElement()) {
+    Document* fullscreenLeaf = Document::GetFullscreenLeaf(root);
+    if (fullscreenLeaf->HasFullscreenKeyboardLockEnabled()) {
+      if (aKeyboardEvent->mMessage == eKeyDown) {
+        // Instead of exiting fullscreen on a single press of the escape key, we
+        // now wait for the escape key to be held for longer than a given
+        // interval before exiting.
+        if (!aKeyboardEvent->mIsRepeat) {
+          mPresShell->mHasShownFullscreenWarningForCurrentEscapeKeyLongPress =
+              false;
+          mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen =
+              aKeyboardEvent->mTimeStamp;
+
+          if (mPresShell->ShouldShowFullscreenKeyboardLockWarning(
+                  *aKeyboardEvent)) {
+            nsContentUtils::DispatchEventOnlyToChrome(
+                root, root, u"MozDOMFullscreen:WarnAboutKeyboardLock"_ns,
+                CanBubble::eYes, Cancelable::eNo, /* DefaultAction */ nullptr);
+          }
+          return;
+        }
+
+        MOZ_ASSERT(aKeyboardEvent->mIsRepeat);
+        if (mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen) {
+          if (mPresShell->ShouldShowFullscreenKeyboardLockWarning(
+                  *aKeyboardEvent)) {
+            nsContentUtils::DispatchEventOnlyToChrome(
+                root, root, u"MozDOMFullscreen:WarnAboutKeyboardLock"_ns,
+                CanBubble::eYes, Cancelable::eNo, /* DefaultAction */ nullptr);
+          }
+
+          const bool escapeHasBeenHeldLongEnough =
+              (aKeyboardEvent->mTimeStamp -
+               mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen) >=
+              TimeDuration::FromMilliseconds(
+                  StaticPrefs::
+                      dom_fullscreen_keyboard_lock_long_press_interval());
+          if (escapeHasBeenHeldLongEnough) {
+            mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen = TimeStamp();
+            MOZ_LOG_FMT(gLog, LogLevel::Debug,
+                        "Exiting fullscreen from Escape key long-press");
+            Document::AsyncExitFullscreen(root);
+
+            if (XRE_IsParentProcess() &&
+                (PointerLockManager::GetLockedRemoteTarget() ||
+                 PointerLockManager::IsLocked())) {
+              PointerLockManager::Unlock("EscapeKey");
+            }
+          }
+        }
+      }
+
+      // If fullscreen keyboard-lock is enabled, return here, as we don't allow
+      // escaping from pointerlock when escape is pressed.
+      return;
+    }
+
     // Prevent default action on ESC key press when exiting
     // DOM fullscreen mode. This prevents the browser ESC key
     // handler from stopping all loads in the document, which
@@ -9415,8 +9475,8 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
 
       if (shouldExitFullscreen) {
         // ESC key released while in DOM fullscreen mode.
-        // Fully exit fullscreen mode for the browser window and documents that
-        // received the event.
+        // Fully exit fullscreen mode for the browser window and documents
+        // that received the event.
         Document::AsyncExitFullscreen(root);
       }
     }
@@ -9936,8 +9996,10 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
     rv = MOZ_KnownLive(mPresShell)
              ->ScrollContentIntoView(
                  content,
-                 ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
-                 ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
+                 AxisScrollParams(WhereToScroll::Nearest,
+                                  WhenToScroll::IfNotVisible),
+                 AxisScrollParams(WhereToScroll::Nearest,
+                                  WhenToScroll::IfNotVisible),
                  ScrollFlags::ScrollOverflowHidden);
     NS_ENSURE_SUCCESS(rv, false);
     frame = content->GetPrimaryFrame();
@@ -9998,7 +10060,8 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
     LayoutDeviceIntPoint& aTargetPt, nsIWidget* aRootWidget) {
   nsCOMPtr<nsIContent> focusedContent = aFocusedElement;
   MOZ_KnownLive(mPresShell)
-      ->ScrollContentIntoView(focusedContent, ScrollAxis(), ScrollAxis(),
+      ->ScrollContentIntoView(focusedContent, AxisScrollParams(),
+                              AxisScrollParams(),
                               ScrollFlags::ScrollOverflowHidden);
 
   nsPresContext* presContext = GetPresContext();
@@ -11233,10 +11296,10 @@ void ReflowCountMgr::DoGrandHTMLTotals() {
     }
   });
 
-  static const char* title[] = {"Class", "Reflows"};
+  static const char* titles[] = {"Class", "Reflows"};
   fprintf(mFD, "<tr>");
-  for (uint32_t i = 0; i < std::size(title); i++) {
-    fprintf(mFD, "<td><center><b>%s<b></center></td>", title[i]);
+  for (const char* title : titles) {
+    fprintf(mFD, "<td><center><b>%s<b></center></td>", title);
   }
   fprintf(mFD, "</tr>\n");
 
@@ -12870,4 +12933,69 @@ void PresShell::UpdateContentRelevancyImmediately(
 
   EnsureLayoutFlush();
   UpdateRelevancyOfContentVisibilityAutoFrames();
+}
+
+void PresShell::CleanupFullscreenState() {
+  mFirstUnmatchedEscapeKeyDownForFullscreen = TimeStamp();
+  mEscapeKeyDownCountForFullscreenKeyboardLockWarning = 0;
+  mLastEscapeKeyDownTimeForFullscreenKeyboardLockWarning = TimeStamp();
+  mHasShownFullscreenWarningForCurrentEscapeKeyLongPress = false;
+}
+
+bool PresShell::ShouldShowFullscreenKeyboardLockWarning(
+    const WidgetKeyboardEvent& aKeyboardEvent) {
+  MOZ_ASSERT(aKeyboardEvent.mMessage == eKeyDown);
+  MOZ_ASSERT(aKeyboardEvent.mKeyCode == NS_VK_ESCAPE);
+
+  if (!XRE_IsParentProcess()) {
+    // We trigger the fullscreen warning from the parent process.
+    return false;
+  }
+
+  if (aKeyboardEvent.mIsRepeat) {
+    // Only when we are in tracking a long press of the escape key and haven't
+    // shown the warning for the current long press yet.
+    if (mFirstUnmatchedEscapeKeyDownForFullscreen &&
+        !mHasShownFullscreenWarningForCurrentEscapeKeyLongPress) {
+      if ((aKeyboardEvent.mTimeStamp -
+           mFirstUnmatchedEscapeKeyDownForFullscreen) >=
+          TimeDuration::FromMilliseconds(
+              StaticPrefs::
+                  dom_fullscreen_keyboard_lock_long_press_warning_interval())) {
+        mHasShownFullscreenWarningForCurrentEscapeKeyLongPress = true;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  MOZ_ASSERT(!aKeyboardEvent.mIsRepeat);
+  const TimeStamp previousEscapeKeyDownTime =
+      mLastEscapeKeyDownTimeForFullscreenKeyboardLockWarning;
+  mLastEscapeKeyDownTimeForFullscreenKeyboardLockWarning =
+      aKeyboardEvent.mTimeStamp;
+
+  const bool escapeKeyDownWithinWarnInterval =
+      previousEscapeKeyDownTime &&
+      (aKeyboardEvent.mTimeStamp - previousEscapeKeyDownTime) <=
+          TimeDuration::FromMilliseconds(
+              StaticPrefs::
+                  dom_fullscreen_keyboard_lock_triple_click_warn_interval());
+  if (!escapeKeyDownWithinWarnInterval) {
+    // If the escape keys were pressed outside of the warning interval, start
+    // a new count.
+    mEscapeKeyDownCountForFullscreenKeyboardLockWarning = 1;
+    return false;
+  }
+
+  mEscapeKeyDownCountForFullscreenKeyboardLockWarning += 1;
+  if (mEscapeKeyDownCountForFullscreenKeyboardLockWarning < 3) {
+    return false;
+  }
+
+  // If the escape key has been pressed 3 or more times within the warning
+  // interval, trigger the warning and reset the counter and timestamp.
+  mEscapeKeyDownCountForFullscreenKeyboardLockWarning = 0;
+  mLastEscapeKeyDownTimeForFullscreenKeyboardLockWarning = TimeStamp();
+  return true;
 }

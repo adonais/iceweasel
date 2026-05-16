@@ -131,6 +131,8 @@ class GeckoInstance:
         "focusmanager.testmode": True,
         # Disable useragent updates
         "general.useragent.updates.enabled": False,
+        # Do not open system settings when geolocation is requested without OS permission
+        "geo.prompt.open_system_prefs": False,
         # Disable geolocation ping (#2)
         "geo.provider.network.url": "",
         # Always use network provider for geolocation tests

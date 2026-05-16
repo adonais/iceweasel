@@ -2,11 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
 import json
 import os
 import sys
 from functools import cache
+from typing import Optional
 
 from mach.util import get_state_dir
 from mozbuild.base import MozbuildObject
@@ -33,11 +33,15 @@ when pushing from hg. Please install it by running:
 """.lstrip()
 
 VCS_NOT_FOUND = """
-Could not detect version control. Only `hg` or `git` are supported.
+error: could not detect version control (only `hg` or `git` are supported)
+""".strip()
+
+NO_REMOTE_CONFIGURED = """
+error: no version control remote configured
 """.strip()
 
 UNCOMMITTED_CHANGES = """
-ERROR please commit changes before continuing
+error: commit changes before continuing
 """.strip()
 
 LARGE_PUSH_THRESHOLD = 1000
@@ -53,11 +57,9 @@ MAX_HISTORY = 10
 MACH_TRY_PUSH_TO_VCS = os.getenv("MACH_TRY_PUSH_TO_VCS") == "1"
 
 HG_TRY_URL = "ssh://hg.mozilla.org/try"
-MACH_TRY_REMOTE = HG_TRY_URL
+MACH_TRY_REMOTE: Optional[str] = None
 
-TREEHERDER_LANDO_TRY_RUN_URL = (
-    "https://treeherder.mozilla.org/jobs?repo=try&landoCommitID={job_id}"
-)
+TREEHERDER_LANDO_TRY_RUN_URL = "https://treeherder.mozilla.org/jobs?repo=try&landoInstance={lando_instance}&landoCommitID={job_id}"
 
 here = os.path.abspath(os.path.dirname(__file__))
 build = MozbuildObject.from_environment(cwd=here)
@@ -172,6 +174,9 @@ def get_sys_argv(injected_argv=None):
 @cache
 def _is_hg_try():
     remote = MACH_TRY_REMOTE
+    if not remote:
+        return False
+
     if remote_url := vcs.get_remote_url(remote, push=True):
         remote = remote_url
     return HG_TRY_URL in remote
@@ -188,9 +193,14 @@ def push_to_try(
     files_to_change=None,
     allow_log_capture=False,
     push_to_vcs=False,
+    force_old_lando=False,
 ):
     metrics.mach_try.commit_prep.start()
     push = not stage_changes and not dry_run
+
+    if push and not MACH_TRY_REMOTE:
+        print(NO_REMOTE_CONFIGURED)
+        sys.exit(1)
 
     # Use direct push if explicitly requested or we aren't pushing to hg.mozilla.org/try.
     push_to_vcs |= MACH_TRY_PUSH_TO_VCS or not _is_hg_try()
@@ -240,17 +250,26 @@ def push_to_try(
                 )
             else:
                 with vcs.try_commit(commit_message, changed_files) as head:
-                    ref = vcs.branch or head
-                    vcs.push(MACH_TRY_REMOTE, ref=ref, force=True)
+                    vcs.push(
+                        MACH_TRY_REMOTE, ref=head, dest_branch=vcs.branch, force=True
+                    )
         else:
-            job_id = push_to_lando_try(vcs, commit_message, changed_files, metrics)
-            if job_id:
+            push_data = push_to_lando_try(
+                vcs,
+                commit_message,
+                changed_files,
+                metrics,
+                force_old_lando=force_old_lando,
+            )
+            lando_instance = push_data["lando_instance"]
+            job_id = push_data["lando_job_id"]
+            if lando_instance and job_id:
                 print(
                     f"Follow the progress of your build on Treeherder: "
-                    f"{TREEHERDER_LANDO_TRY_RUN_URL.format(job_id=job_id)}"
+                    f"{TREEHERDER_LANDO_TRY_RUN_URL.format(lando_instance=lando_instance, job_id=job_id)}"
                 )
 
-            return job_id
+            return push_data
     except MissingVCSExtension as e:
         if e.ext == "push-to-try":
             print(HG_PUSH_TO_TRY_NOT_FOUND)

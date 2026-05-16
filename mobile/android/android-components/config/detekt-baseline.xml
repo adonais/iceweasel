@@ -118,11 +118,9 @@
     <ID>ForbiddenSuppress:WorkManagerSyncManager.kt$WorkManagerSyncWorker$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
     <ID>MaxLineLength:ContextCompatDetector.kt$ContextCompatDetector.Companion$explanation = "Using this method can lead to crashes in older Android versions as newer features might not be available"</ID>
     <ID>MaxLineLength:IconDirectoryEntry.kt$@Suppress("MagicNumber", "ReturnCount", "CognitiveComplexMethod", "NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod")</ID>
+    <ID>MaxLineLength:StringLintXmlDetectorTest.kt$StringLintXmlDetectorTest$fun</ID>
     <ID>MayBeConst:ConstraintLayoutPerfDetector.kt$private val CUSTOM_VIEW_ISSUE_DESCRIPTION = "Caution regarding custom views extending `ConstraintLayout`"</ID>
     <ID>MayBeConst:ConstraintLayoutPerfDetector.kt$private val CUSTOM_VIEW_ISSUE_MESSAGE = "Custom views extending `ConstraintLayout` are less " + "efficient because they cannot share other `ConstraintLayout` defined in file."</ID>
-    <ID>NoSystemCurrentTimeMillis:AbstractFetchDownloadService.kt$AbstractFetchDownloadService$System.currentTimeMillis()</ID>
-    <ID>NoSystemCurrentTimeMillis:AbstractFetchDownloadService.kt$AbstractFetchDownloadService.&lt;no name provided&gt;$System.currentTimeMillis()</ID>
-    <ID>NoSystemCurrentTimeMillis:AbstractFetchDownloadService.kt$AbstractFetchDownloadService.DownloadJobState$System.currentTimeMillis()</ID>
     <ID>NoSystemCurrentTimeMillis:BookmarksStorage.kt$BookmarksStorage$System.currentTimeMillis()</ID>
     <ID>NoSystemCurrentTimeMillis:BrowserAction.kt$LastAccessAction.UpdateLastAccessAction$System.currentTimeMillis()</ID>
     <ID>NoSystemCurrentTimeMillis:BrowserAction.kt$LastAccessAction.UpdateLastMediaAccessAction$System.currentTimeMillis()</ID>
@@ -151,7 +149,6 @@
     <ID>NoSystemCurrentTimeMillis:PlacesHistoryStorage.kt$PlacesHistoryStorage$System.currentTimeMillis()</ID>
     <ID>NoSystemCurrentTimeMillis:PocketStory.kt$System.currentTimeMillis()</ID>
     <ID>NoSystemCurrentTimeMillis:RegionManager.kt$RegionManager$System.currentTimeMillis()</ID>
-    <ID>NoSystemCurrentTimeMillis:RelayFeature.kt$RelayFeature$System.currentTimeMillis()</ID>
     <ID>NoSystemCurrentTimeMillis:RelayState.kt$System.currentTimeMillis()</ID>
     <ID>NoSystemCurrentTimeMillis:SampleApplication.kt$SampleApplication$System.currentTimeMillis()</ID>
     <ID>NoSystemCurrentTimeMillis:SessionUseCases.kt$SessionUseCases.UpdateLastAccessUseCase$System.currentTimeMillis()</ID>
@@ -473,5 +470,6 @@
     <ID>UndocumentedPublicFunction:Types.kt$fun mozilla.components.concept.sync.TabData.into(): TabHistoryEntry</ID>
     <ID>UndocumentedPublicFunction:WebAppManifestParser.kt$WebAppManifestParser$fun serialize(manifest: WebAppManifest)</ID>
     <ID>UndocumentedPublicFunction:WorkManagerSyncManager.kt$fun getLastSynced(context: Context): Long</ID>
+    <ID>UnusedPrivateProperty:NoStaticOrObjectMockingDetectorTest.kt$NoStaticOrObjectMockingDetectorTest$private val mockitoMockConstructionUsage = TestFiles.kotlin( """ package com.example.test import org.mockito.Mockito class SomeDependency { fun getValue() = "real" } class MyMockitoConstructorTest { fun setup() { Mockito.mockConstruction(SomeDependency::class.java) // VIOLATION } } """, ).indented()</ID>
   </CurrentIssues>
 </SmellBaseline>

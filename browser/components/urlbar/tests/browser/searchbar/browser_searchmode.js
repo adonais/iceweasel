@@ -24,7 +24,7 @@ add_task(async function searchModeSurvivesTabSwitch() {
   let popup = await SearchbarTestUtils.openSearchModeSwitcher(window);
   info("Press on the engine1 menu button to enter search mode");
   let popupHidden = SearchbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup.querySelector("menuitem[label=engine1]").click();
+  popup.querySelector("panel-item[data-engine-id=engine1]").button.click();
   await popupHidden;
 
   await SearchbarTestUtils.assertSearchMode(window, {

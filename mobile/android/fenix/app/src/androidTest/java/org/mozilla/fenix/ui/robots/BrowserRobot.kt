@@ -1400,7 +1400,7 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
             return NavigationToolbarRobot.Transition(composeTestRule)
         }
 
-        fun openTabDrawer(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
+        fun openTabDrawer(composeTestRule: ComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
             Log.i(TAG, "openTabDrawer: Trying to click the tab counter button")
             composeTestRule.onNodeWithTag(TABS_COUNTER).performClick()
             Log.i(TAG, "openTabDrawer: Clicked the tab counter button")
@@ -1485,6 +1485,8 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
                     mDevice.findObject(By.textContains(title)).click()
                     Log.i(TAG, "clickDownloadLink: Clicked the: $title download link")
                     assertUIObjectExists(itemWithResId("$packageName:id/parentPanel"))
+
+                    break
                 } catch (e: AssertionError) {
                     Log.i(TAG, "clickDownloadLink: AssertionError caught, executing fallback methods")
                     if (i == RETRY_COUNT) {

@@ -32,7 +32,6 @@ class MediaEnginePrefs {
         mFreq(0),
         mUsePlatformProcessing(false),
         mAecOn(false),
-        mUseAecMobile(false),
         mAgcOn(false),
         mHPFOn(false),
         mNoiseOn(false),
@@ -51,7 +50,6 @@ class MediaEnginePrefs {
   int32_t mFreq;  // for test tones (fake:true)
   bool mUsePlatformProcessing;
   bool mAecOn;
-  bool mUseAecMobile;
   bool mAgcOn;
   bool mHPFOn;
   bool mNoiseOn;

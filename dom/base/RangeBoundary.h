@@ -5,8 +5,6 @@
 #ifndef mozilla_RangeBoundary_h
 #define mozilla_RangeBoundary_h
 
-#include <fmt/format.h>
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -937,10 +935,6 @@ class RangeBoundaryBase {
     MOZ_ASSERT(mParent);
     MOZ_ASSERT(mParent->IsContainerNode(),
                "Range is positioned on a text node!");
-    if (!StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-      return;
-    }
-
     if (!MaybeMutationObserved()) {
       // RangeBoundaries that are not used in the context of a
       // `MutationObserver` use the offset as main source of truth to compute

@@ -47,6 +47,7 @@
 #include "mozilla/dom/AnimationTimelinesController.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
 #include "mozilla/dom/Nullable.h"
@@ -287,6 +288,7 @@ class TrustedHTMLOrString;
 class OwningTrustedHTMLOrString;
 enum class ViewportFitType : uint8_t;
 class ViewTransition;
+struct ViewTransitionParams;
 class ViewTransitionUpdateCallbackOrStartViewTransitionOptions;
 class WakeLockSentinel;
 class WindowContext;
@@ -1948,10 +1950,27 @@ class Document : public nsINode,
 
   bool TopLayerContains(Element&) const;
 
+  // https://fullscreen.spec.whatwg.org/#fullscreen-element-ready-check
+  enum class ElementReadyCheckResult {
+    // error is false, in the Fullscreen API requestFullscreen algorithm
+    eOk,
+    // Shall not abort early during synchronous phase of requestFullscreen, but
+    // will during ApplyFullscreen.
+    // Not yet spec'ed.
+    eKeyboardLockOnly,
+    // Request was for an element that already is the fullscreenElement and the
+    // keyboard lock status is also the same
+    eSame,
+    // Element Ready check failed
+    eErrorPromiseRejected
+  };
+
   // Do the "fullscreen element ready check" from the fullscreen spec.
-  // It returns true if the given element is allowed to go into fullscreen.
-  // It is responsive to dispatch "fullscreenerror" event when necessary.
-  bool FullscreenElementReadyCheck(FullscreenRequest&);
+  // see https://fullscreen.spec.whatwg.org/#fullscreen-element-ready-check
+  // It returns ElementReadyCheckResult::eOk if the given element is allowed to
+  // go into fullscreen. It is responsive to dispatch "fullscreenerror" event
+  // when necessary.
+  ElementReadyCheckResult FullscreenElementReadyCheck(FullscreenRequest&);
 
   /**
    * When this is called on content process, this asynchronously requests that
@@ -1992,7 +2011,7 @@ class Document : public nsINode,
   void SetAncestorOriginsList(nsTArray<nsString>&& aAncestorOriginsList);
   Span<const nsString> GetAncestorOriginsList() const;
   // https://html.spec.whatwg.org/#concept-location-ancestor-origins-list
-  already_AddRefed<DOMStringList> AncestorOrigins() const;
+  already_AddRefed<DOMStringList> AncestorOrigins();
 
   // Removes all the elements with fullscreen flag set from the top layer, and
   // clears their fullscreen flag.
@@ -2052,7 +2071,8 @@ class Document : public nsINode,
    * aFrameElement is the frame element which contains the child-process
    * fullscreen document.
    */
-  void RemoteFrameFullscreenChanged(Element* aFrameElement);
+  void RemoteFrameFullscreenChanged(Element* aFrameElement,
+                                    bool aFullscreenKeyboardLockEnabled);
 
   /**
    * Called when a frame in a remote child document has rolled back fullscreen
@@ -2077,6 +2097,13 @@ class Document : public nsINode,
    * is in fullscreen mode and has no fullscreen children.
    */
   bool IsFullscreenLeaf();
+
+  /**
+   * Get the fullscreen leaf document starting from aDoc or the current
+   * in-process root document if aDoc is not fullscreen.
+   */
+  static Document* GetFullscreenLeaf(Document* aDoc);
+  static Document* GetFullscreenLeaf(Document& aDoc);
 
   /**
    * Returns the document which is at the root of this document's branch
@@ -2129,6 +2156,10 @@ class Document : public nsINode,
    * Clear pending fullscreen in aDocument.
    */
   static void ClearPendingFullscreenRequests(Document* aDocument);
+
+  void SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
+  FullscreenKeyboardLock GetFullscreenKeyboardLockStatus() const;
+  bool HasFullscreenKeyboardLockEnabled();
 
   // ScreenOrientation related APIs
 
@@ -4130,6 +4161,16 @@ class Document : public nsINode,
   void ScheduleViewTransitionUpdateCallback(ViewTransition* aVt);
   MOZ_CAN_RUN_SCRIPT void FlushViewTransitionUpdateCallbackQueue();
 
+  // Returns some ViewTransition::TypeList or Nothing if skip transition.
+  // https://drafts.csswg.org/css-view-transitions-2/#resolve-view-transition-rule
+  Maybe<nsTArray<RefPtr<nsAtom>>> ResolveViewTransitionRule();
+
+  void SetInboundViewTransitionParams(UniquePtr<ViewTransitionParams> aParams);
+
+  // Returns some ViewTransition or Nothing if skip transition.
+  // https://drafts.csswg.org/css-view-transitions-2/#resolve-inbound-cross-document-view-transition
+  Maybe<RefPtr<ViewTransition>> ResolveInboundCrossDocumentViewTransition();
+
   // Getter for PermissionDelegateHandler. Performs lazy initialization.
   PermissionDelegateHandler* GetPermissionDelegateHandler();
 
@@ -5360,6 +5401,7 @@ class Document : public nsINode,
   nsCString mContentType;
 
   nsTArray<nsString> mAncestorOriginsList;
+  RefPtr<DOMStringList> mCachedAncestorOrigins;
 
  protected:
   // The document's security info
@@ -5717,6 +5759,9 @@ class Document : public nsINode,
   RefPtr<ChromeObserver> mChromeObserver;
 
   RefPtr<HTMLAllCollection> mAll;
+
+  // https://drafts.csswg.org/css-view-transitions-2/#document-inbound-view-transition-params
+  UniquePtr<ViewTransitionParams> mInboundViewTransitionParams;
 
   // The active view transition.
   // https://drafts.csswg.org/css-view-transitions-1/#document-active-view-transition

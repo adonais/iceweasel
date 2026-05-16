@@ -791,7 +791,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
              key="open_prefs_key"/>
 
     We need to use this system for localization purposes, until we have a better
-    way to define the Application menu to be used on Mac OS X.
+    way to define the Application menu to be used on macOS.
   */
 
   if (sApplicationMenu) {
@@ -861,7 +861,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
     if (itemBeingAdded) {
       [sApplicationMenu addItem:itemBeingAdded];
 
-      // set this menu item up as the Mac OS X Services menu
+      // set this menu item up as the macOS Services menu
       NSMenu* servicesMenu = [[GeckoNSMenu alloc] initWithTitle:@""];
       itemBeingAdded.submenu = servicesMenu;
       NSApp.servicesMenu = servicesMenu;
@@ -1005,7 +1005,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 // go through the mechanics so they'll give the proper visual
 // feedback.
 - (BOOL)performKeyEquivalent:(NSEvent*)aEvent {
-  // We've noticed that Mac OS X expects this check in subclasses before
+  // We've noticed that macOS expects this check in subclasses before
   // calling NSMenu's "performKeyEquivalent:".
   //
   // There is no case in which we'd need to do anything or return YES

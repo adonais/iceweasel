@@ -14,7 +14,30 @@ export const LINKS = Object.freeze({
     );
   },
 
+  // Used for the upgrade promo button in the locations subview
+  get LOCATION_PROMO_URL() {
+    return (
+      Services.prefs.getCharPref(
+        "browser.ipProtection.productVpn.endpoint",
+        "https://www.mozilla.org"
+      ) +
+      "/products/vpn/?utm_medium=firefox-desktop&utm_source=vpn-panel&utm_campaign=fx-vpn&utm_content=location-selector-promo"
+    );
+  },
+
   SUPPORT_SLUG: "built-in-vpn",
+
+  get TERMS_OF_SERVICE_URL() {
+    return Services.urlFormatter.formatURL(
+      "https://www.mozilla.org/%LOCALE%/about/legal/terms/firefox/"
+    );
+  },
+
+  get PRIVACY_NOTICE_URL() {
+    return Services.urlFormatter.formatURL(
+      "https://www.mozilla.org/%LOCALE%/privacy/firefox/#notice"
+    );
+  },
 });
 
 export const SIGNIN_DATA = Object.freeze({
@@ -37,7 +60,12 @@ export const ONBOARDING_PREF_FLAGS = {
 export const BANDWIDTH = Object.freeze({
   BYTES_IN_GB: Math.pow(2, 30),
   BYTES_IN_MB: Math.pow(2, 20),
-  MAX_IN_GB: 50,
+  get MAX_IN_GB() {
+    return Services.prefs.getIntPref(
+      "browser.ipProtection.bandwidth.maxInGb",
+      50
+    );
+  },
   FIRST_THRESHOLD: 0.5,
   SECOND_THRESHOLD: 0.25,
   THIRD_THRESHOLD: 0.1,

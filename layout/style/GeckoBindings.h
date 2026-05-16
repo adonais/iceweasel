@@ -97,8 +97,7 @@ void Gecko_GetQueryContainerSize(const mozilla::dom::Element*,
                                  nscoord* aOutWidth, nscoord* aOutHeight);
 
 void Gecko_ComputedStyle_Init(mozilla::ComputedStyle* context,
-                              const ServoComputedData* values,
-                              mozilla::PseudoStyleType pseudo_type);
+                              const ServoComputedData* values);
 
 void Gecko_ComputedStyle_Destroy(mozilla::ComputedStyle* context);
 

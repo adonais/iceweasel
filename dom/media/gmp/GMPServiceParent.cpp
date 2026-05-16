@@ -315,8 +315,9 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
     // origin-pairs, if we try to open an origin-pair for non-PB mode, we'll get
     // the NodeId salt stored on-disk, and if we try to open a PB mode
     // origin-pair, we'll re-generate new salt.
-    mTempNodeIds.Clear();
-    mTempGMPStorage.Clear();
+    return GMPDispatch(NewRunnableMethod(
+        "gmp::GeckoMediaPluginServiceParent::ClearTemporaryStorage", this,
+        &GeckoMediaPluginServiceParent::ClearTemporaryStorage));
   } else if (!strcmp("browser:purge-session-history", aTopic)) {
     GMP_LOG_DEBUG(
         "Received 'browser:purge-session-history', clearing everything");
@@ -376,10 +377,11 @@ void GeckoMediaPluginServiceParent::OnPreferenceChanged(
   }
 }
 
-RefPtr<GenericPromise> GeckoMediaPluginServiceParent::EnsureInitialized() {
+RefPtr<GenericNonExclusivePromise>
+GeckoMediaPluginServiceParent::EnsureInitialized() {
   MonitorAutoLock lock(mInitPromiseMonitor);
   if (mLoadPluginsFromDiskComplete) {
-    return GenericPromise::CreateAndResolve(true, __func__);
+    return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
   }
   // We should have an init promise in flight.
   MOZ_ASSERT(!mInitPromise.IsEmpty());
@@ -415,7 +417,8 @@ GeckoMediaPluginServiceParent::GetContentParent(
        nodeIdString = std::move(nodeIdString), api = nsCString(aAPI),
        tags = aTags.Clone(), helper = RefPtr<GMPCrashHelper>(aHelper),
        holder = std::move(holder)](
-          const GenericPromise::ResolveOrRejectValue& aValue) mutable -> void {
+          const GenericNonExclusivePromise::ResolveOrRejectValue&
+              aValue) mutable -> void {
         if (aValue.IsReject()) {
           NS_WARNING("GMPService::EnsureInitialized failed.");
           holder->Reject(NS_ERROR_FAILURE, __func__);
@@ -447,7 +450,7 @@ void GeckoMediaPluginServiceParent::InitializePlugins(
   }
 
   RefPtr<GeckoMediaPluginServiceParent> self(this);
-  RefPtr<GenericPromise> p = mInitPromise.Ensure(__func__);
+  RefPtr<GenericNonExclusivePromise> p = mInitPromise.Ensure(__func__);
   InvokeAsync(aGMPThread, this, __func__,
               &GeckoMediaPluginServiceParent::LoadFromEnvironment)
       ->Then(
@@ -1858,6 +1861,14 @@ void GeckoMediaPluginServiceParent::ServiceUserDestroyed(
   MOZ_ASSERT(mServiceParents.Length() > 0);
   MOZ_ASSERT(mServiceParents.Contains(aServiceParent));
   mServiceParents.RemoveElement(aServiceParent);
+}
+
+void GeckoMediaPluginServiceParent::ClearTemporaryStorage() {
+  AssertOnGMPThread();
+  GMP_LOG_DEBUG("%s::%s", __CLASS__, __FUNCTION__);
+
+  mTempNodeIds.Clear();
+  mTempGMPStorage.Clear();
 }
 
 void GeckoMediaPluginServiceParent::ClearStorage() {

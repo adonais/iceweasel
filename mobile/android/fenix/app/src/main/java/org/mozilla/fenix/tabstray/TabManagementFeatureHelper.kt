@@ -26,6 +26,11 @@ interface TabManagementFeatureHelper {
      * Whether the Tab Groups feature is enabled.
      */
     val tabGroupsEnabled: Boolean
+
+    /**
+     * Whether drag and drop is enabled for the Tab Groups feature.
+     */
+    val tabGroupsDragAndDropEnabled: Boolean
 }
 
 /**
@@ -46,4 +51,7 @@ data object DefaultTabManagementFeatureHelper : TabManagementFeatureHelper {
 
     override val tabGroupsEnabled: Boolean
         get() = FxNimbus.features.tabGroups.value().enabled
+
+    override val tabGroupsDragAndDropEnabled: Boolean
+        get() = FxNimbus.features.tabGroupsDragAndDrop.value().enabled
 }

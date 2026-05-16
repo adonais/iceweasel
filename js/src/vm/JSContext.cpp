@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -19,7 +17,6 @@
 #include <string.h>
 #ifdef ANDROID
 #  include <android/log.h>
-#  include <fstream>
 #endif  // ANDROID
 #ifdef XP_WIN
 #  include <processthreadsapi.h>
@@ -69,6 +66,7 @@
 #include "vm/ToSource.h"    // js::ValueToSource
 
 #include "vm/Compartment-inl.h"
+#include "vm/JSObject-inl.h"
 #include "vm/Stack-inl.h"
 
 using namespace js;
@@ -331,6 +329,8 @@ static void MaybeReportOverRecursedForDifferentialTesting() {
 }
 
 void JSContext::onOverRecursed() {
+  AutoSuppressAllocationMetadataBuilder suppressMetadata(this);
+
   // Try to construct an over-recursed error and then update the exception
   // status to `OverRecursed`. Creating the error can fail, so check there
   // is a reasonable looking exception pending before updating status.
@@ -1491,9 +1491,6 @@ void JSContext::trace(JSTracer* trc) {
   if (isolate) {
     irregexp::TraceIsolate(trc, isolate.ref());
   }
-#ifdef ENABLE_WASM_JSPI
-  wasm().trace(trc);
-#endif
 }
 
 JS::NativeStackLimit JSContext::stackLimitForJitCode(JS::StackKind kind) {
@@ -1502,6 +1499,10 @@ JS::NativeStackLimit JSContext::stackLimitForJitCode(JS::StackKind kind) {
 #else
   return stackLimit(kind);
 #endif
+}
+
+bool JSContext::stackContainsAddress(uintptr_t address, JS::StackKind kind) {
+  return address <= nativeStackBase() && address > stackLimit(kind);
 }
 
 void JSContext::resetJitStackLimit() {

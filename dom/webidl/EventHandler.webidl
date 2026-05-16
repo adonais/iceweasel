@@ -42,7 +42,6 @@ interface mixin GlobalEventHandlers {
            attribute EventHandler oncontentvisibilityautostatechange;
            attribute EventHandler oncontextlost;
            attribute EventHandler oncontextmenu;
-           [Pref="dom.element.commandfor.enabled"]
            attribute EventHandler oncommand;
            attribute EventHandler oncontextrestored;
            attribute EventHandler oncopy;

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2016 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +19,6 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
-
-#include <functional>
 
 #include "gc/Barrier.h"
 #include "js/shadow/Zone.h"  // for BarrierState
@@ -61,6 +57,7 @@ struct FuncExportInstanceData;
 struct MemoryDesc;
 struct MemoryInstanceData;
 class GlobalDesc;
+struct Handlers;
 struct TableDesc;
 struct TableInstanceData;
 struct TagDesc;
@@ -626,6 +623,11 @@ class alignas(16) Instance {
   static int32_t arrayCopy(Instance* instance, void* dstArray,
                            uint32_t dstIndex, void* srcArray, uint32_t srcIndex,
                            uint32_t numElements, uint32_t elementSize);
+#ifdef ENABLE_WASM_JSPI
+  static void* contNew(Instance* instance, void* funcRef);
+  static void* contNewEmpty(Instance* instance);
+  static void contUnwind(Instance* instance, wasm::Handlers* handlers);
+#endif
   static int32_t refTest(Instance* instance, void* refPtr,
                          const wasm::TypeDef* typeDef);
   static int32_t intrI8VecMul(Instance* instance, uint32_t dest, uint32_t src1,

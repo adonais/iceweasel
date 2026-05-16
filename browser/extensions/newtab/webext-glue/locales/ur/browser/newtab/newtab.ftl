@@ -204,9 +204,21 @@ newtab-error-fallback-refresh-link = دوبارہ کوشش کرنے کے لئے 
 
 newtab-custom-shortcuts-title = تیز راہ
 newtab-custom-shortcuts-subtitle = وہ سائٹس جو آپ محفوظ کرتے ہیں یا ملاحظہ کرتے ہیں۔
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = تیز راہ
     .description = وہ سائٹس جو آپ محفوظ کرتے ہیں یا ملاحظہ کرتے ہیں۔
+newtab-custom-shortcuts-nova =
+    .label = تیز راہ
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } قطار
+           *[other] { $num } قطاریں
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =

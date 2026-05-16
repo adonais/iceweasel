@@ -3,63 +3,100 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
+from typing import Optional
+
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import join_symbol, split_symbol
-from voluptuous import Extra, Optional, Required
 
-from gecko_taskgraph.transforms.test import test_description_schema
+from gecko_taskgraph.transforms.test import TestDescriptionSchema
 from gecko_taskgraph.util.perftest import is_external_browser
 
 transforms = TransformSequence()
 task_transforms = TransformSequence()
 
-raptor_description_schema = LegacySchema({
-    # Raptor specific configs.
-    Optional("raptor"): {
-        Optional("activity"): optionally_keyed_by("app", str),
-        Optional("apps"): optionally_keyed_by("test-platform", "subtest", [str]),
-        Optional("binary-path"): optionally_keyed_by("app", str),
-        Optional("run-visual-metrics"): optionally_keyed_by(
-            "app", "test-platform", bool
-        ),
-        Optional("subtests"): optionally_keyed_by("app", "test-platform", list),
-        Optional("test"): str,
-        Optional("test-url-param"): optionally_keyed_by(
-            "subtest", "test-platform", str
-        ),
-        Optional("lull-schedule"): optionally_keyed_by("subtest", "test-platform", str),
-        Optional("network-conditions"): optionally_keyed_by("subtest", list),
-    },
-    # Configs defined in the 'test_description_schema'.
-    Optional("max-run-time"): optionally_keyed_by(
-        "app", "subtest", "test-platform", test_description_schema["max-run-time"]
-    ),
-    Optional("run-on-projects"): optionally_keyed_by(
-        "app",
-        "test-name",
-        "raptor.test",
-        "subtest",
-        "variant",
-        test_description_schema["run-on-projects"],
-    ),
-    Optional("variants"): test_description_schema["variants"],
-    Optional("target"): optionally_keyed_by("app", test_description_schema["target"]),
-    Optional("tier"): optionally_keyed_by(
-        "app", "raptor.test", "subtest", "variant", test_description_schema["tier"]
-    ),
-    Required("test-name"): test_description_schema["test-name"],
-    Required("test-platform"): test_description_schema["test-platform"],
-    Required("require-signed-extensions"): test_description_schema[
-        "require-signed-extensions"
-    ],
-    Required("treeherder-symbol"): test_description_schema["treeherder-symbol"],
-    # Any unrecognized keys will be validated against the test_description_schema.
-    Extra: object,
-})
+SP3_CRITICAL_TESTS = [
+    "test-windows11-64-24h2-shippable/opt-browsertime-benchmark-firefox-speedometer3",
+    "test-linux2404-64-shippable/opt-browsertime-benchmark-firefox-speedometer3",
+    "test-macosx1500-aarch64-shippable/opt-browsertime-benchmark-firefox-speedometer3",
+    "test-android-hw-a55-14-0-aarch64-shippable/opt-browsertime-benchmark-speedometer3-mobile-fenix",
+]
 
-transforms.add_validate(raptor_description_schema)
+
+class RaptorSchema(Schema, kw_only=True):
+    activity: Optional[optionally_keyed_by("app", str, use_msgspec=True)] = None  # type: ignore
+    apps: Optional[  # type: ignore
+        optionally_keyed_by("test-platform", "subtest", list[str], use_msgspec=True)
+    ] = None
+    binary_path: Optional[optionally_keyed_by("app", str, use_msgspec=True)] = None  # type: ignore
+    run_visual_metrics: Optional[  # type: ignore
+        optionally_keyed_by("app", "test-platform", bool, use_msgspec=True)
+    ] = None
+    subtests: Optional[  # type: ignore
+        optionally_keyed_by("app", "test-platform", list[object], use_msgspec=True)
+    ] = None
+    test: Optional[str] = None
+    test_url_param: Optional[  # type: ignore
+        optionally_keyed_by("subtest", "test-platform", str, use_msgspec=True)
+    ] = None
+    lull_schedule: Optional[  # type: ignore
+        optionally_keyed_by("subtest", "test-platform", str, use_msgspec=True)
+    ] = None
+    network_conditions: Optional[  # type: ignore
+        optionally_keyed_by("subtest", list[object], use_msgspec=True)
+    ] = None
+
+
+class RaptorDescriptionSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    # Raptor specific configs.
+    raptor: Optional[RaptorSchema] = None
+    # Configs defined in the 'test_description_schema'.
+    max_run_time: Optional[  # type: ignore
+        optionally_keyed_by(
+            "app",
+            "subtest",
+            "test-platform",
+            TestDescriptionSchema.__annotations__["max_run_time"],
+            use_msgspec=True,
+        )
+    ] = None
+    run_on_projects: Optional[  # type: ignore
+        optionally_keyed_by(
+            "app",
+            "test-name",
+            "raptor.test",
+            "subtest",
+            "variant",
+            TestDescriptionSchema.__annotations__["run_on_projects"],
+            use_msgspec=True,
+        )
+    ] = None
+    variants: TestDescriptionSchema.__annotations__["variants"] = None
+    target: Optional[  # type: ignore
+        optionally_keyed_by(
+            "app", TestDescriptionSchema.__annotations__["target"], use_msgspec=True
+        )
+    ] = None
+    tier: Optional[  # type: ignore
+        optionally_keyed_by(
+            "app",
+            "raptor.test",
+            "subtest",
+            "variant",
+            TestDescriptionSchema.__annotations__["tier"],
+            use_msgspec=True,
+        )
+    ] = None
+    test_name: TestDescriptionSchema.__annotations__["test_name"]  # noqa: F821
+    test_platform: TestDescriptionSchema.__annotations__["test_platform"]  # noqa: F821
+    require_signed_extensions: TestDescriptionSchema.__annotations__[
+        "require_signed_extensions"  # noqa: F821
+    ]
+    treeherder_symbol: TestDescriptionSchema.__annotations__["treeherder_symbol"]  # noqa: F821
+
+
+transforms.add_validate(RaptorDescriptionSchema)
 
 
 @transforms.add
@@ -450,6 +487,23 @@ def setup_lull_schedule(config, tasks):
             # so that it can be accessible through mozci
             lull_schedule = attrs.pop("lull-schedule")
             task.setdefault("extra", {})["lull-schedule"] = lull_schedule
+        yield task
+
+
+@task_transforms.add
+def setup_autoland_retriggers(config, tasks):
+
+    def _allow_task_duplicates(label):
+        if any(sp3_test in label for sp3_test in SP3_CRITICAL_TESTS):
+            return True
+        return False
+
+    for task in tasks:
+        attrs = task.setdefault("attributes", {})
+        if config.params["project"] == "autoland" and _allow_task_duplicates(
+            task["label"]
+        ):
+            attrs["task_duplicates"] = 12
         yield task
 
 

@@ -14,6 +14,7 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.FakeDateTimeProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,6 +24,7 @@ import org.junit.Test
 import org.mozilla.fenix.utils.Settings
 import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Calendar
 import java.util.Locale
@@ -32,7 +34,6 @@ class DefaultMetricsStorageTest {
     private val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val calendarStart = Calendar.getInstance(Locale.US)
     private val dayMillis: Long = 1000 * 60 * 60 * 24
-    private val usageThresholdMillis: Long = 340 * 1000
 
     private var checkDefaultBrowser = false
     private val doCheckDefaultBrowser = { checkDefaultBrowser }
@@ -76,7 +77,7 @@ class DefaultMetricsStorageTest {
         checkDefaultBrowser = true
         every { settings.setAsDefaultGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.SetAsDefault)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent1)
 
         assertFalse(result)
     }
@@ -86,7 +87,7 @@ class DefaultMetricsStorageTest {
         every { settings.setAsDefaultGrowthSent } returns false
         checkDefaultBrowser = false
 
-        val result = storage.shouldTrack(Event.GrowthData.SetAsDefault)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent1)
 
         assertFalse(result)
     }
@@ -96,7 +97,7 @@ class DefaultMetricsStorageTest {
         every { settings.setAsDefaultGrowthSent } returns false
         checkDefaultBrowser = true
 
-        val result = storage.shouldTrack(Event.GrowthData.SetAsDefault)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent1)
 
         assertTrue(result)
     }
@@ -106,7 +107,7 @@ class DefaultMetricsStorageTest {
         every { settings.setAsDefaultGrowthSent } returns true
         checkDefaultBrowser = true
 
-        val result = storage.shouldTrack(Event.GrowthData.SetAsDefault)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent1)
 
         assertFalse(result)
     }
@@ -116,7 +117,7 @@ class DefaultMetricsStorageTest {
         val updateSlot = slot<Boolean>()
         every { settings.setAsDefaultGrowthSent = capture(updateSlot) } just Runs
 
-        storage.updateSentState(Event.GrowthData.SetAsDefault)
+        storage.updateSentState(Event.GrowthData.ConversionEvent1)
 
         assertTrue(updateSlot.captured)
     }
@@ -128,7 +129,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertFalse(result)
     }
@@ -140,22 +141,22 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, thirdDay).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertTrue(result)
     }
 
     @Test
-    fun `GIVEN that app has been used for 3 days but not consecutively WHEN checked for first week activity THEN event will be not sent`() = runTest(dispatcher) {
+    fun `GIVEN that app has been used for 3 non-consecutive days WHEN checked for first week activity THEN event will be sent`() = runTest(dispatcher) {
         val tomorrow = calendarStart.createNextDay()
         val fourDaysFromNow = tomorrow.createNextDay().createNextDay()
         every { settings.firstWeekDaysOfUseGrowthData = any() } just Runs
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, fourDaysFromNow).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
-        assertFalse(result)
+        assertTrue(result)
     }
 
     @Test
@@ -167,7 +168,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekSeriesGrowthSent } returns false
         installTime = installTime9DaysEarlier
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertFalse(result)
     }
@@ -179,7 +180,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, thirdDay).toStrings()
         every { settings.firstWeekSeriesGrowthSent } returns true
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertFalse(result)
     }
@@ -192,7 +193,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData = capture(captureRolling) } just Runs
         every { settings.firstWeekSeriesGrowthSent } returns false
 
-        storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertTrue(captureRolling.captured.contains(formatter.format(calendarStart.time)))
     }
@@ -203,7 +204,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekSeriesGrowthSent } returns false
         every { settings.firstWeekSeriesGrowthSent = capture(captureSent) } just Runs
 
-        storage.updateSentState(Event.GrowthData.FirstWeekSeriesActivity)
+        storage.updateSentState(Event.GrowthData.ConversionEvent4)
 
         assertTrue(captureSent.captured)
     }
@@ -215,7 +216,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData } returns setOf()
         every { settings.firstWeekDaysOfUseGrowthData = capture(captureSlot) } just Runs
 
-        storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertTrue(captureSlot.captured.isNotEmpty())
     }
@@ -227,7 +228,7 @@ class DefaultMetricsStorageTest {
         every { settings.firstWeekDaysOfUseGrowthData = capture(captureSlot) } just Runs
         installTime = calendarStart.timeInMillis - (dayMillis * 9)
 
-        storage.shouldTrack(Event.GrowthData.FirstWeekSeriesActivity)
+        storage.shouldTrack(Event.GrowthData.ConversionEvent4)
 
         assertFalse(captureSlot.isCaptured)
     }
@@ -236,7 +237,7 @@ class DefaultMetricsStorageTest {
     fun `GIVEN serp ad clicked event already sent WHEN checking to track serp ad clicked THEN event will not be sent`() = runTest(dispatcher) {
         every { settings.adClickGrowthSent } returns true
 
-        val result = storage.shouldTrack(Event.GrowthData.SerpAdClicked)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent5)
 
         assertFalse(result)
     }
@@ -245,29 +246,27 @@ class DefaultMetricsStorageTest {
     fun `GIVEN serp ad clicked event not sent WHEN checking to track serp ad clicked THEN event will be sent`() = runTest(dispatcher) {
         every { settings.adClickGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.SerpAdClicked)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent5)
 
         assertTrue(result)
     }
 
     @Test
-    fun `GIVEN usage time has not passed threshold and has not been sent WHEN checking to track THEN event will not be sent`() = runTest(dispatcher) {
-        every { settings.usageTimeGrowthData } returns usageThresholdMillis - 1
+    fun `GIVEN usage time growth event has not been sent WHEN checking to track THEN event will be sent`() = runTest(dispatcher) {
         every { settings.usageTimeGrowthSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.UsageThreshold)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent6)
+
+        assertTrue(result)
+    }
+
+    @Test
+    fun `GIVEN usage time growth event has already been sent WHEN checking to track THEN event will not be sent`() = runTest(dispatcher) {
+        every { settings.usageTimeGrowthSent } returns true
+
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent6)
 
         assertFalse(result)
-    }
-
-    @Test
-    fun `GIVEN usage time has passed threshold and has not been sent WHEN checking to track THEN event will be sent`() = runTest(dispatcher) {
-        every { settings.usageTimeGrowthData } returns usageThresholdMillis + 1
-        every { settings.usageTimeGrowthSent } returns false
-
-        val result = storage.shouldTrack(Event.GrowthData.UsageThreshold)
-
-        assertTrue(result)
     }
 
     @Test
@@ -307,8 +306,8 @@ class DefaultMetricsStorageTest {
         val initial = 10L
         val update = 15L
         val slot = slot<Long>()
-        every { settings.usageTimeGrowthData } returns initial
-        every { settings.usageTimeGrowthData = capture(slot) } just Runs
+        every { settings.firstDayUsageTimeGrowthData } returns initial
+        every { settings.firstDayUsageTimeGrowthData = capture(slot) } just Runs
 
         storage.updateUsageState(update)
 
@@ -323,14 +322,47 @@ class DefaultMetricsStorageTest {
         every { storage.updateUsageState(capture(slot)) } just Runs
         every { activity.componentName } returns mockk()
 
-        val usageRecorder = DefaultMetricsStorage.UsageRecorder(storage)
-        val startTime = System.currentTimeMillis()
+        var currentTimeMillis = 0L
+
+        val dateTimeProvider = object : DateTimeProvider {
+            override fun currentLocalDate(): LocalDate =
+                LocalDate.of(2025, 5, 31)
+
+            override fun currentZoneId(): ZoneId = ZoneOffset.UTC
+
+            override fun currentTimeMillis(): Long = currentTimeMillis
+        }
+
+        val usageRecorder = DefaultMetricsStorage.FirstDayUsageRecorder(
+            storage,
+            duringFirstDay = { true },
+            dateTimeProvider,
+        )
+
+        usageRecorder.onActivityResumed(activity)
+        currentTimeMillis = 10L
+        usageRecorder.onActivityPaused(activity)
+
+        assertTrue(slot.captured > 0)
+    }
+
+    @Test
+    fun `WHEN first day usage recorder receives onResume and onPause callbacks after the first day THEN it will not store usage length`() {
+        val storage = mockk<MetricsStorage>()
+        val activity = mockk<Activity>()
+        val slot = slot<Long>()
+        every { storage.updateUsageState(capture(slot)) } just Runs
+        every { activity.componentName } returns mockk()
+
+        val usageRecorder = DefaultMetricsStorage.FirstDayUsageRecorder(
+            storage,
+            duringFirstDay = { false },
+        )
 
         usageRecorder.onActivityResumed(activity)
         usageRecorder.onActivityPaused(activity)
-        val stopTime = System.currentTimeMillis()
 
-        assertTrue(slot.captured < stopTime - startTime)
+        assertFalse(slot.isCaptured)
     }
 
     @Test
@@ -338,7 +370,7 @@ class DefaultMetricsStorageTest {
         val currentTime = System.currentTimeMillis()
         every { settings.resumeGrowthLastSent } returns currentTime
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstAppOpenForDay)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent2)
 
         assertFalse(result)
     }
@@ -349,7 +381,7 @@ class DefaultMetricsStorageTest {
         installTime = currentTime - (dayMillis + 1)
         every { settings.resumeGrowthLastSent } returns currentTime - 1000 * 60 * 60 * 24 * 2
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstAppOpenForDay)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent2)
 
         assertTrue(result)
     }
@@ -360,7 +392,7 @@ class DefaultMetricsStorageTest {
         every { settings.resumeGrowthLastSent } returns 0
         every { settings.resumeGrowthLastSent = capture(updateSlot) } just Runs
 
-        storage.updateSentState(Event.GrowthData.FirstAppOpenForDay)
+        storage.updateSentState(Event.GrowthData.ConversionEvent2)
 
         assertTrue(updateSlot.captured > 0)
     }
@@ -370,7 +402,7 @@ class DefaultMetricsStorageTest {
         val currentTime = System.currentTimeMillis()
         every { settings.uriLoadGrowthLastSent } returns currentTime
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstUriLoadForDay)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent3)
 
         assertFalse(result)
     }
@@ -381,7 +413,7 @@ class DefaultMetricsStorageTest {
         installTime = currentTime - (dayMillis + 1)
         every { settings.uriLoadGrowthLastSent } returns currentTime - 1000 * 60 * 60 * 24 * 2
 
-        val result = storage.shouldTrack(Event.GrowthData.FirstUriLoadForDay)
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent3)
 
         assertTrue(result)
     }
@@ -392,7 +424,7 @@ class DefaultMetricsStorageTest {
         every { settings.uriLoadGrowthLastSent } returns 0
         every { settings.uriLoadGrowthLastSent = capture(updateSlot) } just Runs
 
-        storage.updateSentState(Event.GrowthData.FirstUriLoadForDay)
+        storage.updateSentState(Event.GrowthData.ConversionEvent3)
 
         assertTrue(updateSlot.captured > 0)
     }
@@ -401,11 +433,13 @@ class DefaultMetricsStorageTest {
     fun `GIVEN first week activated days of use and search use thresholds reached THEN will be sent`() = runTest(dispatcher) {
         val currentTime = System.currentTimeMillis()
         installTime = currentTime - (dayMillis * 5)
-        every { settings.growthEarlyUseCount.value } returns 3
+        val tomorrow = calendarStart.createNextDay()
+        val thirdDay = tomorrow.createNextDay()
+        every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, thirdDay).toStrings()
         every { settings.growthEarlySearchUsed } returns true
         every { settings.growthUserActivatedSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.UserActivated(fromSearch = false))
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertTrue(result)
     }
@@ -414,11 +448,11 @@ class DefaultMetricsStorageTest {
     fun `GIVEN first week activated days of use threshold not reached THEN will not be sent`() = runTest(dispatcher) {
         val currentTime = System.currentTimeMillis()
         installTime = currentTime - (dayMillis * 5)
-        every { settings.growthEarlyUseCount.value } returns 1
+        every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart).toStrings()
         every { settings.growthEarlySearchUsed } returns true
         every { settings.growthUserActivatedSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.UserActivated(fromSearch = false))
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertFalse(result)
     }
@@ -427,11 +461,13 @@ class DefaultMetricsStorageTest {
     fun `GIVEN first week activated search use threshold not reached THEN will not be sent`() = runTest(dispatcher) {
         val currentTime = System.currentTimeMillis()
         installTime = currentTime - (dayMillis * 5)
-        every { settings.growthEarlyUseCount.value } returns 3
+        val tomorrow = calendarStart.createNextDay()
+        val thirdDay = tomorrow.createNextDay()
+        every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, thirdDay).toStrings()
         every { settings.growthEarlySearchUsed } returns false
         every { settings.growthUserActivatedSent } returns false
 
-        val result = storage.shouldTrack(Event.GrowthData.UserActivated(fromSearch = false))
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertFalse(result)
     }
@@ -440,43 +476,15 @@ class DefaultMetricsStorageTest {
     fun `GIVEN first week activated already sent WHEN first week activated signal sent THEN userActivated will not be sent`() = runTest(dispatcher) {
         val currentTime = System.currentTimeMillis()
         installTime = currentTime - (dayMillis * 5)
-        every { settings.growthEarlyUseCount.value } returns 3
+        val tomorrow = calendarStart.createNextDay()
+        val thirdDay = tomorrow.createNextDay()
+        every { settings.firstWeekDaysOfUseGrowthData } returns setOf(calendarStart, tomorrow, thirdDay).toStrings()
         every { settings.growthEarlySearchUsed } returns true
         every { settings.growthUserActivatedSent } returns true
 
-        val result = storage.shouldTrack(Event.GrowthData.UserActivated(fromSearch = false))
+        val result = storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         assertFalse(result)
-    }
-
-    @Test
-    fun `WHEN first week usage signal is sent a full day after last sent THEN settings will be updated accordingly`() = runTest(dispatcher) {
-        val captureSent = slot<Long>()
-        val currentTime = System.currentTimeMillis()
-        installTime = currentTime - (dayMillis * 3)
-        every { settings.growthEarlyUseCount.value } returns 1
-        every { settings.growthEarlyUseCount.increment() } just Runs
-        every { settings.growthEarlyUseCountLastIncrement } returns 0L
-        every { settings.growthEarlyUseCountLastIncrement = capture(captureSent) } just Runs
-
-        storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = false))
-
-        assertTrue(captureSent.captured > 0L)
-    }
-
-    @Test
-    fun `WHEN first week usage signal is sent less than a full day after last sent THEN settings will not be updated`() = runTest(dispatcher) {
-        val captureSent = slot<Long>()
-        val currentTime = System.currentTimeMillis()
-        installTime = currentTime - (dayMillis * 3)
-        val lastUsageIncrementTime = currentTime - (dayMillis / 2)
-        every { settings.growthEarlyUseCount.value } returns 1
-        every { settings.growthEarlyUseCountLastIncrement } returns lastUsageIncrementTime
-        every { settings.growthEarlyUseCountLastIncrement = capture(captureSent) } just Runs
-
-        storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = false))
-
-        assertFalse(captureSent.isCaptured)
     }
 
     @Test
@@ -484,10 +492,11 @@ class DefaultMetricsStorageTest {
         val captureSent = slot<Boolean>()
         val currentTime = System.currentTimeMillis()
         installTime = currentTime - (dayMillis * 3) - 100
+        every { settings.growthUserActivatedSent } returns false
         every { settings.growthEarlySearchUsed } returns false
         every { settings.growthEarlySearchUsed = capture(captureSent) } just Runs
 
-        storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = true))
+        storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = true))
 
         assertTrue(captureSent.captured)
     }
@@ -497,10 +506,11 @@ class DefaultMetricsStorageTest {
         val captureSent = slot<Boolean>()
         val currentTime = System.currentTimeMillis()
         installTime = currentTime - (dayMillis * 3) + 100
+        every { settings.growthUserActivatedSent } returns false
         every { settings.growthEarlySearchUsed } returns false
         every { settings.growthEarlySearchUsed = capture(captureSent) } just Runs
 
-        storage.updatePersistentState(Event.GrowthData.UserActivated(fromSearch = true))
+        storage.shouldTrack(Event.GrowthData.ConversionEvent7(fromSearch = true))
 
         assertFalse(captureSent.isCaptured)
     }

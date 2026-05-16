@@ -1316,7 +1316,7 @@ class PointerAction extends Action {
       lazy.assert.numberInRange(
         altitudeAngle,
         [0, Math.PI / 2],
-        'Expected "altitudeAngle" to be in range 0 to ${Math.PI / 2}, ' +
+        'Expected "altitudeAngle" to be in range 0 to π/2, ' +
           lazy.pprint`got ${altitudeAngle}`
       );
     }
@@ -1324,7 +1324,7 @@ class PointerAction extends Action {
       lazy.assert.numberInRange(
         azimuthAngle,
         [0, 2 * Math.PI],
-        'Expected "azimuthAngle" to be in range 0 to ${2 * Math.PI}, ' +
+        'Expected "azimuthAngle" to be in range 0 to 2*π, ' +
           lazy.pprint`got ${azimuthAngle}`
       );
     }
@@ -1435,13 +1435,13 @@ class PointerDownAction extends PointerAction {
    */
   static fromJSON(id, actionItem) {
     const { button } = actionItem;
-    const props = PointerAction.validateCommon(actionItem);
 
     lazy.assert.positiveInteger(
       button,
       lazy.pprint`Expected "button" to be a positive integer, got ${button}`
     );
 
+    const props = PointerAction.validateCommon(actionItem);
     props.button = button;
 
     return new this(id, props);
@@ -1537,13 +1537,13 @@ class PointerUpAction extends PointerAction {
    */
   static fromJSON(id, actionItem) {
     const { button } = actionItem;
-    const props = PointerAction.validateCommon(actionItem);
 
     lazy.assert.positiveInteger(
       button,
       lazy.pprint`Expected "button" to be a positive integer, got ${button}`
     );
 
+    const props = PointerAction.validateCommon(actionItem);
     props.button = button;
 
     return new this(id, props);
@@ -3089,6 +3089,9 @@ class MultiTouchEventData extends PointerEventData {
     this.tiltx = [];
     this.tilty = [];
     this.twist = [];
+    this.altitudeAngle = [];
+    this.azimuthAngle = [];
+
     this.#setGlobalState = false;
   }
 
@@ -3104,13 +3107,15 @@ class MultiTouchEventData extends PointerEventData {
     this.x.push(inputSource.x);
     this.y.push(inputSource.y);
     this.id.push(inputSource.pointer.id);
-    this.rx.push(action.width || 1);
-    this.ry.push(action.height || 1);
+    this.rx.push(action.width);
+    this.ry.push(action.height);
     this.angle.push(0);
-    this.force.push(action.pressure || (this.type === "touchend" ? 0 : 1));
-    this.tiltx.push(action.tiltX || 0);
-    this.tilty.push(action.tiltY || 0);
-    this.twist.push(action.twist || 0);
+    this.force.push(action.pressure);
+    this.tiltx.push(action.tiltX);
+    this.tilty.push(action.tiltY);
+    this.twist.push(action.twist);
+    this.altitudeAngle.push(action.altitudeAngle);
+    this.azimuthAngle.push(action.azimuthAngle);
   }
 
   update(state, inputSource) {

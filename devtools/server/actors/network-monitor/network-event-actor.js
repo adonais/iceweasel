@@ -673,7 +673,7 @@ class NetworkEventActor extends Actor {
    * @param object info
    *        The object containing security information.
    */
-  addSecurityInfo(info, isRacing) {
+  addSecurityInfo(info) {
     // Ignore calls when this actor is already destroyed
     if (this.isDestroyed()) {
       return;
@@ -683,7 +683,6 @@ class NetworkEventActor extends Actor {
 
     this._onEventUpdate(lazy.NetworkUtils.NETWORK_EVENT_TYPES.SECURITY_INFO, {
       state: info.state,
-      isRacing,
     });
   }
 

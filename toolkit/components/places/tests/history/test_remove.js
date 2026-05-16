@@ -1,6 +1,3 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et: */
-
 // Tests for `History.remove`, as implemented in History.sys.mjs
 
 "use strict";
@@ -14,7 +11,7 @@ add_task(async function test_remove_single() {
     "http://mozilla.com/test_browserhistory/test_remove/" + Math.random()
   );
   await PlacesTestUtils.addVisits(WITNESS_URI);
-  Assert.ok(page_in_database(WITNESS_URI));
+  Assert.ok(await page_in_database(WITNESS_URI));
 
   let remover = async function (name, filter, options) {
     info(name);
@@ -26,7 +23,7 @@ add_task(async function test_remove_single() {
     );
     let title = "Visit " + Math.random();
     await PlacesTestUtils.addVisits({ uri, title });
-    Assert.ok(visits_in_database(uri), "History entry created");
+    Assert.ok(await visits_in_database(uri), "History entry created");
 
     let removeArg = await filter(uri);
 
@@ -124,23 +121,31 @@ add_task(async function test_remove_single() {
       placesEventListener
     );
 
-    Assert.equal(visits_in_database(uri), 0, "History entry has disappeared");
+    Assert.equal(
+      await visits_in_database(uri),
+      0,
+      "History entry has disappeared"
+    );
     Assert.notEqual(
-      visits_in_database(WITNESS_URI),
+      await visits_in_database(WITNESS_URI),
       0,
       "Witness URI still has visits"
     );
     Assert.notEqual(
-      page_in_database(WITNESS_URI),
+      await page_in_database(WITNESS_URI),
       0,
       "Witness URI is still here"
     );
     if (shouldRemove) {
       Assert.ok(removed, "Something was removed");
-      Assert.equal(page_in_database(uri), 0, "Page has disappeared");
+      Assert.equal(await page_in_database(uri), 0, "Page has disappeared");
     } else {
       Assert.ok(!removed, "The page was not removed, as there was a bookmark");
-      Assert.notEqual(page_in_database(uri), 0, "The page is still present");
+      Assert.notEqual(
+        await page_in_database(uri),
+        0,
+        "The page is still present"
+      );
     }
   };
 

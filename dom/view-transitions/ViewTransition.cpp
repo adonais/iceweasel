@@ -194,7 +194,7 @@ struct CapturedElementOldState {
 };
 
 // https://drafts.csswg.org/css-view-transitions/#captured-element
-struct ViewTransition::CapturedElement {
+struct ViewTransitionCapturedElement {
   CapturedElementOldState mOldState;
   RefPtr<Element> mNewElement;
   wr::SnapshotImageKey mNewSnapshotKey{kNoKey};
@@ -203,10 +203,11 @@ struct ViewTransition::CapturedElement {
   nsRect mNewSnapshotRect;
   nsSize mNewBorderBoxSize;
 
-  CapturedElement() = default;
+  ViewTransitionCapturedElement() = default;
 
-  CapturedElement(nsIFrame* aFrame, const nsSize& aSnapshotContainingBlockSize,
-                  StyleViewTransitionClass&& aClassList)
+  ViewTransitionCapturedElement(nsIFrame* aFrame,
+                                const nsSize& aSnapshotContainingBlockSize,
+                                StyleViewTransitionClass&& aClassList)
       : mOldState(aFrame, aSnapshotContainingBlockSize),
         mClassList(std::move(aClassList)) {}
 
@@ -234,7 +235,7 @@ struct ViewTransition::CapturedElement {
     mClassList = std::move(aClassList);
   }
 
-  ~CapturedElement() {
+  ~ViewTransitionCapturedElement() {
     if (wr::AsImageKey(mNewSnapshotKey) != kNoKey) {
       MOZ_ASSERT(mOldState.mSnapshot.mManager);
       mOldState.mSnapshot.mManager->AddSnapshotImageKeyForDiscard(
@@ -243,9 +244,13 @@ struct ViewTransition::CapturedElement {
   }
 };
 
+// This definition should not be in the header as ViewTransitionCapturedElement
+// would be incomplete with non-trivial destructor.
+ViewTransitionParams::~ViewTransitionParams() = default;
+
 static inline void ImplCycleCollectionTraverse(
     nsCycleCollectionTraversalCallback& aCb,
-    const ViewTransition::CapturedElement& aField, const char* aName,
+    const ViewTransitionCapturedElement& aField, const char* aName,
     uint32_t aFlags = 0) {
   ImplCycleCollectionTraverse(aCb, aField.mNewElement, aName, aFlags);
 }
@@ -270,6 +275,32 @@ ViewTransition::ViewTransition(Document& aDoc,
     : mDocument(&aDoc), mUpdateCallback(aCb), mTypeList(std::move(aTypeList)) {}
 
 ViewTransition::~ViewTransition() { ClearTimeoutTimer(); }
+
+/* static */
+already_AddRefed<ViewTransition> ViewTransition::CreateCrossDocument(
+    Document& aDocument, UniquePtr<ViewTransitionParams> aInboundParams,
+    TypeList&& aResolvedRule) {
+  // https://drafts.csswg.org/css-view-transitions-2/#resolve-inbound-cross-document-view-transition
+
+  // Step 10. Create a new ViewTransition whose named elements and
+  // initial snapshot containing block size are initialized from inbound params.
+  // Step 14. Set active types to resolvedRule.
+  MOZ_ASSERT(aInboundParams);
+  RefPtr<ViewTransition> vt =
+      new ViewTransition(aDocument, nullptr, std::move(aResolvedRule));
+  vt->mNamedElements = std::move(aInboundParams->namedElements);
+  vt->mNames = std::move(aInboundParams->names);
+  vt->mInitialSnapshotContainingBlockSize =
+      aInboundParams->initialSnapshotContainingBlockSize;
+
+  // Step 12. Resolve updateCallbackDone with undefined.
+  vt->mUpdateCallbackDonePromise->MaybeResolveWithUndefined();
+
+  // Step 13. Set phase to update-callback-called.
+  vt->mPhase = Phase::UpdateCallbackCalled;
+
+  return vt.forget();
+}
 
 Element* ViewTransition::GetViewTransitionTreeRoot() const {
   return mSnapshotContainingBlock
@@ -1274,8 +1305,7 @@ template <typename Callback>
 static bool ForEachDescendantWithViewTransitionNameInPaintOrder(
     nsIFrame* aFrame, const Callback& aCb) {
   // Call the callback if it specifies view-transition-name.
-  if (!aFrame->StyleUIReset()->mViewTransitionName.value.IsNone() &&
-      !aCb(aFrame)) {
+  if (aFrame->StyleUIReset()->HasViewTransitionName() && !aCb(aFrame)) {
     return false;
   }
 
@@ -1341,8 +1371,8 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
     if (!usedTransitionNames.EnsureInserted(name)) {
       // We don't expect to see a duplicate transition name when using
       // match-element.
-      MOZ_ASSERT(
-          !aFrame->StyleUIReset()->mViewTransitionName.value.IsMatchElement());
+      MOZ_ASSERT(aFrame->StyleUIReset()->mViewTransitionName.value.AsAtom() !=
+                 nsGkAtoms::match_element);
 
       // If usedTransitionNames contains transitionName, then return failure.
       result.emplace(
@@ -1417,8 +1447,8 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
     if (!usedTransitionNames.EnsureInserted(name)) {
       // We don't expect to see a duplicate transition name when using
       // match-element.
-      MOZ_ASSERT(
-          !aFrame->StyleUIReset()->mViewTransitionName.value.IsMatchElement());
+      MOZ_ASSERT(aFrame->StyleUIReset()->mViewTransitionName.value.AsAtom() !=
+                 nsGkAtoms::match_element);
       result.emplace(
           SkipTransitionReason::DuplicateTransitionNameCapturingNewState);
       return false;
@@ -1852,9 +1882,10 @@ already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
   // https://drafts.csswg.org/css-view-transitions-2/#additions-to-vt-name
   // 1. Let computed be the computed value of view-transition-name.
   const auto& computed = aFrame->StyleUIReset()->mViewTransitionName;
+  nsAtom* ident = computed.value.AsAtom();
 
   // 2. If computed is none, return null.
-  if (computed.value.IsNone()) {
+  if (ident == nsGkAtoms::none) {
     return nullptr;
   }
 
@@ -1874,15 +1905,13 @@ already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
   }
 
   // 3. If computed is a <custom-ident>, return computed.
-  if (computed.value.IsIdent()) {
-    return RefPtr<nsAtom>{computed.value.AsIdent().AsAtom()}.forget();
+  if (ident != nsGkAtoms::match_element) {
+    return do_AddRef(ident);
   }
 
   // 4. Assert: computed is auto or match-element.
   // TODO: Bug 1918218. Implement auto or others, depending on the spec issue.
   // https://github.com/w3c/csswg-drafts/issues/12091
-  MOZ_ASSERT(computed.value.IsMatchElement());
-
   // 5. If computed is auto, element has an associated id, and computed is
   // associated with the same root as element’s root, then return a unique
   // string starting with "-ua-". Two elements with the same id must return the

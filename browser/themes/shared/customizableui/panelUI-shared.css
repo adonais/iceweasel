@@ -35,7 +35,7 @@
     --panel-separator-padding-horizontal: var(--dimension-4);
     --panel-subview-body-padding-block: var(--dimension-4);
     :is(panel, menupopup):not([touchmode]) {
-      --arrowpanel-header-back-icon-padding: var(--dimension-4);
+      --panel-header-back-icon-padding: var(--dimension-4);
     }
   }
 }
@@ -49,12 +49,12 @@ menupopup {
    * top padding plus standard menuitem, so that the header's separator will
    * be located excatly where a normal toolbarseparator would be located after
    * the first menuitem, in a menu without a header. */
-  --arrowpanel-header-back-icon-padding: 6px;
-  --arrowpanel-header-back-icon-full-width: calc(16px + (2 * var(--arrowpanel-header-back-icon-padding)));
+  --panel-header-back-icon-padding: 6px;
+  --panel-header-back-icon-full-width: calc(16px + (2 * var(--panel-header-back-icon-padding)));
   /* The min-height is calculated with the separator's horizontal margin rather
    * than the vertical, to let the back icon have even spacing all around
    * while being aligned with the separator. */
-  --arrowpanel-header-min-height: calc(var(--arrowpanel-header-back-icon-full-width) + (var(--panel-separator-padding-horizontal) * 2));
+  --panel-header-min-height: calc(var(--panel-header-back-icon-full-width) + (var(--panel-separator-padding-horizontal) * 2));
 }
 
 panel toolbarseparator {
@@ -135,7 +135,7 @@ panel toolbarseparator {
   &[notificationid="update-unsupported"] > .toolbarbutton-icon {
     background: url(chrome://global/skin/icons/warning.svg) no-repeat center;
     -moz-context-properties: stroke, fill;
-    stroke: var(--arrowpanel-background);
+    stroke: var(--panel-background);
     fill: var(--warning-icon-bgcolor);
   }
 }
@@ -171,7 +171,7 @@ panel toolbarseparator {
   -moz-context-properties: stroke, fill;
   background: url(chrome://browser/skin/notification-fill-12.svg) no-repeat center;
   background-size: var(--icon-size-xsmall);
-  stroke: var(--arrowpanel-background);
+  stroke: var(--panel-background);
   fill: var(--warning-icon-bgcolor);
   filter: drop-shadow(0 0 5px var(--warning-icon-bgcolor));
 }
@@ -282,7 +282,7 @@ panelview {
     list-style-image: url(chrome://global/skin/icons/info.svg);
     -moz-context-properties: fill, fill-opacity;
     fill: currentColor;
-    padding: var(--arrowpanel-header-info-icon-padding);
+    padding: var(--panel-header-info-icon-padding);
   }
 }
 
@@ -294,7 +294,7 @@ panelview {
 #wrapper-edit-controls:is([place="palette"], [place="panel"]) > #edit-controls,
 #wrapper-zoom-controls:is([place="palette"], [place="panel"]) > #zoom-controls,
 :is(panelview, #widget-overflow-fixed-list) .toolbaritem-combined-buttons {
-  margin: var(--arrowpanel-menuitem-margin);
+  margin: var(--panel-menuitem-margin);
 }
 
 /* Tweaks for menupopups hanging off toolbar buttons to make them feel like panels */
@@ -306,15 +306,15 @@ panelview {
     border: none;
     font: menu;
     background-color: transparent;
-    --panel-background: var(--arrowpanel-background);
-    --panel-color: var(--arrowpanel-color);
-    --panel-border-color: var(--arrowpanel-border-color);
-    --panel-border-radius: var(--arrowpanel-border-radius);
+    --panel-background: inherit;
+    --panel-border-color: inherit;
+    --panel-border-radius: inherit;
+    --panel-color: inherit;
     --panel-padding: var(--panel-subview-body-padding);
-    --panel-shadow-margin: var(--arrowpanel-shadow-margin);
-    --menuitem-border-radius: var(--arrowpanel-menuitem-border-radius);
-    --menuitem-padding: var(--arrowpanel-menuitem-padding);
-    --menuitem-margin: var(--arrowpanel-menuitem-margin);
+    --panel-shadow-margin: inherit;
+    --menuitem-border-radius: var(--panel-menuitem-border-radius);
+    --menuitem-padding: var(--panel-menuitem-padding);
+    --menuitem-margin: var(--panel-menuitem-margin);
   }
 
   menupopup {
@@ -391,10 +391,10 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
 }
 
 #confirmation-hint {
-  --arrowpanel-background: #0060df;
-  --arrowpanel-border-color: #0060df;
-  --arrowpanel-color: #fff;
-  --arrowpanel-padding: 6px 10px;
+  --panel-background: #0060df;
+  --panel-border-color: #0060df;
+  --panel-color: #fff;
+  --panel-padding: 6px 10px;
   font-size: 1.1rem;
 
   &::part(content) {
@@ -492,7 +492,7 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
 }
 
 .cui-widget-panel {
-  --arrowpanel-padding: var(--panel-subview-body-padding);
+  --panel-padding: var(--panel-subview-body-padding);
 }
 
 #appMenu-popup panelview,
@@ -935,7 +935,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 }
 
 #fxa-menu-header-title {
-  color: var(--arrowpanel-color);
+  color: var(--panel-color);
   text-wrap: wrap;
 }
 
@@ -1154,10 +1154,10 @@ panelview .toolbarbutton-1,
 .subviewbutton,
 .widget-overflow-list .toolbarbutton-1 {
   appearance: none;
-  margin: var(--arrowpanel-menuitem-margin);
+  margin: var(--panel-menuitem-margin);
   min-height: 24px;
-  padding: var(--arrowpanel-menuitem-padding);
-  border-radius: var(--arrowpanel-menuitem-border-radius);
+  padding: var(--panel-menuitem-padding);
+  border-radius: var(--panel-menuitem-border-radius);
   background-color: transparent;
   flex-shrink: 0;
 }
@@ -1254,7 +1254,7 @@ panelview .toolbarbutton-1,
 /* Adjust the Zoom toolbaritem padding to have its height the same as other toolbarbuttons,
  * also in compact density and touch mode. */
 #appMenu-zoom-controls {
-  padding-block: max(0px, var(--arrowpanel-menuitem-padding-block) - 4px);
+  padding-block: max(0px, var(--panel-menuitem-padding-block) - 4px);
 
   > .subviewbutton {
     margin-inline-start: 2px;
@@ -1336,7 +1336,7 @@ panelview .toolbarbutton-1,
 .panel-subview-footer-button {
   /* Set the footer's bottom margin according to menuitems inline margin
      to make sure the footer's margin is even from all sides. */
-  margin-bottom: var(--arrowpanel-menuitem-margin-inline);
+  margin-bottom: var(--panel-menuitem-margin-inline);
 }
 
 #protections-popup-mainView .subviewbutton-nav:not(.notFound),
@@ -1543,7 +1543,7 @@ toolbarbutton[itemtype="showinactivebutton"] {
     border: 0;
     margin: 0;
     flex: 1;
-    padding-block: var(--arrowpanel-menuitem-padding-block);
+    padding-block: var(--panel-menuitem-padding-block);
     flex-direction: row;
   }
 
@@ -1770,10 +1770,10 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   box-sizing: border-box;
   /* Set the header's padding according to menuitems horizontal padding
      to make sure they are even from all sides and aligned according to that padding. */
-  padding: var(--arrowpanel-menuitem-margin-inline);
+  padding: var(--panel-menuitem-margin-inline);
   /* Calculate the header's height assuming it includes an icon even if it doesn't,
      to make sure all headers are the same height (assuming their text is a one liner). */
-  min-height: var(--arrowpanel-header-min-height);
+  min-height: var(--panel-header-min-height);
 
   + toolbarseparator {
     padding-top: 0 !important;
@@ -1786,17 +1786,17 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
   &.panel-header-with-info-button > h1 {
     /* Add the size of the info button to center properly. */
-    margin-inline-start: var(--arrowpanel-header-info-icon-full-width);
+    margin-inline-start: var(--panel-header-info-icon-full-width);
   }
 
   &.panel-header-with-info-button > .subviewbutton-back + h1 {
     margin-inline-start: 0;
-    margin-inline-end: calc(var(--arrowpanel-header-back-icon-full-width) - var(--arrowpanel-header-info-icon-full-width));
+    margin-inline-end: calc(var(--panel-header-back-icon-full-width) - var(--panel-header-info-icon-full-width));
   }
 
   &:not(.panel-header-with-additional-element) > .subviewbutton-back + h1 {
     /* Add the size of the back button to center properly. */
-    margin-inline-end: var(--arrowpanel-header-back-icon-full-width);
+    margin-inline-end: var(--panel-header-back-icon-full-width);
   }
 
   &.panel-header-with-additional-element > .additional-element-on-inline-start + h1 {
@@ -1804,7 +1804,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
      * the Report Broken Site panel.
      * The var needs to be set manually via CSS on the .panel-header element as we
      * can't predict what icon (and thus its size) may be in use. */
-    margin-inline-end: var(--arrowpanel-header-additional-element-width);
+    margin-inline-end: var(--panel-header-additional-element-width);
   }
 
   > h1 > span {
@@ -1816,7 +1816,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     -moz-context-properties: fill;
     fill: var(--button-icon-fill);
     list-style-image: url(chrome://global/skin/icons/arrow-left.svg);
-    padding: var(--arrowpanel-header-back-icon-padding);
+    padding: var(--panel-header-back-icon-padding);
   }
 
   > .subviewbutton-back:-moz-locale-dir(rtl) {
@@ -2072,7 +2072,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 /* Web-extension pop-ups */
 
 .cui-widget-panelview[id^="PanelUI-webext-"] {
-  border-radius: var(--arrowpanel-border-radius);
+  border-radius: var(--panel-border-radius);
 }
 
 .webextension-popup-browser,
@@ -2135,17 +2135,17 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
   > .panel-subview-body {
     toolbarbutton {
-      margin-inline: calc(-1 * var(--arrowpanel-menuitem-padding-inline));
+      margin-inline: calc(-1 * var(--panel-menuitem-padding-inline));
     }
 
     toolbarbutton::after {
       position: absolute;
-      inset-inline-end: calc(2 * var(--arrowpanel-menuitem-padding-inline));
+      inset-inline-end: calc(2 * var(--panel-menuitem-padding-inline));
     }
   }
 
   #report-broken-site-panel-preview-items {
-    margin: var(--arrowpanel-menuitem-padding);
+    margin: var(--panel-menuitem-padding);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -2160,7 +2160,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     }
 
     .data {
-      padding: var(--arrowpanel-menuitem-padding);
+      padding: var(--panel-menuitem-padding);
       background:
         linear-gradient(0deg, color-mix(in srgb, currentColor 7%, transparent) 0, transparent 16px),
         linear-gradient(180deg, color-mix(in srgb, currentColor 7%, transparent) 0, transparent 16px);
@@ -2188,10 +2188,10 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
         list-style: none;
         cursor: pointer;
         width: -moz-available;
-        padding: var(--arrowpanel-menuitem-padding);
-        padding-inline-start: calc(16px + calc(2 * var(--arrowpanel-menuitem-padding-block)));
+        padding: var(--panel-menuitem-padding);
+        padding-inline-start: calc(16px + calc(2 * var(--panel-menuitem-padding-block)));
         background-image: url("chrome://global/skin/icons/arrow-down.svg");
-        background-position: var(--arrowpanel-menuitem-padding-block) var(--arrowpanel-menuitem-padding-inline);
+        background-position: var(--panel-menuitem-padding-block) var(--panel-menuitem-padding-inline);
         background-repeat: no-repeat;
         -moz-context-properties: fill;
         fill: currentColor;
@@ -2311,7 +2311,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     }
 
     > .panel-header {
-      --arrowpanel-header-additional-element-width: 16px;
+      --panel-header-additional-element-width: 16px;
 
       > .checkmark-icon {
         list-style-image: url(chrome://global/skin/icons/check-filled.svg);
@@ -2347,7 +2347,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 #profiles-edit-this-profile-button {
   list-style-image: url("chrome://global/skin/icons/edit-outline.svg");
-  padding: var(--arrowpanel-header-back-icon-padding);
+  padding: var(--panel-header-back-icon-padding);
   margin: 0;
 }
 
@@ -2440,4 +2440,8 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   #confirmation-hint-message {
     margin-inline-start: 0;
   }
+}
+
+#PanelUI-ipprotection-locations {
+  max-height: 400px;
 }

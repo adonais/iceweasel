@@ -8,7 +8,6 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/dom/NodeFilterBinding.h"
 #include "nsError.h"
-#include "nsGkAtoms.h"
 #include "nsINode.h"
 
 using namespace mozilla;

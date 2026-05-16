@@ -55,6 +55,7 @@ class FeatureFlagPreferenceTest {
     private inner class FeatureFlagHolder(featureFlag: Boolean) : PreferencesHolder {
         override val preferences = testPreferences
 
+        @Suppress("DEPRECATION")
         var property by featureFlagBooleanPreference(
             "key",
             defaultValue = false,

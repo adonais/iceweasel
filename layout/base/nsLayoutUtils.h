@@ -3157,6 +3157,11 @@ class nsLayoutUtils {
    */
   static ComputedStyle* StyleForScrollbar(const nsIFrame* aScrollbarPart);
 
+  static bool UseOverlayScrollbars(const nsIFrame* aScrollbarPart);
+
+  static mozilla::StyleScrollbarWidth ScrollbarWidthFor(
+      const nsIFrame* aScrollbarPart);
+
   /**
    * Returns true if |aFrame| is scrolled out of view by a scrollable element in
    * a cross-process ancestor document.

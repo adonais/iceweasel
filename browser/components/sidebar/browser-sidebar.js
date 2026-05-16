@@ -164,12 +164,18 @@ var SidebarController = {
         this.makeSidebar({
           name: "bookmarks",
           elementId: "sidebar-switcher-bookmarks",
-          url: "chrome://browser/content/places/bookmarksSidebar.xhtml",
+          url:
+            this.sidebarRevampEnabled && this.updatedBookmarksPanelEnabled
+              ? "chrome://browser/content/sidebar/sidebar-bookmarks.html"
+              : "chrome://browser/content/places/bookmarksSidebar.xhtml",
           menuId: "menu_bookmarksSidebar",
           keyId: "viewBookmarksSidebarKb",
           menuL10nId: "menu-view-bookmarks",
           revampL10nId: "sidebar-menu-bookmarks-label",
           iconUrl: "chrome://browser/skin/bookmark-hollow.svg",
+          contextMenuId: this.sidebarRevampEnabled
+            ? "sidebar-bookmarks-context-menu"
+            : undefined,
           disabled: true,
           gleanEvent: Glean.bookmarks.sidebarToggle,
           gleanClickEvent: Glean.sidebar.bookmarksIconClick,
@@ -384,6 +390,20 @@ var SidebarController = {
       this._state = new this.SidebarState(this);
     }
 
+    // Watch for fullscreen transitions to sync the sidebar attribute.
+    this._fullscreenObserver = new MutationObserver(() => {
+      const inFullscreen =
+        document.documentElement.hasAttribute("inDOMFullscreen");
+      this._state.fullscreen = inFullscreen;
+    });
+
+    this._fullscreenObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["inDOMFullscreen"],
+    });
+    // Initial check: is the window already in fullscreen when we start?
+    this._state.fullscreen =
+      document.documentElement.hasAttribute("inDOMFullscreen");
     this._pinnedTabsContainer = document.getElementById(
       "pinned-tabs-container"
     );
@@ -528,10 +548,11 @@ var SidebarController = {
       if (
         !this.uiStateInitialized &&
         !this.inSingleTabWindow &&
+        !window.opener &&
         (this.sidebarRevampEnabled || windowPrivacyMatches)
       ) {
         const backupState = this.SidebarManager.getBackupState();
-        this.initializeUIState(backupState);
+        this.updateUIState(backupState);
       }
     });
     this._initDeferred.resolve();
@@ -540,6 +561,10 @@ var SidebarController = {
   uninit() {
     // Set a flag to allow us to ignore pref changes while the host document is being unloaded.
     this._uninitializing = true;
+    if (this._fullscreenObserver) {
+      this._fullscreenObserver.disconnect();
+      this._fullscreenObserver = null;
+    }
 
     // If this is the last browser window, persist various values that should be
     // remembered for after a restart / reopening a browser window.
@@ -617,7 +642,7 @@ var SidebarController = {
    *
    * @param {SidebarStateProps} state
    */
-  async initializeUIState(state) {
+  async updateUIState(state) {
     if (!state) {
       return;
     }
@@ -625,6 +650,8 @@ var SidebarController = {
     if (!isValidSidebar) {
       state.command = "";
     }
+    // reset any previously remembered launcher-visibility state
+    delete this._launcherStateAtOpen;
 
     const hasOpenPanel =
       state.panelOpen &&
@@ -637,7 +664,7 @@ var SidebarController = {
     }
     await this.promiseInitialized;
     await this.waitUntilStable(); // Finish currently scheduled tasks.
-    await this._state.loadInitialState(state);
+    await this._state.loadCurrentState(state);
     await this.waitUntilStable(); // Finish newly scheduled tasks.
     this.updateToolbarButton();
     if (this.sidebarRevampVisibility === "expand-on-hover") {
@@ -907,7 +934,7 @@ var SidebarController = {
     const sourceState = sourceController.inPopup
       ? null
       : sourceController._state?.getProperties();
-    await this.initializeUIState(sourceState);
+    await this.updateUIState(sourceState);
 
     return true;
   },
@@ -1151,6 +1178,7 @@ var SidebarController = {
       );
       this._box.toggleAttribute("sidebar-ongoing-animations", false);
       tabbox.toggleAttribute("sidebar-ongoing-animations", false);
+      this.sidebarMain.toggleAttribute("sidebar-ongoing-animations", false);
     };
     if (this._ongoingAnimations.length) {
       this._ongoingAnimations.forEach(a => a.cancel());
@@ -1483,7 +1511,10 @@ var SidebarController = {
     );
     this._panelResizeObserver.observe(this._box);
 
-    this._launcherDropHandler = () => (this._state.launcherDragActive = false);
+    this._launcherDropHandler = () => {
+      this._state.launcherDragActive = false;
+      this.updatePinnedTabsHeightOnResize();
+    };
     this._launcherSplitter.addEventListener(
       "command",
       this._launcherDropHandler
@@ -1507,15 +1538,19 @@ var SidebarController = {
       }
     });
 
-    this._itemsWrapperResizeObserver = new ResizeObserver(async () => {
+    this._itemsWrapperResizeObserver = new ResizeObserver(async ([entry]) => {
       await window.promiseDocumentFlushed(() => {
-        // Adjust pinned tabs container height if needed
         requestAnimationFrame(() => {
-          // If we are currently moving tabs, don't resize
           if (this._pinnedTabsContainer.hasAttribute("dragActive")) {
             return;
           }
-
+          // Only respond to WIDTH changes (sidebar being resized wider/narrower).
+          // Ignoring height changes prevents an infinite resize loop.
+          const newWidth = entry.contentBoxSize[0].inlineSize;
+          if (newWidth === this._pinnedTabsItemsWrapperWidth) {
+            return;
+          }
+          this._pinnedTabsItemsWrapperWidth = newWidth;
           this.updatePinnedTabsHeightOnResize();
         });
       });
@@ -1570,17 +1605,26 @@ var SidebarController = {
   },
 
   updatePinnedTabsHeightOnResize() {
+    // Skip during any splitter drag to avoid flickering.
+    if (this.isLauncherDragging || this.isPinnedTabsDragging) {
+      return;
+    }
+
+    const preferredHeight = this._state.launcherExpanded
+      ? this._state.expandedPinnedTabsHeight
+      : this._state.collapsedPinnedTabsHeight;
+
+    if (!preferredHeight || !this._pinnedTabsContainer.childElementCount) {
+      return;
+    }
+
     let itemsWrapperHeight = window.windowUtils.getBoundsWithoutFlushing(
       this._pinnedTabsItemsWrapper
     ).height;
-    if (this._state.pinnedTabsHeight > itemsWrapperHeight) {
-      this._state.pinnedTabsHeight = itemsWrapperHeight;
-      if (this._state.launcherExpanded) {
-        this._state.expandedPinnedTabsHeight = this._state.pinnedTabsHeight;
-      } else {
-        this._state.collapsedPinnedTabsHeight = this._state.pinnedTabsHeight;
-      }
-    }
+
+    // Clamp for display only — never overwrite the user's saved preference
+    const clampedHeight = Math.min(preferredHeight, itemsWrapperHeight);
+    this._pinnedTabsContainer.style.height = `${clampedHeight}px`;
   },
 
   /**
@@ -1911,6 +1955,11 @@ var SidebarController = {
     if (!this._canShow(commandID)) {
       return false;
     }
+    // capture the launcher state so we can revert to it when the panel closes
+    if (this._launcherStateAtOpen === undefined) {
+      this._launcherStateAtOpen = this._state.launcherVisible;
+    }
+
     return this._show(commandID).then(() => {
       this._loadSidebarExtension(commandID);
 
@@ -2078,6 +2127,12 @@ var SidebarController = {
       // automatically re-open next time the sidebar is shown
       this._state.command = "";
       this.lastOpenedId = null;
+      if (this._launcherStateAtOpen !== undefined) {
+        if (this.sidebarRevampVisibility === "hide-sidebar") {
+          this._state.launcherVisible = this._launcherStateAtOpen;
+        }
+        delete this._launcherStateAtOpen;
+      }
     }
 
     if (this.sidebarRevampEnabled) {
@@ -2490,6 +2545,28 @@ XPCOMUtils.defineLazyPreferenceGetter(
     if (!SidebarController.uninitializing) {
       SidebarController.toggleRevampSidebar();
       SidebarController._state.revampEnabled = newValue;
+    }
+  }
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarController,
+  "updatedBookmarksPanelEnabled",
+  "sidebar.updatedBookmarks.enabled",
+  false,
+  (_aPreference, _previousValue, newValue) => {
+    if (!SidebarController.uninitializing) {
+      const bookmarksSidebar = SidebarController.sidebars.get(
+        "viewBookmarksSidebar"
+      );
+      if (bookmarksSidebar) {
+        bookmarksSidebar.url =
+          SidebarController.sidebarRevampEnabled && newValue
+            ? "chrome://browser/content/sidebar/sidebar-bookmarks.html"
+            : "chrome://browser/content/places/bookmarksSidebar.xhtml";
+        if (SidebarController.currentID === "viewBookmarksSidebar") {
+          SidebarController.show("viewBookmarksSidebar");
+        }
+      }
     }
   }
 );

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -1210,10 +1208,45 @@ static bool CallJSAddPropertyOp(JSContext* cx, JSAddPropertyOp op,
   return op(cx, obj, id, v);
 }
 
+static MOZ_ALWAYS_INLINE bool PreserveAnyUnpreservedWrapper(
+    JSContext* cx, Handle<NativeObject*> obj) {
+  if (MOZ_LIKELY(!obj->hasUnpreservedWrapper())) {
+    return true;
+  }
+
+  JS::Value objectWrapperSlot =
+      JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT);
+  if (objectWrapperSlot.isUndefined() || !objectWrapperSlot.toPrivate()) {
+    return true;
+  }
+
+  // The flag is used to guard against having a wrapper that needs to be
+  // preserved but isn't so it's OK if we preserve the wrapper but fail to set
+  // the flag.
+  return MaybePreserveDOMWrapper(cx, obj) &&
+         JSObject::setFlag(cx, obj, ObjectFlag::HasPreservedWrapper);
+}
+
 static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,
                                                   Handle<NativeObject*> obj,
                                                   HandleId id,
                                                   HandleValue value) {
+  // Inline addProperty for array objects.
+  if (obj->is<ArrayObject>()) {
+    ArrayObject* arr = &obj->as<ArrayObject>();
+    uint32_t length = arr->length();
+    uint32_t index;
+    if (IdIsIndex(id, &index) && index >= length) {
+      arr->setLength(cx, index + 1);
+    }
+    return true;
+  }
+
+  // Ensure any wrapper is preserved first.
+  if (!PreserveAnyUnpreservedWrapper(cx, obj)) {
+    return false;
+  }
+
   JSAddPropertyOp addProperty = obj->getClass()->getAddProperty();
   if (MOZ_UNLIKELY(addProperty)) {
     if (!CallJSAddPropertyOp(cx, addProperty, obj, id, value)) {
@@ -1221,16 +1254,7 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,
       return false;
     }
   }
-  if (MOZ_UNLIKELY(obj->hasUnpreservedWrapper())) {
-    JS::Value objectWrapperSlot =
-        JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT);
-    if (objectWrapperSlot.isUndefined() || !objectWrapperSlot.toPrivate()) {
-      return true;
-    }
 
-    MOZ_ALWAYS_TRUE(MaybePreserveDOMWrapper(cx, obj));
-    return JSObject::setFlag(cx, obj, ObjectFlag::HasPreservedWrapper);
-  }
   return true;
 }
 
@@ -1247,6 +1271,11 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHookDense(
     return true;
   }
 
+  // Ensure any wrapper is preserved first.
+  if (!PreserveAnyUnpreservedWrapper(cx, obj)) {
+    return false;
+  }
+
   JSAddPropertyOp addProperty = obj->getClass()->getAddProperty();
   if (MOZ_UNLIKELY(addProperty)) {
     RootedId id(cx, PropertyKey::Int(index));
@@ -1256,15 +1285,6 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHookDense(
     }
   }
 
-  if (MOZ_UNLIKELY(obj->hasUnpreservedWrapper())) {
-    JS::Value objectWrapperSlot =
-        JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT);
-    if (objectWrapperSlot.isUndefined() || !objectWrapperSlot.toPrivate()) {
-      return true;
-    }
-    MOZ_ALWAYS_TRUE(MaybePreserveDOMWrapper(cx, obj));
-    return JSObject::setFlag(cx, obj, ObjectFlag::HasPreservedWrapper);
-  }
   return true;
 }
 

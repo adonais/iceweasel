@@ -116,6 +116,7 @@ button:disabled {
 
 .what-can-you-do-list {
   margin: 0;
+  margin-block-end: var(--space-xxlarge);
   padding-inline-start: var(--space-large);
   display: flex;
   flex-direction: column;

@@ -1,4 +1,3 @@
-/* vim: set ts=2 sw=2 sts=2 et tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -132,17 +131,30 @@ export class DOMFullscreenParent extends JSWindowActorParent {
     let window = browser.ownerGlobal;
     switch (aMessage.name) {
       case "DOMFullscreen:Request": {
+        const keyboardLockEnabled = Services.prefs.getBoolPref(
+          "dom.fullscreen.keyboard_lock.enabled",
+          false
+        );
+        this.fullscreenKeyboardLock = keyboardLockEnabled
+          ? aMessage.data.fullscreenKeyboardLock
+          : "none";
         this.manager.fullscreen = true;
         this.waitingForChildExitFullscreen = false;
         this.requestOrigin = this;
         this.addListeners(window);
-        window.windowUtils.remoteFrameFullscreenChanged(browser);
+        window.windowUtils.remoteFrameFullscreenChanged(
+          browser,
+          this.fullscreenKeyboardLock == "browser"
+        );
         break;
       }
       case "DOMFullscreen:NewOrigin": {
         // Don't show the warning if we've already exited fullscreen.
         if (window.document.fullscreen) {
-          window.PointerlockFsWarning.showFullScreen(topBrowsingContext);
+          window.PointerlockFsWarning.showFullScreen(
+            topBrowsingContext,
+            window.document.fullscreenKeyboardLock == "browser"
+          );
         }
         this.updateFullscreenWindowReference(window);
         break;
@@ -174,6 +186,29 @@ export class DOMFullscreenParent extends JSWindowActorParent {
         this.sendAsyncMessage("DOMFullscreen:Painted", {});
         Glean.fullscreen.change.stopAndAccumulate(this.timerId);
         this.timerId = null;
+        break;
+      }
+      case "DOMFullscreen:UpdateKeyboardLock": {
+        // Validate the received keyboardlock state before updating - an
+        // infected content process could send something unexpected.
+        const keyboardLockEnabled = Services.prefs.getBoolPref(
+          "dom.fullscreen.keyboard_lock.enabled",
+          false
+        );
+        let newLock =
+          keyboardLockEnabled &&
+          (aMessage.data.fullscreenKeyboardLock == "none" ||
+            aMessage.data.fullscreenKeyboardLock == "browser")
+            ? aMessage.data.fullscreenKeyboardLock
+            : "none";
+        if (window.document.fullscreenKeyboardLock != newLock) {
+          this.manager.updateFullscreenKeyboardLockStatus(newLock);
+          window.PointerlockFsWarning.close("fullscreen-warning");
+          window.PointerlockFsWarning.showFullScreen(
+            this.browsingContext,
+            newLock == "browser"
+          );
+        }
         break;
       }
     }
@@ -220,7 +255,8 @@ export class DOMFullscreenParent extends JSWindowActorParent {
 
         if (!this.hasBeenDestroyed() && this.requestOrigin) {
           window.PointerlockFsWarning.showFullScreen(
-            this.requestOrigin.browsingContext
+            this.requestOrigin.browsingContext,
+            browser.ownerGlobal.document.fullscreenKeyboardLock == "browser"
           );
         }
         break;
@@ -246,6 +282,15 @@ export class DOMFullscreenParent extends JSWindowActorParent {
         }
         break;
       }
+      case "MozDOMFullscreen:WarnAboutKeyboardLock": {
+        if (!this.hasBeenDestroyed() && this.requestOrigin) {
+          window.PointerlockFsWarning.showFullScreen(
+            this.requestOrigin.browsingContext,
+            window.document.fullscreenKeyboardLock == "browser"
+          );
+        }
+        break;
+      }
     }
   }
 
@@ -263,11 +308,22 @@ export class DOMFullscreenParent extends JSWindowActorParent {
       /* useCapture */ true,
       /* wantsUntrusted */ false
     );
+    aWindow.addEventListener(
+      "MozDOMFullscreen:WarnAboutKeyboardLock",
+      this,
+      /* useCapture */ true,
+      /* wantsUntrusted */ false
+    );
   }
 
   removeListeners(aWindow) {
     aWindow.removeEventListener("MozDOMFullscreen:Entered", this, true);
     aWindow.removeEventListener("MozDOMFullscreen:Exited", this, true);
+    aWindow.removeEventListener(
+      "MozDOMFullscreen:WarnAboutKeyboardLock",
+      this,
+      true
+    );
   }
 
   /**

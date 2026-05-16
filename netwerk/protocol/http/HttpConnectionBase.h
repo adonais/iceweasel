@@ -147,7 +147,9 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   void SetDnsBootstrapTimings(TimeStamp domainLookupStart,
                               TimeStamp domainLookupEnd);
   void SetConnectBootstrapTimings(TimeStamp connectStart,
-                                  TimeStamp tcpConnectEnd);
+                                  TimeStamp tcpConnectEnd,
+                                  TimeStamp secureConnectionStart = TimeStamp(),
+                                  TimeStamp connectEnd = TimeStamp());
 
   virtual bool IsPersistent() = 0;
   virtual bool IsReused() = 0;

@@ -4,83 +4,27 @@
 #ifndef include_dom_media_ipc_RemoteMediaDataEncoderChild_h
 #define include_dom_media_ipc_RemoteMediaDataEncoderChild_h
 
-#include <functional>
-
-#include "PlatformEncoderModule.h"
-#include "mozilla/MediaActorUtils.h"
 #include "mozilla/PRemoteEncoderChild.h"
-#include "mozilla/RemoteMediaManagerChild.h"
 #include "mozilla/ShmemRecycleAllocator.h"
 
 namespace mozilla {
 
-class RemoteMediaManagerChild;
-
 class RemoteMediaDataEncoderChild final
     : public ShmemRecycleAllocator<RemoteMediaDataEncoderChild>,
-      public PRemoteEncoderChild,
-      public MediaDataEncoder {
+      public PRemoteEncoderChild {
   friend class PRemoteEncoderChild;
 
  public:
-  MEDIA_INLINE_DECL_THREADSAFE_REFCOUNTING_META(RemoteMediaDataEncoderChild,
-                                                NS_IMETHOD_, delete(this),
-                                                MaybeDestroyActor(), final);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteMediaDataEncoderChild, final);
 
-  RemoteMediaDataEncoderChild(nsCOMPtr<nsISerialEventTarget>&& aThread,
-                              RemoteMediaIn aLocation);
-
-  nsISerialEventTarget* GetManagerThread() const { return mThread; }
-  RemoteMediaIn GetLocation() const { return mLocation; }
-
-  RefPtr<PlatformEncoderModule::CreateEncoderPromise> Construct();
-
+  RemoteMediaDataEncoderChild();
   void ActorDestroy(ActorDestroyReason aWhy) override;
-
-  // MediaDataEncoder
-  RefPtr<MediaDataEncoder::InitPromise> Init() override;
-  RefPtr<MediaDataEncoder::EncodePromise> Encode(
-      const MediaData* aSample) override;
-  RefPtr<MediaDataEncoder::EncodePromise> Encode(
-      nsTArray<RefPtr<MediaData>>&& aSamples) override;
-  RefPtr<MediaDataEncoder::EncodePromise> Drain() override;
-  RefPtr<MediaDataEncoder::ReconfigurationPromise> Reconfigure(
-      const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges)
-      override;
-  RefPtr<mozilla::ShutdownPromise> Shutdown() override;
-  bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
-  nsCString GetDescriptionName() const override;
-  RefPtr<GenericPromise> SetBitrate(uint32_t aBitsPerSec) override;
+  bool HasRemoteCrashed() const { return mRemoteCrashed; }
 
  private:
   virtual ~RemoteMediaDataEncoderChild();
-  RemoteMediaManagerChild* GetManager();
 
-  virtual RefPtr<PRemoteEncoderChild::EncodePromise> DoSendEncode(
-      const nsTArray<RefPtr<MediaData>>& aSamples, ShmemRecycleTicket* aTicket);
-
-  void DoSendInit();
-  void MaybeDestroyActor();
-
-  const nsCOMPtr<nsISerialEventTarget> mThread;
-  const RemoteMediaIn mLocation;
   bool mRemoteCrashed = false;
-  bool mHasConstructed = false;
-
-  MozPromiseHolder<PlatformEncoderModule::CreateEncoderPromise>
-      mConstructPromise;
-  MozPromiseHolder<MediaDataEncoder::InitPromise> mInitPromise;
-  MozPromiseHolder<MediaDataEncoder::EncodePromise> mDrainPromise;
-  MozPromiseHolder<MediaDataEncoder::ReconfigurationPromise>
-      mReconfigurePromise;
-  MozPromiseHolder<mozilla::ShutdownPromise> mShutdownPromise;
-
-  mutable Mutex mMutex{"RemoteMediaDataEncoderChild"};
-
-  nsCString mHardwareAcceleratedReason MOZ_GUARDED_BY(mMutex);
-  nsCString mDescription MOZ_GUARDED_BY(mMutex);
-  bool mIsHardwareAccelerated MOZ_GUARDED_BY(mMutex) = false;
-  bool mNeedsShutdown MOZ_GUARDED_BY(mMutex) = false;
 };
 
 }  // namespace mozilla

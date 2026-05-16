@@ -42,7 +42,7 @@ const mockController = {
 add_task(async function test_load_legacy_session_restore_data() {
   const sidebarState = new SidebarState(mockController);
 
-  sidebarState.loadInitialState({
+  sidebarState.loadCurrentState({
     width: "300px",
     command: "viewBookmarksSidebar",
     expanded: true,
@@ -62,7 +62,7 @@ add_task(async function test_load_legacy_session_restore_data() {
 add_task(async function test_load_prerevamp_session_restore_data() {
   const sidebarState = new SidebarState(mockController);
 
-  sidebarState.loadInitialState({
+  sidebarState.loadCurrentState({
     command: "viewBookmarksSidebar",
   });
 
@@ -79,7 +79,7 @@ add_task(async function test_load_prerevamp_session_restore_data() {
 add_task(async function test_load_hidden_panel_state() {
   const sidebarState = new SidebarState(mockController);
 
-  sidebarState.loadInitialState({
+  sidebarState.loadCurrentState({
     command: "viewBookmarksSidebar",
     panelOpen: false,
     launcherVisible: true,

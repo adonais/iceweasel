@@ -17,7 +17,7 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
  * @param onSearchResultClicked Invoked with the selected [TabsTrayItem] when a search result is clicked.
  **/
 class TabSearchNavigationMiddleware(
-    private val onSearchResultClicked: (TabsTrayItem) -> Unit,
+    private val onSearchResultClicked: (TabsTrayItem.Tab) -> Unit,
 ) : Middleware<TabsTrayState, TabsTrayAction> {
 
     override fun invoke(
@@ -29,7 +29,10 @@ class TabSearchNavigationMiddleware(
 
         when (action) {
             is TabSearchAction.SearchResultClicked -> {
-                onSearchResultClicked(action.tab)
+                when (action.searchResult) {
+                    is TabsTrayItem.Tab -> onSearchResultClicked(action.searchResult)
+                    is TabsTrayItem.TabGroup -> {}
+                }
             }
 
             else -> {} // no-op

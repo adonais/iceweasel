@@ -144,13 +144,13 @@ Result<Ok, LaunchError> LaunchApp(const std::vector<std::string>& argv,
   }
 
   int pid = 0;
-  int spawn_succeeded = (posix_spawnp(&pid, argv_copy[0], &file_actions,
-                                      &spawnattr, argv_copy, vars.get()) == 0);
+  err = posix_spawnp(&pid, argv_copy[0], &file_actions, &spawnattr, argv_copy,
+                     vars.get());
 
   bool process_handle_valid = pid > 0;
-  if (!spawn_succeeded || !process_handle_valid) {
+  if (err != 0 || !process_handle_valid) {
     DLOG(WARNING) << "posix_spawnp failed";
-    retval = Err(LaunchError("posix_spawnp", spawn_succeeded));
+    retval = Err(LaunchError("posix_spawnp", err));
   } else {
     gProcessLog.print("==> process %d launched child process %d\n",
                       GetCurrentProcId(), pid);

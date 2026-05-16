@@ -433,7 +433,7 @@ void av1_block_yrd_idtx(MACROBLOCK *x, const uint8_t *const pred_buf,
   DECLARE_BLOCK_YRD_BUFFERS()
   DECLARE_BLOCK_YRD_VARS()
   for (int r = 0; r < max_blocks_high; r += block_step) {
-    for (int c = 0, s = 0; c < max_blocks_wide; c += block_step, s += step) {
+    for (int c = 0; c < max_blocks_wide; c += block_step) {
       DECLARE_LOOP_VARS_BLOCK_YRD()
       scale_square_buf_vals(low_coeff, tx_wd, src_diff, diff_stride);
       av1_quantize_lp(low_coeff, tx_wd * tx_wd, p->round_fp_QTX,

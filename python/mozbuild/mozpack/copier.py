@@ -38,7 +38,10 @@ def _scandir_dest_info(top):
                     normed = os.path.normpath(entry.path)
                     if entry.is_symlink():
                         existing_files.add(normed)
-                        symlink_targets[normed] = os.readlink(entry.path)
+                        target = os.readlink(entry.path)
+                        symlink_targets[normed] = mozpath.strip_extended_length_prefix(
+                            target
+                        )
                     elif entry.is_dir(follow_symlinks=False):
                         existing_dirs.add(normed)
                         stack.append(entry.path)
@@ -490,7 +493,10 @@ class FileCopier(FileRegistry):
                 and os.path.normpath(src_path) in src_dirs
             ):
                 link_target = dest_symlinks.get(destfile)
-                if link_target is not None and link_target == src_path:
+                if (
+                    link_target is not None
+                    and link_target == mozpath.strip_extended_length_prefix(src_path)
+                ):
                     dest_files.add(destfile)
                     result.existing_files.add(destfile)
                     continue
@@ -517,7 +523,11 @@ class FileCopier(FileRegistry):
                 # fall through to the mtime comparison below.
                 if isinstance(f, AbsoluteSymlinkFile):
                     link_target = dest_symlinks.get(destfile)
-                    if link_target is not None and link_target == src_path:
+                    if (
+                        link_target is not None
+                        and link_target
+                        == mozpath.strip_extended_length_prefix(src_path)
+                    ):
                         dest_files.add(destfile)
                         result.existing_files.add(destfile)
                         continue

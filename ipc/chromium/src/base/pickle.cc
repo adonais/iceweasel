@@ -5,12 +5,12 @@
 #include "base/pickle.h"
 
 #include "mozilla/CheckedInt.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 
 #include <stdlib.h>
 
+#include <bit>
 #include <limits>
 #include <string>
 #include <algorithm>
@@ -54,11 +54,10 @@ struct Copier {
 template <typename T>
 struct Copier<T, sizeof(uint64_t), false> {
   static void Copy(T* dest, const char* iter) {
-#  if MOZ_LITTLE_ENDIAN
-    static const int loIndex = 0, hiIndex = 1;
-#  else
-    static const int loIndex = 1, hiIndex = 0;
-#  endif
+    static const int loIndex =
+        std::endian::native == std::endian::little ? 0 : 1;
+    static const int hiIndex =
+        std::endian::native == std::endian::little ? 1 : 0;
     static_assert(alignof(uint32_t*) == alignof(void*),
                   "Pointers have different alignments");
     const uint32_t* src = reinterpret_cast<const uint32_t*>(iter);

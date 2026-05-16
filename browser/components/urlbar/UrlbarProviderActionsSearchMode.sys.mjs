@@ -59,6 +59,7 @@ export class UrlbarProviderActionsSearchMode extends UrlbarProvider {
         payload: {
           key: resultKey,
           dynamicType: DYNAMIC_TYPE_NAME,
+          inputLength: queryContext.trimmedLowerCaseSearchString.length,
         },
       });
       addCallback(this, result);

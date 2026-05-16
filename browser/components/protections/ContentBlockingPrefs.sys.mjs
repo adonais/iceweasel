@@ -7,7 +7,6 @@ const PREFS_CHANGING_CATEGORY = new Set([
   "network.cookie.cookieBehavior.pbmode",
   "network.http.referer.disallowCrossSiteRelaxingDefault",
   "network.http.referer.disallowCrossSiteRelaxingDefault.top_navigation",
-  "privacy.partition.network_state.ocsp_cache",
   "privacy.query_stripping.enabled",
   "privacy.query_stripping.enabled.pbmode",
   "privacy.fingerprintingProtection",
@@ -156,16 +155,6 @@ export let ContentBlockingPrefs = {
           "network.http.referer.disallowCrossSiteRelaxingDefault.top_navigation"
         ] = false;
         break;
-      case "ocsp":
-        this.CATEGORY_PREFS[type][
-          "privacy.partition.network_state.ocsp_cache"
-        ] = true;
-        break;
-      case "-ocsp":
-        this.CATEGORY_PREFS[type][
-          "privacy.partition.network_state.ocsp_cache"
-        ] = false;
-        break;
       case "qps":
         this.CATEGORY_PREFS[type]["privacy.query_stripping.enabled"] = true;
         break;
@@ -303,7 +292,6 @@ export let ContentBlockingPrefs = {
         "network.http.referer.disallowCrossSiteRelaxingDefault": null,
         "network.http.referer.disallowCrossSiteRelaxingDefault.top_navigation":
           null,
-        "privacy.partition.network_state.ocsp_cache": null,
         "privacy.query_stripping.enabled": null,
         "privacy.query_stripping.enabled.pbmode": null,
         "privacy.fingerprintingProtection": null,
@@ -330,7 +318,6 @@ export let ContentBlockingPrefs = {
         "network.http.referer.disallowCrossSiteRelaxingDefault": null,
         "network.http.referer.disallowCrossSiteRelaxingDefault.top_navigation":
           null,
-        "privacy.partition.network_state.ocsp_cache": null,
         "privacy.query_stripping.enabled": null,
         "privacy.query_stripping.enabled.pbmode": null,
         "privacy.fingerprintingProtection": null,
@@ -549,7 +536,6 @@ const PREF_PREFIXES_TO_OBSERVE = new Set([
   "privacy.trackingprotection",
   "network.cookie.cookieBehavior",
   "network.http.referer.disallowCrossSiteRelaxingDefault",
-  "privacy.partition.network_state.ocsp_cache",
   "privacy.query_stripping.enabled",
   "privacy.fingerprintingProtection",
   ContentBlockingPrefs.PREF_CB_CATEGORY,

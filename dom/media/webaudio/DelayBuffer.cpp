@@ -128,15 +128,15 @@ void DelayBuffer::ReadChannels(const float aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
     positions[1] = PositionForDelay(floorDelay) + i;
     positions[0] = positions[1] - 1;
 
-    for (unsigned tick = 0; tick < std::size(positions); ++tick) {
-      int readChunk = ChunkForPosition(positions[tick]);
+    for (int position : positions) {
+      int readChunk = ChunkForPosition(position);
       // The zero check on interpolationFactor is important because, when
       // currentDelay is integer, positions[0] may be outside the range
       // considered for determining totalChannelCount.
       // mVolume is not set on default initialized chunks so also handle null
       // chunks specially.
       if (interpolationFactor != 0.0f && !mChunks[readChunk].IsNull()) {
-        int readOffset = OffsetForPosition(positions[tick]);
+        int readOffset = OffsetForPosition(position);
         UpdateUpmixChannels(readChunk, totalChannelCount,
                             aChannelInterpretation);
         float multiplier = interpolationFactor * mChunks[readChunk].mVolume;
@@ -155,11 +155,7 @@ void DelayBuffer::ReadChannels(const float aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
 void DelayBuffer::Read(float aDelayTicks, AudioBlock* aOutputChunk,
                        ChannelInterpretation aChannelInterpretation) {
   float computedDelay[WEBAUDIO_BLOCK_SIZE];
-
-  for (unsigned i = 0; i < WEBAUDIO_BLOCK_SIZE; ++i) {
-    computedDelay[i] = aDelayTicks;
-  }
-
+  std::fill(std::begin(computedDelay), std::end(computedDelay), aDelayTicks);
   Read(computedDelay, aOutputChunk, aChannelInterpretation);
 }
 

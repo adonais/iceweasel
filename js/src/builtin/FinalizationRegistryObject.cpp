@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -268,10 +266,12 @@ void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
   }
 }
 
-void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
+void FinalizationRegistryObject::traceWeak(JSTracer* trc,
+                                           bool* hasSymbolRegistrations) {
   // Trace and update the contents of the registrations map's keys, which
   // are weakly held.
   MOZ_ASSERT(registrations());
+  MOZ_ASSERT(hasSymbolRegistrations);
 
   for (auto iter = registrations()->modIter(); !iter.done(); iter.next()) {
     auto result = TraceWeakEdge(trc, &iter.getMutable().mutableKey(),
@@ -284,6 +284,8 @@ void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
         oomUnsafe.crash("FinalizationRegistryObject::traceWeak");
       }
       iter.remove();
+    } else if (result.finalTarget().isSymbol()) {
+      *hasSymbolRegistrations = true;
     }
   }
 
@@ -468,6 +470,10 @@ bool FinalizationRegistryObject::addRegistration(
   if (!ptr->value().append(record)) {
     ReportOutOfMemory(cx);
     return false;
+  }
+
+  if (unregisterToken.isSymbol()) {
+    cx->zone()->setGCFinalizationRegistriesMayHaveSymbolRegistrations();
   }
 
   return true;

@@ -826,7 +826,8 @@ void av1_init_plane_quantizers(const AV1_COMP *cpi, MACROBLOCK *x,
       qindex_rdmult, cm->seq_params->bit_depth,
       cpi->ppi->gf_group.update_type[cpi->gf_frame_index], layer_depth,
       boost_index, frame_type, cpi->oxcf.q_cfg.use_fixed_qp_offsets,
-      is_stat_consumption_stage(cpi), cpi->oxcf.tune_cfg.tuning);
+      is_stat_consumption_stage(cpi), cpi->oxcf.tune_cfg.tuning,
+      cpi->oxcf.mode);
 
   const int qindex_change = x->qindex != qindex;
   if (qindex_change || do_update) {
@@ -885,8 +886,7 @@ void av1_set_quantizer(AV1_COMMON *const cm, int min_qmlevel, int max_qmlevel,
 
   // Disable deltaq in lossless mode.
   if (enable_chroma_deltaq && q) {
-    if (is_allintra &&
-        (tuning == AOM_TUNE_IQ || tuning == AOM_TUNE_SSIMULACRA2)) {
+    if (tuning == AOM_TUNE_IQ || tuning == AOM_TUNE_SSIMULACRA2) {
       int chroma_dc_delta_q = 0;
       int chroma_ac_delta_q = 0;
 
@@ -986,30 +986,28 @@ void av1_set_quantizer(AV1_COMMON *const cm, int min_qmlevel, int max_qmlevel,
   int (*get_luma_qmlevel)(int, int, int);
   int (*get_chroma_qmlevel)(int, int, int);
 
-  if (is_allintra) {
-    if (tuning == AOM_TUNE_IQ || tuning == AOM_TUNE_SSIMULACRA2) {
-      if (tuning == AOM_TUNE_SSIMULACRA2) {
-        // Use luma QM formula specifically tailored for tune SSIMULACRA2
-        get_luma_qmlevel = aom_get_qmlevel_luma_ssimulacra2;
-      } else {
-        get_luma_qmlevel = aom_get_qmlevel_allintra;
-      }
-
-      if (cm->seq_params->subsampling_x == 0 &&
-          cm->seq_params->subsampling_y == 0) {
-        // 4:4:4 subsampling mode has 4x the number of chroma coefficients
-        // compared to 4:2:0 (2x on each dimension). This means the encoder
-        // should use lower chroma QM levels that more closely match the scaling
-        // of an equivalent 4:2:0 chroma QM.
-        get_chroma_qmlevel = aom_get_qmlevel_444_chroma;
-      } else {
-        // For all other chroma subsampling modes, use the all intra QM formula
-        get_chroma_qmlevel = aom_get_qmlevel_allintra;
-      }
+  if (tuning == AOM_TUNE_IQ || tuning == AOM_TUNE_SSIMULACRA2) {
+    if (tuning == AOM_TUNE_SSIMULACRA2) {
+      // Use luma QM formula specifically tailored for tune SSIMULACRA2
+      get_luma_qmlevel = aom_get_qmlevel_luma_ssimulacra2;
     } else {
       get_luma_qmlevel = aom_get_qmlevel_allintra;
+    }
+
+    if (cm->seq_params->subsampling_x == 0 &&
+        cm->seq_params->subsampling_y == 0) {
+      // 4:4:4 subsampling mode has 4x the number of chroma coefficients
+      // compared to 4:2:0 (2x on each dimension). This means the encoder
+      // should use lower chroma QM levels that more closely match the scaling
+      // of an equivalent 4:2:0 chroma QM.
+      get_chroma_qmlevel = aom_get_qmlevel_444_chroma;
+    } else {
+      // For all other chroma subsampling modes, use the all intra QM formula
       get_chroma_qmlevel = aom_get_qmlevel_allintra;
     }
+  } else if (is_allintra) {
+    get_luma_qmlevel = aom_get_qmlevel_allintra;
+    get_chroma_qmlevel = aom_get_qmlevel_allintra;
   } else {
     get_luma_qmlevel = aom_get_qmlevel;
     get_chroma_qmlevel = aom_get_qmlevel;

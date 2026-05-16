@@ -664,14 +664,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
     SetHTMLBoolAttr(nsGkAtoms::muted, aMuted, aRv);
   }
 
-  bool MozAllowCasting() const { return mAllowCasting; }
-
-  void SetMozAllowCasting(bool aShow) { mAllowCasting = aShow; }
-
-  bool MozIsCasting() const { return mIsCasting; }
-
-  void SetMozIsCasting(bool aShow) { mIsCasting = aShow; }
-
   // Returns whether a call to Play() would be rejected with NotAllowedError.
   // This assumes "worst case" for unknowns. So if prompting for permission is
   // enabled and no permission is stored, this behaves as if the user would
@@ -805,6 +797,18 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   }
 
   void NotifyCueDisplayStatesChanged();
+
+  void SetCuesDirty() {
+    if (mTextTrackManager) {
+      mTextTrackManager->SetCuesDirty();
+    }
+  }
+
+  void UpdateCueDisplay() {
+    if (mTextTrackManager) {
+      mTextTrackManager->UpdateCueDisplay();
+    }
+  }
 
   bool IsBlessed() const { return mIsBlessed; }
 

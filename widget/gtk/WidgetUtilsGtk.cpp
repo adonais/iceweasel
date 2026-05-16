@@ -26,6 +26,7 @@
 #include <gtk/gtk.h>
 #include <dlfcn.h>
 #include <glib.h>
+#include <inttypes.h>
 
 #ifdef MOZ_ENABLE_DBUS
 #  include "mozilla/ClearOnShutdown.h"
@@ -139,6 +140,23 @@ GdkDevice* GdkGetPointer() {
   GdkDisplay* display = gdk_display_get_default();
   GdkDeviceManager* deviceManager = gdk_display_get_device_manager(display);
   return gdk_device_manager_get_client_pointer(deviceManager);
+}
+
+GdkSeat* GdkDeviceGetSeat(GdkDevice* device) {
+  static auto sGdkDeviceGetSeat =
+      (GdkSeat * (*)(GdkDevice*)) dlsym(RTLD_DEFAULT, "gdk_device_get_seat");
+  if (!sGdkDeviceGetSeat) {
+    return nullptr;
+  }
+  return sGdkDeviceGetSeat(device);
+}
+
+void GdkSeatUngrab(GdkSeat* seat) {
+  static auto sGdkSeatUngrab =
+      (void (*)(GdkSeat*))dlsym(RTLD_DEFAULT, "gdk_seat_ungrab");
+  if (sGdkSeatUngrab) {
+    sGdkSeatUngrab(seat);
+  }
 }
 
 static GdkEvent* sLastPointerDownEvent = nullptr;
@@ -582,14 +600,13 @@ bool IsCancelledGError(GError* aGError) {
 }
 
 #if defined(MOZ_X11)
-static unsigned long GetWindowUserTime(GdkDisplay* aDisplay,
-                                       uintptr_t aWindow) {
+static uint32_t GetWindowUserTime(GdkDisplay* aDisplay, uintptr_t aWindow) {
   Atom actualType;
   int actualFormat;
   unsigned long numberOfItems;
   unsigned long bytesAfter;
   unsigned char* property = nullptr;
-  unsigned long userTime = 0;
+  uint32_t userTime = 0;
 
   Display* xDisplay = GDK_DISPLAY_XDISPLAY(aDisplay);
   Atom atom =
@@ -600,7 +617,7 @@ static unsigned long GetWindowUserTime(GdkDisplay* aDisplay,
                          &bytesAfter, &property) == Success &&
       property) {
     if (numberOfItems == 1) {
-      userTime = *((unsigned long*)property);
+      userTime = *((uint32_t*)property);
     }
     XFree(property);
   }
@@ -609,12 +626,12 @@ static unsigned long GetWindowUserTime(GdkDisplay* aDisplay,
 }
 
 void FindLatestUserTime(GdkDisplay* aDisplay, uintptr_t aWindow,
-                        unsigned long* aLatestTime) {
+                        uint32_t* aLatestTime) {
   Window rootReturn;
   Window parentReturn;
   Window* children;
   unsigned int numberOfChildren;
-  unsigned long userTime;
+  uint32_t userTime;
 
   Display* xDisplay = GDK_DISPLAY_XDISPLAY(aDisplay);
 
@@ -634,7 +651,7 @@ void FindLatestUserTime(GdkDisplay* aDisplay, uintptr_t aWindow,
 
 // Assume we're started from user interaction and infer user time if its missing
 nsCString SynthesizeStartupToken() {
-  unsigned long latestUserTime = 0;
+  uint32_t latestUserTime = 0;
   FindLatestUserTime(gdk_display_get_default(),
                      GDK_WINDOW_XID(gdk_get_default_root_window()),
                      &latestUserTime);
@@ -643,7 +660,7 @@ nsCString SynthesizeStartupToken() {
     return nsCString();
   }
 
-  return nsPrintfCString("%s_TIME%lu", g_get_host_name(), latestUserTime);
+  return nsPrintfCString("%s_TIME%" PRIu32, g_get_host_name(), latestUserTime);
 }
 #endif
 

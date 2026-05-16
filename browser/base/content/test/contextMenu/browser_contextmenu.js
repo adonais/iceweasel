@@ -534,6 +534,8 @@ add_task(async function test_canvas() {
       true,
       "context-saveimage",
       true,
+      "context-copyimage-contents",
+      true,
       "---",
       null,
       "context-selectall",
@@ -2410,6 +2412,41 @@ add_task(async function test_svg_relative_link() {
       },
     }
   );
+});
+
+add_task(async function test_mathml_link() {
+  await test_contextmenu(
+    "#mathml-with-link > a",
+    [
+      ...kLinkItems,
+      ...(hasSelectTranslations ? ["context-translate-selection", true] : []),
+      ...askChatMenu,
+    ],
+    {
+      awaitOnMenuBuilt: {
+        id: "context-ask-chat",
+      },
+    }
+  );
+  if (
+    !Services.prefs.getBoolPref(
+      "mathml.href_link_on_non_anchor_element.disabled"
+    )
+  ) {
+    await test_contextmenu(
+      "#deprecated-mathml-with-link > mrow",
+      [
+        ...kLinkItems,
+        ...(hasSelectTranslations ? ["context-translate-selection", true] : []),
+        ...askChatMenu,
+      ],
+      {
+        awaitOnMenuBuilt: {
+          id: "context-ask-chat",
+        },
+      }
+    );
+  }
 });
 
 add_task(async function test_background_image() {

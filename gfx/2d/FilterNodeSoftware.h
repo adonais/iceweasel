@@ -351,14 +351,20 @@ class FilterNodeComponentTransferSoftware : public FilterNodeSoftware {
   IntRect MapRectToSource(const IntRect& aRect, const IntRect& aMax,
                           FilterNode* aSourceNode) override;
 
+  // Contains the mapping from one colour value to another.
+  using LookupTable = std::array<uint8_t, 256>;
+  // feComponentTransfer can have up to 4 colour channels:
+  // red, green, blue and alpha.
+  using LookupTables = std::array<LookupTable, 4>;
+
  protected:
   already_AddRefed<DataSourceSurface> Render(const IntRect& aRect) override;
   IntRect GetOutputRectInRect(const IntRect& aRect) override;
   int32_t InputIndex(uint32_t aInputEnumIndex) override;
   void RequestFromInputsForRect(const IntRect& aRect) override;
-  virtual void GenerateLookupTable(ptrdiff_t aComponent,
-                                   uint8_t aTables[4][256], bool aDisabled);
-  virtual bool FillLookupTable(ptrdiff_t aComponent, uint8_t aTable[256]) = 0;
+  virtual void GenerateLookupTable(ptrdiff_t aComponent, LookupTables& aTables,
+                                   bool aDisabled);
+  virtual bool FillLookupTable(ptrdiff_t aComponent, LookupTable& aTable) = 0;
 
   bool mDisableR;
   bool mDisableG;
@@ -377,11 +383,11 @@ class FilterNodeTableTransferSoftware
                     uint32_t aSize) override;
 
  protected:
-  bool FillLookupTable(ptrdiff_t aComponent, uint8_t aTable[256]) override;
+  bool FillLookupTable(ptrdiff_t aComponent, LookupTable& aTable) override;
 
  private:
   bool FillLookupTableImpl(const std::vector<Float>& aTableValues,
-                           uint8_t aTable[256]);
+                           LookupTable& aTable);
 
   std::vector<Float> mTableR;
   std::vector<Float> mTableG;
@@ -400,11 +406,11 @@ class FilterNodeDiscreteTransferSoftware
                     uint32_t aSize) override;
 
  protected:
-  bool FillLookupTable(ptrdiff_t aComponent, uint8_t aTable[256]) override;
+  bool FillLookupTable(ptrdiff_t aComponent, LookupTable& aTable) override;
 
  private:
   bool FillLookupTableImpl(const std::vector<Float>& aTableValues,
-                           uint8_t aTable[256]);
+                           LookupTable& aTable);
 
   std::vector<Float> mTableR;
   std::vector<Float> mTableG;
@@ -423,10 +429,10 @@ class FilterNodeLinearTransferSoftware
   void SetAttribute(uint32_t aIndex, Float aValue) override;
 
  protected:
-  bool FillLookupTable(ptrdiff_t aComponent, uint8_t aTable[256]) override;
+  bool FillLookupTable(ptrdiff_t aComponent, LookupTable& aTable) override;
 
  private:
-  bool FillLookupTableImpl(Float aSlope, Float aIntercept, uint8_t aTable[256]);
+  bool FillLookupTableImpl(Float aSlope, Float aIntercept, LookupTable& aTable);
 
   Float mSlopeR;
   Float mSlopeG;
@@ -449,11 +455,11 @@ class FilterNodeGammaTransferSoftware
   void SetAttribute(uint32_t aIndex, Float aValue) override;
 
  protected:
-  bool FillLookupTable(ptrdiff_t aComponent, uint8_t aTable[256]) override;
+  bool FillLookupTable(ptrdiff_t aComponent, LookupTable& aTable) override;
 
  private:
   bool FillLookupTableImpl(Float aAmplitude, Float aExponent, Float aOffset,
-                           uint8_t aTable[256]);
+                           LookupTable& aTable);
 
   Float mAmplitudeR;
   Float mAmplitudeG;

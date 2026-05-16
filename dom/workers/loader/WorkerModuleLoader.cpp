@@ -106,11 +106,10 @@ bool WorkerModuleLoader::CreateDynamicImportLoader() {
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   workerPrivate->AssertIsOnWorkerThread();
 
-  IgnoredErrorResult rv;
   RefPtr<WorkerScriptLoader> loader = loader::WorkerScriptLoader::Create(
       workerPrivate, nullptr, nullptr,
-      GetCurrentScriptLoader()->GetWorkerScriptType(), rv);
-  if (NS_WARN_IF(rv.Failed())) {
+      GetCurrentScriptLoader()->GetWorkerScriptType());
+  if (NS_WARN_IF(!loader)) {
     return false;
   }
 
@@ -149,6 +148,7 @@ nsresult WorkerModuleLoader::CompileFetchedModule(
   switch (aRequest->mModuleType) {
     case JS::ModuleType::Unknown:
     case JS::ModuleType::Bytes:
+    case JS::ModuleType::Text:
       MOZ_CRASH("Unexpected module type");
     case JS::ModuleType::JavaScriptOrWasm:
       return CompileJavaScriptOrWasmModule(aCx, aOptions, aRequest,

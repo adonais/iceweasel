@@ -363,9 +363,9 @@ nsresult Http2WebTransportStream::HandleMaxStreamData(uint64_t aLimit) {
 
 void Http2WebTransportStream::OnStopSending() { mSendState = SEND_DONE; }
 
-void Http2WebTransportStream::OnReset(uint64_t aSize) {
+nsresult Http2WebTransportStream::OnReset(uint64_t aSize) {
   if (mReliableSize) {
-    return;
+    return NS_OK;
   }
 
   LOG(("Http2WebTransportStream::OnReset %p aSize=%" PRIu64
@@ -379,7 +379,7 @@ void Http2WebTransportStream::OnReset(uint64_t aSize) {
     RefPtr<Http2WebTransportSessionImpl> session = mWebTransportSession;
     Close(NS_ERROR_ILLEGAL_VALUE);
     session->Close(NS_ERROR_ILLEGAL_VALUE);
-    return;
+    return NS_ERROR_ILLEGAL_VALUE;
   }
 
   mReliableSize.emplace(aSize);
@@ -387,6 +387,8 @@ void Http2WebTransportStream::OnReset(uint64_t aSize) {
   if (mTotalReceived == aSize) {
     mRecvState = RECV_DONE;
   }
+
+  return NS_OK;
 }
 
 void Http2WebTransportStream::OnStreamDataSent(size_t aCount) {

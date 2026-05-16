@@ -147,6 +147,7 @@ class SrcRepository(Repository):
         self,
         remote: Optional[str] = None,
         ref: Optional[str] = None,
+        dest_branch: Optional[str] = None,
         force: bool = False,
     ):
         pass

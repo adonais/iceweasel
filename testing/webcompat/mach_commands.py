@@ -3,7 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import argparse
+import glob
 import io
+import json
 import os
 import platform
 import sys
@@ -384,17 +386,21 @@ def webcompat_addon(command_context):
             with open(fullpath) as f:
                 in_lines = f.readlines()
             with open(fullpath, "w") as f:
+                addonpath = os.path.dirname(fullpath)
                 for line in in_lines:
-                    if not line.startswith("#include"):
+                    if not line.startswith("const AVAILABLE_INTERVENTIONS = {}"):
                         f.write(line)
                         continue
-                    include_path = line.split()[1]
-                    include_fullpath = os.path.join(
-                        os.path.dirname(fullpath), include_path
-                    )
-                    with open(include_fullpath) as inc:
-                        f.write(inc.read())
-                    f.write("\n")
+                    jsons = f"{addonpath}/data/interventions/*.json"
+                    interventions = {}
+                    for ipath in glob.glob(jsons):
+                        bug_number = os.path.splitext(os.path.basename(ipath))[0].split(
+                            "-"
+                        )[0]
+                        with open(ipath) as fd:
+                            interventions[bug_number] = json.load(fd)
+                    str = json.dumps(dict(sorted(interventions.items())), indent=2)
+                    f.write(f"const AVAILABLE_INTERVENTIONS = {str};\n")
 
         shutil.copytree(src, src_copy, dirs_exist_ok=True)
         process_includes("run.js")

@@ -31,6 +31,9 @@ const PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID =
 const PREF_SELECTED_WALLPAPER =
   "browser.newtabpage.activity-stream.newtabWallpapers.wallpaper";
 
+const PREF_WALLPAPERS_USER_ENABLED_MIGRATED =
+  "browser.newtabpage.activity-stream.newtabWallpapers.user.enabled.migrated";
+
 const RS_FALLBACK_BASE_URL =
   "https://firefox-settings-attachments.cdn.mozilla.net/";
 
@@ -76,6 +79,38 @@ export class WallpaperFeed {
     );
 
     if (wallpapersEnabled) {
+      // newtabWallpapers.user.enabled defaults to false, but users who already
+      // had a wallpaper selected before this pref was introduced should have
+      // it set to true so their wallpaper remains visible after updating.
+      //
+      // PREF_WALLPAPERS_USER_ENABLED_MIGRATED tracks whether this one-time
+      // check has already run. Without it, wallpaperSetup (which is called on
+      // startup and on Remote Settings sync) would re-run the check every time,
+      // undoing any explicit toggle-off the user makes.
+      //
+      // @backward-compat { version 152 }
+      // This migration block and PREF_WALLPAPERS_USER_ENABLED_MIGRATED can be
+      // removed once Firefox 152 is on Release, at which point all users will
+      // have run this migration.
+      if (
+        !Services.prefs.getBoolPref(
+          PREF_WALLPAPERS_USER_ENABLED_MIGRATED,
+          false
+        )
+      ) {
+        // Mark as done immediately so subsequent wallpaperSetup calls skip this.
+        Services.prefs.setBoolPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED, true);
+        const selectedWallpaper = Services.prefs.getStringPref(
+          PREF_SELECTED_WALLPAPER,
+          ""
+        );
+        if (selectedWallpaper) {
+          this.store.dispatch(
+            ac.SetPref("newtabWallpapers.user.enabled", true)
+          );
+        }
+      }
+
       if (!this.wallpaperClient) {
         // getting collection
         this.wallpaperClient = this.RemoteSettings(
@@ -167,12 +202,27 @@ export class WallpaperFeed {
       }),
     ];
 
+    const CATEGORY_ORDER = [
+      "custom-wallpaper",
+      "firefox",
+      "abstracts",
+      "celestial",
+      "photographs",
+      "solid-colors",
+    ];
+
     const categories = [
       ...new Set(
         wallpapers.map(wallpaper => wallpaper.category).filter(Boolean)
       ),
       ...(customWallpaperEnabled ? ["custom-wallpaper"] : []), // Conditionally add custom wallpaper input
-    ];
+    ].sort((a, b) => {
+      const aIndex = CATEGORY_ORDER.indexOf(a);
+      const bIndex = CATEGORY_ORDER.indexOf(b);
+      const aOrder = aIndex === -1 ? CATEGORY_ORDER.length : aIndex;
+      const bOrder = bIndex === -1 ? CATEGORY_ORDER.length : bIndex;
+      return aOrder - bOrder;
+    });
 
     this.store.dispatch(
       ac.BroadcastToContent({
@@ -325,8 +375,7 @@ export class WallpaperFeed {
         break;
       case at.PREF_CHANGED:
         if (
-          action.data.name ===
-            "newtabWallpapers.newtabWallpapers.customColor.enabled" ||
+          action.data.name === "newtabWallpapers.customColor.enabled" ||
           action.data.name === "newtabWallpapers.customWallpaper.enabled" ||
           action.data.name === "newtabWallpapers.enabled"
         ) {

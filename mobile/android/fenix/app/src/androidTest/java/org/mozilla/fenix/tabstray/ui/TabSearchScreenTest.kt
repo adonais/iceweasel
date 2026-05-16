@@ -12,6 +12,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.TabsTrayTestTag.TAB_SEARCH_BACK_BUTTON
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.middleware.TabSearchNavigationMiddleware
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
@@ -46,5 +47,22 @@ class TabSearchScreenTest {
         composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).performClick()
 
         assertTrue(tabSearchInvoked)
+    }
+
+    @Test
+    fun spammingBackButtonDoesNotCrashTest() {
+        val store = TabsTrayStore()
+
+        composeTestRule.setContent {
+            TabSearchScreen(store = store)
+        }
+
+        composeTestRule.onNodeWithTag(TAB_SEARCH_BACK_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(TAB_SEARCH_BACK_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(TAB_SEARCH_BACK_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(TAB_SEARCH_BACK_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(TAB_SEARCH_BACK_BUTTON).performClick()
+
+        assertTrue(store.state.backStack.isNotEmpty())
     }
 }

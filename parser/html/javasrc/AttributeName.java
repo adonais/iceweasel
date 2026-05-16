@@ -808,6 +808,7 @@ public final class AttributeName
     public static final AttributeName SANDBOX = new AttributeName(ALL_NO_NS, "sandbox", "sandbox", "sandbox", "sandbox", ALL_NO_PREFIX, NCNAME_HTML | NCNAME_FOREIGN | NCNAME_LANG);
     public static final AttributeName SHADOWROOTCUSTOMELEMENTREGISTRY = new AttributeName(ALL_NO_NS, "shadowrootcustomelementregistry", "shadowrootcustomelementregistry", "shadowrootcustomelementregistry", "shadowrootcustomelementregistry", ALL_NO_PREFIX, NCNAME_HTML | NCNAME_FOREIGN | NCNAME_LANG);
     public static final AttributeName SHADOWROOTDELEGATESFOCUS = new AttributeName(ALL_NO_NS, "shadowrootdelegatesfocus", "shadowrootdelegatesfocus", "shadowrootdelegatesfocus", "shadowrootdelegatesfocus", ALL_NO_PREFIX, NCNAME_HTML | NCNAME_FOREIGN | NCNAME_LANG);
+    public static final AttributeName SHADOWROOTSLOTASSIGNMENT = new AttributeName(ALL_NO_NS, "shadowrootslotassignment", "shadowrootslotassignment", "shadowrootslotassignment", "shadowrootslotassignment", ALL_NO_PREFIX, NCNAME_HTML | NCNAME_FOREIGN | NCNAME_LANG);
     public static final AttributeName WORD_SPACING = new AttributeName(ALL_NO_NS, "word-spacing", "word-spacing", "word-spacing", "word-spacing", ALL_NO_PREFIX, NCNAME_HTML | NCNAME_FOREIGN | NCNAME_LANG);
     public static final AttributeName ACCENTUNDER = new AttributeName(ALL_NO_NS, "accentunder", "accentunder", "accentunder", "accentunder", ALL_NO_PREFIX, NCNAME_HTML | NCNAME_FOREIGN | NCNAME_LANG);
     public static final AttributeName ACCEPT_CHARSET = new AttributeName(ALL_NO_NS, "accept-charset", "accept-charset", "accept-charset", "accept-charset", ALL_NO_PREFIX, NCNAME_HTML | NCNAME_FOREIGN | NCNAME_LANG);
@@ -1709,6 +1710,7 @@ public final class AttributeName
     REFX,
     CY,
     FY,
+    SHADOWROOTSLOTASSIGNMENT,
     };
     private final static int[] ATTRIBUTE_HASHES = {
     1854497001,

@@ -1045,12 +1045,11 @@ void WebrtcGmpVideoDecoder::Decoded(GMPVideoi420Frame* aDecodedFrame) {
   // always.  Also, we can only Destroy() the frame on the gmp thread, so
   // copying is simplest if expensive.
   // I420 size including rounding...
-  CheckedInt32 length =
-      (CheckedInt32(aDecodedFrame->Stride(kGMPYPlane)) *
-       aDecodedFrame->Height()) +
-      (CheckedInt32(aDecodedFrame->Stride(kGMPVPlane)) +
-       aDecodedFrame->Stride(kGMPUPlane)) *
-      ((aDecodedFrame->Height() + 1) / 2);
+  CheckedInt32 length = (CheckedInt32(aDecodedFrame->Stride(kGMPYPlane)) *
+                         aDecodedFrame->Height()) +
+                        (CheckedInt32(aDecodedFrame->Stride(kGMPVPlane)) +
+                         aDecodedFrame->Stride(kGMPUPlane)) *
+                            ((aDecodedFrame->Height() + 1) / 2);
   int32_t size = length.isValid() ? length.value() : 0;
   MOZ_RELEASE_ASSERT(length.isValid() && size > 0);
 

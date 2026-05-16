@@ -136,7 +136,7 @@ class TestAndroidMachCommands(unittest.TestCase):
             self.cleanup_gradle_args(gradle_args),
             [
                 "-p",
-                "mobile/android/focus-android/app",
+                os.path.join("mobile", "android", "focus-android", "app"),
                 "testFocusDebugUnitTest",
                 "--tests",
                 "org.mozilla.focus.components.EngineProviderTest",
@@ -162,7 +162,11 @@ class TestAndroidMachCommands(unittest.TestCase):
 
         self.assertEqual(
             self.cleanup_gradle_args(gradle_args),
-            ["-p", "mobile/android/fenix/app", "testDebugUnitTest"],
+            [
+                "-p",
+                os.path.join("mobile", "android", "fenix", "app"),
+                "testDebugUnitTest",
+            ],
         )
 
     def test_run_android_test_androidTest(self):
@@ -188,7 +192,7 @@ class TestAndroidMachCommands(unittest.TestCase):
             self.cleanup_gradle_args(gradle_args),
             [
                 "-p",
-                "mobile/android/fenix/app",
+                os.path.join("mobile", "android", "fenix", "app"),
                 "connectedDebugAndroidTest",
                 "-Pandroid.testInstrumentationRunnerArguments.class=org.mozilla.fenix.components.MenuItemTest",
             ],
@@ -214,7 +218,11 @@ class TestAndroidMachCommands(unittest.TestCase):
 
         self.assertEqual(
             self.cleanup_gradle_args(gradle_args),
-            ["-p", "mobile/android/geckoview", "testReleaseUnitTest"],
+            [
+                "-p",
+                os.path.join("mobile", "android", "geckoview"),
+                "testReleaseUnitTest",
+            ],
         )
 
     def test_run_android_test_flavor(self):
@@ -239,7 +247,7 @@ class TestAndroidMachCommands(unittest.TestCase):
             self.cleanup_gradle_args(gradle_args),
             [
                 "-p",
-                "mobile/android/geckoview",
+                os.path.join("mobile", "android", "geckoview"),
                 "testDebugUnitTest",
                 "connectedDebugAndroidTest",
             ],
@@ -279,7 +287,7 @@ class TestAndroidMachCommands(unittest.TestCase):
             self.cleanup_gradle_args(gradle_args),
             [
                 "-p",
-                "mobile/android/android-components",
+                os.path.join("mobile", "android", "android-components"),
                 ":components:concept-engine:testDebugUnitTest",
                 ":components:browser-engine-gecko:testDebugUnitTest",
                 "--tests",

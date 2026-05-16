@@ -209,8 +209,9 @@ class MenuNavigationMiddleware(
                         url?.let {
                             shareSheetLauncher.showNativeShareSheet(
                                 id = session?.id,
-                                url = it,
+                                longUrl = it,
                                 title = title,
+                                isPrivate = session?.content?.private ?: false,
                                 isCustomTab = customTab != null,
                             )
                         }
@@ -345,6 +346,13 @@ class MenuNavigationMiddleware(
                         sessionUseCases.stopLoading.invoke(it.id)
                         onDismiss()
                     }
+                }
+
+                is MenuAction.Navigate.IPProtectionSettings -> {
+                    navController.nav(
+                        id = R.id.menuDialogFragment,
+                        directions = MenuDialogFragmentDirections.actionMenuDialogFragmentToIpProtectionFragment(),
+                    )
                 }
 
                 else -> Unit

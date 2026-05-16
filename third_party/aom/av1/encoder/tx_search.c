@@ -79,6 +79,10 @@ static const int sqrt_tx_pixels_2d[TX_SIZES_ALL] = { 4,  8,  16, 32, 32, 6,  6,
                                                      12, 12, 23, 23, 32, 32, 8,
                                                      8,  16, 16, 23, 23 };
 
+// look-up table for number of top no-split RD Costs that should be considered
+// based on prune_inter_tx_split_rd_eval_lvl speed feature.
+static const int num_inter_tx_no_split_cand[2] = { 4, 3 };
+
 static inline uint32_t get_block_residue_hash(MACROBLOCK *x, BLOCK_SIZE bsize) {
   const int rows = block_size_high[bsize];
   const int cols = block_size_wide[bsize];
@@ -300,6 +304,62 @@ static inline void save_mb_rd_info(int n4, uint32_t hash,
   mb_rd_info->rd_stats = *rd_stats;
 }
 
+// Store the RD Cost of transform no-split.
+static inline void push_inter_block_tx_no_split_rd(
+    MACROBLOCK *x, const MB_MODE_INFO *mbmi, int64_t tmp_rd, int blk_idx,
+    int prune_inter_tx_split_rd_eval_lvl) {
+  assert(blk_idx < MAX_TX_BLOCKS_IN_MAX_SB);
+  if (!prune_inter_tx_split_rd_eval_lvl) return;
+
+  if (blk_idx == -1 || tmp_rd == INT64_MAX) return;
+
+  // Do not store for skip and intraBC modes
+  if (mbmi->skip_mode != 0 || is_intrabc_block(mbmi)) return;
+
+  assert(prune_inter_tx_split_rd_eval_lvl <= 2);
+  const int num_top_cand =
+      num_inter_tx_no_split_cand[prune_inter_tx_split_rd_eval_lvl - 1];
+  assert(num_top_cand <= TOP_INTER_TX_NO_SPLIT_COUNT);
+
+  // Insert the RD Cost in sorted order
+  for (int i = 0; i < num_top_cand; i++) {
+    if (tmp_rd < x->top_inter_tx_no_split_rd[blk_idx][i]) {
+      for (int j = num_top_cand - 1; j > i; j--) {
+        x->top_inter_tx_no_split_rd[blk_idx][j] =
+            x->top_inter_tx_no_split_rd[blk_idx][j - 1];
+      }
+      x->top_inter_tx_no_split_rd[blk_idx][i] = tmp_rd;
+      break;
+    }
+  }
+}
+
+// Prune the evaluation of transform split.
+static inline bool prune_tx_split_eval_using_no_split_rd(
+    const MACROBLOCK *x, const MB_MODE_INFO *mbmi, int64_t tmp_rd, int blk_idx,
+    int prune_inter_tx_split_rd_eval_lvl) {
+  if (!prune_inter_tx_split_rd_eval_lvl) return false;
+
+  if (blk_idx == -1 || tmp_rd == INT64_MAX) return false;
+
+  // Do not prune for skip and intraBC modes
+  if (mbmi->skip_mode != 0 || is_intrabc_block(mbmi)) return false;
+
+  assert(prune_inter_tx_split_rd_eval_lvl <= 2);
+  const int num_top_cand =
+      num_inter_tx_no_split_cand[prune_inter_tx_split_rd_eval_lvl - 1];
+  assert(num_top_cand <= TOP_INTER_TX_NO_SPLIT_COUNT);
+
+  // Do not prune if there is no valid top RD Cost for comparison
+  if (x->top_inter_tx_no_split_rd[blk_idx][num_top_cand - 1] == INT64_MAX)
+    return false;
+
+  if (tmp_rd > x->top_inter_tx_no_split_rd[blk_idx][num_top_cand - 1])
+    return true;
+
+  return false;
+}
+
 static int get_search_init_depth(int mi_width, int mi_height, int is_inter,
                                  const SPEED_FEATURES *sf,
                                  int tx_size_search_method) {
@@ -327,7 +387,7 @@ static inline void select_tx_block(
     TX_SIZE tx_size, int depth, BLOCK_SIZE plane_bsize, ENTROPY_CONTEXT *ta,
     ENTROPY_CONTEXT *tl, TXFM_CONTEXT *tx_above, TXFM_CONTEXT *tx_left,
     RD_STATS *rd_stats, int64_t prev_level_rd, int64_t ref_best_rd,
-    int *is_cost_valid, FAST_TX_SEARCH_MODE ftxs_mode);
+    int *is_cost_valid, FAST_TX_SEARCH_MODE ftxs_mode, int blk_idx);
 
 // NOTE: CONFIG_COLLECT_RD_STATS has 3 possible values
 // 0: Do not collect any RD stats
@@ -2419,6 +2479,7 @@ static inline void try_tx_block_split(
     if (offsetr >= max_blocks_high) break;
     for (int c = 0; c < txb_width; c += sub_txb_width, ++blk_idx) {
       assert(blk_idx < 4);
+      (void)blk_idx;
       const int offsetc = blk_col + c;
       if (offsetc >= max_blocks_wide) continue;
 
@@ -2427,7 +2488,7 @@ static inline void try_tx_block_split(
       select_tx_block(cpi, x, offsetr, offsetc, block, sub_txs, depth + 1,
                       plane_bsize, ta, tl, tx_above, tx_left, &this_rd_stats,
                       no_split_rd / nblks, ref_best_rd - split_rd_stats->rdcost,
-                      &this_cost_valid, ftxs_mode);
+                      &this_cost_valid, ftxs_mode, -1);
       if (!this_cost_valid) {
         split_rd_stats->rdcost = INT64_MAX;
         return;
@@ -2542,7 +2603,7 @@ static inline void select_tx_block(
     TX_SIZE tx_size, int depth, BLOCK_SIZE plane_bsize, ENTROPY_CONTEXT *ta,
     ENTROPY_CONTEXT *tl, TXFM_CONTEXT *tx_above, TXFM_CONTEXT *tx_left,
     RD_STATS *rd_stats, int64_t prev_level_rd, int64_t ref_best_rd,
-    int *is_cost_valid, FAST_TX_SEARCH_MODE ftxs_mode) {
+    int *is_cost_valid, FAST_TX_SEARCH_MODE ftxs_mode, int blk_idx) {
   assert(tx_size < TX_SIZES_ALL);
   av1_init_rd_stats(rd_stats);
   if (ref_best_rd < 0) {
@@ -2583,6 +2644,10 @@ static inline void select_tx_block(
                           plane_bsize, ta, tl, ctx, rd_stats, ref_best_rd,
                           ftxs_mode, &no_split);
 
+    push_inter_block_tx_no_split_rd(
+        x, mbmi, no_split.rd, blk_idx,
+        cpi->sf.tx_sf.prune_inter_tx_split_rd_eval_lvl);
+
     // Speed features for early termination.
     const int search_level = cpi->sf.tx_sf.adaptive_txb_search_level;
     if (search_level) {
@@ -2596,6 +2661,11 @@ static inline void select_tx_block(
     }
     if (cpi->sf.tx_sf.txb_split_cap) {
       if (p->eobs[block] == 0) try_split = 0;
+    }
+    if (prune_tx_split_eval_using_no_split_rd(
+            x, mbmi, no_split.rd, blk_idx,
+            cpi->sf.tx_sf.prune_inter_tx_split_rd_eval_lvl)) {
+      try_split = 0;
     }
   }
 
@@ -3402,6 +3472,7 @@ static int64_t select_tx_size_and_type(const AV1_COMP *cpi, MACROBLOCK *x,
   int64_t skip_txfm_rd = RDCOST(x->rdmult, skip_txfm_cost, 0);
   int64_t no_skip_txfm_rd = RDCOST(x->rdmult, no_skip_txfm_cost, 0);
   int block = 0;
+  int blk_idx = 0;
 
   av1_init_rd_stats(rd_stats);
   for (int idy = 0; idy < max_block_high(xd, bsize, 0); idy += bh) {
@@ -3415,7 +3486,8 @@ static int64_t select_tx_size_and_type(const AV1_COMP *cpi, MACROBLOCK *x,
       // Search for the best transform block size and type for the sub-block.
       select_tx_block(cpi, x, idy, idx, block, max_tx_size, init_depth, bsize,
                       ctxa, ctxl, tx_above, tx_left, &pn_rd_stats, INT64_MAX,
-                      best_rd_sofar, &is_cost_valid, ftxs_mode);
+                      best_rd_sofar, &is_cost_valid, ftxs_mode, blk_idx);
+      blk_idx++;
       if (!is_cost_valid || pn_rd_stats.rate == INT_MAX) {
         av1_invalid_rd_stats(rd_stats);
         return INT64_MAX;

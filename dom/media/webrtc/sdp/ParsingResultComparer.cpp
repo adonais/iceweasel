@@ -4,8 +4,8 @@
 
 #include "sdp/ParsingResultComparer.h"
 
-#include <ostream>
 #include <regex>
+#include <sstream>
 #include <string>
 
 #include "mozilla/Assertions.h"

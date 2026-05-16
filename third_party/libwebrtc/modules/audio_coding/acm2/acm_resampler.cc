@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "absl/algorithm/container.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio/audio_view.h"
 #include "audio/utility/audio_frame_operations.h"
@@ -24,7 +25,7 @@ namespace webrtc {
 namespace acm2 {
 
 ResamplerHelper::ResamplerHelper() {
-  ClearSamples(last_audio_buffer_);
+  absl::c_fill(last_audio_buffer_, 0);
 }
 
 bool ResamplerHelper::MaybeResample(int desired_sample_rate_hz,

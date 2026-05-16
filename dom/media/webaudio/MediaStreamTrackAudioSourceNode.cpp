@@ -48,21 +48,6 @@ MediaStreamTrackAudioSourceNode::Create(
   // https://github.com/WebAudio/web-audio-api/issues/2149
   MOZ_RELEASE_ASSERT(!aAudioContext.IsOffline(), "Bindings messed up?");
 
-  if (!aOptions.mMediaStreamTrack->Ended() &&
-      aAudioContext.Graph() != aOptions.mMediaStreamTrack->Graph()) {
-    nsGlobalWindowInner* pWindow = aAudioContext.GetOwnerWindow();
-    Document* document = pWindow ? pWindow->GetExtantDoc() : nullptr;
-    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "Web Audio"_ns,
-                                    document, PropertiesFile::DOM_PROPERTIES,
-                                    "MediaStreamAudioSourceNodeDifferentRate");
-    // This is not a spec-required exception, just a limitation of our
-    // implementation.
-    aRv.ThrowNotSupportedError(
-        "Connecting AudioNodes from AudioContexts with different sample-rate "
-        "is currently not supported.");
-    return nullptr;
-  }
-
   RefPtr<MediaStreamTrackAudioSourceNode> node =
       new MediaStreamTrackAudioSourceNode(&aAudioContext);
 
@@ -98,10 +83,10 @@ void MediaStreamTrackAudioSourceNode::Init(MediaStreamTrack* aMediaStreamTrack,
 
   MOZ_ASSERT(mTrack);
 
-  mInputTrack = aMediaStreamTrack;
+  mInputTrack = aMediaStreamTrack->AsAudioStreamTrack();
   ProcessedMediaTrack* outputTrack =
       static_cast<ProcessedMediaTrack*>(mTrack.get());
-  mInputPort = mInputTrack->ForwardTrackContentsTo(outputTrack);
+  mInputPort = mInputTrack->AddConsumerPort(outputTrack);
   PrincipalChanged(mInputTrack);  // trigger enabling/disabling of the connector
   mInputTrack->AddPrincipalChangeObserver(this);
 
@@ -110,6 +95,7 @@ void MediaStreamTrackAudioSourceNode::Init(MediaStreamTrack* aMediaStreamTrack,
 
 void MediaStreamTrackAudioSourceNode::Destroy() {
   if (mInputTrack) {
+    mInputTrack->RemoveConsumerPort(mInputPort);
     mTrackListener.NotifyEnded(mInputTrack);
     mInputTrack->RemovePrincipalChangeObserver(this);
     mInputTrack->RemoveConsumer(&mTrackListener);
@@ -161,7 +147,6 @@ void MediaStreamTrackAudioSourceNode::PrincipalChanged(
   bool enabled = subsumes;
   track->SetInt32Parameter(MediaStreamTrackAudioSourceNodeEngine::ENABLE,
                            enabled);
-  fprintf(stderr, "NOW: %s", enabled ? "enabled" : "disabled");
 
   if (!enabled && doc) {
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "Web Audio"_ns,
@@ -186,6 +171,7 @@ size_t MediaStreamTrackAudioSourceNode::SizeOfIncludingThis(
 
 void MediaStreamTrackAudioSourceNode::DestroyMediaTrack() {
   if (mInputPort) {
+    mInputTrack->RemoveConsumerPort(mInputPort);
     mInputPort->Destroy();
     mInputPort = nullptr;
   }

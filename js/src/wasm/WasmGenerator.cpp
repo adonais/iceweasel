@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2015 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -87,6 +85,9 @@ ModuleGenerator::ModuleGenerator(const CodeMetadata& codeMeta,
       debugStubCodeOffset_(0),
       requestTierUpStubCodeOffset_(0),
       updateCallRefMetricsStubCodeOffset_(0),
+#ifdef ENABLE_WASM_JSPI
+      contBaseFrameOffset_(0),
+#endif
       lastPatchedCallSite_(0),
       startOfUnpatchedCallsites_(0),
       numCallRefMetrics_(0),
@@ -326,6 +327,12 @@ void ModuleGenerator::noteCodeRange(uint32_t codeRangeIndex,
       MOZ_ASSERT(!updateCallRefMetricsStubCodeOffset_);
       updateCallRefMetricsStubCodeOffset_ = codeRange.begin();
       break;
+#ifdef ENABLE_WASM_JSPI
+    case CodeRange::ContBaseFrame:
+      MOZ_ASSERT(!contBaseFrameOffset_);
+      contBaseFrameOffset_ = codeRange.begin();
+      break;
+#endif
     case CodeRange::TrapExit:
       MOZ_ASSERT(!linkData_->trapOffset);
       linkData_->trapOffset = codeRange.begin();
@@ -1398,6 +1405,9 @@ SharedModule ModuleGenerator::finishModule(
   code->setDebugStubOffset(debugStubCodeOffset_);
   code->setRequestTierUpStubOffset(requestTierUpStubCodeOffset_);
   code->setUpdateCallRefMetricsStubOffset(updateCallRefMetricsStubCodeOffset_);
+#ifdef ENABLE_WASM_JSPI
+  code->setContBaseFrameOffset(contBaseFrameOffset_);
+#endif
 
   // All the components are finished, so create the complete Module and start
   // tier-2 compilation if requested.

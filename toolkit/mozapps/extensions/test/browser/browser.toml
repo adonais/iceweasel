@@ -219,3 +219,6 @@ skip-if = [
 ["browser_webext_icon.js"]
 
 ["browser_webext_incognito.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
+]

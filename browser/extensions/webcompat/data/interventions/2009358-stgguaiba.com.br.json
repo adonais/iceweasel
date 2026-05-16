@@ -1,0 +1,17 @@
+{
+  "label": "stgguaiba.com.br",
+  "bugs": {
+    "2009358": {
+      "issue": "broken-layout",
+      "matches": ["*://www.stgguaiba.com.br/versao-mobile*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug2009358-stgguaiba.com.br-fix-table-layout.css"]
+      }
+    }
+  ]
+}

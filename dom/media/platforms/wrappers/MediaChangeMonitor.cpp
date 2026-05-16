@@ -370,7 +370,8 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
          curConfig.isOk() ? curConfig.inspect().ToString().get() : "invalid",
          newConfig.ToString().get());
 
-    if (!newConfig.HasSPS() && !curConfig.unwrap().HasSPS()) {
+    if (!newConfig.HasSPS() &&
+        (curConfig.isErr() || !curConfig.inspect().HasSPS())) {
       // We don't have inband data and the original config didn't contain a SPS.
       // We can't decode this content.
       LOG("No sps found, waiting for initialization");

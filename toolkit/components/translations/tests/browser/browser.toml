@@ -26,6 +26,8 @@ support-files = [
 
 ["browser_about_translations_accessible_invocation.js"]
 
+["browser_about_translations_app_menu.js"]
+
 ["browser_about_translations_copy_button_enabled_states.js"]
 
 ["browser_about_translations_copy_button_functionality.js"]

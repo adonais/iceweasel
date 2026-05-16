@@ -7,6 +7,7 @@ support-files = [
   "test_process_flags_chrome.html",
   "helper_origin_attrs_testing.js",
   "file_about_srcdoc.html",
+  "file_reader_mode_article.html",
 ]
 prefs = [
   "browser.sessionstore.closedTabsFromAllWindows=true",
@@ -267,6 +268,7 @@ tags = "vertical-tabs"
 ["browser_multiselect_tabs_move_to_another_window_drag.js"]
 tags = "vertical-tabs"
 skip-if = [
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1940606
 ]
 
@@ -363,6 +365,14 @@ tags = "vertical-tabs"
 
 ["browser_new_tab_in_privilegedabout_process_pref.js"]
 https_first_disabled = true
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1934364
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1934364
+  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1934364
+  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1934364
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1934364
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1934364
+]
 
 ["browser_new_tab_insert_position.js"]
 https_first_disabled = true
@@ -581,6 +591,8 @@ tags = "vertical-tabs"
 ["browser_tab_groups_keyboard_focus.js"]
 tags = "vertical-tabs"
 
+["browser_tab_groups_list.js"]
+
 ["browser_tab_groups_tabContextMenu.js"]
 tags = "vertical-tabs"
 skip-if = [
@@ -606,6 +618,9 @@ tags = "vertical-tabs"
 ["browser_tab_label_picture_in_picture.js"]
 tags = "vertical-tabs"
 
+["browser_tab_label_reader_mode.js"]
+tags = "vertical-tabs"
+
 ["browser_tab_manager_close.js"]
 tags = "vertical-tabs"
 
@@ -616,6 +631,8 @@ tags = "vertical-tabs"
 tags = "vertical-tabs"
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1994900
+  "opt && standalone", # Bug 2028649
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 2028660
 ]
 
 ["browser_tab_manager_keyboard_access.js"]
@@ -631,6 +648,9 @@ tags = "vertical-tabs"
 tags = "vertical-tabs"
 
 ["browser_tab_note_preview.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 2020468
+]
 
 ["browser_tab_play.js"]
 tags = "vertical-tabs"
@@ -639,7 +659,13 @@ tags = "vertical-tabs"
 tags = "vertical-tabs"
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 2010318
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1980036
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1980036
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # # Bug 1980036;
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # # Bug 1980036;
 ]
+
+["browser_tabs_space_consistent.js"]
 
 ["browser_tab_splitview.js"]
 
@@ -655,6 +681,7 @@ skip-if = [
 ["browser_tab_splitview_contextmenu.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1994508
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
 
 ["browser_tab_splitview_footer.js"]

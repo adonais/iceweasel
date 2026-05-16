@@ -71,7 +71,7 @@ void Blob::MakeValidBlobType(nsAString& aType) {
 }
 
 /* static */
-Blob* Blob::Create(nsIGlobalObject* aGlobal, BlobImpl* aImpl) {
+already_AddRefed<Blob> Blob::Create(nsIGlobalObject* aGlobal, BlobImpl* aImpl) {
   MOZ_ASSERT(aImpl);
 
   MOZ_ASSERT(aGlobal);
@@ -79,7 +79,9 @@ Blob* Blob::Create(nsIGlobalObject* aGlobal, BlobImpl* aImpl) {
     return nullptr;
   }
 
-  return aImpl->IsFile() ? new File(aGlobal, aImpl) : new Blob(aGlobal, aImpl);
+  RefPtr<Blob> blob =
+      aImpl->IsFile() ? new File(aGlobal, aImpl) : new Blob(aGlobal, aImpl);
+  return blob.forget();
 }
 
 /* static */

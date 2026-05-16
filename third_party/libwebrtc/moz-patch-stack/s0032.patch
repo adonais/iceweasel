@@ -11,7 +11,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/99b99cca6b7b2c2eb
  3 files changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
-index 573532bdad..da85692fc4 100644
+index 80d961c84c..3e77b262c7 100644
 --- a/modules/video_capture/video_capture_impl.h
 +++ b/modules/video_capture/video_capture_impl.h
 @@ -98,6 +98,10 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {

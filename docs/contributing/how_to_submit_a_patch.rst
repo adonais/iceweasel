@@ -96,7 +96,7 @@ Each patch should represent a single complete change, separating
 distinct changes into multiple individual patches. If your change
 results in a large, complex patch, seek if it can be broken into
 `smaller, easy to understand patches representing complete
-steps <https://secure.phabricator.com/book/phabflavor/article/writing_reviewable_code/#many-small-commits>`__,
+steps <https://we.phorge.it/book/flavor/article/writing_reviewable_code/#many-small-commits>`__,
 applied on top of each other. This makes it easier to review your
 changes, `leading to quicker
 reviews, <https://groups.google.com/group/mozilla.dev.planning/msg/2f99460f57f776ef?hl=en>`__
@@ -112,7 +112,7 @@ simple commit message should look like this:
 The text of the message should be what you did to fix the bug, not a
 description of what the bug was. If it is not obvious why this change is
 appropriate, then `explain why in the commit
-message <https://mozilla-version-control-tools.readthedocs.io/en/latest/mozreview/commits.html#write-detailed-commit-messages>`__.
+message <https://we.phorge.it/book/flavor/article/writing_reviewable_code/#write-sensible-commit-messages>`__.
 If this does not fit on one line, then leave a blank line and add
 further lines for more detail and/or reasoning.
 

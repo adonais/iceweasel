@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Serĉi langetojn</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Tajpu serĉan tekston</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Viaj malfermitaj langetoj aperos ĉi tie.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Viaj privataj langetoj aperos ĉi tie.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Privata retumo</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Elekti kolekton</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Eliri el la reĝimo de plurelekto</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Konservi elektitajn langetojn en kolekto</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Reprenu viajn langetojn el iu ajn aparato</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Haltigi</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Etendaĵoj</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Vi havas instalitajn etendaĵojn se ili ne estas aktivaj</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Administri etendaĵojn</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Provu rekomenditan etendaĵon</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Informoj pri konto</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Helpo</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Novaĵoj</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Agordoj</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Biblioteko</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Skribotabla retejo</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Malfermi en normala langeto</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Aldoni al hejmekrano</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">KUN TEKNOLOGIO DE %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Kun teknologio de %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Legila vido</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Malfermi per programo</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Personecigi legilan vidon</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Personecigi la legilan vidon</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Aldoni</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Modifi</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Personecigi ekan paĝon</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Komenci seancon</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Fermi menuon</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Esplorado</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Fermi menuon de etendaĵoj</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Fermi menuon por konservi</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Fermi menuon de iloj</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Fermi menuon de personecigo de langetoj</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -368,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Hejmekrano</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Traduki paĝon</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -391,6 +362,56 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Ignori mesaĝon</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Resumoj de paĝoj</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">Regiloj de AI</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Vi ĉiam povas decidi en %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Tio inkluzivas la uzon aŭ ne uzon de trajtoj pelataj aŭ plibonigitaj de AI.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Pli da informo</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Bloki plibonigojn, kiuj uzas AI</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Tiu blokado signifas ke vi ne vidos novajn aŭ nunajn plibonigojn pri AI en %s kaj ankaŭ ne ŝprucaĵojn pri ili.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Montri kio estas inkluzivita kaj kio ne</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Novaj kaj nunaj plibonigoj de AI estas norme blokitaj. Malbloku specifajn trajtojn malsupre.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Trajtoj pelataj de AI</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Tradukoj</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Ĉiuj tradukoj restas privataj en via aparato.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Pli da agordoj pri tradukoj</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Pli da agordoj pri resumoj de paĝoj</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Voĉa serĉo</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">La voĉo estos tekstigita de Google Speech Services.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Ĉu bloki plibonigojn, kiuj uzas AI?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Vi ne vidos nunajn aŭ novajn plibonigojn pri AI en %1$s kaj ankaŭ ne ŝprucaĵojn pri ili. Vi povas poste malbloki specife tion, kion vi volas plu uzi.\n\nTiu blokado efikas ankaŭ sur etendaĵoj, kiuj uzas AI provizita de %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Kio estos blokita:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Nuligi</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Bloki</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -408,7 +429,11 @@
   <string name="search_scan_button_2">Skani kodon QR</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Agordoj de serĉilo</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Alglui ligilon el la tondujo</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Permesi</string>
@@ -581,7 +606,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Daŭrigi</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Helpu nin diskonigi Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Helpu nin diskonigi Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Rakontu pri kiel vi malkovris Firefox kaj la fakton ke vi ĝin uzas al la marketikaj asociitoj de Mozilla. Tiuj datumoj neniam estos venditaj.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -685,7 +710,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Rakontu pri kiel vi malkovris Firefox kaj la fakton ke vi ĝin uzas al la marketikaj asociitoj de Mozilla. Tiuj datumoj neniam estos venditaj. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Rakontu pri kiel vi malkovris Firefox kaj la fakton ke vi ĝin uzas al la marketikaj asociitoj de Mozilla. Tiuj datumoj neniam estos venditaj. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Kiel ni uzas la datumojn</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -1417,6 +1442,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Ŝovi la ilaron supren por malfermi langetojn</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Ŝovi la adresan strion flanken por ŝanĝi langetojn</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Skui por resumi</string>
   <!--
     Library
 
@@ -1579,6 +1606,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Malfermitaj privataj langetoj: %1$s. Tuŝetu por ŝanĝi langetojn.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d malfermita grupo de langetoj. Tuŝetu por ŝanĝi langetojn.</item>
+    <item quantity="other">%1$d malfermitaj grupoj de langetoj. Tuŝetu por ŝanĝi langetojn.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1600,18 +1635,10 @@
   <string name="add_tab">Aldoni langeton</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Aldoni privatan langeton</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privata</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Spegulado</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Serĉi inter viaj langetoj</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Dividi ĉiujn langetojn</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Ĵuse fermitaj langetoj</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Ĵuse fermitaj</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Agordoj de konto</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1626,12 +1653,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Fermi langetojn</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Nuligi</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Legosigno</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Legosigno por elektitaj langeto</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Fermi</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Fermi elektitajn langetojn</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1680,6 +1703,10 @@
   <string name="pwa_site_controls_title_private">%1$s (Privata reĝimo)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Malfermi serĉilon de langetoj</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Provu la grupojn de langetoj, por rulumi malpli kaj plenumi pli</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Elektu langetojn por krei grupon. Ili estos konservitaj ĉi tie, pretaj por kiam vi ilin volos aliri.</string>
   <!--
     Tab Group
 
@@ -2382,8 +2409,6 @@
   <string name="toast_copy_link_to_clipboard">Kopiita al la tondujo</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Komenci seancon en Speguli</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Komenci seancon</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Sendi al ĉiuj aparatoj</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2540,8 +2565,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Forigi retumajn datumojn kiam la programo finiĝas</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Aŭtomate forigi retumajn datumojn kiam vi elektas \"Fini\" en la ĉefa menuo</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Fini</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Forigota tempa amplekso</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2643,10 +2666,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Rigora</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Plej bona protekto kontraŭ spurado, kaj plej bona efikeco, sed kelkaj retejoj povus ne bone funkcii.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Permesi al %1$s aŭtomate apliki esceptojn, kiuj bezonatas por eviti gravan misfunkciadon en retejoj.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Aŭtomate apliki esceptojn ankaŭ kiam ili bezonatas por solvi negravajn problemojn aŭ por permesi aliron al praktikaj trajtoj.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Solvi gravajn retejajn problemojn (rekomendata)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3033,6 +3052,49 @@
   <string name="email_masks_max_free_tier_reached">Vi jam uzis viajn 5 senpagajn retpoŝtajn maskojn, do ni elektis unu por ke vi reuzu ĝin.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Retpoŝtaj maskoj ne haveblas en tiu ĉi momento. Provu denove post kelkaj minutoj.</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN integrita en %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Retumu kun aldonaj protektoj per kaŝo de via loko, eĉ dum vi estas en publika Wi-Fi.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Pli da informo</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Monata datuma limo</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">Restas %1$.1f GB el %2$.1f GB</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">La unuan tagon de ĉiu monato %1$.0f GB estos disponigitaj.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Loko</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Rekomenditaj</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Tio ĉi elektas la plej rapidan VPN por vi.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Ŝaltita</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Malŝaltita</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Konekto…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Paŭzigita</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Eraro</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Malfermi agordojn de VPN</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label">VPN ŝaltita</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description">VPN estas aktiva.</string>
   <!--
     Autofill
 
@@ -3268,26 +3330,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Kontrolita de: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Forigi</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Modifi</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Ĉu vi certe volas forigi tiun ĉi pasvorton?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Forigi</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Nuligi</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Pasvortaj elektebloj</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">La modifebla teksta kampo de la reteja retadreso.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">La modifebla teksta kampo de la uzanto.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">La modifebla teksta kampo de la pasvorto.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Konservi ŝanĝojn.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Modifi pasvorton</string>
   <!-- The page title for adding new password. -->
@@ -3347,6 +3395,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Montri ĉiujn ŝparvojojn</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Aldoni ŝparvojon</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Enigu validan retadreson</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Lima kvanto de ŝparvojoj atingita</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3460,16 +3510,6 @@
   <string name="experiments_snackbar">Aktivigi telemezuradon por sendi datumojn.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Iri al agordoj</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Ni donas al ĉiu recenzo de produkto <b>literan noton</b> el A ĝis F.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[La <b>alĝustigita taksado</b> estas bazita nur sur la recenzoj, kiujn ni opinias fidindaj.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Elstaraĵoj</b> venas el recenzoj de %s, kiujn ni opinias fidindaj kaj okazis dum la lastaj 80 tagoj.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3595,6 +3635,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Neniam traduki tiujn ĉi retejojn</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Elŝuti lingvojn</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Tradukoj</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Ĉiuj tradukoj restas privataj en via aparato.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Pli da informo</string>
   <!--
     Automatic translation preference screen
 

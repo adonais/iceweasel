@@ -1,22 +1,21 @@
 package org.mozilla.fenix.tabgroups
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.junit.Assert.assertTrue
+import junit.framework.TestCase.assertTrue
+import mozilla.components.compose.base.utils.LocalUnderTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.data.createTabGroup
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
@@ -27,42 +26,17 @@ class ExpandedTabGroupTest {
     val composeTestRule = createComposeRule()
     val testGroupTitle = "Test Tab Group"
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Test
-    fun bottomSheetIsInitializedPartiallyExpanded() {
-        var sheetState: SheetState? = null
-        composeTestRule.setContent {
-            sheetState = rememberModalBottomSheetState(
-                skipPartiallyExpanded = false,
-            )
-            FirefoxTheme(theme = Theme.Light) {
-                Surface {
-                    ExpandedTabGroup(
-                        group = fakeTabGroup(),
-                        focusedTabId = null,
-                        sheetState = sheetState,
-                    )
-                }
-            }
-        }
-        assertTrue(sheetState?.currentValue == SheetValue.PartiallyExpanded)
-        assertTrue(sheetState?.isVisible == true)
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun verifyVisibleItems() {
-        var sheetState: SheetState? = null
         composeTestRule.setContent {
-            sheetState = rememberModalBottomSheetState(
-                skipPartiallyExpanded = false,
-            )
             FirefoxTheme(theme = Theme.Light) {
                 Surface {
                     ExpandedTabGroup(
                         group = fakeTabGroup(),
-                        focusedTabId = null,
-                        sheetState = sheetState,
+                        onItemClick = {},
+                        onTabClose = {},
+                        onDeleteTabGroup = {},
+                        editTabGroupClick = {},
                     )
                 }
             }
@@ -73,24 +47,23 @@ class ExpandedTabGroupTest {
             .assertIsDisplayed()
         composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON)
             .assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TabsTrayTestTag.BOTTOM_SHEET_CIRCLE).assertIsDisplayed()
-        composeTestRule.onNodeWithText(testGroupTitle).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(
+            TabsTrayTestTag.BOTTOM_SHEET_CIRCLE,
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun verifyMenuItems() {
-        var sheetState: SheetState? = null
         composeTestRule.setContent {
-            sheetState = rememberModalBottomSheetState(
-                skipPartiallyExpanded = false,
-            )
             FirefoxTheme(theme = Theme.Light) {
                 Surface {
                     ExpandedTabGroup(
                         group = fakeTabGroup(),
-                        focusedTabId = null,
-                        sheetState = sheetState,
+                        onItemClick = {},
+                        onTabClose = {},
+                        onDeleteTabGroup = {},
+                        editTabGroupClick = {},
                     )
                 }
             }
@@ -102,10 +75,135 @@ class ExpandedTabGroupTest {
         composeTestRule.onNodeWithTag(TabsTrayTestTag.DELETE_TAB_GROUP).assertIsDisplayed()
     }
 
-    private fun fakeTabGroup(): TabsTrayItem.TabGroup {
+    @Test
+    fun verifyTabGroupItemClick() {
+        var itemClicked = false
+        val tab = createTab(url = "test tab")
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalUnderTest provides true) {
+                FirefoxTheme(theme = Theme.Light) {
+                    Surface {
+                        ExpandedTabGroup(
+                            group = fakeTabGroup(tabs = mutableListOf(tab)),
+                            onItemClick = {
+                                if (it == tab) {
+                                    itemClicked = true
+                                }
+                            },
+                            onTabClose = {},
+                            onDeleteTabGroup = {},
+                            editTabGroupClick = {},
+                        )
+                    }
+                }
+            }
+        }
+        composeTestRule
+            .onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT)
+            .performClick()
+
+        assertTrue(itemClicked)
+    }
+
+    @Test
+    fun verifyTabGroupItemCloseClick() {
+        var itemClosed = false
+        val tab = createTab(url = "test tab")
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalUnderTest provides true) {
+                FirefoxTheme(theme = Theme.Light) {
+                    Surface {
+                        ExpandedTabGroup(
+                            group = fakeTabGroup(tabs = mutableListOf(tab)),
+                            onItemClick = {},
+                            onTabClose = {
+                                if (it == tab) {
+                                    itemClosed = true
+                                }
+                            },
+                            onDeleteTabGroup = {},
+                            editTabGroupClick = {},
+                        )
+                    }
+                }
+            }
+        }
+        composeTestRule
+            .onNodeWithTag(TabsTrayTestTag.TAB_ITEM_CLOSE)
+            .performClick()
+
+        assertTrue(itemClosed)
+    }
+
+    @Test
+    fun verifyDeleteTabGroupClick() {
+        var deleteClicked = false
+        val group = fakeTabGroup()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalUnderTest provides true) {
+                FirefoxTheme(theme = Theme.Light) {
+                    Surface {
+                        ExpandedTabGroup(
+                            group = group,
+                            onItemClick = {},
+                            onTabClose = {},
+                            onDeleteTabGroup = {
+                                deleteClicked = true
+                            },
+                            editTabGroupClick = {},
+                        )
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON)
+            .performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.DELETE_TAB_GROUP)
+            .performClick()
+
+        assertTrue(deleteClicked)
+    }
+
+    @Test
+    fun verifyEditTabGroupClick() {
+        var editClicked = false
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalUnderTest provides true) {
+                FirefoxTheme(theme = Theme.Light) {
+                    Surface {
+                        ExpandedTabGroup(
+                            group = fakeTabGroup(),
+                            onItemClick = {},
+                            onTabClose = {},
+                            onDeleteTabGroup = {},
+                            editTabGroupClick = {
+                                editClicked = true
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON)
+            .performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.EDIT_TAB_GROUP)
+            .performClick()
+
+        assertTrue(editClicked)
+    }
+
+    private fun fakeTabGroup(
+        tabs: MutableList<TabsTrayItem.Tab> = mutableListOf(),
+    ): TabsTrayItem.TabGroup {
         return createTabGroup(
             title = testGroupTitle,
-            tabs = hashSetOf(), // empty list because thumbnail loading throws an exception
+            tabs = tabs,
         )
     }
 }

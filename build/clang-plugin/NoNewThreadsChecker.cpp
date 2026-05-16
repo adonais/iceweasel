@@ -10,9 +10,9 @@ void NoNewThreadsChecker::registerMatchers(MatchFinder *AstMatcher) {
   // -Instances of NS_NewNamedThread that aren't in allowed files
   // -Instances of NS_NewNamedThread that use names that aren't recognized
   AstMatcher->addMatcher(
-      callExpr(allOf(isFirstParty(),
+      callExpr(isFirstParty(),
                      callee(functionDecl(hasName("NS_NewNamedThread"))),
-                     unless(isInAllowlistForThreads())))
+                     unless(isInAllowlistForThreads()))
           .bind("funcCall"),
       this);
 }

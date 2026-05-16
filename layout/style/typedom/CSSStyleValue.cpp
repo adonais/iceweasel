@@ -7,12 +7,17 @@
 #include "CSSUnsupportedValue.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CSSPropertyId.h"
+#include "mozilla/DeclarationBlock.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/CSSKeywordValue.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSStyleValueBinding.h"
 #include "mozilla/dom/CSSTransformValue.h"
+#include "mozilla/dom/CSSUnparsedValue.h"
+#include "mozilla/dom/Document.h"
+#include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsString.h"
 
@@ -31,51 +36,65 @@ CSSStyleValue::CSSStyleValue(nsCOMPtr<nsISupports> aParent,
 }
 
 // static
-RefPtr<CSSStyleValue> CSSStyleValue::Create(
-    nsCOMPtr<nsISupports> aParent, const CSSPropertyId& aPropertyId,
-    StylePropertyTypedValue&& aTypedValue) {
-  RefPtr<CSSStyleValue> styleValue;
+void CSSStyleValue::Create(nsCOMPtr<nsISupports> aParent,
+                           const CSSPropertyId& aPropertyId,
+                           StylePropertyTypedValueList&& aTypedValueList,
+                           nsTArray<RefPtr<CSSStyleValue>>& aRetVal) {
+  switch (aTypedValueList.tag) {
+    case StylePropertyTypedValueList::Tag::Typed: {
+      const auto& typedValueList = aTypedValueList.AsTyped();
 
-  switch (aTypedValue.tag) {
-    case StylePropertyTypedValue::Tag::Typed: {
-      const auto& typedValue = aTypedValue.AsTyped();
+      aRetVal.SetCapacity(typedValueList.values.Length());
 
-      switch (typedValue.tag) {
-        case StyleTypedValue::Tag::Keyword: {
-          const auto& keywordValue = typedValue.AsKeyword();
+      for (const auto& typedValue : typedValueList.values) {
+        RefPtr<CSSStyleValue> styleValue;
 
-          styleValue =
-              CSSKeywordValue::Create(std::move(aParent), keywordValue);
+        switch (typedValue.tag) {
+          case StyleTypedValue::Tag::Unparsed: {
+            const auto& unparsedValue = typedValue.AsUnparsed();
 
-          break;
+            styleValue = CSSUnparsedValue::Create(aParent, unparsedValue);
+
+            break;
+          }
+
+          case StyleTypedValue::Tag::Keyword: {
+            const auto& keywordValue = typedValue.AsKeyword();
+
+            styleValue = CSSKeywordValue::Create(aParent, keywordValue);
+
+            break;
+          }
+
+          case StyleTypedValue::Tag::Numeric: {
+            const auto& numericValue = typedValue.AsNumeric();
+
+            styleValue = CSSNumericValue::Create(aParent, numericValue);
+
+            break;
+          }
         }
 
-        case StyleTypedValue::Tag::Numeric: {
-          const auto& numericValue = typedValue.AsNumeric();
-
-          styleValue =
-              CSSNumericValue::Create(std::move(aParent), numericValue);
-
-          break;
-        }
+        aRetVal.AppendElement(std::move(styleValue));
       }
-      break;
-    }
-
-    case StylePropertyTypedValue::Tag::Unsupported: {
-      auto unsupportedValue = std::move(aTypedValue).ExtractUnsupported();
-
-      styleValue = CSSUnsupportedValue::Create(std::move(aParent), aPropertyId,
-                                               std::move(unsupportedValue));
 
       break;
     }
 
-    case StylePropertyTypedValue::Tag::None:
+    case StylePropertyTypedValueList::Tag::Unsupported: {
+      auto unsupportedValue = std::move(aTypedValueList).ExtractUnsupported();
+
+      RefPtr<CSSStyleValue> styleValue = CSSUnsupportedValue::Create(
+          std::move(aParent), aPropertyId, std::move(unsupportedValue));
+
+      aRetVal.AppendElement(std::move(styleValue));
+
+      break;
+    }
+
+    case StylePropertyTypedValueList::Tag::None:
       break;
   }
-
-  return styleValue;
 }
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(CSSStyleValue)
@@ -95,22 +114,47 @@ JSObject* CSSStyleValue::WrapObject(JSContext* aCx,
 
 // start of CSSStyleValue Web IDL implementation
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssstylevalue-parse
+//
 // static
 RefPtr<CSSStyleValue> CSSStyleValue::Parse(const GlobalObject& aGlobal,
                                            const nsACString& aProperty,
                                            const nsACString& aCssText,
                                            ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  RefPtr<Document> document =
+      nsContentUtils::TryGetDocumentFromWindowGlobal(global);
+  if (!document) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
+  }
+
+  return ParseStyleValue(std::move(global), aProperty, aCssText,
+                         document->DefaultStyleAttrURLData(),
+                         /* aStyleValues */ nullptr, aRv);
 }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssstylevalue-parseall
+//
 // static
 void CSSStyleValue::ParseAll(const GlobalObject& aGlobal,
                              const nsACString& aProperty,
                              const nsACString& aCssText,
                              nsTArray<RefPtr<CSSStyleValue>>& aRetVal,
                              ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  RefPtr<Document> document =
+      nsContentUtils::TryGetDocumentFromWindowGlobal(global);
+  if (!document) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+
+  ParseStyleValue(std::move(global), aProperty, aCssText,
+                  document->DefaultStyleAttrURLData(),
+                  /* aStyleValues */ &aRetVal, aRv);
 }
 
 void CSSStyleValue::Stringify(nsACString& aRetVal) const {
@@ -121,8 +165,60 @@ void CSSStyleValue::Stringify(nsACString& aRetVal) const {
 
 // end of CSSStyleValue Web IDL implementation
 
+// https://drafts.css-houdini.org/css-typed-om-1/#parse-a-cssstylevalue
+//
+// static
+RefPtr<CSSStyleValue> CSSStyleValue::ParseStyleValue(
+    nsCOMPtr<nsISupports> aGlobal, const nsACString& aProperty,
+    const nsACString& aCssText, URLExtraData* aURLExtraData,
+    nsTArray<RefPtr<CSSStyleValue>>* aStyleValues, ErrorResult& aRv) {
+  // Step 2.
+  NonCustomCSSPropertyId id = nsCSSProps::LookupProperty(aProperty);
+  if (id == eCSSProperty_UNKNOWN) {
+    aRv.ThrowTypeError("Invalid property "_ns + aProperty);
+    return nullptr;
+  }
+
+  auto propertyId = CSSPropertyId::FromIdOrCustomProperty(id, aProperty);
+
+  // Step 3.
+  RefPtr<StyleLockedDeclarationBlock> rawBlock =
+      Servo_DeclarationBlock_Parse(&propertyId, &aCssText, aURLExtraData)
+          .Consume();
+  if (!rawBlock) {
+    aRv.ThrowTypeError(aCssText + "cannot be parsed"_ns);
+    return nullptr;
+  }
+
+  auto block = MakeRefPtr<DeclarationBlock>(rawBlock.forget());
+
+  // Step 4 & 5.
+  auto valueList = StylePropertyTypedValueList::None();
+  if (!block->GetPropertyTypedValueList(propertyId, valueList)) {
+    aRv.ThrowTypeError("Invalid property "_ns + aProperty);
+    return nullptr;
+  }
+  MOZ_DIAGNOSTIC_ASSERT(!valueList.IsNone());
+
+  nsTArray<RefPtr<CSSStyleValue>> styleValues;
+  CSSStyleValue::Create(std::move(aGlobal), propertyId, std::move(valueList),
+                        styleValues);
+  MOZ_DIAGNOSTIC_ASSERT(!styleValues.IsEmpty());
+
+  // Step 6.
+  if (!aStyleValues) {
+    return styleValues[0];
+  }
+  *aStyleValues = std::move(styleValues);
+  return nullptr;
+}
+
 bool CSSStyleValue::IsCSSUnsupportedValue() const {
   return mStyleValueType == StyleValueType::UnsupportedValue;
+}
+
+bool CSSStyleValue::IsCSSUnparsedValue() const {
+  return mStyleValueType == StyleValueType::UnparsedValue;
 }
 
 bool CSSStyleValue::IsCSSKeywordValue() const {
@@ -158,6 +254,13 @@ void CSSStyleValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       const CSSKeywordValue& keywordValue = GetAsCSSKeywordValue();
 
       keywordValue.ToCssTextWithProperty(aPropertyId, aDest);
+      break;
+    }
+
+    case StyleValueType::UnparsedValue: {
+      const CSSUnparsedValue& unparsedValue = GetAsCSSUnparsedValue();
+
+      unparsedValue.ToCssTextWithProperty(aPropertyId, aDest);
       break;
     }
 

@@ -33,6 +33,7 @@ class RemoteTextureHostWrapper : public TextureHost {
   gfx::YUVColorSpace GetYUVColorSpace() const override;
   gfx::ColorDepth GetColorDepth() const override;
   gfx::ColorRange GetColorRange() const override;
+  gfx::TransferFunction GetTransferFunction() const override;
 
   gfx::IntSize GetSize() const override;
 

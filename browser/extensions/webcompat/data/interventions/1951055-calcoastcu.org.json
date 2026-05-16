@@ -1,0 +1,17 @@
+{
+  "label": "calcoastcu.org",
+  "bugs": {
+    "1951055": {
+      "issue": "unsupported-warning",
+      "matches": ["*://*.calcoastcu.org/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["linux"],
+      "content_scripts": {
+        "css": ["bug1951055-calcoastcu.org-hide-browser-warning.css"]
+      }
+    }
+  ]
+}

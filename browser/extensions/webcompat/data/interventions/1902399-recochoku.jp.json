@@ -1,0 +1,18 @@
+{
+  "label": "recochoku.jp",
+  "bugs": {
+    "1902399": {
+      "issue": "unsupported-warning",
+      "matches": ["*://recochoku.jp/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "isolated": true,
+        "js": ["bug1902399-recochoku.jp-hide-unsupported-browser-warning.js"]
+      }
+    }
+  ]
+}

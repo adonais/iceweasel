@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.ui.icons.R
+import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.interactor.HomepageInteractor
 import org.mozilla.fenix.home.pocket.ui.PocketSection
@@ -185,6 +186,7 @@ private fun MiddleSearchHomepagePreview() {
                 showCollections = true,
                 showPrivacyReport = true,
                 trackersBlockedCount = 754,
+                sportsWidgetState = SportsWidgetState(),
                 headerState = HeaderState.Normal(
                     wordmarkTextColor = null,
                     privateBrowsingButtonColor = colorResource(

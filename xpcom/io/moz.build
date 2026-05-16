@@ -89,6 +89,7 @@ EXPORTS += [
 ]
 
 EXPORTS.mozilla += [
+    "AsyncPlatformPipes.h",
     "Base64.h",
     "FilePreferences.h",
     "FixedBufferOutputStream.h",
@@ -106,6 +107,7 @@ EXPORTS.mozilla += [
 ]
 
 UNIFIED_SOURCES += [
+    "AsyncPlatformPipes.cpp",
     "Base64.cpp",
     "crc32c.c",
     "FileDescriptorFile.cpp",

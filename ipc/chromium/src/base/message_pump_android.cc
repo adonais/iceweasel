@@ -5,7 +5,6 @@
 #include "base/message_pump_android.h"
 
 #include <fcntl.h>
-#include <math.h>
 
 #include "base/eintr_wrapper.h"
 #include "base/logging.h"

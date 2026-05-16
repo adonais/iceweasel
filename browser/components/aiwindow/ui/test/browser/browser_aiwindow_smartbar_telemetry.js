@@ -16,45 +16,50 @@
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.searchEngagementTelemetry.enabled", true]],
+    set: [
+      ["browser.urlbar.searchEngagementTelemetry.enabled", true],
+      ["browser.smartwindow.firstrun.modelChoice", "1"],
+    ],
   });
+
+  const fakeIntentEngine = {
+    run({ args: [[query]] }) {
+      const searchKeywords = ["search", "find", "look up"];
+      const navigateKeywords = ["https://", "www.", ".com"];
+      const formattedPrompt = query.toLowerCase();
+
+      const isSearch = searchKeywords.some(keyword =>
+        formattedPrompt.includes(keyword)
+      );
+      const isNavigate = navigateKeywords.some(keyword =>
+        formattedPrompt.includes(keyword)
+      );
+
+      if (isNavigate) {
+        return [
+          { label: "navigate", score: 0.95 },
+          { label: "chat", score: 0.05 },
+        ];
+      }
+      if (isSearch) {
+        return [
+          { label: "search", score: 0.95 },
+          { label: "chat", score: 0.05 },
+        ];
+      }
+      return [
+        { label: "chat", score: 0.95 },
+        { label: "search", score: 0.05 },
+      ];
+    },
+  };
+
+  gIntentEngineStub.resolves(fakeIntentEngine);
 });
 
 async function resetTelemetry() {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
-}
-
-/**
- * Submit the smartbar with a specific action type.
- *
- * @param {MozBrowser} browser - The browser element
- * @param {object} options - Options for submission
- * @param {SmartbarAction} options.action - The action type
- * @param {"enter" | "button"} options.submitType - How to submit
- */
-async function submitSmartbar(browser, { action, submitType } = {}) {
-  await SpecialPowers.spawn(
-    browser,
-    [action, submitType],
-    async (actionType, submission) => {
-      const aiWindow = content.document.querySelector("ai-window");
-      const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
-
-      smartbar._loadURL = () => {};
-      smartbar.smartbarAction = actionType;
-      smartbar.smartbarActionIsUserInitiated = true;
-
-      const event =
-        submission === "button"
-          ? new content.PointerEvent("click", { bubbles: true })
-          : new content.KeyboardEvent("keydown", {
-              key: "Enter",
-              bubbles: true,
-            });
-      smartbar.handleCommand(event);
-    }
-  );
 }
 
 // TODO (bug 2025792): Add tests for `extra_key`s `bounce` and `disable`.
@@ -65,33 +70,41 @@ add_task(async function test_smartbar_telemetry_navigate_submit_enter() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await typeInSmartbar(browser, "example.com");
-  await submitSmartbar(browser, {
-    action: "navigate",
-    submitType: "enter",
-  });
+  await stubLoadURL(browser);
+  await typeInSmartbar(browser, "https://example.com");
+  await waitForSmartbarAction(browser, "navigate");
+  await submitSmartbar(browser);
 
   const events = Glean.smartWindow.navigateSubmit.testGetValue();
   Assert.equal(events.length, 1, "Should have one navigate_submit event");
-  Assert.ok(events[0].extra.chat_id, "navigate_submit has chat_id");
-  Assert.ok(
-    "message_seq" in events[0].extra,
-    "navigate_submit has message_seq"
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "navigate_submit has chat_id");
+  Assert.equal(
+    extra.message_seq,
+    "0",
+    "navigate_submit has correct message_seq"
   );
   Assert.equal(
-    events[0].extra.location,
+    extra.model,
+    "gemini-2.5-flash-lite",
+    "navigate_submit has correct model"
+  );
+  Assert.equal(extra.length, "20", "navigate_submit has correct length");
+  Assert.equal(
+    extra.location,
     "fullpage",
     "navigate_submit has correct location"
   );
   Assert.equal(
-    events[0].extra.detected_intent,
+    extra.detected_intent,
     "navigate",
     "navigate_submit has correct detected_intent"
   );
   Assert.equal(
-    events[0].extra.submit_type,
+    extra.submit_type,
     "enter",
-    "navigate_submit has correct submit_type"
+    "navigate_submit has correct submit_type for enter key"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -103,18 +116,29 @@ add_task(async function test_smartbar_telemetry_navigate_submit_button() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await typeInSmartbar(browser, "example.com");
-  await submitSmartbar(browser, {
-    action: "navigate",
-    submitType: "button",
-  });
+  await stubLoadURL(browser);
+  await typeInSmartbar(browser, "https://example.com");
+  await waitForSmartbarAction(browser, "navigate");
+  await submitSmartbar(browser, { useButton: true });
 
   const events = Glean.smartWindow.navigateSubmit.testGetValue();
   Assert.equal(events.length, 1, "Should have one navigate_submit event");
+
+  const extra = events[0].extra;
   Assert.equal(
-    events[0].extra.submit_type,
+    extra.submit_type,
     "button",
-    "navigate_submit has correct submit_type"
+    "navigate_submit has correct submit_type for button click"
+  );
+  Assert.equal(
+    extra.detected_intent,
+    "navigate",
+    "navigate_submit has correct detected_intent"
+  );
+  Assert.equal(
+    extra.location,
+    "fullpage",
+    "navigate_submit has correct location"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -126,32 +150,194 @@ add_task(async function test_smartbar_telemetry_search_submit() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await typeInSmartbar(browser, "test search query");
-  await submitSmartbar(browser, {
-    action: "search",
-    submitType: "button",
-  });
+  await stubLoadURL(browser);
+  await typeInSmartbar(browser, "search for cats");
+  await waitForSmartbarAction(browser, "search");
+  await submitSmartbar(browser, { useButton: true });
 
   const events = Glean.smartWindow.searchSubmit.testGetValue();
   Assert.equal(events.length, 1, "Should have one search_submit event");
-  Assert.ok(events[0].extra.chat_id, "search_submit has chat_id");
-  Assert.ok("message_seq" in events[0].extra, "search_submit has message_seq");
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "search_submit has chat_id");
+  Assert.equal(extra.message_seq, "0", "search_submit has correct message_seq");
   Assert.equal(
-    events[0].extra.location,
+    extra.model,
+    "gemini-2.5-flash-lite",
+    "search_submit has correct model"
+  );
+  Assert.equal(
+    extra.location,
     "fullpage",
     "search_submit has correct location"
   );
   Assert.equal(
-    events[0].extra.detected_intent,
+    extra.detected_intent,
     "search",
     "search_submit has correct detected_intent"
   );
-  Assert.ok(events[0].extra.provider, "search_submit has provider");
+  Assert.equal(extra.length, "15", "search_submit has correct length");
+  Assert.ok(extra.provider, "search_submit has provider");
   Assert.equal(
-    events[0].extra.length,
-    "17",
-    "search_submit has correct length"
+    extra.submit_type,
+    "button",
+    "search_submit has correct submit_type for button click"
   );
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(
+  async function test_smartbar_telemetry_search_submit_user_changed_intent() {
+    await resetTelemetry();
+
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await typeInSmartbar(browser, "test");
+    await stubLoadURL(browser);
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindow = content.document.querySelector("ai-window");
+      const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+      const inputCta = smartbar.querySelector("input-cta");
+      const mozButton = inputCta.shadowRoot.querySelector("moz-button");
+
+      const chevronButton = await ContentTaskUtils.waitForCondition(
+        () => mozButton.shadowRoot.querySelector("#chevron-button"),
+        "Wait for chevron button to be rendered"
+      );
+
+      const panelList = inputCta.shadowRoot.querySelector("panel-list");
+      chevronButton.click();
+      await ContentTaskUtils.waitForEvent(panelList, "shown");
+
+      const searchItem = panelList.querySelector('panel-item[icon="search"]');
+      searchItem.click();
+    });
+
+    const previewEvents = Glean.smartWindow.intentChangePreview.testGetValue();
+    Assert.equal(
+      previewEvents.length,
+      1,
+      "Should have one intent_change_preview event"
+    );
+    Assert.equal(
+      previewEvents[0].extra.current_intent,
+      "chat",
+      "intent_change_preview current_intent reflects intent model"
+    );
+
+    const searchEvents = Glean.smartWindow.searchSubmit.testGetValue();
+    Assert.equal(searchEvents.length, 1, "Should have one search_submit event");
+    Assert.equal(
+      searchEvents[0].extra.detected_intent,
+      "chat",
+      "search_submit detected_intent is chat even though user picked search"
+    );
+    Assert.equal(
+      searchEvents[0].extra.submit_type,
+      "button",
+      "search_submit has correct submit_type for explicit action selection"
+    );
+
+    await BrowserTestUtils.closeWindow(win);
+  }
+);
+
+add_task(async function test_smartbar_telemetry_chat_submit_enter() {
+  await resetTelemetry();
+
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await typeInSmartbar(browser, "tell me a joke");
+  await waitForSmartbarAction(browser, "chat");
+  await submitSmartbar(browser);
+
+  const events = Glean.smartWindow.chatSubmit.testGetValue();
+  Assert.equal(events.length, 1, "Should have one chat_submit event");
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "chat_submit has chat_id");
+  Assert.equal(extra.message_seq, "0", "chat_submit has correct message_seq");
+  Assert.equal(
+    extra.model,
+    "gemini-2.5-flash-lite",
+    "chat_submit has correct model"
+  );
+  Assert.equal(extra.location, "fullpage", "chat_submit has correct location");
+  Assert.equal(
+    extra.detected_intent,
+    "chat",
+    "chat_submit has correct detected_intent"
+  );
+  Assert.equal(
+    extra.submit_type,
+    "enter",
+    "chat_submit has correct submit_type for enter key"
+  );
+  Assert.equal(extra.tabs, "0", "chat_submit has correct tabs count");
+  Assert.equal(extra.mentions, "0", "chat_submit has correct mentions count");
+  Assert.equal(extra.length, "14", "chat_submit has correct length");
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_smartbar_telemetry_chat_submit_button_click() {
+  await resetTelemetry();
+
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await typeInSmartbar(browser, "tell me a joke");
+  await waitForSmartbarAction(browser, "chat");
+  await submitSmartbar(browser, { useButton: true });
+
+  const events = Glean.smartWindow.chatSubmit.testGetValue();
+  Assert.equal(events.length, 1, "Should have one chat_submit event");
+
+  const extra = events[0].extra;
+  Assert.equal(
+    extra.submit_type,
+    "button",
+    "chat_submit has correct submit_type for button click"
+  );
+  Assert.equal(
+    extra.detected_intent,
+    "chat",
+    "chat_submit has correct detected_intent"
+  );
+  Assert.equal(extra.location, "fullpage", "chat_submit has correct location");
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_smartbar_telemetry_chat_submit_keyboard() {
+  await resetTelemetry();
+
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await typeInSmartbar(browser, "tell me a joke");
+  await waitForSmartbarAction(browser, "chat");
+  await submitSmartbar(browser);
+
+  const events = Glean.smartWindow.chatSubmit.testGetValue();
+  Assert.equal(events.length, 1, "Should have one chat_submit event");
+
+  const extra = events[0].extra;
+  Assert.equal(
+    extra.submit_type,
+    "enter",
+    "chat_submit has correct submit_type when pressing Enter"
+  );
+  Assert.equal(
+    extra.detected_intent,
+    "chat",
+    "chat_submit has correct detected_intent"
+  );
+  Assert.equal(extra.location, "fullpage", "chat_submit has correct location");
 
   await BrowserTestUtils.closeWindow(win);
 });
@@ -167,32 +353,27 @@ add_task(async function test_smartbar_telemetry_engagement_extra_keys() {
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    await typeInSmartbar(browser, "test");
+    await typeInSmartbar(browser, "tell me a joke");
     await submitSmartbar(browser);
-
-    await TestUtils.waitForTick();
-    await Services.fog.testFlushAllChildren();
 
     const events = Glean.urlbar.engagement.testGetValue() ?? [];
     Assert.greater(events.length, 0, "Should have engagement events");
     const smartbarEvent = events.find(e => e.extra.sap === "smartbar");
     Assert.ok(smartbarEvent, "Should have a smartbar engagement event");
+
+    const extra = smartbarEvent.extra;
+    Assert.ok(extra.chat_id, "engagement has chat_id");
+    Assert.equal(extra.intent, "chat", "engagement has correct intent");
     Assert.equal(
-      smartbarEvent.extra.location,
-      "fullpage",
-      "Engagement event includes the correct location extra key"
+      extra.window_mode,
+      "smartwindow",
+      "engagement has correct window mode"
     );
-    Assert.ok(
-      smartbarEvent.extra.chat_id,
-      "Engagement event includes chat_id extra key"
-    );
-    Assert.ok(
-      "intent" in smartbarEvent.extra,
-      "Engagement event includes intent extra key"
-    );
-    Assert.ok(
-      "model" in smartbarEvent.extra,
-      "Engagement event includes model extra key"
+    Assert.equal(extra.location, "fullpage", "engagement has correct location");
+    Assert.equal(
+      extra.model,
+      "gemini-2.5-flash-lite",
+      "engagement has correct model"
     );
 
     await BrowserTestUtils.closeWindow(win);
@@ -213,29 +394,24 @@ add_task(async function test_smartbar_telemetry_abandonment_extra_keys() {
     smartbar.blur();
   });
 
-  await TestUtils.waitForTick();
-  await Services.fog.testFlushAllChildren();
-
   const events = Glean.urlbar.abandonment.testGetValue() ?? [];
   Assert.greater(events.length, 0, "Should have abandonment events");
   const smartbarEvent = events.find(e => e.extra.sap === "smartbar");
   Assert.ok(smartbarEvent, "Should have a smartbar abandonment event");
+
+  const extra = smartbarEvent.extra;
+  Assert.ok(extra.chat_id, "abandonment has chat_id");
+  Assert.equal(extra.intent, "chat", "abandonment has correct intent");
   Assert.equal(
-    smartbarEvent.extra.location,
-    "sidebar",
-    "Abandonment event includes the correct location extra key"
+    extra.window_mode,
+    "smartwindow",
+    "abandonment has correct window mode"
   );
-  Assert.ok(
-    smartbarEvent.extra.chat_id,
-    "Abandonment event includes chat_id extra key"
-  );
-  Assert.ok(
-    "intent" in smartbarEvent.extra,
-    "Abandonment event includes intent extra key"
-  );
-  Assert.ok(
-    "model" in smartbarEvent.extra,
-    "Abandonment event includes model extra key"
+  Assert.equal(extra.location, "sidebar", "abandonment has correct location");
+  Assert.equal(
+    extra.model,
+    "gemini-2.5-flash-lite",
+    "abandonment has correct model"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -266,19 +442,23 @@ add_task(async function test_smartbar_telemetry_intent_change_preview() {
 
   const events = Glean.smartWindow.intentChangePreview.testGetValue();
   Assert.equal(events.length, 1, "intent_change_preview event recorded");
-  Assert.ok(
-    events[0].extra.current_intent,
-    "intent_change_preview has intent_change_preview"
-  );
-  Assert.ok(events[0].extra.chat_id, "intent_change_preview has chat_id");
-  Assert.ok(
-    "message_seq" in events[0].extra,
-    "intent_change_preview has message_seq"
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "intent_change_preview has chat_id");
+  Assert.equal(
+    extra.current_intent,
+    "chat",
+    "intent_change_preview has correct current_intent"
   );
   Assert.equal(
-    events[0].extra.location,
+    extra.location,
     "fullpage",
     "intent_change_preview has correct location"
+  );
+  Assert.equal(
+    extra.message_seq,
+    "0",
+    "intent_change_preview has correct message_seq"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -295,17 +475,20 @@ add_task(async function test_smartbar_telemetry_mention_start_inline() {
 
   const events = Glean.smartWindow.mentionStart.testGetValue();
   Assert.equal(events.length, 1, "Should have mention_start events");
-  Assert.ok(events[0].extra.chat_id, "mention_start has chat_id");
-  Assert.ok(
-    "mentions_available" in events[0].extra,
-    "mention_start has mentions_available"
-  );
-  Assert.ok("message_seq" in events[0].extra, "mention_start has message_seq");
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "mention_start has chat_id");
   Assert.equal(
-    events[0].extra.location,
+    extra.location,
     "fullpage",
     "mention_start has correct location"
   );
+  Assert.equal(
+    extra.mentions_available,
+    "1",
+    "mention_start has correct mentions_available"
+  );
+  Assert.equal(extra.message_seq, "0", "mention_start has correct message_seq");
 
   await BrowserTestUtils.closeWindow(win);
 });
@@ -326,22 +509,28 @@ add_task(async function test_smartbar_telemetry_add_tabs_click() {
 
   const events = Glean.smartWindow.addTabsClick.testGetValue();
   Assert.equal(events.length, 1, "Should have add_tabs_click events");
-  Assert.ok(events[0].extra.chat_id, "add_tabs_click has chat_id");
-  Assert.ok("message_seq" in events[0].extra, "add_tabs_click has message_seq");
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "add_tabs_click has chat_id");
   Assert.equal(
-    events[0].extra.location,
+    extra.location,
     "fullpage",
     "add_tabs_click has correct location"
   );
   Assert.equal(
-    events[0].extra.tabs_available,
-    "1",
-    "add_tabs_click has correct number of tabs_available"
+    extra.message_seq,
+    "0",
+    "add_tabs_click has correct message_seq"
   );
   Assert.equal(
-    events[0].extra.tabs_preselected,
+    extra.tabs_available,
+    "1",
+    "add_tabs_click has correct tabs_available"
+  );
+  Assert.equal(
+    extra.tabs_preselected,
     "0",
-    "add_tabs_click has correct number of tabs_preselected"
+    "add_tabs_click has correct tabs_preselected"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -374,21 +563,28 @@ add_task(async function test_smartbar_telemetry_mention_select_inline() {
 
   const events = Glean.smartWindow.mentionSelect.testGetValue();
   Assert.equal(events.length, 1, "Should have mention_select events");
-  Assert.ok(events[0].extra.chat_id, "mention_select has chat_id");
-  Assert.ok(
-    "mentions_available" in events[0].extra,
-    "mention_select has mentions_available"
-  );
-  Assert.ok("message_seq" in events[0].extra, "mention_select has message_seq");
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "mention_select has chat_id");
   Assert.equal(
-    events[0].extra.location,
+    extra.location,
     "fullpage",
     "mention_select has correct location"
   );
   Assert.greater(
-    Number(events[0].extra.length),
+    Number(extra.length),
     0,
-    "mention_select event reports the length of the mention"
+    "mention_select has length of the mention"
+  );
+  Assert.equal(
+    extra.mentions_available,
+    "1",
+    "mention_select has correct mentions_available"
+  );
+  Assert.equal(
+    extra.message_seq,
+    "0",
+    "mention_select has correct message_seq"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -422,30 +618,33 @@ add_task(async function test_smartbar_telemetry_add_tabs_selection() {
 
   const events = Glean.smartWindow.addTabsSelection.testGetValue();
   Assert.equal(events.length, 1, "Should have add_tabs_selection events");
-  Assert.ok(events[0].extra.chat_id, "add_tabs_selection has chat_id");
-  Assert.ok(
-    "message_seq" in events[0].extra,
-    "add_tabs_selection has message_seq"
-  );
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "add_tabs_selection has chat_id");
   Assert.equal(
-    events[0].extra.location,
+    extra.location,
     "fullpage",
     "add_tabs_selection has correct location"
   );
   Assert.equal(
-    events[0].extra.tabs_available,
-    "1",
-    "add_tabs_selection has correct number of tabs_available"
-  );
-  Assert.equal(
-    events[0].extra.tabs_preselected,
+    extra.message_seq,
     "0",
-    "add_tabs_selection has correct number of tabs_preselected"
+    "add_tabs_selection has correct message_seq"
   );
   Assert.equal(
-    events[0].extra.tabs_selected,
+    extra.tabs_available,
     "1",
-    "add_tabs_selection has correct number of tabs_selected"
+    "add_tabs_selection has correct tabs_available"
+  );
+  Assert.equal(
+    extra.tabs_preselected,
+    "0",
+    "add_tabs_selection has correct tabs_preselected"
+  );
+  Assert.equal(
+    extra.tabs_selected,
+    "1",
+    "add_tabs_selection has correct tabs_selected"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -484,17 +683,23 @@ add_task(async function test_smartbar_telemetry_mention_remove_inline() {
 
   const events = Glean.smartWindow.mentionRemove.testGetValue();
   Assert.equal(events.length, 1, "Should have mention_remove events");
-  Assert.ok(events[0].extra.chat_id, "mention_remove has chat_id");
-  Assert.ok("message_seq" in events[0].extra, "mention_remove has message_seq");
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "mention_remove has chat_id");
   Assert.equal(
-    events[0].extra.location,
+    extra.location,
     "fullpage",
     "mention_remove has correct location"
   );
   Assert.equal(
-    events[0].extra.mentions,
+    extra.mentions,
     "0",
-    "mention_remove reports the remaining mentions count"
+    "mention_remove has correct remaining mentions count"
+  );
+  Assert.equal(
+    extra.message_seq,
+    "0",
+    "mention_remove has correct message_seq"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -539,17 +744,15 @@ add_task(async function test_smartbar_telemetry_remove_tab() {
 
   const events = Glean.smartWindow.removeTab.testGetValue();
   Assert.equal(events.length, 1, "Should have remove_tab events");
-  Assert.ok(events[0].extra.chat_id, "remove_tab has chat_id");
-  Assert.ok("message_seq" in events[0].extra, "remove_tab has message_seq");
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "remove_tab has chat_id");
+  Assert.equal(extra.location, "fullpage", "remove_tab has correct location");
+  Assert.equal(extra.message_seq, "0", "remove_tab has correct message_seq");
   Assert.equal(
-    events[0].extra.location,
-    "fullpage",
-    "remove_tab has correct location"
-  );
-  Assert.equal(
-    events[0].extra.tabs_selected,
+    extra.tabs_selected,
     "0",
-    "remove_tab reports the remaining tabs count"
+    "remove_tab has correct remaining tabs count"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -640,17 +843,16 @@ add_task(async function test_smartbar_telemetry_mention_start_sidebar() {
 
   const events = Glean.smartWindow.mentionStart.testGetValue();
   Assert.equal(events.length, 1, "Should have mention_start events");
-  Assert.ok(events[0].extra.chat_id, "mention_start has chat_id");
-  Assert.ok(
-    "mentions_available" in events[0].extra,
-    "mention_start has mentions_available"
-  );
-  Assert.ok("message_seq" in events[0].extra, "mention_start has message_seq");
+
+  const extra = events[0].extra;
+  Assert.ok(extra.chat_id, "mention_start has chat_id");
+  Assert.equal(extra.location, "sidebar", "mention_start has correct location");
   Assert.equal(
-    events[0].extra.location,
-    "sidebar",
-    "mention_start has correct location for sidebar"
+    extra.mentions_available,
+    "1",
+    "mention_start has correct mentions_available"
   );
+  Assert.equal(extra.message_seq, "0", "mention_start has correct message_seq");
 
   await BrowserTestUtils.closeWindow(win);
 });

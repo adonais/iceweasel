@@ -45,6 +45,7 @@ struct PageUseCounters;
 class WindowSessionStoreState;
 struct WindowSessionStoreUpdate;
 class SSCacheQueryResult;
+enum class FullscreenKeyboardLock : uint8_t;
 
 /**
  * A handle in the parent process to a specific nsGlobalWindowInner object.
@@ -226,6 +227,7 @@ class WindowGlobalParent final : public WindowContext,
   nsITransportSecurityInfo* GetSecurityInfo() { return mSecurityInfo; }
 
   const nsACString& GetRemoteType() const override;
+  void GetRemoteType(nsACString& aRemoteType) const;
 
   void NotifySessionStoreUpdatesComplete(Element* aEmbedder);
 
@@ -341,14 +343,17 @@ class WindowGlobalParent final : public WindowContext,
 
   mozilla::ipc::IPCResult RecvSetCookies(
       const nsCString& aBaseDomain, const OriginAttributes& aOriginAttributes,
-      nsIURI* aHost, bool aFromHttp, bool aIsThirdParty,
+      nsIURI* aHost, bool aIsThirdParty,
       const nsTArray<CookieStruct>& aCookies);
-
-  mozilla::ipc::IPCResult RecvOnInitialStorageAccess();
 
   mozilla::ipc::IPCResult RecvRecordUserActivationForBTP();
 
   mozilla::ipc::IPCResult RecvRecordUserInteractionForPermissions();
+
+  already_AddRefed<dom::PSerialManagerParent> AllocPSerialManagerParent();
+
+  mozilla::ipc::IPCResult RecvPSerialManagerConstructor(
+      PSerialManagerParent* aActor) override;
 
   already_AddRefed<dom::PWebAuthnTransactionParent>
   AllocPWebAuthnTransactionParent();
@@ -357,6 +362,8 @@ class WindowGlobalParent final : public WindowContext,
 
   already_AddRefed<dom::PDigitalCredentialParent>
   AllocPDigitalCredentialParent();
+
+  void UpdateFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
 
  private:
   WindowGlobalParent(CanonicalBrowsingContext* aBrowsingContext,

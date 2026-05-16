@@ -9,8 +9,8 @@ origin:
   description: A fast regular expression engine from V8
   url: https://v8.dev
 
-  release: b5aa4c8b718d75f9cf4d4afd635ffd217f0acb38 (Sun Sep 07 04:43:21 2025).
-  revision: b5aa4c8b718d75f9cf4d4afd635ffd217f0acb38
+  release: 9611b26fdb7d6ca28e81b8357d0b3f191106c551 (Thu Mar 19 19:07:50 2026).
+  revision: 9611b26fdb7d6ca28e81b8357d0b3f191106c551
 
   license: BSD-3-Clause
   license-file: LICENSE.v8
@@ -21,9 +21,12 @@ vendoring:
   vendor-directory: js/src/irregexp/
   skip-vendoring-steps: ['fetch', 'move-contents']
   patches:
-    - patches/trace-constiterator-operator-not-equal.patch
     - patches/public-regexp-destructor.patch
     - patches/icu4x.patch
+    - patches/remove-using-enum.patch
+    - patches/regexp-tracer-unique-ptr.patch
+    - patches/unordered-set-include.patch
+    - patches/disable-bytecode-analysis.patch
 
   update-actions:
     - action: run-script

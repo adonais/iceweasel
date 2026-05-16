@@ -11,7 +11,7 @@ const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPSignInWatcher.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs"
 );
 const { ProxyPass, ProxyUsage, Entitlement } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs"
@@ -22,7 +22,16 @@ const { RemoteSettings } = ChromeUtils.importESModule(
 const { IPProtectionActivator } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPProtectionActivator.sys.mjs"
 );
+const { IPPFxaAuthProvider } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
+);
+const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs"
+);
+
+IPProtectionActivator.addHelpers(IPPFxaAuthProvider.helpers);
 IPProtectionActivator.setupHelpers();
+IPProtectionActivator.setAuthProvider(IPPFxaAuthProvider);
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -89,16 +98,14 @@ function setupStubs(
   const options = { ...defaultStubOptions, ...aOptions };
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => options.signedIn);
   sandbox
-    .stub(IPProtectionService.guardian, "isLinkedToGuardian")
+    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
     .resolves(options.isLinkedToGuardian);
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: null,
     entitlement: options.entitlement,
   });
-  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({
-    status: 200,
-    error: null,
+  sandbox.stub(IPProtectionService.guardian, "enrollWithFxa").resolves({
     ok: true,
   });
   sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({

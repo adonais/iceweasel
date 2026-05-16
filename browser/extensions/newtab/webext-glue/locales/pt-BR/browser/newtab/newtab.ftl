@@ -307,9 +307,23 @@ newtab-error-fallback-refresh-link = Atualize a página para tentar novamente.
 
 newtab-custom-shortcuts-title = Atalhos
 newtab-custom-shortcuts-subtitle = Sites que você salva ou visita
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Atalhos
     .description = Sites que você salva ou visita
+newtab-custom-shortcuts-nova =
+    .label = Atalhos
+newtab-custom-row-description =
+    .description = Número de linhas
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } linha
+           *[other] { $num } linhas
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -320,9 +334,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Atalhos patrocinados
 newtab-custom-pocket-title = Recomendado pelo { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Conteúdo excepcional selecionado pelo { -pocket-brand-name }, parte da família { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Histórias recomendadas
     .description = Conteúdo excepcional escolhido pela família { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Histórias recomendadas
 newtab-custom-stories-personalized-toggle =
     .label = Histórias
 newtab-custom-stories-personalized-checkbox-label = Histórias personalizadas com base na sua atividade
@@ -356,8 +373,11 @@ newtab-custom-settings = Gerenciar mais configurações
 
 newtab-wallpaper-title = Fundo de tela
 newtab-wallpaper-reset = Restaurar padrão
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Enviar uma imagem
 newtab-wallpaper-custom-color = Escolher uma cor
+newtab-wallpaper-toggle-title =
+    .label = Fundo de tela
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = A imagem excedeu o limite de tamanho de arquivo de { $file_size }MB. Tente enviar um arquivo menor.
@@ -380,6 +400,7 @@ newtab-wallpaper-light-fox-anniversary = Uma raposa em um campo gramado com uma 
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Cores sólidas
 newtab-wallpaper-blue = Azul
 newtab-wallpaper-light-blue = Azul claro
@@ -486,7 +507,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Mudar para Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Mudar para Celsius
-newtab-weather-menu-hide-weather-v2 = Ocultar previsão do tempo
 newtab-weather-menu-hide-weather = Ocultar tempo em nova aba
 newtab-weather-menu-learn-more = Saiba mais
 newtab-weather-menu-detect-my-location = Detectar minha localização
@@ -499,6 +519,12 @@ newtab-weather-opt-in-yes =
     .label = Sim
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Cidade de Nova York
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Máxima
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Mínima
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -654,7 +680,6 @@ newtab-widget-lists-menu-edit = Editar nome da lista
 newtab-widget-lists-menu-create = Criar nova lista
 newtab-widget-lists-menu-delete = Excluir esta lista
 newtab-widget-lists-menu-copy = Copiar lista para a área de transferência
-newtab-widget-lists-menu-hide = Ocultar todas as listas
 newtab-widget-lists-menu-learn-more = Saiba mais
 newtab-widget-lists-input-add-an-item =
     .placeholder = Adicionar um item
@@ -707,7 +732,6 @@ newtab-widget-timer-reset =
     .title = Redefinir
 newtab-widget-timer-menu-notifications = Desativar notificações
 newtab-widget-timer-menu-notifications-on = Ativar notificações
-newtab-widget-timer-menu-hide = Esconder o temporizador
 newtab-widget-timer-menu-learn-more = Saiba mais
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Principais notícias
@@ -718,6 +742,12 @@ newtab-daily-briefing-card-timestamp = Atualizado há { $minutes } minutos
 newtab-widget-message-title = Mantenha a concentração com listas e um temporizador integrado
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Desde lembretes rápidos a tarefas diárias, com sessões de concentração e intervalos para estivar as pernas — cumpra tarefas e prazos.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Deixe o { -brand-product-name } do seu jeito
+newtab-promo-card-body-addons = Escolha um fundo de tela da nossa coleção, ou crie seu próprio.
+newtab-promo-card-cta-addons = Experimente agora
 newtab-promo-card-title = Apoie o { -brand-product-name }
 newtab-promo-card-body = Nossos patrocinadores apoiam nossa missão de construir uma web melhor
 newtab-promo-card-cta = Saiba mais

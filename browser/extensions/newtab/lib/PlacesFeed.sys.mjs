@@ -298,10 +298,7 @@ export class PlacesFeed {
   }
 
   async fillSearchTopSiteTerm({ _target, data }) {
-    // @backward-compat { version 149 }
-    // SearchService replaces Services.search in 149.
-    const searchEngine = await (Services.search ?? lazy.SearchService) // eslint-disable-line mozilla/valid-services
-      .getEngineByAlias(data.label);
+    const searchEngine = await lazy.SearchService.getEngineByAlias(data.label);
     _target.browser.ownerGlobal.gURLBar.search(data.label, {
       searchEngine,
       searchModeEntry: "topsites_newtab",
@@ -309,10 +306,7 @@ export class PlacesFeed {
   }
 
   _getDefaultSearchEngine(isPrivateWindow) {
-    // @backward-compat { version 149 }
-    // SearchService replaces Services.search in 149.
-    // eslint-disable-next-line mozilla/valid-services
-    return (Services.search ?? lazy.SearchService)[
+    return lazy.SearchService[
       isPrivateWindow ? "defaultPrivateEngine" : "defaultEngine"
     ];
   }
@@ -449,7 +443,7 @@ export class PlacesFeed {
         this.fillSearchTopSiteTerm(action);
         break;
       case at.OPEN_LINK: {
-        this.openLink(action);
+        this.openLink(action, action.data.where);
         break;
       }
       case at.PARTNER_LINK_ATTRIBUTION:

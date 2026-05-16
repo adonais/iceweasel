@@ -8,8 +8,6 @@ import {
   openAIEngine,
   renderPrompt,
   MODEL_FEATURES,
-  SERVICE_TYPES,
-  PURPOSES,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import { sanitizeUntrustedContent } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
@@ -38,7 +36,8 @@ function generateDefaultTitle(message) {
 }
 
 /**
- * Generate a chat title based on the user's message and current tab information.
+ * Generate a chat title based on the user's message, current tab information,
+ * and optionally the first assistant response.
  *
  * @param {string} message - The user's message
  * @param {object} current_tab - Object containing current tab information
@@ -56,9 +55,6 @@ export async function generateChatTitle(
     // Build the OpenAI engine
     const engine = await openAIEngine.build(
       MODEL_FEATURES.TITLE_GENERATION,
-      `${MODEL_FEATURES.TITLE_GENERATION}-engine`,
-      SERVICE_TYPES.AI,
-      PURPOSES.TITLE_GENERATION,
       flowId
     );
 
@@ -76,6 +72,10 @@ export async function generateChatTitle(
       { role: "system", content: systemPrompt },
       { role: "user", content: message },
     ];
+
+    if (assistantResponse) {
+      messages.push({ role: "assistant", content: assistantResponse });
+    }
 
     // Get config for inference parameters if exists
     const config = engine.getConfig(engine.feature);

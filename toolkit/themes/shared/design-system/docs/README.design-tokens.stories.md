@@ -324,7 +324,7 @@ Our build process provides a mechanism to override design tokens behind a pref. 
 ```js
 {
   name: "nova",
-  pref: "browser.design-tokens.nova",
+  pref: "browser.nova.enabled",
 }
 ```
 
@@ -333,7 +333,7 @@ Then you can create new JSON files in `src/tokens` that end with a suffix using 
 When you run `./mach buildtokens`, the CSS output will include the new tokens under a media query using the `pref` that you defined. For example:
 
 ```css
-@media -moz-pref("browser.design-tokens.nova") {
+@media -moz-pref("browser.nova.enabled") {
   /* Your token overrides */
 }
 ```

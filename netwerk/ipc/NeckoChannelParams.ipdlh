@@ -18,6 +18,7 @@ include "mozilla/dom/NavigationAPIIPCUtils.h";
 include "mozilla/dom/PropertyBagUtils.h";
 include "mozilla/dom/ReferrerInfoUtils.h";
 include "mozilla/ipc/URIUtils.h";
+include "mozilla/dom/ConsoleReportIPCUtils.h";
 include "mozilla/net/CacheInfoIPCTypes.h";
 include "mozilla/AntiTrackingIPCUtils.h";
 include "mozilla/net/ClassOfService.h";
@@ -44,6 +45,7 @@ using nsILoadInfo::HTTPSUpgradeTelemetryType from "nsILoadInfo.h";
 using nsILoadInfo::SchemelessInputType from "nsILoadInfo.h";
 using mozilla::dom::UserNavigationInvolvement from "mozilla/dom/UserNavigationInvolvement.h";
 using mozilla::RFPTargetSet from "nsRFPService.h";
+using PropertiesFile from "nsContentUtils.h";
 
 namespace mozilla {
 namespace net {
@@ -484,7 +486,7 @@ struct HttpConnectionInfoCloneArgs
 struct ConsoleReportCollected {
   uint32_t errorFlags;
   nsCString category;
-  uint32_t propertiesFile;
+  PropertiesFile propertiesFile;
   nsCString sourceFileURI;
   uint32_t lineNumber;
   uint32_t columnNumber;

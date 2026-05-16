@@ -19,12 +19,14 @@ from .util import (
     get_decision_task_id,
     get_pushes,
     get_pushes_from_params_input,
+    get_pushes_in_gap,
     trigger_action,
 )
 
 logger = logging.getLogger(__name__)
 SYMBOL_REGEX = re.compile("^(.*)-[a-z0-9]{11}-bk$")
 GROUP_SYMBOL_REGEX = re.compile("^(.*)-bk$")
+MIN_SLICE_GAP = 7
 
 # Allowed browser applications for performance test backfills
 # Only Firefox and Geckoview should be backfilled for regression detection
@@ -109,6 +111,19 @@ def input_for_support_action(revision, task, times=1, retrigger=True):
                     "ran it."
                 ),
             },
+            "slices": {
+                "type": "integer",
+                "default": 0,
+                "minimum": 0,
+                "maximum": 25,
+                "title": "Slices",
+                "description": (
+                    "Number of cuts to make in the push range. "
+                    "0 (default) triggers all pushes (standard backfill). "
+                    "1 triggers one push in the middle of the range. "
+                    "3 cuts the range into 4 chunks and triggers the 3 boundary pushes."
+                ),
+            },
         },
         "additionalProperties": False,
     },
@@ -117,6 +132,10 @@ def input_for_support_action(revision, task, times=1, retrigger=True):
 def backfill_action(parameters, graph_config, input, task_group_id, task_id):
     """
     This action takes a task ID and schedules it on previous pushes (via support action).
+    When 'slices' is 0 (default), standard backfill is used (all pushes).
+    When 'slices' > 0, the gap of missing pushes is detected and the mode is chosen automatically.
+      - small gaps: standard backfill
+      - large gaps: sliced backfill (exact pivot pushes at n/N+1, 2n/N+1, ... for slices=N).
 
     To execute this action locally follow the documentation here:
     https://taskcluster-taskgraph.readthedocs.io/en/latest/howto/create-actions.html#testing-actions
@@ -135,16 +154,26 @@ def backfill_action(parameters, graph_config, input, task_group_id, task_id):
         )
         return
 
-    pushes = get_pushes_from_params_input(parameters, input)
-    failed = False
     input_for_action = input_for_support_action(
         revision=parameters["head_rev"],
         task=task,
         times=input.get("times", 1),
         retrigger=input.get("retrigger", True),
     )
+    slices = input.get("slices", 0)
+    if slices == 0:
+        strategy = "standard"
+        pushes = get_pushes_from_params_input(parameters, input)
+    else:
+        pushes = get_pushes_in_gap(parameters, input_for_action.get("label", ""))
+        if len(pushes) < MIN_SLICE_GAP:
+            strategy = "standard"
+        else:
+            strategy = "sliced"
 
-    for push_id in pushes:
+    planned_pushes = plan_pushes_to_trigger(pushes, strategy, slices)
+    failed = False
+    for push_id in planned_pushes:
         try:
             # The Gecko decision task can sometimes fail on a push and we need to handle
             # the exception that this call will produce
@@ -177,12 +206,21 @@ def add_backfill_suffix(regex, symbol, suffix):
     return symbol
 
 
+def is_speedometer_task(label):
+    return "shippable" in label and "speedometer3" in label
+
+
 def backfill_modifier(task, input):
     if task.label != input["label"]:
         return task
 
     logger.debug(f"Modifying test_manifests for {task.label}")
     times = input.get("times", 1)
+
+    if is_speedometer_task(task.label):
+        # Reduce duplicates to 1 from 12. Allow `times` to continue
+        # to be used by doing this before the check below.
+        task.attributes["task_duplicates"] = 1
 
     # Set task duplicates based on 'times' value.
     if times > 1:
@@ -471,3 +509,28 @@ def add_all_browsertime(parameters, graph_config, input, task_group_id, task_id)
         decision_task_id,
     )
     logger.info(f"Scheduled {len(to_run)} raptor tasks (time 1)")
+
+
+def plan_pushes_to_trigger(
+    pushes: list[str],
+    strategy: str,
+    slices: int,
+) -> list[str]:
+    """
+    Returns push_ids to trigger backfill-task for.
+    standard: all pushes.
+    sliced: trigger only the exact pivot pushes (n/N+1, 2n/N+1, ... for slices=N).
+    """
+    if not pushes:
+        return []
+
+    if strategy == "standard":
+        return pushes
+
+    n = len(pushes)
+    pivot_indices = sorted(set(i * n // (slices + 1) for i in range(1, slices + 1)))
+    planned: list[str] = []
+    for pivot in pivot_indices:
+        pid = pushes[pivot]
+        planned.append(pid)
+    return planned

@@ -539,7 +539,8 @@ export class AdsFeed {
       case at.PREF_CHANGED:
         await this.onPrefChangedAction(action);
         break;
-      case at.DISCOVERY_STREAM_CONFIG_CHANGE: // Event emitted from ASDevTools "Reset Cache" button
+      case at.DISCOVERY_STREAM_CONFIG_CHANGE:
+      case at.DISCOVERY_STREAM_DEV_REFRESH_CACHE: // Event emitted from ASDevTools "Refresh Cache" button
       case at.DISCOVERY_STREAM_DEV_EXPIRE_CACHE: // Event emitted from ASDevTools "Expire Cache" button
         // Clear cache
         await this.resetAdsFeed();

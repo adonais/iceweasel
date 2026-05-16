@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -744,15 +742,6 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
 
   if (re->kind() == RegExpShared::Kind::Atom) {
     return RegExpShared::executeAtom(re, input, start, matches);
-  }
-
-  /*
-   * Ensure sufficient memory for output vector.
-   * No need to initialize it. The RegExp engine fills them in on a match.
-   */
-  if (!matches->allocOrExpandArray(re->pairCount())) {
-    ReportOutOfMemory(cx);
-    return RegExpRunStatus::Error;
   }
 
   uint32_t interruptRetries = 0;

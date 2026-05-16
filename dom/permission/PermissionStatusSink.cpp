@@ -18,12 +18,17 @@
 
 namespace mozilla::dom {
 
+void PermissionStatusSink::ClearPermissionStatus() {
+  MOZ_ASSERT(mSerialEventTarget->IsOnCurrentThread());
+  mPermissionStatus = nullptr;
+}
+
 PermissionStatusSink::PermissionStatusSink(PermissionStatus* aPermissionStatus,
                                            PermissionName aPermissionName,
                                            const nsACString& aPermissionType)
     : mSerialEventTarget(NS_GetCurrentThread()),
-      mPermissionStatus(aPermissionStatus),
       mMutex("PermissionStatusSink::mMutex"),
+      mPermissionStatus(aPermissionStatus),
       mPermissionName(aPermissionName),
       mPermissionType(aPermissionType) {
   MOZ_ASSERT(aPermissionStatus);
@@ -131,10 +136,86 @@ bool PermissionStatusSink::MaybeUpdatedByOnMainThread(
   return mPrincipalForPermission->Equals(permissionPrincipal);
 }
 
+bool PermissionStatusSink::MaybeUpdatedByBrowserPermOnMainThread(
+    nsIPermission* aPermission) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!MaybeUpdatedByOnMainThread(aPermission)) {
+    return false;
+  }
+
+  uint64_t permBrowserId = 0;
+  aPermission->GetBrowserId(&permBrowserId);
+  if (!permBrowserId) {
+    return false;
+  }
+
+  uint64_t sinkBrowserId = 0;
+  if (!GetBrowserIdOnMainThread(&sinkBrowserId)) {
+    return false;
+  }
+
+  return sinkBrowserId == permBrowserId;
+}
+
 bool PermissionStatusSink::MaybeUpdatedByNotifyOnlyOnMainThread(
     nsPIDOMWindowInner* aInnerWindow) {
   MOZ_ASSERT(NS_IsMainThread());
   return false;
+}
+
+bool PermissionStatusSink::MaybeAffectedByBrowserIdOnMainThread(
+    uint64_t aBrowserId) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  uint64_t sinkBrowserId = 0;
+  if (!GetBrowserIdOnMainThread(&sinkBrowserId)) {
+    return false;
+  }
+
+  return sinkBrowserId == aBrowserId;
+}
+
+bool PermissionStatusSink::GetBrowserIdOnMainThread(uint64_t* aBrowserId) {
+  MOZ_ASSERT(NS_IsMainThread());
+  *aBrowserId = 0;
+
+  RefPtr<nsGlobalWindowInner> window;
+
+  if (mSerialEventTarget->IsOnCurrentThread()) {
+    // Window sink: the main thread is the owning thread, so we can safely
+    // access mPermissionStatus to get the owner window.
+    if (!GetPermissionStatus()) {
+      return false;
+    }
+    window = GetPermissionStatus()->GetOwnerWindow();
+  } else {
+    // Worker sink: mPermissionStatus is owned by the worker thread and must
+    // not be touched here. Instead, get the worker's ancestor window (the tab
+    // that spawned it) via mWorkerRef, which is mutex-guarded.
+    MutexAutoLock lock(mMutex);
+    if (!mWorkerRef) {
+      return false;
+    }
+    nsCOMPtr<nsPIDOMWindowInner> ancestorWindow =
+        mWorkerRef->Private()->GetAncestorWindow();
+    if (!ancestorWindow) {
+      return false;
+    }
+    window = nsGlobalWindowInner::Cast(ancestorWindow);
+  }
+
+  if (!window) {
+    return false;
+  }
+
+  RefPtr<BrowsingContext> bc = window->GetBrowsingContext();
+  if (!bc) {
+    return false;
+  }
+
+  *aBrowserId = bc->Top()->BrowserId();
+  return true;
 }
 
 void PermissionStatusSink::PermissionChangedOnMainThread() {
@@ -155,8 +236,9 @@ void PermissionStatusSink::PermissionChangedOnMainThread() {
       mSerialEventTarget, __func__,
       [self = RefPtr(this)](
           const PermissionStatePromise::ResolveOrRejectValue& aResult) {
-        if (aResult.IsResolve() && self->mPermissionStatus) {
-          self->mPermissionStatus->PermissionChanged(aResult.ResolveValue());
+        if (aResult.IsResolve() && self->GetPermissionStatus()) {
+          self->GetPermissionStatus()->PermissionChanged(
+              aResult.ResolveValue());
         }
       });
 }
@@ -164,7 +246,7 @@ void PermissionStatusSink::PermissionChangedOnMainThread() {
 void PermissionStatusSink::Disentangle() {
   MOZ_ASSERT(mSerialEventTarget->IsOnCurrentThread());
 
-  mPermissionStatus = nullptr;
+  ClearPermissionStatus();
 
   NS_DispatchToMainThread(
       NS_NewRunnableFunction(__func__, [self = RefPtr(this)] {
@@ -192,12 +274,13 @@ PermissionStatusSink::ComputeStateOnMainThread() {
   // example)
 
   if (mSerialEventTarget->IsOnCurrentThread()) {
-    if (!mPermissionStatus) {
+    if (!GetPermissionStatus()) {
       return PermissionStatePromise::CreateAndReject(NS_ERROR_FAILURE,
                                                      __func__);
     }
 
-    RefPtr<nsGlobalWindowInner> window = mPermissionStatus->GetOwnerWindow();
+    RefPtr<nsGlobalWindowInner> window =
+        GetPermissionStatus()->GetOwnerWindow();
     return ComputeStateOnMainThreadInternal(window);
   }
 
@@ -312,14 +395,37 @@ PermissionStatusSink::ComputeSystemState() {
                 spsPromisePrivate->Resolve(PermissionState::Granted, __func__);
               });
         } else {
+          // No ContentChild. Fall back to Granted.
           spsPromisePrivate->Resolve(PermissionState::Granted, __func__);
         }
       }));
   if (NS_FAILED(rv)) {
     spsPromisePrivate->Resolve(PermissionState::Granted, __func__);
   }
-
   return spsPromisePrivate;
+}
+
+void PermissionStatusSink::SystemPermissionChangedOnMainThread(
+    PermissionState aState) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (StaticPrefs::dom_permissions_testing_enabled()) {
+    return;
+  }
+
+  if (!mSerialEventTarget->IsOnCurrentThread()) {
+    MutexAutoLock lock(mMutex);
+    if (!mWorkerRef) {
+      return;
+    }
+  }
+
+  mSerialEventTarget->Dispatch(
+      NS_NewRunnableFunction(__func__, [self = RefPtr(this), aState]() {
+        if (self->mPermissionStatus) {
+          self->mPermissionStatus->SystemPermissionChanged(aState);
+        }
+      }));
 }
 
 }  // namespace mozilla::dom

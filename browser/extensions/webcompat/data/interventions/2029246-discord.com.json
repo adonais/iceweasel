@@ -1,0 +1,21 @@
+{
+  "label": "discord.com",
+  "bugs": {
+    "2029246": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://discord.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "min_version": 151,
+      "pref_check": {
+        "layout.css.fake-webkit-scrollbar.enabled": true
+      },
+      "content_scripts": {
+        "css": ["bug2029246-discord.com-scrollbar-fix.css"]
+      }
+    }
+  ]
+}

@@ -26,7 +26,10 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.prompt.PromptRequest
 import mozilla.components.concept.engine.window.WindowRequest
 import mozilla.components.concept.fetch.Response
+import mozilla.components.feature.downloads.CurrentDownloadState
 import mozilla.components.feature.downloads.DownloadsFeature
+import mozilla.components.feature.downloads.NegativeActionCallback
+import mozilla.components.feature.downloads.PositiveActionCallback
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
@@ -36,11 +39,13 @@ import mozilla.components.support.utils.DownloadFileUtils
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.downloads.DownloadService
+import org.mozilla.fenix.downloads.RenameAndChangeLocationDialogFragment
 import org.mozilla.fenix.downloads.dialog.createDownloadAppDialog
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.theme.ThemeManager
 import mozilla.components.feature.downloads.R as downloadsR
@@ -125,48 +130,31 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                 onNeedToRequestPermissions = { permissions ->
                     requestPermissions(permissions, REQUEST_CODE_DOWNLOAD_PERMISSIONS)
                 },
-                customFirstPartyDownloadDialog = { filename, contentSize, _, positiveAction, negativeAction, _ ->
+                customFirstPartyDownloadDialog = { currentDownloadState, _, positiveAction, negativeAction, _ ->
                     run {
-                        if (downloadDialog == null) {
-                            val title = if (contentSize.value > 0L) {
-                                val contentSizeInBytes =
-                                    requireComponents.core.fileSizeFormatter.formatSizeInBytes(
-                                        contentSize.value,
-                                    )
-                                getString(
-                                    downloadsR.string.mozac_feature_downloads_dialog_title_3,
-                                    contentSizeInBytes,
+                        if (canShowDownloadDialog()) {
+                            if (!FxNimbus.features.downloadsCustomLocation.value().enabled) {
+                                showFirstPartyDownloadDialog(
+                                    currentDownloadState = currentDownloadState,
+                                    positiveAction = positiveAction,
+                                    negativeAction = negativeAction,
                                 )
                             } else {
-                                getString(downloadsR.string.mozac_feature_downloads_dialog_title_with_unknown_size)
-                            }
-
-                            downloadDialog = MaterialAlertDialogBuilder(requireContext())
-                                .setTitle(title)
-                                .setMessage(filename.value)
-                                .setPositiveButton(
-                                    downloadsR.string.mozac_feature_downloads_dialog_download,
-                                ) { dialog, _ ->
-                                        positiveAction.value.invoke()
-                                        dialog.dismiss()
-                                }
-                                .setNegativeButton(
-                                    downloadsR.string.mozac_feature_downloads_dialog_cancel,
-                                ) { dialog, _ ->
-                                        negativeAction.value.invoke()
-                                        dialog.dismiss()
-                                }.setOnDismissListener {
-                                    downloadDialog = null
-                                    requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
-                                        Breadcrumb("FirstPartyDownloadDialog onDismiss"),
+                                currentDownloadState.value.fileName?.let { fileName ->
+                                    showRenameDownloadDialog(
+                                        fileName = fileName,
+                                        currentDownloadState = currentDownloadState,
+                                        positiveAction = positiveAction,
+                                        negativeAction = negativeAction,
                                     )
-                                }.show()
+                                }
+                            }
                         }
                     }
                 },
                 customThirdPartyDownloadDialog = { downloaderApps, onAppSelected, negativeActionCallback ->
                     run {
-                        if (downloadDialog == null) {
+                        if (canShowDownloadDialog()) {
                             requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
                                 Breadcrumb("DownloaderAppDialog created"),
                             )
@@ -361,6 +349,89 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                     )
                 }
             }
+        }
+    }
+
+    private fun canShowDownloadDialog(): Boolean {
+        val isRenameFragmentShowing = childFragmentManager.findFragmentByTag(
+            RenameAndChangeLocationDialogFragment.RENAME_AND_CHANGE_LOCATION_DIALOG_TAG,
+        ) != null
+
+        return downloadDialog == null && !isRenameFragmentShowing
+    }
+
+    private fun showFirstPartyDownloadDialog(
+        currentDownloadState: CurrentDownloadState,
+        positiveAction: PositiveActionCallback,
+        negativeAction: NegativeActionCallback,
+    ) {
+        val contentSize = currentDownloadState.value.contentLength ?: 0
+        val title = if (contentSize > 0L) {
+            val contentSizeInBytes = requireComponents.core.fileSizeFormatter.formatSizeInBytes(
+                contentSize,
+            )
+            getString(
+                downloadsR.string.mozac_feature_downloads_dialog_title_3,
+                contentSizeInBytes,
+            )
+        } else {
+            getString(
+                downloadsR.string.mozac_feature_downloads_dialog_title_with_unknown_size,
+            )
+        }
+
+        downloadDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setMessage(currentDownloadState.value.fileName)
+            .setPositiveButton(
+                downloadsR.string.mozac_feature_downloads_dialog_download,
+            ) { dialog, _ ->
+                positiveAction.value.invoke(currentDownloadState.value)
+                dialog.dismiss()
+            }
+            .setNegativeButton(
+                downloadsR.string.mozac_feature_downloads_dialog_cancel,
+            ) { dialog, _ ->
+                negativeAction.value.invoke()
+                dialog.dismiss()
+            }.setOnDismissListener {
+                downloadDialog = null
+                requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
+                    Breadcrumb("FirstPartyDownloadDialog onDismiss"),
+                )
+            }.show()
+    }
+
+    private fun showRenameDownloadDialog(
+        fileName: String,
+        currentDownloadState: CurrentDownloadState,
+        positiveAction: PositiveActionCallback,
+        negativeAction: NegativeActionCallback,
+    ) {
+        val existingFragment = childFragmentManager.findFragmentByTag(
+            RenameAndChangeLocationDialogFragment.RENAME_AND_CHANGE_LOCATION_DIALOG_TAG,
+        )
+
+        if (existingFragment == null && isAdded && !childFragmentManager.isStateSaved) {
+            val renameDialog = RenameAndChangeLocationDialogFragment.newInstance(
+                fileName = fileName,
+                directoryPath = currentDownloadState.value.directoryPath,
+                contentSize = currentDownloadState.value.contentLength ?: 0,
+            )
+            renameDialog.onConfirmSave = { newFileName: String, directoryPath: String ->
+                val downloadState = currentDownloadState.value.copy(
+                    fileName = newFileName,
+                    directoryPath = directoryPath,
+                )
+                positiveAction.value.invoke(downloadState)
+            }
+            renameDialog.onCancel = {
+                negativeAction.value.invoke()
+            }
+            renameDialog.show(
+                childFragmentManager,
+                RenameAndChangeLocationDialogFragment.RENAME_AND_CHANGE_LOCATION_DIALOG_TAG,
+            )
         }
     }
 

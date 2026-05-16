@@ -5,6 +5,7 @@
 #include "nsPKCS12Blob.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_security.h"

@@ -413,14 +413,12 @@ let interfaceNamesInGlobalScope = [
   {
     name: "DocumentPictureInPicture",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   {
     name: "DocumentPictureInPictureEvent",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -1482,6 +1480,10 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "Selection", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "Serial", android: false },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "SerialPort", android: false },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
   "ServiceWorker",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "ServiceWorkerContainer",
@@ -1767,7 +1769,6 @@ let interfaceNamesInGlobalScope = [
   {
     name: "documentPictureInPicture",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   // IMPORTANT: Do not change this list without review from a DOM peer!

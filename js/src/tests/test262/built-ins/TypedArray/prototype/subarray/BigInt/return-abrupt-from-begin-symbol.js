@@ -9,7 +9,7 @@ info: |
   ...
   7. Let relativeBegin be ? ToInteger(begin).
   ...
-includes: [testBigIntTypedArray.js]
+includes: [testTypedArray.js]
 features: [BigInt, Symbol, TypedArray]
 ---*/
 
@@ -21,6 +21,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   assert.throws(TypeError, function() {
     sample.subarray(s);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

@@ -7,22 +7,23 @@ package mozilla.components.feature.awesomebar.provider
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.delay
 import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionCategory
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
 import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionTeam
+import mozilla.components.feature.awesomebar.facts.SuggestionCardType
+import mozilla.components.feature.awesomebar.facts.emitOptimizedSuggestionCardClickedFact
+import mozilla.components.feature.awesomebar.facts.emitOptimizedSuggestionCardDisplayedFact
 import mozilla.components.feature.search.SearchUseCases
 import java.time.DateTimeException
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.time.format.FormatStyle
 import java.util.Locale
 import java.util.UUID
 
-const val DEFAULT_SPORT_SUGGESTION_LIMIT = 1
+internal const val DEFAULT_SPORT_SUGGESTION_LIMIT = 1
 
 /**
  * [AwesomeBar.SuggestionProvider] implementation that provides suggestions based on online sports.
@@ -59,11 +60,17 @@ class SportsOnlineSuggestionProvider(
             .mapNotNull { it.toSuggestionOrNull() }
             .take(maxNumberOfSuggestions)
             .toList()
+            .also {
+                if (it.isNotEmpty()) {
+                    emitOptimizedSuggestionCardDisplayedFact(SuggestionCardType.SPORTS)
+                }
+            }
     }
 
     private fun AwesomeBar.SportItem.toSuggestionOrNull(): AwesomeBar.SportSuggestion? {
         val hasRequiredFields =
             query.isNotBlank() && sport.isNotBlank()
+        val sportCategory = parseSportCategory(sportCategory)
         val date = parseDate(date)
         val status = parseStatus(status)
         val statusType = parseStatusType(statusType)
@@ -73,11 +80,15 @@ class SportsOnlineSuggestionProvider(
 
         return if (hasRequiredFields && hasAllFields) {
             AwesomeBar.SportSuggestion(
-                onSuggestionClicked = { searchUseCase.invoke(query) },
+                onSuggestionClicked = {
+                    emitOptimizedSuggestionCardClickedFact(SuggestionCardType.SPORTS)
+                    searchUseCase.invoke(query)
+                },
                 provider = this@SportsOnlineSuggestionProvider,
                 score = Int.MAX_VALUE,
                 query = query,
                 sport = sport,
+                sportCategory = sportCategory,
                 date = date,
                 status = status,
                 statusType = statusType,
@@ -105,11 +116,7 @@ class SportsOnlineSuggestionProvider(
                     SportSuggestionDate.Today
                 }
                 tomorrow -> {
-                    val time = parsedDate.format(
-                        DateTimeFormatter
-                            .ofLocalizedTime(FormatStyle.SHORT)
-                            .withLocale(locale),
-                    )
+                    val time = formatShortTime(parsedDate, locale)
                     SportSuggestionDate.Tomorrow(time)
                 }
                 else -> {
@@ -124,15 +131,6 @@ class SportsOnlineSuggestionProvider(
         } catch (_: DateTimeException) {
             null
         }
-    }
-
-    private fun parseIsoDate(
-        date: String,
-        timeZone: ZoneId,
-    ): LocalDateTime? = try {
-        OffsetDateTime.parse(date).atZoneSameInstant(timeZone).toLocalDateTime()
-    } catch (_: DateTimeParseException) {
-        null
     }
 
     @VisibleForTesting
@@ -168,6 +166,20 @@ class SportsOnlineSuggestionProvider(
     internal fun parseTeam(team: AwesomeBar.SportItem.Team): SportSuggestionTeam? {
         return team.name.takeIf { it.isNotBlank() }?.let {
             SportSuggestionTeam(it, team.score)
+        }
+    }
+
+    @VisibleForTesting
+    internal fun parseSportCategory(sportCategory: String): SportSuggestionCategory {
+        return when (sportCategory) {
+            "baseball" -> SportSuggestionCategory.BASEBALL
+            "basketball" -> SportSuggestionCategory.BASKETBALL
+            "hockey" -> SportSuggestionCategory.HOCKEY
+            "soccer" -> SportSuggestionCategory.SOCCER
+            "football" -> SportSuggestionCategory.FOOTBALL
+            "golf" -> SportSuggestionCategory.GOLF
+            "racing" -> SportSuggestionCategory.RACING
+            else -> SportSuggestionCategory.MISC
         }
     }
 }

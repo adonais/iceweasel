@@ -131,7 +131,7 @@ inline already_AddRefed<T>&& dont_AddRef(
  *
  * See |class nsGetInterface| for an example.
  */
-class MOZ_STACK_CLASS nsCOMPtr_helper {
+class MOZ_STACK_CLASS MOZ_NULL_AFTER_MOVE nsCOMPtr_helper {
  public:
   virtual nsresult NS_FASTCALL operator()(const nsIID&, void**) const = 0;
 };

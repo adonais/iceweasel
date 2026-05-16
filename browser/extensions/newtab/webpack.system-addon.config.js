@@ -11,7 +11,7 @@ const { MozSrcUriPlugin } = require("../../tools/mozsrcUriPlugin");
 const absolute = relPath => path.join(__dirname, relPath);
 
 const baseConfig = env => ({
-  mode: env.development ? "development" : "production",
+  mode: "none",
   devtool: env.development ? "inline-source-map" : false,
   module: {
     rules: [
@@ -35,19 +35,21 @@ const baseConfig = env => ({
     extensions: [".js", ".jsx", ".mjs"],
     modules: ["node_modules", "."],
   },
-  optimization: {
-    minimizer: [
-      new TerserPlugin({
-        extractComments: false,
-        terserOptions: {
-          format: {
-            comments: /THIS FILE IS AUTO-GENERATED/,
-          },
-        },
-      }),
-    ],
-  },
 });
+
+const vendorOptimization = {
+  minimize: true,
+  minimizer: [
+    new TerserPlugin({
+      extractComments: false,
+      terserOptions: {
+        format: {
+          comments: /THIS FILE IS AUTO-GENERATED/,
+        },
+      },
+    }),
+  ],
+};
 
 module.exports = (env = {}) => [
   // Vendor bundle with React
@@ -58,6 +60,8 @@ module.exports = (env = {}) => [
       path: absolute("data/content"),
       filename: "vendor.bundle.js",
     },
+    devtool: false,
+    optimization: vendorOptimization,
     plugins: [
       new webpack.DefinePlugin({
         "process.env.NODE_ENV": JSON.stringify(

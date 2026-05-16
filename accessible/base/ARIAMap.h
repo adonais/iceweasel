@@ -295,6 +295,13 @@ bool IsRoleMapIndexValid(uint8_t aRoleMapIndex);
 uint64_t UniversalStatesFor(dom::Element* aElement);
 
 /**
+ * Map an ARIA state rule only if it is listed in the provided role map entry.
+ */
+void MapToStateIfInRoleMapEntry(const nsRoleMapEntry* aRoleMapEntry,
+                                EStateRule aRule, dom::Element* aElement,
+                                uint64_t* aState);
+
+/**
  * Get the ARIA attribute characteristics for a given ARIA attribute.
  *
  * @param aAtom  ARIA attribute

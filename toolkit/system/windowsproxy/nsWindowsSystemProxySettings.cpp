@@ -1,4 +1,3 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -224,6 +223,16 @@ NS_IMETHODIMP nsWindowsSystemProxySettings::GetSystemWPADSetting(
       (flags & (PROXY_TYPE_AUTO_PROXY_URL | PROXY_TYPE_AUTO_DETECT)) ==
       PROXY_TYPE_AUTO_DETECT;
   return rv;
+}
+
+NS_IMETHODIMP nsWindowsSystemProxySettings::GetSystemProxyDirect(
+    bool* aResult) {
+  uint32_t flags = mFunctions->GetCachedFlags();
+  *aResult = flags != UINT32_MAX &&
+             !(flags & (PROXY_TYPE_PROXY | PROXY_TYPE_AUTO_PROXY_URL |
+                        PROXY_TYPE_AUTO_DETECT)) &&
+             !mozilla::toolkit::system::HasProxyEnvVars();
+  return NS_OK;
 }
 
 NS_IMPL_COMPONENT_FACTORY(nsWindowsSystemProxySettings) {

@@ -11,9 +11,9 @@
 #include "PlatformDecoderModule.h"
 #include "PlatformEncoderModule.h"
 #include "RemoteAudioDecoder.h"
-#include "RemoteCDMChild.h"
+#include "RemoteCDMProxy.h"
 #include "RemoteMediaDataDecoder.h"
-#include "RemoteMediaDataEncoderChild.h"
+#include "RemoteMediaDataEncoder.h"
 #include "RemoteVideoDecoder.h"
 #include "VideoUtils.h"
 #include "mozilla/DataMutex.h"
@@ -455,7 +455,7 @@ RemoteMediaManagerChild::CreateVideoDecoder(const CreateDecoderParams& aParams,
 }
 
 /* static */
-RefPtr<RemoteCDMChild> RemoteMediaManagerChild::CreateCDM(
+RefPtr<RemoteCDMProxy> RemoteMediaManagerChild::CreateCDM(
     RemoteMediaIn aLocation, dom::MediaKeys* aKeys, const nsAString& aKeySystem,
     bool aDistinctiveIdentifierRequired, bool aPersistentStateRequired) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -482,7 +482,7 @@ RefPtr<RemoteCDMChild> RemoteMediaManagerChild::CreateCDM(
   RefPtr<GenericNonExclusivePromise> p = LaunchRDDProcessIfNeeded();
   LOG("Create CDM in %s", RemoteMediaInToStr(aLocation));
 
-  return MakeRefPtr<RemoteCDMChild>(
+  return MakeRefPtr<RemoteCDMProxy>(
       std::move(managerThread), std::move(p), aLocation, aKeys, aKeySystem,
       aDistinctiveIdentifierRequired, aPersistentStateRequired);
 }
@@ -512,13 +512,12 @@ RemoteMediaManagerChild::Construct(RefPtr<RemoteDecoderChild>&& aChild,
                   CreateAndReject(aResult, __func__);
             }
             if (params.mCDM) {
-              if (auto* cdmChild = params.mCDM->AsPRemoteCDMChild()) {
+              if (auto* cdm = params.mCDM->AsRemoteCDMProxy()) {
                 return PlatformDecoderModule::CreateDecoderPromise::
                     CreateAndResolve(
                         MakeRefPtr<EMEMediaDataDecoderProxy>(
                             params,
-                            MakeAndAddRef<RemoteMediaDataDecoder>(child),
-                            static_cast<RemoteCDMChild*>(cdmChild)),
+                            MakeAndAddRef<RemoteMediaDataDecoder>(child), cdm),
                         __func__);
               }
               return PlatformDecoderModule::CreateDecoderPromise::
@@ -613,8 +612,7 @@ EncodeSupportSet RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
 
 /* static */ RefPtr<PlatformEncoderModule::CreateEncoderPromise>
 RemoteMediaManagerChild::InitializeEncoder(
-    RefPtr<RemoteMediaDataEncoderChild>&& aEncoder,
-    const EncoderConfig& aConfig) {
+    RefPtr<RemoteMediaDataEncoder>&& aEncoder, const EncoderConfig& aConfig) {
   RemoteMediaIn location = aEncoder->GetLocation();
 
   TrackSupport required;
@@ -679,7 +677,8 @@ RemoteMediaManagerChild::InitializeEncoder(
                           "Remote manager not available"),
               __func__);
         }
-        if (!manager->SendPRemoteEncoderConstructor(encoder, aConfig)) {
+        if (!manager->SendPRemoteEncoderConstructor(encoder->GetChild(),
+                                                    aConfig)) {
           LOG("Create encoder in %s failed, send failed",
               RemoteMediaInToStr(encoder->GetLocation()));
           return PlatformEncoderModule::CreateEncoderPromise::CreateAndReject(

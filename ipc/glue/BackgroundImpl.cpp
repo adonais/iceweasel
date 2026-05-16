@@ -46,8 +46,6 @@
 #include "nsXPCOMPrivate.h"
 #include "prthread.h"
 
-#include <functional>
-
 #ifdef RELEASE_OR_BETA
 #  define THREADSAFETY_ASSERT MOZ_ASSERT
 #else
@@ -468,7 +466,7 @@ class ChildImpl final : public BackgroundChildImpl {
         return nullptr;
       }
       strongActor->SetActorAlive();
-      threadLocalInfo->mActor = strongActor;
+      threadLocalInfo->mActor = strongActor.forget();
 
       // Dispatch to the background task queue to create the relevant actor in
       // the remote process.
@@ -479,7 +477,7 @@ class ChildImpl final : public BackgroundChildImpl {
               NS_WARNING("Failed to create toplevel actor");
             }
           }));
-      return strongActor;
+      return threadLocalInfo->mActor;
     }
 
    private:

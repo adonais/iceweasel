@@ -34,6 +34,7 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.autofill.AutofillApiException
@@ -41,6 +42,7 @@ import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.state.action.SearchAction.SearchConfigurationAvailabilityChanged
 import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.selectedOrDefaultPrivateSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.GlobalPlacesDependencyProvider
 import mozilla.components.concept.base.crash.Breadcrumb
@@ -54,6 +56,7 @@ import mozilla.components.feature.autofill.AutofillUseCases
 import mozilla.components.feature.fxsuggest.GlobalFxSuggestDependencyProvider
 import mozilla.components.feature.search.ext.buildSearchUrl
 import mozilla.components.feature.search.ext.waitForSelectedOrDefaultSearchEngine
+import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.feature.syncedtabs.commands.GlobalSyncedTabsCommandsProvider
 import mozilla.components.feature.top.sites.TopSitesFrecencyConfig
 import mozilla.components.feature.top.sites.TopSitesProviderConfig
@@ -84,16 +87,21 @@ import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.GleanMetrics.Addons
 import org.mozilla.fenix.GleanMetrics.Addresses
 import org.mozilla.fenix.GleanMetrics.AndroidAutofill
+import org.mozilla.fenix.GleanMetrics.Browser
 import org.mozilla.fenix.GleanMetrics.CreditCards
 import org.mozilla.fenix.GleanMetrics.CustomizeHome
 import org.mozilla.fenix.GleanMetrics.Events.marketingNotificationAllowed
+import org.mozilla.fenix.GleanMetrics.GenaiAiControls
+import org.mozilla.fenix.GleanMetrics.Integrity
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.PerfStartup
 import org.mozilla.fenix.GleanMetrics.Preferences
 import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
+import org.mozilla.fenix.GleanMetrics.SearchDefaultEngineForPrivate
 import org.mozilla.fenix.GleanMetrics.TabStrip
 import org.mozilla.fenix.GleanMetrics.TermsOfUse
+import org.mozilla.fenix.GleanMetrics.UserAiSummarize
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction
@@ -555,12 +563,25 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
-    private fun queueIntegrityClientWarmUp(queue: RunWhenReadyQueue) =
+    private fun queueIntegrityClientWarmUp(queue: RunWhenReadyQueue) {
+        // We want to avoid shipping this warmup into UI test builds to reduce quota impact, especially given
+        // that the Integrity verdicts will always fail anyway.
+        if (!BuildConfig.MOZILLA_OFFICIAL) {
+            return
+        }
         runOnVisualCompleteness(queue) {
             GlobalScope.launch(IO) {
-                components.integrityClient.warmUp()
+                val start = System.currentTimeMillis()
+                val result = components.integrityClient.warmUp()
+                Integrity.warmedUp.record(
+                    Integrity.WarmedUpExtra(
+                        durationMs = (System.currentTimeMillis() - start).toInt(),
+                        success = result,
+                        ),
+                    )
             }
         }
+    }
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalAndroidComponentsApi::class) // GlobalScope usage
     private fun queueNimbusFetchInForeground(queue: RunWhenReadyQueue) =
@@ -900,6 +921,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             adjustCreative.set(settings.adjustCreative)
             adjustNetwork.set(settings.adjustNetwork)
 
+            settings.migrateDeleteDownloadBehaviorIfNeeded()
             settings.migrateSearchWidgetInstalledPrefIfNeeded()
             searchWidgetInstalled.set(settings.searchWidgetInstalled)
 
@@ -970,6 +992,16 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             enabled.set(autofillUseCases.isEnabled(applicationContext))
         }
 
+        val summarizeSettings = SummarizationSettings.dataStore(applicationContext)
+        UserAiSummarize.summarizationEnabled.set(summarizeSettings.getFeatureEnabledUserStatus().first())
+        UserAiSummarize.gestureEnabled.set(summarizeSettings.getGestureEnabledUserStatus().first())
+        UserAiSummarize.summarizationConsented.set(summarizeSettings.getHasConsentedToShake().first())
+
+        Browser.globalAiControlIsBlocking.set(components.aiControlsFeatureBlock.isBlocked.first())
+        components.aiFeatureRegistry.getFeatures().forEach { feature ->
+            GenaiAiControls.featuresBlocked[feature.id.value].set(!feature.isEnabled.first())
+        }
+
         browserStore.waitForSelectedOrDefaultSearchEngine { searchEngine ->
             searchEngine?.let {
                 val sendSearchUrl =
@@ -990,6 +1022,32 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                     SearchDefaultEngine.apply {
                         code.set(searchEngine.id)
                         name.set("custom")
+                    }
+                }
+
+                val privateSearchEngine =
+                    browserStore.state.search.selectedOrDefaultPrivateSearchEngine
+                privateSearchEngine?.let { privateEngine ->
+                    val isSameAsDefault = privateEngine.id == searchEngine.id
+                    val sendPrivateSearchUrl =
+                        !privateEngine.isCustomEngine() || privateEngine.isKnownSearchDomain()
+                    if (sendPrivateSearchUrl) {
+                        SearchDefaultEngineForPrivate.apply {
+                            code.set(
+                                if (privateEngine.telemetrySuffix.isNullOrEmpty()) {
+                                    privateEngine.id
+                                } else {
+                                    "${privateEngine.id}-${privateEngine.telemetrySuffix}"
+                                },
+                            )
+                            name.set(if (isSameAsDefault) "default" else privateEngine.name)
+                            searchUrl.set(privateEngine.buildSearchUrl(""))
+                        }
+                    } else {
+                        SearchDefaultEngineForPrivate.apply {
+                            code.set(privateEngine.id)
+                            name.set(if (isSameAsDefault) "default" else "custom")
+                        }
                     }
                 }
             }
@@ -1048,7 +1106,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             browsingHistorySuggestion.set(settings.shouldShowHistorySuggestions)
             bookmarksSuggestion.set(settings.shouldShowBookmarkSuggestions)
             clipboardSuggestionsEnabled.set(settings.shouldShowClipboardSuggestions)
-            searchShortcutsEnabled.set(settings.shouldShowSearchShortcuts)
             voiceSearchEnabled.set(settings.shouldShowVoiceSearch)
             openLinksInAppEnabled.set(settings.openLinksInExternalApp)
             signedInSync.set(settings.signedInFxaAccount)

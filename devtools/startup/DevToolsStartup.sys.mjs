@@ -211,7 +211,7 @@ ChromeUtils.defineLazyGetter(lazy, "KeyShortcuts", function () {
   // but also from the web page when it is focused.
   if (
     Services.prefs.getBoolPref(
-      "devtools.debugger.features.javascript-tracing",
+      "devtools.command-button-jstracer.enabled",
       false
     )
   ) {
@@ -1453,6 +1453,10 @@ const JsonView = {
             ) /* private browsing ? */,
             Services.scriptSecurityManager.getSystemPrincipal()
           );
+          // Close the persist document to tear down the IPC actor
+          // that otherwise prevents the content window from being
+          // destroyed until GC runs.
+          doc.close();
         },
         onError() {
           throw new Error("JSON Viewer's onSave failed in startPersistence");

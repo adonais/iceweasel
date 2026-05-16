@@ -49,8 +49,19 @@ test_newtab({
     ]);
   },
   test: function test_render_logo_false() {
+    // @nova-cleanup(remove-pref): Remove novaEnabled detection
+    const novaEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.nova.enabled",
+      false
+    );
+
     let logoWordmark = content.document.querySelector(".logo-and-wordmark");
-    ok(!logoWordmark, "The logo is not rendered when pref is false");
+    // @nova-cleanup(remove-conditional): Remove novaEnabled check; always assert logo is rendered
+    if (!novaEnabled) {
+      ok(!logoWordmark, "The logo is not rendered when pref is false");
+    } else {
+      ok(logoWordmark, "The logo is always rendered when Nova is enabled.");
+    }
   },
 });
 

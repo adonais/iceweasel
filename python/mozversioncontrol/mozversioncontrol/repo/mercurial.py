@@ -288,6 +288,7 @@ class HgRepository(Repository):
         self,
         remote: Optional[str] = None,
         ref: Optional[str] = None,
+        dest_branch: Optional[str] = None,
         force: bool = False,
     ):
         if ref and not remote:

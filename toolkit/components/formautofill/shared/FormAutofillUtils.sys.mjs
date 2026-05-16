@@ -212,15 +212,8 @@ FormAutofillUtils = {
   },
 
   isValidSection(fieldDetails) {
-    // If one of the fields has the autocomplete reason, the section is valid,
-    // except for email fields since those are often login forms.
-    // Bug 2008553 - should find a way to display an email dropdown if this
-    // isn't a login form.
-    if (
-      fieldDetails.some(
-        f => f.reason == "autocomplete" && f.fieldName != "email"
-      )
-    ) {
+    // If one of the fields has the autocomplete reason, the section is valid.
+    if (fieldDetails.some(f => f.reason == "autocomplete")) {
       return true;
     }
 

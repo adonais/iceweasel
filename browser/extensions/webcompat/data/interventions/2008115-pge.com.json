@@ -1,0 +1,17 @@
+{
+  "label": "pge.com",
+  "bugs": {
+    "2008115": {
+      "issue": "unsupported-warning",
+      "matches": ["*://www.pge.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug2008115-pge.com-hide-unsupported-message.css"]
+      }
+    }
+  ]
+}

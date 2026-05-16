@@ -92,7 +92,7 @@ index d9a6d09e60..a7c1764c51 100644
      // Returns the number of capabilities this device.
      virtual int32_t NumberOfCapabilities(const char* deviceUniqueIdUTF8) = 0;
 diff --git a/modules/video_capture/windows/device_info_ds.cc b/modules/video_capture/windows/device_info_ds.cc
-index 1904c3fac2..9fdc647259 100644
+index fcb9869f32..1a7098e3bf 100644
 --- a/modules/video_capture/windows/device_info_ds.cc
 +++ b/modules/video_capture/windows/device_info_ds.cc
 @@ -173,7 +173,8 @@ int32_t DeviceInfoDS::GetDeviceName(uint32_t deviceNumber,

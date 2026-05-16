@@ -195,6 +195,11 @@ class AttachmentDownloader extends Downloader {
       delete: async attachmentId => {
         return this._client.db.saveAttachment(attachmentId, null);
       },
+      deleteMultiple: async attachmentIds => {
+        return this._client.db.saveAttachments(
+          attachmentIds.map(id => [id, null])
+        );
+      },
       prune: async excludeIds => {
         return this._client.db.pruneAttachments(excludeIds);
       },
@@ -247,9 +252,10 @@ class AttachmentDownloader extends Downloader {
    */
   async deleteAll() {
     let allRecords = await this._client.db.list();
-    return Promise.all(
-      allRecords.filter(r => !!r.attachment).map(r => this.deleteDownloaded(r))
-    );
+    const idsToDelete = allRecords.filter(r => !!r.attachment).map(r => r.id);
+    if (idsToDelete.length) {
+      await this.cacheImpl.deleteMultiple(idsToDelete);
+    }
   }
 }
 

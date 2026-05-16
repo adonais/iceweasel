@@ -222,7 +222,7 @@ add_task(async function dragSelect() {
   gURLBar.value = exampleSearch.repeat(10);
   // Drags from an artibrary offset of 30 to test for bug 1562145: that the
   // selection does not start at the beginning.
-  await drag(gURLBar.inputField, 30, 0, 60, 0);
+  await drag(gURLBar.inputField, 30, 10, 60, 10);
   Assert.greater(
     gURLBar.selectionStart,
     0,
@@ -260,7 +260,7 @@ add_task(async function dragAfterSelectAll() {
   checkPrimarySelection();
 
   // The offset of 30 is arbitrary.
-  await drag(gURLBar.inputField, 30, 0, 60, 0);
+  await drag(gURLBar.inputField, 30, 10, 60, 10);
 
   Assert.notEqual(
     gURLBar.selectionStart,

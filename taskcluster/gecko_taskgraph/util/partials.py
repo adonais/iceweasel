@@ -85,7 +85,8 @@ def get_partials_artifacts_from_params(release_history, platform, locale):
     platform = _sanitize_platform(platform)
     return [
         (artifact, details.get("previousVersion", None))
-        for artifact, details in release_history.get(platform, {})
+        for artifact, details in release_history
+        .get(platform, {})
         .get(locale, {})
         .items()
     ]

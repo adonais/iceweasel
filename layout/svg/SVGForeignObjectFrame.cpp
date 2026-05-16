@@ -347,7 +347,7 @@ void SVGForeignObjectFrame::NotifySVGChanged(ChangeFlags aFlags) {
 }
 
 SVGBBox SVGForeignObjectFrame::GetBBoxContribution(
-    const Matrix& aToBBoxUserspace, uint32_t aFlags) {
+    const Matrix& aToBBoxUserspace, SVGBBoxFlags aFlags) {
   SVGForeignObjectElement* content =
       static_cast<SVGForeignObjectElement*>(GetContent());
 

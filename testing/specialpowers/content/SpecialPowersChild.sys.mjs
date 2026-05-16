@@ -2249,6 +2249,21 @@ export class SpecialPowersChild extends JSWindowActorChild {
     }
     return Promise.resolve();
   }
+
+  /**
+   * Gets the privileged button inside an <input> element
+   * (clear / reveal / number spinner).
+   *
+   * @param {HTMLInputElement} input
+   * @returns {HTMLButtonElement?} the privileged button, if any.
+   */
+  getInputButton(input) {
+    if (ChromeUtils.getClassName(input) != "HTMLInputElement") {
+      throw new Error("Not an <input> element");
+    }
+    let children = InspectorUtils.getChildrenForNode(input, true, false);
+    return children.find(e => e.localName == "button");
+  }
 }
 
 SpecialPowersChild.prototype._proxiedObservers = {

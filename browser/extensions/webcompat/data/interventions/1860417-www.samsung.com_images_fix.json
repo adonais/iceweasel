@@ -1,0 +1,17 @@
+{
+  "label": "www.samsung.com (images fix)",
+  "bugs": {
+    "1860417": {
+      "issue": "broken-images",
+      "matches": ["*://www.samsung.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "js": ["bug1799968-www.samsung.com-appVersion-linux-fix.js"]
+      }
+    }
+  ]
+}

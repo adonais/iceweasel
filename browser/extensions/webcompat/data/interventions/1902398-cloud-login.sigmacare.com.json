@@ -1,0 +1,19 @@
+{
+  "label": "cloud-login.sigmacare.com",
+  "bugs": {
+    "1902398": {
+      "issue": "unsupported-warning",
+      "matches": ["*://cloud-login.sigmacare.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": [
+          "bug1902398-cloud-login.sigmacare.com-hide-unsupported-message.css"
+        ]
+      }
+    }
+  ]
+}

@@ -67,6 +67,9 @@ skip-if = [
 ["browser_bookmark_change_location.js"]
 
 ["browser_bookmark_context_menu_contents.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200'", # Bug 2019745
+]
 
 ["browser_bookmark_copy_folder_tree.js"]
 tags = "os_integration"
@@ -234,7 +237,10 @@ https_first_disabled = true
 
 ["browser_remove_bookmarks.js"]
 
+["browser_sidebar_bookmarks_glean.js"]
+
 ["browser_sidebar_bookmarks_telemetry.js"]
+disabled = "Bug 2036783"
 
 ["browser_sidebar_history_telemetry.js"]
 

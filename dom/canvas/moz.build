@@ -219,8 +219,11 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
 LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
 
 if CONFIG["CC_TYPE"] in ("clang", "clang-cl"):
-    CXXFLAGS += ["-Werror=implicit-int-conversion", "-Wno-shorten-64-to-32"]
-    CXXFLAGS += ["-Werror=switch"]
+    COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += [
+        "-Werror=implicit-int-conversion",
+        "-Werror=switch",
+        "-Wno-shorten-64-to-32",
+    ]
 
 if CONFIG["CC_TYPE"] == "gcc":
     CXXFLAGS += ["-Wno-error=unused-result"]  # GCC doesn't ignore (void)MustUse();

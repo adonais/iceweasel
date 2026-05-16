@@ -405,8 +405,10 @@ class TooltipsOverlay {
    *
    * @param  {DOMNode} target
    *         The currently hovered node
-   * @return {boolean}
-   *         true if shown, false otherwise.
+   * @return {boolean|Element}
+   *         This returns either a boolean, that indicate if the tooltip should be shown,
+   *         or an Element which should be used as the anchor for the tooltip (in case
+   *         this needs to be different from `target`).
    */
   async onInteractiveTooltipTargetHover(target) {
     if (target.classList.contains("ruleview-compatibility-warning")) {
@@ -454,7 +456,10 @@ class TooltipsOverlay {
 
     if (type === TOOLTIP_CSS_QUERY_CONTAINER) {
       // Ensure this is the correct node and not a parent.
-      if (!target.closest(".container-query .container-query-declaration")) {
+      const conditionEl = target.closest(
+        ".container-query .container-condition"
+      );
+      if (!conditionEl) {
         return false;
       }
 
@@ -465,7 +470,11 @@ class TooltipsOverlay {
 
       this.sendOpenScalarToTelemetry(type);
 
-      return true;
+      // We want the tooltip to be displayed if a child of the condition element is hovered
+      // (for example the "jump to" button), but we want the tooltip to always be anchored
+      // to the condition element as we're using the .tooltip-anchor class to style the
+      // condition when showing the tooltip
+      return conditionEl;
     }
 
     if (type === TOOLTIP_CSS_SELECTOR_WARNINGS) {

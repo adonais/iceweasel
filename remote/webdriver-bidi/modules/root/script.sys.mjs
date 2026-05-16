@@ -14,12 +14,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
+  isParentProcess:
+    "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   OwnershipModel: "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
   processExtraData:
     "chrome://remote/content/webdriver-bidi/modules/Intercept.sys.mjs",
   RealmType: "chrome://remote/content/shared/Realm.sys.mjs",
+  RemoteAgent: "chrome://remote/content/components/RemoteAgent.sys.mjs",
   SessionDataMethod:
     "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   setDefaultAndAssertSerializationOptions:
@@ -455,6 +458,10 @@ class ScriptModule extends RootBiDiModule {
       supportsChromeScope: true,
     });
 
+    // Bug 2030901: this check should be handled by getContextFromTarget via
+    // _getNavigable, but at the moment this would regress other commands.
+    this.#assertParentProcessScriptAccess(context);
+
     const serializationOptionsWithDefaults =
       lazy.setDefaultAndAssertSerializationOptions(serializationOptions);
 
@@ -576,6 +583,10 @@ class ScriptModule extends RootBiDiModule {
       supportsChromeScope: true,
     });
 
+    // Bug 2030901: this check should be handled by getContextFromTarget via
+    // _getNavigable, but at the moment this would regress other commands.
+    this.#assertParentProcessScriptAccess(context);
+
     const serializationOptionsWithDefaults =
       lazy.setDefaultAndAssertSerializationOptions(serializationOptions);
 
@@ -688,15 +699,23 @@ class ScriptModule extends RootBiDiModule {
         );
       }
 
-      // Remove this check when other realm types are supported
-      if (type !== lazy.RealmType.Window) {
+      const unsupportedRealmTypes = [
+        lazy.RealmType.AudioWorklet,
+        lazy.RealmType.PaintWorklet,
+        lazy.RealmType.Worker,
+        lazy.RealmType.Worklet,
+      ];
+      if (unsupportedRealmTypes.includes(type)) {
         throw new lazy.error.UnsupportedOperationError(
-          `Unsupported "type": ${type}. Only "type" ${lazy.RealmType.Window} is currently supported.`
+          `Unsupported "type": ${type}`
         );
       }
     }
 
-    return { realms: await this.#getRealmInfos(destination) };
+    const realms = await this.#getRealmInfos(destination);
+    return {
+      realms: type === null ? realms : realms.filter(r => r.type === type),
+    };
   }
 
   /**
@@ -808,6 +827,16 @@ class ScriptModule extends RootBiDiModule {
     return true;
   }
 
+  #assertParentProcessScriptAccess(context) {
+    // `supportsChromeScope` only checks browsingContext.isContent, but about
+    // pages can have isContent=true but still run in parent process.
+    if (!lazy.RemoteAgent.allowSystemAccess && lazy.isParentProcess(context)) {
+      throw new lazy.error.UnsupportedOperationError(
+        `script.evaluate and script.callFunction are not supported for parent process browsing contexts: ${context.id}`
+      );
+    }
+  }
+
   #assertResultOwnership(resultOwnership) {
     if (
       ![lazy.OwnershipModel.None, lazy.OwnershipModel.Root].includes(
@@ -904,7 +933,7 @@ class ScriptModule extends RootBiDiModule {
         type: lazy.ContextDescriptorType.All,
       },
     };
-    const realmInfos = await this.#getRealmInfos(destination);
+    const realmInfos = await this.#getWindowRealmInfos(destination);
     const realm = realmInfos.find(info => info.realm == realmId);
 
     if (realm && realm.context !== null) {
@@ -915,6 +944,12 @@ class ScriptModule extends RootBiDiModule {
   }
 
   async #getRealmInfos(destination) {
+    const windowRealms = await this.#getWindowRealmInfos(destination);
+    const workerRealms = this.#getWorkerRealmInfos(destination);
+    return [...windowRealms, ...workerRealms];
+  }
+
+  async #getWindowRealmInfos(destination) {
     let realms = await this.messageHandler.forwardCommand({
       moduleName: "script",
       commandName: "getWindowRealms",
@@ -940,6 +975,60 @@ class ScriptModule extends RootBiDiModule {
         return realm;
       })
       .filter(realm => realm.context !== null);
+  }
+
+  #getWorkerRealmInfo(workerData) {
+    const { id, type, url } = workerData;
+
+    const realmInfo = {
+      origin: url,
+      realm: id,
+    };
+
+    switch (type) {
+      case Ci.nsIWorkerDebugger.TYPE_DEDICATED: {
+        const owners = this.#getWorkerOwners(workerData);
+        realmInfo.owners = owners;
+        realmInfo.type = lazy.RealmType.DedicatedWorker;
+        break;
+      }
+      case Ci.nsIWorkerDebugger.TYPE_SHARED: {
+        realmInfo.type = lazy.RealmType.SharedWorker;
+        break;
+      }
+      case Ci.nsIWorkerDebugger.TYPE_SERVICE: {
+        realmInfo.type = lazy.RealmType.ServiceWorker;
+        break;
+      }
+      default:
+        throw new Error(`Unexpected worker type ${type}`);
+    }
+
+    return realmInfo;
+  }
+
+  #getWorkerRealmInfos(destination) {
+    const workers = lazy.workerListenerRegistry.getWorkers();
+    const realmInfos = [];
+
+    for (const workerData of workers) {
+      if (workerData.isChrome) {
+        // Bug 2016576: Support workers for chrome scope.
+        continue;
+      }
+
+      if (destination.id !== undefined) {
+        const workerBrowsingContextIds =
+          this.#getWorkerBrowsingContexts(workerData);
+        if (!workerBrowsingContextIds.includes(destination.id)) {
+          continue;
+        }
+      }
+
+      realmInfos.push(this.#getWorkerRealmInfo(workerData));
+    }
+
+    return realmInfos;
   }
 
   /**
@@ -1043,43 +1132,15 @@ class ScriptModule extends RootBiDiModule {
   };
 
   #onWorkerRegistered = (eventName, workerData) => {
-    const { id, isChrome, type, url } = workerData;
-
-    if (isChrome) {
+    if (workerData.isChrome) {
       // Bug 2016576: Support workers for chrome scope.
       return;
-    }
-
-    const realmInfo = {};
-    switch (type) {
-      case Ci.nsIWorkerDebugger.TYPE_DEDICATED: {
-        const owners = this.#getWorkerOwners(workerData);
-        realmInfo.origin = url;
-        realmInfo.owners = owners;
-        realmInfo.realm = id;
-        realmInfo.type = lazy.RealmType.DedicatedWorker;
-        break;
-      }
-      case Ci.nsIWorkerDebugger.TYPE_SHARED: {
-        realmInfo.origin = url;
-        realmInfo.realm = id;
-        realmInfo.type = lazy.RealmType.SharedWorker;
-        break;
-      }
-      case Ci.nsIWorkerDebugger.TYPE_SERVICE: {
-        realmInfo.origin = url;
-        realmInfo.realm = id;
-        realmInfo.type = lazy.RealmType.ServiceWorker;
-        break;
-      }
-      default:
-        throw new Error(`Unexpected worker type ${type}`);
     }
 
     this._emitEventForBrowsingContexts(
       this.#getWorkerBrowsingContexts(workerData),
       "script.realmCreated",
-      realmInfo
+      this.#getWorkerRealmInfo(workerData)
     );
   };
 

@@ -9,11 +9,42 @@ const { sinon } = ChromeUtils.importESModule(
 const { BackupService } = ChromeUtils.importESModule(
   "resource:///modules/backup/BackupService.sys.mjs"
 );
+const { OSKeyStoreTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/OSKeyStoreTestUtils.sys.mjs"
+);
+const { MockRegistrar } = ChromeUtils.importESModule(
+  "resource://testing-common/MockRegistrar.sys.mjs"
+);
 
 const execProcess = sinon.fake();
 
 add_setup(async () => {
   await initSelectableProfileService();
+
+  // During our unit tests, we're not interested in showing OSKeyStore
+  // authentication dialogs, nor are we interested in actually using the "real"
+  // OSKeyStore. We instead swap in our own implementation of nsIOSKeyStore
+  // which provides some stubbed out values. We also set up OSKeyStoreTestUtils
+  // which will suppress any reauthentication dialogs.
+  const fakeOSKeyStore = {
+    asyncEncryptBytes: sinon.stub(),
+    asyncDecryptBytes: sinon.stub(),
+    asyncDeleteSecret: sinon.stub().resolves(),
+    asyncSecretAvailable: sinon.stub().resolves(true),
+    asyncGetRecoveryPhrase: sinon.stub().resolves("SomeRecoveryPhrase"),
+    asyncRecoverSecret: sinon.stub().resolves(),
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIOSKeyStore]),
+  };
+  let osKeyStoreCID = MockRegistrar.register(
+    "@mozilla.org/security/oskeystore;1",
+    fakeOSKeyStore
+  );
+
+  OSKeyStoreTestUtils.setup();
+  registerCleanupFunction(async () => {
+    await OSKeyStoreTestUtils.cleanup();
+    MockRegistrar.unregister(osKeyStoreCID);
+  });
 
   sinon.replace(getSelectableProfileService(), "execProcess", execProcess);
 });

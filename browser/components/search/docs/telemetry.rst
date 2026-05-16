@@ -104,7 +104,8 @@ SEARCH_COUNTS - SAP usage
     - ``urlbar-handoff`` Used when searching from about:newtab.
     - ``urlbar-persisted`` Used when searching from the Urlbar while it
       was in a Persisted Search state.
-    - ``urlbar-searchmode`` Used when the Urlbar is in search mode.
+    - ``urlbar-searchmode`` Used when the Urlbar is in search mode or the search
+      was started using the unified search button popup.
     - ``webextension``
 
 browser.engagement.navigation.*

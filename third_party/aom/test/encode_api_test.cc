@@ -9,12 +9,14 @@
  * PATENTS file, you can obtain it at www.aomedia.org/license/patent.
  */
 
+#include <array>
 #include <cassert>
 #include <climits>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <tuple>
 
 #include "gtest/gtest.h"
@@ -42,6 +44,42 @@ static void *Memset16(void *dest, int val, size_t length) {
   uint16_t *dest16 = (uint16_t *)dest;
   for (size_t i = 0; i < length; ++i) *dest16++ = val;
   return dest;
+}
+
+static void FillImage(aom_image_t *img, uint8_t val) {
+  for (int p = 0; p < 3; ++p) {
+    uint8_t *buf = img->planes[p];
+    const int h = p == 0 ? (int)img->d_h : (int)((img->d_h + 1) / 2);
+    const int w = p == 0 ? (int)img->d_w : (int)((img->d_w + 1) / 2);
+    for (int r = 0; r < h; ++r) {
+      memset(buf, val, w);
+      buf += img->stride[p];
+    }
+  }
+}
+
+static void SetSvc(aom_codec_ctx_t *codec, int num_sl, const int *num,
+                   const int *den, const int *bitrates) {
+  aom_svc_params_t sp = {};
+  sp.number_spatial_layers = num_sl;
+  sp.number_temporal_layers = 1;
+  sp.framerate_factor[0] = 1;
+  for (int i = 0; i < num_sl; ++i) {
+    sp.scaling_factor_num[i] = num[i];
+    sp.scaling_factor_den[i] = den[i];
+    sp.max_quantizers[i] = 56;
+    sp.min_quantizers[i] = 2;
+    sp.layer_target_bitrate[i] = bitrates[i];
+  }
+  ASSERT_EQ(aom_codec_control(codec, AV1E_SET_SVC_PARAMS, &sp), AOM_CODEC_OK);
+}
+
+static void EncodeOne(aom_codec_ctx_t *codec, aom_image_t *img,
+                      aom_codec_pts_t pts) {
+  ASSERT_EQ(aom_codec_encode(codec, img, pts, 1, 0), AOM_CODEC_OK);
+  aom_codec_iter_t iter = NULL;
+  while (aom_codec_get_cx_data(codec, &iter) != NULL) {
+  }
 }
 
 TEST(EncodeAPI, InvalidParams) {
@@ -190,19 +228,98 @@ TEST(EncodeAPI, InvalidControlId) {
   EXPECT_EQ(AOM_CODEC_OK, aom_codec_destroy(&enc));
 }
 
-TEST(EncodeAPI, TuneIqNotAllIntra) {
-  aom_codec_iface_t *iface = aom_codec_av1_cx();
+TEST(EncodeAPI, InvalidUVStrides) {
+  static constexpr std::array<aom_img_fmt_t, 9> kAv1ImageFormats = {
+    AOM_IMG_FMT_YV12,   AOM_IMG_FMT_I420,   AOM_IMG_FMT_I422,
+    AOM_IMG_FMT_I444,   AOM_IMG_FMT_NV12,   AOM_IMG_FMT_I42016,
+    AOM_IMG_FMT_YV1216, AOM_IMG_FMT_I42216, AOM_IMG_FMT_I44416
+  };
+  struct UVStride {
+    int u_stride;
+    int v_stride;
+  };
+  constexpr int kWidth = 64;
+  constexpr int kHeight = 64;
+  static constexpr std::array<UVStride, 4> kUVStrides = {
+    UVStride{ kWidth, kWidth - 1 }, UVStride{ kWidth, kWidth + 1 },
+    UVStride{ kWidth - 1, kWidth }, UVStride{ kWidth + 1, kWidth }
+  };
+  aom_image_t img;
+  aom_codec_ctx_t enc;
   aom_codec_enc_cfg_t cfg;
-  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+  // Allocate a buffer large enough for a non-subsampled, high bitdepth image.
+  auto buf = std::make_unique<uint8_t[]>(kWidth * kHeight * 3 * 2);
+
+  ASSERT_EQ(aom_codec_enc_config_default(aom_codec_av1_cx(), &cfg,
+                                         /*usage=*/AOM_USAGE_REALTIME),
             AOM_CODEC_OK);
 
-  aom_codec_ctx_t enc;
-  ASSERT_EQ(aom_codec_enc_init(&enc, iface, &cfg, 0), AOM_CODEC_OK);
+  for (const auto img_fmt : kAv1ImageFormats) {
+    const bool high_bit_depth =
+        (img_fmt & AOM_IMG_FMT_HIGHBITDEPTH) == AOM_IMG_FMT_HIGHBITDEPTH;
+    if (high_bit_depth && !(aom_codec_get_caps(aom_codec_av1_cx()) &
+                            AOM_CODEC_CAP_HIGHBITDEPTH)) {
+      break;
+    }
+    ASSERT_EQ(aom_img_wrap(&img, img_fmt, kWidth, kHeight, /*stride_align=*/1,
+                           buf.get()),
+              &img)
+        << "Unable to wrap aom_image for format: " << img_fmt;
+    const bool is_444 = (img.x_chroma_shift == 0 && img.y_chroma_shift == 0);
+    const bool is_422 = (img.x_chroma_shift == 1 && img.y_chroma_shift == 0);
+    // 4:4:4 is allowed in profile 1, 4:2:2 in profile 2.
+    cfg.g_profile = is_444 + 2 * is_422;
+    cfg.g_w = kWidth;
+    cfg.g_h = kHeight;
+    cfg.g_bit_depth = high_bit_depth ? AOM_BITS_10 : AOM_BITS_8;
+    // Monochrome is not allowed in profile 1.
+    const unsigned int max_monochrome = (cfg.g_profile == 1) ? 0u : 1u;
+    for (cfg.monochrome = 0; cfg.monochrome <= max_monochrome;
+         ++cfg.monochrome) {
+      ASSERT_EQ(
+          aom_codec_enc_init(&enc, aom_codec_av1_cx(), &cfg,
+                             high_bit_depth ? AOM_CODEC_USE_HIGHBITDEPTH : 0),
+          AOM_CODEC_OK)
+          << " high_bit_depth: " << high_bit_depth;
 
-  ASSERT_EQ(aom_codec_control(&enc, AOME_SET_TUNING, AOM_TUNE_SSIMULACRA2),
-            AOM_CODEC_INCAPABLE);
+      for (const auto uv_stride : kUVStrides) {
+        const UVStride orig = { img.stride[AOM_PLANE_U],
+                                img.stride[AOM_PLANE_V] };
+        img.stride[AOM_PLANE_U] = uv_stride.u_stride;
+        img.stride[AOM_PLANE_V] =
+            (img_fmt == AOM_IMG_FMT_NV12) ? 0 : uv_stride.v_stride;
+        img.monochrome = cfg.monochrome;
+        // Monochrome should ignore the U and V planes and NV12 only sets one
+        // stride value, they should always succeed.
+        const aom_codec_err_t expected_err =
+            (cfg.monochrome || img_fmt == AOM_IMG_FMT_NV12)
+                ? AOM_CODEC_OK
+                : AOM_CODEC_INVALID_PARAM;
+        EXPECT_EQ(aom_codec_encode(&enc, &img, /*pts=*/0, /*duration=*/1,
+                                   /*flags=*/0),
+                  expected_err)
+            << "Error: " << aom_codec_error_detail(&enc)
+            << ", format: " << img_fmt << ", U stride: " << uv_stride.u_stride
+            << ", V stride: " << uv_stride.v_stride;
 
-  ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+        // Ensure the encoder can recover when given valid strides.
+        img.stride[AOM_PLANE_U] = orig.u_stride;
+        img.stride[AOM_PLANE_V] = orig.v_stride;
+        EXPECT_EQ(aom_codec_encode(&enc, &img, /*pts=*/0, /*duration=*/1,
+                                   /*flags=*/0),
+                  AOM_CODEC_OK)
+            << "Error: " << aom_codec_error_detail(&enc)
+            << ", format: " << img_fmt << ", U stride: " << orig.u_stride
+            << ", V stride: " << orig.v_stride;
+      }
+
+      EXPECT_EQ(
+          aom_codec_encode(&enc, /*img=*/nullptr, /*pts=*/0, /*duration=*/0,
+                           /*flags=*/0),
+          AOM_CODEC_OK);
+      EXPECT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+    }
+  }
 }
 
 void EncodeSetSFrameOnFirstFrame(aom_img_fmt fmt, aom_codec_flags_t flag) {
@@ -1918,6 +2035,209 @@ TEST(EncodeAPI, SizeAlignOverflow) {
 
   aom_img_free(img);
   ASSERT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+}
+
+TEST(EncodeAPI, DynamicSvcAq0Issue499606109) {
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+
+  // Init at 1920x1080.
+  cfg.g_w = 1920;
+  cfg.g_h = 1080;
+  cfg.g_timebase.num = 1;
+  cfg.g_timebase.den = 30;
+  cfg.rc_end_usage = AOM_CBR;
+  cfg.rc_target_bitrate = 2000;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_error_resilient = 1;
+  cfg.g_threads = 1;
+  cfg.kf_max_dist = 3000;
+  cfg.kf_min_dist = 3000;
+  cfg.rc_dropframe_thresh = 30;
+
+  aom_codec_ctx_t codec;
+  ASSERT_EQ(aom_codec_enc_init(&codec, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&codec, AOME_SET_CPUUSED, 10), AOM_CODEC_OK);
+  ASSERT_EQ(
+      aom_codec_control(&codec, AV1E_SET_MAX_CONSEC_FRAME_DROP_MS_CBR, 34),
+      AOM_CODEC_OK);
+
+  // Phase 0: shrink to 640x360, 2 SLs. Frame 0 allocates
+  // source_last_TL0 at 640x360 (small buffer).
+  cfg.g_w = 640;
+  cfg.g_h = 360;
+  cfg.rc_target_bitrate = 500;
+  ASSERT_EQ(aom_codec_enc_config_set(&codec, &cfg), AOM_CODEC_OK);
+  {
+    const int num[] = { 1, 1 }, den[] = { 1, 1 }, br[] = { 200, 300 };
+    SetSvc(&codec, 2, num, den, br);
+  }
+  aom_codec_pts_t pts = 0;
+  aom_image_t *raw = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 640, 360, 1);
+  ASSERT_NE(raw, nullptr);
+  for (int f = 0; f < 3; ++f) {
+    for (int sl = 0; sl < 2; ++sl) {
+      aom_svc_layer_id_t lid = { sl, 0 };
+      ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_LAYER_ID, &lid),
+                AOM_CODEC_OK);
+      FillImage(raw, static_cast<uint8_t>(128 + f));
+      EncodeOne(&codec, raw, pts++);
+    }
+  }
+  aom_img_free(raw);
+
+  // Phase 1: grow to 1920x1080, 3 SLs. SL2 encoding sets
+  // mi_cols_full_resoln = 480, mi_rows_full_resoln = 270.
+  cfg.g_w = 1920;
+  cfg.g_h = 1080;
+  cfg.rc_target_bitrate = 2000;
+  ASSERT_EQ(aom_codec_enc_config_set(&codec, &cfg), AOM_CODEC_OK);
+  {
+    const int num[] = { 1, 2, 1 }, den[] = { 3, 3, 1 },
+              br[] = { 200, 500, 1300 };
+    SetSvc(&codec, 3, num, den, br);
+  }
+  raw = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 1920, 1080, 1);
+  ASSERT_NE(raw, nullptr);
+  for (int f = 0; f < 3; ++f) {
+    for (int sl = 0; sl < 3; ++sl) {
+      aom_svc_layer_id_t lid = { sl, 0 };
+      ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_LAYER_ID, &lid),
+                AOM_CODEC_OK);
+      FillImage(raw, static_cast<uint8_t>(64 + f));
+      EncodeOne(&codec, raw, pts++);
+    }
+  }
+  aom_img_free(raw);
+
+  // Phase 2: back to 640x360, 2 SLs. Encode SL0 only with mi_cols
+  // stays stale. Very low SL0 bitrate forces a frame drop.
+  // After the drop, next SL0 gets last_source = source_last_TL0
+  // (640x360 small buffer). SAD loop overruns it with OOB. */
+  cfg.g_w = 640;
+  cfg.g_h = 360;
+  cfg.rc_target_bitrate = 500;
+  ASSERT_EQ(aom_codec_enc_config_set(&codec, &cfg), AOM_CODEC_OK);
+  {
+    const int num[] = { 1, 1 }, den[] = { 1, 1 }, br[] = { 1, 499 };
+    SetSvc(&codec, 2, num, den, br);
+  }
+  raw = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 640, 360, 1);
+  ASSERT_NE(raw, nullptr);
+  for (int f = 0; f < 20; ++f) {
+    aom_svc_layer_id_t lid = { 0, 0 };
+    ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_LAYER_ID, &lid),
+              AOM_CODEC_OK);
+    FillImage(raw, static_cast<uint8_t>((f % 2 == 0) ? 16 : 235));
+    EncodeOne(&codec, raw, pts++);
+  }
+
+  aom_img_free(raw);
+  ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
+}
+
+TEST(EncodeAPI, DynamicSvcAq3Issue499606109) {
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+
+  // Init at 1920x1080.
+  cfg.g_w = 1920;
+  cfg.g_h = 1080;
+  cfg.g_timebase.num = 1;
+  cfg.g_timebase.den = 30;
+  cfg.rc_end_usage = AOM_CBR;
+  cfg.rc_target_bitrate = 2000;
+  cfg.g_lag_in_frames = 0;
+  cfg.g_error_resilient = 1;
+  cfg.g_threads = 1;
+  cfg.kf_max_dist = 3000;
+  cfg.kf_min_dist = 3000;
+  cfg.rc_dropframe_thresh = 30;
+
+  aom_codec_ctx_t codec;
+  ASSERT_EQ(aom_codec_enc_init(&codec, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&codec, AOME_SET_CPUUSED, 10), AOM_CODEC_OK);
+  ASSERT_EQ(
+      aom_codec_control(&codec, AV1E_SET_MAX_CONSEC_FRAME_DROP_MS_CBR, 34),
+      AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_AQ_MODE, 3), AOM_CODEC_OK);
+
+  // Phase 0: shrink to 640x360, 2 SLs. Frame 0 allocates
+  // source_last_TL0 at 640x360 (small buffer).
+  cfg.g_w = 640;
+  cfg.g_h = 360;
+  cfg.rc_target_bitrate = 500;
+  ASSERT_EQ(aom_codec_enc_config_set(&codec, &cfg), AOM_CODEC_OK);
+  {
+    const int num[] = { 1, 1 }, den[] = { 1, 1 }, br[] = { 200, 300 };
+    SetSvc(&codec, 2, num, den, br);
+  }
+  aom_codec_pts_t pts = 0;
+  aom_image_t *raw = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 640, 360, 1);
+  ASSERT_NE(raw, nullptr);
+  for (int f = 0; f < 3; ++f) {
+    for (int sl = 0; sl < 2; ++sl) {
+      aom_svc_layer_id_t lid = { sl, 0 };
+      ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_LAYER_ID, &lid),
+                AOM_CODEC_OK);
+      FillImage(raw, static_cast<uint8_t>(128 + f));
+      EncodeOne(&codec, raw, pts++);
+    }
+  }
+  aom_img_free(raw);
+
+  // Phase 1: grow to 1920x1080, 3 SLs. SL2 encoding sets
+  // mi_cols_full_resoln = 480, mi_rows_full_resoln = 270.
+  cfg.g_w = 1920;
+  cfg.g_h = 1080;
+  cfg.rc_target_bitrate = 2000;
+  ASSERT_EQ(aom_codec_enc_config_set(&codec, &cfg), AOM_CODEC_OK);
+  {
+    const int num[] = { 1, 2, 1 }, den[] = { 3, 3, 1 },
+              br[] = { 200, 500, 1300 };
+    SetSvc(&codec, 3, num, den, br);
+  }
+  raw = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 1920, 1080, 1);
+  ASSERT_NE(raw, nullptr);
+  for (int f = 0; f < 3; ++f) {
+    for (int sl = 0; sl < 3; ++sl) {
+      aom_svc_layer_id_t lid = { sl, 0 };
+      ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_LAYER_ID, &lid),
+                AOM_CODEC_OK);
+      FillImage(raw, static_cast<uint8_t>(64 + f));
+      EncodeOne(&codec, raw, pts++);
+    }
+  }
+  aom_img_free(raw);
+
+  // Phase 2: back to 640x360, 2 SLs. Encode SL0 only with mi_cols
+  // stays stale. Very low SL0 bitrate forces a frame drop.
+  // After the drop, next SL0 gets last_source = source_last_TL0
+  // (640x360 small buffer). SAD loop overruns it with OOB. */
+  cfg.g_w = 640;
+  cfg.g_h = 360;
+  cfg.rc_target_bitrate = 500;
+  ASSERT_EQ(aom_codec_enc_config_set(&codec, &cfg), AOM_CODEC_OK);
+  {
+    const int num[] = { 1, 1 }, den[] = { 1, 1 }, br[] = { 1, 499 };
+    SetSvc(&codec, 2, num, den, br);
+  }
+  raw = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 640, 360, 1);
+  ASSERT_NE(raw, nullptr);
+  for (int f = 0; f < 20; ++f) {
+    aom_svc_layer_id_t lid = { 0, 0 };
+    ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_LAYER_ID, &lid),
+              AOM_CODEC_OK);
+    FillImage(raw, static_cast<uint8_t>((f % 2 == 0) ? 16 : 235));
+    EncodeOne(&codec, raw, pts++);
+  }
+
+  aom_img_free(raw);
+  ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
 }
 
 }  // namespace

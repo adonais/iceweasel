@@ -28,8 +28,9 @@
 # ========
 # A list of operands for the MIR op class constructor. Each operand is a
 # MIR node. The operand kind is specified from the one of the kinds from
-# the MIRType enum in IonTypes.h. The specified types for the
-# operands will decide the type policy for the instruction.
+# the MIRType enum in IonTypes.h or `any` if the operand has no specific type.
+# The specified types for the operands will decide the type policy for the
+# instruction.
 #
 # The naming of operands is how the NAMED_OPERANDS macro will define
 # its operands.
@@ -515,7 +516,7 @@
 
 - name: AssertFloat32
   operands:
-    value: Value
+    value: any
   arguments:
     mustBeFloat32: bool
   result_type: None
@@ -1656,7 +1657,7 @@
 
 - name: BoxNonStrictThis
   operands:
-    def: Value
+    def: ValueOrObject
   arguments:
     globalThis: JSObject*
   result_type: Object
@@ -1929,7 +1930,6 @@
   result_type: Int32
   movable: true
   congruent_to: if_operands_equal
-  folds_to: custom
   alias_set:
     load: ObjectFields
   compute_range: custom
@@ -2376,25 +2376,6 @@
     iterator: Object
   result_type: Object
   can_recover: true
-
-# Used to fold Object.keys(obj).length into a single operation.
-#
-# This should not be used with a Proxy, as proxies can have a user-defined
-# `ownKeys` function which can have arbitrary outputs.
-#
-# This MIR node is created by folding an MObjectKeys with an MArrayLength, as
-# part of MArrayLength::foldsTo.
-- name: ObjectKeysLength
-  operands:
-    object: Object
-  result_type: Int32
-  movable: false
-  congruent_to: if_operands_equal
-  alias_set:
-    load: ObjectFields
-  clone: true
-  possibly_calls: true
-  generate_lir: true
 
 - name: LoadUnboxedScalar
   gen_boilerplate: false
@@ -3414,7 +3395,9 @@
   gen_boilerplate: false
 
 - name: GetIteratorCache
-  gen_boilerplate: false
+  operands:
+    value: ValueOrObject
+  result_type: Object
 
 - name: OptimizeSpreadCallCache
   operands:
@@ -3490,8 +3473,12 @@
 - name: HasOwnCache
   gen_boilerplate: false
 
+# Implementation for instanceof operator with specific rhs.
 - name: InstanceOf
-  gen_boilerplate: false
+  operands:
+    obj: ValueOrObject
+    proto: Object
+  result_type: Boolean
 
 # Implementation for instanceof operator with unknown rhs.
 - name: InstanceOfCache
@@ -3599,7 +3586,14 @@
   gen_boilerplate: false
 
 - name: IsCallable
-  gen_boilerplate: false
+  operands:
+    object: ValueOrObject
+  result_type: Boolean
+  movable: true
+  congruent_to: if_operands_equal
+  folds_to: custom
+  alias_set:
+    load: ObjectFields
 
 - name: IsConstructor
   operands:
@@ -3632,7 +3626,7 @@
 
 - name: IsNullOrUndefined
   operands:
-    value: Value
+    value: any
   result_type: Boolean
   movable: true
   folds_to: custom
@@ -3651,8 +3645,12 @@
 - name: GuardToFunction
   gen_boilerplate: false
 
+# Note: we might call a proxy trap, so this instruction is effectful.
 - name: IsArray
-  gen_boilerplate: false
+  operands:
+    value: ValueOrObject
+  result_type: Boolean
+  folds_to: custom
 
 - name: IsTypedArray
   gen_boilerplate: false
@@ -4743,6 +4741,47 @@
 - name: WasmReturnCall
   gen_boilerplate: false
 
+#ifdef ENABLE_WASM_JSPI
+- name: WasmFindHandler
+  operands:
+    instance: Pointer
+    tag: WasmAnyRef
+  arguments:
+    trap: wasm::Trap
+    trapSiteDesc: wasm::TrapSiteDesc
+  result_type: Pointer
+  movable: false
+  guard: true
+  type_policy: none
+  generate_lir: true
+  lir_temps: 4
+
+- name: WasmSuspend
+  operands:
+    instance: Pointer
+    suspendedCont: WasmAnyRef
+    handler: Pointer
+  arguments:
+    callSiteDesc: wasm::CallSiteDesc
+  type_policy: none
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 3
+
+- name: WasmResumeBarrier
+  operands:
+    instance: Pointer
+    cont: WasmAnyRef
+  movable: false
+  guard: true
+  type_policy: none
+  generate_lir: true
+  lir_temps: 1
+
+- name: WasmResume
+  gen_boilerplate: false
+#endif
+
 - name: WasmSelect
   gen_boilerplate: false
 
@@ -4751,37 +4790,6 @@
 
 - name: Rotate
   gen_boilerplate: false
-
-- name: WasmStackSwitchToMain
-  operands:
-    instance: Pointer
-    suspender: WasmAnyRef
-    fn: WasmAnyRef
-    data: WasmAnyRef
-  result_type: WasmAnyRef
-  type_policy: none
-  possibly_calls: true
-  generate_lir: true
-
-- name: WasmStackSwitchToSuspendable
-  operands:
-    instance: Pointer
-    suspender: WasmAnyRef
-    fn: WasmAnyRef
-    data: WasmAnyRef
-  type_policy: none
-  possibly_calls: true
-  generate_lir: true
-
-- name: WasmStackContinueOnSuspendable
-  operands:
-    instance: Pointer
-    suspender: WasmAnyRef
-    result: WasmAnyRef
-  type_policy: none
-  possibly_calls: true
-  generate_lir: true
-  lir_temps: 2
 
 - name: WasmBinarySimd128
   gen_boilerplate: false
@@ -4941,14 +4949,5 @@
   operands:
     environment: Object
   result_type: Value
-  generate_lir: true
-
-- name: CreateSuppressedError
-  operands:
-    error: Value
-    suppressed: Value
-  result_type: Object
-  alias_set: none
-  possibly_calls: true
   generate_lir: true
 #endif

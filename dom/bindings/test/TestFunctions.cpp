@@ -84,8 +84,8 @@ void TestFunctions::GetShortLiteralString(nsAString& aString) {
 
 void TestFunctions::GetMediumLiteralString(nsAString& aString) {
   // JS inline strings are at most 2 * sizeof(void*) chars, so at most 16 on
-  // 64-bit.  FakeString can hold 63 chars in its inline buffer (plus the null
-  // terminator).  Let's return 40 chars; that way if we ever move to 128-bit
+  // 64-bit. nsTAutoString can hold 63 chars in its inline buffer (plus the null
+  // terminator). Let's return 40 chars; that way if we ever move to 128-bit
   // void* or something this test will still be valid.
   aString.AssignLiteral(u"0123456789012345678901234567890123456789");
 }

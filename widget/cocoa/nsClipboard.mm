@@ -241,6 +241,30 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
         nsCocoaUtils::GetDataFromPasteboardItem(aFlavor, item));
   }
 
+  if (aFlavor.EqualsLiteral(kURLDataMime)) {
+    NSString* publicUrl = [UTIHelper stringFromPboardType:kPublicUrlPboardType];
+    NSString* pString = [aPasteboard stringForType:publicUrl];
+    if (!pString) {
+      return nsCOMPtr<nsISupports>{};
+    }
+
+    NSData* stringData = [pString dataUsingEncoding:NSUnicodeStringEncoding
+                               allowLossyConversion:YES];
+    unsigned int dataLength = [stringData length];
+    void* clipboardDataPtr = malloc(dataLength);
+    if (!clipboardDataPtr) {
+      return mozilla::Err(NS_ERROR_OUT_OF_MEMORY);
+    }
+    [stringData getBytes:clipboardDataPtr length:dataLength];
+
+    nsCOMPtr<nsISupports> genericDataWrapper;
+    nsPrimitiveHelpers::CreatePrimitiveForData(
+        aFlavor, clipboardDataPtr, dataLength,
+        getter_AddRefs(genericDataWrapper));
+    free(clipboardDataPtr);
+    return std::move(genericDataWrapper);
+  }
+
   if (aFlavor.EqualsLiteral(kCustomTypesMime)) {
     NSString* type = [aPasteboard
         availableTypeFromArray:
@@ -283,9 +307,9 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
                                      stringFromPboardType:(NSString*)
                                                               kUTTypeFileURL],
                                  [UTIHelper
-                                     stringFromPboardType:NSPasteboardTypeTIFF],
-                                 [UTIHelper
                                      stringFromPboardType:NSPasteboardTypePNG],
+                                 [UTIHelper
+                                     stringFromPboardType:NSPasteboardTypeTIFF],
                                  nil]];
     if (!type) {
       return nsCOMPtr<nsISupports>{};
@@ -308,6 +332,18 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
       outputType = CFSTR("com.compuserve.gif");
     } else {
       return nsCOMPtr<nsISupports>{};
+    }
+
+    // If the pasteboard data is already in the requested format, return it
+    // directly to avoid an ImageIO round-trip that applies color management
+    // and shifts pixel values (bug 1396587).
+    if ([type isEqualToString:(__bridge NSString*)outputType]) {
+      nsCOMPtr<nsIInputStream> byteStream;
+      NS_NewByteInputStream(getter_AddRefs(byteStream),
+                            mozilla::Span((const char*)[pasteboardData bytes],
+                                          [pasteboardData length]),
+                            NS_ASSIGNMENT_COPY);
+      return nsCOMPtr<nsISupports>(std::move(byteStream));
     }
 
     // Use ImageIO to interpret the data on the clipboard and transcode.
@@ -341,7 +377,20 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
       CFRelease(source);
       return nsCOMPtr<nsISupports>{};
     }
-    CGImageDestinationAddImageFromSource(dest, source, 0, NULL);
+    CGImageRef cgImage = CGImageSourceCreateImageAtIndex(source, 0, NULL);
+    if (!cgImage) {
+      CFRelease(dest);
+      CFRelease(source);
+      return nsCOMPtr<nsISupports>{};
+    }
+    CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    CGImageRef srgbImage = CGImageCreateCopyWithColorSpace(cgImage, srgb);
+    CGImageDestinationAddImage(dest, srgbImage ? srgbImage : cgImage, NULL);
+    CGColorSpaceRelease(srgb);
+    if (srgbImage) {
+      CGImageRelease(srgbImage);
+    }
+    CGImageRelease(cgImage);
 
     nsCOMPtr<nsIInputStream> byteStream;
     if (CGImageDestinationFinalize(dest)) {
@@ -506,6 +555,14 @@ nsClipboard::HasNativeClipboardDataMatchingFlavors(
             return true;
           }
         }
+      }
+    } else if (mimeType.EqualsLiteral(kURLDataMime)) {
+      NSString* availableType = [cocoaPasteboard availableTypeFromArray:@[
+        [UTIHelper stringFromPboardType:kPublicUrlPboardType]
+      ]];
+      if (availableType) {
+        MOZ_CLIPBOARD_LOG("    has %s\n", mimeType.get());
+        return true;
       }
     }
   }
@@ -816,6 +873,9 @@ bool nsClipboard::IsStringType(const nsACString& aMIMEType,
     return true;
   } else if (aMIMEType.EqualsLiteral(kHTMLMime)) {
     *aPboardType = [UTIHelper stringFromPboardType:NSPasteboardTypeHTML];
+    return true;
+  } else if (aMIMEType.EqualsLiteral(kURLDataMime)) {
+    *aPboardType = [UTIHelper stringFromPboardType:kPublicUrlPboardType];
     return true;
   } else {
     return false;

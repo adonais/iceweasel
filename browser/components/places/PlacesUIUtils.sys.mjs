@@ -1,4 +1,3 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -13,6 +12,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   CLIENT_NOT_CONFIGURED: "resource://services-sync/constants.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  ContentSharingUtils:
+    "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
@@ -24,7 +25,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Weave: "resource://services-sync/main.sys.mjs",
   WebNavigationManager: "resource://gre/modules/WebNavigation.sys.mjs",
 });
-
 const ITEM_CHANGED_BATCH_NOTIFICATION_THRESHOLD = 10;
 
 // copied from utilityOverlay.js
@@ -859,7 +859,7 @@ export var PlacesUIUtils = {
     }
     if (lazy.OpenInTabsUtils.confirmOpenInTabs(urlsToOpen.length, window)) {
       if (window.updateTelemetry) {
-        window.updateTelemetry(urlsToOpen);
+        window.updateTelemetry(urlsToOpen, true);
       }
       this.openTabset(urlsToOpen, event, window);
     }
@@ -1040,7 +1040,7 @@ export var PlacesUIUtils = {
    * @throws if aFetchInfo is representing a separator.
    */
   async promiseNodeLikeFromFetchInfo(aFetchInfo) {
-    if (aFetchInfo.itemType == lazy.PlacesUtils.bookmarks.TYPE_SEPARATOR) {
+    if (aFetchInfo.type == lazy.PlacesUtils.bookmarks.TYPE_SEPARATOR) {
       throw new Error("promiseNodeLike doesn't support separators");
     }
 
@@ -1055,7 +1055,7 @@ export var PlacesUIUtils = {
       uri: aFetchInfo.url !== undefined ? aFetchInfo.url.href : "",
 
       get type() {
-        if (aFetchInfo.itemType == lazy.PlacesUtils.bookmarks.TYPE_FOLDER) {
+        if (aFetchInfo.type == lazy.PlacesUtils.bookmarks.TYPE_FOLDER) {
           return Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER;
         }
 
@@ -1338,6 +1338,13 @@ export var PlacesUIUtils = {
     if (
       item.hasAttribute("hide-if-usercontext-disabled") &&
       !Services.prefs.getBoolPref("privacy.userContext.enabled", false)
+    ) {
+      return true;
+    }
+
+    if (
+      item.hasAttribute("hide-if-content-sharing-disabled") &&
+      !lazy.ContentSharingUtils.isEnabled
     ) {
       return true;
     }

@@ -13,7 +13,7 @@ info: |
     c. Let testResult be ! ToBoolean(? Call(predicate, thisArg, « kValue, 𝔽(k), O »)).
     ...
   7. Return -1.
-includes: [testBigIntTypedArray.js]
+includes: [testTypedArray.js]
 features: [BigInt, TypedArray, array-find-from-last]
 ---*/
 
@@ -36,6 +36,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
     result, -1,
     "returns -1 on an empty instance"
   );
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

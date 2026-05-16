@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -102,6 +100,15 @@
     /* flag force enable  */ false,                                     \
     /* flag fuzz enable   */ true,                                      \
     /* preference name    */ js_promise_integration)                    \
+  FEATURE(                                                              \
+    /* capitalized name   */ StackSwitching,                            \
+    /* lower case name    */ stackSwitching,                            \
+    /* compile predicate  */ WASM_JSPI_ENABLED,                         \
+    /* compiler predicate */ IonPlatformSupport(),                      \
+    /* flag predicate     */ true,                                      \
+    /* flag force enable  */ WasmJSPromiseIntegrationFlag(cx),          \
+    /* flag fuzz enable   */ true,                                      \
+    /* preference name    */ stack_switching)                           \
   FEATURE(                                                              \
     /* capitalized name   */ MozIntGemm,                                \
     /* lower case name    */ mozIntGemm,                                \

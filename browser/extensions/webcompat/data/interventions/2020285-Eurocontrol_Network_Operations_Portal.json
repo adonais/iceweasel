@@ -1,0 +1,20 @@
+{
+  "label": "Eurocontrol Network Operations Portal",
+  "bugs": {
+    "2020285": {
+      "issue": "page-fails-to-load",
+      "matches": ["*://www.public.nm.eurocontrol.int/PUBPORTAL/gateway/spec/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "js": ["bug2020285-eurocontrol-ua-override.js"],
+        "all_frames": true,
+        "match_origin_as_fallback": true,
+        "run_at": "document_start"
+      }
+    }
+  ]
+}

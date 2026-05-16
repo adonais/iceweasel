@@ -19,6 +19,7 @@ from textwrap import dedent
 import mozpack.path as mozpath
 import requests
 from mozbuild.base import BuildEnvironmentNotFoundException, MozbuildObject
+from mozbuild.util import set_taskcluster_root_url
 
 from .tasks import resolve_tests_by_suite
 from .util.ssh import get_ssh_user
@@ -348,6 +349,8 @@ class ExistingTasks(ParameterConfig):
     def find_decision_task(self, use_existing_tasks):
         from taskgraph.util import taskcluster
 
+        set_taskcluster_root_url()
+
         branch = "try"
         if use_existing_tasks == "last_try_push":
             # Use existing tasks from user's previous try push.
@@ -376,6 +379,8 @@ class ExistingTasks(ParameterConfig):
             return
 
         from taskgraph.util import taskcluster
+
+        set_taskcluster_root_url()
 
         if use_existing_tasks.startswith("task-id="):
             tid = use_existing_tasks[len("task-id=") :]

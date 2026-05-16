@@ -823,4 +823,47 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(true),
         )
     }
+
+    @Test
+    fun contentBlockingDatabaseStatus() {
+        val contentBlocking = sessionRule.runtime.settings.contentBlocking
+
+        assertThat(
+            "Expect correct default for contentBlockingDatabaseStatus value which is false",
+            contentBlocking.contentBlockingDatabaseStatus,
+            equalTo(false),
+        )
+
+        // Checks that the pref value is also consistent with the runtime settings
+        val originalContentBlockingDatabaseStatus = sessionRule.getPrefs(
+            "browser.contentblocking.database.enabled",
+        )
+        assertThat(
+            "Initial content blocking database status is correct",
+            originalContentBlockingDatabaseStatus[0],
+            equalTo(contentBlocking.contentBlockingDatabaseStatus),
+        )
+
+        // Change from the default value.
+        contentBlocking.setContentBlockingDatabaseStatus(true)
+        val updatedPref = sessionRule.getPrefs(
+            "browser.contentblocking.database.enabled",
+        )
+        assertThat(
+            "content blocking database status is updated",
+            updatedPref[0] as Boolean,
+            equalTo(true),
+        )
+
+        // Change the value again.
+        contentBlocking.setContentBlockingDatabaseStatus(false)
+        val newUpdatedPref = sessionRule.getPrefs(
+            "browser.contentblocking.database.enabled",
+        )
+        assertThat(
+            "content blocking database status is updated",
+            newUpdatedPref[0] as Boolean,
+            equalTo(false),
+        )
+    }
 }

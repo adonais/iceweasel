@@ -114,6 +114,7 @@
   color: var(--box-button-text-color);
   display: flex;
   padding: var(--box-padding);
+  gap: var(--space-small);
   text-align: start;
   border: none;
   border-start-start-radius: var(--box-border-radius-start, var(--box-border-radius-inner));

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -21,39 +19,9 @@ namespace detail {
 // This class only handles the incremental case and does not deal with nursery
 // pointers. The only users should be for NurseryAwareHashMap; it is defined
 // externally because we need a GCPolicy for its use in the contained map.
-template <typename T>
-class UnsafeBareWeakHeapPtr : public ReadBarriered<T> {
- public:
-  UnsafeBareWeakHeapPtr()
-      : ReadBarriered<T>(JS::SafelyInitialized<T>::create()) {}
-  MOZ_IMPLICIT UnsafeBareWeakHeapPtr(const T& v) : ReadBarriered<T>(v) {}
-  explicit UnsafeBareWeakHeapPtr(const UnsafeBareWeakHeapPtr& v)
-      : ReadBarriered<T>(v) {}
-  UnsafeBareWeakHeapPtr(UnsafeBareWeakHeapPtr&& v)
-      : ReadBarriered<T>(std::move(v)) {}
 
-  UnsafeBareWeakHeapPtr& operator=(const UnsafeBareWeakHeapPtr& v) {
-    this->value = v.value;
-    return *this;
-  }
+DEFINE_BARRIERED_PTR(UnsafeBareWeakHeapPtr, gc::BarrierOption_ReadBarrier);
 
-  UnsafeBareWeakHeapPtr& operator=(const T& v) {
-    this->value = v;
-    return *this;
-  }
-
-  const T get() const {
-    if (!InternalBarrierMethods<T>::isMarkable(this->value)) {
-      return JS::SafelyInitialized<T>::create();
-    }
-    this->read();
-    return this->value;
-  }
-
-  explicit operator bool() const { return bool(this->value); }
-
-  const T unbarrieredGet() const { return this->value; }
-};
 }  // namespace detail
 
 enum : bool { DuplicatesNotPossible, DuplicatesPossible };

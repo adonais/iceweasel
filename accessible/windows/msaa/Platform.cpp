@@ -313,6 +313,10 @@ bool a11y::GetInstantiator(nsIFile** aOutInstantiator) {
   return NS_SUCCEEDED(gInstantiator->Clone(aOutInstantiator));
 }
 
+void a11y::GetHumanReadableInstantiatorStr(nsAString& aResult) {
+  a11y::Compatibility::GetHumanReadableConsumersStr(aResult);
+}
+
 uint64_t a11y::GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
   // If we're instantiating because of a screen reader, enable all cache
   // domains. We expect that demanding ATs will need all information we have.

@@ -11,6 +11,10 @@
 #include "FuzzingInterface.h"
 #include "mozilla/Attributes.h"
 
+#ifdef AFLFUZZ
+#  include <fstream>
+#endif
+
 namespace mozilla {
 
 #ifdef JS_STANDALONE

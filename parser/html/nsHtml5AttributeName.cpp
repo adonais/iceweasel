@@ -208,6 +208,8 @@ nsHtml5AttributeName*
     nsHtml5AttributeName::ATTR_SHADOWROOTCUSTOMELEMENTREGISTRY = nullptr;
 nsHtml5AttributeName* nsHtml5AttributeName::ATTR_SHADOWROOTDELEGATESFOCUS =
     nullptr;
+nsHtml5AttributeName* nsHtml5AttributeName::ATTR_SHADOWROOTSLOTASSIGNMENT =
+    nullptr;
 nsHtml5AttributeName* nsHtml5AttributeName::ATTR_WORD_SPACING = nullptr;
 nsHtml5AttributeName* nsHtml5AttributeName::ATTR_ACCENTUNDER = nullptr;
 nsHtml5AttributeName* nsHtml5AttributeName::ATTR_ACCEPT_CHARSET = nullptr;
@@ -1058,6 +1060,10 @@ void nsHtml5AttributeName::initializeStatics() {
   ATTR_SHADOWROOTDELEGATESFOCUS = new nsHtml5AttributeName(
       ALL_NO_NS, nsGkAtoms::shadowrootdelegatesfocus,
       nsGkAtoms::shadowrootdelegatesfocus, nsGkAtoms::shadowrootdelegatesfocus,
+      ALL_NO_PREFIX);
+  ATTR_SHADOWROOTSLOTASSIGNMENT = new nsHtml5AttributeName(
+      ALL_NO_NS, nsGkAtoms::shadowrootslotassignment,
+      nsGkAtoms::shadowrootslotassignment, nsGkAtoms::shadowrootslotassignment,
       ALL_NO_PREFIX);
   ATTR_WORD_SPACING = new nsHtml5AttributeName(
       ALL_NO_NS, nsGkAtoms::word_spacing, nsGkAtoms::word_spacing,
@@ -2222,7 +2228,7 @@ void nsHtml5AttributeName::initializeStatics() {
   ATTR_REFY =
       new nsHtml5AttributeName(ALL_NO_NS, nsGkAtoms::refy, nsGkAtoms::refy,
                                nsGkAtoms::refY, ALL_NO_PREFIX);
-  ATTRIBUTE_NAMES = new nsHtml5AttributeName*[509];
+  ATTRIBUTE_NAMES = new nsHtml5AttributeName*[510];
   ATTRIBUTE_NAMES[0] = ATTR_MASKUNITS;
   ATTRIBUTE_NAMES[1] = ATTR_BASEPROFILE;
   ATTRIBUTE_NAMES[2] = ATTR_SLOPE;
@@ -2732,6 +2738,7 @@ void nsHtml5AttributeName::initializeStatics() {
   ATTRIBUTE_NAMES[506] = ATTR_REFX;
   ATTRIBUTE_NAMES[507] = ATTR_CY;
   ATTRIBUTE_NAMES[508] = ATTR_FY;
+  ATTRIBUTE_NAMES[509] = ATTR_SHADOWROOTSLOTASSIGNMENT;
 }
 
 void nsHtml5AttributeName::releaseStatics() {
@@ -2861,6 +2868,7 @@ void nsHtml5AttributeName::releaseStatics() {
   delete ATTR_SANDBOX;
   delete ATTR_SHADOWROOTCUSTOMELEMENTREGISTRY;
   delete ATTR_SHADOWROOTDELEGATESFOCUS;
+  delete ATTR_SHADOWROOTSLOTASSIGNMENT;
   delete ATTR_WORD_SPACING;
   delete ATTR_ACCENTUNDER;
   delete ATTR_ACCEPT_CHARSET;

@@ -146,6 +146,9 @@ newtab-menu-report = Báo cáo
 newtab-menu-section-block = Chặn
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Huỷ theo dõi
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Bỏ theo dõi chủ đề
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -311,9 +314,22 @@ newtab-error-fallback-refresh-link = Thử làm mới lại trang.
 
 newtab-custom-shortcuts-title = Lối tắt
 newtab-custom-shortcuts-subtitle = Các trang web bạn lưu hoặc truy cập
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Lối tắt
     .description = Các trang web bạn lưu hoặc truy cập
+newtab-custom-shortcuts-nova =
+    .label = Lối tắt
+newtab-custom-row-description =
+    .description = Số lượng hàng
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+           *[other] { $num } hàng
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -323,9 +339,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Các lối tắt được tài trợ
 newtab-custom-pocket-title = Được đề xuất bởi { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Nội dung đặc biệt do { -pocket-brand-name }, một phần của { -brand-product-name }, quản lý
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Câu chuyện được đề xuất
     .description = Nội dung đặc biệt được quản lý bởi gia đình { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Câu chuyện được đề xuất
 newtab-custom-stories-personalized-toggle =
     .label = Câu chuyện
 newtab-custom-stories-personalized-checkbox-label = Câu chuyện được cá nhân hóa dựa trên hoạt động của bạn
@@ -359,8 +378,11 @@ newtab-custom-settings = Quản lý các cài đặt khác
 
 newtab-wallpaper-title = Hình nền
 newtab-wallpaper-reset = Đặt lại về mặc định
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Tải lên một ảnh
 newtab-wallpaper-custom-color = Chọn màu
+newtab-wallpaper-toggle-title =
+    .label = Hình nền
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Hình ảnh vượt quá giới hạn kích thước tập tin { $file_size }MB. Vui lòng thử tải lên một tập tin nhỏ hơn.
@@ -383,6 +405,7 @@ newtab-wallpaper-light-fox-anniversary = Một chú cáo trong cánh đồng xan
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Màu
 newtab-wallpaper-blue = Xanh dương
 newtab-wallpaper-light-blue = Xanh dương nhạt
@@ -489,7 +512,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Độ F
 newtab-weather-menu-temperature-option-celsius = Độ C
 newtab-weather-menu-change-temperature-units-fahrenheit = Chuyển sang độ F
 newtab-weather-menu-change-temperature-units-celsius = Chuyển sang độ C
-newtab-weather-menu-hide-weather-v2 = Ẩn thời tiết
 newtab-weather-menu-hide-weather = Ẩn thời tiết trên thẻ mới
 newtab-weather-menu-learn-more = Tìm hiểu thêm
 newtab-weather-menu-detect-my-location = Phát hiện vị trí của tôi
@@ -502,6 +524,12 @@ newtab-weather-opt-in-yes =
     .label = Đồng ý
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Thành phố New York
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Cao nhất
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Thấp nhất
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -575,6 +603,7 @@ newtab-section-confirm-block-topic-p2 = Chủ đề bị chặn sẽ không còn
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Chặn { $topic }
+newtab-section-block-cancel-button = Hủy bỏ
 
 ## Strings for custom wallpaper highlight
 
@@ -638,6 +667,18 @@ newtab-toast-thanks-for-reporting =
     .message = Cảm ơn bạn đã báo cáo điều này.
 newtab-toast-widgets-hidden =
     .message = Chọn biểu tượng bút chì để thêm lại widget bất cứ lúc nào.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Bạn hiện đang theo dõi { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Bạn không còn theo dõi { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Bạn sẽ không còn thấy các bài viết về { $topic } nữa.
 
 ## Strings for task / to-do list productivity widget
 
@@ -657,7 +698,6 @@ newtab-widget-lists-menu-edit = Chỉnh sửa tên danh sách
 newtab-widget-lists-menu-create = Tạo một danh sách mới
 newtab-widget-lists-menu-delete = Xóa danh sách này
 newtab-widget-lists-menu-copy = Sao chép danh sách vào bộ nhớ tạm
-newtab-widget-lists-menu-hide = Ẩn tất cả danh sách
 newtab-widget-lists-menu-learn-more = Tìm hiểu thêm
 newtab-widget-lists-input-add-an-item =
     .placeholder = Thêm một mục
@@ -679,6 +719,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = Danh sách mới
 newtab-widget-section-title = Widget
 newtab-widget-menu-hide = Ẩn widget
+newtab-widget-menu-change-size = Thay đổi kích thước
+newtab-widget-size-small = Nhỏ
+newtab-widget-size-medium = Trung bình
+newtab-widget-size-large = Lớn
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Ẩn widget
@@ -710,7 +754,6 @@ newtab-widget-timer-reset =
     .title = Đặt lại
 newtab-widget-timer-menu-notifications = Tắt thông báo
 newtab-widget-timer-menu-notifications-on = Bật thông báo
-newtab-widget-timer-menu-hide = Ẩn bộ hẹn giờ
 newtab-widget-timer-menu-learn-more = Tìm hiểu thêm
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Tin tức nổi bật
@@ -721,6 +764,12 @@ newtab-daily-briefing-card-timestamp = Đã cập nhật { $minutes } phút trư
 newtab-widget-message-title = Giữ tập trung với danh sách và bộ đếm thời gian tích hợp
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Từ những lời nhắc nhở nhanh đến những việc cần làm hàng ngày, các buổi tập trung đến những giờ nghỉ giải lao — hãy tập trung vào nhiệm vụ và đúng giờ.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Biến { -brand-product-name } thành của riêng bạn
+newtab-promo-card-body-addons = Chọn một hình nền từ bộ sưu tập của chúng tôi hoặc tự tạo hình nền của riêng bạn.
+newtab-promo-card-cta-addons = Thử ngay bây giờ
 newtab-promo-card-title = Hỗ trợ cho { -brand-product-name }
 newtab-promo-card-body = Các nhà tài trợ của chúng tôi hỗ trợ sứ mệnh của chúng tôi là xây dựng một trang web tốt hơn
 newtab-promo-card-cta = Tìm hiểu thêm

@@ -7,6 +7,8 @@ package org.mozilla.fenix.components.metrics
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -16,6 +18,8 @@ import org.mozilla.fenix.utils.Settings
 @RunWith(AndroidJUnit4::class)
 internal class AdjustMetricsServiceTest {
     val context: Context = ApplicationProvider.getApplicationContext()
+
+    val conversionEventRecorder = mockk<ConversionEventRecorder>(relaxed = true)
 
     @Test
     fun `WHEN Adjust attribution data already exist THEN already known is true`() {
@@ -42,5 +46,105 @@ internal class AdjustMetricsServiceTest {
 
         settings.adjustCreative = "creative"
         assertTrue(AdjustMetricsService.alreadyKnown(settings))
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent1 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.GrowthData.ConversionEvent1,
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(1) }
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent2 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.GrowthData.ConversionEvent2,
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(2) }
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent3 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.GrowthData.ConversionEvent3,
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(3) }
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent4 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.GrowthData.ConversionEvent4,
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(4) }
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent5 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.GrowthData.ConversionEvent5,
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(5) }
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent6 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.GrowthData.ConversionEvent6,
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(6) }
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent7 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.GrowthData.ConversionEvent7(fromSearch = true),
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(7) }
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent8 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.FirstWeekPostInstall.ConversionEvent8,
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(8) }
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent9 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.FirstWeekPostInstall.ConversionEvent9,
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(9) }
+    }
+
+    @Test
+    fun `GIVEN a ConversionEvent10 event WHEN sendGleanEventAndPing is called THEN the event is recorded and the ping is submitted`() {
+        AdjustMetricsService.sendGleanEventAndPing(
+            Event.FirstWeekPostInstall.ConversionEvent10,
+            conversionEventRecorder,
+        )
+
+        verify { conversionEventRecorder.recordConversionEvent(10) }
     }
 }

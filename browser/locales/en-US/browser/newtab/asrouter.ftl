@@ -430,3 +430,13 @@ set-default-menu-message-row-layout-subtitle-variant = { PLATFORM() ->
 
 set-default-menu-message-primary-button = Set as default
 set-default-menu-message-primary-button-variant = Set as primary browser
+
+## Firefox Relay 50 Masks Announcement
+
+# "on us" in this context means "for free" or "at no cost"
+relay-50-masks-announcement-title = 50 email masks, on us
+relay-50-masks-announcement-subtitle = Now you get 50 free masks (up from 5). Use one for every account to keep your real email private.
+relay-50-masks-announcement-primary-button = Go to { -relay-brand-name }
+  .accesskey = G
+relay-50-masks-announcement-secondary-button = Dismiss
+  .accesskey = D

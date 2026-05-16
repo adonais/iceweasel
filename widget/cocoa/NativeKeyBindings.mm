@@ -348,7 +348,7 @@ void NativeKeyBindings::GetEditCommandsForTests(
               ? aEvent.GetRemappedKeyNameIndex(aWritingMode.ref())
               : aEvent.mKeyNameIndex) {
     case KEY_NAME_INDEX_USE_STRING:
-      // OSX specific key bindings.
+      // macOS specific key bindings.
       if (aEvent.IsControl() && aEvent.IsAlt()) {
         if (aEvent.PseudoCharCode() == 'b' || aEvent.PseudoCharCode() == 'B') {
           instance->AppendEditCommandsForSelector(

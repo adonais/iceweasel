@@ -102,7 +102,7 @@ class MediaStreamTrackAudioSourceNode
 
  private:
   RefPtr<MediaInputPort> mInputPort;
-  RefPtr<MediaStreamTrack> mInputTrack;
+  RefPtr<AudioStreamTrack> mInputTrack;
   TrackListener mTrackListener;
 };
 

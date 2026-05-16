@@ -5,7 +5,6 @@
 #ifndef PEER_CONNECTION_IMPL_H_
 #define PEER_CONNECTION_IMPL_H_
 
-#include <cmath>
 #include <map>
 #include <string>
 #include <vector>
@@ -403,10 +402,9 @@ class PeerConnectionImpl final
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool PluginCrash(uint32_t aPluginID,
                                                const nsAString& aPluginName);
 
-  NS_IMETHODIMP_TO_ERRORRESULT(SetConfiguration, ErrorResult& rv,
-                               const RTCConfiguration& aConfiguration) {
-    rv = SetConfiguration(aConfiguration);
-  }
+  NS_IMETHODIMP SetConfiguration(const RTCConfiguration& aConfiguration);
+  void SetConfiguration(const RTCConfiguration& aConfiguration,
+                        ErrorResult& rv);
 
   dom::RTCSctpTransport* GetSctp() const;
 
@@ -599,6 +597,9 @@ class PeerConnectionImpl final
       nsTHashMap<nsCStringHashKey, RefPtr<dom::RTCDtlsTransport>>;
 
  private:
+  void ParseIceServers(const nsTArray<dom::RTCIceServer>& aIceServers,
+                       ErrorResult& aRv);
+
   virtual ~PeerConnectionImpl();
   PeerConnectionImpl(const PeerConnectionImpl& rhs);
   PeerConnectionImpl& operator=(PeerConnectionImpl);

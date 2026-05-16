@@ -9,9 +9,6 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 const { ExtensionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/ExtensionXPCShellUtils.sys.mjs"
 );
-const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
-);
 
 do_get_profile();
 
@@ -373,7 +370,7 @@ add_task(async function test_isEnrolling_during_maybeEnrollAndEntitle() {
   let resolveEnroll;
   // Slow down enrolling step info so that we can properly test
   // isEnrolling. The promise only resolves when we call resolveEnroll().
-  IPProtectionService.guardian.enroll.returns(
+  IPProtectionService.guardian.enrollWithFxa.returns(
     new Promise(resolve => {
       resolveEnroll = resolve;
     })

@@ -4,6 +4,8 @@
 
 package mozilla.components.feature.summarize.ui
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -82,10 +84,10 @@ internal fun SummarizingContent(
 
     val brush = Brush.linearGradient(
         colorStops = arrayOf(
-            0.0f to contentColor.copy(alpha = 0.5f),
+            0.0f to contentColor.copy(alpha = 0.8f),
             0.351f to Color.White,
             0.6298f to Color.White,
-            1.0f to contentColor.copy(alpha = 0.5f),
+            1.0f to contentColor.copy(alpha = 0.8f),
         ),
         start = Offset(progress - 300f, 0f),
         end = Offset(progress + 300f, 0f),
@@ -102,7 +104,7 @@ internal fun SummarizingContent(
             painter = painterResource(id = iconsR.drawable.mozac_ic_logo_firefox_24),
             contentDescription = null,
             modifier = Modifier.size(48.dp),
-            tint = contentColor,
+            tint = MaterialTheme.colorScheme.onPrimary,
         )
 
         Text(
@@ -112,7 +114,7 @@ internal fun SummarizingContent(
                 }
             },
             textAlign = TextAlign.Center,
-            color = contentColor.copy(alpha = 0.5f),
+            color = contentColor.copy(alpha = 0.8f),
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
             lineHeight = 21.sp,
@@ -121,6 +123,7 @@ internal fun SummarizingContent(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun SummarizingContentPreview() {

@@ -1,12 +1,16 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 document.addEventListener(
   "MozBeforeInitialXULLayout",
   () => {
-    // <commandset id="mainCommandSet"> defined in browser-sets.inc
+    const lazy = {};
+    ChromeUtils.defineESModuleGetters(lazy, {
+      TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
+    });
+
+    // <commandset id="mainCommandSet"> defined in browser-sets.inc.xhtml
     document
       .getElementById("mainCommandSet")
       // eslint-disable-next-line complexity
@@ -122,6 +126,12 @@ document.addEventListener(
           case "cmd_translate":
             FullPageTranslationsPanel.open(event);
             break;
+          case "cmd_openAboutTranslations":
+            lazy.TranslationsParent.openAboutTranslationsPage({
+              browserWindow: window,
+              targetLanguage: "derive",
+            }).catch(console.error);
+            break;
           case "Browser:AddBookmarkAs":
             PlacesCommandHook.bookmarkPage();
             break;
@@ -158,6 +168,9 @@ document.addEventListener(
             break;
           case "Browser:ReloadSkipCache":
             BrowserCommands.reloadSkipCache();
+            break;
+          case "Browser:DuplicateTab":
+            BrowserCommands.duplicateTab();
             break;
           case "Browser:NextTab":
             gBrowser.tabContainer.advanceSelectedTab(1, true);

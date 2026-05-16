@@ -139,6 +139,7 @@ typedef struct RefCntBuffer {
   unsigned int ref_display_order_hint[INTER_REFS_PER_FRAME];
   // Frame's level within the hierarchical structure.
   unsigned int pyramid_level;
+  int base_qindex;
   MV_REF *mvs;
   uint8_t *seg_map;
   struct segmentation seg;

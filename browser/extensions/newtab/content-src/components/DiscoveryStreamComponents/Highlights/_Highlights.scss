@@ -4,14 +4,18 @@
   .section {
     .section-list {
       grid-gap: var(--gridRowGap);
-      grid-template-columns: repeat(1, 1fr);
 
-      @media (min-width: $break-point-medium) {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      // @nova-cleanup(remove-styles): Remove, replace with nova styles.
+      &:not(.nova-enabled *) {
+        grid-template-columns: repeat(1, 1fr);
 
-      @media (min-width: $break-point-large) {
-        grid-template-columns: repeat(4, 1fr);
+        @media (min-width: $break-point-medium) {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (min-width: $break-point-large) {
+          grid-template-columns: repeat(4, 1fr);
+        }
       }
 
       .card-outer {
@@ -29,7 +33,8 @@
 
         .card-title {
           font-size: var(--font-size-small);
-          font-weight: var(--font-weight-heading);
+          // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+          font-weight: var(--font-weight-heading, var(--heading-font-weight));
           line-height: $line-height;
           max-height: $line-height;
         }
@@ -61,5 +66,59 @@
 
   .hide-for-narrow {
     display: block;
+  }
+
+  // @nova-cleanup(remove-conditional): Remove .nova-enabled wrapper, make default
+  .nova-enabled & {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, calc(2 * var(--col-width) + 1 * var(--space-medium)));
+    gap: var(--space-medium);
+    justify-content: center;
+
+    // 2-column layout
+    @include at-content-cols(8) {
+      grid-template-columns: repeat(4, calc(2 * var(--col-width) + 1 * var(--space-medium)));
+    }
+
+    // 3, and 4 column layouts.
+    @include at-content-cols(12) {
+      grid-template-columns: repeat(4, calc(3 * var(--col-width) + 2 * var(--space-medium)));
+    }
+
+    .ds-highlights-title {
+      @include wallpaper-contrast-fix;
+
+      grid-column: 1 / -1;
+      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+      font-weight: var(--font-weight-heading, var(--heading-font-weight));
+      font-size: var(--font-size-heading-large, var(--font-size-xlarge));
+
+      @include at-content-cols(12) {
+        font-size: var(--font-size-heading-xlarge, var(--font-size-xxlarge));
+      }
+
+      color: var(--newtab-contextual-text-primary-color);
+      margin-block: var(--space-small) 0;
+    }
+
+    .section {
+      display: contents;
+    }
+
+    .section > div {
+      display: contents;
+    }
+
+    .section-list {
+      grid-column: 1 / -1;
+      padding-block-end: var(--space-xxlarge);
+      grid-template-columns: repeat(2, 1fr);
+
+      // 2, 3, and 4 column layouts.
+      @include at-content-cols(8) {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
   }
 }

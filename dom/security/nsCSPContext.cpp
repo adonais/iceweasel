@@ -92,10 +92,8 @@ static LogModule* GetCspOriginLogLog() {
 static bool ValidateDirectiveName(const nsAString& aDirective) {
   static const auto directives = []() {
     std::unordered_set<std::string> directives;
-    constexpr size_t dirLen =
-        sizeof(CSPStrDirectives) / sizeof(CSPStrDirectives[0]);
-    for (size_t i = 0; i < dirLen; ++i) {
-      directives.insert(CSPStrDirectives[i]);
+    for (const char* directive : CSPStrDirectives) {
+      directives.insert(directive);
     }
     return directives;
   }();

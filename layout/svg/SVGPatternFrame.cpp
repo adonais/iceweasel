@@ -187,8 +187,8 @@ static nsresult GetTargetGeometry(gfxRect* aBBox,
   *aBBox =
       aOverrideBounds
           ? *aOverrideBounds
-          : SVGUtils::GetBBox(aTarget, SVGUtils::eUseFrameBoundsForOuterSVG |
-                                           SVGUtils::eBBoxIncludeFillGeometry);
+          : SVGUtils::GetBBox(aTarget, {SVGBBoxFlag::UseFrameBoundsForOuterSVG,
+                                        SVGBBoxFlag::IncludeFillGeometry});
 
   // Sanity check
   if (IncludeBBoxScale(aViewBox, aPatternContentUnits, aPatternUnits) &&

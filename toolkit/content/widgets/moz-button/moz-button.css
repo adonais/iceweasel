@@ -7,10 +7,13 @@
 }
 
 :host {
+  --button-alignment: center;
+  --button-badge-background-color: var(--color-accent-attention);
+  --button-badge-size: 6px;
+
   display: inline-block;
   height: fit-content;
   width: fit-content;
-  --button-alignment: center;
 }
 
 :host([type="split"]) {
@@ -56,21 +59,16 @@ button {
    * UA styles */
   color: inherit;
   width: 100%;
+  height: 100%;
 
   &:focus-visible {
     outline: none;
   }
 
-  padding-inline-start: var(--button-outer-padding-inline-start, var(--button-outer-padding-inline));
-  padding-inline-end: var(--button-outer-padding-inline-end, var(--button-outer-padding-inline));
-  padding-block-start: var(--button-outer-padding-block-start, var(--button-outer-padding-block));
-  padding-block-end: var(--button-outer-padding-block-end, var(--button-outer-padding-block));
-}
-
-@media not ((prefers-contrast) or (forced-colors)) {
-  button.badged::after {
-    background-color: var(--button-attention-dot-color);
-  }
+  padding-inline-start: var(--button-outer-padding-inline-start, var(--button-outer-padding-inline, 0));
+  padding-inline-end: var(--button-outer-padding-inline-end, var(--button-outer-padding-inline, 0));
+  padding-block-start: var(--button-outer-padding-block-start, var(--button-outer-padding-block, 0));
+  padding-block-end: var(--button-outer-padding-block-end, var(--button-outer-padding-block, 0));
 }
 
 .button-background {
@@ -98,12 +96,21 @@ button {
   &.badged::after {
     content: "";
     position: absolute;
-    height: 6px;
-    width: 6px;
+    /* The size of the dot is in between dimension token sizes. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    height: var(--button-badge-size);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    width: var(--button-badge-size);
     inset-block-start: var(--space-xxsmall);
     inset-inline-end: var(--space-xxsmall);
-    background-color: var(--button-attention-dot-color);
+    background-color: var(--button-badge-background-color);
     border-radius: var(--border-radius-circle);
+  }
+
+  @media not ((prefers-contrast) or (forced-colors)) {
+    &.badged::after {
+      background-color: var(--button-attention-dot-color, var(--button-badge-background-color));
+    }
   }
 
   button:hover > & {

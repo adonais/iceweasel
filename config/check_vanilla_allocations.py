@@ -144,8 +144,14 @@ def main():
         "umutex.o",
         # Ignore allocations from decimal conversion functions inside mozglue.
         "Decimal.o",
-        # Ignore use of std::string in regexp AST debug output.
+        # Ignore allocations in imported regexp engine
+        "regexp-ast-printer.o",
         "regexp-ast.o",
+        "regexp-bytecode-peephole.o",
+        "regexp-compiler.o",
+        "regexp-compiler-tonode.o",
+        "regexp-graph-printer.o",
+        "regexp-node-printer.o",
         # mozglue/misc/Debug.cpp contains a call to `printf_stderr("%s", aStr.str().c_str())`
         # where `aStr` is a `std::stringstream`. In inlined opt builds, this calls
         # `operator new()` and `operator delete` for a temporary.

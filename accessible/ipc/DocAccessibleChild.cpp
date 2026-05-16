@@ -86,11 +86,11 @@ void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aChild,
       if (AppShutdown::IsShutdownImpending()) {
         return;
       }
-      // Note: std::move used on aSuppressShowEvent to force selection of the
+      // Note: bool(...) used on aSuppressShowEvent to force selection of the
       // ShowEventData constructor that takes all rvalue reference arguments.
       const uint32_t accCount = data.Length();
       PushMutationEventData(
-          ShowEventData{std::move(data), std::move(aSuppressShowEvent), false,
+          ShowEventData{std::move(data), bool(aSuppressShowEvent), false,
                         false},
           accCount);
 

@@ -2,9 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import multiprocessing
 import os
 import sys
+import threading
 import time
 import warnings
 from collections import OrderedDict, namedtuple
@@ -137,7 +139,6 @@ def _collect(pipe, poll_interval):
     data then forwards it on a pipe until told to stop.
     """
 
-    data = []
     processes = []
     sample_processes = "MOZ_PROCESS_SAMPLING" in os.environ
 
@@ -226,7 +227,7 @@ def _collect(pipe, poll_interval):
             swap_entry[sout_index] = swap_mem.sout - swap_last.sout
             swap_last = swap_mem
 
-            data.append((
+            pipe.send((
                 last_time,
                 measured_end_time,
                 io_diff,
@@ -247,9 +248,6 @@ def _collect(pipe, poll_interval):
         warnings.warn("_collect failed: %s" % e)
 
     finally:
-        for entry in data:
-            pipe.send(entry)
-
         for pid, create_time, end_time, cmd, ppid in processes:
             if len(cmd) > 0:
                 cmd[0] = os.path.basename(cmd[0])
@@ -352,6 +350,15 @@ class SystemResourceMonitor:
 
     instance = None
 
+    # Category indices matching the categories array in _build_meta
+    OTHER_CATEGORY = 0
+    PHASE_CATEGORY = 1
+    TASK_CATEGORY = 2
+
+    @staticmethod
+    def _format_percent(value):
+        return str(round(value, 1)) + "%"
+
     def __init__(self, poll_interval=1.0, metadata={}):
         """Instantiate a system resource monitor instance.
 
@@ -364,6 +371,7 @@ class SystemResourceMonitor:
         self.events = []
         self.markers = []
         self.processes = []
+        self.measurements = []
         self.phases = OrderedDict()
 
         self._active_phases = {}
@@ -372,6 +380,9 @@ class SystemResourceMonitor:
         self._running = False
         self._stopped = False
         self._process = None
+        self._stream_file = None
+        self._drain_timer = None
+        self._pipe_lock = threading.Lock()
 
         if psutil is None:
             return
@@ -449,6 +460,7 @@ class SystemResourceMonitor:
         self._running = True
         self.start_time = time.monotonic()
         SystemResourceMonitor.instance = self
+        self._schedule_drain_timer()
 
     def stop(self, upload_dir=None):
         """Stop measuring system-wide CPU resource utilization.
@@ -474,79 +486,11 @@ class SystemResourceMonitor:
             pass
         self._stopped = True
 
-        self.measurements = []
+        self._cancel_drain_timer()
 
-        # The child process will send each data sample over the pipe
-        # as a separate data structure. When it has finished sending
-        # samples, it sends a special "done" message to indicate it
-        # is finished.
-
-        while _poll(self._pipe, poll_interval=0.1):
-            try:
-                (
-                    start_time,
-                    end_time,
-                    io_diff,
-                    net_io_diff,
-                    cpu_diff,
-                    cpu_percent,
-                    virt_mem,
-                    swap_mem,
-                ) = self._pipe.recv()
-            except Exception as e:
-                warnings.warn("failed to receive data: %s" % e)
-                # Assume we can't recover
-                break
-
-            if start_time == "process":
-                pid = end_time
-                start = self.convert_to_monotonic_time(io_diff)
-                end = self.convert_to_monotonic_time(net_io_diff)
-                cmd = cpu_diff
-                ppid = cpu_percent
-                self.processes.append((pid, start, end, cmd, ppid))
-                continue
-
-            # There should be nothing after the "done" message so
-            # terminate.
-            if start_time == "done":
-                break
-
-            try:
-                io = self._io_type(*io_diff)
-                net_io = self._net_io_type(*net_io_diff)
-                virt = self._virt_type(*virt_mem)
-                swap = self._swap_type(*swap_mem)
-                cpu_times = [self._cpu_times_type(*v) for v in cpu_diff]
-
-                self.measurements.append(
-                    SystemResourceUsage(
-                        start_time,
-                        end_time,
-                        cpu_times,
-                        cpu_percent,
-                        io,
-                        net_io,
-                        virt,
-                        swap,
-                    )
-                )
-            except Exception:
-                # We also can't recover, but output the data that caused the exception
-                warnings.warn(
-                    "failed to read the received data: %s"
-                    % str((
-                        start_time,
-                        end_time,
-                        io_diff,
-                        cpu_diff,
-                        cpu_percent,
-                        virt_mem,
-                        swap_mem,
-                    ))
-                )
-
-                break
+        # Drain remaining data from the child process, including the
+        # "done" sentinel and any process entries.
+        self._drain_pipe(until_done=True)
 
         # We establish a timeout so we don't hang forever if the child
         # process has crashed.
@@ -559,6 +503,10 @@ class SystemResourceMonitor:
         self._running = False
         SystemResourceUsage.instance = None
         self.end_time = time.monotonic()
+
+        if self._stream_file:
+            self._stream_file.close()
+            self._stream_file = None
 
         # Add event markers for files in upload directory
         if upload_dir is None:
@@ -584,6 +532,153 @@ class SystemResourceMonitor:
                             self._parse_sccache_log(filepath)
             except Exception as e:
                 warnings.warn(f"Failed to scan upload directory: {e}")
+
+    def start_streaming(self, path):
+        """Start streaming profile data to a file as JSON lines.
+
+        The first line contains the meta object, then a thread object,
+        then one line per marker. The file is meant to be replaced with
+        the full serialized profile on normal shutdown.
+        """
+        self._stream_file = open(path, "w", encoding="utf-8", newline="\n")
+        meta = {"type": "meta"}
+        meta.update(self._build_meta())
+        self._stream_file.write(json.dumps(meta, separators=(",", ":")) + "\n")
+        thread = {"type": "thread"}
+        thread.update(self._build_thread())
+        thread["processName"] = meta.get("product", "mach")
+        self._stream_file.write(json.dumps(thread, separators=(",", ":")) + "\n")
+
+        for name, start, end, data, category in self.markers:
+            markerData = (
+                data if isinstance(data, dict) else {"type": "Text", "text": str(data)}
+            )
+            self._stream_marker(name, start, end, markerData, category)
+        for event in self.events:
+            if len(event) == 3:
+                timestamp, name, data = event
+                self._stream_marker(name, timestamp, None, data)
+            else:
+                timestamp, name = event
+                self._stream_marker(
+                    name, timestamp, None, {"type": "Text", "text": name}
+                )
+
+        self._drain_pipe()
+
+    def _drain_pipe(self, until_done=False):
+        """Read available measurement data from the child process pipe.
+
+        If until_done is True, block until the "done" sentinel is received.
+        Otherwise, only read data that is immediately available.
+        """
+        if not self._pipe:
+            return
+
+        with self._pipe_lock:
+            self._drain_pipe_locked(until_done)
+
+    def _drain_pipe_locked(self, until_done):
+        poll_interval = 0.1 if until_done else 0
+        while _poll(self._pipe, poll_interval=poll_interval):
+            try:
+                (
+                    start_time,
+                    end_time,
+                    io_diff,
+                    net_io_diff,
+                    cpu_diff,
+                    cpu_percent,
+                    virt_mem,
+                    swap_mem,
+                ) = self._pipe.recv()
+            except Exception as e:
+                if not self._stopped:
+                    warnings.warn("failed to receive data: %s" % e)
+                break
+
+            if start_time == "process":
+                pid = end_time
+                start = self.convert_to_monotonic_time(io_diff)
+                end = self.convert_to_monotonic_time(net_io_diff)
+                cmd = cpu_diff
+                ppid = cpu_percent
+                self.processes.append((pid, start, end, cmd, ppid))
+                continue
+
+            if start_time == "done":
+                break
+
+            try:
+                io = self._io_type(*io_diff)
+                net_io = self._net_io_type(*net_io_diff)
+                virt = self._virt_type(*virt_mem)
+                swap = self._swap_type(*swap_mem)
+                cpu_times = [self._cpu_times_type(*v) for v in cpu_diff]
+
+                m = SystemResourceUsage(
+                    start_time, end_time, cpu_times, cpu_percent, io, net_io, virt, swap
+                )
+                self.measurements.append(m)
+                self._stream_measurement(m)
+            except Exception:
+                warnings.warn(
+                    "failed to read the received data: %s"
+                    % str((
+                        start_time,
+                        end_time,
+                        io_diff,
+                        cpu_diff,
+                        cpu_percent,
+                        virt_mem,
+                        swap_mem,
+                    ))
+                )
+                break
+
+    def _stream_measurement(self, m):
+        if not self._stream_file:
+            return
+        if m.end - m.start < self.poll_interval / 10:
+            return
+        for name, start, end, data in self._measurement_markers(m):
+            self._stream_marker(name, start, end, data)
+
+    def _schedule_drain_timer(self):
+        if self._running:
+            self._drain_timer = threading.Timer(
+                self.poll_interval * 10, self._on_drain_timer
+            )
+            self._drain_timer.daemon = True
+            self._drain_timer.start()
+
+    def _cancel_drain_timer(self):
+        if self._drain_timer:
+            self._drain_timer.cancel()
+            self._drain_timer = None
+
+    def _on_drain_timer(self):
+        self._drain_pipe()
+        self._schedule_drain_timer()
+
+    def _stream_marker(self, name, start, end, data, category=0):
+        if not self._stream_file:
+            return
+
+        start_ms = round((start - self.start_time) * 1000, 3)
+        end_ms = round((end - self.start_time) * 1000, 3) if end is not None else None
+        obj = {
+            "type": "marker",
+            "name": name,
+            "startTime": start_ms,
+            "endTime": end_ms,
+            "data": data,
+        }
+        if category != 0:
+            obj["category"] = category
+        line = json.dumps(obj, separators=(",", ":"))
+        self._stream_file.write(line + "\n")
+        self._stream_file.flush()
 
     def _parse_sccache_log(self, filepath):
         """Parse sccache.log and add profiler markers for cache hits and misses."""
@@ -686,6 +781,7 @@ class SystemResourceMonitor:
                     data["start_time"],
                     data["end_time"],
                     marker_data,
+                    self.TASK_CATEGORY,
                 ))
 
         except Exception as e:
@@ -704,9 +800,25 @@ class SystemResourceMonitor:
                         "type": "Text",
                         "text": f"Parsed {num_markers} sccache entries from log",
                     },
+                    self.TASK_CATEGORY,
                 ))
 
     # Methods to record events alongside the monitored data.
+
+    def _add_event(self, name, timestamp, data=None):
+        if data:
+            self.events.append((timestamp, name, data))
+            self._stream_marker(name, timestamp, None, data)
+        else:
+            self.events.append((timestamp, name))
+            self._stream_marker(name, timestamp, None, {"type": "Text", "text": name})
+
+    def _add_marker(self, name, start, end, data, category=TASK_CATEGORY):
+        self.markers.append((name, start, end, data, category))
+        markerData = (
+            data if isinstance(data, dict) else {"type": "Text", "text": str(data)}
+        )
+        self._stream_marker(name, start, end, markerData, category)
 
     @staticmethod
     def record_event(name, timestamp=None, data=None):
@@ -723,10 +835,7 @@ class SystemResourceMonitor:
         if SystemResourceMonitor.instance:
             if timestamp is None:
                 timestamp = time.monotonic()
-            if data:
-                SystemResourceMonitor.instance.events.append((timestamp, name, data))
-            else:
-                SystemResourceMonitor.instance.events.append((timestamp, name))
+            SystemResourceMonitor.instance._add_event(name, timestamp, data)
 
     @staticmethod
     def record_marker(name, start, end, data):
@@ -740,7 +849,7 @@ class SystemResourceMonitor:
         payload (e.g., {"type": "Text", "text": "description"}) or a string.
         """
         if SystemResourceMonitor.instance:
-            SystemResourceMonitor.instance.markers.append((name, start, end, data))
+            SystemResourceMonitor.instance._add_marker(name, start, end, data)
 
     @staticmethod
     def begin_marker(name, text, disambiguator=None, timestamp=None):
@@ -908,7 +1017,7 @@ class SystemResourceMonitor:
             # Find the corresponding test marker and mark it as failed due to leak
             # if it hasn't already failed for another reason
             for marker in SystemResourceMonitor.instance.markers:
-                marker_name_type, marker_start, marker_end, marker_data = marker
+                marker_name_type, marker_start, marker_end, marker_data, _ = marker
                 if (
                     marker_name_type == "test"
                     and marker_data.get("test") == test_name
@@ -990,6 +1099,14 @@ class SystemResourceMonitor:
         phase = (self._active_phases[name], time.monotonic())
         self.phases[name] = phase
         del self._active_phases[name]
+
+        self._stream_marker(
+            "Phase",
+            phase[0],
+            phase[1],
+            {"type": "Phase", "phase": name},
+            self.PHASE_CATEGORY,
+        )
 
         return phase[1] - phase[0]
 
@@ -1173,459 +1290,582 @@ class SystemResourceMonitor:
 
         return max(values)
 
+    def _build_cpu_schema(self):
+        cpu_times = psutil.cpu_times(False)
+        schema = {
+            "name": "CPU",
+            "tooltipLabel": "{marker.name}",
+            "display": [],
+            "data": [
+                {"key": "cpuPercent", "label": "CPU Percent", "format": "string"},
+            ],
+            "graphs": [],
+        }
+        for field, label in {
+            "user": "User %",
+            "iowait": "IO Wait %",
+            "system": "System %",
+            "nice": "Nice %",
+            "idle": "Idle %",
+        }.items():
+            if hasattr(cpu_times, field):
+                schema["data"].append({
+                    "key": field + "_pct",
+                    "label": label,
+                    "format": "string",
+                })
+        for field, color in {
+            "softirq": "orange",
+            "iowait": "red",
+            "system": "grey",
+            "user": "yellow",
+            "nice": "blue",
+        }.items():
+            if hasattr(cpu_times, field):
+                schema["graphs"].append({"key": field, "color": color, "type": "bar"})
+        return schema
+
+    def _build_meta(self):
+        """Build the profile metadata dict."""
+        meta = {
+            "processType": 0,
+            "product": "mach",
+            "stackwalk": 0,
+            "version": 27,
+            "preprocessedProfileVersion": 47,
+            "symbolicationNotSupported": True,
+            "interval": self.poll_interval * 1000,
+            "startTime": self.start_timestamp * 1000,
+            "profilingStartTime": 0,
+            "logicalCPUs": psutil.cpu_count(logical=True),
+            "physicalCPUs": psutil.cpu_count(logical=False),
+            "mainMemory": psutil.virtual_memory()[0],
+            "categories": [
+                {
+                    "name": "Other",
+                    "color": "grey",
+                    "subcategories": ["Other"],
+                },
+                {
+                    "name": "Phases",
+                    "color": "grey",
+                    "subcategories": ["Other"],
+                },
+                {
+                    "name": "Tasks",
+                    "color": "grey",
+                    "subcategories": ["Other"],
+                },
+            ],
+            "markerSchema": [
+                self._build_cpu_schema(),
+                {
+                    "name": "Phase",
+                    "tooltipLabel": "{marker.data.phase}",
+                    "tableLabel": "{marker.name} — {marker.data.phase} — CPU time: {marker.data.cpuTime} ({marker.data.cpuPercent})",
+                    "chartLabel": "{marker.data.phase}",
+                    "display": [
+                        "marker-chart",
+                        "marker-table",
+                        "timeline-overview",
+                    ],
+                    "data": [
+                        {
+                            "key": "cpuTime",
+                            "label": "CPU Time",
+                            "format": "duration",
+                        },
+                        {
+                            "key": "cpuPercent",
+                            "label": "CPU Percent",
+                            "format": "string",
+                        },
+                    ],
+                },
+                {
+                    "name": "Text",
+                    "tooltipLabel": "{marker.name}",
+                    "tableLabel": "{marker.name} — {marker.data.text}",
+                    "chartLabel": "{marker.data.text}",
+                    "display": ["marker-chart", "marker-table"],
+                    "data": [
+                        {
+                            "key": "text",
+                            "label": "Description",
+                            "format": "string",
+                        }
+                    ],
+                },
+                {
+                    "name": "Test",
+                    "tooltipLabel": "{marker.data.name}",
+                    "tableLabel": "{marker.data.status} — {marker.data.test}",
+                    "chartLabel": "{marker.data.name}",
+                    "display": ["marker-chart", "marker-table"],
+                    "colorField": "color",
+                    "data": [
+                        {
+                            "key": "test",
+                            "label": "Test Name",
+                            "format": "string",
+                        },
+                        {
+                            "key": "name",
+                            "label": "Short Name",
+                            "format": "string",
+                            "hidden": True,
+                        },
+                        {
+                            "key": "status",
+                            "label": "Status",
+                            "format": "string",
+                        },
+                        {
+                            "key": "expected",
+                            "label": "Expected",
+                            "format": "string",
+                        },
+                        {
+                            "key": "message",
+                            "label": "Message",
+                            "format": "string",
+                        },
+                        {
+                            "key": "timeoutfactor",
+                            "label": "Timeout Factor",
+                            "format": "integer",
+                        },
+                        {
+                            "key": "color",
+                            "hidden": True,
+                        },
+                    ],
+                },
+                {
+                    "name": "TestStatus",
+                    "tableLabel": "{marker.data.message} — {marker.data.test} {marker.data.subtest}",
+                    "display": ["marker-chart", "marker-table"],
+                    "colorField": "color",
+                    "data": [
+                        {
+                            "key": "message",
+                            "label": "Message",
+                            "format": "string",
+                        },
+                        {
+                            "key": "test",
+                            "label": "Test Name",
+                            "format": "string",
+                        },
+                        {
+                            "key": "subtest",
+                            "label": "Subtest",
+                            "format": "string",
+                        },
+                        {
+                            "key": "color",
+                            "hidden": True,
+                        },
+                    ],
+                },
+                {
+                    "name": "Artifact",
+                    "tableLabel": "{marker.data.filename} — {marker.data.size}",
+                    "display": ["marker-chart", "marker-table"],
+                    "data": [
+                        {
+                            "key": "filename",
+                            "label": "Filename",
+                            "format": "string",
+                        },
+                        {
+                            "key": "size",
+                            "label": "Size",
+                            "format": "bytes",
+                        },
+                    ],
+                },
+                {
+                    "name": "Crash",
+                    "tableLabel": "{marker.data.signature} — {marker.data.test}",
+                    "display": ["marker-chart", "marker-table"],
+                    "colorField": "color",
+                    "data": [
+                        {
+                            "key": "signature",
+                            "label": "Signature",
+                            "format": "string",
+                        },
+                        {
+                            "key": "reason",
+                            "label": "Reason",
+                            "format": "string",
+                        },
+                        {
+                            "key": "test",
+                            "label": "Test Name",
+                            "format": "string",
+                        },
+                        {
+                            "key": "minidump",
+                            "label": "Minidump",
+                            "format": "string",
+                        },
+                        {
+                            "key": "color",
+                            "hidden": True,
+                        },
+                    ],
+                },
+                {
+                    "name": "Mem",
+                    "tooltipLabel": "{marker.name}",
+                    "display": [],
+                    "data": [
+                        {"key": "used", "label": "Memory Used", "format": "bytes"},
+                        {
+                            "key": "cached",
+                            "label": "Memory cached",
+                            "format": "bytes",
+                        },
+                        {
+                            "key": "buffers",
+                            "label": "Memory buffers",
+                            "format": "bytes",
+                        },
+                    ],
+                    "graphs": [
+                        {"key": "used", "color": "orange", "type": "line-filled"}
+                    ],
+                },
+                {
+                    "name": "IO",
+                    "tooltipLabel": "{marker.name}",
+                    "display": [],
+                    "data": [
+                        {
+                            "key": "write_bytes",
+                            "label": "Written",
+                            "format": "bytes",
+                        },
+                        {
+                            "key": "write_count",
+                            "label": "Write count",
+                            "format": "integer",
+                        },
+                        {"key": "read_bytes", "label": "Read", "format": "bytes"},
+                        {
+                            "key": "read_count",
+                            "label": "Read count",
+                            "format": "integer",
+                        },
+                    ],
+                    "graphs": [
+                        {"key": "read_bytes", "color": "green", "type": "bar"},
+                        {"key": "write_bytes", "color": "red", "type": "bar"},
+                    ],
+                },
+                {
+                    "name": "NetIO",
+                    "tooltipLabel": "{marker.name}",
+                    "display": [],
+                    "data": [
+                        {
+                            "key": "sent_bytes",
+                            "label": "Sent",
+                            "format": "bytes",
+                        },
+                        {
+                            "key": "sent_count",
+                            "label": "Packets sent",
+                            "format": "integer",
+                        },
+                        {
+                            "key": "recv_bytes",
+                            "label": "Received",
+                            "format": "bytes",
+                        },
+                        {
+                            "key": "recv_count",
+                            "label": "Packets received",
+                            "format": "integer",
+                        },
+                    ],
+                    "graphs": [
+                        {"key": "recv_bytes", "color": "blue", "type": "bar"},
+                        {"key": "sent_bytes", "color": "orange", "type": "bar"},
+                    ],
+                },
+                {
+                    "name": "Process",
+                    "chartLabel": "{marker.data.cmd}",
+                    "tooltipLabel": "{marker.name}",
+                    "tableLabel": "{marker.data.cmd}",
+                    "display": ["marker-chart", "marker-table"],
+                    "data": [
+                        {
+                            "key": "cmd",
+                            "label": "Command line",
+                            "format": "string",
+                        },
+                        {
+                            "key": "pid",
+                            "label": "Process ID",
+                            "format": "pid",
+                        },
+                        {
+                            "key": "ppid",
+                            "label": "Parent process ID",
+                            "format": "pid",
+                        },
+                    ],
+                },
+                {
+                    "name": "Interval",
+                    "tooltipLabel": "{marker.name}",
+                    "display": [],
+                    "data": [
+                        {
+                            "key": "interval",
+                            "label": "Interval",
+                            "format": "duration",
+                        }
+                    ],
+                    "graphs": [{"key": "interval", "color": "purple", "type": "line"}],
+                },
+                {
+                    "name": "sccache",
+                    "tooltipLabel": "{marker.data.status}: {marker.data.file}",
+                    "tableLabel": "{marker.data.status}: {marker.data.file}",
+                    "chartLabel": "{marker.data.file}",
+                    "display": ["marker-chart", "marker-table"],
+                    "colorField": "color",
+                    "data": [
+                        {
+                            "key": "file",
+                            "label": "File",
+                            "format": "string",
+                        },
+                        {
+                            "key": "status",
+                            "label": "Status",
+                            "format": "string",
+                        },
+                        {
+                            "key": "hash_time",
+                            "label": "Hash Time",
+                            "format": "duration",
+                        },
+                        {
+                            "key": "lookup_time",
+                            "label": "Lookup Time",
+                            "format": "duration",
+                        },
+                        {
+                            "key": "compile_time",
+                            "label": "Compile Time",
+                            "format": "duration",
+                        },
+                        {
+                            "key": "artifact_time",
+                            "label": "Artifact Creation Time",
+                            "format": "duration",
+                        },
+                        {
+                            "key": "write_time",
+                            "label": "Cache Write Time",
+                            "format": "duration",
+                        },
+                        {
+                            "key": "color",
+                            "hidden": True,
+                        },
+                    ],
+                },
+            ],
+            "usesOnlyOneStackType": True,
+        }
+        for key in self.metadata:
+            meta[key] = self.metadata[key]
+        return meta
+
+    def _build_thread(self):
+        """Build the base thread dict for the profile."""
+        return {
+            "processType": "default",
+            "processName": "mach",
+            "processStartupTime": 0,
+            "processShutdownTime": None,
+            "registerTime": 0,
+            "unregisterTime": None,
+            "pausedRanges": [],
+            "showMarkersInTimeline": True,
+            "name": "",
+            "isMainThread": False,
+            "pid": "0",
+            "tid": 0,
+            "samples": {
+                "weightType": "samples",
+                "weight": None,
+                "stack": [],
+                "time": [],
+                "length": 0,
+            },
+            "stackTable": {
+                "frame": [0],
+                "prefix": [None],
+                "category": [0],
+                "subcategory": [0],
+                "length": 1,
+            },
+            "frameTable": {
+                "address": [-1],
+                "inlineDepth": [0],
+                "category": [None],
+                "subcategory": [0],
+                "func": [0],
+                "nativeSymbol": [None],
+                "innerWindowID": [0],
+                "implementation": [None],
+                "line": [None],
+                "column": [None],
+                "length": 1,
+            },
+            "funcTable": {
+                "isJS": [False],
+                "relevantForJS": [False],
+                "name": [0],
+                "resource": [-1],
+                "fileName": [None],
+                "lineNumber": [None],
+                "columnNumber": [None],
+                "length": 1,
+            },
+            "resourceTable": {
+                "lib": [],
+                "name": [],
+                "host": [],
+                "type": [],
+                "length": 0,
+            },
+            "nativeSymbols": {
+                "libIndex": [],
+                "address": [],
+                "name": [],
+                "functionSize": [],
+                "length": 0,
+            },
+        }
+
+    def _measurement_markers(self, m):
+        """Yield (name, start, end, data) tuples for a single measurement."""
+        fp = self._format_percent
+
+        # CPU
+        cpu_data = {
+            "type": "CPU",
+            "cpuPercent": fp(sum(list(m.cpu_percent)) / len(m.cpu_percent)),
+        }
+        # Due to inconsistencies in the sampling rate, sometimes the
+        # cpu_times add up to more than 100%, causing annoying
+        # spikes in the CPU use charts. Avoid them by dividing the
+        # values by the total if it is above 1.
+        total = 0
+        for field in ["nice", "user", "system", "iowait", "softirq", "idle"]:
+            if hasattr(m.cpu_times[0], field):
+                total += sum(getattr(core, field) for core in m.cpu_times) / (
+                    m.end - m.start
+                )
+        divisor = total if total > 1 else 1
+        total = 0
+        for field in ["nice", "user", "system", "iowait", "softirq"]:
+            if hasattr(m.cpu_times[0], field):
+                total += (
+                    sum(getattr(core, field) for core in m.cpu_times)
+                    / (m.end - m.start)
+                    / divisor
+                )
+                cpu_data[field] = round(total, 3)
+        for field in ["nice", "user", "system", "iowait", "idle"]:
+            if hasattr(m.cpu_times[0], field):
+                cpu_data[field + "_pct"] = fp(
+                    100
+                    * sum(getattr(core, field) for core in m.cpu_times)
+                    / (m.end - m.start)
+                    / len(m.cpu_times)
+                )
+        yield ("CPU Use", m.start, m.end, cpu_data)
+
+        # Memory
+        mem_data = {"type": "Mem", "used": m.virt.used}
+        if hasattr(m.virt, "cached"):
+            mem_data["cached"] = m.virt.cached
+        if hasattr(m.virt, "buffers"):
+            mem_data["buffers"] = m.virt.buffers
+        yield ("Memory", m.start, m.end, mem_data)
+
+        # IO
+        yield (
+            "IO",
+            m.start,
+            m.end,
+            {
+                "type": "IO",
+                "read_count": m.io.read_count,
+                "read_bytes": m.io.read_bytes,
+                "write_count": m.io.write_count,
+                "write_bytes": m.io.write_bytes,
+            },
+        )
+
+        # Network IO
+        yield (
+            "NetIO",
+            m.start,
+            m.end,
+            {
+                "type": "NetIO",
+                "recv_count": m.net_io.packets_recv,
+                "recv_bytes": m.net_io.bytes_recv,
+                "sent_count": m.net_io.packets_sent,
+                "sent_bytes": m.net_io.bytes_sent,
+            },
+        )
+
+        # Sampling interval
+        yield (
+            "Sampling Interval",
+            m.end,
+            None,
+            {
+                "type": "Interval",
+                "interval": round((m.end - m.start) * 1000),
+            },
+        )
+
     def as_profile(self):
         """Convert the recorded data to an object suitable for import into the firefox profiler"""
         profile_time = time.monotonic()
         start_time = self.start_time
+        firstThread = self._build_thread()
+        firstThread["stringArray"] = ["(root)"]
+        firstThread["markers"] = {
+            "data": [],
+            "name": [],
+            "startTime": [],
+            "endTime": [],
+            "phase": [],
+            "category": [],
+            "stack": [],
+            "length": 0,
+        }
         profile = {
-            "meta": {
-                "processType": 0,
-                "product": "mach",
-                "stackwalk": 0,
-                "version": 27,
-                "preprocessedProfileVersion": 47,
-                "symbolicationNotSupported": True,
-                "interval": self.poll_interval * 1000,
-                "startTime": self.start_timestamp * 1000,
-                "profilingStartTime": 0,
-                "logicalCPUs": psutil.cpu_count(logical=True),
-                "physicalCPUs": psutil.cpu_count(logical=False),
-                "mainMemory": psutil.virtual_memory()[0],
-                "categories": [
-                    {
-                        "name": "Other",
-                        "color": "grey",
-                        "subcategories": ["Other"],
-                    },
-                    {
-                        "name": "Phases",
-                        "color": "grey",
-                        "subcategories": ["Other"],
-                    },
-                    {
-                        "name": "Tasks",
-                        "color": "grey",
-                        "subcategories": ["Other"],
-                    },
-                ],
-                "markerSchema": [
-                    {
-                        "name": "Phase",
-                        "tooltipLabel": "{marker.data.phase}",
-                        "tableLabel": "{marker.name} — {marker.data.phase} — CPU time: {marker.data.cpuTime} ({marker.data.cpuPercent})",
-                        "chartLabel": "{marker.data.phase}",
-                        "display": [
-                            "marker-chart",
-                            "marker-table",
-                            "timeline-overview",
-                        ],
-                        "data": [
-                            {
-                                "key": "cpuTime",
-                                "label": "CPU Time",
-                                "format": "duration",
-                            },
-                            {
-                                "key": "cpuPercent",
-                                "label": "CPU Percent",
-                                "format": "string",
-                            },
-                        ],
-                    },
-                    {
-                        "name": "Text",
-                        "tooltipLabel": "{marker.name}",
-                        "tableLabel": "{marker.name} — {marker.data.text}",
-                        "chartLabel": "{marker.data.text}",
-                        "display": ["marker-chart", "marker-table"],
-                        "data": [
-                            {
-                                "key": "text",
-                                "label": "Description",
-                                "format": "string",
-                            }
-                        ],
-                    },
-                    {
-                        "name": "Test",
-                        "tooltipLabel": "{marker.data.name}",
-                        "tableLabel": "{marker.data.status} — {marker.data.test}",
-                        "chartLabel": "{marker.data.name}",
-                        "display": ["marker-chart", "marker-table"],
-                        "colorField": "color",
-                        "data": [
-                            {
-                                "key": "test",
-                                "label": "Test Name",
-                                "format": "string",
-                            },
-                            {
-                                "key": "name",
-                                "label": "Short Name",
-                                "format": "string",
-                                "hidden": True,
-                            },
-                            {
-                                "key": "status",
-                                "label": "Status",
-                                "format": "string",
-                            },
-                            {
-                                "key": "expected",
-                                "label": "Expected",
-                                "format": "string",
-                            },
-                            {
-                                "key": "message",
-                                "label": "Message",
-                                "format": "string",
-                            },
-                            {
-                                "key": "timeoutfactor",
-                                "label": "Timeout Factor",
-                                "format": "integer",
-                            },
-                            {
-                                "key": "color",
-                                "hidden": True,
-                            },
-                        ],
-                    },
-                    {
-                        "name": "TestStatus",
-                        "tableLabel": "{marker.data.message} — {marker.data.test} {marker.data.subtest}",
-                        "display": ["marker-chart", "marker-table"],
-                        "colorField": "color",
-                        "data": [
-                            {
-                                "key": "message",
-                                "label": "Message",
-                                "format": "string",
-                            },
-                            {
-                                "key": "test",
-                                "label": "Test Name",
-                                "format": "string",
-                            },
-                            {
-                                "key": "subtest",
-                                "label": "Subtest",
-                                "format": "string",
-                            },
-                            {
-                                "key": "color",
-                                "hidden": True,
-                            },
-                        ],
-                    },
-                    {
-                        "name": "Artifact",
-                        "tableLabel": "{marker.data.filename} — {marker.data.size}",
-                        "display": ["marker-chart", "marker-table"],
-                        "data": [
-                            {
-                                "key": "filename",
-                                "label": "Filename",
-                                "format": "string",
-                            },
-                            {
-                                "key": "size",
-                                "label": "Size",
-                                "format": "bytes",
-                            },
-                        ],
-                    },
-                    {
-                        "name": "Crash",
-                        "tableLabel": "{marker.data.signature} — {marker.data.test}",
-                        "display": ["marker-chart", "marker-table"],
-                        "colorField": "color",
-                        "data": [
-                            {
-                                "key": "signature",
-                                "label": "Signature",
-                                "format": "string",
-                            },
-                            {
-                                "key": "reason",
-                                "label": "Reason",
-                                "format": "string",
-                            },
-                            {
-                                "key": "test",
-                                "label": "Test Name",
-                                "format": "string",
-                            },
-                            {
-                                "key": "minidump",
-                                "label": "Minidump",
-                                "format": "string",
-                            },
-                            {
-                                "key": "color",
-                                "hidden": True,
-                            },
-                        ],
-                    },
-                    {
-                        "name": "Mem",
-                        "tooltipLabel": "{marker.name}",
-                        "display": [],
-                        "data": [
-                            {"key": "used", "label": "Memory Used", "format": "bytes"},
-                            {
-                                "key": "cached",
-                                "label": "Memory cached",
-                                "format": "bytes",
-                            },
-                            {
-                                "key": "buffers",
-                                "label": "Memory buffers",
-                                "format": "bytes",
-                            },
-                        ],
-                        "graphs": [
-                            {"key": "used", "color": "orange", "type": "line-filled"}
-                        ],
-                    },
-                    {
-                        "name": "IO",
-                        "tooltipLabel": "{marker.name}",
-                        "display": [],
-                        "data": [
-                            {
-                                "key": "write_bytes",
-                                "label": "Written",
-                                "format": "bytes",
-                            },
-                            {
-                                "key": "write_count",
-                                "label": "Write count",
-                                "format": "integer",
-                            },
-                            {"key": "read_bytes", "label": "Read", "format": "bytes"},
-                            {
-                                "key": "read_count",
-                                "label": "Read count",
-                                "format": "integer",
-                            },
-                        ],
-                        "graphs": [
-                            {"key": "read_bytes", "color": "green", "type": "bar"},
-                            {"key": "write_bytes", "color": "red", "type": "bar"},
-                        ],
-                    },
-                    {
-                        "name": "NetIO",
-                        "tooltipLabel": "{marker.name}",
-                        "display": [],
-                        "data": [
-                            {
-                                "key": "sent_bytes",
-                                "label": "Sent",
-                                "format": "bytes",
-                            },
-                            {
-                                "key": "sent_count",
-                                "label": "Packets sent",
-                                "format": "integer",
-                            },
-                            {
-                                "key": "recv_bytes",
-                                "label": "Received",
-                                "format": "bytes",
-                            },
-                            {
-                                "key": "recv_count",
-                                "label": "Packets received",
-                                "format": "integer",
-                            },
-                        ],
-                        "graphs": [
-                            {"key": "recv_bytes", "color": "blue", "type": "bar"},
-                            {"key": "sent_bytes", "color": "orange", "type": "bar"},
-                        ],
-                    },
-                    {
-                        "name": "Process",
-                        "chartLabel": "{marker.data.cmd}",
-                        "tooltipLabel": "{marker.name}",
-                        "tableLabel": "{marker.data.cmd}",
-                        "display": ["marker-chart", "marker-table"],
-                        "data": [
-                            {
-                                "key": "cmd",
-                                "label": "Command line",
-                                "format": "string",
-                            },
-                            {
-                                "key": "pid",
-                                "label": "Process ID",
-                                "format": "pid",
-                            },
-                            {
-                                "key": "ppid",
-                                "label": "Parent process ID",
-                                "format": "pid",
-                            },
-                        ],
-                    },
-                    {
-                        "name": "Interval",
-                        "tooltipLabel": "{marker.name}",
-                        "display": [],
-                        "data": [
-                            {
-                                "key": "interval",
-                                "label": "Interval",
-                                "format": "duration",
-                            }
-                        ],
-                        "graphs": [
-                            {"key": "interval", "color": "purple", "type": "line"}
-                        ],
-                    },
-                    {
-                        "name": "sccache",
-                        "tooltipLabel": "{marker.data.status}: {marker.data.file}",
-                        "tableLabel": "{marker.data.status}: {marker.data.file}",
-                        "chartLabel": "{marker.data.file}",
-                        "display": ["marker-chart", "marker-table"],
-                        "colorField": "color",
-                        "data": [
-                            {
-                                "key": "file",
-                                "label": "File",
-                                "format": "string",
-                            },
-                            {
-                                "key": "status",
-                                "label": "Status",
-                                "format": "string",
-                            },
-                            {
-                                "key": "hash_time",
-                                "label": "Hash Time",
-                                "format": "duration",
-                            },
-                            {
-                                "key": "lookup_time",
-                                "label": "Lookup Time",
-                                "format": "duration",
-                            },
-                            {
-                                "key": "compile_time",
-                                "label": "Compile Time",
-                                "format": "duration",
-                            },
-                            {
-                                "key": "artifact_time",
-                                "label": "Artifact Creation Time",
-                                "format": "duration",
-                            },
-                            {
-                                "key": "write_time",
-                                "label": "Cache Write Time",
-                                "format": "duration",
-                            },
-                            {
-                                "key": "color",
-                                "hidden": True,
-                            },
-                        ],
-                    },
-                ],
-                "usesOnlyOneStackType": True,
-            },
+            "meta": self._build_meta(),
             "libs": [],
-            "threads": [
-                {
-                    "processType": "default",
-                    "processName": "mach",
-                    "processStartupTime": 0,
-                    "processShutdownTime": None,
-                    "registerTime": 0,
-                    "unregisterTime": None,
-                    "pausedRanges": [],
-                    "showMarkersInTimeline": True,
-                    "name": "",
-                    "isMainThread": False,
-                    "pid": "0",
-                    "tid": 0,
-                    "samples": {
-                        "weightType": "samples",
-                        "weight": None,
-                        "stack": [],
-                        "time": [],
-                        "length": 0,
-                    },
-                    "stringArray": ["(root)"],
-                    "markers": {
-                        "data": [],
-                        "name": [],
-                        "startTime": [],
-                        "endTime": [],
-                        "phase": [],
-                        "category": [],
-                        "stack": [],
-                        "length": 0,
-                    },
-                    "stackTable": {
-                        "frame": [0],
-                        "prefix": [None],
-                        "category": [0],
-                        "subcategory": [0],
-                        "length": 1,
-                    },
-                    "frameTable": {
-                        "address": [-1],
-                        "inlineDepth": [0],
-                        "category": [None],
-                        "subcategory": [0],
-                        "func": [0],
-                        "nativeSymbol": [None],
-                        "innerWindowID": [0],
-                        "implementation": [None],
-                        "line": [None],
-                        "column": [None],
-                        "length": 1,
-                    },
-                    "funcTable": {
-                        "isJS": [False],
-                        "relevantForJS": [False],
-                        "name": [0],
-                        "resource": [-1],
-                        "fileName": [None],
-                        "lineNumber": [None],
-                        "columnNumber": [None],
-                        "length": 1,
-                    },
-                    "resourceTable": {
-                        "lib": [],
-                        "name": [],
-                        "host": [],
-                        "type": [],
-                        "length": 0,
-                    },
-                    "nativeSymbols": {
-                        "libIndex": [],
-                        "address": [],
-                        "name": [],
-                        "functionSize": [],
-                        "length": 0,
-                    },
-                }
-            ],
+            "threads": [firstThread],
             "counters": [],
         }
-        OTHER_CATEGORY = 0
-        PHASE_CATEGORY = 1
-        TASK_CATEGORY = 2
-
-        firstThread = profile["threads"][0]
         markers = firstThread["markers"]
-        for key in self.metadata:
-            profile["meta"][key] = self.metadata[key]
 
         def get_string_index(string):
             stringArray = firstThread["stringArray"]
@@ -1846,7 +2086,7 @@ class SystemResourceMonitor:
                     frame_index = frameTable["length"]
                     frameTable["address"].append(frame_address)
                     frameTable["inlineDepth"].append(inline_depth)
-                    frameTable["category"].append(OTHER_CATEGORY)
+                    frameTable["category"].append(self.OTHER_CATEGORY)
                     frameTable["subcategory"].append(0)
                     frameTable["func"].append(func_index)
                     frameTable["nativeSymbol"].append(native_symbol_index)
@@ -1868,7 +2108,12 @@ class SystemResourceMonitor:
             return stack_index
 
         def add_marker(
-            name_index, start, end, data, category_index=OTHER_CATEGORY, precision=None
+            name_index,
+            start,
+            end,
+            data,
+            category_index=self.OTHER_CATEGORY,
+            precision=None,
         ):
             # The precision argument allows setting how many digits after the
             # decimal point are desired.
@@ -1911,135 +2156,11 @@ class SystemResourceMonitor:
             markers["stack"].append(stack_index)
             markers["length"] = markers["length"] + 1
 
-        def format_percent(value):
-            return str(round(value, 1)) + "%"
-
-        cpu_string_index = get_string_index("CPU Use")
-        memory_string_index = get_string_index("Memory")
-        io_string_index = get_string_index("IO")
-        network_string_index = get_string_index("NetIO")
-        interval_string_index = get_string_index("Sampling Interval")
-        valid_cpu_fields = set()
         for m in self.measurements:
-            # Ignore samples that are much too short.
             if m.end - m.start < self.poll_interval / 10:
                 continue
-
-            # CPU
-            markerData = {
-                "type": "CPU",
-                "cpuPercent": format_percent(
-                    sum(list(m.cpu_percent)) / len(m.cpu_percent)
-                ),
-            }
-
-            # due to inconsistencies in the sampling rate, sometimes the
-            # cpu_times add up to more than 100%, causing annoying
-            # spikes in the CPU use charts. Avoid them by dividing the
-            # values by the total if it is above 1.
-            total = 0
-            for field in ["nice", "user", "system", "iowait", "softirq", "idle"]:
-                if hasattr(m.cpu_times[0], field):
-                    total += sum(getattr(core, field) for core in m.cpu_times) / (
-                        m.end - m.start
-                    )
-            divisor = total if total > 1 else 1
-
-            total = 0
-            for field in ["nice", "user", "system", "iowait", "softirq"]:
-                if hasattr(m.cpu_times[0], field):
-                    total += (
-                        sum(getattr(core, field) for core in m.cpu_times)
-                        / (m.end - m.start)
-                        / divisor
-                    )
-                    if total > 0:
-                        valid_cpu_fields.add(field)
-                    markerData[field] = round(total, 3)
-            for field in ["nice", "user", "system", "iowait", "idle"]:
-                if hasattr(m.cpu_times[0], field):
-                    markerData[field + "_pct"] = format_percent(
-                        100
-                        * sum(getattr(core, field) for core in m.cpu_times)
-                        / (m.end - m.start)
-                        / len(m.cpu_times)
-                    )
-            add_marker(cpu_string_index, m.start, m.end, markerData)
-
-            # Memory
-            markerData = {"type": "Mem", "used": m.virt.used}
-            if hasattr(m.virt, "cached"):
-                markerData["cached"] = m.virt.cached
-            if hasattr(m.virt, "buffers"):
-                markerData["buffers"] = m.virt.buffers
-            add_marker(memory_string_index, m.start, m.end, markerData)
-
-            # IO
-            markerData = {
-                "type": "IO",
-                "read_count": m.io.read_count,
-                "read_bytes": m.io.read_bytes,
-                "write_count": m.io.write_count,
-                "write_bytes": m.io.write_bytes,
-            }
-            add_marker(io_string_index, m.start, m.end, markerData)
-
-            # Network IO
-            markerData = {
-                "type": "NetIO",
-                "recv_count": m.net_io.packets_recv,
-                "recv_bytes": m.net_io.bytes_recv,
-                "sent_count": m.net_io.packets_sent,
-                "sent_bytes": m.net_io.bytes_sent,
-            }
-            add_marker(network_string_index, m.start, m.end, markerData)
-
-            # Sampling interval marker
-            add_marker(
-                interval_string_index,
-                m.end,
-                None,
-                {
-                    "type": "Interval",
-                    "interval": round((m.end - m.start) * 1000),
-                },
-            )
-
-        # The marker schema for CPU markers should only contain graph
-        # definitions for fields we actually have, or the profiler front-end
-        # will detect missing data and skip drawing the track entirely.
-        cpuSchema = {
-            "name": "CPU",
-            "tooltipLabel": "{marker.name}",
-            "display": [],
-            "data": [{"key": "cpuPercent", "label": "CPU Percent", "format": "string"}],
-            "graphs": [],
-        }
-        cpuData = cpuSchema["data"]
-        for field, label in {
-            "user": "User %",
-            "iowait": "IO Wait %",
-            "system": "System %",
-            "nice": "Nice %",
-            "idle": "Idle %",
-        }.items():
-            if field in valid_cpu_fields or field == "idle":
-                cpuData.append({
-                    "key": field + "_pct",
-                    "label": label,
-                    "format": "string",
-                })
-        cpuGraphs = cpuSchema["graphs"]
-        for field, color in {
-            "softirq": "orange",
-            "iowait": "red",
-            "system": "grey",
-            "user": "yellow",
-            "nice": "blue",
-        }.items():
-            if field in valid_cpu_fields:
-                cpuGraphs.append({"key": field, "color": color, "type": "bar"})
-        profile["meta"]["markerSchema"].insert(0, cpuSchema)
+            for name, start, end, markerData in self._measurement_markers(m):
+                add_marker(get_string_index(name), start, end, markerData)
 
         # Create markers for phases
         phase_string_index = get_string_index("Phase")
@@ -2048,7 +2169,7 @@ class SystemResourceMonitor:
 
             cpu_percent_cores = self.aggregate_cpu_percent(phase=phase)
             if cpu_percent_cores:
-                markerData["cpuPercent"] = format_percent(
+                markerData["cpuPercent"] = self._format_percent(
                     sum(cpu_percent_cores) / len(cpu_percent_cores)
                 )
 
@@ -2060,19 +2181,21 @@ class SystemResourceMonitor:
             if total_cpu_time_ms > 0:
                 markerData["cpuTime"] = total_cpu_time_ms
 
-            add_marker(phase_string_index, v[0], v[1], markerData, PHASE_CATEGORY, 3)
+            add_marker(
+                phase_string_index, v[0], v[1], markerData, self.PHASE_CATEGORY, 3
+            )
 
         process_string_index = get_string_index("process")
         for pid, start, end, cmd, ppid in self.processes:
             markerData = {"type": "Process", "pid": pid, "ppid": ppid, "cmd": cmd}
             add_marker(process_string_index, start, end, markerData)
         # Add generic markers
-        for name, start, end, data in self.markers:
+        for name, start, end, data, category in self.markers:
             # data can be a dictionary containing the marker payload or a plain text value
             markerData = (
                 data if isinstance(data, dict) else {"type": "Text", "text": str(data)}
             )
-            add_marker(get_string_index(name), start, end, markerData, TASK_CATEGORY, 3)
+            add_marker(get_string_index(name), start, end, markerData, category, 3)
         if self.events:
             event_string_index = get_string_index("Event")
             for event in self.events:
@@ -2084,7 +2207,7 @@ class SystemResourceMonitor:
                         event_time,
                         None,
                         data,
-                        OTHER_CATEGORY,
+                        self.OTHER_CATEGORY,
                         3,
                     )
                 elif len(event) == 2:
@@ -2095,7 +2218,7 @@ class SystemResourceMonitor:
                         event_time,
                         None,
                         {"type": "Text", "text": text},
-                        OTHER_CATEGORY,
+                        self.OTHER_CATEGORY,
                         3,
                     )
 
@@ -2115,7 +2238,7 @@ class SystemResourceMonitor:
             "phase": "teardown",
         }
         add_marker(
-            phase_string_index, self.stop_time, now, markerData, PHASE_CATEGORY, 3
+            phase_string_index, self.stop_time, now, markerData, self.PHASE_CATEGORY, 3
         )
         teardown_string_index = get_string_index("resourcemonitor")
         markerData = {
@@ -2127,7 +2250,7 @@ class SystemResourceMonitor:
             self.stop_time,
             self.end_time,
             markerData,
-            TASK_CATEGORY,
+            self.TASK_CATEGORY,
             3,
         )
         markerData = {
@@ -2135,7 +2258,7 @@ class SystemResourceMonitor:
             "text": "as_profile",
         }
         add_marker(
-            teardown_string_index, profile_time, now, markerData, TASK_CATEGORY, 3
+            teardown_string_index, profile_time, now, markerData, self.TASK_CATEGORY, 3
         )
 
         # Unfortunately, whatever the caller does with the profile (e.g. json)

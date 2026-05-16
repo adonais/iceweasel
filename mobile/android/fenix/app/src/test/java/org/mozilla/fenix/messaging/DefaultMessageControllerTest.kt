@@ -16,13 +16,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MessageClicked
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import java.lang.ref.WeakReference
 
 @RunWith(RobolectricTestRunner::class)
 class DefaultMessageControllerTest {
@@ -30,17 +28,17 @@ class DefaultMessageControllerTest {
     @get:Rule
     val gleanTestRule = FenixGleanTestRule(testContext)
 
-    private val homeActivity: HomeActivity = mockk(relaxed = true)
     private val messagingController: NimbusMessagingControllerInterface = mockk(relaxed = true)
     private lateinit var defaultMessageController: DefaultMessageController
     private val appStore: AppStore = mockk(relaxed = true)
+    private val processIntent: (Intent?) -> Unit = mockk(relaxed = true)
 
     @Before
     fun setup() {
         defaultMessageController = DefaultMessageController(
             messagingController = messagingController,
             appStore = appStore,
-            homeActivityRef = WeakReference(homeActivity),
+            processIntent = processIntent,
         )
     }
 
@@ -52,7 +50,7 @@ class DefaultMessageControllerTest {
         defaultMessageController.onMessagePressed(message)
 
         verify { messagingController.getIntentForMessage(message) }
-        verify { homeActivity.processIntent(any()) }
+        verify { processIntent(any()) }
         verify { appStore.dispatch(MessageClicked(message)) }
     }
 

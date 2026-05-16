@@ -20,7 +20,6 @@
 #include "nsCRT.h"
 #include "nsContentUtils.h"
 #include "nsDOMString.h"
-#include "nsGkAtoms.h"
 #include "nsINode.h"
 #include "nsNameSpaceManager.h"
 #include "nsNodeInfoManager.h"

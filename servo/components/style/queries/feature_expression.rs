@@ -8,9 +8,13 @@
 use super::feature::{Evaluator, QueryFeatureDescription};
 use super::feature::{FeatureFlags, KeywordDiscriminant};
 use crate::context::QuirksMode;
+use crate::custom_properties::{
+    self, ComputedSubstitutionFunctions, VariableValue as CustomVariableValue,
+};
 use crate::derives::*;
+use crate::dom::AttributeTracker;
 use crate::parser::{Parse, ParserContext};
-use crate::properties::CSSWideKeyword;
+use crate::properties::{self, CSSWideKeyword};
 use crate::properties_and_values::value::{ComputedValueComponent as Component, ValueInner};
 use crate::selector_map::PrecomputedHashSet;
 use crate::str::{starts_with_ignore_ascii_case, string_as_ascii_lowercase};
@@ -678,9 +682,10 @@ pub enum QueryExpressionValue {
     Time(Time),
     /// A custom property name.
     Custom(DashedIdent),
-    /// A simple var(...) reference without a default (equivalent to a bare Custom ident,
-    /// but will serialize with the `var()` wrapper)
-    Var(DashedIdent),
+    /// An arbitrary substitution function (var(), attr(), env()), stored as a string
+    /// for later evaluation. We store this as a custom-property value to make it easy
+    /// to resolve later.
+    Function(Box<CustomVariableValue>),
 }
 
 impl QueryExpressionValue {
@@ -704,11 +709,7 @@ impl QueryExpressionValue {
             QueryExpressionValue::Angle(v) => v.to_css(dest),
             QueryExpressionValue::Time(v) => v.to_css(dest),
             QueryExpressionValue::Custom(ref v) => v.to_css(dest),
-            QueryExpressionValue::Var(ref v) => {
-                dest.write_str("var(")?;
-                v.to_css(dest)?;
-                dest.write_char(')')
-            },
+            QueryExpressionValue::Function(ref f) => f.to_css(dest),
             QueryExpressionValue::Enumerated(value) => match for_expr
                 .expect("caller should have passed for_expr")
                 .feature()
@@ -793,17 +794,27 @@ impl QueryExpressionValue {
         if let Ok(keyword) = input.try_parse(|i| CSSWideKeyword::parse(i)) {
             return Ok(Self::Keyword(keyword));
         }
+        input.skip_whitespace();
+        let start = input.position();
         if let Ok(Token::Function(ref name)) = input.next() {
-            // Here, we only handle simple `var(--foo)` references when used as individual
-            // query expression values. More complex usages such as `var(...)` with default,
-            // or `var(...)` used within `calc(...)` expressions, will be substituted and
-            // resolved at query evaluation time.
-            if name.eq_ignore_ascii_case("var") {
-                if let Ok(ident) =
-                    input.try_parse(|i| i.parse_nested_block(|i| DashedIdent::parse(context, i)))
-                {
-                    return Ok(Self::Var(ident));
-                }
+            // Helper to parse the function arg and store the complete expression (function
+            // name and parenthesized argument) into a CustomVariableValue.
+            let parse_func =
+                |input: &mut Parser<'i, 't>| -> Result<CustomVariableValue, ParseError<'i>> {
+                    input.parse_nested_block(|i| i.expect_no_error_token().map_err(Into::into))?;
+                    let mut input = ParserInput::new(input.slice_from(start));
+                    CustomVariableValue::parse(
+                        &mut Parser::new(&mut input),
+                        Some(&context.namespaces.prefixes),
+                        context.url_data,
+                    )
+                };
+
+            if properties::enabled_arbitrary_substitution_functions()
+                .iter()
+                .any(|n| n.eq_ignore_ascii_case(name))
+            {
+                return Ok(Self::Function(Box::new(parse_func(input)?)));
             }
         }
         Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
@@ -839,7 +850,6 @@ impl ToCss for QueryStyleRange {
     where
         W: fmt::Write,
     {
-        dest.write_char('(')?;
         match self {
             Self::StyleRange2 {
                 ref value1,
@@ -850,7 +860,7 @@ impl ToCss for QueryStyleRange {
                 dest.write_char(' ')?;
                 op1.to_css(dest)?;
                 dest.write_char(' ')?;
-                value2.to_css(dest, None)?;
+                value2.to_css(dest, None)
             },
             Self::StyleRange3 {
                 ref value1,
@@ -867,10 +877,9 @@ impl ToCss for QueryStyleRange {
                 dest.write_char(' ')?;
                 op2.to_css(dest)?;
                 dest.write_char(' ')?;
-                value3.to_css(dest, None)?;
+                value3.to_css(dest, None)
             },
         }
-        dest.write_char(')')
     }
 }
 
@@ -911,15 +920,31 @@ impl QueryStyleRange {
     }
 
     /// Returns whether this style-range query evaluates to true for the given context.
-    pub fn evaluate(&self, context: &computed::Context) -> KleeneValue {
+    pub fn evaluate(
+        &self,
+        context: &computed::Context,
+        attribute_tracker: &mut AttributeTracker,
+    ) -> KleeneValue {
         match self {
             QueryStyleRange::StyleRange2 {
                 ref value1,
                 ref op1,
                 ref value2,
             } => Self::compare_values(
-                Self::resolve_value(value1, context, &mut PrecomputedHashSet::default()).as_ref(),
-                Self::resolve_value(value2, context, &mut PrecomputedHashSet::default()).as_ref(),
+                Self::resolve_value(
+                    value1,
+                    context,
+                    attribute_tracker,
+                    &mut PrecomputedHashSet::default(),
+                )
+                .as_ref(),
+                Self::resolve_value(
+                    value2,
+                    context,
+                    attribute_tracker,
+                    &mut PrecomputedHashSet::default(),
+                )
+                .as_ref(),
             )
             .is_some_and(|c| op1.evaluate(c))
             .into(),
@@ -931,8 +956,18 @@ impl QueryStyleRange {
                 ref op2,
                 ref value3,
             } => {
-                let v1 = Self::resolve_value(value1, context, &mut PrecomputedHashSet::default());
-                let v2 = Self::resolve_value(value2, context, &mut PrecomputedHashSet::default());
+                let v1 = Self::resolve_value(
+                    value1,
+                    context,
+                    attribute_tracker,
+                    &mut PrecomputedHashSet::default(),
+                );
+                let v2 = Self::resolve_value(
+                    value2,
+                    context,
+                    attribute_tracker,
+                    &mut PrecomputedHashSet::default(),
+                );
                 Self::compare_values(v1.as_ref(), v2.as_ref())
                     .is_some_and(|c1| {
                         op1.evaluate(c1)
@@ -941,6 +976,7 @@ impl QueryStyleRange {
                                 Self::resolve_value(
                                     value3,
                                     context,
+                                    attribute_tracker,
                                     &mut PrecomputedHashSet::default(),
                                 )
                                 .as_ref(),
@@ -956,10 +992,11 @@ impl QueryStyleRange {
     fn resolve_value(
         value: &QueryExpressionValue,
         context: &computed::Context,
+        attribute_tracker: &mut AttributeTracker,
         visited_set: &mut PrecomputedHashSet<DashedIdent>,
     ) -> Option<Component> {
         match value {
-            QueryExpressionValue::Custom(ident) | QueryExpressionValue::Var(ident) => {
+            QueryExpressionValue::Custom(ident) => {
                 // `ident` is the dashed ident, but we need the name
                 // without "--" for custom-property lookup.
                 let name = ident.undashed();
@@ -978,7 +1015,13 @@ impl QueryStyleRange {
                         // and we risk infinite recursion, so instead return None
                         // (i.e. the value cannot be resolved).
                         if visited_set.insert(ident.clone()) {
-                            Self::resolve_universal(&v.css, &v.url_data, context, visited_set)
+                            Self::resolve_universal(
+                                &v.css,
+                                &v.url_data,
+                                context,
+                                attribute_tracker,
+                                visited_set,
+                            )
                         } else {
                             None
                         }
@@ -988,6 +1031,31 @@ impl QueryStyleRange {
                         None
                     },
                 }
+            },
+            QueryExpressionValue::Function(value) => {
+                let sub_funcs = ComputedSubstitutionFunctions::new(
+                    Some(context.inherited_custom_properties().clone()),
+                    None,
+                );
+                let stylist = context
+                    .builder
+                    .stylist
+                    .expect("container queries should have a stylist around");
+                let substituted = custom_properties::substitute(
+                    &value,
+                    &sub_funcs,
+                    stylist,
+                    context,
+                    attribute_tracker,
+                )
+                .ok()?;
+                Self::resolve_universal(
+                    &substituted.css,
+                    &value.url_data,
+                    context,
+                    attribute_tracker,
+                    visited_set,
+                )
             },
             QueryExpressionValue::Length(v) => {
                 Some(Component::Length(v.to_computed_value(context)))
@@ -1021,6 +1089,7 @@ impl QueryStyleRange {
         css_text: &str,
         url_data: &UrlExtraData,
         context: &computed::Context,
+        attribute_tracker: &mut AttributeTracker,
         visited_set: &mut PrecomputedHashSet<DashedIdent>,
     ) -> Option<Component> {
         let parser_context = ParserContext::new(
@@ -1036,7 +1105,9 @@ impl QueryStyleRange {
         let mut input = ParserInput::new(css_text);
         QueryExpressionValue::parse_for_style_range(&parser_context, &mut Parser::new(&mut input))
             .ok()
-            .and_then(|parsed| Self::resolve_value(&parsed, context, visited_set))
+            .and_then(|parsed| {
+                Self::resolve_value(&parsed, context, attribute_tracker, visited_set)
+            })
     }
 
     fn compare_values(value1: Option<&Component>, value2: Option<&Component>) -> Option<Ordering> {

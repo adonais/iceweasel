@@ -299,9 +299,20 @@ newtab-error-fallback-refresh-link = Segarkan laman untuk mencoba lagi.
 
 newtab-custom-shortcuts-title = Pintasan
 newtab-custom-shortcuts-subtitle = Situs yang Anda simpan atau kunjungi
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Pintasan
     .description = Situs yang Anda simpan atau kunjungi
+newtab-custom-shortcuts-nova =
+    .label = Pintasan
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+           *[other] { $num } baris
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -311,9 +322,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Pintasan bersponsor
 newtab-custom-pocket-title = Disarankan oleh { -pocket-brand-name }
 newtab-custom-pocket-subtitle = Konten luar biasa yang dikelola oleh { -pocket-brand-name }, bagian dari keluarga { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Cerita yang direkomendasikan
     .description = Konten luar biasa yang dikurasi oleh keluarga { -brand-product-name }
+newtab-recommended-stories-toggle =
+    .label = Cerita yang direkomendasikan
 newtab-custom-stories-personalized-toggle =
     .label = Cerita
 newtab-custom-stories-personalized-checkbox-label = Cerita yang dipersonalisasi berdasarkan aktivitas Anda
@@ -343,8 +357,11 @@ newtab-custom-settings = Kelola pengaturan lainnya
 
 newtab-wallpaper-title = Gambar latar
 newtab-wallpaper-reset = Setel ulang ke bawaan
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Unggah gambar
 newtab-wallpaper-custom-color = Pilih warna
+newtab-wallpaper-toggle-title =
+    .label = Gambar latar
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Gambar melebihi batas ukuran berkas sebesar { $file_size }MB. Coba unggah berkas yang lebih kecil.
@@ -367,6 +384,7 @@ newtab-wallpaper-light-fox-anniversary = Seekor rubah di padang berumput dengan 
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Warna-warni rata
 newtab-wallpaper-blue = Biru
 newtab-wallpaper-light-blue = Biru muda
@@ -601,7 +619,6 @@ newtab-widget-lists-menu-edit = Sunting nama daftar
 newtab-widget-lists-menu-create = Buat daftar baru
 newtab-widget-lists-menu-delete = Hapus daftar ini
 newtab-widget-lists-menu-copy = Salin daftar ke papan klip
-newtab-widget-lists-menu-hide = Sembunyikan semua daftar
 newtab-widget-lists-menu-learn-more = Pelajari lebih lanjut
 newtab-widget-lists-input-menu-open-link = Buka tautan
 newtab-widget-lists-input-menu-move-up = Pindah ke atas

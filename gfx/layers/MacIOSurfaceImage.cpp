@@ -304,7 +304,8 @@ already_AddRefed<MacIOSurface> MacIOSurfaceRecycleAllocator::Allocate(
     }
 #endif
 
-    return MakeAndAddRef<MacIOSurface>(surf, false, aYUVColorSpace);
+    return MakeAndAddRef<MacIOSurface>(surf, false, aYUVColorSpace,
+                                       aTransferFunction);
   }
 
   // Time to decide if we are creating a single planar or bi-planar surface.

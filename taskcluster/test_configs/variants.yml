@@ -95,7 +95,7 @@ trainhop-release:
     component: "Firefox::New Tab Page"
     suffix: "trainhop-rel"
     mozinfo: "trainhop"
-    expiration: None
+    expiration: "never"
     merge:
         worker:
             env:
@@ -139,7 +139,7 @@ trainhop-beta:
     component: "Firefox::New Tab Page"
     suffix: "trainhop-beta"
     mozinfo: "trainhop"
-    expiration: None
+    expiration: "never"
     merge:
         worker:
             env:
@@ -178,6 +178,21 @@ trainhop-beta:
                     index: gecko.v2.mozilla-beta.shippable.latest.firefox.win64-opt
                     name: build/target.zip
 
+
+standalone:
+    description: "{description} with browser restart after each test to identify test dependencies"
+    component: "Testing::General"
+    expiration: "never"
+    suffix: "standalone"
+    treeherder-suffix: "sa"
+    mozinfo: "standalone"
+    replace:
+        optimization:
+            skip-unless-backstop: null
+    merge:
+        mozharness:
+            extra-options:
+                - "--restart-between-tests"
 
 geckoview-no-fission:
     description: "{description} without fission enabled"
@@ -288,8 +303,6 @@ conditioned_profile:
         mozharness:
             extra-options:
                 - "--conditioned-profile"
-    replace:
-        chunks: 8
 
 socketprocess:
     description: "{description} with socket process enabled"
@@ -497,11 +510,15 @@ msix:
                         || "debug" in task["test-platform"]
                     ) && !(
                         "asan" in task["test-platform"]
+                        || "artifact" in task["test-platform"]
                         || "ccov" in task["test-platform"]
                         || "devedition" in task["test-platform"]
                     )
                 '
     replace:
+        target:
+            by-test-platform:
+                windows11-64.*: target.installer.msix
         mozharness:
             extra-options:
                 - "--variant=msix"

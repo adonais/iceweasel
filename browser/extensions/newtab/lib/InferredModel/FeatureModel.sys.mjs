@@ -10,10 +10,10 @@ import {
   FORMAT,
   AggregateResultKeys,
   SPECIAL_FEATURE_CLICK,
+  DEFAULT_USER_CTR,
 } from "resource://newtab/lib/InferredModel/InferredConstants.sys.mjs";
 
 export const DAYS_TO_MS = 60 * 60 * 24 * 1000;
-
 const MAX_INT_32 = 2 ** 32;
 
 /**
@@ -266,6 +266,7 @@ export class FeatureModel {
     normalize = false,
     normalizeL1 = false,
     privateFeatures = [],
+    ctrPriorStrength = null,
   }) {
     this.modelId = modelId;
     this.tileImportance = tileImportance;
@@ -277,6 +278,7 @@ export class FeatureModel {
     this.normalizeL1 = normalizeL1;
     this.modelType = modelType;
     this.privateFeatures = privateFeatures;
+    this.ctrPriorStrength = ctrPriorStrength;
   }
 
   static fromJSON(json) {
@@ -299,6 +301,7 @@ export class FeatureModel {
       clickScale: json.clickScale,
       modelType: json.model_type,
       privateFeatures: json.private_features ?? null,
+      ctrPriorStrength: json.ctr_prior_strength ?? null,
     });
   }
 
@@ -490,6 +493,41 @@ export class FeatureModel {
     return res;
   }
 
+  hasBayesianSmoothing() {
+    return this.ctrPriorStrength !== null && this.ctrPriorStrength > 0;
+  }
+
+  /**
+   * Applies Bayesian-smoothed CTR normalization. With few impressions the result
+   * regresses toward 1.0 (representing the user average). With many impressions the actual
+   * per-feature CTR dominates. The result is normalized by user average CTR.
+   *
+   * @param {{[key: string]: number}} clicks - Per-feature click counts.
+   * @param {{[key: string]: number}} impressions - Per-feature impression counts.
+   * @param {number} averageCTR - The average CTR for the user.
+   * @returns {{[key: string]: number}} Normalized smoothed CTR values.
+   */
+  applyBayesianSmoothing(clicks, impressions, averageCTRInput = null) {
+    const k = this.ctrPriorStrength;
+    const averageCTR =
+      averageCTRInput !== null && averageCTRInput > 1e-7
+        ? averageCTRInput
+        : DEFAULT_USER_CTR;
+    const alpha = averageCTR * k;
+    const result = {};
+    const allKeys = new Set([
+      ...Object.keys(clicks),
+      ...Object.keys(impressions),
+    ]);
+    for (const key of allKeys) {
+      const featureClicks = clicks[key] || 0;
+      const featureImpressions = impressions[key] || 0;
+      const smoothedCtr = (featureClicks + alpha) / (featureImpressions + k);
+      result[key] = smoothedCtr / averageCTR;
+    }
+    return result;
+  }
+
   /**
    * Computes interest vectors based on click-through rate (CTR) by dividing the click dictionary
    * by the impression dictionary. Applies differential privacy using Laplace noise, and optionally
@@ -515,6 +553,7 @@ export class FeatureModel {
     condensePrivateValues = true,
     timeZoneOffset,
     debugOverrideCoarseValueDictionary = null,
+    averageCtr = null,
   }) {
     let inferredInterests = divideDict(clicks, impressions);
 
@@ -525,10 +564,18 @@ export class FeatureModel {
     };
 
     if (this.supportsCoarseInterests()) {
-      // always true
-      const coarseValues = this.applyPostProcessing({
-        ...originalInterestValues,
-      });
+      let coarseValues;
+      if (this.hasBayesianSmoothing()) {
+        coarseValues = this.applyBayesianSmoothing(
+          clicks,
+          impressions,
+          averageCtr
+        );
+      } else {
+        coarseValues = this.applyPostProcessing({
+          ...originalInterestValues,
+        });
+      }
       // Time zone offset special case only in coarse / private interests
       if (timeZoneOffset && "timeZoneOffset" in this.interestVectorModel) {
         coarseValues.timeZoneOffset = timeZoneOffset;
@@ -542,16 +589,31 @@ export class FeatureModel {
     }
 
     if (this.supportsCoarsePrivateInterests()) {
-      let coarsePrivateValues = { ...originalInterestValues };
-      if (this.privateFeatures) {
-        // filter here for private features
-        coarsePrivateValues = Object.fromEntries(
-          Object.entries(coarsePrivateValues).filter(([key]) =>
-            this.privateFeatures.includes(key)
-          )
+      let coarsePrivateValues;
+      if (this.hasBayesianSmoothing()) {
+        coarsePrivateValues = this.applyBayesianSmoothing(
+          clicks,
+          impressions,
+          averageCtr
         );
+        if (this.privateFeatures) {
+          coarsePrivateValues = Object.fromEntries(
+            Object.entries(coarsePrivateValues).filter(([key]) =>
+              this.privateFeatures.includes(key)
+            )
+          );
+        }
+      } else {
+        coarsePrivateValues = { ...originalInterestValues };
+        if (this.privateFeatures) {
+          coarsePrivateValues = Object.fromEntries(
+            Object.entries(coarsePrivateValues).filter(([key]) =>
+              this.privateFeatures.includes(key)
+            )
+          );
+        }
+        coarsePrivateValues = this.applyPostProcessing(coarsePrivateValues);
       }
-      coarsePrivateValues = this.applyPostProcessing(coarsePrivateValues);
       if (
         timeZoneOffset &&
         (!this.privateFeatures ||

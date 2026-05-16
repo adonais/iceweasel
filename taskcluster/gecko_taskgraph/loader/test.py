@@ -29,6 +29,9 @@ def loader(kind, path, config, params, loaded_tasks, write_artifacts):
     builds_by_platform = get_builds_by_platform(
         dep_kind="build", loaded_tasks=loaded_tasks
     )
+    builds_by_platform.update(
+        get_builds_by_platform(dep_kind="artifact-build", loaded_tasks=loaded_tasks)
+    )
     signed_builds_by_platform = get_builds_by_platform(
         dep_kind="build-signing", loaded_tasks=loaded_tasks
     )

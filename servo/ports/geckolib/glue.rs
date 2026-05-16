@@ -106,7 +106,7 @@ use style::string_cache::{Atom, WeakAtom};
 use style::style_adjuster::StyleAdjuster;
 use style::stylesheets::container_rule::ContainerSizeQuery;
 use style::stylesheets::import_rule::{ImportLayer, ImportSheet};
-use style::stylesheets::keyframes_rule::{Keyframe, KeyframeSelector, KeyframesStepValue};
+use style::stylesheets::keyframes_rule::{Keyframe, KeyframeSelectors, KeyframesStepValue};
 use style::stylesheets::scope_rule::{ImplicitScopeRoot, ScopeRootCandidate, ScopeSubjectMap};
 use style::stylesheets::supports_rule::parse_condition_or_declaration;
 use style::stylesheets::{
@@ -114,10 +114,10 @@ use style::stylesheets::{
     CssRuleType, CssRuleTypes, CssRules, CustomMediaCondition, CustomMediaEvaluator,
     CustomMediaRule, DocumentRule, FontFaceRule, FontFeatureValuesRule, FontPaletteValuesRule,
     ImportRule, KeyframesRule, LayerBlockRule, LayerStatementRule, MarginRule, MediaRule,
-    NamespaceRule, NestedDeclarationsRule, Origin, OriginSet, PagePseudoClassFlags, PageRule,
-    PositionTryRule, PropertyRule, SanitizationData, SanitizationKind, ScopeRule,
+    NamespaceRule, NavigationType, NestedDeclarationsRule, Origin, OriginSet, PagePseudoClassFlags,
+    PageRule, PositionTryRule, PropertyRule, SanitizationData, SanitizationKind, ScopeRule,
     StartingStyleRule, StyleRule, StylesheetContents, StylesheetInDocument,
-    StylesheetLoader as StyleStylesheetLoader, SupportsRule, UrlExtraData,
+    StylesheetLoader as StyleStylesheetLoader, SupportsRule, UrlExtraData, ViewTransitionRule,
 };
 use style::stylist::{
     add_size_of_ua_cache, replace_parent_selector_with_implicit_scope, scope_root_candidates,
@@ -147,6 +147,7 @@ use style::values::generics::color::ColorMixFlags;
 use style::values::generics::easing::BeforeFlag;
 use style::values::generics::length::GenericAnchorSizeFunction;
 use style::values::resolved;
+use style::values::resolved::ToResolvedValue;
 use style::values::specified::align::AlignFlags;
 use style::values::specified::intersection_observer::IntersectionObserverMargin;
 use style::values::specified::position::PositionTryFallbacksItem;
@@ -156,7 +157,7 @@ use style::values::specified::{AbsoluteLength, NoCalcLength};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
 use style_traits::{
     CssWriter, NumericValue, ParseError, ParsingMode, SpecifiedValueInfo, ToCss, ToTyped,
-    TypedValue, UnitValue,
+    TypedValue, TypedValueList, UnitValue,
 };
 use thin_vec::ThinVec as nsTArray;
 use to_shmem::SharedMemoryBuilder;
@@ -2588,6 +2589,13 @@ impl_basic_rule_funcs! { (NestedDeclarations, NestedDeclarationsRule, Locked<Nes
     changed: Servo_StyleSet_NestedDeclarationsRuleChanged,
 }
 
+impl_basic_rule_funcs! { (ViewTransition, ViewTransitionRule, ViewTransitionRule),
+    getter: Servo_CssRules_GetViewTransitionRuleAt,
+    debug: Servo_ViewTransitionRule_Debug,
+    to_css: Servo_ViewTransitionRule_GetCssText,
+    changed: Servo_StyleSet_ViewTransitionRuleChanged,
+}
+
 #[no_mangle]
 pub extern "C" fn Servo_NestedDeclarationsRule_GetStyle(
     rule: &LockedNestedDeclarationsRule,
@@ -3178,7 +3186,7 @@ pub extern "C" fn Servo_Keyframe_GetKeyText(keyframe: &LockedKeyframe, result: &
 pub extern "C" fn Servo_Keyframe_SetKeyText(keyframe: &LockedKeyframe, text: &nsACString) -> bool {
     let text = unsafe { text.as_str_unchecked() };
     let mut input = ParserInput::new(&text);
-    if let Ok(selector) = Parser::new(&mut input).parse_entirely(KeyframeSelector::parse) {
+    if let Ok(selector) = Parser::new(&mut input).parse_entirely(KeyframeSelectors::parse) {
         write_locked_arc(keyframe, |keyframe: &mut Keyframe| {
             keyframe.selector = selector;
         });
@@ -3450,12 +3458,34 @@ pub extern "C" fn Servo_ContainerRule_GetConditionText(
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_ContainerRule_GetContainerQuery(
+pub extern "C" fn Servo_ContainerRule_GetConditionsLength(rule: &ContainerRule) -> usize {
+    rule.conditions.0.len()
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ContainerRule_GetContainerName(
     rule: &ContainerRule,
+    i: usize,
     result: &mut nsACString,
 ) {
-    if let Some(condition) = rule.query_condition() {
-        condition.to_css(&mut CssWriter::new(result)).unwrap();
+    if let Some(condition) = rule.conditions.0.get(i) {
+        let name = condition.name();
+        if !name.is_none() {
+            name.to_css(&mut CssWriter::new(result)).unwrap();
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ContainerRule_GetContainerQuery(
+    rule: &ContainerRule,
+    i: usize,
+    result: &mut nsACString,
+) {
+    if let Some(condition) = rule.conditions.0.get(i) {
+        if let Some(condition) = condition.query_condition() {
+            condition.to_css(&mut CssWriter::new(result)).unwrap();
+        }
     }
 }
 
@@ -3463,22 +3493,53 @@ pub extern "C" fn Servo_ContainerRule_GetContainerQuery(
 pub extern "C" fn Servo_ContainerRule_QueryContainerFor(
     rule: &ContainerRule,
     element: &RawGeckoElement,
+    condition_index: usize,
 ) -> *const RawGeckoElement {
-    debug_assert_eq!(rule.conditions.0.len(), 1);
-    rule.conditions.0[0]
-        .find_container(GeckoElement(element), None)
-        .map_or(ptr::null(), |result| result.element.0)
+    if let Some(condition) = rule.conditions.0.get(condition_index) {
+        if let Some(result) = condition.find_container(GeckoElement(element), None) {
+            return result.element.0;
+        }
+    }
+    ptr::null()
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_ContainerRule_GetContainerName(
+pub extern "C" fn Servo_ContainerRule_QueryConditionMatchesElement(
     rule: &ContainerRule,
-    result: &mut nsACString,
-) {
-    let name = rule.container_name();
-    if !name.is_none() {
-        name.to_css(&mut CssWriter::new(result)).unwrap();
-    }
+    element: &RawGeckoElement,
+    condition_index: usize,
+    per_doc_data: &PerDocumentStyleData,
+) -> bool {
+    let Some(condition) = rule.conditions.0.get(condition_index) else {
+        return false;
+    };
+
+    let stylist = &per_doc_data.borrow().stylist;
+    let quirks_mode = stylist.quirks_mode();
+    let mut selector_caches = SelectorCaches::default();
+    let mut context: MatchingContext<'_, style::selector_parser::SelectorImpl> =
+        MatchingContext::new(
+            MatchingMode::Normal,
+            /* bloom_filter = */ None,
+            &mut selector_caches,
+            quirks_mode,
+            NeedsSelectorFlags::No,
+            MatchingForInvalidation::No,
+        );
+
+    condition
+        .matches(
+            stylist,
+            GeckoElement(element),
+            context.extra_data.originating_element_style,
+            &mut context.extra_data.cascade_input_flags,
+        )
+        .to_bool(
+            // Consider unknown as false so we're consistent with that's done in
+            // CascadeData::container_condition_matches and won't indicate unsupported
+            // functions/idents as supported (see https://drafts.csswg.org/mediaqueries/#typedef-general-enclosed)
+            false,
+        )
 }
 
 #[no_mangle]
@@ -4862,30 +4923,27 @@ fn parse_property_into(
     )
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn Servo_ParseProperty(
-    property: &structs::CSSPropertyId,
+fn parse_property(
+    property_id: PropertyId,
     value: &nsACString,
-    data: *mut URLExtraData,
+    url_extra_data: &UrlExtraData,
     parsing_mode: ParsingMode,
-    quirks_mode: nsCompatibility,
-    loader: *mut Loader,
+    quirks_mode: QuirksMode,
     rule_type: CssRuleType,
+    reporter: Option<&dyn ParseErrorReporter>,
 ) -> Strong<LockedDeclarationBlock> {
-    let id = get_property_id_from_csspropertyid!(property, Strong::null());
     let mut declarations = SourcePropertyDeclaration::default();
-    let reporter = ErrorReporter::new(ptr::null_mut(), loader, data);
-    let data = UrlExtraData::from_ptr_ref(&data);
+
     let result = parse_property_into(
         &mut declarations,
-        id,
+        property_id,
         value,
         Origin::Author,
-        data,
+        url_extra_data,
         parsing_mode,
-        quirks_mode.into(),
+        quirks_mode,
         rule_type,
-        reporter.as_ref().map(|r| r as &dyn ParseErrorReporter),
+        reporter,
     );
 
     match result {
@@ -4897,6 +4955,31 @@ pub unsafe extern "C" fn Servo_ParseProperty(
         },
         Err(_) => Strong::null(),
     }
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ParseProperty(
+    property: &structs::CSSPropertyId,
+    value: &nsACString,
+    data: *mut URLExtraData,
+    parsing_mode: ParsingMode,
+    quirks_mode: nsCompatibility,
+    loader: *mut Loader,
+    rule_type: CssRuleType,
+) -> Strong<LockedDeclarationBlock> {
+    let property_id = get_property_id_from_csspropertyid!(property, Strong::null());
+    let reporter = ErrorReporter::new(ptr::null_mut(), loader, data);
+    let data = unsafe { UrlExtraData::from_ptr_ref(&data) };
+
+    parse_property(
+        property_id,
+        value,
+        data,
+        parsing_mode,
+        quirks_mode.into(),
+        rule_type,
+        reporter.as_ref().map(|r| r as &dyn ParseErrorReporter),
+    )
 }
 
 #[no_mangle]
@@ -5260,55 +5343,55 @@ impl From<Arc<Locked<PropertyDeclarationBlock>>> for UnsupportedValue {
 
 /// A property-aware wrapper around reification results.
 ///
-/// While `TypedValue` is property-agnostic, this enum represents the outcome
-/// of reifying a specific property from a `PropertyDeclarationBlock`.
+/// While `TypedValueList` is property-agnostic, this enum represents the
+/// outcome of reifying a specific property from a `PropertyDeclarationBlock`.
 /// It distinguishes between properties that are not present, properties whose
-/// values cannot be represented as a `TypedValue`, and properties that were
-/// successfully reified.
+/// values cannot be represented as a `TypedValueList`, and properties that
+/// were successfully reified.
 ///
 /// In the unsupported case, the full declaration block is carried via
 /// `UnsupportedValue`, which in turn holds the
-/// `Strong<LockedDeclarationBlock>`,
+/// `Strong<LockedDeclarationBlock>`.
 #[repr(C)]
 /// cbindgen:derive-tagged-enum-copy-constructor=false
 /// cbindgen:derive-tagged-enum-copy-assignment=false
-pub enum PropertyTypedValue {
+pub enum PropertyTypedValueList {
     /// The property is not present in the declaration block.
     None,
 
-    /// The property exists but cannot be expressed as a `TypedValue`.
+    /// The property exists but cannot be expressed as a `TypedValueList`.
     ///
     /// This occurs for shorthands and other unrepresentable cases. In this
     /// case, an `UnsupportedValue` is returned so a `CSSUnsupportedValue`
     /// object can be created and tied to the property.
     Unsupported(UnsupportedValue),
 
-    /// The property was successfully reified into a `TypedValue`.
-    Typed(TypedValue),
+    /// The property was successfully reified into a `TypedValueList`.
+    Typed(TypedValueList),
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValue(
+pub extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValueList(
     declarations: &LockedDeclarationBlock,
-    property: &nsACString,
-    result: *mut PropertyTypedValue,
+    property_id: &structs::CSSPropertyId,
+    result: &mut PropertyTypedValueList,
 ) -> bool {
-    let property_id = get_property_id_from_property!(property, false);
+    let property_id = get_property_id_from_csspropertyid!(property_id, false);
 
     *result = read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
-        let typed_value = decls.property_value_to_typed_value(&property_id);
+        let typed_value_list = decls.property_value_to_typed_value_list(&property_id);
 
-        match typed_value {
-            Err(()) => PropertyTypedValue::None,
+        match typed_value_list {
+            Err(()) => PropertyTypedValueList::None,
 
             Ok(None) => {
                 let global_style_data = &*GLOBAL_STYLE_DATA;
-                PropertyTypedValue::Unsupported(
+                PropertyTypedValueList::Unsupported(
                     Arc::new(global_style_data.shared_lock.wrap(decls.clone())).into(),
                 )
             },
 
-            Ok(Some(typed_value)) => PropertyTypedValue::Typed(typed_value),
+            Ok(Some(typed_value_list)) => PropertyTypedValueList::Typed(typed_value_list),
         }
     });
 
@@ -5483,6 +5566,49 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_SetPropertyById(
     )
 }
 
+#[no_mangle]
+pub extern "C" fn Servo_DeclarationBlock_SetPropertyTypedValue(
+    declarations: &LockedDeclarationBlock,
+    property_id: &structs::CSSPropertyId,
+    value: &nsACString,
+    url_extra_data: *mut URLExtraData,
+    before_change_closure: DeclarationBlockMutationClosure,
+    changed: &mut bool,
+) -> nsresult {
+    let property_id =
+        get_property_id_from_csspropertyid!(property_id, nsresult::NS_ERROR_INVALID_ARG);
+    let non_custom_property_id = property_id.non_custom_id();
+
+    let mut source_declarations = SourcePropertyDeclaration::default();
+
+    let result = parse_property_into(
+        &mut source_declarations,
+        property_id,
+        value,
+        Origin::Author,
+        unsafe { UrlExtraData::from_ptr_ref(&url_extra_data) },
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        CssRuleType::Style,
+        None,
+    );
+
+    match result {
+        Ok(()) => {
+            *changed = set_property_to_declarations(
+                non_custom_property_id,
+                declarations,
+                &mut source_declarations,
+                before_change_closure,
+                Importance::Normal,
+            );
+
+            nsresult::NS_OK
+        },
+        Err(_) => nsresult::NS_ERROR_DOM_SYNTAX_ERR,
+    }
+}
+
 fn remove_property(
     declarations: &LockedDeclarationBlock,
     property_id: PropertyId,
@@ -5532,12 +5658,30 @@ pub extern "C" fn Servo_DeclarationBlock_RemovePropertyById(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_NumericDeclaration_Parse(
-    text: &nsACString,
-) -> *mut NumericDeclaration {
+pub extern "C" fn Servo_DeclarationBlock_Parse(
+    property_id: &structs::CSSPropertyId,
+    value: &nsACString,
+    url_extra_data: *mut URLExtraData,
+) -> Strong<LockedDeclarationBlock> {
+    let property_id = get_property_id_from_csspropertyid!(property_id, Strong::null());
+    let url_extra_data = unsafe { UrlExtraData::from_ptr_ref(&url_extra_data) };
+
+    parse_property(
+        property_id,
+        value,
+        url_extra_data,
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        CssRuleType::Style,
+        None,
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_NumericDeclaration_Parse(text: &nsACString) -> *mut NumericDeclaration {
     let context = ParserContext::new(
         Origin::Author,
-        dummy_url_data(),
+        unsafe { dummy_url_data() },
         Some(CssRuleType::Style),
         ParsingMode::DEFAULT,
         QuirksMode::NoQuirks,
@@ -5546,7 +5690,7 @@ pub unsafe extern "C" fn Servo_NumericDeclaration_Parse(
         None,
     );
 
-    let string = text.as_str_unchecked();
+    let string = unsafe { text.as_str_unchecked() };
     let mut input = ParserInput::new(&string);
     let mut parser = Parser::new(&mut input);
 
@@ -5586,9 +5730,9 @@ pub enum NumericValueResult {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_NumericDeclaration_GetValue(
+pub extern "C" fn Servo_NumericDeclaration_GetValue(
     declaration: &NumericDeclaration,
-    result: *mut NumericValueResult,
+    result: &mut NumericValueResult,
 ) {
     *result = match declaration.to_typed_value() {
         Some(TypedValue::Numeric(numeric)) => NumericValueResult::Numeric(numeric),
@@ -5597,7 +5741,7 @@ pub unsafe extern "C" fn Servo_NumericDeclaration_GetValue(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_SumValue_Create(numeric_value: &NumericValue) -> *mut SumValue {
+pub extern "C" fn Servo_SumValue_Create(numeric_value: &NumericValue) -> *mut SumValue {
     let sum_value = match SumValue::try_from_numeric_value(numeric_value) {
         Ok(sum_value) => sum_value,
         Err(..) => return ptr::null_mut(),
@@ -5631,12 +5775,12 @@ pub enum UnitValueResult {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_SumValue_ToUnit(
+pub extern "C" fn Servo_SumValue_ToUnit(
     sum_value: &SumValue,
     unit: &nsACString,
-    result: *mut UnitValueResult,
+    result: &mut UnitValueResult,
 ) {
-    let unit = unit.as_str_unchecked();
+    let unit = unsafe { unit.as_str_unchecked() };
 
     *result = match sum_value.resolve_to_unit(unit) {
         Ok(unit_value) => UnitValueResult::Unit(unit_value),
@@ -6868,7 +7012,7 @@ pub extern "C" fn Servo_ReparentStyle(
         .cascade_style_and_visited(
             element,
             pseudo.as_ref(),
-            inputs,
+            &inputs,
             &StylesheetGuards::same(&guard),
             Some(parent_style),
             Some(layout_parent_style),
@@ -6896,7 +7040,6 @@ fn create_context_for_animation<'a>(
     per_doc_data: &'a PerDocumentStyleDataImpl,
     style: &'a ComputedValues,
     parent_style: Option<&'a ComputedValues>,
-    for_smil_animation: bool,
     rule_cache_conditions: &'a mut RuleCacheConditions,
     container_size_query: ContainerSizeQuery<'a>,
 ) -> Context<'a> {
@@ -6907,7 +7050,6 @@ fn create_context_for_animation<'a>(
             style,
             parent_style,
         ),
-        for_smil_animation,
         per_doc_data.stylist.quirks_mode(),
         rule_cache_conditions,
         container_size_query,
@@ -7000,7 +7142,6 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
         &data,
         &style,
         parent_style,
-        /* for_smil_animation = */ false,
         &mut conditions,
         container_size_query,
     );
@@ -7138,7 +7279,6 @@ pub extern "C" fn Servo_GetAnimationValues(
         &data,
         &style,
         parent_style,
-        /* for_smil_animation = */ true,
         &mut conditions,
         container_size_query,
     );
@@ -7184,7 +7324,6 @@ pub extern "C" fn Servo_AnimationValue_Compute(
         &data,
         style,
         parent_style,
-        /* for_smil_animation = */ false,
         &mut conditions,
         container_size_query,
     );
@@ -7504,6 +7643,14 @@ pub unsafe extern "C" fn Servo_StyleSet_GetCounterStyleRule(
             .find_map(|(d, _)| d.counter_styles.get(name))
             .map_or(ptr::null(), |rule| &**rule as *const _)
     })
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_StyleSet_GetLastViewTransitionRule(
+    raw_data: &PerDocumentStyleData,
+) -> Strong<ViewTransitionRule> {
+    let data = raw_data.borrow();
+    data.stylist.last_view_transition_rule().cloned().into()
 }
 
 #[no_mangle]
@@ -8435,7 +8582,7 @@ pub unsafe extern "C" fn Servo_GetResolvedValue(
         element_info: resolved::ResolvedElementInfo {
             element: GeckoElement(element),
         },
-        for_property: prop,
+        for_property: PropertyId::NonCustom(prop),
         current_longhand: None,
     };
 
@@ -8443,25 +8590,29 @@ pub unsafe extern "C" fn Servo_GetResolvedValue(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_GetComputedTypedValue(
+pub extern "C" fn Servo_ComputedValues_GetPropertyTypedValueList(
     style: &ComputedValues,
-    property: &nsACString,
-    result: *mut PropertyTypedValue,
+    property_id: &structs::CSSPropertyId,
+    result: &mut PropertyTypedValueList,
 ) -> bool {
-    let property_id = get_property_id_from_property!(property, false);
+    let property_id = get_property_id_from_csspropertyid!(property_id, false);
 
     let non_custom_property_id = match property_id.non_custom_id() {
         Some(id) => id,
         // XXX Handle custom properties here. Tracked in bug 1990426.
-        None => return false,
+        None => {
+            *result = PropertyTypedValueList::None;
+            return true;
+        },
     };
 
-    let typed_value: Option<TypedValue> = match non_custom_property_id.longhand_or_shorthand() {
-        Ok(longhand) => style.computed_typed_value(longhand),
-        Err(_) => None,
-    };
+    let typed_value_list: Option<TypedValueList> =
+        match non_custom_property_id.longhand_or_shorthand() {
+            Ok(longhand) => style.property_value_to_typed_value_list(longhand),
+            Err(_) => None,
+        };
 
-    *result = match typed_value {
+    *result = match typed_value_list {
         None => {
             let global_style_data = &*GLOBAL_STYLE_DATA;
 
@@ -8484,12 +8635,12 @@ pub unsafe extern "C" fn Servo_GetComputedTypedValue(
                 },
             };
 
-            PropertyTypedValue::Unsupported(
+            PropertyTypedValueList::Unsupported(
                 Arc::new(global_style_data.shared_lock.wrap(block)).into(),
             )
         },
 
-        Some(typed_value) => PropertyTypedValue::Typed(typed_value),
+        Some(typed_value_list) => PropertyTypedValueList::Typed(typed_value_list),
     };
 
     true
@@ -8500,9 +8651,11 @@ pub unsafe extern "C" fn Servo_GetCustomPropertyValue(
     style: &ComputedValues,
     name: &nsACString,
     raw_data: &PerDocumentStyleData,
-    value: &mut nsACString,
+    element: &RawGeckoElement,
+    value: Option<&mut nsACString>,
 ) -> bool {
     let data = raw_data.borrow();
+    let device = data.stylist.device();
     let name = Atom::from(name.as_str_unchecked());
     let custom_registration = data.stylist.get_custom_property_registration(&name);
     let computed_value = style.custom_properties.get(custom_registration, &name);
@@ -8510,9 +8663,23 @@ pub unsafe extern "C" fn Servo_GetCustomPropertyValue(
         Some(v) => v,
         None => return false,
     };
-    // TODO(emilio): This might want to return resolved colors and so on for example, see
-    // https://github.com/w3c/csswg-drafts/issues/10371.
-    computed_value.to_css(&mut CssWriter::new(value)).unwrap();
+
+    let Some(value) = value else { return true };
+
+    let mut context = resolved::Context {
+        style,
+        device,
+        element_info: resolved::ResolvedElementInfo {
+            element: GeckoElement(element),
+        },
+        for_property: PropertyId::Custom(name),
+        current_longhand: None,
+    };
+    computed_value
+        .clone()
+        .to_resolved_value(&mut context)
+        .to_css(&mut CssWriter::new(value))
+        .unwrap();
     true
 }
 
@@ -9684,6 +9851,33 @@ pub extern "C" fn Servo_LayerStatementRule_GetNameAt(
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_ViewTransitionRule_GetNavigationDescriptor(
+    rule: &ViewTransitionRule,
+) -> NavigationType {
+    rule.descriptors.navigation.unwrap_or_default()
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ViewTransitionRule_GetNavigation(
+    rule: &ViewTransitionRule,
+    result: &mut nsACString,
+) {
+    if let Some(nav) = rule.descriptors.navigation {
+        nav.to_css(&mut CssWriter::new(result)).unwrap()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ViewTransitionRule_GetTypes(
+    rule: &ViewTransitionRule,
+    result: &mut nsTArray<*mut nsAtom>,
+) {
+    if let Some(ref types) = rule.descriptors.types {
+        result.extend(types.value.iter().map(|ty| ty.0.as_ptr()));
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Servo_InvalidateForViewportUnits(
     document_style: &PerDocumentStyleData,
     root: &RawGeckoElement,
@@ -9849,13 +10043,7 @@ pub extern "C" fn Servo_SlowRgbToNearestColorName(
 pub extern "C" fn Servo_ColorNameToRgb(name: &nsACString, out: &mut structs::nscolor) -> bool {
     match cssparser::color::parse_named_color(unsafe { name.as_str_unchecked() }) {
         Ok((r, g, b)) => {
-            *out = AbsoluteColor::new(
-                ColorSpace::Srgb,
-                r,
-                g,
-                b,
-                1.0,
-            ).to_nscolor();
+            *out = AbsoluteColor::new(ColorSpace::Srgb, r, g, b, 1.0).to_nscolor();
             true
         },
         _ => false,

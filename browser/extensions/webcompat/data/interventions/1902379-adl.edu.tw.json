@@ -1,0 +1,17 @@
+{
+  "label": "adl.edu.tw",
+  "bugs": {
+    "1902379": {
+      "issue": "unsupported-warning",
+      "matches": ["*://adl.edu.tw/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "js": ["bug1902379-adl.edu.tw-hide-unsupported-popup.js"]
+      }
+    }
+  ]
+}

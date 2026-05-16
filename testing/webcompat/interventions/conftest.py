@@ -75,6 +75,12 @@ def pytest_generate_tests(metafunc):
     if "disable_standard_captureStream" in marks:
         otherargs["disable_standard_captureStream"] = True
 
+    if "enable_webkit_scrollbar" in marks:
+        otherargs["enable_webkit_scrollbar"] = True
+
+    if "disable_webkit_scrollbar" in marks:
+        otherargs["disable_webkit_scrollbar"] = True
+
     if "enable_webkit_fill_available" in marks:
         otherargs["enable_webkit_fill_available"] = True
 
@@ -110,6 +116,7 @@ async def test_config(request, driver):
         "enable_standard_captureStream": params.get(
             "enable_standard_captureStream", False
         ),
+        "enable_webkit_scrollbar": params.get("enable_webkit_scrollbar", False),
         "enable_webkit_fill_available": params.get(
             "enable_webkit_fill_available", False
         ),
@@ -118,6 +125,7 @@ async def test_config(request, driver):
         "disable_standard_captureStream": params.get(
             "disable_standard_captureStream", False
         ),
+        "disable_webkit_scrollbar": params.get("disable_webkit_scrollbar", False),
         "disable_webkit_fill_available": params.get(
             "disable_webkit_fill_available", False
         ),

@@ -1,0 +1,18 @@
+{
+  "label": "copyleaks.com",
+  "bugs": {
+    "1898944": {
+      "issue": "unsupported-warning",
+      "matches": ["*://*.copyleaks.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "content_scripts": {
+        "all_frames": true,
+        "css": ["bug1830796-copyleaks.com-hide-unsupported.css"]
+      }
+    }
+  ]
+}

@@ -9,6 +9,7 @@
  */
 
 DEPRECATED_OPERATION(Components)
+DEPRECATED_OPERATION(CSSContainerRuleSingleCondition)
 DEPRECATED_OPERATION(NodeIteratorDetach)
 DEPRECATED_OPERATION(LenientThis)
 DEPRECATED_OPERATION(UseOfCaptureEvents)
@@ -48,6 +49,7 @@ DEPRECATED_OPERATION(MathML_DeprecatedMathVariant)
 DEPRECATED_OPERATION(MathML_DeprecatedMoExplicitAccent)
 DEPRECATED_OPERATION(MathML_DeprecatedMoverNonExplicitAccent)
 DEPRECATED_OPERATION(MathML_DeprecatedMunderNonExplicitAccentunder)
+DEPRECATED_OPERATION(MathML_DeprecatedHrefLinkOnNonAnchorElement)
 DEPRECATED_OPERATION(FormSubmissionUntrustedEvent)
 DEPRECATED_OPERATION(ElementSetCapture)
 DEPRECATED_OPERATION(ElementReleaseCapture)

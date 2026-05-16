@@ -106,9 +106,7 @@ class HTMLEditUtils final {
    * native anonymous node or something.
    */
   static bool IsNeverElementContentsEditableByUser(const nsIContent& aContent) {
-    return aContent.IsElement() &&
-           // XXX I think we should not treat <button> contents as editable
-           !aContent.IsHTMLElement(nsGkAtoms::button) &&
+    return aContent.IsElement() && !aContent.IsHTMLElement(nsGkAtoms::button) &&
            (!HTMLEditUtils::IsContainerNode(aContent) ||
             HTMLEditUtils::IsReplacedElement(*aContent.AsElement()) ||
             aContent.IsAnyOfHTMLElements(nsGkAtoms::applet, nsGkAtoms::colgroup,
@@ -471,12 +469,6 @@ class HTMLEditUtils final {
   [[nodiscard]] static bool IsNonVoidReplacedElement(const Element& aElement) {
     return IsReplacedElement(aElement) && IsContainerNode(aElement);
   }
-
-  /**
-   * Return true if aElement is a form widget, i.e., a replaced element for the
-   * <form>.
-   */
-  [[nodiscard]] static bool IsFormWidgetElement(const nsIContent& aContent);
 
   /**
    * Return true if aContent is an element which can ahve `align` attribute.

@@ -165,8 +165,6 @@ run-if = [
 ]
 tags = "os_integration"
 
-["test_readCertPrefs.js"]
-
 ["test_servicerequest_xhr.js"]
 
 ["test_sqlite.js"]

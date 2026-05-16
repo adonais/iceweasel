@@ -147,6 +147,7 @@ export const CERT_ERRORS = [
       showDateTime: true,
     },
     hasNoUserFix: false,
+    checkClockSkew: true,
   },
   {
     id: "SEC_ERROR_REVOKED_CERTIFICATE",
@@ -493,6 +494,33 @@ export const CERT_ERRORS = [
         supportPage: "connection-not-secure",
       },
       showViewCertificate: true,
+    },
+    hasNoUserFix: false,
+  },
+  // This does not correspond to a real NSS error code. It is a virtual error
+  // that may appear in place of certain errors that have checkClockSkew: true,
+  // when clock skew is detected at runtime.
+  {
+    id: "CLOCK_SKEW_ERROR",
+    category: "cert",
+    bodyTitleL10nId: "clockSkewError-title",
+    introContent: {
+      dataL10nId: "fp-certerror-clock-skew-intro",
+      dataL10nArgs: { hostname: null, now: null },
+    },
+    buttons: {
+      showTryAgain: true,
+      showGoBack: false,
+      showAdvanced: false,
+      showAddException: false,
+    },
+    advanced: null,
+    customNetError: {
+      titleL10nId: "clockSkewError-title",
+      whatCanYouDoL10nId: "fp-certerror-clock-skew-what-can-you-do-body",
+      whatCanYouDoL10nArgs: { now: null },
+      learnMoreL10nId: "fp-learn-more-about-time-related-errors",
+      learnMoreSupportPage: "time-errors",
     },
     hasNoUserFix: false,
   },

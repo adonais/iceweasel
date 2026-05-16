@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Ҷустуҷӯ дар варақаҳо</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Вожаҳои ҷустуҷӯиро ворид намоед</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Варақаҳои кушодашудаи шумо дар ин ҷо нишон дода мешаванд.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Варақаҳои хусусии шумо дар ин ҷо нишон дода мешаванд.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Тамошобинии хусусӣ</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Маҷмуаро интихоб кунед</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Аз реҷаи серинтихоб баромадан</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Нигоҳ доштани варақаҳои интихобшуда дар маҷмуа</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Варақаҳоро аз дастгоҳи дилхоҳ ба даст оред</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Истодан</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Васеъшавиҳо</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Шумо васеъшавиҳоро насб кардед, вале онҳо фаъол намебошанд</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Идоракунии васеъшавиҳо</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Васеъшавии тавсияшударо кӯшиш кунед</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Маълумот дар бораи ҳисоби корбар</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Кумак</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Чӣ нав аст</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Танзимот</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Китобхона</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Барои компютери мизи корӣ</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Кушодан дар варақаи оддӣ</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Илова кардан ба экрани асосӣ</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ДАР %1$s АСОС МЕЁБАД</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Дар %1$s асос меёбад</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Намоиши хониш</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Кушодан дар барнома</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Фармоишдиҳии намоиши хониш</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Фармоишдиҳии намоиши хониш</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Илова кардан</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Таҳрир кардан</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Танзимоти саҳифаи асосӣ</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Ворид шудан</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Пӯшидани меню</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Паймоиш</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Варақи менюи васеъшавиҳоро мепӯшад</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Варақи менюи нигоҳдориро мепӯшад</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Варақи менюи абзорҳоро мепӯшад</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Варақи менюи варақаи фармоиширо мепӯшад</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -368,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Экрани асосӣ</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Тарҷума кардани саҳифа</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -391,6 +362,58 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Нодида гузаронидани паём</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Хулосаҳои саҳифа</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">Унсурҳои идоракунии зеҳни сунъӣ (AI)</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Шумо ҳамеша дар барномаи «%s» интихоб доред</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Ин бахш имконияти истифодаи ҳусусиятҳои такмилёфтаро тавассути зеҳни сунъӣ (AI) дар бар мегирад. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Ин бахш имконияти истифодаи ҳусусиятҳои такмилёфтаро тавассути зеҳни сунъӣ (AI) дар бар мегирад.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Маълумоти бештар</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Манъ кардани такмилҳои зеҳни сунъӣ (AI)</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Амали манъкунӣ маънои онро дорад, ки шумо дар барномаи «%s» такмилҳои нав ё ҷории зеҳни сунъиро (AI) намебинед, аз он ҷумла маълумот дар бораи онҳо тавассути равзанаҳои зоҳиршаванда.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Озмоед, ки чӣ дохил карда шудааст ва чӣ дохил карда нашудааст</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Такмилҳои нав ё ҷории зеҳни сунъӣ (AI) ба таври пешфарз манъ карда мешаванд. Хусусиятҳои мушаххасро дар зер кушоед.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Хусусиятҳои зеҳни сунъӣ (AI)</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Тарҷумаҳо</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Ҳамаи тарҷумаҳо дар дастгоҳи шумо ба таври махфӣ мемонанд.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Танзимоти иловагии тарҷума</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Танзимоти иловагии хулосаи саҳифа</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Ҷустуҷӯи овозӣ</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Аудио тавассути «Google Speech Services» ба матн табдил дода мешавад.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Такмилҳои зеҳни сунъӣ (AI)-ро манъ мекунед?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Шумо дар барномаи «%1$s» такмилдиҳии нав ё ҷории зеҳни сунъӣ ё равзанаҳои зоҳиршавандаро дар бораи онҳо дигар намебинед. Пас аз ин, барои идомаи истифодаи чизҳои дилхоҳ шумо метавонед ҳамаи онҳоро боз кунед.\n\nАмали манъкунӣ, инчунин, ба васеъшавиҳое, ки зеҳни сунъӣ (AI)-ро аз ҷониби «%1$s» истифода мебаранд, таъсир мерасонад.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Чӣ манъ карда мешавад:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Бекор кардан</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Манъ кардан</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -408,7 +431,11 @@
   <string name="search_scan_button_2">Рамзи QR-ро аксбардорӣ намоед</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Танзимоти низоми ҷустуҷӯӣ</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Гузоштани пайванд аз ҳофизаи муваққатӣ</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Иҷозат додан</string>
@@ -581,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Идома додан</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Ба мо барои инкишофи браузери «Firefox» кумак расонед</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Ба мо барои инкишофи браузери «Firefox» кумак расонед</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Ба шарикони технологияи бозоршиносии «Mozilla» хабар диҳед, ки шумо чӣ тавр браузери «Firefox»-ро пайдо кардед ва онро истифода мебаред. Ин маълумот ҳеҷ гоҳ фурӯхта намешавад.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -685,7 +712,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Ба шарикони технологияи бозоршиносии «Mozilla» хабар диҳед, ки шумо чӣ тавр браузери «Firefox»-ро пайдо кардед ва онро истифода мебаред. Ин маълумот ҳеҷ гоҳ фурӯхта намешавад. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Ба шарикони технологияи бозоршиносии «Mozilla» хабар диҳед, ки шумо чӣ тавр браузери «Firefox»-ро пайдо кардед ва онро истифода мебаред. Ин маълумот ҳеҷ гоҳ фурӯхта намешавад. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Чӣ тавр мо маълумотро истифода мебарем</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -1098,6 +1125,8 @@
   <string name="customize_wallpapers">Тасвирҳои замина</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Миёнбурҳои сарпарастӣ</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Ҷоми ҷаҳон</string>
   <!--
     Wallpapers
 
@@ -1414,9 +1443,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Барои пинҳон кардани навори абзорҳо ҳаракат кунед</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Барои дидани варақаҳои кушодашуда, аз болои навори абзорҳо ба таври амудӣ бо ангуш молед</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Барои кушодани варақаҳо аз болои навори абзорҳо ба боло бо ангуш молед</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Барои иваз кардани варақаҳо аз болои навори нишонӣ ба тарафи лозимӣ бо ангуш молед</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Барои баровардани хулоса, дастгоҳро ҷунбонед</string>
   <!--
     Library
 
@@ -1579,6 +1612,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Варақаҳои хусусии кушодашуда: %1$s. Барои гузариш байни варақаҳо зарба занед.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d гурӯҳи варақаҳо кушода аст. Барои гузариш байни варақаҳо зарба занед.</item>
+    <item quantity="other">%1$d гурӯҳи варақаҳо кушодаанд. Барои гузариш байни варақаҳо зарба занед.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1600,18 +1641,10 @@
   <string name="add_tab">Илова кардани варақа</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Илова кардани варақаи хусусӣ</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Хусусӣ</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Ҳамоҳангсозӣ</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Ҷустуҷӯ дар варақаҳои худ</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Мубодила кардани ҳамаи варақаҳо</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Варақаҳои ба наздикӣ пӯшидашуда</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Пӯшидашудаи охирин</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Танзимоти ҳисоб</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1626,12 +1659,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Пӯшидани варақаҳо</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Бекор кардан</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Хатбарак</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Гузоштани хатбарак барои варақаҳои интихобшуда</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Пӯшидан</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Пӯшидани варақаҳои интихобшуда</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1689,6 +1718,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Таҳрир кардани гурӯҳ</string>
   <string name="create_tab_group_save_button">Нигоҳ доштан</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Гурӯҳи нав, дастаки таҳвилро печонед</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Пӯшидани реҷаи таҳрири гурӯҳи варақаҳо</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Гурӯҳ</string>
@@ -1704,6 +1735,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Илова кардан ба</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Ба гурӯҳи варақаҳо илова кунед, дастаки таҳвилро печонед</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Ба гурӯҳи нави варақаҳо илова кунед</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Пӯшидани имкони иловакунӣ ба гурӯҳи варақаҳо</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Варақаи нави гурӯҳ</string>
@@ -1715,6 +1750,25 @@
     <item quantity="one">%1$d варақа</item>
     <item quantity="other">%1$d варақа</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Илова кардан ба гурӯҳи варақаҳои «%1$s», %2$d варақа, ранги «%3$s»</item>
+    <item quantity="other">Илова кардан ба гурӯҳи варақаҳои «%1$s», %2$d варақа, ранги «%3$s»</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Мубодила кардани гурӯҳи варақаҳои «%1$s» бо %2$d варақа.</item>
+    <item quantity="other">Мубодила кардани гурӯҳи варақаҳои «%1$s» бо %2$d варақа.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Гурӯҳи варақаҳоро нишон диҳед, дастаки таҳвилро печонед</string>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Гурӯҳи варақаҳоро нест мекунед?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1723,6 +1777,38 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Нест кардани гурӯҳ</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Бекор кардан</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Варақаҳоро мепӯшед ва гурӯҳро нест мекунед?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Ин амал гурӯҳро бебозгашт нест мекунад.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Нест кардани гурӯҳ</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Бекор кардан</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Зард</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Норинҷӣ</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Сурх</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Гулобӣ</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Лоҷувард</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Бунафш</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Кабуд</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Осмонӣ</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Сабз</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Хокистарӣ</string>
   <!--
     History
 
@@ -2107,6 +2193,8 @@
   <string name="bookmark_sort_menu_a_to_z">Мураттаб кардан аз А то Я</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Мураттаб кардан аз Я то А</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Ворид кардан аз файл</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2165,6 +2253,8 @@
   <string name="bookmark_select_folder_close_folder_content_description">Пӯшидани ҷузвдон: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Пӯшидани хатбаракҳо</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Ворид кардан аз файл</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">То ҳол ягон хатбарак нест</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
@@ -2382,8 +2472,6 @@
   <string name="toast_copy_link_to_clipboard">Ба ҳофизаи муваққатӣ нусха бардошта шуд</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Барои ҳамоҳангсозӣ ворид шавед</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Ворид шудан</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Фиристодан ба ҳамаи дастгоҳҳо</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2540,8 +2628,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Нест кардани маълумоти тамошобинӣ ҳангоми баромад</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Вақте ки шумо аз менюи асосӣ имкони \"Хомӯш кардан\"-ро интихоб мекунед, маълумоти тамошобинӣ ба таври худкор нест карда мешавад</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Баромадан</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Фосилаи вақте, ки нест карда мешавад</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2643,10 +2729,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Ҷиддӣ</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Муҳофизати ҷиддӣ барои самаранокии тезтар ва бар зиддӣ васоити пайгирӣ, аммо баъзе сомонаҳо метавонанд ба таври дуруст кор накунанд.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Ба «%1$s» иҷозат диҳед, ки истисноҳои заруриро ба таври худкор татбиқ кунад ва вайроншавии асосии сомонаро пешгирӣ намояд.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Инчунин, истисноҳоеро ба таври худкор татбиқ кунед, ки танҳо барои ислоҳ кардани мушкилиҳои хурд ва дастрас кардани хусусиятҳои қулай заруранд.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Ислоҳ кардани нуқсонҳои асосии сомона (тавсия дода мешавад)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3034,6 +3116,52 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Дар айни ҳол ниқобҳои почтаи электронӣ дастнорасанд. Пас аз чанд дақиқа аз нав кӯшиш кунед.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">«VPN»-и дарунсохт</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">«VPN»-и дарунсохти «%s»\u0020</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Маълумоти бештар</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f ГБ аз %2$.1f ГБ боқӣ мондааст</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Ҷойгиршавӣ</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Тавсияшуда</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Фаъол</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Ғайрифаъол</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Пайваст мешавад…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Таваққуф карда шуд</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Хато</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Кушодани танзимоти «VPN»</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label">«VPN» фаъол аст</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description">«VPN» фаъол аст.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Оғози кор</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Ҳоло не</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3268,26 +3396,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Тасдиқ аз ҷониби: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Нест кардан</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Таҳрир кардан</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Шумо мутмаин ҳастед, ки мехоҳед ин ниҳонвожаро нест намоед?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Нест кардан</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Бекор кардан</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Инконоти ниҳонвожа</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Майдони матни таҳриршаванда барои нишонии сомона.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Майдони матни таҳриршаванда барои номи корбар.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Майдони матни таҳриршаванда барои ниҳонвожа.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Тағийротро нигоҳ медорад.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Таҳрир кардани ниҳонвожа</string>
   <!-- The page title for adding new password. -->
@@ -3347,6 +3461,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Намоиш додани ҳамаи миёнбурҳо</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Илова кардани миёнбур</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Нишонии «URL»-и сомонаро ворид намоед</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Ба ҳудуди шумораи миёнбурҳо расид</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3460,16 +3576,6 @@
   <string name="experiments_snackbar">Барои фиристодани маълумот дурисанҷро фаъол созед.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Гузариш ба танзимот</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Мо ба тақризҳои ҳар як маҳсул <b>баҳои ҳарфиро</b> аз A то F таъин мекунем.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Баҳодиҳии санҷида дурустшуда</b> танҳо дар он тақризҳое асос меёбад, ки ба умеди мо боэътимод мебошанд.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Нуқтаҳои асосӣ</b> аз тақризҳои «%s» ба хулоса омаданд, ки дар давоми 80 рӯзи охир ҷамъ карда шудаанд ва онҳо ба умеди мо боэътимод мебошанд.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3595,6 +3701,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Ин сомонаҳо бояд ҳеҷ вақт тарҷума карда нашаванд</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Боргирӣ кардани забонҳо</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Тарҷумаҳо</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Ҳамаи тарҷумаҳо дар дастгоҳи шумо ба таври махфӣ мемонанд.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Маълумоти бештар</string>
   <!--
     Automatic translation preference screen
 
@@ -4281,6 +4393,76 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Шумо метавонед аз %1$s маълумоти бештар гиред.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">ин ҷой</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Осиё</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Аврупо</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Ҷойи сеюм</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Нав кардан</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Гурӯҳи «A»</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Гурӯҳи «B»</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Гурӯҳи «C»</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Гурӯҳи «F»</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Гурӯҳи «G»</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Гурӯҳи «H»</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Гурӯҳи «I»</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Гурӯҳи «J»</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Гурӯҳи «K»</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Гурӯҳи «L»</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Дидани натиҷаҳо</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Дидани тафсилоти бозӣ</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches">Бозиҳои марбут</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Вақти пурра)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Вақти пурра</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">Тоза кардан</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Нодида гузарондан</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">Р</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">С</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">Д</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">Пӯшидан</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Имконоти бештар</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, саҳифаи %2$d аз %3$d</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

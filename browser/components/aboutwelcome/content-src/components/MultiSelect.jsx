@@ -233,6 +233,17 @@ export const MultiSelect = ({
           </div>
         )
       )}
+      {content.tiles.footer ? (
+        <Localized
+          text={
+            items.some(i => activeMultiSelect?.includes(i.id))
+              ? content.tiles.footer.checkedLabel
+              : content.tiles.footer.unCheckAllLabel
+          }
+        >
+          <h2 id="multi-stage-multi-select-footer-label" />
+        </Localized>
+      ) : null}
     </div>
   );
 };

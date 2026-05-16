@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -63,13 +61,6 @@ class DateObject : public NativeObject {
   static const JSClass protoClass_;
 
   js::DateTimeInfo* dateTimeInfo() const;
-
-  JS::ClippedTime clippedTime() const {
-    double t = getFixedSlot(UTC_TIME_SLOT).toDouble();
-    JS::ClippedTime clipped = JS::TimeClip(t);
-    MOZ_ASSERT(mozilla::NumbersAreIdentical(clipped.toDouble(), t));
-    return clipped;
-  }
 
   /**
    * Return the time in milliseconds since the epoch. The value is guaranteed to

@@ -66,6 +66,12 @@ tasks.named<Test>("test") {
     dependsOn("integrationTestApiLint")
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        allWarningsAsErrors.set(true)
+    }
+}
+
 dependencies {
     implementation(gradleApi())
     compileOnly(libs.android.gradle.plugin)

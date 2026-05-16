@@ -349,9 +349,9 @@ class SettingsRobot {
     }
 
     fun verifyDownloadsButton() {
-        scrollToElementByText(getStringResource(R.string.preferences_downloads))
+        scrollToElementByText(getStringResource(R.string.preferences_downloads_2))
         Log.i(TAG, "verifyExternalDownloadsButton: Trying to verify that the \"Downloads\" button is visible")
-        onView(withText(getStringResource(R.string.preferences_downloads)))
+        onView(withText(getStringResource(R.string.preferences_downloads_2)))
             .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyExternalDownloadsButton: Verified that the \"Downloads\" button is visible")
     }

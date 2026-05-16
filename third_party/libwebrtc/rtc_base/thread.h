@@ -14,6 +14,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <map>
 #include <memory>
 #include <queue>
@@ -29,6 +30,7 @@
 #include "api/location.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"  // IWYU pragma: keep
 #include "rtc_base/checks.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -46,15 +48,20 @@
 #if RTC_DCHECK_IS_ON
 // Counts how many `Thread::BlockingCall` are made from within a scope and logs
 // the number of blocking calls at the end of the scope.
-#define RTC_LOG_THREAD_BLOCK_COUNT()                                        \
-  webrtc::Thread::ScopedCountBlockingCalls blocked_call_count_printer(      \
-      [func = __func__](uint32_t actual_block, uint32_t could_block) {      \
-        auto total = actual_block + could_block;                            \
-        if (total) {                                                        \
-          RTC_LOG(LS_WARNING) << "Blocking " << func << ": total=" << total \
-                              << " (actual=" << actual_block                \
-                              << ", could=" << could_block << ")";          \
-        }                                                                   \
+// The reported duration is the time from entering the block-counting scope
+// until exiting it. This includes time spent executing the calling thread,
+// executing the called thread, and waiting.
+#define RTC_LOG_THREAD_BLOCK_COUNT()                                      \
+  webrtc::Thread::ScopedCountBlockingCalls blocked_call_count_printer(    \
+      [func = __func__](uint32_t actual_block, uint32_t could_block,      \
+                        webrtc::TimeDelta duration) {                     \
+        auto total = actual_block + could_block;                          \
+        if (total) {                                                      \
+          RTC_LOG(LS_WARNING)                                             \
+              << "Blocking " << func << ": total=" << total               \
+              << " (actual=" << actual_block << ", could=" << could_block \
+              << ", duration=" << duration.us() << "us)";                 \
+        }                                                                 \
       })
 
 // Adds an RTC_DCHECK_LE that checks that the number of blocking calls are
@@ -223,7 +230,7 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
   class ScopedCountBlockingCalls {
    public:
     ScopedCountBlockingCalls(
-        absl::AnyInvocable<void(uint32_t, uint32_t) &&> callback);
+        absl::AnyInvocable<void(uint32_t, uint32_t, TimeDelta) &&> callback);
     ScopedCountBlockingCalls(const ScopedCountBlockingCalls&) = delete;
     ScopedCountBlockingCalls& operator=(const ScopedCountBlockingCalls&) =
         delete;
@@ -246,7 +253,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
     // tame log spam.
     // By default we always issue the callback, regardless of callback count.
     uint32_t min_blocking_calls_for_callback_ = 0;
-    absl::AnyInvocable<void(uint32_t, uint32_t) &&> result_callback_;
+    absl::AnyInvocable<void(uint32_t, uint32_t, TimeDelta) &&> result_callback_;
+    const int64_t start_time_ns_ = 0;
   };
 
   uint32_t GetBlockingCallCount() const;
@@ -309,6 +317,12 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
   // ProcessMessages occasionally.
   virtual void Run();
 
+  // Called from cooperative tasks to know if they should yield.
+  // If a task yields, it is up to the task itself how or if to
+  // continue the ongoing operation. Typically this can be handled
+  // by using PostTask() to queue up a continuation task.
+  bool IsYieldRequested() const;
+
   // Convenience method to invoke a functor on another thread.
   // Blocks the current thread until execution is complete.
   // Ex: thread.BlockingCall([&] { result = MyFunctionReturningBool(); });
@@ -330,6 +344,12 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
     BlockingCall([&] { result = std::forward<Functor>(functor)(); }, location);
     return result;
   }
+
+  // Posts a task that jumps the queue (gets added as the next task to execute,
+  // ahead of other pending tasks). An internal yielding request flag is also
+  // raised that cooperative aware tasks can check by calling
+  // `IsYieldRequested()` and immediately exit.
+  void PostHighPriorityTask(absl::AnyInvocable<void() &&> task);
 
   // Allows BlockingCall to specified `thread`. Thread never will be
   // dereferenced and will be used only for reference-based comparison, so
@@ -456,6 +476,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
  private:
   static const int kSlowDispatchLoggingThreshold = 50;  // 50 ms
 
+  void PostTaskInternal(absl::AnyInvocable<void() &&> task, bool high_priority);
+
   // Get() will process I/O until:
   //  1) A task is available (returns it)
   //  2) cmsWait seconds have elapsed (returns empty task)
@@ -490,7 +512,9 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
   // Called by the ThreadManager when being unset as the current thread.
   void ClearCurrentTaskQueue();
 
-  std::queue<absl::AnyInvocable<void() &&>> messages_ RTC_GUARDED_BY(mutex_);
+  std::deque<absl::AnyInvocable<void() &&>> messages_ RTC_GUARDED_BY(mutex_);
+  std::deque<absl::AnyInvocable<void() &&>> high_priority_messages_
+      RTC_GUARDED_BY(mutex_);
   std::priority_queue<DelayedMessage> delayed_messages_ RTC_GUARDED_BY(mutex_);
   uint32_t delayed_next_num_ RTC_GUARDED_BY(mutex_);
 #if RTC_DCHECK_IS_ON
@@ -538,6 +562,16 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
   friend class ThreadManager;
 
   int dispatch_warning_ms_ RTC_GUARDED_BY(this) = kSlowDispatchLoggingThreshold;
+
+#if RTC_DCHECK_IS_ON
+  // This is used to catch if a cooperative task ends up being called from
+  // within another task. If that happens, the risk is that a full yield won't
+  // actually happen, so this is to help with ensuring we catch when things
+  // don't run as expected since webrtc can be configured in many ways and
+  // sometimes virtual thread concepts such as worker and network threads, can
+  // map to the same thread object.
+  int running_synchronous_blocking_call_count_ RTC_GUARDED_BY(this) = 0;
+#endif
 };
 
 // AutoThread automatically installs itself at construction
@@ -545,6 +579,9 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public TaskQueueBase {
 // _not already_ associated with the current OS thread.
 //
 // NOTE: *** This class should only be used by tests ***
+// NOTE: Use test::RunLoop instead of AutoThread as it also adopts the current
+// thread, and provides utilities for testing with threads. It also does not
+// expose a direct dependency on webrtc::Thread.
 //
 class AutoThread : public Thread {
  public:
@@ -559,7 +596,10 @@ class AutoThread : public Thread {
 // construction and uninstalls at destruction. If a Thread object is
 // already associated with the current OS thread, it is temporarily
 // disassociated and restored by the destructor.
-
+//
+// NOTE: Use test::RunLoop instead of AutoSocketServerThread as it also adopts
+// the current thread, and provides utilities for testing with threads. It also
+// does not expose a direct dependency on webrtc::Thread.
 class AutoSocketServerThread : public Thread {
  public:
   explicit AutoSocketServerThread(SocketServer* ss);

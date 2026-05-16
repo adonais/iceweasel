@@ -1,5 +1,3 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -1305,9 +1303,9 @@ set_config("MOZ_SYSTEM_WEBP", depends(when=system_webp)(lambda: True))
 
 # Build Freetype in the tree
 # ==============================================================
-@depends(target, "--enable-skia-pdf")
-def tree_freetype(target, skia_pdf):
-    if target.os == "Android" or (skia_pdf and target.os == "WINNT"):
+@depends(target)
+def tree_freetype(target):
+    if target.os == "Android":
         return True
 
 
@@ -4323,13 +4321,11 @@ set_define(
 
 # Desktop Launcher
 # ==============================================================
-# with only_when(target_is_windows):
-#     desktop_launcher_enabled = ~compile_environment | check_header(
-#         "winhttp.h",
-#         includes=["windows.h"],
-#         body="auto flag = WINHTTP_FLAG_SECURE_DEFAULTS",
-#         language="C++",
-#         when=compile_environment,
-#     )
-#     set_config("DESKTOP_LAUNCHER_ENABLED", True, when=desktop_launcher_enabled)
-#     set_define("DESKTOP_LAUNCHER_ENABLED", True, when=desktop_launcher_enabled)
+with only_when(target_is_windows):
+
+    @depends(target.abi)
+    def desktop_launcher_enabled(abi):
+        return False
+
+    set_config("DESKTOP_LAUNCHER_ENABLED", True, when=desktop_launcher_enabled)
+    set_define("DESKTOP_LAUNCHER_ENABLED", True, when=desktop_launcher_enabled)

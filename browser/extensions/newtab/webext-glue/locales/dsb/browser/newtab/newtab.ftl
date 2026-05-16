@@ -146,6 +146,9 @@ newtab-menu-report = K wěsći daś
 newtab-menu-section-block = Blokěrowaś
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Wěcej njeslědowaś
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Temje wěcej njeslědowaś
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -311,9 +314,25 @@ newtab-error-fallback-refresh-link = Aktualizěrujśo bok, aby hyšći raz wopyt
 
 newtab-custom-shortcuts-title = Zwězanja
 newtab-custom-shortcuts-subtitle = Sedła, kótarež składujośo abo ku kótarymž se woglědujośo
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Zwězanja
     .description = Sedła, kótarež składujośo abo ku kótarymž se woglědujośo
+newtab-custom-shortcuts-nova =
+    .label = Zwězanja
+newtab-custom-row-description =
+    .description = Licba smužkow
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } smužka
+            [two] { $num } smužce
+            [few] { $num } smužki
+           *[other] { $num } smužkow
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -326,9 +345,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Sponserowane zwězanja
 newtab-custom-pocket-title = Wót { -pocket-brand-name } dopórucone
 newtab-custom-pocket-subtitle = Wósebne wopśimjeśe, wubrane pśez { -pocket-brand-name }, źěla swójźby { -brand-product-name }
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Dopórucone tšojeńka
     .description = Wuwześowe wopśimjeśe, kótarež se pśez swójźbu { -brand-product-name } wótwardujo
+newtab-recommended-stories-toggle =
+    .label = Dopórucone tšojeńka
 newtab-custom-stories-personalized-toggle =
     .label = Tšojenja
 newtab-custom-stories-personalized-checkbox-label = Personalizěrowane tšojenja na zakłaźe wašeje aktiwity
@@ -362,8 +384,12 @@ newtab-custom-settings = Dalšne nastajenja zastojaś
 
 newtab-wallpaper-title = Slězynowe wobraze
 newtab-wallpaper-reset = Na standard slědk stajiś
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Wobraz nagraś
+newtab-wallpaper-add-an-image = Wobraz pśidaś
 newtab-wallpaper-custom-color = Barwu wubraś
+newtab-wallpaper-toggle-title =
+    .label = Slězynowe wobraze
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Wobraz jo pśekšocył limit datajoweje wjelikosći { $file_size }. Nagrajśo pšosym mjeńšu dataju.
@@ -386,7 +412,9 @@ newtab-wallpaper-light-fox-anniversary = Liška w tšawowem pólu z kurjawkateju
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Jadnotne barwy
+newtab-wallpaper-colors = Barwy
 newtab-wallpaper-blue = Módry
 newtab-wallpaper-light-blue = Swětłomódry
 newtab-wallpaper-light-purple = Swětłowioletny
@@ -492,7 +520,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Fahrenheit wužywaś
 newtab-weather-menu-change-temperature-units-celsius = Celsius wužywaś
-newtab-weather-menu-hide-weather-v2 = Wjedro schowaś
 newtab-weather-menu-hide-weather = Wjedro na nowem rejtariku schowaś
 newtab-weather-menu-learn-more = Dalšne informacije
 newtab-weather-menu-detect-my-location = Mójo stojnišćo namakaś
@@ -503,8 +530,18 @@ newtab-weather-opt-in-not-now =
     .label = Nic něnto
 newtab-weather-opt-in-yes =
     .label = Jo
+newtab-weather-opt-in-headline = Dostańśo swóju lokalnu wjedrowu pśedpowěsć
+newtab-weather-opt-in-use-location =
+    .label = Stojnišćo wužywaś
+newtab-weather-opt-in-choose-location = Stojnišćo wubraś
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Wusoka
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Niska
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -578,6 +615,7 @@ newtab-section-confirm-block-topic-p2 = Blokěrowane temy se wěcej we wašom ka
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = { $topic } blokěrowaś
+newtab-section-block-cancel-button = Pśetergnuś
 
 ## Strings for custom wallpaper highlight
 
@@ -641,6 +679,18 @@ newtab-toast-thanks-for-reporting =
     .message = Wjeliki źěk, až sćo dał to k wěsći.
 newtab-toast-widgets-hidden =
     .message = Wubjeŕśo symbol pisaka, aby kuždy cas zasej asistenty pśidał.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Slědujośo něnto { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Njeslědujośo wěcej { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Njewiźiśo wěcej tšojeńki wó { $topic }.
 
 ## Strings for task / to-do list productivity widget
 
@@ -660,7 +710,6 @@ newtab-widget-lists-menu-edit = Mě lisćiny wobźěłaś
 newtab-widget-lists-menu-create = Nowu lisćinu napóraś
 newtab-widget-lists-menu-delete = Toś tu lisćinu lašowaś
 newtab-widget-lists-menu-copy = Lisćinu do mjazywótkłada kopěrowaś
-newtab-widget-lists-menu-hide = Wšykne lisćiny schowaś
 newtab-widget-lists-menu-learn-more = Dalšne informacije
 newtab-widget-lists-input-add-an-item =
     .placeholder = Zapisk pśidaś
@@ -682,6 +731,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = Nowa lisćina
 newtab-widget-section-title = Asistenty
 newtab-widget-menu-hide = Asistent schowaś
+newtab-widget-menu-change-size = Wjelikosć změniś
+newtab-widget-size-small = Mały
+newtab-widget-size-medium = Srjejźny
+newtab-widget-size-large = Wjeliki
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Asistenty schowaś
@@ -713,7 +766,6 @@ newtab-widget-timer-reset =
     .title = Slědk stajiś
 newtab-widget-timer-menu-notifications = Zdźělenja znjemóžniś
 newtab-widget-timer-menu-notifications-on = Zdźělenja zmóžniś
-newtab-widget-timer-menu-hide = Měritko casa schowaś
 newtab-widget-timer-menu-learn-more = Dalšne informacije
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Wažne głowne nadpisma
@@ -724,6 +776,12 @@ newtab-daily-briefing-card-timestamp = Pśed { $minutes } m zaktualizěrowany
 newtab-widget-message-title = Wóstańśo koncentrěrowany z lisćinami a zatwarjonym casowym měritkom
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Wót malsnych dopomnjeśow do wšednych nadawkowych lisćinow, koncentrěrujśo se na posejźenja, aby pśestawki pódlejšył – njepópušćajśo a buźćo zdypkom.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Pśiměŕśo { -brand-product-name } pó swójom dobrozdaśu
+newtab-promo-card-body-addons = Wubjeŕśo slězynowy wobraz z našeje zběrki abo napórajśo swójski.
+newtab-promo-card-cta-addons = Wopytajśo něnto
 newtab-promo-card-title = { -brand-product-name } pódpěraś
 newtab-promo-card-body = Naše sponsory našu misiju pódpěraju, aby lěpšy web twórili
 newtab-promo-card-cta = Dalšne informacije

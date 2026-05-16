@@ -1,11 +1,48 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { CustomKeys } = ChromeUtils.importESModule(
   "resource:///modules/CustomKeys.sys.mjs"
 );
+
+var gSerialDeviceObserver = {
+  _activePortCounts: new WeakMap(),
+
+  observe(subject, topic, _data) {
+    if (topic != "serial-device-state-changed") {
+      return;
+    }
+
+    let props = subject.QueryInterface(Ci.nsIPropertyBag2);
+    const browserId = props.getPropertyAsUint64("browserId");
+    let bc = BrowsingContext.getCurrentTopByBrowserId(browserId);
+    if (!bc) {
+      console.warn("BrowsingContext not found for browser ID:", browserId);
+      return;
+    }
+    let browser = bc.embedderElement;
+    if (!browser) {
+      console.warn("No embedder element for BrowsingContext");
+      return;
+    }
+
+    let connected = props.getPropertyAsBool("connected");
+    let count = this._activePortCounts.get(browser) || 0;
+    count = connected ? count + 1 : Math.max(0, count - 1);
+    this._activePortCounts.set(browser, count);
+
+    if (gBrowser) {
+      gBrowser.updateBrowserSharing(browser, {
+        serial: count > 0 ? "serial" : null,
+      });
+    }
+  },
+
+  resetBrowserCount(browser) {
+    this._activePortCounts.delete(browser);
+  },
+};
 
 let _resolveDelayedStartup;
 var delayedStartupPromise = new Promise(resolve => {
@@ -177,13 +214,18 @@ var gBrowserInit = {
 
     // Run menubar initialization first, to avoid CustomTitlebar code picking
     // up mutations from it and causing a reflow.
-    AutoHideMenubar.init();
+    BrowserUtils.callModulesFromCategory(
+      {
+        categoryName:
+          "browser-window-before-initial-xul-layout-document-preparation",
+        jsGlobal: globalThis,
+      },
+      window
+    );
+
     // Update the customtitlebar attribute so the window can be sized
     // correctly.
     window.TabBarVisibility.update();
-    CustomTitlebar.init();
-
-    new LightweightThemeConsumer(document);
 
     if (
       Services.prefs.getBoolPref(
@@ -194,9 +236,17 @@ var gBrowserInit = {
       document.documentElement.setAttribute("icon", "main-window");
     }
 
-    // Call this after we set attributes that might change toolbars' computed
-    // text color.
-    ToolbarIconColor.init(window);
+    // The following modules would be initialized:
+    // CustomTitlebar, LightweightThemeConsumer, and ToolbarIconColor.
+    // ToolbarIconColor.init should be called after we set the attributes, since
+    // it might change the toolbars' computed text color.
+    BrowserUtils.callModulesFromCategory(
+      {
+        categoryName: "browser-window-before-initial-xul-layout",
+        jsGlobal: globalThis,
+      },
+      window
+    );
   },
 
   onDOMContentLoaded() {
@@ -485,6 +535,10 @@ var gBrowserInit = {
     Services.obs.addObserver(
       this._translationsEnabledStateObserver,
       "translations:enabled-state-changed"
+    );
+    Services.obs.addObserver(
+      gSerialDeviceObserver,
+      "serial-device-state-changed"
     );
 
     BrowserOffline.init();
@@ -1120,9 +1174,10 @@ var gBrowserInit = {
   onUnload() {
     gUIDensity.uninit();
 
-    CustomTitlebar.uninit();
-
-    ToolbarIconColor.uninit(window);
+    BrowserUtils.callModulesFromCategory(
+      { categoryName: "browser-window-unload-begin", jsGlobal: globalThis },
+      window
+    );
 
     // In certain scenarios it's possible for unload to be fired before onload,
     // (e.g. if the window is being closed after browser.js loads but before the
@@ -1235,6 +1290,10 @@ var gBrowserInit = {
       Services.obs.removeObserver(
         this._translationsEnabledStateObserver,
         "translations:enabled-state-changed"
+      );
+      Services.obs.removeObserver(
+        gSerialDeviceObserver,
+        "serial-device-state-changed"
       );
 
       BrowserOffline.uninit();

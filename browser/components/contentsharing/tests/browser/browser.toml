@@ -1,0 +1,12 @@
+[DEFAULT]
+support-files = ["head.js"]
+
+prefs = [
+  "browser.contentsharing.enabled=true",
+]
+
+["browser_testShareBookmarks.js"]
+
+["browser_testShareTabGroup.js"]
+
+["browser_testShareTabs.js"]

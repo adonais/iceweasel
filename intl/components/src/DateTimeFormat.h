@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef intl_components_DateTimeFormat_h_
 #define intl_components_DateTimeFormat_h_
-#include <functional>
 #include "unicode/udat.h"
 
 #include "mozilla/intl/ICU4CGlue.h"

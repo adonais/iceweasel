@@ -366,7 +366,7 @@ void nsMathMLmpaddedFrame::Place(DrawTarget* aDrawTarget,
   // there are attributes, tweak our metrics and move children to achieve the
   // desired visual effects.
 
-  const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
+  const bool isRTL = GetWritingMode().IsBidiRTL();
   if (isRTL ? mWidth.IsValid() : mLeadingSpace.IsValid()) {
     // there was padding on the left. dismiss the left italic correction now
     // (so that our parent won't correct us)

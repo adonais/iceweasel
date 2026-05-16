@@ -205,16 +205,22 @@ async function testHelper(
   );
 
   if (expectStringInPage) {
-    let pageContent = await SpecialPowers.spawn(
+    let found = await SpecialPowers.spawn(
       win.gBrowser.selectedBrowser,
-      [],
-      async function () {
-        return content.document.body.textContent;
+      [expectStringInPage],
+      async function (expectedString) {
+        const netErrorCard = content.document.querySelector("net-error-card");
+        if (netErrorCard) {
+          const card = netErrorCard.wrappedJSObject;
+          await card.getUpdateComplete();
+          return card.errorInfo.errorCodeString === expectedString;
+        }
+        return content.document.body.textContent.includes(expectedString);
       }
     );
     Assert.ok(
-      pageContent.includes(expectStringInPage),
-      `page should contain the string '${expectStringInPage}' (was '${pageContent}')`
+      found,
+      `page should reference the string '${expectStringInPage}'`
     );
   }
 

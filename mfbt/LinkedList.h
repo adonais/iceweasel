@@ -174,7 +174,8 @@ class LinkedListElement {
   const bool mIsSentinel;
 
  public:
-  LinkedListElement() : mNext(this), mPrev(this), mIsSentinel(false) {}
+  constexpr LinkedListElement()
+      : mNext(this), mPrev(this), mIsSentinel(false) {}
 
   /*
    * Moves |aOther| into |*this|. If |aOther| is already in a list, then

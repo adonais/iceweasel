@@ -15,7 +15,7 @@ add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["signon.firefoxRelay.showToAllBrowsers", true],
-      ["browser.settings-redesign.nonTechnicalPrivacy2.enabled", true],
+      ["browser.settings-redesign.enabled", true],
     ],
   });
 });

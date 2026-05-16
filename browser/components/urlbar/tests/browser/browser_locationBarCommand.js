@@ -150,9 +150,12 @@ add_task(async function load_in_current_tab_test() {
     let tab = await promiseOpenNewTab();
 
     // Trigger a load and check it occurs in the current tab.
-    let loadStartedPromise = promiseLoadStarted();
+    let browserLoadedPromise = BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      { wantLoad: TEST_VALUE + "/" }
+    );
     await typeAndCommand(type, details);
-    await loadStartedPromise;
+    await browserLoadedPromise;
 
     info("URL should be loaded in the current tab");
     is(
@@ -182,6 +185,12 @@ add_task(async function load_in_new_tab_test() {
       url: "about:blank",
     },
     {
+      desc: "Middleclick on go button",
+      type: "click",
+      details: { button: 1 },
+      url: "about:blank",
+    },
+    {
       desc: "Alt+Return keypress in a dirty tab",
       type: "keypress",
       details: { altKey: true },
@@ -202,9 +211,13 @@ add_task(async function load_in_new_tab_test() {
     let tab = await promiseOpenNewTab(url);
 
     // Trigger a load and check it occurs in a new tab.
-    let tabSwitchedPromise = promiseNewTabSwitched();
+    let newTabPromise = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      TEST_VALUE + "/",
+      true
+    );
     await typeAndCommand(type, details);
-    await tabSwitchedPromise;
+    let newTab = await newTabPromise;
 
     // Check the load occurred in a new tab.
     info("URL should be loaded in a new focused tab");
@@ -213,10 +226,10 @@ add_task(async function load_in_new_tab_test() {
       UrlbarTestUtils.trimURL(TEST_VALUE),
       "Urlbar still has the value we entered"
     );
-    await promiseCheckChildNoFocusedElement(gBrowser.selectedBrowser);
+    await promiseCheckChildNoFocusedElement(newTab.linkedBrowser);
     is(
       document.activeElement,
-      gBrowser.selectedBrowser,
+      newTab.linkedBrowser,
       "Content window should be focused"
     );
     isnot(gBrowser.selectedTab, tab, "New URL was loaded in a new tab");
@@ -246,9 +259,12 @@ add_task(async function go_button_after_tab_switch() {
   );
 
   // Trigger a load and check it occurs in the current tab.
-  let loadStartedPromise = promiseLoadStarted();
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    { wantLoad: TEST_VALUE + "/" }
+  );
   await triggerCommand("click");
-  await loadStartedPromise;
+  await browserLoadedPromise;
 
   info("URL should be loaded in the current tab");
   is(
@@ -361,18 +377,6 @@ async function promiseOpenNewTab(url = "about:blank") {
   });
   await tabSwitchPromise;
   return tab;
-}
-
-function promiseNewTabSwitched() {
-  return new Promise(resolve => {
-    gBrowser.addEventListener(
-      "TabSwitchDone",
-      function () {
-        executeSoon(resolve);
-      },
-      { once: true }
-    );
-  });
 }
 
 function promiseCheckChildNoFocusedElement(browser) {

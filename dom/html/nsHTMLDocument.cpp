@@ -90,10 +90,6 @@ using namespace mozilla::dom;
 // =
 // ==================================================================
 
-static bool IsAsciiCompatible(const Encoding* aEncoding) {
-  return aEncoding->IsAsciiCompatible() || aEncoding == ISO_2022_JP_ENCODING;
-}
-
 nsresult NS_NewHTMLDocument(Document** aInstancePtrResult,
                             nsIPrincipal* aPrincipal,
                             nsIPrincipal* aPartitionedPrincipal,
@@ -189,11 +185,11 @@ void nsHTMLDocument::TryReloadCharset(nsIDocumentViewer* aViewer,
       aViewer->ForgetReloadEncoding();
 
       if (reloadEncodingSource <= aCharsetSource ||
-          !IsAsciiCompatible(aEncoding)) {
+          !aEncoding->IsAsciiCompatible()) {
         return;
       }
 
-      if (reloadEncoding && IsAsciiCompatible(reloadEncoding)) {
+      if (reloadEncoding && reloadEncoding->IsAsciiCompatible()) {
         aCharsetSource = reloadEncodingSource;
         aEncoding = WrapNotNull(reloadEncoding);
       }
@@ -217,7 +213,7 @@ void nsHTMLDocument::TryUserForcedCharset(nsIDocumentViewer* aViewer,
   }
 
   // mCharacterSet not updated yet for channel, so check aEncoding, too.
-  if (WillIgnoreCharsetOverride() || !IsAsciiCompatible(aEncoding)) {
+  if (WillIgnoreCharsetOverride() || !aEncoding->IsAsciiCompatible()) {
     return;
   }
 
@@ -249,8 +245,8 @@ void nsHTMLDocument::TryParentCharset(nsIDocShell* aDocShell,
   if (kCharsetFromInitialUserForcedAutoDetection == parentSource ||
       kCharsetFromFinalUserForcedAutoDetection == parentSource) {
     if (WillIgnoreCharsetOverride() ||
-        !IsAsciiCompatible(aEncoding) ||  // if channel said UTF-16
-        !IsAsciiCompatible(parentCharset)) {
+        !aEncoding->IsAsciiCompatible() ||  // if channel said UTF-16
+        !parentCharset->IsAsciiCompatible()) {
       return;
     }
     aEncoding = WrapNotNull(parentCharset);
@@ -266,7 +262,7 @@ void nsHTMLDocument::TryParentCharset(nsIDocShell* aDocShell,
   if (kCharsetFromInitialAutoDetectionASCII <= parentSource) {
     // Make sure that's OK
     if (!NodePrincipal()->Equals(parentPrincipal) ||
-        !IsAsciiCompatible(parentCharset)) {
+        !parentCharset->IsAsciiCompatible()) {
       return;
     }
 
@@ -759,8 +755,7 @@ bool nsHTMLDocument::WillIgnoreCharsetOverride() {
   if (mCharacterSetSource >= kCharsetFromByteOrderMark) {
     return true;
   }
-  if (!mCharacterSet->IsAsciiCompatible() &&
-      mCharacterSet != ISO_2022_JP_ENCODING) {
+  if (!mCharacterSet->IsAsciiCompatible()) {
     return true;
   }
   nsIURI* uri = GetOriginalURI();

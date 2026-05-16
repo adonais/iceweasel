@@ -319,10 +319,15 @@ urlbar-result-aria-group-flight-status =
 # 2" means the game is taking place at Team 2's home venue, and we say Team 1 is
 # the "away" team and Team 2 is the "home" team. If your language doesn't have a
 # similar phrase, use your equivalent of "vs." or even just "and".
+
+# This string is shown for a scheduled future game. Please list $homeTeam before
+# $awayTeam so that the ordering of teams in the string matches the ordering of
+# the team icons in the suggestion UI. Without violating the team ordering,
+# please use your language's equivalent of "vs". "and" is another option.
 # Variables:
-#   $awayTeam (string) - Name of the visting team.
 #   $homeTeam (string) - Name of the home team.
-urlbar-result-sports-team-names = { $awayTeam } at { $homeTeam }
+#   $awayTeam (string) - Name of the visiting team.
+urlbar-result-sports-team-names = { $homeTeam } vs { $awayTeam }
 
 # This string is shown when the game is today, in the near future, or in the
 # recent past.
@@ -347,3 +352,21 @@ urlbar-result-dismissal-acknowledgment-sports = Thanks for your feedback. You wo
 # This a11y label is read by screen readers when an item in the row is selected.
 urlbar-result-aria-group-sports =
   .aria-label = Sports suggestions
+
+## For urlbar results with last-visited dates like history, bookmarks, and top
+## sites, these strings replace their URL when the user selects or hovers over
+## them. They explain the reason the result is shown.
+##
+## TODO: Move these to browser.ftl when they are finalized.
+
+# This explanation is used when the when the last-visited date is formatted as
+# an absolute date like "11 May" or "11 May 2026".
+# Variables:
+#   $date (string) - A localized absolute date string
+urlbar-result-explanation-last-visited-absolute = You last visited this on { $date }
+
+# This explanation is used when the when the last-visited date is formatted as
+# one of the following relative dates: "yesterday", "today"
+# Variables:
+#   $date (string) - A localized relative date string
+urlbar-result-explanation-last-visited-relative = You last visited this { $date }

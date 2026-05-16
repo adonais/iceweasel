@@ -83,8 +83,7 @@ bool FFmpegRuntimeLinker::Init() {
   // more precise error if possible.
   sLinkStatus = LinkStatus_NOT_FOUND;
 
-  for (size_t i = 0; i < std::size(sLibs); i++) {
-    const char* lib = sLibs[i];
+  for (auto lib : sLibs) {
     PRLibSpec lspec;
     lspec.type = PR_LibSpec_Pathname;
     lspec.value.pathname = lib;

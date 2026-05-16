@@ -122,5 +122,5 @@ skip-if = [
 
 ["test_valuechange.html"]
 skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
+  "os == 'mac'", # bug 2030038
 ]

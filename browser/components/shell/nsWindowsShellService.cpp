@@ -1,4 +1,3 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -19,6 +18,7 @@
 #include "mozilla/FileUtils.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/Localization.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/widget/WinTaskbar.h"
 #include "mozilla/WindowsVersion.h"
@@ -36,6 +36,7 @@
 #include "nsIOutputStream.h"
 #include "nsIPrefService.h"
 #include "nsIStringBundle.h"
+#include "nsITimer.h"
 #include "nsIWindowsRegKey.h"
 #include "nsIXULAppInfo.h"
 #include "nsLocalFile.h"
@@ -44,6 +45,7 @@
 #include "nsProxyRelease.h"
 #include "nsServiceManagerUtils.h"
 #include "nsShellService.h"
+#include "nsThreadUtils.h"
 #include "nsUnicharUtils.h"
 #include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
@@ -57,6 +59,7 @@
 #include <mbstring.h>
 #include <objbase.h>
 #include <propkey.h>
+#include <uiautomation.h>
 #include <propvarutil.h>
 #include <shellapi.h>
 #include <strsafe.h>
@@ -508,6 +511,35 @@ nsWindowsShellService::LaunchModernSettingsDialogDefaultApps() {
   return ::LaunchModernSettingsDialogDefaultApps() ? NS_OK : NS_ERROR_FAILURE;
 }
 
+static void FocusSetDefaultBrowserButton() {
+  nsCOMPtr<nsISerialEventTarget> serialEventTarget;
+  const nsresult nsr{NS_CreateBackgroundTaskQueue(
+      "FocusSetDefaultBrowserButtonQueue", getter_AddRefs(serialEventTarget))};
+  if (NS_FAILED(nsr)) {
+    return;
+  }
+
+  auto attempts{std::make_shared<int>(0)};
+  auto timer{std::make_shared<nsCOMPtr<nsITimer>>()};
+  auto timerCallback{[attempts, timer](nsITimer* aTimer) {
+    const int kMaxAttempts{40};
+    if (++(*attempts) > kMaxAttempts) {
+      aTimer->Cancel();
+      return;
+    }
+    auto [window, button]{FindSetDefaultBrowserButton()};
+    if (window && button) {
+      FocusElement(window, button);
+      aTimer->Cancel();
+    }
+  }};
+  const uint32_t kRetryDelayMs{500};
+  NS_NewTimerWithCallback(getter_AddRefs(*timer), timerCallback, kRetryDelayMs,
+                          nsITimer::TYPE_REPEATING_SLACK,
+                          "FocusSetDefaultBrowserButtonTimer"_ns,
+                          serialEventTarget);
+}
+
 NS_IMETHODIMP
 nsWindowsShellService::SetDefaultBrowser(bool aForAllUsers) {
   // If running from within a package, don't attempt to set default with
@@ -529,9 +561,14 @@ nsWindowsShellService::SetDefaultBrowser(bool aForAllUsers) {
 
   if (NS_SUCCEEDED(rv)) {
     rv = LaunchModernSettingsDialogDefaultApps();
-    // The above call should never really fail, but just in case
-    // fall back to showing control panel for all defaults
-    if (NS_FAILED(rv)) {
+    if (NS_SUCCEEDED(rv)) {
+      if (Preferences::GetBool("browser.shell.focusSetDefaultBrowserButton",
+                               false)) {
+        FocusSetDefaultBrowserButton();
+      }
+    } else {
+      // The above call should never really fail, but just in case
+      // fall back to showing control panel for all defaults
       rv = LaunchControlPanelDefaultsSelectionUI();
     }
   }
@@ -1770,7 +1807,8 @@ static nsresult ManageShortcutTaskbarPins(bool aCheckOnly, bool aPinType,
 
 static nsresult PinShortcutToTaskbarImpl(bool aCheckOnly,
                                          const nsAString& aAppUserModelId,
-                                         const nsAString& aShortcutPath) {
+                                         const nsAString& aShortcutPath,
+                                         const bool aFireAndForget = false) {
   // Verify shortcut is visible to `shell:appsfolder`. Shortcut creation -
   // during install or runtime - causes a race between it propagating to the
   // virtual `shell:appsfolder` and attempts to pin via `ITaskbarManager`,
@@ -1783,7 +1821,7 @@ static nsresult PinShortcutToTaskbarImpl(bool aCheckOnly,
   }
 
   auto pinWithWin11TaskbarAPIResults =
-      PinCurrentAppToTaskbarWin11(aCheckOnly, aAppUserModelId);
+      PinCurrentAppToTaskbarWin11(aCheckOnly, aAppUserModelId, aFireAndForget);
   switch (pinWithWin11TaskbarAPIResults.result) {
     case Win11PinToTaskBarResultStatus::NotSupported:
       // Fall through to the win 10 mechanism
@@ -1989,9 +2027,10 @@ static bool PollAppsFolderForShortcut(const nsAString& aAppUserModelId,
 }
 
 static nsresult PinCurrentAppToTaskbarImpl(
-    bool aCheckOnly, bool aPrivateBrowsing, const nsAString& aAppUserModelId,
-    const nsAString& aShortcutName, const nsAString& aShortcutSubstring,
-    nsIFile* aGreDir, const ShortcutLocations& location) {
+    bool aCheckOnly, bool aPrivateBrowsing, const bool aFireAndForget,
+    const nsAString& aAppUserModelId, const nsAString& aShortcutName,
+    const nsAString& aShortcutSubstring, nsIFile* aGreDir,
+    const ShortcutLocations& location) {
   MOZ_DIAGNOSTIC_ASSERT(
       !NS_IsMainThread(),
       "PinCurrentAppToTaskbarImpl should be called off main thread only");
@@ -2041,13 +2080,13 @@ static nsresult PinCurrentAppToTaskbarImpl(
       return NS_ERROR_FILE_NOT_FOUND;
     }
   }
-  return PinShortcutToTaskbarImpl(aCheckOnly, aAppUserModelId, shortcutPath);
+  return PinShortcutToTaskbarImpl(aCheckOnly, aAppUserModelId, shortcutPath,
+                                  aFireAndForget);
 }
 
-static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
-                                                bool aPrivateBrowsing,
-                                                JSContext* aCx,
-                                                dom::Promise** aPromise) {
+static nsresult PinCurrentAppToTaskbarAsyncImpl(
+    bool aCheckOnly, bool aPrivateBrowsing, JSContext* aCx,
+    dom::Promise** aPromise, const bool aFireAndForget = false) {
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
@@ -2113,8 +2152,8 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
   NS_DispatchBackgroundTask(
       NS_NewRunnableFunction(
           "CheckPinCurrentAppToTaskbarAsync",
-          [aCheckOnly, aPrivateBrowsing, shortcutName, aumid = nsString{aumid},
-           greDir, location = std::move(location),
+          [aCheckOnly, aPrivateBrowsing, aFireAndForget, shortcutName,
+           aumid = nsString{aumid}, greDir, location = std::move(location),
            promiseHolder = std::move(promiseHolder)] {
             nsresult rv = NS_ERROR_FAILURE;
             HRESULT hr = CoInitialize(nullptr);
@@ -2123,8 +2162,8 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
               nsAutoString shortcutSubstring;
               shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
               rv = PinCurrentAppToTaskbarImpl(
-                  aCheckOnly, aPrivateBrowsing, aumid, shortcutName,
-                  shortcutSubstring, greDir.get(), location);
+                  aCheckOnly, aPrivateBrowsing, aFireAndForget, aumid,
+                  shortcutName, shortcutSubstring, greDir.get(), location);
               CoUninitialize();
             }
 
@@ -2148,10 +2187,11 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
 
 NS_IMETHODIMP
 nsWindowsShellService::PinCurrentAppToTaskbarAsync(bool aPrivateBrowsing,
+                                                   bool aFireAndForget,
                                                    JSContext* aCx,
                                                    dom::Promise** aPromise) {
   return PinCurrentAppToTaskbarAsyncImpl(
-      /* aCheckOnly */ false, aPrivateBrowsing, aCx, aPromise);
+      /* aCheckOnly */ false, aPrivateBrowsing, aCx, aPromise, aFireAndForget);
 }
 
 NS_IMETHODIMP

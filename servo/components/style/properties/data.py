@@ -955,6 +955,7 @@ class PropertiesData(object):
         self.font_face_descriptors = self._load_descriptors("font_face_descriptors.toml")
         self.counter_style_descriptors = self._load_descriptors("counter_style_descriptors.toml")
         self.property_descriptors = self._load_descriptors("property_descriptors.toml")
+        self.view_transition_descriptors = self._load_descriptors("view_transition_descriptors.toml")
 
 
     def declare_all_shorthand(self):
@@ -1239,6 +1240,8 @@ class PropertyRestrictions:
             props.add(p)
         # ::placeholder can't be SVG text
         props -= PropertyRestrictions.svg_text_properties()
+        # Historically ::placeholder's line-height was !important in the UA sheet.
+        props.remove("line-height")
 
         return props
 

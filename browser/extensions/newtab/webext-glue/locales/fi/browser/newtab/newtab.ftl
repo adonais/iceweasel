@@ -150,6 +150,9 @@ newtab-menu-report = Ilmoita
 newtab-menu-section-block = Estä
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Lopeta seuraaminen
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Lopeta aiheen seuraaminen
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
@@ -315,9 +318,23 @@ newtab-error-fallback-refresh-link = Yritä uudestaan päivittämällä sivu.
 
 newtab-custom-shortcuts-title = Oikotiet
 newtab-custom-shortcuts-subtitle = Tallentamasi tai vierailemasi sivustot
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = Oikotiet
     .description = Tallentamasi tai vierailemasi sivustot
+newtab-custom-shortcuts-nova =
+    .label = Oikotiet
+newtab-custom-row-description =
+    .description = Rivien lukumäärä
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num } rivi
+           *[other] { $num } riviä
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =
@@ -328,9 +345,12 @@ newtab-custom-row-selector =
 newtab-custom-sponsored-sites = Sponsoroidut oikotiet
 newtab-custom-pocket-title = { -pocket-brand-name } suosittelee
 newtab-custom-pocket-subtitle = Poikkeuksellista, valikoitua sisältöä { -pocket-brand-name }-palvelulta, osana { -brand-product-name }-perhettä
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be having a description under "Recommended stories" anymore
 newtab-custom-stories-toggle =
     .label = Suositellut tarinat
     .description = Poikkeuksellista { -brand-product-name }-perheen kuratoimaa sisältöä
+newtab-recommended-stories-toggle =
+    .label = Suositellut tarinat
 newtab-custom-stories-personalized-toggle =
     .label = Tarinat
 newtab-custom-stories-personalized-checkbox-label = Personoituja tarinoita aktiivisuuteesi pohjautuen
@@ -364,8 +384,11 @@ newtab-custom-settings = Muokkaa lisää asetuksia
 
 newtab-wallpaper-title = Taustakuvat
 newtab-wallpaper-reset = Palauta oletusarvo
+#  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Lähetä kuva
 newtab-wallpaper-custom-color = Valitse väri
+newtab-wallpaper-toggle-title =
+    .label = Taustakuvat
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Kuvan koko ylitti tiedostokokorajan { $file_size } Mt. Yritä ladata pienempi tiedosto.
@@ -388,6 +411,7 @@ newtab-wallpaper-light-fox-anniversary = Kettu ruohopellolla ja sumuinen vuorist
 
 ## Solid Colors
 
+#  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Yhtenäiset värit
 newtab-wallpaper-blue = Sininen
 newtab-wallpaper-light-blue = Vaaleansininen
@@ -494,7 +518,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Vaihda Fahrenheitiin
 newtab-weather-menu-change-temperature-units-celsius = Vaihda Celsiukseen
-newtab-weather-menu-hide-weather-v2 = Piilota sää
 newtab-weather-menu-hide-weather = Piilota sää uudessa välilehdessä
 newtab-weather-menu-learn-more = Lue lisää
 newtab-weather-menu-detect-my-location = Havaitse sijaintini
@@ -507,6 +530,12 @@ newtab-weather-opt-in-yes =
     .label = Kyllä
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Helsinki
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Korkein
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Matalin
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -580,6 +609,7 @@ newtab-section-confirm-block-topic-p2 = Estetyt aiheet eivät enää näy syött
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Estä { $topic }
+newtab-section-block-cancel-button = Peruuta
 
 ## Strings for custom wallpaper highlight
 
@@ -643,6 +673,18 @@ newtab-toast-thanks-for-reporting =
     .message = Kiitos, että ilmoitit tästä.
 newtab-toast-widgets-hidden =
     .message = Voit lisätä pienoisohjelmia takaisin milloin tahansa valitsemalla kynäkuvakkeen.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Seuraat nyt aihetta { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Et enää seuraa aihetta { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Et enää näe aihetta { $topic } käsitteleviä tarinoita.
 
 ## Strings for task / to-do list productivity widget
 
@@ -662,7 +704,6 @@ newtab-widget-lists-menu-edit = Muokkaa listan nimeä
 newtab-widget-lists-menu-create = Luo uusi lista
 newtab-widget-lists-menu-delete = Poista tämä lista
 newtab-widget-lists-menu-copy = Kopioi lista leikepöydälle
-newtab-widget-lists-menu-hide = Piilota kaikki listat
 newtab-widget-lists-menu-learn-more = Lue lisää
 newtab-widget-lists-input-add-an-item =
     .placeholder = Lisää kohde
@@ -684,6 +725,10 @@ newtab-widget-lists-name-placeholder-new =
     .placeholder = Uusi lista
 newtab-widget-section-title = Pienoisohjelmat
 newtab-widget-menu-hide = Piilota pienoisohjelma
+newtab-widget-menu-change-size = Muuta kokoa
+newtab-widget-size-small = Pieni
+newtab-widget-size-medium = Keskikokoinen
+newtab-widget-size-large = Suuri
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Piilota pienoisohjelmat
@@ -715,7 +760,6 @@ newtab-widget-timer-reset =
     .title = Nollaa
 newtab-widget-timer-menu-notifications = Poista ilmoitukset käytöstä
 newtab-widget-timer-menu-notifications-on = Ota ilmoitukset käyttöön
-newtab-widget-timer-menu-hide = Piilota ajastin
 newtab-widget-timer-menu-learn-more = Lue lisää
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Pääotsikot
@@ -726,6 +770,12 @@ newtab-daily-briefing-card-timestamp = Päivitetty { $minutes } min sitten
 newtab-widget-message-title = Pysy keskittyneenä listojen ja sisäänrakennetun ajastimen avulla
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Nopeista muistutuksista päivittäisiin tehtäviin, keskittymisharjoituksista venyttelytaukoihin – pysy tehtävässäsi ja aikataulussa.
+# "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
+# is to customize the new tab page with a background image or color from
+# the built-in wallpaper collection or uploading your own image.
+newtab-promo-card-title-addons = Tee { -brand-product-name }ista omasi
+newtab-promo-card-body-addons = Valitse taustakuva kokoelmastamme tai luo omasi.
+newtab-promo-card-cta-addons = Kokeile nyt
 newtab-promo-card-title = Tue { -brand-product-name }ia
 newtab-promo-card-body = Sponsorimme tukevat tehtäväämme rakentaa parempaa Internetiä
 newtab-promo-card-cta = Lue lisää

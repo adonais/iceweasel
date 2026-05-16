@@ -404,7 +404,7 @@ TEST_F(APZCBasicTester, MultipleSmoothScrollsSmooth) {
   }
 }
 
-TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdate) {
+TEST_F(APZCBasicTester, NotifyMainThreadTransaction_WithScrollUpdate) {
   // Set an empty metadata as if the APZC is now newly created.
   // This replicates when a document in a background tab now becomes forground.
   ScrollMetadata metadata;
@@ -445,7 +445,7 @@ TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdate) {
   ASSERT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset(), CSSPoint(15, 15));
 }
 
-TEST_F(APZCBasicTester, NotifyLayersUpdate_WithMultipleScrollUpdates) {
+TEST_F(APZCBasicTester, NotifyMainThreadTransaction_WithMultipleScrollUpdates) {
   // Set an empty metadata as if the APZC is now newly created.
   // This replicates when a document in a background tab now becomes foreground.
   ScrollMetadata metadata;

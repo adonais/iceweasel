@@ -4,11 +4,13 @@
 
 package org.mozilla.fenix.ui.efficiency.tests
 
+import org.junit.Ignore
 import org.junit.Test
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class SettingsHTTPSOnlyModeTest : BaseTest() {
 
+    @Ignore("Covered by verifyNavigationReachability[1: SettingsHTTPSOnlyModePage (TBD) — Navigation Reachability]")
     @Test
     fun verifyTheHTTPSOnlyModeSectionTest() {
         on.settingsHTTPSOnlyMode.navigateToPage()

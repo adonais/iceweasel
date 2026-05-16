@@ -36,7 +36,7 @@ low_complexity_test_verify_environment() {
 }
 
 # Runs libaom low-complexity decode mode test
-low_complexity_mode_test() {
+low_complexity_test() {
   local img_width=608
   local img_height=1080
 
@@ -51,9 +51,11 @@ low_complexity_mode_test() {
   fi
 
   echo "The LC mode encoder is started."
-  eval "${AOM_TEST_PREFIX}" "${encoder}" av1 "${img_width}" \
-      "${img_height}" "${input_file}" "${ivf_file}" 9999 0 90 \
-      ${devnull} || return 1
+  local enc_cmd="$(echo "${AOM_TEST_PREFIX}" "${encoder}" av1 "${img_width}" \
+                 "${img_height}" "${input_file}" "${ivf_file}" 150 90 "\
+                 "${devnull})"
+  echo "$enc_cmd"
+  eval "$enc_cmd" || return 1
 
   [ -e "${ivf_file}" ] || return 1
   echo "The LC mode encoder is completed."
@@ -75,14 +77,13 @@ low_complexity_mode_test() {
   echo "$dec_cmd"
   eval "$dec_cmd" || return 1
 
-  # Get perf user instruction count in thousands from perf output
-  local instruction_count="0"
-  local line=$( cat ${perfstat_file} | grep "instructions:u" )
-  instruction_count=${line%instructions:u*}
+  # Get perf user instruction count from perf output
+  local instruction_count="$(awk '/instructions:u/ {print $1}' \
+                           "${perfstat_file}")"
   echo ${instruction_count}
 }
 
-low_complexity_decode_mode_test="low_complexity_mode_test"
+low_complexity_decode_mode_test="low_complexity_test"
 
 run_tests low_complexity_test_verify_environment \
   "${low_complexity_decode_mode_test}"

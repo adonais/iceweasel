@@ -50,7 +50,6 @@
 #include "nsISerialEventTarget.h"
 #include "nsISiteSecurityService.h"
 #include "nsITimer.h"
-#include "nsITokenPasswordDialogs.h"
 #include "nsIWindowWatcher.h"
 #include "nsIXULRuntime.h"
 #include "nsLiteralString.h"
@@ -2172,36 +2171,6 @@ nsresult getNSSDialogs(void** _result, REFNSIID aIID, const char* contract) {
   rv = svc->QueryInterface(aIID, _result);
 
   return rv;
-}
-
-nsresult setPassword(PK11SlotInfo* slot, nsIInterfaceRequestor* ctx) {
-  MOZ_ASSERT(slot);
-  MOZ_ASSERT(ctx);
-  NS_ENSURE_ARG_POINTER(slot);
-  NS_ENSURE_ARG_POINTER(ctx);
-
-  if (PK11_NeedUserInit(slot)) {
-    nsCOMPtr<nsITokenPasswordDialogs> dialogs;
-    nsresult rv = getNSSDialogs(getter_AddRefs(dialogs),
-                                NS_GET_IID(nsITokenPasswordDialogs),
-                                NS_TOKENPASSWORDSDIALOG_CONTRACTID);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    bool canceled;
-    nsCOMPtr<nsIPK11Token> token = new nsPK11Token(slot);
-    rv = dialogs->SetPassword(ctx, token, &canceled);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    if (canceled) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-  }
-
-  return NS_OK;
 }
 
 static PRBool ConvertBetweenUCS2andASCII(PRBool toUnicode, unsigned char* inBuf,

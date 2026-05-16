@@ -244,6 +244,9 @@ add_task(async function test_sidebar_close_button() {
       "Wait for sidebar to auto-open after navigation"
     );
 
+    const askButton = win.document.getElementById(
+      "smartwindow-ask-button-inner"
+    );
     const sidebar = win.document.getElementById("ai-window-box");
 
     Assert.ok(!sidebar.collapsed, "Sidebar is open");
@@ -271,6 +274,15 @@ add_task(async function test_sidebar_close_button() {
     Assert.ok(
       sidebar.collapsed,
       "Sidebar is closed after clicking close button"
+    );
+    Assert.ok(
+      !askButton.hasAttribute("checked"),
+      "Ask button is unchecked after sidebar close"
+    );
+    Assert.equal(
+      askButton.getAttribute("aria-expanded"),
+      "false",
+      "Ask button has aria-expanded=false after sidebar close"
     );
   } finally {
     await BrowserTestUtils.closeWindow(win);

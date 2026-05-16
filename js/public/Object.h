@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -65,7 +63,7 @@ static MOZ_ALWAYS_INLINE Compartment* GetCompartment(JSObject* obj) {
  * If |obj| is known to be a proxy and you're willing to use friend APIs,
  * |js::GetProxyReservedSlot| in "js/Proxy.h" is very slightly more efficient.
  */
-inline const Value& GetReservedSlot(JSObject* obj, size_t slot) {
+inline const Value& GetReservedSlot(const JSObject* obj, size_t slot) {
   MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
   return reinterpret_cast<const shadow::Object*>(obj)->slotRef(slot);
 }

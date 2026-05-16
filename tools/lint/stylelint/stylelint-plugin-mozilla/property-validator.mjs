@@ -178,7 +178,7 @@ export class PropertyValidator {
 
   isUnit(word) {
     const parsed = valueParser.unit(word);
-    return parsed !== false && parsed.unit !== "";
+    return parsed !== false && parsed.number !== "" && parsed.unit !== "";
   }
 
   static isCalcOperand(node) {

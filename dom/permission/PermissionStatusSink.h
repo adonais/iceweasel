@@ -49,10 +49,15 @@ class PermissionStatusSink {
   // window/worker as an argument. MaybeUpdatedByNotifyOnly must be defined by
   // PermissionStatus inheritors that are double-keyed.
   virtual bool MaybeUpdatedByOnMainThread(nsIPermission* aPermission);
+  virtual bool MaybeUpdatedByBrowserPermOnMainThread(
+      nsIPermission* aPermission);
   virtual bool MaybeUpdatedByNotifyOnlyOnMainThread(
       nsPIDOMWindowInner* aInnerWindow);
 
+  bool MaybeAffectedByBrowserIdOnMainThread(uint64_t aBrowserId);
+
   void PermissionChangedOnMainThread();
+  void SystemPermissionChangedOnMainThread(PermissionState aState);
 
   PermissionName Name() const { return mPermissionName; }
 
@@ -68,14 +73,28 @@ class PermissionStatusSink {
 
   RefPtr<SystemPermissionStatePromise> ComputeSystemState();
 
+  // Returns mPermissionStatus. Must be called on mSerialEventTarget (i.e. the
+  // main thread for window sinks, the worker thread for worker sinks).
+  PermissionStatus* GetPermissionStatus() {
+    MOZ_ASSERT(mSerialEventTarget->IsOnCurrentThread());
+    return mPermissionStatus;
+  }
+
+  void ClearPermissionStatus();
+
+  bool GetBrowserIdOnMainThread(uint64_t* aBrowserId);
+
   nsCOMPtr<nsISerialEventTarget> mSerialEventTarget;
   nsCOMPtr<nsIPrincipal> mPrincipalForPermission;
 
   RefPtr<PermissionObserver> mObserver;
 
-  RefPtr<PermissionStatus> mPermissionStatus;
-
   Mutex mMutex;
+
+ private:
+  // Only access via GetPermissionStatus(). Owned by mSerialEventTarget; for
+  // worker sinks the main thread must use mWorkerRef (under mMutex) instead.
+  RefPtr<PermissionStatus> mPermissionStatus;
 
   // Protected by mutex.
   // Created and released on worker-thread. Used also on main-thread.

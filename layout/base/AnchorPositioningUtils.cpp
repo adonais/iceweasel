@@ -30,13 +30,8 @@ namespace mozilla {
 namespace {
 
 bool IsScrolled(const nsIFrame* aFrame) {
-  switch (aFrame->Style()->GetPseudoType()) {
-    case PseudoStyleType::MozScrolledContent:
-    case PseudoStyleType::MozScrolledCanvas:
-      return true;
-    default:
-      return false;
-  }
+  return aFrame->Style()->GetPseudoType() ==
+         PseudoStyleType::MozScrolledContent;
 }
 
 dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
@@ -172,22 +167,12 @@ bool IsAnchorInScopeForPositionedElement(const ScopedNameRef& aName,
         return nullptr;
       }();
 
-      if (!anchorScope || anchorScope->value.IsNone()) {
+      if (!anchorScope || anchorScope->value.IsEmpty()) {
         continue;
       }
 
-      if (anchorScope->value.IsAll()) {
-        const dom::ShadowRoot* shadowRoot = GetTreeForCascadeLevel(
-            *cp, anchorScope->scope.ShadowCascadeOrder());
-        if (shadowRoot == aShadowRoot) {
-          return cp;
-        }
-        continue;
-      }
-
-      MOZ_ASSERT(anchorScope->value.IsIdents());
-      for (const StyleAtom& ident : anchorScope->value.AsIdents().AsSpan()) {
-        if (aName == ident.AsAtom()) {
+      for (const StyleAtom& ident : anchorScope->value.AsSpan()) {
+        if (aName == ident.AsAtom() || ident.AsAtom() == nsGkAtoms::all) {
           const dom::ShadowRoot* shadowRoot = GetTreeForCascadeLevel(
               *cp, anchorScope->scope.ShadowCascadeOrder());
           if (shadowRoot == aShadowRoot) {
@@ -919,15 +904,18 @@ Maybe<ScopedNameRef> AnchorPositioningUtils::GetUsedAnchorName(
     return Some(aAnchorName);
   }
 
-  const auto& defaultAnchor = aPositioned->StylePosition()->mPositionAnchor;
-  if (defaultAnchor.value.IsNone()) {
+  const auto* stylePosition = aPositioned->StylePosition();
+  if (!stylePosition->CanHaveDefaultAnchor()) {
     return Nothing{};
   }
 
+  const auto& defaultAnchor = stylePosition->mPositionAnchor;
   if (defaultAnchor.value.IsIdent()) {
     return Some(ScopedNameRef(defaultAnchor.value.AsIdent().AsAtom(),
                               defaultAnchor.scope));
   }
+
+  MOZ_ASSERT(defaultAnchor.value.IsNormal() || defaultAnchor.value.IsAuto());
 
   if (aPositioned->Style()->IsPseudoElement()) {
     return Some(ScopedNameRef(nsGkAtoms::AnchorPosImplicitAnchor,
@@ -935,8 +923,9 @@ Maybe<ScopedNameRef> AnchorPositioningUtils::GetUsedAnchorName(
   }
 
   if (const nsIContent* content = aPositioned->GetContent()) {
-    if (const auto* element = content->AsElement()) {
-      if (element->GetPopoverData()) {
+    if (const auto* element = nsGenericHTMLElement::FromNode(content)) {
+      if (element->GetPopoverAttributeState() !=
+          dom::PopoverAttributeState::None) {
         return Some(ScopedNameRef(nsGkAtoms::AnchorPosImplicitAnchor,
                                   StyleCascadeLevel::Default()));
       }
@@ -1126,7 +1115,7 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
   // end up containing scroll offset in their position. For now, walk the chain
   // to account for those deltas too.
   const nsPoint chainedDelta = [&]() -> nsPoint {
-    if (defaultAnchor->StylePosition()->mPositionAnchor.value.IsNone()) {
+    if (!defaultAnchor->StylePosition()->CanHaveDefaultAnchor()) {
       return {};
     }
     const auto* referenceData =

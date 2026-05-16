@@ -1187,3 +1187,78 @@ add_atomic_task(async function test_securityProperties_upsert_updatesFlags() {
     );
   });
 });
+
+add_atomic_task(async function test_memoriesToggled_roundTrip() {
+  // Test null value (default)
+  const conversation1 = new ChatConversation({});
+  conversation1.title = "conversation with null memoriesToggled";
+  conversation1.addUserMessage("test content", "https://www.firefox.com");
+  await gChatStore.updateConversation(conversation1);
+
+  const restored1 = await gChatStore.findConversationById(conversation1.id);
+  Assert.ok(restored1, "conversation should restore from DB");
+  Assert.equal(
+    restored1.memoriesToggled,
+    null,
+    "memoriesToggled should be null after restore"
+  );
+
+  // Test true value
+  const conversation2 = new ChatConversation({ memoriesToggled: true });
+  conversation2.title = "conversation with memoriesToggled true";
+  conversation2.addUserMessage("test content", "https://www.firefox.com");
+  await gChatStore.updateConversation(conversation2);
+
+  const restored2 = await gChatStore.findConversationById(conversation2.id);
+  Assert.ok(restored2, "conversation should restore from DB");
+  Assert.equal(
+    restored2.memoriesToggled,
+    true,
+    "memoriesToggled should be true after restore"
+  );
+
+  // Test false value
+  const conversation3 = new ChatConversation({ memoriesToggled: false });
+  conversation3.title = "conversation with memoriesToggled false";
+  conversation3.addUserMessage("test content", "https://www.firefox.com");
+  await gChatStore.updateConversation(conversation3);
+
+  const restored3 = await gChatStore.findConversationById(conversation3.id);
+  Assert.ok(restored3, "conversation should restore from DB");
+  Assert.equal(
+    restored3.memoriesToggled,
+    false,
+    "memoriesToggled should be false after restore"
+  );
+});
+
+add_atomic_task(async function test_memoriesToggled_upsert_updatesValue() {
+  const conversation = new ChatConversation({});
+  conversation.title = "conversation with changing memoriesToggled";
+  conversation.addUserMessage("test content", "https://www.firefox.com");
+  await gChatStore.updateConversation(conversation);
+
+  // Simulate memories toggle being set during conversation lifetime
+  conversation.memoriesToggled = true;
+  await gChatStore.updateConversation(conversation);
+
+  let restored = await gChatStore.findConversationById(conversation.id);
+  Assert.ok(restored, "conversation should restore from DB");
+  Assert.equal(
+    restored.memoriesToggled,
+    true,
+    "memoriesToggled should be true after upsert"
+  );
+
+  // Toggle to false
+  conversation.memoriesToggled = false;
+  await gChatStore.updateConversation(conversation);
+
+  restored = await gChatStore.findConversationById(conversation.id);
+  Assert.ok(restored, "conversation should restore from DB");
+  Assert.equal(
+    restored.memoriesToggled,
+    false,
+    "memoriesToggled should be false after second upsert"
+  );
+});

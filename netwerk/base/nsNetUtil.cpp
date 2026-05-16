@@ -2385,43 +2385,6 @@ nsresult NS_URIChainHasFlags(nsIURI* uri, uint32_t flags, bool* result) {
   return util->URIChainHasFlags(uri, flags, result);
 }
 
-uint32_t NS_SecurityHashURI(nsIURI* aURI) {
-  nsCOMPtr<nsIURI> baseURI = NS_GetInnermostURI(aURI);
-
-  nsAutoCString scheme;
-  uint32_t schemeHash = 0;
-  if (NS_SUCCEEDED(baseURI->GetScheme(scheme))) {
-    schemeHash = mozilla::HashString(scheme);
-  }
-
-  // TODO figure out how to hash file:// URIs
-  if (scheme.EqualsLiteral("file")) return schemeHash;  // sad face
-
-#if IS_ORIGIN_IS_FULL_SPEC_DEFINED
-  bool hasFlag;
-  if (NS_FAILED(NS_URIChainHasFlags(
-          baseURI, nsIProtocolHandler::ORIGIN_IS_FULL_SPEC, &hasFlag)) ||
-      hasFlag) {
-    nsAutoCString spec;
-    uint32_t specHash;
-    nsresult res = baseURI->GetSpec(spec);
-    if (NS_SUCCEEDED(res))
-      specHash = mozilla::HashString(spec);
-    else
-      specHash = static_cast<uint32_t>(res);
-    return specHash;
-  }
-#endif
-
-  nsAutoCString host;
-  uint32_t hostHash = 0;
-  if (NS_SUCCEEDED(baseURI->GetAsciiHost(host))) {
-    hostHash = mozilla::HashString(host);
-  }
-
-  return mozilla::AddToHash(schemeHash, hostHash, NS_GetRealPort(baseURI));
-}
-
 bool NS_SecurityCompareURIs(nsIURI* aSourceURI, nsIURI* aTargetURI,
                             bool aStrictFileOriginPolicy) {
   nsresult rv;

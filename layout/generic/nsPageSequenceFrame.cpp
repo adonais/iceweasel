@@ -19,7 +19,6 @@
 #include "nsContentUtils.h"
 #include "nsDeviceContext.h"
 #include "nsDisplayList.h"
-#include "nsGkAtoms.h"
 #include "nsHTMLCanvasFrame.h"
 #include "nsICanvasRenderingContextInternal.h"
 #include "nsIFrame.h"

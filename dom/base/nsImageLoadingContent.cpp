@@ -423,6 +423,7 @@ nsresult nsImageLoadingContent::GetSyncDecodingHint(bool* aHint) {
 
 already_AddRefed<Promise> nsImageLoadingContent::QueueDecodeAsync(
     ErrorResult& aRv) {
+  // XXX probably should use our global.
   Document* doc = GetOurOwnerDoc();
   RefPtr<Promise> promise = Promise::Create(doc->GetScopeObject(), aRv);
   if (aRv.Failed()) {
@@ -437,11 +438,12 @@ already_AddRefed<Promise> nsImageLoadingContent::QueueDecodeAsync(
           mPromise(aPromise),
           mRequestGeneration(aRequestGeneration) {}
 
-    virtual void Run(AutoSlowOperation& aAso) override {
+    void Run(AutoSlowOperation& aAso) override {
       mOwner->DecodeAsync(std::move(mPromise), mRequestGeneration);
     }
 
-    virtual bool Suppressed() override {
+    bool Suppressed() override {
+      // XXX Probably should use mOwner->GetOwnerGlobal()
       nsIGlobalObject* global = mOwner->GetOurOwnerDoc()->GetScopeObject();
       return global && global->IsInSyncOperation();
     }
@@ -1280,6 +1282,7 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
     return nullptr;
   }
 
+  // XXX Probably should use this->GetOwnerGlobal()
   RefPtr<Promise> domPromise =
       Promise::Create(GetOurOwnerDoc()->GetScopeObject(), aRv);
   if (aRv.Failed()) {
@@ -1359,7 +1362,9 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
 
             nsTArray<ImageText> imageTexts(
                 textRecognitionResult.quads().Length());
-            nsIGlobalObject* global = el->OwnerDoc()->GetOwnerGlobal();
+            // XXX shouldn't this be GetOwnerGlobal? But it's privileged code so
+            // seems probably fine.
+            nsIGlobalObject* global = el->GetOwnerDocGlobal();
 
             for (const auto& quad : textRecognitionResult.quads()) {
               NotNull<ImageText*> imageText = imageTexts.AppendElement();

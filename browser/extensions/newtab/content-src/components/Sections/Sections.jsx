@@ -246,11 +246,7 @@ export class Section extends React.PureComponent {
           dispatch={this.props.dispatch}
           isWebExtension={this.props.isWebExtension}
         >
-          {!shouldShowEmptyState && (
-            <ul className="section-list" style={{ padding: 0 }}>
-              {cards}
-            </ul>
-          )}
+          {!shouldShowEmptyState && <ul className="section-list">{cards}</ul>}
           {shouldShowEmptyState && (
             <div className="section-empty-state">
               <div className="empty-state">

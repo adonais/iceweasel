@@ -39,7 +39,8 @@ class nsFilePickerProxy : public nsBaseFilePicker,
 
   // nsIFilePicker (less what's in nsBaseFilePicker)
   NS_IMETHOD Init(mozilla::dom::BrowsingContext* aBrowsingContext,
-                  const nsAString& aTitle, nsIFilePicker::Mode aMode) override;
+                  const nsAString& aTitle, nsIFilePicker::Mode aMode,
+                  nsISupports* aGlobal) override;
   NS_IMETHOD AppendFilter(const nsAString& aTitle,
                           const nsAString& aFilter) override;
   NS_IMETHOD GetCapture(nsIFilePicker::CaptureTarget* aCapture) override;

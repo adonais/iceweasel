@@ -554,13 +554,6 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
     mFirstPresent = false;
   }
 
-  if (mDisablingNativeCompositor) {
-    // During disabling native compositor, we need to wait all gpu tasks
-    // complete. Otherwise, rendering window could cause white flash.
-    WaitForPreviousGraphicsCommandsFinishedQuery(/* aWaitAll */ true);
-    mDisablingNativeCompositor = false;
-  }
-
   if (mDCLayerTree) {
     mDCLayerTree->MaybeUpdateDebug();
     mDCLayerTree->MaybeCommit();
@@ -833,12 +826,10 @@ bool RenderCompositorANGLE::UseLayerCompositor() const {
 }
 
 bool RenderCompositorANGLE::SupportAsyncScreenshot() {
-  return !UseCompositor() && !mDisablingNativeCompositor;
+  return !UseCompositor();
 }
 
-bool RenderCompositorANGLE::ShouldUseNativeCompositor() {
-  return mDCLayerTree && mDCLayerTree->UseNativeCompositor();
-}
+bool RenderCompositorANGLE::ShouldUseNativeCompositor() { return false; }
 
 bool RenderCompositorANGLE::ShouldUseLayerCompositor() const {
   return UseLayerCompositor();
@@ -942,27 +933,6 @@ void RenderCompositorANGLE::GetWindowProperties(WindowProperties* aProperties) {
   const bool enable_screenshot =
       mDCLayerTree && mDCLayerTree->GetAsyncScreenshotEnabled();
   aProperties->enable_screenshot = enable_screenshot;
-}
-
-void RenderCompositorANGLE::EnableNativeCompositor(bool aEnable) {
-  // XXX Re-enable native compositor is not handled yet.
-  MOZ_RELEASE_ASSERT(!mDisablingNativeCompositor);
-  MOZ_RELEASE_ASSERT(!aEnable);
-  LOG("RenderCompositorANGLE::EnableNativeCompositor() aEnable %d", aEnable);
-
-  if (!UseCompositor()) {
-    return;
-  }
-
-  mDCLayerTree->DisableNativeCompositor();
-
-  if (!RecreateNonNativeCompositorSwapChain()) {
-    gfxCriticalNote << "Failed to re-create SwapChain";
-    RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
-    return;
-  }
-
-  mDisablingNativeCompositor = true;
 }
 
 bool RenderCompositorANGLE::EnableAsyncScreenshot() {

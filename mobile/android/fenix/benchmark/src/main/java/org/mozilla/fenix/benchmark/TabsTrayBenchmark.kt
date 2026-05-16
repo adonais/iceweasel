@@ -18,7 +18,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.benchmark.utils.EXTRA_COMPOSABLE_TOOLBAR
 import org.mozilla.fenix.benchmark.utils.EXTRA_TAB_TRAY_ANIMATION
 import org.mozilla.fenix.benchmark.utils.EXTRA_TAB_TRAY_ENHANCEMENTS
 import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
@@ -86,7 +85,6 @@ class TabsTrayBenchmark {
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun switchTabsBenchmark(compilationMode: CompilationMode, animationsEnabled: Boolean) {
         var firstStart = true
-        val useComposableToolbar = true
 
         benchmarkRule.measureRepeatedDefault(
             packageName = TARGET_PACKAGE,
@@ -96,39 +94,33 @@ class TabsTrayBenchmark {
             compilationMode = compilationMode,
             setupBlock = {
                 if (firstStart) {
-                    prepareTabsTray(useComposableToolbar, animationsEnabled)
+                    prepareTabsTray(animationsEnabled)
                     firstStart = false
                 }
             },
         ) {
-            device.openTabsTray(useComposableToolbar)
+            device.openTabsTray()
             device.switchTabs(siteName = HtmlAsset.SIMPLE.title, newTabUrl = mockRule.url(HtmlAsset.SIMPLE))
 
-            device.openTabsTray(useComposableToolbar)
+            device.openTabsTray()
             device.switchTabs(siteName = HtmlAsset.LONG.title, newTabUrl = mockRule.url(HtmlAsset.LONG))
         }
     }
 
-    private fun MacrobenchmarkScope.prepareTabsTray(
-        useComposableToolbar: Boolean,
-        animationsEnabled: Boolean
-    ) {
+    private fun MacrobenchmarkScope.prepareTabsTray(animationsEnabled: Boolean) {
         pressHome()
-        val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK).putExtra(
-            EXTRA_COMPOSABLE_TOOLBAR, useComposableToolbar)
+        val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK)
             .putExtra(EXTRA_TAB_TRAY_ENHANCEMENTS, true)
             .putExtra(EXTRA_TAB_TRAY_ANIMATION, animationsEnabled)
 
         intent.setPackage(packageName)
         startActivityAndWait(intent = intent)
 
-        device.enterSearchMode(useComposableToolbar)
-        device.loadSite(url = mockRule.url(HtmlAsset.SIMPLE), useComposableToolbar)
+        device.enterSearchMode()
+        device.loadSite(url = mockRule.url(HtmlAsset.SIMPLE))
 
-        device.openTabsTray(useComposableToolbar)
+        device.openTabsTray()
         device.openNewTabOnTabsTray()
-        device.loadSite(url = mockRule.url(HtmlAsset.LONG), useComposableToolbar)
+        device.loadSite(url = mockRule.url(HtmlAsset.LONG))
     }
-
-
 }

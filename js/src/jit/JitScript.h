@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -203,15 +201,20 @@ class alignas(uintptr_t) ICScript final : public TrailingArray<ICScript> {
   void setActive() { active_ = true; }
   void resetActive() { active_ = false; }
 
-  gc::AllocSite* getOrCreateAllocSite(JSScript* outerScript, uint32_t pcOffset);
+  gc::AllocSite* getOrCreateAllocSite(JSScript* outerScript, uint32_t pcOffset,
+                                      const gc::AutoMarkingLock& lock);
 
-  void ensureEnvAllocSite(JSScript* outerScript);
+  void ensureEnvAllocSite(JSScript* outerScript,
+                          const gc::AutoMarkingLock& lock);
+
   gc::AllocSite* maybeEnvAllocSite() const { return envAllocSite_; }
 
   void prepareForDestruction(Zone* zone);
 
   void trace(JSTracer* trc);
   bool traceWeak(JSTracer* trc);
+
+  gc::MarkingLock& markingLock() { return markingLock_; }
 
 #ifdef DEBUG
   mozilla::HashNumber hash(JSContext* cx);
@@ -258,6 +261,9 @@ class alignas(uintptr_t) ICScript final : public TrailingArray<ICScript> {
 
   // Bytecode size of the JSScript corresponding to this ICScript.
   uint32_t bytecodeSize_;
+
+  // Lock used to synchronise mutation during concurrent marking.
+  gc::MarkingLock markingLock_;
 
   // Flag set when discarding JIT code to indicate this script is on the stack
   // and should not be discarded.
@@ -493,6 +499,11 @@ class alignas(uintptr_t) JitScript final
   void setBaselineScriptImpl(JSScript* script, BaselineScript* baselineScript);
   void setBaselineScriptImpl(JS::GCContext* gcx, JSScript* script,
                              BaselineScript* baselineScript);
+  void maybeRemoveFromCompileQueue(JSScript* script) {
+    if (isBaselineQueued()) {
+      script->realm()->removeFromCompileQueue(script);
+    }
+  }
 
  public:
   // Methods for getting/setting/clearing a BaselineScript*.
@@ -510,6 +521,7 @@ class alignas(uintptr_t) JitScript final
   }
   void setBaselineScript(JSScript* script, BaselineScript* baselineScript) {
     MOZ_ASSERT(!hasBaselineScript());
+    maybeRemoveFromCompileQueue(script);
     setBaselineScriptImpl(script, baselineScript);
     MOZ_ASSERT(hasBaselineScript());
   }
@@ -531,6 +543,7 @@ class alignas(uintptr_t) JitScript final
   }
   void setIsBaselineCompiling(JSScript* script) {
     MOZ_ASSERT(baselineScript_ == nullptr);
+    maybeRemoveFromCompileQueue(script);
     setBaselineScriptImpl(script, BaselineCompilingScriptPtr);
   }
   void clearIsBaselineCompiling(JSScript* script) {

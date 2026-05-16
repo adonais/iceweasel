@@ -24,18 +24,9 @@ RsdparsaSdp::RsdparsaSdp(RsdparsaSessionHandle session, const SdpOrigin& origin)
 
   size_t section_count = sdp_media_section_count(mSession.get());
   for (size_t level = 0; level < section_count; level++) {
-    RustMediaSection* mediaSection =
-        sdp_get_media_section(mSession.get(), level);
-    if (!mediaSection) {
-      MOZ_ASSERT(false,
-                 "sdp_get_media_section failed because level was out of"
-                 " bounds, but we did a bounds check!");
-      break;
-    }
     RsdparsaSessionHandle newSession(sdp_new_reference(mSession.get()));
-    RsdparsaSdpMediaSection* sdpMediaSection;
-    sdpMediaSection = new RsdparsaSdpMediaSection(
-        level, std::move(newSession), mediaSection, mAttributeList.get());
+    auto* sdpMediaSection = new RsdparsaSdpMediaSection(
+        level, std::move(newSession), mAttributeList.get());
     mMediaSections.emplace_back(sdpMediaSection);
   }
 }
@@ -53,16 +44,12 @@ uint32_t RsdparsaSdp::GetBandwidth(const std::string& type) const {
 }
 
 const SdpMediaSection& RsdparsaSdp::GetMediaSection(size_t level) const {
-  if (level > mMediaSections.size()) {
-    MOZ_CRASH();
-  }
+  MOZ_RELEASE_ASSERT(mMediaSections.size() > level);
   return *mMediaSections[level];
 }
 
 SdpMediaSection& RsdparsaSdp::GetMediaSection(size_t level) {
-  if (level > mMediaSections.size()) {
-    MOZ_CRASH();
-  }
+  MOZ_RELEASE_ASSERT(mMediaSections.size() > level);
   return *mMediaSections[level];
 }
 
@@ -78,10 +65,8 @@ SdpMediaSection& RsdparsaSdp::AddMediaSection(
     size_t level = mMediaSections.size();
     RsdparsaSessionHandle newSessHandle(sdp_new_reference(mSession.get()));
 
-    auto rustMediaSection = sdp_get_media_section(mSession.get(), level);
-    auto mediaSection =
-        new RsdparsaSdpMediaSection(level, std::move(newSessHandle),
-                                    rustMediaSection, mAttributeList.get());
+    auto* mediaSection = new RsdparsaSdpMediaSection(
+        level, std::move(newSessHandle), mAttributeList.get());
     mMediaSections.emplace_back(mediaSection);
 
     return *mediaSection;

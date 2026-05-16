@@ -439,13 +439,13 @@ export class UrlbarValueFormatter {
     try {
       baseDomain = Services.eTLD.getBaseDomainFromHost(origin);
       if (!domain.endsWith(baseDomain)) {
-        // getBaseDomainFromHost converts its resultant to ACE.
+        // The domain may be displayed in a different encoding (e.g., mixed
+        // punycode/unicode) than the ACE baseDomain from origin. Get the
+        // baseDomain in the same encoding as the displayed domain.
         let IDNService = Cc["@mozilla.org/network/idn-service;1"].getService(
           Ci.nsIIDNService
         );
-        // XXX This should probably convert to display IDN instead.
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=1906048
-        baseDomain = IDNService.convertACEtoUTF8(baseDomain);
+        baseDomain = IDNService.domainToDisplay(baseDomain);
       }
     } catch (e) {}
     if (baseDomain != domain) {

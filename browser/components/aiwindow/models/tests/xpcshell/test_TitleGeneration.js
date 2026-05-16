@@ -378,6 +378,60 @@ add_task(async function test_generateChatTitle_short_message() {
 });
 
 /**
+ * Test that generateChatTitle includes the assistant response in messages when provided
+ */
+add_task(async function test_generateChatTitle_with_assistant_response() {
+  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+  Services.prefs.setStringPref(PREF_MODEL, MODEL);
+
+  const sb = sinon.createSandbox();
+  try {
+    const mockResponse = { finalOutput: "Firefox Memories Location" };
+    const fakeEngineInstance = {
+      run: sb.stub().resolves(mockResponse),
+    };
+    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+
+    const message = "where are my memories";
+    const currentTab = { url: "", title: "", description: "" };
+    const assistantResponse =
+      "Your memories are in AI Controls > Smart Window > Manage memories.";
+
+    const title = await generateChatTitle(
+      message,
+      currentTab,
+      assistantResponse
+    );
+
+    Assert.equal(
+      title,
+      "Firefox Memories Location",
+      "Should return the generated title"
+    );
+
+    const callArgs = fakeEngineInstance.run.firstCall.args[0];
+    Assert.equal(
+      callArgs.args.length,
+      3,
+      "Should have system, user, and assistant messages when assistantResponse is provided"
+    );
+    Assert.equal(
+      callArgs.args[2].role,
+      "assistant",
+      "Third message should be assistant"
+    );
+    Assert.equal(
+      callArgs.args[2].content,
+      assistantResponse,
+      "Assistant message should contain the provided response"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+/**
  * Test default title generation with more than four words
  */
 add_task(async function test_generateChatTitle_long_message() {

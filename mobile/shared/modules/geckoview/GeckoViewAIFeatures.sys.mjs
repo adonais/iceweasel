@@ -42,6 +42,7 @@ export const GeckoViewAIFeatures = {
               featureId,
               isEnabled: feature.isEnabled,
               isAllowed: feature.isAllowed,
+              isBlocked: feature.isBlocked,
             };
           }),
         });
@@ -62,7 +63,7 @@ export const GeckoViewAIFeatures = {
         );
         break;
       }
-      case "GeckoView:AIFeature:Reset": {
+      case "GeckoView:AIFeature:MakeAvailable": {
         const feature = getAIFeature(aData.featureId);
         if (!feature) {
           aCallback.onError(`Unknown AI feature: ${aData.featureId}`);

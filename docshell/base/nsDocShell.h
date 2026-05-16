@@ -499,8 +499,6 @@ class nsDocShell final : public nsDocLoader,
   // in the parent is on.
   bool FillLoadStateFromCurrentEntry(nsDocShellLoadState& aLoadState);
 
-  static bool ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel);
-
   mozilla::dom::ChildSHistory* GetSessionHistory() {
     return mBrowsingContext->GetChildSessionHistory();
   }

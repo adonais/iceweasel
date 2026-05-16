@@ -162,15 +162,15 @@ class UnderlyingSinkAlgorithmsWrapper : public UnderlyingSinkAlgorithmsBase {
   }
 };
 
-class WritableStreamToOutput final : public UnderlyingSinkAlgorithmsWrapper,
-                                     public nsIOutputStreamCallback {
+class WritableStreamToOutputAlgorithms : public UnderlyingSinkAlgorithmsWrapper,
+                                         public nsIOutputStreamCallback {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIOUTPUTSTREAMCALLBACK
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(WritableStreamToOutput,
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(WritableStreamToOutputAlgorithms,
                                            UnderlyingSinkAlgorithmsBase)
 
-  WritableStreamToOutput(nsIGlobalObject* aParent,
-                         nsIAsyncOutputStream* aOutput)
+  WritableStreamToOutputAlgorithms(nsIGlobalObject* aParent,
+                                   nsIAsyncOutputStream* aOutput)
       : mWritten(0), mParent(aParent), mOutput(aOutput) {}
 
   // Streams algorithms
@@ -187,9 +187,22 @@ class WritableStreamToOutput final : public UnderlyingSinkAlgorithmsWrapper,
 
   void ReleaseObjects() override;
 
- private:
-  ~WritableStreamToOutput() override = default;
+ protected:
+  ~WritableStreamToOutputAlgorithms() override = default;
 
+  nsIGlobalObject* GetParent() const { return mParent; }
+  void CloseOutput() {
+    if (mOutput) {
+      mOutput->Close();
+    }
+  }
+  void CloseOutputWithStatus(nsresult aReason) {
+    if (mOutput) {
+      mOutput->CloseWithStatus(aReason);
+    }
+  }
+
+ private:
   void ClearData() {
     mData = Nothing();
     mPromise = nullptr;

@@ -23,7 +23,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsMimeTypes.h"
 #include "nsStringStream.h"
-#include "nsGkAtoms.h"
 #include "nsWhitespaceTokenizer.h"
 #include "nsIChannelEventSink.h"
 #include "nsIDNSRecord.h"

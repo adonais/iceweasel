@@ -178,7 +178,7 @@ void ConsoleReportCollector::StealConsoleReports(
 
   for (const PendingReport& report : reports) {
     aReports.AppendElement(net::ConsoleReportCollected(
-        report.mErrorFlags, report.mCategory, uint32_t(report.mPropertiesFile),
+        report.mErrorFlags, report.mCategory, report.mPropertiesFile,
         report.mSourceFileURI, report.mLineNumber, report.mColumnNumber,
         report.mMessageName, report.mStringParams));
   }

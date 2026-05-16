@@ -1,0 +1,21 @@
+{
+  "label": "directv.com.co",
+  "bugs": {
+    "1610344": {
+      "issue": "unsupported-warning",
+      "matches": ["https://*.directv.com.co/*"]
+    },
+    "1827706": {
+      "issue": "unsupported-warning",
+      "matches": ["https://*.directv.com.ec/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1610344-directv.com.co-hide-unsupported-message.css"]
+      }
+    }
+  ]
+}

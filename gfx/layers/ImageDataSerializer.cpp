@@ -229,6 +229,18 @@ Maybe<int32_t> CbCrStrideFromBufferDescriptor(
   }
 }
 
+Maybe<gfx::ColorSpace2> ColorSpace2FromBufferDescriptor(
+    const BufferDescriptor& aDescriptor) {
+  switch (aDescriptor.type()) {
+    case BufferDescriptor::TRGBDescriptor:
+      return Some(aDescriptor.get_RGBDescriptor().colorSpace());
+    case BufferDescriptor::TYCbCrDescriptor:
+      return Nothing();
+    default:
+      MOZ_CRASH("GFX:  ColorSpace2FromBufferDescriptor");
+  }
+}
+
 Maybe<gfx::YUVColorSpace> YUVColorSpaceFromBufferDescriptor(
     const BufferDescriptor& aDescriptor) {
   switch (aDescriptor.type()) {
@@ -289,6 +301,18 @@ Maybe<gfx::ChromaSubsampling> ChromaSubsamplingFromBufferDescriptor(
   }
 }
 
+Maybe<gfx::TransferFunction> TransferFunctionFromBufferDescriptor(
+    const BufferDescriptor& aDescriptor) {
+  switch (aDescriptor.type()) {
+    case BufferDescriptor::TRGBDescriptor:
+      return Some(aDescriptor.get_RGBDescriptor().transferFunction());
+    case BufferDescriptor::TYCbCrDescriptor:
+      return Some(aDescriptor.get_YCbCrDescriptor().transferFunction());
+    default:
+      MOZ_CRASH("GFX: TransferFunctionFromBufferDescriptor");
+  }
+}
+
 uint8_t* GetYChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor) {
   return aBuffer + aDescriptor.yOffset();
 }
@@ -299,6 +323,18 @@ uint8_t* GetCbChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor) {
 
 uint8_t* GetCrChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor) {
   return aBuffer + aDescriptor.crOffset();
+}
+
+uint16_t* GetYChannel(uint16_t* aBuffer, const YCbCrDescriptor& aDescriptor) {
+  return aBuffer + aDescriptor.yOffset() / 2;
+}
+
+uint16_t* GetCbChannel(uint16_t* aBuffer, const YCbCrDescriptor& aDescriptor) {
+  return aBuffer + aDescriptor.cbOffset() / 2;
+}
+
+uint16_t* GetCrChannel(uint16_t* aBuffer, const YCbCrDescriptor& aDescriptor) {
+  return aBuffer + aDescriptor.crOffset() / 2;
 }
 
 already_AddRefed<DataSourceSurface> DataSourceSurfaceFromYCbCrDescriptor(

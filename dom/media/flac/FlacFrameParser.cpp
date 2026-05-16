@@ -8,6 +8,7 @@
 #include "OggCodecState.h"
 #include "OpusParser.h"
 #include "VideoUtils.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Try.h"
 #include "nsTArray.h"
 

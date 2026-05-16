@@ -128,8 +128,8 @@ SVGTransformSMILData::SVGTransformSMILData(const SVGTransform& aTransform)
                  mTransformType <= SVG_TRANSFORM_SKEWY,
              "Unexpected transform type");
 
-  for (uint32_t i = 0; i < NUM_STORED_PARAMS; ++i) {
-    mParams[i] = 0.f;
+  for (float& mParam : mParams) {
+    mParam = 0.f;
   }
 
   switch (mTransformType) {

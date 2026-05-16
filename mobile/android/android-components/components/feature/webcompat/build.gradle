@@ -31,24 +31,16 @@ android {
 // the extension at: `resource://android/assets/extensions/webcompat/`.
 tasks.register("syncWebcompatExtension", Sync) {
     def topsrcdir = gradle.mozconfig.topsrcdir
-    from "$topsrcdir/browser/extensions/webcompat"
-    into layout.buildDirectory.dir("generated/assets/extensions/webcompat/")
-    exclude "**/tests/**", "**/components.conf", "**/moz.build"
-
-    // webcompat adopted #include directives in Bug 1936031, which are only
-    // processed for Desktop builds. The filter below pre-processes the files
-    // that include these directives.
-
-    // configuration-cache doesn't allow calling file() from a groovy closure,
-    // in this case filesMatching callback, so we call file before the closure.
-    def interventionsJson = file("$topsrcdir/browser/extensions/webcompat/data/interventions.json")
-    filesMatching([
-        '**/run.js',
-    ]) {
-        filter(ReplaceTokens, beginToken: '', endToken: '', tokens: [
-            '#include data/interventions.json': interventionsJson.text.trim(),
-        ])
+    from ("$topsrcdir/browser/extensions/webcompat") {
+        exclude "run.js"
     }
+    def topobjdir = gradle.mozconfig.topobjdir
+    from ("$topobjdir/mobile/android") {
+        include "webcompat_addon_run.js"
+        rename "webcompat_addon_run.js", "run.js"
+    }
+    into layout.buildDirectory.dir("generated/assets/extensions/webcompat/")
+    exclude "**/tests/**", "**/components.conf", "**/moz.build", "**/codegen.py", "**/data/interventions"
 }
 
 // Make sure DAGP asset-source exploding happens after syncWebcompatExtension

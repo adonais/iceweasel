@@ -202,7 +202,7 @@ LocalStorageManager2::PrecacheStorage(nsIPrincipal* aPrincipal,
   // implementation to perform a preload in the content/current process.  That's
   // not how things work in LSNG.  Instead everything happens in the parent
   // process, triggered by the official preloading spot,
-  // ContentParent::AboutToLoadHttpDocumentForChild.
+  // ContentParent::AboutToLoadDocumentForChild.
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

@@ -150,6 +150,7 @@ typedef struct TplDepFrame {
   YV12_BUFFER_CONFIG *rec_picture;
   int ref_map_index[REF_FRAMES];
   int stride;
+  // width and height here is in the unit of 16x16 block.
   int width;
   int height;
   int mi_rows;

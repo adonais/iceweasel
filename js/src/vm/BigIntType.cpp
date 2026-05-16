@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -1602,7 +1600,7 @@ BigInt* BigInt::parseLiteralDigits(JSContext* cx, Range<const CharT> chars,
   // Fast path for the single digit case.
   if (length == 1) {
     BigInt::Digit digit = 0;
-    if (!ParseLiteralDigit(chars, radix, &digit)) {
+    if (!ParseLiteralDigit(Range{start, end}, radix, &digit)) {
       *haveParseError = true;
       return nullptr;
     }
@@ -2884,15 +2882,16 @@ BigInt* BigInt::asUintN(JSContext* cx, HandleBigInt x, uint64_t bits) {
 
   const bool isNegative = false;
   BigInt* res = createUninitialized(cx, length, isNegative);
-  if (res == nullptr) {
+  if (!res) {
     return nullptr;
   }
+
+  MOZ_ASSERT_IF(length == 0, res->isZero());
 
   while (length-- > 0) {
     res->setDigit(length, x->digit(length) & mask);
     mask = Digit(-1);
   }
-  MOZ_ASSERT_IF(length == 0, res->isZero());
 
   return res;
 }

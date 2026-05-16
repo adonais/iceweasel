@@ -65,13 +65,15 @@ interface nsIFilePicker : nsISupports
   * Initialize the file picker widget.  The file picker is not valid until this
   * method is called.
   *
-  * @param      browsingContext   The context in which the file picker is being
-  *                               shown, must be non-null.
-  * @param      title             The title for the file widget
-  * @param      mode              load, save, or get folder
-  *
+  * @param      bc     The context in which the file picker is being shown,
+  *                    must be non-null.
+  * @param      title  The title for the file widget
+  * @param      mode   load, save, or get folder
+  * @param      global the global the result objects should be associated with,
+  *                    defaults to browsingContext's inner window.
   */
-  void init(in BrowsingContext browsingContext, in AString title, in nsIFilePicker_Mode mode);
+  void init(in BrowsingContext bc, in AString title, in nsIFilePicker_Mode mode,
+            [optional] in nsISupports global);
 
   /**
    * Returns a Promise that resolves to true if the passed nsIFilePicker mode

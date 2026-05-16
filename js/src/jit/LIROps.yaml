@@ -3393,6 +3393,11 @@
 - name: WasmStackResult64
   gen_boilerplate: false
 
+#ifdef ENABLE_WASM_JSPI
+- name: WasmResume
+  gen_boilerplate: false
+#endif
+
 - name: AssertRangeI
   operands:
     input: WordSized

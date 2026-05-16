@@ -5,11 +5,11 @@
 ## Chrome
 
 appmenuitem-new-ai-window =
-    .label = New smart window
-    .value = New smart window
+    .label = New Smart Window
+    .value = New Smart Window
 
 appmenuitem-new-classic-window =
-    .label = New classic window
+    .label = New Classic Window
 
 menu-file-new-ai-window =
     .label = New Smart Window
@@ -30,7 +30,7 @@ smartwindow-document-title = New Tab
 ## Smart Window Toggle Button
 
 toolbar-button-ai-window-toggle =
-    .label = Smart window
+    .label = Window Type
     .tooltiptext = Switch between Smart and Classic windows.
 
 ai-window-toggleview-switch-classic =
@@ -64,6 +64,9 @@ aiwindow-input-cta-menu-label-chat = Ask
 aiwindow-input-cta-menu-label-navigate = Go to site
 # $searchEngineName (string) - The name of the default search engine
 aiwindow-input-cta-menu-label-search = Search with { $searchEngineName }
+aiwindow-input-cta-menu-label-search-with = Search with…
+
+aiwindow-input-cta-search-submenu-header = Search
 
 ## Smartbar
 
@@ -72,6 +75,7 @@ smartbar-placeholder =
 
 ## Mentions
 
+smartbar-mention-typing-placeholder = Tag a tab or site
 smartbar-mentions-list-no-results-label = No results found
 smartbar-mentions-list-recent-tabs-label = Recent tabs
 
@@ -95,14 +99,36 @@ aiwindow-firstrun-model-title = What’s important to you?
 aiwindow-firstrun-model-subtitle = Pick a model to power Smart Window. Switch anytime.
 aiwindow-firstrun-model-fast-label = Fast
 aiwindow-firstrun-model-fast-body = Answers quickly
-# $modelName (string) - The name of the AI model
+# $model (string) - The name of the AI model
 # $ownerName (string) - The name of the model owner/provider
-aiwindow-firstrun-model-chip-subtitle = Model { $modelName } by { $ownerName }
+aiwindow-firstrun-model-chip-subtitle = Model { $model } by { $ownerName }
 aiwindow-firstrun-model-allpurpose-label = Flexible
 aiwindow-firstrun-model-allpurpose-body = Solid fit for most needs
 aiwindow-firstrun-model-personal-label = Personal
 aiwindow-firstrun-model-personal-body = Most tailored answers
 aiwindow-firstrun-button = Let’s go!
+aiwindow-firstrun-back-button = Back
+aiwindow-firstrun-next-button = Next
+
+## Firstrun memories onboarding
+
+aiwindow-firstrun-memories-title = More helpful answers, on your terms
+aiwindow-firstrun-memories-subtitle = Smart Window can learn from your chats, browsing, or both to create memories. They make answers more helpful over time.
+
+aiwindow-firstrun-memories-conversation-title = Keep the conversation going
+aiwindow-firstrun-memories-conversation-body = Learning from chats means you’ll have to repeat yourself less.
+
+aiwindow-firstrun-memories-relevance-title = More relevant answers
+aiwindow-firstrun-memories-relevance-body = Learning from browsing gives Smart Window the bigger picture.
+
+aiwindow-firstrun-memories-privacy-title = Private by design
+aiwindow-firstrun-memories-privacy-body = Memories are stored on this device. Delete or turn off anytime.
+
+aiwindow-firstrun-memories-choose-label = Choose what Smart Window learns from
+aiwindow-firstrun-memories-checkbox-chats = Chats in Smart Window
+aiwindow-firstrun-memories-checkbox-browsing = Browsing across { -brand-product-name }
+aiwindow-firstrun-memories-update-settings = Update in settings anytime.
+aiwindow-firstrun-memories-no-create = Got it. Smart Window won’t create memories. Update in settings anytime.
 
 ## Ask Toolbar Button
 
@@ -112,10 +138,10 @@ smartwindow-ask-button =
 ## Memories toggle button
 
 aiwindow-memories-on =
-    .tooltiptext = Memories on
+    .tooltiptext = Use memories in responses when helpful
     .aria-label = Memories on
 aiwindow-memories-off =
-    .tooltiptext = Memories off
+    .tooltiptext = Don’t use memories in responses
     .aria-label = Memories off
 
 ## New Chat Button

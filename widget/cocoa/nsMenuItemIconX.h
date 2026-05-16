@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
- * Retrieves and displays icons in native menu items on Mac OS X.
+ * Retrieves and displays icons in native menu items on macOS.
  */
 
 #ifndef nsMenuItemIconX_h_

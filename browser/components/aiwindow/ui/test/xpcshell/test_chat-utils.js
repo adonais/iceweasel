@@ -54,6 +54,7 @@ add_task(function test_parseConversationRow() {
     status: "a status",
     security_properties: '{"privateData": false, "untrustedInput": true}',
     seen_urls: '["https://example.com/page1"]',
+    memories_toggled: true,
   });
 
   const conversation = parseConversationRow(testRow);
@@ -81,6 +82,11 @@ add_task(function test_parseConversationRow() {
     soft.ok(
       conversation.seenUrls.has("https://example.com/page1"),
       "seenUrls should contain the persisted URL"
+    );
+    soft.equal(
+      conversation.memoriesToggled,
+      true,
+      "memoriesToggled should be true"
     );
   });
 });

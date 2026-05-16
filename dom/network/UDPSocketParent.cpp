@@ -244,7 +244,8 @@ void UDPSocketParent::DoConnect(const nsCOMPtr<nsIUDPSocket>& aSocket,
                                 const UDPAddressInfo& aAddressInfo) {
   UDPSOCKET_LOG(("%s: %s:%u", __FUNCTION__, aAddressInfo.addr().get(),
                  aAddressInfo.port()));
-  if (NS_FAILED(ConnectInternal(aAddressInfo.addr(), aAddressInfo.port()))) {
+  if (NS_FAILED(
+          ConnectInternal(aSocket, aAddressInfo.addr(), aAddressInfo.port()))) {
     SendInternalError(aReturnThread, __LINE__);
     return;
   }
@@ -270,13 +271,14 @@ void UDPSocketParent::DoConnect(const nsCOMPtr<nsIUDPSocket>& aSocket,
   SendConnectResponse(aReturnThread, UDPAddressInfo(addr, port));
 }
 
-nsresult UDPSocketParent::ConnectInternal(const nsCString& aHost,
+nsresult UDPSocketParent::ConnectInternal(const nsCOMPtr<nsIUDPSocket>& aSocket,
+                                          const nsCString& aHost,
                                           const uint16_t& aPort) {
   nsresult rv;
 
   UDPSOCKET_LOG(("%s: %s:%u", __FUNCTION__, nsCString(aHost).get(), aPort));
 
-  if (!mSocket) {
+  if (!aSocket) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -289,7 +291,7 @@ nsresult UDPSocketParent::ConnectInternal(const nsCString& aHost,
   }
 
   mozilla::net::NetAddr addr(&prAddr);
-  rv = mSocket->Connect(&addr);
+  rv = aSocket->Connect(&addr);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -407,7 +409,7 @@ void UDPSocketParent::Send(const IPCStream& aStream,
 }
 
 mozilla::ipc::IPCResult UDPSocketParent::RecvJoinMulticast(
-    const nsCString& aMulticastAddress, const nsCString& aInterface) {
+    const nsACString& aMulticastAddress, const nsACString& aInterface) {
   if (!mSocket) {
     NS_WARNING("multicast socket is closed");
     FireInternalError(__LINE__);
@@ -424,7 +426,7 @@ mozilla::ipc::IPCResult UDPSocketParent::RecvJoinMulticast(
 }
 
 mozilla::ipc::IPCResult UDPSocketParent::RecvLeaveMulticast(
-    const nsCString& aMulticastAddress, const nsCString& aInterface) {
+    const nsACString& aMulticastAddress, const nsACString& aInterface) {
   if (!mSocket) {
     NS_WARNING("multicast socket is closed");
     FireInternalError(__LINE__);

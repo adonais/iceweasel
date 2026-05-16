@@ -1,4 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -248,57 +247,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
    */
   bool hasEmbedVisit(nsIURI* aURI);
 
-  int32_t GetFrecencyAgedWeight(int32_t aAgeInDays) const {
-    if (aAgeInDays <= mFirstBucketCutoffInDays) {
-      return mFirstBucketWeight;
-    }
-    if (aAgeInDays <= mSecondBucketCutoffInDays) {
-      return mSecondBucketWeight;
-    }
-    if (aAgeInDays <= mThirdBucketCutoffInDays) {
-      return mThirdBucketWeight;
-    }
-    if (aAgeInDays <= mFourthBucketCutoffInDays) {
-      return mFourthBucketWeight;
-    }
-    return mDefaultWeight;
-  }
-
-  int32_t GetFrecencyTransitionBonus(int32_t aTransitionType, bool aVisited,
-                                     bool aRedirect = false) const {
-    if (aRedirect) {
-      return mRedirectSourceVisitBonus;
-    }
-
-    switch (aTransitionType) {
-      case nsINavHistoryService::TRANSITION_EMBED:
-        return mEmbedVisitBonus;
-      case nsINavHistoryService::TRANSITION_FRAMED_LINK:
-        return mFramedLinkVisitBonus;
-      case nsINavHistoryService::TRANSITION_LINK:
-        return mLinkVisitBonus;
-      case nsINavHistoryService::TRANSITION_TYPED:
-        return aVisited ? mTypedVisitBonus : mUnvisitedTypedBonus;
-      case nsINavHistoryService::TRANSITION_BOOKMARK:
-        return aVisited ? mBookmarkVisitBonus : mUnvisitedBookmarkBonus;
-      case nsINavHistoryService::TRANSITION_DOWNLOAD:
-        return mDownloadVisitBonus;
-      case nsINavHistoryService::TRANSITION_REDIRECT_PERMANENT:
-        return mPermRedirectVisitBonus;
-      case nsINavHistoryService::TRANSITION_REDIRECT_TEMPORARY:
-        return mTempRedirectVisitBonus;
-      case nsINavHistoryService::TRANSITION_RELOAD:
-        return mReloadVisitBonus;
-      default:
-        // 0 == undefined (see bug #375777 for details)
-        NS_WARNING_ASSERTION(!aTransitionType,
-                             "new transition but no bonus for frecency");
-        return mDefaultVisitBonus;
-    }
-  }
-
-  int32_t GetNumVisitsForFrecency() const { return mNumVisitsForFrecency; }
-
   /**
    * This is a simplified version of the frecency calculation that is used for
    * thresholds. All visits are considered to have the given age, and the
@@ -430,31 +378,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
   // Whether or not diacritics must match in history text searches.
   // Will mimic value of the places.search.matchDiacritics preference.
   bool mMatchDiacritics;
-
-  // Frecency preferences.
-  int32_t mNumVisitsForFrecency;
-  int32_t mFirstBucketCutoffInDays;
-  int32_t mSecondBucketCutoffInDays;
-  int32_t mThirdBucketCutoffInDays;
-  int32_t mFourthBucketCutoffInDays;
-  int32_t mFirstBucketWeight;
-  int32_t mSecondBucketWeight;
-  int32_t mThirdBucketWeight;
-  int32_t mFourthBucketWeight;
-  int32_t mDefaultWeight;
-  int32_t mEmbedVisitBonus;
-  int32_t mFramedLinkVisitBonus;
-  int32_t mLinkVisitBonus;
-  int32_t mTypedVisitBonus;
-  int32_t mBookmarkVisitBonus;
-  int32_t mDownloadVisitBonus;
-  int32_t mPermRedirectVisitBonus;
-  int32_t mTempRedirectVisitBonus;
-  int32_t mRedirectSourceVisitBonus;
-  int32_t mDefaultVisitBonus;
-  int32_t mUnvisitedBookmarkBonus;
-  int32_t mUnvisitedTypedBonus;
-  int32_t mReloadVisitBonus;
 
   int64_t mTagsFolder;
   int64_t mLastCachedStartOfDay;

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -24,6 +22,7 @@
 #include "js/RealmOptions.h"
 #include "js/TelemetryTimers.h"
 #include "js/UniquePtr.h"
+#include "util/LanguageId.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/GuardFuse.h"
 #include "vm/InvalidatingFuse.h"
@@ -347,6 +346,9 @@ class JS::Realm : public JS::shadow::Realm {
 
   const js::AllocationMetadataBuilder* allocationMetadataBuilder_ = nullptr;
   void* realmPrivate_ = nullptr;
+
+  // Default locale for realms with non-default locales.
+  js::LanguageId localeId_ = js::LanguageId::und();
 
 #if JS_HAS_INTL_API
   // Date-time info for realms with non-default time zones.
@@ -813,8 +815,12 @@ class JS::Realm : public JS::shadow::Realm {
 
   bool shouldCaptureStackForThrow();
 
-  // Returns the locale for this realm. (Pointer must NOT be freed!)
-  const char* getLocale() const;
+  // Returns the locale for this realm.
+  //
+  // The returned locale is canonicalized, but not necessarily an available
+  // locale for the ECMA-402 Intl API. `intl::GlobalIntlData::defaultLocale()`
+  // returns the *actual* default locale used for `Intl` objects.
+  js::LanguageId getLocale();
 
   // Set the locale for this realm. Reset to the system default locale when the
   // input is |nullptr|.

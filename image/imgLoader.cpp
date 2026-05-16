@@ -1714,6 +1714,8 @@ bool imgLoader::SetHasNoProxies(imgRequest* aRequest, imgCacheEntry* aEntry) {
     mCacheQueue.Push(aEntry);
   }
 
+  CheckCacheLimits();
+
   return true;
 }
 
@@ -2787,7 +2789,7 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
 #endif
 
   // Filter out any load flags not from nsIRequest
-  requestFlags &= nsIRequest::LOAD_REQUESTMASK;
+  requestFlags &= nsIRequest::LOAD_INHERIT_MASK;
 
   nsresult rv = NS_OK;
   if (request) {

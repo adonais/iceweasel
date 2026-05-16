@@ -54,11 +54,11 @@ add_task(async function test_metrics_initialized() {
 });
 
 add_task(async function test_sidebar_expand() {
-  await SidebarController.initializeUIState({ launcherExpanded: false });
+  await SidebarController.updateUIState({ launcherExpanded: false });
   await SpecialPowers.pushPrefEnv({
     set: [[VERTICAL_TABS_PREF, true]],
   });
-  await waitForTabstripOrientation("vertical");
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
   // Vertical tabs are expanded by default
   info("Waiting for sidebar main to be expanded");
   await BrowserTestUtils.waitForMutationCondition(
@@ -93,7 +93,10 @@ add_task(async function test_sidebar_expand() {
   Assert.equal(events?.length, 2, "Two events were reported.");
 
   await SpecialPowers.popPrefEnv();
-  await waitForTabstripOrientation(initialTabDirection);
+  await SidebarTestUtils.waitForTabstripOrientation(
+    window,
+    initialTabDirection
+  );
 });
 
 async function testSidebarToggle(commandID, gleanEvent, otherCommandID) {
@@ -123,7 +126,7 @@ async function testSidebarToggle(commandID, gleanEvent, otherCommandID) {
     "false",
     "Event indicates that the panel was closed."
   );
-  await SidebarController.initializeUIState({
+  await SidebarController.updateUIState({
     panelOpen: false,
     command: "",
     launcherVisible: true,
@@ -444,7 +447,7 @@ add_task(async function test_customize_sidebar_display() {
   await SpecialPowers.pushPrefEnv({
     set: [[VERTICAL_TABS_PREF, true]],
   });
-  await waitForTabstripOrientation("vertical");
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
   await testCustomizeSetting(
     "visibilityInput",
     Glean.sidebarCustomize.sidebarDisplay,
@@ -452,7 +455,10 @@ add_task(async function test_customize_sidebar_display() {
     { preference: "always" }
   );
   await SpecialPowers.popPrefEnv();
-  await waitForTabstripOrientation(initialTabDirection);
+  await SidebarTestUtils.waitForTabstripOrientation(
+    window,
+    initialTabDirection
+  );
 });
 
 add_task(async function test_customize_sidebar_position() {
@@ -491,7 +497,7 @@ add_task(async function test_sidebar_resize() {
   await SpecialPowers.pushPrefEnv({
     set: [[VERTICAL_TABS_PREF, true]],
   });
-  await waitForTabstripOrientation("vertical");
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
   await SidebarController.show("viewHistorySidebar");
   const originalWidth = SidebarController._box.style.width;
   SidebarController._box.style.width = "500px";
@@ -515,14 +521,17 @@ add_task(async function test_sidebar_resize() {
   SidebarController._box.style.width = originalWidth;
   SidebarController.hide();
   await SpecialPowers.popPrefEnv();
-  await waitForTabstripOrientation(initialTabDirection);
+  await SidebarTestUtils.waitForTabstripOrientation(
+    window,
+    initialTabDirection
+  );
 });
 
 add_task(async function test_sidebar_display_settings() {
   await SpecialPowers.pushPrefEnv({
     set: [[VERTICAL_TABS_PREF, true]],
   });
-  await waitForTabstripOrientation("vertical");
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
   await testCustomizeSetting(
     "visibilityInput",
     Glean.sidebar.displaySettings,
@@ -530,7 +539,10 @@ add_task(async function test_sidebar_display_settings() {
     "always"
   );
   await SpecialPowers.popPrefEnv();
-  await waitForTabstripOrientation(initialTabDirection);
+  await SidebarTestUtils.waitForTabstripOrientation(
+    window,
+    initialTabDirection
+  );
 });
 
 add_task(async function test_sidebar_position_settings() {
@@ -582,7 +594,7 @@ async function testIconClick(expanded) {
       ["browser.contextual-password-manager.enabled", true],
     ],
   });
-  await waitForTabstripOrientation("vertical");
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
 
   await SidebarController.waitUntilStable();
   await SidebarController.show("viewCustomizeSidebar");
@@ -613,7 +625,7 @@ async function testIconClick(expanded) {
   sidebarMain.updateComplete;
 
   for (const button of sidebarMain.toolButtons) {
-    await SidebarController.initializeUIState({
+    await SidebarController.updateUIState({
       launcherExpanded: expanded,
       command: "",
     });
@@ -655,7 +667,7 @@ async function testIconClick(expanded) {
   await extension.startup();
   await extension.awaitMessage("sidebar");
 
-  await SidebarController.initializeUIState({
+  await SidebarController.updateUIState({
     launcherExpanded: expanded,
     panelOpen: false,
     command: "",
@@ -690,7 +702,10 @@ async function testIconClick(expanded) {
   await extension.unload();
 
   await SpecialPowers.popPrefEnv();
-  await waitForTabstripOrientation(initialTabDirection);
+  await SidebarTestUtils.waitForTabstripOrientation(
+    window,
+    initialTabDirection
+  );
   Services.fog.testResetFOG();
 }
 
@@ -938,4 +953,75 @@ add_task(async function test_synced_tabs_link_glean_probe() {
   SidebarController.hide();
   sandbox.restore();
   cleanUpExtraTabs();
+});
+
+add_task(async function test_bookmarks_link_glean_probe() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", true]],
+  });
+  await SidebarController.waitUntilStable();
+  Services.fog.testResetFOG();
+
+  const TEST_URL = "http://mochi.test:8888/browser/";
+  const bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    url: TEST_URL,
+    title: "Test Bookmark",
+  });
+
+  await SidebarController.show("viewBookmarksSidebar");
+  const { contentDocument, contentWindow } = SidebarController.browser;
+  const component = await TestUtils.waitForCondition(
+    () => contentDocument.querySelector("sidebar-bookmarks"),
+    "sidebar-bookmarks component is rendered."
+  );
+
+  await TestUtils.waitForCondition(
+    () => component.bookmarks?.children?.length,
+    "Bookmarks data is loaded."
+  );
+  await component.updateComplete;
+
+  const bookmarkList = component.bookmarkList;
+  const toolbarFolder = await TestUtils.waitForCondition(
+    () => bookmarkList.folderEls[0],
+    "Toolbar folder is rendered."
+  );
+
+  if (!toolbarFolder.open) {
+    toolbarFolder.querySelector("summary").click();
+    await BrowserTestUtils.waitForMutationCondition(
+      toolbarFolder,
+      { attributes: true },
+      () => toolbarFolder.open
+    );
+  }
+
+  const nestedList = toolbarFolder.querySelector("sidebar-bookmark-list");
+  await TestUtils.waitForCondition(
+    () => nestedList.rowEls[0],
+    "Bookmark rows are rendered."
+  );
+
+  const row = Array.from(nestedList.rowEls).find(r => r.url === TEST_URL);
+  Assert.ok(row, "The test bookmark row was found.");
+
+  const loaded = BrowserTestUtils.waitForLocationChange(gBrowser, TEST_URL);
+
+  AccessibilityUtils.setEnv({ focusableRule: false });
+  EventUtils.synthesizeMouseAtCenter(row.mainEl, {}, contentWindow);
+  AccessibilityUtils.resetEnv();
+  await loaded;
+
+  Assert.equal(
+    Glean.sidebar.link.bookmarks.testGetValue(),
+    1,
+    "One bookmark link click was recorded."
+  );
+
+  await PlacesUtils.bookmarks.remove(bookmark.guid);
+  SidebarController.hide();
+  cleanUpExtraTabs();
+  await SpecialPowers.popPrefEnv();
+  await SidebarController.waitUntilStable();
 });

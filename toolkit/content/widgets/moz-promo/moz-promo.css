@@ -13,42 +13,26 @@
   TODO: need HCM styles
 */
 
-:host([type="vibrant"]) {
-  --promo-message-text-color: light-dark(var(--color-violet-80), var(--color-violet-0));
-  --promo-heading-text-color: var(--promo-message-text-color);
-  --promo-background-color: light-dark(var(--color-violet-0), var(--color-violet-90));
-  --promo-border-color: var(--color-violet-30);
-}
-
-:host([imagealignment="center"]) {
-  .container {
-    flex-direction: column;
-  }
-
-  .image-container {
-    /* TODO: The height of this container should _probably_ be configurable  */
-    /* Bug 1966430: We need this in order to show the image at all when the
-      alignment is set to center
-    */
-    min-height: var(--size-item-large);
-    margin: var(--space-large);
-    margin-block-start: 0;
-  }
-}
-
 :host {
   --promo-message-text-color: var(--text-color);
   --promo-heading-text-color: var(--promo-message-text-color);
-  --promo-background-color: var(--background-color-box-info);
+  --promo-background-color: color-mix(in lch, currentColor 8%, transparent);
   --promo-border: var(--promo-border-width) solid var(--promo-border-color);
-  --promo-border-color: var(--border-color);
+  --promo-border-color: color-mix(in lch, currentColor 8%, transparent);
   --promo-border-width: var(--border-width);
   --promo-border-radius: var(--border-radius-medium);
-  --promo-container-min-height: var(--dimension-56);
+  --promo-image-dimension: var(--size-image-xlarge);
+  --promo-image-dimension-large: calc(2 * var(--size-image-xlarge));
+  --promo-padding: var(--space-medium);
 
   @media (prefers-contrast) {
+    --promo-background-color: var(--background-color-canvas);
     --promo-message-text-color: var(--text-color);
+    --promo-border-color: var(--border-color);
   }
+
+  display: flex;
+  flex-direction: column;
 }
 
 /* MozPromo layout */
@@ -60,10 +44,10 @@
   color: var(--promo-message-text-color);
   display: flex;
   flex-direction: row;
-  gap: var(--space-xsmall);
-  min-height: var(--promo-container-min-height);
+  gap: var(--space-medium);
   align-items: center;
   overflow: hidden;
+  flex-grow: 1;
 }
 
 .text-container {
@@ -71,16 +55,81 @@
   flex: 1;
   flex-direction: column;
   gap: var(--space-xsmall);
-  padding: var(--space-medium);
 }
 
 .image-container {
-  background-image: var(--promo-image-url);
-  background-size: cover;
-  background-position: var(--promo-image-position, center);
-  background-repeat: no-repeat;
-  flex-basis: 25%;
+  width: var(--promo-image-dimension);
+  flex-shrink: 0;
   align-self: stretch;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+
+  img {
+    width: 100%;
+    height: auto;
+  }
+}
+
+:host([type="vibrant"]) {
+  --promo-message-text-color: light-dark(var(--color-violet-80), var(--color-violet-0));
+  --promo-heading-text-color: var(--promo-message-text-color);
+  --promo-background-color: light-dark(var(--color-violet-0), var(--color-violet-90));
+  --promo-border-color: var(--color-violet-30);
+}
+
+:host([imagedisplay="cover"]) {
+  .image-container {
+    align-items: stretch;
+  }
+
+  .text-container {
+    padding: var(--promo-padding);
+  }
+
+  img {
+    object-fit: cover;
+    object-position: var(--promo-image-position, bottom right);
+
+    :host([imagealignment="end"]) & {
+      object-position: var(--promo-image-position, bottom left);
+    }
+    :host([imagealignment="center"]) & {
+      object-position: var(--promo-image-position, top center);
+    }
+  }
+}
+
+:host([imagedisplay="padded"]) {
+  .text-container {
+    padding: 0;
+  }
+
+  .container {
+    padding: var(--promo-padding);
+  }
+}
+
+:host([imagealignment="center"]) {
+  .container {
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .image-container {
+    align-self: center;
+  }
+}
+
+:host([imagealignment="center"][imagedisplay="cover"]) {
+  .image-container {
+    width: 100%;
+    height: var(--promo-image-dimension);
+  }
+}
+
+:host([imagewidth="large"]) {
+  --promo-image-dimension: var(--promo-image-dimension-large);
 }
 
 /* MozPromo heading style */

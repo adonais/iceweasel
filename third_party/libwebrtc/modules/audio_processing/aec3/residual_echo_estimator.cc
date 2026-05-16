@@ -230,9 +230,9 @@ void ResidualEchoEstimator::Estimate(
     }
 
     const Block& render = render_buffer.GetBlock(headroom_blocks);
-    neural_residual_echo_estimator_->Estimate(render, capture,
-                                              linear_aec_output, S2_linear, Y2,
-                                              E2, R2, R2_unbounded);
+    neural_residual_echo_estimator_->Estimate(
+        render, capture, linear_aec_output, S2_linear, Y2, E2, dominant_nearend,
+        R2, R2_unbounded);
   }
 
   // Estimate the residual echo power.
@@ -315,6 +315,9 @@ void ResidualEchoEstimator::Reset() {
   echo_reverb_.Reset();
   X2_noise_floor_counter_.fill(config_.echo_model.noise_floor_hold);
   X2_noise_floor_.fill(config_.echo_model.min_noise_floor_power);
+  if (neural_residual_echo_estimator_) {
+    neural_residual_echo_estimator_->Reset();
+  }
 }
 
 void ResidualEchoEstimator::UpdateRenderNoisePower(

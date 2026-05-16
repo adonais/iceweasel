@@ -144,7 +144,7 @@ void SVGMarkerFrame::PaintMark(gfxContext& aContext,
 }
 
 SVGBBox SVGMarkerFrame::GetMarkBBoxContribution(const Matrix& aToBBoxUserspace,
-                                                uint32_t aFlags,
+                                                SVGBBoxFlags aFlags,
                                                 SVGGeometryFrame* aMarkedFrame,
                                                 const SVGMark& aMark,
                                                 float aStrokeWidth) {

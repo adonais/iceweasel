@@ -4269,6 +4269,16 @@ nsresult nsGlobalWindowOuter::SetFullscreenInternal(FullscreenReason aReason,
       mFullscreen.isSome(),
       mFullscreen.value() != FullscreenReason::ForForceExitFullscreen);
 
+  // We are in the chrome process and are exiting from fullscreen, whatever the
+  // reason, make sure to disable the fullscreen keyboard lock for the chrome
+  // document.
+  if (!aFullscreen) {
+    Document* doc = GetExtantDoc();
+    if (doc) {
+      doc->SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock::None);
+    }
+  }
+
   // If we are already in full screen mode, just return, we don't care about the
   // reason here, because,
   // - If we are in fullscreen mode due to browser fullscreen mode, requesting

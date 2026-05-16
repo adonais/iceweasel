@@ -711,7 +711,8 @@ class MarkerSchema {
     CString,
     String,
     TimeStamp,
-    TimeDuration
+    TimeDuration,
+    Flow,
   };
 
   template <typename T>
@@ -743,6 +744,8 @@ class MarkerSchema {
       return InputType::TimeDuration;
     } else if constexpr (std::is_same_v<CleanT, ProfilerString8View>) {
       return InputType::CString;
+    } else if constexpr (std::is_same_v<CleanT, Flow>) {
+      return InputType::Flow;
     } else {
       static_assert(sizeof(T) == 0, "Unsupported type");
     }
@@ -947,6 +950,11 @@ class MarkerSchema {
     return *this;
   }
 
+  MarkerSchema& SetColorField(std::string aKey) {
+    mColorField = std::move(aKey);
+    return *this;
+  }
+
   // Each data element that is streamed by `StreamJSONMarkerData()` can be
   // displayed as indicated by using one of the `Add...` function below.
   // Each `Add...` will add a line in the full marker description. Parameters:
@@ -1012,6 +1020,7 @@ class MarkerSchema {
   std::string mTooltipLabel;
   std::string mTableLabel;
   bool mIsStackBased = false;
+  std::string mColorField;
   // Main display, made of zero or more rows of key+label+format or label+value.
  private:
   struct DynamicData {
@@ -1089,6 +1098,69 @@ struct StreamPayloadHelper<Flow, aFormat> {
   }
 };
 
+template <MarkerSchema::InputType IT>
+struct InputTypeToCpp;
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::Uint64> {
+  using Type = uint64_t;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::Uint32> {
+  using Type = uint32_t;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::Uint8> {
+  using Type = uint8_t;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::Int64> {
+  using Type = int64_t;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::Int32> {
+  using Type = int32_t;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::Int8> {
+  using Type = int8_t;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::Double> {
+  using Type = double;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::Boolean> {
+  using Type = bool;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::CString> {
+  using Type = ProfilerString8View;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::String> {
+  using Type = ProfilerString16View;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::TimeStamp> {
+  using Type = TimeStamp;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::TimeDuration> {
+  using Type = TimeDuration;
+};
+template <>
+struct InputTypeToCpp<MarkerSchema::InputType::Flow> {
+  using Type = Flow;
+};
+
+template <typename T, size_t... Is>
+auto PayloadFieldsTupleHelper(std::index_sequence<Is...>) -> std::tuple<
+    typename InputTypeToCpp<T::PayloadFields[Is].InputTy>::Type...>;
+
+template <typename T>
+using PayloadFieldsTuple = decltype(PayloadFieldsTupleHelper<T>(
+    std::make_index_sequence<std::size(T::PayloadFields)>{}));
+
 }  // namespace detail
 
 // This helper class is used by MarkerTypes that want to support the general
@@ -1104,6 +1176,7 @@ struct BaseMarkerType {
   static constexpr const char* ChartLabel = nullptr;
   static constexpr const char* TableLabel = nullptr;
   static constexpr const char* TooltipLabel = nullptr;
+  static constexpr const char* ColorField = nullptr;
 
   // Setting this property to true is a promise that the the marker will nest
   // properly.  i.e. it can't have a partially overlapping time range with any
@@ -1134,6 +1207,9 @@ struct BaseMarkerType {
     }
     if (T::IsStackBased) {
       schema.SetIsStackBased();
+    }
+    if (T::ColorField) {
+      schema.SetColorField(T::ColorField);
     }
     for (const MS::PayloadField field : T::PayloadFields) {
       if (field.Label) {

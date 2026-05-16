@@ -4,11 +4,13 @@
 
 package org.mozilla.fenix.ui.efficiency.tests
 
+import org.junit.Ignore
 import org.junit.Test
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class SettingsCustomizeTest : BaseTest() {
 
+    @Ignore("Covered by verifyNavigationReachability[0: SettingsCustomizePage (TBD) — Navigation Reachability]")
     @Test
     fun verifySettingsCustomizeLoadsTest() {
         on.settingsCustomize.navigateToPage()

@@ -31,8 +31,24 @@ object HomeSelectors {
         groups = listOf("requiredForPage"),
     )
 
+    // Use UIAutomator when navigating from BrowserPage — avoids Compose sync hanging when GeckoView is active.
+    val MAIN_MENU_BUTTON_UIAUTOMATOR = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
+        value = getStringResource(R.string.content_description_menu),
+        description = "Three Dot Menu",
+        groups = listOf(),
+    )
+
+    val PRIVATE_BROWSING_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.content_description_private_browsing),
+        description = "Private browsing button",
+        groups = listOf("privateBrowsing"),
+    )
+
     val all = listOf(
         MAIN_MENU_BUTTON,
+        PRIVATE_BROWSING_BUTTON,
         TOP_SITES_LIST,
     )
 }

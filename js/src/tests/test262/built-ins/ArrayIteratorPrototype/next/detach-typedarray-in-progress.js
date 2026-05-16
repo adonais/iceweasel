@@ -23,6 +23,6 @@ testWithTypedArrayConstructors(TA => {
     }
   });
   assert.sameValue(i, 1);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

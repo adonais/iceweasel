@@ -83,7 +83,7 @@ SafeRefPtr<InternalRequest> InternalRequest::Clone() {
   }
   return clone;
 }
-InternalRequest::InternalRequest(const nsACString& aURL,
+InternalRequest::InternalRequest(NotNull<nsIURI*> aURL,
                                  const nsACString& aFragment)
     : mMethod("GET"),
       mHeaders(new InternalHeaders(HeadersGuardEnum::None)),
@@ -97,7 +97,6 @@ InternalRequest::InternalRequest(const nsACString& aURL,
       mCacheMode(RequestCache::Default),
       mRedirectMode(RequestRedirect::Follow),
       mPriorityMode(RequestPriority::Auto) {
-  MOZ_ASSERT(!aURL.IsEmpty());
   AddURL(aURL, aFragment);
 }
 
@@ -195,9 +194,7 @@ InternalRequest::InternalRequest(const IPCInternalRequest& aIPCRequest)
 void InternalRequest::ToIPCInternalRequest(
     IPCInternalRequest* aIPCRequest, mozilla::ipc::PBackgroundChild* aManager) {
   aIPCRequest->method() = mMethod;
-  for (const auto& url : mURLList) {
-    aIPCRequest->urlList().AppendElement(url);
-  }
+  aIPCRequest->urlList() = mURLList.Clone();
   mHeaders->ToIPC(aIPCRequest->headers(), aIPCRequest->headersGuard());
   aIPCRequest->bodySize() = mBodyLength;
   aIPCRequest->preferredAlternativeDataType() = mPreferredAlternativeDataType;

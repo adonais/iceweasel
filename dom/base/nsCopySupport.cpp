@@ -347,11 +347,8 @@ nsresult nsCopySupport::EncodeDocumentWithContextAndPutToClipboard(
     bool aWithRubyAnnotation, UpdateClipboard aUpdateClipboard /* = Yes */) {
   NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
 
-  uint32_t additionalFlags = nsIDocumentEncoder::SkipInvisibleContent;
-
-  if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-    additionalFlags |= nsIDocumentEncoder::AllowCrossShadowBoundary;
-  }
+  uint32_t additionalFlags = nsIDocumentEncoder::SkipInvisibleContent |
+                             nsIDocumentEncoder::AllowCrossShadowBoundary;
 
   if (aWithRubyAnnotation) {
     additionalFlags |= nsIDocumentEncoder::OutputRubyAnnotation;
@@ -408,11 +405,8 @@ nsresult nsCopySupport::GetTransferableForSelection(
   NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
   NS_ENSURE_TRUE(aTransferable, NS_ERROR_NULL_POINTER);
 
-  const uint32_t additionalFlags =
-      StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
-          ? nsIDocumentEncoder::SkipInvisibleContent |
-                nsIDocumentEncoder::AllowCrossShadowBoundary
-          : nsIDocumentEncoder::SkipInvisibleContent;
+  const uint32_t additionalFlags = nsIDocumentEncoder::SkipInvisibleContent |
+                                   nsIDocumentEncoder::AllowCrossShadowBoundary;
 
   return EncodeDocumentWithContextAndCreateTransferable(
       *aDoc, aSel, additionalFlags, aTransferable);

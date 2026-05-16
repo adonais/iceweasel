@@ -243,6 +243,12 @@ function assert_trap(thunk, message) {
   }
 }
 
+function assert_suspension(thunk, message) {
+  // TODO: basically a duplicate of assert_trap, not sure what this actually
+  // is supposed to be.
+  assert_trap(thunk, message);
+}
+
 let StackOverflow;
 try {
   (function f() {

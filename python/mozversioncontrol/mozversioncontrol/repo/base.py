@@ -274,12 +274,14 @@ class Repository(abc.ABC):
         self,
         remote: Optional[str] = None,
         ref: Optional[str] = None,
+        dest_branch: Optional[str] = None,
         force: bool = False,
     ):
         """Push to a remote repository.
 
         `remote` specifies the remote to push to. If None, the default remote is used.
         `ref` specifies the branch or ref to push. If None, the current branch/ref is used.
+        `dest_branch` specifies the destination branch name. If None, pushes ref to ref.
         `force` whether to use a force push (default False).
         """
 

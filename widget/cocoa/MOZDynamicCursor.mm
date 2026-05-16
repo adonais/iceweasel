@@ -8,7 +8,6 @@
 #include "nsObjCExceptions.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
-#include <math.h>
 
 static MOZDynamicCursor* gInstance;
 static CGFloat sCurrentCursorScaleFactor = 0.0f;
@@ -30,7 +29,7 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
 
 @interface NSCursor (Undocumented)
 // busyButClickableCursor is an undocumented NSCursor API, but has been in use
-// since at least OS X 10.4 and through 10.9.
+// since at least macOS 10.4 and through 10.9.
 + (NSCursor*)busyButClickableCursor;
 @end
 
@@ -80,14 +79,19 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
     case eCursor_grabbing:
       return [NSCursor closedHandCursor];
     case eCursor_zoom_in:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor zoomInCursor];
+      }
       return [NSCursor cursorWithImageNamed:@"zoomIn"
                                     hotSpot:NSMakePoint(10, 10)];
     case eCursor_zoom_out:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor zoomOutCursor];
+      }
       return [NSCursor cursorWithImageNamed:@"zoomOut"
                                     hotSpot:NSMakePoint(10, 10)];
     case eCursor_vertical_text:
-      return [NSCursor cursorWithImageNamed:@"vtIBeam"
-                                    hotSpot:NSMakePoint(12, 11)];
+      return [NSCursor IBeamCursorForVerticalLayout];
     case eCursor_all_scroll:
       return [NSCursor openHandCursor];
     case eCursor_not_allowed:
@@ -139,10 +143,16 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
                                     hotSpot:NSMakePoint(12, 12)];
     // Column Resize
     case eCursor_col_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor columnResizeCursor];
+      }
       return [NSCursor cursorWithImageNamed:@"colResize"
                                     hotSpot:NSMakePoint(12, 12)];
     // Row Resize
     case eCursor_row_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor rowResizeCursor];
+      }
       return [NSCursor cursorWithImageNamed:@"rowResize"
                                     hotSpot:NSMakePoint(12, 12)];
     default:

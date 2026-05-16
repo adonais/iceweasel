@@ -194,6 +194,7 @@ struct SetHTMLOptions;
 struct SetHTMLUnsafeOptions;
 enum class ShadowRootMode : uint8_t;
 class ShadowRoot;
+enum class SlotAssignmentMode : uint8_t;
 struct StructuredSerializeOptions;
 struct SynthesizeMouseEventData;
 struct SynthesizeMouseEventOptions;
@@ -3469,6 +3470,14 @@ class nsContentUtils {
   static already_AddRefed<mozilla::dom::ContentFrameMessageManager>
   TryGetBrowserChildGlobal(nsISupports* aFrom);
 
+  /**
+   * Attempts to retrieve the extant document from a window global.
+   *
+   * @param aFrom The object expected to represent a window global.
+   * @return The associated document, or nullptr if not available.
+   */
+  static Document* TryGetDocumentFromWindowGlobal(nsISupports* aFrom);
+
   // Get a serial number for a newly created inner or outer window.
   static uint32_t InnerOrOuterWindowCreated();
   // Record that an inner or outer window has been destroyed.
@@ -3636,7 +3645,8 @@ class nsContentUtils {
   static nsIContent* AttachDeclarativeShadowRoot(
       nsIContent* aHost, mozilla::dom::ShadowRootMode aMode, bool aIsClonable,
       bool aIsSerializable, bool aDelegatesFocus, bool aCustomElementRegistry,
-      const nsAString&);
+      mozilla::dom::SlotAssignmentMode aSlotAssignment,
+      const nsAString& aReferenceTarget);
 
   static bool NavigationMustBeAReplace(nsIURI& aURI, const Document& aDocument);
 

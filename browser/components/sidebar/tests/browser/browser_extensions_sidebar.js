@@ -77,6 +77,8 @@ add_task(async function test_extension_sidebar_actions() {
   );
   await promiseClosed;
 
+  await SidebarTestUtils.ensureLauncherVisible(window);
+
   await extension.unload();
   await sidebar.updateComplete;
   is(
@@ -214,7 +216,7 @@ add_task(async function test_customize_sidebar_extensions() {
   let extensionButtonCount = sidebar.extensionButtons.length;
   is(extensionButtonCount, 1, "Extension is shown in the sidebar.");
 
-  await toggleSidebarPanel(window, "viewCustomizeSidebar");
+  await SidebarTestUtils.showPanel(window, "viewCustomizeSidebar");
   let customizeDocument = SidebarController.browser.contentDocument;
   const customizeComponent =
     customizeDocument.querySelector("sidebar-customize");
@@ -299,7 +301,7 @@ add_task(async function test_extensions_keyboard_navigation() {
     "Two extensions are shown in the sidebar."
   );
 
-  await toggleSidebarPanel(window, "viewCustomizeSidebar");
+  await SidebarTestUtils.showPanel(window, "viewCustomizeSidebar");
   let customizeDocument = SidebarController.browser.contentDocument;
   const customizeComponent =
     customizeDocument.querySelector("sidebar-customize");

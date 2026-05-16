@@ -54,8 +54,12 @@ support-files = [
 
 ["test_Tools_SearchBrowsingHistory.js"]
 
+["test_Tools_WorldCup.js"]
+
 ["test_Utils.js"]
 
 ["test_Utils_RemoteSettings.js"]
+
+["test_Utils_RemoteSettings_ChatModelChoice.js"]
 
 ["test_intent_classifier.js"]

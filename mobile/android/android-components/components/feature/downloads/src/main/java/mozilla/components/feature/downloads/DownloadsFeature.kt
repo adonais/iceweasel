@@ -55,6 +55,12 @@ import mozilla.components.support.utils.ext.packageManagerCompatHelper
 value class Filename(val value: String)
 
 /**
+ * Represents the current state of a download being processed.
+ */
+@JvmInline
+value class CurrentDownloadState(val value: DownloadState)
+
+/**
  * The name of a file that was already downloaded with the same ETag.
  * The value will be `null` if no such file exists.
  */
@@ -84,7 +90,7 @@ value class ThirdPartyDownloaderAppChosenCallback(val value: (DownloaderApp) -> 
  * Callback for when the positive button of a download dialog was tapped.
  */
 @JvmInline
-value class PositiveActionCallback(val value: () -> Unit)
+value class PositiveActionCallback(val value: (DownloadState?) -> Unit)
 
 /**
  * Callback for when the negative button of a download dialog was tapped.
@@ -143,8 +149,7 @@ class DownloadsFeature(
     private val shouldForwardToThirdParties: () -> Boolean = { false },
     private val customFirstPartyDownloadDialog: (
         (
-        Filename,
-        ContentSize,
+        CurrentDownloadState,
         FileNameOfDuplicateIfAlreadyDownloaded,
         PositiveActionCallback,
         NegativeActionCallback,
@@ -266,13 +271,19 @@ class DownloadsFeature(
                     customFirstPartyDownloadDialog != null && !download.skipConfirmation -> {
                         val downloadWithSameEtag = findDownloadWithSameEtag(download)
                         customFirstPartyDownloadDialog.invoke(
-                            Filename(download.getRealFilenameOrGuessed(downloadFileUtils)),
-                            ContentSize(download.contentLength ?: 0),
+                            CurrentDownloadState(
+                                download.copy(
+                                    fileName = download.getRealFilenameOrGuessed(downloadFileUtils),
+                                    contentLength = download.contentLength ?: 0,
+                                ),
+                            ),
                             FileNameOfDuplicateIfAlreadyDownloaded(downloadWithSameEtag?.fileName),
-                            PositiveActionCallback {
-                                startDownload(download)
-                                useCases.consumeDownload.invoke(tab.id, download.id)
-                            },
+                            PositiveActionCallback { downloadState ->
+                                downloadState?.let {
+                                startDownload(it)
+                                useCases.consumeDownload.invoke(tab.id, it.id)
+                            }
+                                                   },
                             NegativeActionCallback {
                                 useCases.cancelDownloadRequest.invoke(tab.id, download.id)
                             },

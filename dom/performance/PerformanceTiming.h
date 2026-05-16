@@ -7,10 +7,12 @@
 
 #include "CacheablePerformanceTimingData.h"
 #include "Performance.h"
+#include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/PerformanceResourceTimingBinding.h"
 #include "mozilla/dom/PerformanceTimingTypes.h"
 #include "mozilla/net/nsServerTiming.h"
 #include "nsContentUtils.h"
@@ -197,7 +199,8 @@ class PerformanceTimingData final : public CacheablePerformanceTimingData {
 
   uint64_t mTransferSize = 0;
 
-  RenderBlockingStatusType mRenderBlockingStatus;
+  RenderBlockingStatusType mRenderBlockingStatus =
+      RenderBlockingStatusType::Non_blocking;
 };
 
 // Script "performance.timing" object
@@ -395,6 +398,13 @@ class PerformanceTiming final : public nsWrapperCache {
 namespace IPC {
 
 template <>
+struct ParamTraits<mozilla::dom::RenderBlockingStatusType>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::dom::RenderBlockingStatusType,
+          mozilla::dom::RenderBlockingStatusType::Blocking,
+          mozilla::dom::RenderBlockingStatusType::Non_blocking> {};
+
+template <>
 struct ParamTraits<mozilla::dom::PerformanceTimingData> {
   using paramType = mozilla::dom::PerformanceTimingData;
   static void Write(IPC::MessageWriter* aWriter, const paramType& aParam) {
@@ -430,6 +440,7 @@ struct ParamTraits<mozilla::dom::PerformanceTimingData> {
     WriteParam(aWriter, aParam.mBodyInfoAccessAllowed);
     WriteParam(aWriter, aParam.mTimingAllowed);
     WriteParam(aWriter, aParam.mInitialized);
+    WriteParam(aWriter, aParam.mRenderBlockingStatus);
   }
 
   static bool Read(IPC::MessageReader* aReader, paramType* aResult) {
@@ -464,7 +475,8 @@ struct ParamTraits<mozilla::dom::PerformanceTimingData> {
            ReadParam(aReader, &aResult->mSecureConnection) &&
            ReadParam(aReader, &aResult->mBodyInfoAccessAllowed) &&
            ReadParam(aReader, &aResult->mTimingAllowed) &&
-           ReadParam(aReader, &aResult->mInitialized);
+           ReadParam(aReader, &aResult->mInitialized) &&
+           ReadParam(aReader, &aResult->mRenderBlockingStatus);
   }
 };
 

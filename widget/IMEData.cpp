@@ -4,8 +4,6 @@
 
 #include "IMEData.h"
 
-#include <sstream>
-
 #include "ContentData.h"
 #include "gfxFontUtils.h"
 #include "TextEvents.h"

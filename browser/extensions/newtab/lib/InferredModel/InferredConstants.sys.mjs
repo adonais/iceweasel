@@ -38,6 +38,9 @@ export const AggregateResultKeys = {
 // Clicks feature is handled in certain ways by the model
 export const SPECIAL_FEATURE_CLICK = "clicks";
 
+// This is largely a placeholder when there are no impressions or clicks
+export const DEFAULT_USER_CTR = 0.002;
+
 export const DEFAULT_INFERRED_MODEL_DATA = {
   model_type: MODEL_TYPE.CLICKS,
   rescale: true,

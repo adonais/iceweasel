@@ -46,6 +46,9 @@ class RenderDcompSurfaceTextureHost final : public RenderTextureHostSWGL {
   gfx::YUVRangedColorSpace GetYUVColorSpace() const override {
     return gfx::YUVRangedColorSpace::GbrIdentity;
   }
+  gfx::TransferFunction GetTransferFunction() const override {
+    return gfx::TransferFunction::SRGB;
+  };
   size_t Bytes() override { return 0; }
 
   gfx::IntSize GetSize() const { return mSize; };

@@ -594,12 +594,6 @@ struct moz_wl_pointer_listener {
 #ifndef WL_FIXES_DESTROY_SINCE_VERSION
 #  define WL_FIXES_DESTROY_SINCE_VERSION 1
 
-// Emulate what mozilla header wrapper does - make the
-// wl_fixes_interface always visible.
-#  pragma GCC visibility push(default)
-extern const struct wl_interface wl_fixes_interface;
-#  pragma GCC visibility pop
-
 #  define WL_FIXES_DESTROY 0
 #  define WL_FIXES_DESTROY_REGISTRY 1
 #  define WL_FIXES_DESTROY_SINCE_VERSION 1

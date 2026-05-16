@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -33,6 +31,7 @@
 #include "gc/Marking-inl.h"
 #include "gc/StableCellHasher-inl.h"
 #include "gc/WeakMap-inl.h"
+#include "vm/ArgumentsObject-inl.h"
 #include "vm/BytecodeIterator-inl.h"
 #include "vm/Stack-inl.h"
 
@@ -2191,6 +2190,15 @@ class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
     return true;
   }
 
+  static bool argumentsElementIsOptimizedOut(Handle<ArgumentsObject*> argsObj) {
+    for (uint32_t i = 0; i < argsObj->initialLength(); i++) {
+      if (argsObj->element(i).isMagic(JS_OPTIMIZED_OUT)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool getMissingArgumentsPropertyDescriptor(
       JSContext* cx, Handle<DebugEnvironmentProxy*> debugEnv,
       EnvironmentObject& env,
@@ -2203,6 +2211,12 @@ class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
     if (!argsObj) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_DEBUG_NOT_ON_STACK, "Debugger scope");
+      return false;
+    }
+
+    if (argumentsElementIsOptimizedOut(argsObj)) {
+      RootedId id(cx, NameToId(cx->names().arguments));
+      reportOptimizedOut(cx, id);
       return false;
     }
 
@@ -2281,6 +2295,12 @@ class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
       return false;
     }
 
+    if (argumentsElementIsOptimizedOut(argsObj)) {
+      RootedId id(cx, NameToId(cx->names().arguments));
+      reportOptimizedOut(cx, id);
+      return false;
+    }
+
     vp.setObject(*argsObj);
     return true;
   }
@@ -2352,7 +2372,9 @@ class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
     if (!createMissingArguments(cx, env, &argsObj)) {
       return false;
     }
-    vp.set(argsObj ? ObjectValue(*argsObj) : MagicValue(JS_MISSING_ARGUMENTS));
+    bool optimizedOut = !argsObj || argumentsElementIsOptimizedOut(argsObj);
+    vp.set(optimizedOut ? MagicValue(JS_MISSING_ARGUMENTS)
+                        : ObjectValue(*argsObj));
     return true;
   }
 

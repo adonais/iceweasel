@@ -59,6 +59,12 @@ const FeaturePrefs = Object.freeze({
   [OnDeviceModelFeatures.SmartWindow]: [
     "browser.smartwindow.enabled",
     "browser.smartwindow.tos.consentTime",
+    // makeAiControlSetting's get() calls AIWindow.isBlocked which reads a
+    // cached value of this pref. Without this entry get() can run before
+    // AIWindow's cache is refreshed since pref observers fire in
+    // unpredictable order. This is triggered e.g. when UITour overrides
+    // this pref externally.
+    "browser.ai.control.smartWindow",
   ],
 });
 

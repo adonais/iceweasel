@@ -29,6 +29,8 @@ const TEST_URI = `
 `;
 
 const TEST_DATA = [
+  // This new rule is displayed as the 3rd rule because
+  // a pseudo element is displayed first.
   { node: "#testid", expected: "#testid", expectedIndex: 2 },
   { node: ".testclass2", expected: ".testclass2" },
   { node: ".class1.class2", expected: ".class1.class2" },

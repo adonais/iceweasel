@@ -23,6 +23,12 @@ category browser-before-ui-startup resource:///modules/AccountsGlue.sys.mjs Acco
 category browser-before-ui-startup moz-src:///browser/modules/ObserverForwarder.sys.mjs ObserverForwarder.init
 
 # Browser window lifecycle consumers
+category browser-window-before-initial-xul-layout-document-preparation chrome://browser/content/browser-customization.js AutoHideMenubar.init
+
+category browser-window-before-initial-xul-layout resource://gre/modules/LightweightThemeConsumer.sys.mjs LightweightThemeConsumer.init
+category browser-window-before-initial-xul-layout moz-src:///browser/themes/ToolbarIconColor.sys.mjs ToolbarIconColor.init
+category browser-window-before-initial-xul-layout chrome://browser/content/browser-customtitlebar.js CustomTitlebar.init
+
 category browser-window-domcontentloaded-before-tabbrowser resource:///modules/BrowserDOMWindow.sys.mjs BrowserDOMWindow.setupInWindow
 category browser-window-domcontentloaded resource:///modules/BrowserWindowTracker.sys.mjs BrowserWindowTracker.track
 category browser-window-domcontentloaded moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs CustomizableUI.handleNewBrowserWindow
@@ -34,6 +40,9 @@ category browser-window-delayed-startup moz-src:///browser/components/aiwindow/u
 category browser-window-delayed-startup moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.init
 category browser-window-delayed-startup moz-src:///browser/components/search/SearchUIUtils.sys.mjs SearchUIUtils.init
 category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarTabsPageAction.sys.mjs TaskbarTabsPageAction.init
+
+category browser-window-unload-begin chrome://browser/content/browser-customtitlebar.js CustomTitlebar.uninit
+category browser-window-unload-begin moz-src:///browser/themes/ToolbarIconColor.sys.mjs ToolbarIconColor.uninit
 
 category browser-window-unload resource:///modules/BrowserDOMWindow.sys.mjs BrowserDOMWindow.teardownInWindow
 category browser-window-unload moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs NewTabPagePreloading.removePreloadedBrowser
@@ -53,6 +62,7 @@ category browser-first-window-ready resource:///modules/profiles/SelectableProfi
 category browser-first-window-ready moz-src:///browser/components/protections/ContentBlockingPrefs.sys.mjs ContentBlockingPrefs.init
 category browser-first-window-ready resource://gre/modules/CaptchaDetectionPingUtils.sys.mjs CaptchaDetectionPingUtils.init
 category browser-first-window-ready moz-src:///browser/components/ipprotection/IPProtectionHelpers.sys.mjs IPProtectionActivator.init
+category browser-first-window-ready moz-src:///browser/components/customizableui/SearchWidgetTracker.sys.mjs SearchWidgetTracker.init
 #ifdef MOZ_SANDBOX
 #ifdef XP_LINUX
 category browser-first-window-ready resource://gre/modules/SandboxUtils.sys.mjs SandboxUtils.maybeWarnAboutMissingUserNamespaces
@@ -76,6 +86,7 @@ category browser-idle-startup resource://gre/modules/ColorwayThemeMigration.sys.
 category browser-idle-startup resource://gre/modules/AppServicesTracing.sys.mjs RustLogForwarder.init
 #ifdef MOZ_UPDATER
 category browser-idle-startup resource://gre/modules/UpdateListener.sys.mjs UpdateListener.maybeShowUnsupportedNotification
+category browser-idle-startup resource:///modules/UpdatePolicyEnforcer.sys.mjs UpdatePolicyEnforcer.registerObservers
 #endif
 #ifdef XP_WIN
 category browser-idle-startup resource:///modules/WindowsJumpLists.sys.mjs WinTaskbarJumpList.startup

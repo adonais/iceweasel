@@ -20,7 +20,9 @@ android {
 
         buildConfigField("String", "LIBRARY_VERSION", "\"" + config.componentsVersion + "\"")
         buildConfigField("String", "APPLICATION_SERVICES_VERSION", "\"" + appServicesVersion + "\"")
-        buildConfigField("String", "GLEAN_SDK_VERSION", "\"" + project.ext.gleanVersion + "\"")
+        // This uses the version catalog entry, which could differ from the version
+        // Gradle actually resolves if a range or `+` were used in the catalog.
+        buildConfigField("String", "GLEAN_SDK_VERSION", "\"" + libs.versions.glean.get() + "\"")
         if (gradle.mozconfig.substs.MOZ_INCLUDE_SOURCE_INFO) {
             buildConfigField("String", "VCS_HASH", "\"" + gradle.mozconfig.source_repo.MOZ_SOURCE_STAMP + "\"")
         } else {

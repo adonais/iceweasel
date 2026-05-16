@@ -304,6 +304,10 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
     }
   }
 
+  if (!mCanvasElement || !mImageContainer) {
+    return false;
+  }
+
   // We save any current surface because we might need it in GetSnapshot. If we
   // are on a worker thread and not WebGL, then this will be the only way we can
   // access the pixel data on the main thread.
@@ -570,6 +574,38 @@ already_AddRefed<layers::Image> OffscreenCanvasDisplayHelper::GetAsImage() {
   return MakeAndAddRef<layers::SourceSurfaceImage>(surface);
 }
 
+void OffscreenCanvasDisplayHelper::MaybeRandomizePixels(
+    CanvasUtils::ImageExtraction aExtractionBehavior, uint8_t* aData,
+    gfx::IntSize aSize) {
+  nsIPrincipal* principal = nullptr;
+  nsICookieJarSettings* cookieJarSettings = nullptr;
+  {
+    MutexAutoLock lock(mMutex);
+    if (mCanvasElement) {
+      principal = mCanvasElement->NodePrincipal();
+      cookieJarSettings = mCanvasElement->OwnerDoc()->CookieJarSettings();
+    } else if (mOffscreenCanvas) {
+      principal = mOffscreenCanvas->GetParentObject()
+                      ? mOffscreenCanvas->GetParentObject()->PrincipalOrNull()
+                      : nullptr;
+      cookieJarSettings =
+          mOffscreenCanvas->GetParentObject()
+              ? mOffscreenCanvas->GetParentObject()->GetCookieJarSettings()
+              : nullptr;
+    }
+  }
+
+  nsRFPService::PotentiallyDumpImage(principal, aData, aSize.width,
+                                     aSize.height,
+                                     aSize.width * aSize.height * 4);
+
+  if (aExtractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
+    nsRFPService::RandomizePixels(
+        cookieJarSettings, principal, aData, aSize.width, aSize.height,
+        aSize.width * aSize.height * 4, gfx::SurfaceFormat::A8R8G8B8_UINT32);
+  }
+}
+
 UniquePtr<uint8_t[]> OffscreenCanvasDisplayHelper::GetImageBuffer(
     CanvasUtils::ImageExtraction aExtractionBehavior, int32_t* aOutFormat,
     gfx::IntSize* aOutImageSize) {
@@ -591,35 +627,8 @@ UniquePtr<uint8_t[]> OffscreenCanvasDisplayHelper::GetImageBuffer(
     return nullptr;
   }
 
-  nsIPrincipal* principal = nullptr;
-  nsICookieJarSettings* cookieJarSettings = nullptr;
-  {
-    MutexAutoLock lock(mMutex);
-
-    if (mCanvasElement) {
-      principal = mCanvasElement->NodePrincipal();
-      cookieJarSettings = mCanvasElement->OwnerDoc()->CookieJarSettings();
-    } else if (mOffscreenCanvas) {
-      principal = mOffscreenCanvas->GetParentObject()
-                      ? mOffscreenCanvas->GetParentObject()->PrincipalOrNull()
-                      : nullptr;
-      cookieJarSettings =
-          mOffscreenCanvas->GetParentObject()
-              ? mOffscreenCanvas->GetParentObject()->GetCookieJarSettings()
-              : nullptr;
-    }
-  }
-  nsRFPService::PotentiallyDumpImage(
-      principal, imageBuffer.get(), dataSurface->GetSize().width,
-      dataSurface->GetSize().height,
-      dataSurface->GetSize().width * dataSurface->GetSize().height * 4);
-  if (aExtractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
-    nsRFPService::RandomizePixels(
-        cookieJarSettings, principal, imageBuffer.get(),
-        dataSurface->GetSize().width, dataSurface->GetSize().height,
-        dataSurface->GetSize().width * dataSurface->GetSize().height * 4,
-        gfx::SurfaceFormat::A8R8G8B8_UINT32);
-  }
+  MaybeRandomizePixels(aExtractionBehavior, imageBuffer.get(),
+                       dataSurface->GetSize());
 
   return imageBuffer;
 }

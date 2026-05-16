@@ -23,4 +23,11 @@ interface nsIGNOMEShellService : nsIShellService
 
   AUTF8String getGSettingsString(in AUTF8String aScheme, in AUTF8String aKey);
   void setGSettingsString(in AUTF8String aScheme, in AUTF8String aKey, in AUTF8String aValue);
+
+  /**
+   * Gets the command name that was used to start the browser.
+   *
+   * @returns the value of argv[0].
+   */
+  ACString getArgv0();
 };

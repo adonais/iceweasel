@@ -38,7 +38,7 @@ info: |
     Let buffer be the value of O's [[ViewedArrayBuffer]] internal slot.
     If IsDetachedBuffer(buffer) is true, return undefined.
 
-includes: [testBigIntTypedArray.js, detachArrayBuffer.js]
+includes: [testTypedArray.js, detachArrayBuffer.js]
 features: [BigInt, TypedArray]
 ---*/
 
@@ -54,6 +54,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   });
 
   assert.sameValue(loops, 2);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

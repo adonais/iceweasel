@@ -27,9 +27,8 @@ class GeminiNanoLlmTest {
 
         val results = llm.prompt(Prompt("test prompt")).toList()
 
-        assertEquals(2, results.size)
-        assertEquals(Llm.Response.Success.ReplyPart("test response"), results[0])
-        assertEquals(Llm.Response.Success.ReplyFinished, results[1])
+        assertEquals(1, results.size)
+        assertEquals("test response", results[0])
         assertEquals("test prompt", fakeModel.lastPromptProcessed)
     }
 
@@ -41,11 +40,11 @@ class GeminiNanoLlmTest {
         )
 
         val llm = GeminiNanoLlm(buildModel = { fakeModel })
+        val result = runCatching { llm.prompt(Prompt("test prompt")).toList() }
 
-        val results = llm.prompt(Prompt("test prompt")).toList()
-
-        assertEquals(1, results.size)
-        assertEquals(Llm.Response.Failure("Gemini Nano inference failed: [ErrorCode 4] Request doesn't pass certain policy check. Please try a different input."), results[0])
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is Llm.Exception)
+        assertEquals("Gemini Nano inference failed: [ErrorCode 4] Request doesn't pass certain policy check. Please try a different input.", result.exceptionOrNull()?.message)
     }
 
     @Test

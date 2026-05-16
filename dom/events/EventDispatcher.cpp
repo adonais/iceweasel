@@ -907,6 +907,25 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
     }
   }
 
+  // Track the current event timing entry so that modal dialog code can call
+  // RecordModalFallbackTime() to stamp the fallback time on the right entry.
+  // The previous entry is saved and restored via ScopeExit to handle nested
+  // event dispatch and early returns.
+  RefPtr<PerformanceMainThread> perfMainThread;
+  RefPtr<PerformanceEventTiming> prevEventTimingEntry;
+  if (eventTimingEntry) {
+    perfMainThread = aPresContext->GetPerformanceMainThread();
+    if (perfMainThread) {
+      prevEventTimingEntry = perfMainThread->GetCurrentEventTimingEntry();
+      perfMainThread->SetCurrentEventTimingEntry(eventTimingEntry);
+    }
+  }
+  auto restoreEventTimingEntry = MakeScopeExit([&]() {
+    if (perfMainThread) {
+      perfMainThread->SetCurrentEventTimingEntry(prevEventTimingEntry);
+    }
+  });
+
   bool retargeted = false;
 
   if (aEvent->mFlags.mRetargetToNonNativeAnonymous) {

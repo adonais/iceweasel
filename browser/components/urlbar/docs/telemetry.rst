@@ -429,6 +429,11 @@ urlbar.picked.*
     full URLs instead of "up to the next slash" partial URLs. For more
     information on this type of autofill, see this `adaptive history autofill
     document`_.
+  - ``history_autofill_fallback_origin``
+    The origin fallback result shown alongside an adaptive history URL autofill.
+    When adaptive autofill suggests a deep URL, the root origin is surfaced as a
+    second result to accommodate users who alternate between root and subpage
+    navigation.
   - ``autofill_origin``
     An autofilled origin_ from the user's history. Typically "origin" means a
     domain or host name like "mozilla.org". Technically it can also include a

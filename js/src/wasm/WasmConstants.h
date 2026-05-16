@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2015 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,6 +65,9 @@ enum class TypeCode {
   I8 = 0x78,   // SLEB128(-0x08)
   I16 = 0x77,  // SLEB128(-0x09)
 
+  // A null reference in the cont hierarchy.
+  NullContRef = 0x75,  // SLEB128(-0x0b)
+
   // A function pointer with any signature
   FuncRef = 0x70,  // SLEB128(-0x10)
 
@@ -106,6 +107,9 @@ enum class TypeCode {
   // A reference to an exception value.
   ExnRef = 0x69,  // SLEB128(-0x17)
 
+  // A reference to a continuation.
+  ContRef = 0x68,  // SLEB128(-0x18)
+
   // A null reference in the any hierarchy.
   NullAnyRef = 0x71,  // SLEB128(-0x0F)
 
@@ -117,6 +121,9 @@ enum class TypeCode {
 
   // Type constructor for array types - gc proposal
   Array = 0x5e,  // SLEB128(-0x22)
+
+  // Type constructor for cont types - stack switching proposal
+  Cont = 0x5d,  // SLEB128(-0x23)
 
   // Value for non-nullable type present.
   TableHasInitExpr = 0x40,
@@ -203,6 +210,14 @@ enum class Trap {
   // The wasm execution has potentially run too long and the engine must call
   // CheckForInterrupt(). This trap is resumable.
   CheckInterrupt,
+
+#ifdef ENABLE_WASM_JSPI
+  // Throw the WebAssembly.SuspendError exception.
+  ThrowSuspendError,
+#endif
+
+  // Executed an instruction that is not fully implemented yet.
+  Unimplemented,
 
   // Signal an error that was reported in C++ code.
   ThrowReported,
@@ -503,6 +518,17 @@ enum class Op {
 
   // Function references
   BrOnNonNull = 0xd6,
+
+#ifdef ENABLE_WASM_JSPI
+  // Stack switching
+  ContNew = 0xe0,
+  ContBind = 0xe1,
+  Suspend = 0xe2,
+  Resume = 0xe3,
+  ResumeThrow = 0xe4,
+  ResumeThrowRef = 0xe5,
+  Switch = 0xe6,
+#endif
 
   FirstPrefix = 0xfa,
   GcPrefix = 0xfb,
@@ -1016,19 +1042,6 @@ enum class BuiltinModuleId {
   JSStringConstants,
 };
 
-enum class StackSwitchKind {
-  SwitchToSuspendable,
-  SwitchToMain,
-  ContinueOnSuspendable,
-};
-
-enum class UpdateSuspenderStateAction {
-  Enter,
-  Suspend,
-  Resume,
-  Leave,
-};
-
 enum class MozOp {
   // ------------------------------------------------------------------------
   // These operators are emitted internally when compiling asm.js and are
@@ -1072,11 +1085,17 @@ enum class MozOp {
   OldCallDirect,
   OldCallIndirect,
 
+  // Everything above this must be asm.js.
+  LastAsmJSOp = OldCallIndirect,
+
+#ifdef ENABLE_WASM_JSPI
+  // Check that there is a WebAssembly.promising function ready to suspend to.
+  GuardSuspending,
+#endif
+
   // Call a builtin module funcs. The operator has argument leb u32 to specify
   // particular operation id. See BuiltinModuleFuncId above.
   CallBuiltinModuleFunc,
-
-  StackSwitch,
 
   Limit
 };
@@ -1155,6 +1174,13 @@ enum class FieldFlags { Mutable = 0x01, AllowedMask = 0x01 };
 
 enum class FieldWideningOp { None, Signed, Unsigned };
 
+enum class HandlerKind : uint8_t {
+  Suspend = 0x0,
+  Switch = 0x1,
+
+  Limit = Switch,
+};
+
 // The WebAssembly custom page sizes proposal allows for a virtual page size of
 // either 64KiB, or 1 byte.  We call these Standard and Tiny, respectively.
 enum class PageSize {
@@ -1213,6 +1239,7 @@ static const unsigned MaxTryTableCatches = 10000;
 static const unsigned MaxBrTableElems = 65520;
 static const unsigned MaxCodeSectionBytes = MaxModuleBytes;
 static const unsigned MaxBranchHintValue = 2;
+static const unsigned MaxHandlers = 16;
 
 // 512KiB should be enough, considering how Rabaldr uses the stack and
 // what the standard limits are:
@@ -1225,20 +1252,13 @@ static const unsigned MaxBranchHintValue = 2;
 
 static const unsigned MaxFrameSize = 512 * 1024;
 
-// Limit for the amount of stacks present in the runtime.
-static const size_t SuspendableStacksMaxCount = 100;
+// The wasm usable size of a continuation stack.
+static const size_t ContJitStackSize = 0x100000;
 
-// Max size of an allocated stack.
-static const size_t SuspendableStackSize = 0x100000;
-
-// Size of additional space at the top of a suspendable stack.
+// Size of additional space at the top of a continuation stack.
 // The space is allocated to C++ handlers such as error/trap handlers,
 // or stack snapshots utilities.
-static const size_t SuspendableRedZoneSize = 0x6000;
-
-// Total size of a suspendable stack to be reserved.
-static constexpr size_t SuspendableStackPlusRedZoneSize =
-    SuspendableStackSize + SuspendableRedZoneSize;
+static const size_t ContRedZoneSize = 0x8000;
 
 // Asserted by Decoder::readVarU32.
 

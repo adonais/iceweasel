@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2016 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -164,7 +162,7 @@ bool js::wasm::GetImports(JSContext* cx, const Module& module,
   const TableDescVector& tables = codeMeta.tables;
   for (const Import& import : moduleMeta.imports) {
     Maybe<BuiltinModuleId> builtinModule =
-        ImportMatchesBuiltinModule(import.module.utf8Bytes(), builtinModules);
+        ImportMatchesBuiltinModule(import, builtinModules);
     if (builtinModule) {
       if (*builtinModule == BuiltinModuleId::JSStringConstants) {
         isImportedStringModule = true;
@@ -1252,9 +1250,28 @@ bool WasmModuleObject::imports(JSContext* cx, unsigned argc, Value* vp) {
 #endif  // ENABLE_WASM_TYPE_REFLECTIONS
 
   for (const Import& import : moduleMeta.imports) {
-    Maybe<BuiltinModuleId> builtinModule = ImportMatchesBuiltinModule(
-        import.module.utf8Bytes(), codeMeta.features().builtinModules);
+    Maybe<BuiltinModuleId> builtinModule =
+        ImportMatchesBuiltinModule(import, codeMeta.features().builtinModules);
     if (builtinModule) {
+#ifdef ENABLE_WASM_TYPE_REFLECTIONS
+      switch (import.kind) {
+        case DefinitionKind::Function:
+          numFuncImport++;
+          break;
+        case DefinitionKind::Table:
+          numTableImport++;
+          break;
+        case DefinitionKind::Memory:
+          numMemoryImport++;
+          break;
+        case DefinitionKind::Global:
+          numGlobalImport++;
+          break;
+        case DefinitionKind::Tag:
+          numTagImport++;
+          break;
+      }
+#endif  // ENABLE_WASM_TYPE_REFLECTIONS
       continue;
     }
 
@@ -1588,15 +1605,20 @@ struct MOZ_STACK_CLASS AutoPinBufferSourceLength {
   bool wasPinned_;
 };
 
+// Checks if the `obj` is a buffer source (according to WebIDL rules) and
+// returns a view to the underlying memory. Callers should be sure to use
+// AutoPinBufferSourceLength for the resulting lifetime of the bytecode
+// source.
 static bool GetBytecodeSource(JSContext* cx, Handle<JSObject*> obj,
-                              unsigned errorNumber, BytecodeSource* bytecode) {
+                              unsigned errorNumber, BytecodeSource* bytecode,
+                              bool* isShared) {
   JSObject* unwrapped = CheckedUnwrapStatic(obj);
 
   SharedMem<uint8_t*> dataPointer;
   size_t byteLength;
-  if (!unwrapped ||
-      !IsBufferSource(cx, unwrapped, /*allowShared*/ false,
-                      /*allowResizable*/ false, &dataPointer, &byteLength)) {
+  if (!unwrapped || !IsBufferSource(cx, unwrapped, /*allowShared*/ true,
+                                    /*allowResizable*/ true, &dataPointer,
+                                    &byteLength, isShared)) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, errorNumber);
     return false;
   }
@@ -1605,17 +1627,51 @@ static bool GetBytecodeSource(JSContext* cx, Handle<JSObject*> obj,
   return true;
 }
 
+// The same as `GetBytecodeSource`, but instead returns an owned bytecode
+// buffer copy. Callers don't need to use AutoPinBufferSourceLength because
+// they own the resulting memory.
 static bool GetBytecodeBuffer(JSContext* cx, Handle<JSObject*> obj,
                               unsigned errorNumber, BytecodeBuffer* bytecode) {
   BytecodeSource source;
-  if (!GetBytecodeSource(cx, obj, errorNumber, &source)) {
+  bool isShared;
+  if (!GetBytecodeSource(cx, obj, errorNumber, &source, &isShared)) {
     return false;
   }
   AutoPinBufferSourceLength pin(cx, obj);
+
   if (!BytecodeBuffer::fromSource(source, bytecode)) {
     ReportOutOfMemory(cx);
     return false;
   }
+  return true;
+}
+
+// The same as `GetBytecodeSource`, but instead returns an owned bytecode
+// buffer if the buffer source is shared.
+static bool GetBytecodeBufferOrSource(JSContext* cx, Handle<JSObject*> obj,
+                                      unsigned errorNumber,
+                                      BytecodeBufferOrSource* bytecode) {
+  BytecodeSource source;
+  bool isShared;
+  if (!GetBytecodeSource(cx, obj, errorNumber, &source, &isShared)) {
+    return false;
+  }
+
+  if (!isShared) {
+    *bytecode = BytecodeBufferOrSource(source);
+    return true;
+  }
+
+  // The buffer source is shared, we need to make a copy to ensure it we have an
+  // immutable copy.
+  AutoPinBufferSourceLength pin(cx, obj);
+  BytecodeBuffer buffer;
+  if (!BytecodeBuffer::fromSource(source, &buffer)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  *bytecode = BytecodeBufferOrSource(std::move(buffer));
   return true;
 }
 
@@ -1686,19 +1742,22 @@ bool WasmModuleObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  BytecodeSource source;
-  Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
-  if (!GetBytecodeSource(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG, &source)) {
-    return false;
-  }
-
   UniqueChars error;
   UniqueCharsVector warnings;
   SharedModule module;
   {
+    // Limit the lifetime of the bytecode to just compilation and ensure we pin
+    // the buffer. No user code should be running here anyways, so this is very
+    // conservative.
+    BytecodeBufferOrSource bytecode;
+    Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
+    if (!GetBytecodeBufferOrSource(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG,
+                                   &bytecode)) {
+      return false;
+    }
     AutoPinBufferSourceLength pin(cx, sourceObj.get());
-    module = CompileBuffer(*compileArgs, BytecodeBufferOrSource(source), &error,
-                           &warnings, nullptr);
+
+    module = CompileBuffer(*compileArgs, bytecode, &error, &warnings, nullptr);
   }
 
   if (!ReportCompileWarnings(cx, warnings)) {
@@ -3741,7 +3800,7 @@ void WasmExceptionObject::trace(JSTracer* trc, JSObject* obj) {
 
   wasm::SharedTagType tag = exnObj.tagType();
   const wasm::ValTypeVector& params = tag->argTypes();
-  const wasm::TagOffsetVector& offsets = tag->argOffsets();
+  const wasm::TagOffsetVector& offsets = tag->exceptionArgOffsets();
   uint8_t* typedMem = exnObj.typedMem();
   for (size_t i = 0; i < params.length(); i++) {
     ValType paramType = params[i];
@@ -3846,7 +3905,7 @@ bool WasmExceptionObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
   wasm::SharedTagType tagType = exnObj->tagType();
   const wasm::ValTypeVector& params = tagType->argTypes();
-  const wasm::TagOffsetVector& offsets = tagType->argOffsets();
+  const wasm::TagOffsetVector& offsets = tagType->exceptionArgOffsets();
 
   RootedValue nextArg(cx);
   for (size_t i = 0; i < params.length(); i++) {
@@ -4017,7 +4076,7 @@ bool WasmExceptionObject::getArgImpl(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  uint32_t offset = exnTag->tagType()->argOffsets()[index];
+  uint32_t offset = exnTag->tagType()->exceptionArgOffsets()[index];
   RootedValue result(cx);
   if (!exnObj->loadArg(cx, offset, params[index], &result)) {
     return false;
@@ -4309,7 +4368,7 @@ bool WasmFunctionConstruct(JSContext* cx, unsigned argc, Value* vp) {
 
   if (!IsCallableNonCCW(args[1])) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_WASM_BAD_FUNCTION_VALUE);
+                             JSMSG_WASM_BAD_FUNCTION_VALUE, "second");
     return false;
   }
   RootedObject func(cx, &args[1].toObject());
@@ -4575,7 +4634,8 @@ struct CompileBufferTask : PromiseHelperTask {
   CompileBufferTask(JSContext* cx, Handle<PromiseObject*> promise)
       : PromiseHelperTask(cx, promise), instantiate(false) {}
 
-  bool init(JSContext* cx, FeatureOptions options, const char* introducer) {
+  bool init(JSContext* cx, const FeatureOptions& options,
+            const char* introducer) {
     compileArgs = InitCompileArgs(cx, options, introducer);
     if (!compileArgs) {
       return false;
@@ -4584,8 +4644,9 @@ struct CompileBufferTask : PromiseHelperTask {
   }
 
   void execute() override {
-    module = CompileBuffer(*compileArgs, BytecodeBufferOrSource(bytecode),
-                           &error, &warnings, nullptr);
+    module =
+        CompileBuffer(*compileArgs, BytecodeBufferOrSource(std::move(bytecode)),
+                      &error, &warnings, nullptr);
   }
 
   bool resolve(JSContext* cx, Handle<PromiseObject*> promise) override {
@@ -4801,17 +4862,21 @@ static bool WebAssembly_validate(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  BytecodeSource source;
-  Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
-  if (!GetBytecodeSource(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG, &source)) {
-    return false;
-  }
-
   UniqueChars error;
   bool validated;
   {
+    // Limit the lifetime of the bytecode to just validation and ensure we pin
+    // the buffer. No user code should be running here anyways, so this is very
+    // conservative.
+    BytecodeBufferOrSource bytecode;
+    Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
+    if (!GetBytecodeBufferOrSource(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG,
+                                   &bytecode)) {
+      return false;
+    }
     AutoPinBufferSourceLength pin(cx, sourceObj.get());
-    validated = Validate(cx, source, options, &error);
+
+    validated = Validate(cx, bytecode.source(), options, &error);
   }
 
   // If the reason for validation failure was OOM (signalled by null error
@@ -5047,7 +5112,8 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
     switch (streamState_.lock().get()) {
       case Env: {
         BytecodeBuffer bytecode(envBytes_, nullptr, nullptr);
-        module_ = CompileBuffer(*compileArgs_, BytecodeBufferOrSource(bytecode),
+        module_ = CompileBuffer(*compileArgs_,
+                                BytecodeBufferOrSource(std::move(bytecode)),
                                 &compileError_, &warnings_, nullptr);
         setClosedAndDestroyBeforeHelperThreadStarted();
         return;
@@ -5486,7 +5552,7 @@ bool WasmSuspendingObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
   if (!IsCallableNonCCW(args[0])) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_WASM_BAD_FUNCTION_VALUE);
+                             JSMSG_WASM_BAD_FUNCTION_VALUE, "first");
     return false;
   }
 
@@ -5515,7 +5581,7 @@ static bool WebAssembly_promising(JSContext* cx, unsigned argc, Value* vp) {
 
   if (!IsWasmFunction(args[0])) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_WASM_BAD_FUNCTION_VALUE);
+                             JSMSG_WASM_BAD_FUNCTION_VALUE, "first");
     return false;
   }
 
@@ -5691,6 +5757,15 @@ static bool WebAssemblyClassFinish(JSContext* cx, HandleObject object,
         return false;
       }
     }
+
+    SharedTagType jsPromiseTagType(sJSPromiseTagType);
+    WasmTagObject* jsPromiseTagObject =
+        WasmTagObject::create(cx, jsPromiseTagType, tagProto);
+    if (!jsPromiseTagObject) {
+      return false;
+    }
+
+    wasm->setJSPromiseTag(jsPromiseTagObject);
   }
 #endif
 

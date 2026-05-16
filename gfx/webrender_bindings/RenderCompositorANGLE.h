@@ -116,7 +116,6 @@ class RenderCompositorANGLE final : public RenderCompositor {
                   wr::ImageRendering aImageRendering,
                   wr::DeviceIntRect aRoundedClipRect,
                   wr::ClipRadius aClipRadius) override;
-  void EnableNativeCompositor(bool aEnable) override;
   bool EnableAsyncScreenshot() override;
   void GetCompositorCapabilities(CompositorCapabilities* aCaps) override;
   void GetWindowProperties(WindowProperties* aProperties) override;
@@ -178,8 +177,6 @@ class RenderCompositorANGLE final : public RenderCompositor {
   Maybe<LayoutDeviceIntSize> mBufferSize;
   bool mUsePartialPresent = false;
   bool mFullRender = false;
-  // Used to know a timing of disabling native compositor.
-  bool mDisablingNativeCompositor = false;
   bool mFirstPresent = true;
   // Wether we're currently using alpha.
   bool mSwapChainUsingAlpha = false;

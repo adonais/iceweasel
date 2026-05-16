@@ -137,7 +137,15 @@ TRRServiceChannel::Cancel(nsresult status) {
         NS_DISPATCH_NORMAL);
   }
 
-  CancelNetworkRequest(status);
+  if (mCurrentEventTarget->IsOnCurrentThread()) {
+    CancelNetworkRequest(status);
+  } else {
+    mCurrentEventTarget->Dispatch(
+        NS_NewRunnableFunction("TRRServiceChannel::CancelNetworkRequest",
+                               [self = RefPtr(this), status]() {
+                                 self->CancelNetworkRequest(status);
+                               }));
+  }
   return NS_OK;
 }
 
@@ -456,6 +464,23 @@ nsresult TRRServiceChannel::BeginConnect() {
     StoreAllowSpdy(0);
     mCaps |= NS_HTTP_DISALLOW_SPDY;
     mConnectionInfo->SetNoSpdy(true);
+  }
+
+  auto canUseHappyEyeballs = [&]() {
+    if (!StaticPrefs::network_http_happy_eyeballs_enabled()) {
+      return false;
+    }
+    if (mProxyInfo || mConnectionInfo->ProxyInfo()) {
+      return false;
+    }
+    return true;
+  };
+
+  if (canUseHappyEyeballs()) {
+    LOG(("%p NS_HTTP_USE_HAPPY_EYEBALLS ", this));
+    mCaps |= NS_HTTP_USE_HAPPY_EYEBALLS;
+    mCaps &= ~NS_HTTP_FORCE_WAIT_HTTP_RR;
+    mConnectionInfo->SetHappyEyeballsEnabled(true);
   }
 
   // if this somehow fails we can go on without it

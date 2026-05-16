@@ -33,8 +33,13 @@ export:: webidl.stub
 # codegen.pp is created as a side-effect of the webidl action
 -include codegen.pp
 
+WEBIDL_CCACHE=
+ifdef MOZ_USING_BUILDCACHE
+    WEBIDL_CCACHE=$(CCACHE)
+endif
+
 webidl.stub: $(codegen_dependencies)
-	$(call py_action,webidl $(relativesrcdir),$(srcdir))
+	$(call py_action,webidl $(relativesrcdir),$(srcdir),,$(WEBIDL_CCACHE))
 	@$(TOUCH) $@
 
 .PHONY: compiletests

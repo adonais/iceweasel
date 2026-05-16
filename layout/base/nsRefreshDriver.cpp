@@ -1884,6 +1884,10 @@ bool nsRefreshDriver::ComputeHasImageAnimations() const {
   return false;
 }
 
+bool nsRefreshDriver::HasReasonsToTick() const {
+  return GetReasonsToTick() != TickReasons::None;
+}
+
 auto nsRefreshDriver::GetReasonsToTick() const -> TickReasons {
   TickReasons reasons = TickReasons::None;
   if (HasObservers()) {

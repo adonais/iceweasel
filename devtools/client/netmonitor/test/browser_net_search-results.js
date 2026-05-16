@@ -42,11 +42,7 @@ add_task(async function () {
   EventUtils.synthesizeKey("KEY_Enter");
 
   // Wait until there are two resources rendered in the results
-  await waitForDOMIfNeeded(
-    document,
-    ".search-panel-content .treeRow.resourceRow",
-    2
-  );
+  await waitForDOM(document, ".search-panel-content .treeRow.resourceRow", 2);
 
   const searchMatchContents = document.querySelectorAll(
     ".search-panel-content .treeRow .treeIcon"
@@ -57,11 +53,7 @@ add_task(async function () {
   }
 
   // Wait until there are two resources rendered in the results
-  await waitForDOMIfNeeded(
-    document,
-    ".search-panel-content .treeRow.resultRow",
-    12
-  );
+  await waitForDOM(document, ".search-panel-content .treeRow.resultRow", 12);
 
   // Check the matches
   const matches = document.querySelectorAll(
@@ -212,11 +204,7 @@ add_task(async function () {
   await waitForAllNetworkUpdateEvents();
 
   // Wait until there are two resources rendered in the results
-  await waitForDOMIfNeeded(
-    document,
-    ".search-panel-content .treeRow.resourceRow",
-    2
-  );
+  await waitForDOM(document, ".search-panel-content .treeRow.resourceRow", 2);
 
   const resourceMatches = document.querySelectorAll(
     ".search-panel-content .treeRow .treeIcon"
@@ -227,11 +215,7 @@ add_task(async function () {
   clickElement(firstResourceMatch, monitor);
 
   // Wait until the expanded resource is rendered in the results
-  await waitForDOMIfNeeded(
-    document,
-    ".search-panel-content .treeRow.resultRow",
-    1
-  );
+  await waitForDOM(document, ".search-panel-content .treeRow.resultRow", 1);
 
   // Check the content matches
   const contentMatches = document.querySelectorAll(
@@ -319,14 +303,10 @@ add_task(async function searchWithRequestOnUnload() {
   EventUtils.synthesizeKey("KEY_Enter");
 
   // Wait until there are two resources rendered in the results
-  await waitForDOMIfNeeded(
-    document,
-    ".search-panel-content .treeRow.resourceRow",
-    1
-  );
+  await waitForDOM(document, ".search-panel-content .treeRow.resourceRow", 1);
 
   // Wait until there are two resources rendered in the results
-  await waitForDOMIfNeeded(document, ".search-panel .status-bar-label");
+  await waitForDOM(document, ".search-panel .status-bar-label");
   const statusBar = document.querySelector(".search-panel .status-bar-label");
   const matchingLines = PluralForm.get(
     1,

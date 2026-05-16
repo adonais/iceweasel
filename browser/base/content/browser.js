@@ -1,5 +1,4 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -29,6 +28,8 @@ ChromeUtils.defineESModuleGetters(this, {
   Color: "resource://gre/modules/Color.sys.mjs",
   ContentAnalysis:
     "moz-src:///browser/components/contentanalysis/content/ContentAnalysis.sys.mjs",
+  ContentSharingUtils:
+    "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   CustomizableUI:
@@ -52,8 +53,6 @@ ChromeUtils.defineESModuleGetters(this, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   nsContextMenu: "chrome://browser/content/nsContextMenu.sys.mjs",
-  OpenInTabsUtils:
-    "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
   OpenSearchManager:
     "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
   PageActions: "resource:///modules/PageActions.sys.mjs",
@@ -81,7 +80,8 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/privatebrowsing/ResetPBMPanel.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
-  ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
+  ScreenshotsUtils:
+    "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
@@ -1387,7 +1387,7 @@ var gLastOpenDirectory = {
 };
 
 function readFromClipboard() {
-  var url;
+  var url = "";
 
   try {
     // Create transferable that will transfer the text.
@@ -1945,6 +1945,12 @@ var XULBrowserWindow = {
     return (this._menuItemForTranslations =
       document.getElementById("cmd_translate"));
   },
+  get _moreToolsTranslateMenuItem() {
+    delete this._moreToolsTranslateMenuItem;
+    return (this._moreToolsTranslateMenuItem = document.getElementById(
+      "cmd_openAboutTranslations"
+    ));
+  },
 
   setDefaultStatus(status) {
     this.defaultStatus = status;
@@ -2202,6 +2208,8 @@ var XULBrowserWindow = {
       (location == "about:blank" &&
         BrowserUIUtils.checkEmptyPageOrigin(gBrowser.selectedBrowser)) ||
       location == "" ||
+      (location == "about:newtab" && !this.newTabPageEnabled) ||
+      location == "chrome://browser/content/blanktab.html" ||
       window.browsingContext.isDocumentPiP
     ) {
       // Second condition is for new tabs, otherwise
@@ -2378,14 +2386,13 @@ var XULBrowserWindow = {
     } else {
       this._menuItemForTranslations.removeAttribute("disabled");
     }
-    if (
+
+    const shouldShowTranslationsMenuItems =
       TranslationsParent.AIFeature.isEnabled &&
-      TranslationsParent.getIsTranslationsEngineSupported()
-    ) {
-      this._menuItemForTranslations.removeAttribute("hidden");
-    } else {
-      this._menuItemForTranslations.setAttribute("hidden", "true");
-    }
+      TranslationsParent.getIsTranslationsEngineSupported();
+
+    this._menuItemForTranslations.hidden = !shouldShowTranslationsMenuItems;
+    this._moreToolsTranslateMenuItem.hidden = !shouldShowTranslationsMenuItems;
   },
 
   /**
@@ -2604,6 +2611,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   XULBrowserWindow,
   "spinCursorWhileBusy",
   "browser.spin_cursor_while_busy"
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  XULBrowserWindow,
+  "newTabPageEnabled",
+  "browser.newtabpage.enabled",
+  true
 );
 
 var LinkTargetDisplay = {
@@ -3349,61 +3363,6 @@ const DynamicShortcutTooltip = {
  */
 
 /**
- * Extracts linkNode and href for the current click target.
- *
- * Note: linkNode will be null if the click wasn't on an anchor
- * element (or XLink).
- *
- * @param event
- *        The click event.
- * @return [href, linkNode].
- */
-function hrefAndLinkNodeForClickEvent(event) {
-  function isHTMLLink(aNode) {
-    // Be consistent with what nsContextMenu.js does.
-    return (
-      (HTMLAnchorElement.isInstance(aNode) && aNode.href) ||
-      (HTMLAreaElement.isInstance(aNode) && aNode.href) ||
-      HTMLLinkElement.isInstance(aNode)
-    );
-  }
-
-  let node = event.composedTarget;
-  while (node && !isHTMLLink(node)) {
-    node = node.flattenedTreeParentNode;
-  }
-
-  if (node) {
-    return [node.href, node];
-  }
-
-  // If there is no linkNode, try simple XLink.
-  let href, baseURI;
-  node = event.composedTarget;
-  while (node && !href) {
-    if (
-      node.nodeType == Node.ELEMENT_NODE &&
-      (node.localName == "a" ||
-        node.namespaceURI == "http://www.w3.org/1998/Math/MathML")
-    ) {
-      href =
-        node.getAttribute("href") ||
-        node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
-
-      if (href) {
-        baseURI = node.baseURI;
-        break;
-      }
-    }
-    node = node.flattenedTreeParentNode;
-  }
-
-  // In case of XLink, we don't return the node we got href from since
-  // callers expect <a>-like elements.
-  return [href ? makeURLAbsolute(baseURI, href) : null, null];
-}
-
-/**
  * Called whenever the user clicks in the content area.
  *
  * Note: the default event is prevented if the click is handled.
@@ -3418,7 +3377,7 @@ function contentAreaClick(event, isPanelClick) {
     return;
   }
 
-  let [href, linkNode] = hrefAndLinkNodeForClickEvent(event);
+  let [href, linkNode] = BrowserUtils.hrefAndLinkNodeForClickEvent(event);
   if (!href) {
     // Not a link, handle middle mouse navigation.
     if (
@@ -3609,80 +3568,6 @@ function middleMousePaste(event) {
 
   if (Event.isInstance(event)) {
     event.stopPropagation();
-  }
-}
-
-// handleDroppedLink has the following 2 overloads:
-//   handleDroppedLink(event, url, name, triggeringPrincipal)
-//   handleDroppedLink(event, links, triggeringPrincipal)
-function handleDroppedLink(
-  event,
-  urlOrLinks,
-  nameOrTriggeringPrincipal,
-  triggeringPrincipal
-) {
-  let links;
-  if (Array.isArray(urlOrLinks)) {
-    links = urlOrLinks;
-    triggeringPrincipal = nameOrTriggeringPrincipal;
-  } else {
-    links = [{ url: urlOrLinks, nameOrTriggeringPrincipal, type: "" }];
-  }
-
-  let lastLocationChange = gBrowser.selectedBrowser.lastLocationChange;
-
-  let userContextId = gBrowser.selectedBrowser.getAttribute("usercontextid");
-
-  // event is null if links are dropped in content process.
-  // inBackground should be false, as it's loading into current browser.
-  let inBackground = false;
-  if (event) {
-    inBackground = Services.prefs.getBoolPref("browser.tabs.loadInBackground");
-    if (event.shiftKey) {
-      inBackground = !inBackground;
-    }
-  }
-
-  (async function () {
-    if (
-      links.length >=
-      Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
-    ) {
-      // Sync dialog cannot be used inside drop event handler.
-      let answer = await OpenInTabsUtils.promiseConfirmOpenInTabs(
-        links.length,
-        window
-      );
-      if (!answer) {
-        return;
-      }
-    }
-
-    let urls = [];
-    let postDatas = [];
-    for (let link of links) {
-      let data = await UrlbarUtils.getShortcutOrURIAndPostData(link.url);
-      urls.push(data.url);
-      postDatas.push(data.postData);
-    }
-    if (lastLocationChange == gBrowser.selectedBrowser.lastLocationChange) {
-      gBrowser.loadTabs(urls, {
-        inBackground,
-        replace: true,
-        allowThirdPartyFixup: false,
-        postDatas,
-        userContextId,
-        triggeringPrincipal,
-      });
-    }
-  })();
-
-  // If links are dropped in content process, event.preventDefault() should be
-  // called in content process.
-  if (event) {
-    // Keep the event from being handled by the dragDrop listeners
-    // built-in to gecko if they happen to be above us.
-    event.preventDefault();
   }
 }
 

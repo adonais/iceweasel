@@ -71,6 +71,7 @@ exports.STATUS = {
  * Mapping of CSS at-Rule className to CSSRule type name.
  */
 exports.CSSAtRuleClassNameType = {
+  CSSAppearanceBaseRule: "appearance-base",
   CSSContainerRule: "container",
   CSSCounterStyleRule: "counter-style",
   CSSDocumentRule: "document",

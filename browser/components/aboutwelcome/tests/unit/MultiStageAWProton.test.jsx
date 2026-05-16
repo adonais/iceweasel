@@ -4,6 +4,7 @@ import {
   ProtonScreenActionButtons,
 } from "content-src/components/MultiStageProtonScreen";
 import { AWScreenUtils } from "modules/AWScreenUtils.sys.mjs";
+import { AboutWelcomeUtils } from "content-src/lib/aboutwelcome-utils.mjs";
 import React from "react";
 import { mount } from "enzyme";
 
@@ -600,6 +601,62 @@ describe("MultiStageAboutWelcomeProton module", () => {
       );
     });
 
+    it("Primary button should be disabled when activeSingleSelectSelections is undefined", () => {
+      const SCREEN_PROPS = {
+        content: {
+          title: "test title",
+          primary_button: {
+            label: "test primary button",
+            disabled: "hasActiveSingleSelect",
+          },
+        },
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.isTrue(
+        wrapper.find("button.primary").prop("disabled"),
+        "Button is disabled when activeSingleSelectSelections is undefined"
+      );
+    });
+
+    it("Primary button should be disabled when activeSingleSelectSelections has no valid selection", () => {
+      const SCREEN_PROPS = {
+        content: {
+          title: "test title",
+          primary_button: {
+            label: "test primary button",
+            disabled: "hasActiveSingleSelect",
+          },
+        },
+        activeSingleSelectSelections: { "single-select-0": "none" },
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.isTrue(
+        wrapper.find("button.primary").prop("disabled"),
+        "Button is disabled when selection is 'none'"
+      );
+    });
+
+    it("Primary button should be enabled when activeSingleSelectSelections has a valid selection", () => {
+      const SCREEN_PROPS = {
+        content: {
+          title: "test title",
+          primary_button: {
+            label: "test primary button",
+            disabled: "hasActiveSingleSelect",
+          },
+        },
+        activeSingleSelectSelections: { "single-select-0": "model_1" },
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.isFalse(
+        wrapper.find("button.primary").prop("disabled"),
+        "Button is enabled when a tile is selected"
+      );
+    });
+
     it("should not render a progress bar if there is 1 step", () => {
       const SCREEN_PROPS = {
         content: {
@@ -623,6 +680,21 @@ describe("MultiStageAboutWelcomeProton module", () => {
       const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
       assert.ok(wrapper.exists());
       assert.equal(wrapper.find(".steps").exists(), false);
+    });
+
+    it("should render title with ref and tabIndex for screens with requireAction prop", () => {
+      const SCREEN_PROPS = {
+        content: {
+          title: "test title",
+        },
+        requireAction: true,
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+
+      const title = wrapper.find("h1#mainContentHeader");
+      assert.ok(title.exists());
+      assert.equal(title.prop("tabIndex"), -1);
     });
 
     it("should render a steps indicator above action buttons", () => {
@@ -1473,6 +1545,235 @@ describe("MultiStageAboutWelcomeProton module", () => {
       assert.isTrue(wrapper.find(".secondary-buttons-top-container").exists());
       assert.isTrue(wrapper.find("#secondary_button_0").exists());
       assert.isTrue(wrapper.find("#secondary_button_1").exists());
+    });
+  });
+
+  describe("Gating on experiment load", () => {
+    let SCREEN_PROPS;
+    it("should advance after minDisplayMs once experiments gate resolves", async () => {
+      const navigateStub = sandbox.stub();
+
+      const awWaitStub = sandbox
+        .stub(global, "AWWaitForNimbus")
+        .resolves("ready");
+
+      SCREEN_PROPS = {
+        content: {
+          title: "Loading screen",
+        },
+        // No legacy autoAdvance
+        autoAdvance: null,
+        advanceOnExperimentLoad: {
+          minDisplayMs: 1000,
+          maxDisplayMs: 5000,
+        },
+        navigate: navigateStub,
+      };
+
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+
+      sinon.assert.calledOnce(awWaitStub);
+
+      // Before minDisplayMs we should not advance
+      clock.tick(999);
+      await Promise.resolve();
+      sinon.assert.notCalled(navigateStub);
+
+      // After minDisplayMs (and Nimbus already resolved) we should advance
+      clock.tick(1);
+      await Promise.resolve();
+      sinon.assert.calledOnce(navigateStub);
+      sinon.assert.calledWithExactly(navigateStub, false);
+
+      wrapper.unmount();
+    });
+
+    it("should force advance at maxDisplayMs even if Nimbus never resolves", async () => {
+      const navigateStub = sandbox.stub();
+
+      // Nimbus never resolves
+      sandbox.stub(global, "AWWaitForNimbus").returns(new Promise(() => {}));
+
+      SCREEN_PROPS = {
+        content: {
+          title: "Loading screen",
+        },
+        autoAdvance: null,
+        advanceOnExperimentLoad: {
+          minDisplayMs: 1000,
+          maxDisplayMs: 2000,
+        },
+        navigate: navigateStub,
+      };
+
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+
+      // Before maxDisplayMs we should not advance
+      clock.tick(1999);
+      await Promise.resolve();
+      sinon.assert.notCalled(navigateStub);
+
+      // At maxDisplayMs we should advance
+      clock.tick(1);
+      await Promise.resolve();
+      sinon.assert.calledOnce(navigateStub);
+      sinon.assert.calledWithExactly(navigateStub, false);
+
+      wrapper.unmount();
+    });
+
+    it("should prefer legacy autoAdvance over experiments gate when both are set", async () => {
+      const handleActionStub = sandbox.stub();
+      const navigateStub = sandbox.stub();
+
+      const awWaitStub = sandbox.stub(global, "AWWaitForNimbus");
+
+      SCREEN_PROPS = {
+        content: {
+          title: "Legacy auto advance",
+        },
+        autoAdvance: "SOME_TARGET",
+        advanceOnExperimentLoad: {
+          minDisplayMs: 1000,
+          maxDisplayMs: 2000,
+        },
+        handleAction: handleActionStub,
+        navigate: navigateStub,
+      };
+
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+
+      clock.tick(19999);
+      await Promise.resolve();
+      sinon.assert.notCalled(handleActionStub);
+      sinon.assert.notCalled(navigateStub);
+
+      // At 20s legacy autoAdvance should fire via handleAction
+      clock.tick(1);
+      await Promise.resolve();
+
+      sinon.assert.calledOnce(handleActionStub);
+      const [call] = handleActionStub.getCall(0).args;
+      assert.propertyVal(call, "name", "AUTO_ADVANCE");
+      assert.propertyVal(call.currentTarget, "value", "SOME_TARGET");
+
+      sinon.assert.notCalled(awWaitStub);
+
+      wrapper.unmount();
+    });
+
+    it("should send telemetry with reason nimbus_ready when Nimbus resolves before minDisplayMs", async () => {
+      const navigateStub = sandbox.stub();
+      const telemetryStub = sandbox.stub(
+        AboutWelcomeUtils,
+        "sendActionTelemetry"
+      );
+      sandbox.stub(global, "AWWaitForNimbus").resolves("ready");
+
+      const wrapper = mount(
+        <MultiStageProtonScreen
+          content={{ title: "Loading screen" }}
+          autoAdvance={null}
+          advanceOnExperimentLoad={{ minDisplayMs: 1000, maxDisplayMs: 5000 }}
+          messageId="test-splash-screen"
+          navigate={navigateStub}
+        />
+      );
+
+      clock.tick(999);
+      await Promise.resolve();
+      sinon.assert.notCalled(telemetryStub);
+
+      clock.tick(1);
+      await Promise.resolve();
+
+      sinon.assert.calledOnce(telemetryStub);
+      sinon.assert.calledWith(
+        telemetryStub,
+        "test-splash-screen",
+        "advance_on_experiment_load",
+        "SPLASH_DISMISSED",
+        sinon.match({ reason: "nimbus_ready", screen_duration: 1000 })
+      );
+
+      wrapper.unmount();
+    });
+
+    it("should send telemetry with reason max_display_timeout when max timer fires before Nimbus", async () => {
+      const navigateStub = sandbox.stub();
+      const telemetryStub = sandbox.stub(
+        AboutWelcomeUtils,
+        "sendActionTelemetry"
+      );
+      sandbox.stub(global, "AWWaitForNimbus").returns(new Promise(() => {}));
+
+      const wrapper = mount(
+        <MultiStageProtonScreen
+          content={{ title: "Loading screen" }}
+          autoAdvance={null}
+          advanceOnExperimentLoad={{ minDisplayMs: 1000, maxDisplayMs: 2000 }}
+          messageId="test-splash-screen"
+          navigate={navigateStub}
+        />
+      );
+
+      clock.tick(1999);
+      await Promise.resolve();
+      sinon.assert.notCalled(telemetryStub);
+
+      clock.tick(1);
+      await Promise.resolve();
+
+      sinon.assert.calledOnce(telemetryStub);
+      sinon.assert.calledWith(
+        telemetryStub,
+        "test-splash-screen",
+        "advance_on_experiment_load",
+        "SPLASH_DISMISSED",
+        sinon.match({ reason: "max_display_timeout", screen_duration: 2000 })
+      );
+
+      wrapper.unmount();
+    });
+
+    it("should send telemetry with reason nimbus_error when Nimbus resolves with error", async () => {
+      const navigateStub = sandbox.stub();
+      const telemetryStub = sandbox.stub(
+        AboutWelcomeUtils,
+        "sendActionTelemetry"
+      );
+      sandbox.stub(global, "AWWaitForNimbus").resolves("error");
+
+      const wrapper = mount(
+        <MultiStageProtonScreen
+          content={{ title: "Loading screen" }}
+          autoAdvance={null}
+          advanceOnExperimentLoad={{ minDisplayMs: 1000, maxDisplayMs: 5000 }}
+          messageId="test-splash-screen"
+          navigate={navigateStub}
+        />
+      );
+
+      clock.tick(999);
+      await Promise.resolve();
+      sinon.assert.notCalled(telemetryStub);
+
+      clock.tick(1);
+      await Promise.resolve();
+
+      sinon.assert.calledOnce(telemetryStub);
+      sinon.assert.calledWith(
+        telemetryStub,
+        "test-splash-screen",
+        "advance_on_experiment_load",
+        "SPLASH_DISMISSED",
+        sinon.match({ reason: "nimbus_error" })
+      );
+
+      wrapper.unmount();
     });
   });
 });

@@ -19,7 +19,6 @@ struct DisplayListData {
   LayoutDeviceRect mRect;
   nsTArray<WebRenderParentCommand> mCommands;
   Maybe<mozilla::ipc::ByteBuf> mDLItems;
-  Maybe<mozilla::ipc::ByteBuf> mDLCache;
   Maybe<mozilla::ipc::ByteBuf> mDLSpatialTree;
   wr::BuiltDisplayListDescriptor mDLDesc;
   nsTArray<OpUpdateResource> mResourceUpdates;

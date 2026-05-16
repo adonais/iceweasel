@@ -13,6 +13,26 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+## v151
+- Added `isBlocked` to `AIFeature` on [`AIFeaturesController`][150.3].
+- ⚠️ Remove deprecated `ContentDelegate.ContextElement` constructor.
+- ⚠️ Removed deprecated `ContentDelegate.ContextElement.textContent`.
+- ⚠️ Renamed `RuntimeAIFeatures.resetFeature` to [`RuntimeAIFeatures.makeFeatureAvailable`][151.1] in [`AIFeaturesController`][150.3] and `disable` to `block` to align with updated toolkit API naming.
+- Added [`ERROR_ENGINE_DEACTIVATED`][151.2] to `TranslationsController.TranslationsException` to indicate that session-level translation operations failed because the translations engine was deactivated by AI controls.
+- Added [`ContentParams`][151.3] to `PageExtractionController`[149.2] and [`getPageContent(ContentParams)`][151.4] to [`SessionPageExtractor`][149.3] for controlling how page text is extracted (e.g. boilerplate removal).
+    ([bug 2015480]({{bugzilla}}2015480))
+- Added [`isReaderable`][151.5] to [`PageMetadata`][150.6] in `PageExtractionController` to indicate whether the page is likely readable by reader mode.
+    ([bug 2030001]({{bugzilla}}2030001))
+- Added `getContentBlockingDatabaseStatus` \ `setContentBlockingDatabaseStatus` to [`ContentBlocking.Settings`][151.6] to enable the trackers blocked database recording blocked trackers events. ([bug 1974742]({{bugzilla}}1974742))
+
+[151.1]: {{javadoc_uri}}/AIFeaturesController.RuntimeAIFeatures.html#makeFeatureAvailable(java.lang.String)
+[151.2]: {{javadoc_uri}}/TranslationsController.TranslationsException.html#ERROR_ENGINE_DEACTIVATED
+[151.3]: {{javadoc_uri}}/PageExtractionController.GetTextOptions.html
+[151.4]: {{javadoc_uri}}/PageExtractionController.SessionPageExtractor.html#getPageContent(org.mozilla.geckoview.PageExtractionController.ContentParams)
+[151.4]: {{javadoc_uri}}/PageExtractionController.SessionPageExtractor.html#getPageContent(org.mozilla.geckoview.PageExtractionController.GetTextOptionsParams)
+[151.5]: {{javadoc_uri}}/PageExtractionController.PageMetadata.html#isReaderable
+[151.6]: {{javadoc_uri}}/ContentBlocking.Settings.html
+
 ## v150
 - Added support for `COOKIES_PARTITIONED_TRACKER` in the tracking protection blocking log. ([bug 2020898 ]({{bugzilla}}2020898))
 - Added [`GeckoSession.qwacStatus`][150.1] API.
@@ -22,6 +42,7 @@ exclude: true
 - ⚠️ Deprecated [`GeckoRuntimeSettings.getDisableShip`][150.4] and [`GeckoRuntimeSettings.Builder.disableShip`][150.5].
 - Added [`PageMetadata`][150.6] to `PageExtractionController` and [`getPageMetadata`][150.7] to [`SessionPageExtractor`][149.3] for retrieving structured metadata about the current page.
     ([bug 2020508]({{bugzilla}}2020508))
+- Added `getSafeBrowsingGlobalCacheEnabled`/`setSafeBrowsingGlobalCacheEnabled`, `getSafeBrowsingRealTimeEnabled`/`setSafeBrowsingRealTimeEnabled`, `getSafeBrowsingRealTimeSimulationEnabled`/`setSafeBrowsingRealTimeSimulationEnabled`, `getSafeBrowsingRealTimeSimulationHitProbability`/`setSafeBrowsingRealTimeSimulationHitProbability`, `getSafeBrowsingRealTimeSimulationCacheTTLSec`/`setSafeBrowsingRealTimeSimulationCacheTTLSec`, `getSafeBrowsingRealTimeSimulationNegativeCacheEnabled`/`setSafeBrowsingRealTimeSimulationNegativeCacheEnabled`, and `getSafeBrowsingRealTimeSimulationNegativeCacheTTLSec`/`setSafeBrowsingRealTimeSimulationNegativeCacheTTLSec` to [`ContentBlocking.Settings`][150.8] to control SafeBrowsing real-time lookup and simulation.
 
 [150.1]: {{javadoc_uri}}/GeckoSession.html#qwacStatus()
 [150.2]: {{javadoc_uri}}/GeckoRuntime.html#warmUp
@@ -30,6 +51,7 @@ exclude: true
 [150.5]: {{javadoc_uri}}/GeckoRuntimeSettings.Builder.html#disableShip(boolean)
 [150.6]: {{javadoc_uri}}/PageExtractionController.PageMetadata.html
 [150.7]: {{javadoc_uri}}/PageExtractionController.SessionPageExtractor.html#getPageMetadata()
+[150.8]: {{javadoc_uri}}/ContentBlocking.Settings.html
 
 ## v149
 - Introduce the Firefox Relay APIs in `GeckoRuntimeSettings`.
@@ -1927,4 +1949,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: e6b61ff3aade33dd664b0669bb8b0f80d4908bbe
+[api-version]: 1f7aa7b2b928ec436f5fbec35e3dbb1b34475d05

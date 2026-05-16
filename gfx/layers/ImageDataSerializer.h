@@ -70,6 +70,9 @@ Maybe<int32_t> YStrideFromBufferDescriptor(const BufferDescriptor& aDescriptor);
 Maybe<int32_t> CbCrStrideFromBufferDescriptor(
     const BufferDescriptor& aDescriptor);
 
+Maybe<gfx::ColorSpace2> ColorSpace2FromBufferDescriptor(
+    const BufferDescriptor& aDescriptor);
+
 Maybe<gfx::YUVColorSpace> YUVColorSpaceFromBufferDescriptor(
     const BufferDescriptor& aDescriptor);
 
@@ -77,6 +80,9 @@ Maybe<gfx::ColorDepth> ColorDepthFromBufferDescriptor(
     const BufferDescriptor& aDescriptor);
 
 Maybe<gfx::ColorRange> ColorRangeFromBufferDescriptor(
+    const BufferDescriptor& aDescriptor);
+
+Maybe<gfx::TransferFunction> TransferFunctionFromBufferDescriptor(
     const BufferDescriptor& aDescriptor);
 
 Maybe<StereoMode> StereoModeFromBufferDescriptor(
@@ -90,6 +96,12 @@ uint8_t* GetYChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor);
 uint8_t* GetCbChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor);
 
 uint8_t* GetCrChannel(uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor);
+
+uint16_t* GetYChannel(uint16_t* aBuffer, const YCbCrDescriptor& aDescriptor);
+
+uint16_t* GetCbChannel(uint16_t* aBuffer, const YCbCrDescriptor& aDescriptor);
+
+uint16_t* GetCrChannel(uint16_t* aBuffer, const YCbCrDescriptor& aDescriptor);
 
 already_AddRefed<gfx::DataSourceSurface> DataSourceSurfaceFromYCbCrDescriptor(
     uint8_t* aBuffer, const YCbCrDescriptor& aDescriptor,

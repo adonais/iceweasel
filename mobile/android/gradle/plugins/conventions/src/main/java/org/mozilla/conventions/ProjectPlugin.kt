@@ -9,17 +9,29 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencySubstitution
+import org.gradle.api.artifacts.ExternalModuleDependency
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.attributes.Bundling
 import org.gradle.api.artifacts.component.ModuleComponentSelector
+import org.gradle.api.logging.Logger
 import org.gradle.api.logging.StandardOutputListener
 import org.gradle.api.plugins.AppliedPlugin
+import org.gradle.api.tasks.JavaExec
+import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.TestDescriptor
+import org.gradle.api.tasks.testing.TestListener
+import org.gradle.api.tasks.testing.TestOutputEvent
+import org.gradle.api.tasks.testing.TestOutputListener
+import org.gradle.api.tasks.testing.TestResult
 import java.io.File
 
 class ProjectPlugin : Plugin<Project> {
     @Suppress("UNCHECKED_CAST")
     override fun apply(project: Project) {
-        project.extensions.create("mozilla", ProjectExtension::class.java).apply {
-            androidComponentsProject.convention(false)
-        }
+        val mozilla = project.extensions.create("mozilla", ProjectExtension::class.java)
+        mozilla.androidComponentsProject.convention(false)
+        mozilla.ktlintSourcePaths.convention(emptyList())
 
         val extraProperties = project.gradle.extensions.extraProperties
         val mozconfig = extraProperties["mozconfig"] as Map<String, Any>
@@ -41,6 +53,11 @@ class ProjectPlugin : Plugin<Project> {
         configureKotlinJvmToolchain(project)
         configureAppServicesSubstitution(project, extraProperties, substs)
         configureGleanSubstitution(project, extraProperties)
+        configureGleanVersionResolution(project)
+        configureKtlint(project, mozilla)
+        configureTestOutputFormatting(project)
+        configurePackagingResourcesExcludes(project)
+        registerPrintVariantsTask(project)
     }
 
     // Initialize the project buildDir to be in ${topobjdir} to follow
@@ -238,9 +255,224 @@ class ProjectPlugin : Plugin<Project> {
         }
     }
 
+    private fun configureGleanVersionResolution(project: Project) {
+        // Dependencies can't depend on a different major version of Glean than A-C itself.
+        val action = Action<AppliedPlugin> {
+            val versionCatalogs = project.extensions.getByType(VersionCatalogsExtension::class.java)
+            val libs = versionCatalogs.named("libs")
+            val gleanVersion = libs.findVersion("glean").get().requiredVersion
+
+            project.configurations.configureEach {
+                resolutionStrategy {
+                    eachDependency {
+                        if (requested.group == "org.mozilla.telemetry" && requested.name.contains("glean")) {
+                            val requestedMajor = requested.version?.split(".")?.firstOrNull()
+                            val definedMajor = gleanVersion.split(".").firstOrNull()
+                            // Check the major version
+                            if (requestedMajor != definedMajor) {
+                                throw AssertionError(
+                                    "Cannot resolve to a single Glean version. " +
+                                        "Requested: ${requested.version}, version catalog defines: $gleanVersion"
+                                )
+                            } else {
+                                // Enforce that all (transitive) dependencies are using the defined Glean version
+                                useVersion(gleanVersion)
+                            }
+                        }
+                    }
+                    capabilitiesResolution {
+                        withCapability("org.mozilla.telemetry:glean-native") {
+                            val toBeSelected = candidates.find {
+                                it.id is ModuleComponentIdentifier &&
+                                    (it.id as ModuleComponentIdentifier).module.contains("geckoview")
+                            }
+                            if (toBeSelected != null) {
+                                select(toBeSelected)
+                            }
+                            because("use GeckoView Glean instead of standalone Glean")
+                        }
+                    }
+                }
+            }
+        }
+        project.pluginManager.withPlugin("com.android.library", action)
+        project.pluginManager.withPlugin("com.android.application", action)
+    }
+
     companion object {
         private const val LOCAL_SNAPSHOT_VERSION = "0.0.1-SNAPSHOT-+"
         private val APP_SERVICES_GROUPS = setOf("org.mozilla.appservices", "org.mozilla.appservices.nightly")
         private val GLEAN_GROUPS = setOf("org.mozilla.telemetry")
+    }
+
+    private fun configureKtlint(project: Project, mozilla: ProjectExtension) {
+        val sourcePaths = mozilla.ktlintSourcePaths
+
+        val ktlintConfig = project.configurations.create("ktlint")
+
+        val ktlintDep = project.provider {
+            val versionCatalogs = project.extensions.getByType(VersionCatalogsExtension::class.java)
+            val libs = versionCatalogs.named("libs")
+            val dep = project.dependencies.create(libs.findLibrary("ktlint").get().get())
+            if (dep is ExternalModuleDependency) {
+                dep.attributes {
+                    attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling::class.java, Bundling.EXTERNAL))
+                }
+            }
+            dep
+        }
+        ktlintConfig.dependencies.addLater(ktlintDep)
+
+        project.tasks.register("ktlint", JavaExec::class.java) {
+            group = "verification"
+            description = "Check Kotlin code style."
+            classpath = ktlintConfig
+            mainClass.set("com.pinterest.ktlint.Main")
+            onlyIf { sourcePaths.get().isNotEmpty() }
+            sourcePaths.get().forEach { args(it) }
+            args("--reporter=json,output=build/reports/ktlint/ktlint.json")
+            args("--reporter=plain")
+        }
+
+        project.tasks.register("ktlintFormat", JavaExec::class.java) {
+            group = "formatting"
+            description = "Fix Kotlin code style deviations."
+            classpath = ktlintConfig
+            mainClass.set("com.pinterest.ktlint.Main")
+            onlyIf { sourcePaths.get().isNotEmpty() }
+            args("-F")
+            sourcePaths.get().forEach { args(it) }
+            args("--reporter=json,output=build/reports/ktlint/ktlintFormat.json")
+            args("--reporter=plain")
+            jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+        }
+    }
+
+    // Translates JUnit test events into Mozilla's TBPL-like textual format that Taskcluster
+    // log parsing expects. See also: testing/mozbase/mozlog/mozlog/formatters/tbplformatter.py
+    private fun configureTestOutputFormatting(project: Project) {
+        project.pluginManager.withPlugin("com.android.base") {
+            project.tasks.withType(Test::class.java).configureEach {
+                systemProperty("robolectric.logging", "stdout")
+                systemProperty("logging.test-mode", "true")
+                systemProperty("javax.net.ssl.trustStoreType", "JKS")
+
+                testLogging.events = emptySet()
+
+                val listener = MozillaTestOutputListener(logger)
+                addTestListener(listener)
+                addTestOutputListener(listener)
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun configurePackagingResourcesExcludes(project: Project) {
+        val action = Action<AppliedPlugin> {
+            val android = project.extensions.getByName("android")
+            val packagingOptions = android.javaClass.getMethod("getPackagingOptions").invoke(android)
+            val resources = packagingOptions.javaClass.getMethod("getResources").invoke(packagingOptions)
+            val excludes = resources.javaClass.getMethod("getExcludes").invoke(resources) as MutableSet<String>
+            excludes.addAll(listOf("META-INF/LICENSE.md", "META-INF/LICENSE-notice.md"))
+        }
+        project.pluginManager.withPlugin("com.android.library", action)
+        project.pluginManager.withPlugin("com.android.application", action)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun registerPrintVariantsTask(project: Project) {
+        project.pluginManager.withPlugin("com.android.application") {
+            val android = project.extensions.getByName("android")
+            val outputFile = project.file("build/printVariants.json")
+
+            project.tasks.register("printVariants") {
+                val variants = project.provider {
+                    val applicationVariants = android.javaClass
+                        .getMethod("getApplicationVariants").invoke(android) as Iterable<*>
+
+                    applicationVariants.map { variant ->
+                        val outputs = variant!!.javaClass
+                            .getMethod("getOutputs").invoke(variant) as Iterable<*>
+                        val buildType = variant.javaClass
+                            .getMethod("getBuildType").invoke(variant)
+                        val buildTypeName = buildType!!.javaClass
+                            .getMethod("getName").invoke(buildType) as String
+                        val variantName = variant.javaClass
+                            .getMethod("getName").invoke(variant) as String
+
+                        mapOf(
+                            "apks" to outputs.map { output ->
+                                val filterMethod = output!!.javaClass.getMethod(
+                                    "getFilter", String::class.java
+                                )
+                                val abi = filterMethod.invoke(output, "ABI") as String?
+                                    ?: "universal"
+                                val outputFileObj = output.javaClass
+                                    .getMethod("getOutputFile").invoke(output) as java.io.File
+                                mapOf(
+                                    "abi" to abi,
+                                    "fileName" to outputFileObj.name
+                                )
+                            },
+                            "build_type" to buildTypeName,
+                            "name" to variantName
+                        )
+                    }.toMutableList()
+                }
+
+                outputs.file(outputFile)
+
+                doLast {
+                    val variantsList = variants.get()
+                    variantsList.add(
+                        mapOf(
+                            "apks" to listOf(
+                                mapOf(
+                                    "abi" to "noarch",
+                                    "fileName" to "app-debug-androidTest.apk"
+                                )
+                            ),
+                            "build_type" to "androidTest",
+                            "name" to "androidTest"
+                        )
+                    )
+                    outputFile.parentFile.mkdirs()
+                    outputFile.writeText(groovy.json.JsonOutput.toJson(variantsList))
+                    logger.debug("Wrote variant info to $outputFile")
+                }
+            }
+        }
+    }
+}
+
+private class MozillaTestOutputListener(
+    private val taskLogger: Logger,
+) : TestListener, TestOutputListener {
+    override fun beforeSuite(suite: TestDescriptor) {
+        if (suite.className != null) {
+            println("\nSUITE: ${suite.className}")
+        }
+    }
+
+    override fun afterSuite(suite: TestDescriptor, result: TestResult) {}
+
+    override fun beforeTest(testDescriptor: TestDescriptor) {
+        println("  TEST: ${testDescriptor.name}")
+    }
+
+    override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {
+        when (result.resultType) {
+            TestResult.ResultType.SUCCESS -> println("  SUCCESS")
+            TestResult.ResultType.FAILURE -> {
+                val testId = "${testDescriptor.className}.${testDescriptor.name}"
+                println("  TEST-UNEXPECTED-FAIL | $testId | ${result.exception}")
+            }
+            TestResult.ResultType.SKIPPED -> println("  SKIPPED")
+        }
+        taskLogger.lifecycle("")
+    }
+
+    override fun onOutput(testDescriptor: TestDescriptor, outputEvent: TestOutputEvent) {
+        taskLogger.lifecycle("    ${outputEvent.message.trim()}")
     }
 }

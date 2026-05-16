@@ -303,14 +303,13 @@ add_task(async function test_special_message_actions() {
 });
 
 /**
- * Tests that clicking the dismiss button in the component's shadow DOM calls
- * handleDismiss (records DISMISS telemetry and hides the message) without
- * permanently blocking it.
+ * Tests that clicking the X button in the component's shadow DOM permanently
+ * blocks the message and records a DISMISS telemetry event.
  */
 add_task(async function test_dismiss_button_click() {
   let sandbox = sinon.createSandbox();
   sandbox.spy(AboutWelcomeTelemetry.prototype, "submitGleanPingForPing");
-  sandbox.spy(ASRouter, "blockMessageById");
+  sandbox.stub(ASRouter, "blockMessageById").returns(Promise.resolve());
 
   await withTestMessage(sandbox, gTestNewTabMessage, async () => {
     await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
@@ -332,6 +331,10 @@ add_task(async function test_dismiss_button_click() {
   });
 
   Assert.ok(
+    ASRouter.blockMessageById.calledWith(TEST_MESSAGE_ID),
+    "Clicking the X button permanently blocked the message."
+  );
+  Assert.ok(
     AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
       sinon.match({
         message_id: gTestNewTabMessage.id,
@@ -339,11 +342,7 @@ add_task(async function test_dismiss_button_click() {
         pingType: "newtab_message",
       })
     ),
-    "Clicking the dismiss button recorded a DISMISS telemetry event."
-  );
-  Assert.ok(
-    !ASRouter.blockMessageById.called,
-    "Clicking the dismiss button did not permanently block the message."
+    "Clicking the X button recorded a DISMISS telemetry event."
   );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   sandbox.restore();
@@ -533,6 +532,10 @@ add_task(async function test_secondary_button_dismiss() {
     "Clicking the secondary button with only dismiss: true did not trigger SpecialMessageActions."
   );
   Assert.ok(
+    !ASRouter.blockMessageById.called,
+    "Clicking the secondary button with dismiss: true did not permanently block the message."
+  );
+  Assert.ok(
     AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
       sinon.match({
         message_id: testMessage.id,
@@ -543,5 +546,112 @@ add_task(async function test_secondary_button_dismiss() {
     "Clicking the secondary button with dismiss: true recorded a DISMISS telemetry event."
   );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+/**
+ * Tests that clicking the secondary button with a BLOCK_MESSAGE action
+ * permanently blocks the message via SpecialMessageActions.
+ */
+add_task(async function test_secondary_button_block_message() {
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(SpecialMessageActions, "blockMessageById")
+    .returns(Promise.resolve());
+
+  const testMessage = {
+    ...gTestNewTabMessage,
+    content: {
+      ...gTestNewTabMessage.content,
+      secondaryButton: {
+        label: "No Thanks",
+        action: {
+          type: "BLOCK_MESSAGE",
+          data: { id: TEST_MESSAGE_ID },
+        },
+      },
+    },
+  };
+
+  await withTestMessage(sandbox, testMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector("asrouter-newtab-message");
+      }, "Found asrouter-newtab-message");
+
+      let msgEl = content.document.querySelector("asrouter-newtab-message");
+      let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+      let secondaryBtn = shadow.querySelector(
+        ".button-group moz-button[type='default']"
+      );
+      Assert.ok(secondaryBtn, "Found secondary button in shadow DOM");
+      secondaryBtn.click();
+    });
+  });
+
+  await TestUtils.waitForCondition(
+    () => SpecialMessageActions.blockMessageById.calledWith(TEST_MESSAGE_ID),
+    "Clicking the secondary button with BLOCK_MESSAGE permanently blocked the message."
+  );
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+/**
+ * Tests that the image property, when set to the empty string, causes the image
+ * element to not be rendered.
+ */
+add_task(async function test_image_is_optional() {
+  let sandbox = sinon.createSandbox();
+
+  await withTestMessage(sandbox, gTestNewTabMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(
+      gBrowser.selectedBrowser,
+      [gTestNewTabMessage.content.imageSrc],
+      async imageURL => {
+        await ContentTaskUtils.waitForCondition(() => {
+          return content.document.querySelector("asrouter-newtab-message");
+        }, "Found asrouter-newtab-message");
+
+        let msgEl = content.document.querySelector("asrouter-newtab-message");
+        let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+        let image = shadow.querySelector("img");
+        Assert.ok(image, "Found image in shadow DOM");
+        Assert.ok(ContentTaskUtils.isVisible(image), "Image is visible");
+        Assert.equal(
+          image.src,
+          imageURL,
+          "Image source was set to the right URL"
+        );
+      }
+    );
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  });
+
+  const testMessageNoImage = {
+    ...gTestNewTabMessage,
+    content: {
+      ...gTestNewTabMessage.content,
+      imageSrc: "",
+    },
+  };
+
+  await withTestMessage(sandbox, testMessageNoImage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector("asrouter-newtab-message");
+      }, "Found asrouter-newtab-message");
+
+      let msgEl = content.document.querySelector("asrouter-newtab-message");
+      let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+      let image = shadow.querySelector("img");
+      Assert.ok(!image, "No image in shadow DOM");
+    });
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  });
+
   sandbox.restore();
 });

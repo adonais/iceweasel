@@ -1252,7 +1252,6 @@ function prompt(aActor, aBrowser, aRequest) {
       // If we haven't handled the permission yet, we want to show the doorhanger.
       return false;
     },
-    queue: true,
   };
 
   function shouldShowAlwaysRemember() {
@@ -1715,12 +1714,7 @@ function maybeShowPopupNotificationInSidebar(
     "sidebar-webrtc-microphone-notification-icon",
     mainAction,
     secondaryActions,
-    {
-      ...options,
-      // Prevent dismissal when clicking outside the panel within the sidebar.
-      // Sidebar users may interact with sidebar content while the permission prompt is open.
-      queue: false,
-    }
+    options
   );
 
   notification.callID = aRequest.callID;

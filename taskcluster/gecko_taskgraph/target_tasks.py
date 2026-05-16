@@ -54,6 +54,7 @@ UNCOMMON_TRY_TASK_LABELS = [
     r"windows10-aarch64-qr",
     # Test tasks
     r"web-platform-tests.*backlog",  # hide wpt jobs that are not implemented yet - bug 1572820
+    r"-artifact[/-]",  # Artifact build test jobs - Bug 1945658
     r"-ccov",
     r"-profiling-",  # talos/raptor profiling jobs are run too often
     r"-32-.*-webgpu",  # webgpu gets little benefit from these tests.
@@ -65,6 +66,8 @@ UNCOMMON_TRY_TASK_LABELS = [
     r"nightly-simulation",
     # Can't actually run on try
     r"notarization",
+    # not usually needed
+    "upload-symbols",
 ]
 
 
@@ -1693,6 +1696,17 @@ def target_tasks_android_l10n_sync(full_task_graph, parameters, graph_config):
     return [l for l, t in full_task_graph.tasks.items() if l == "android-l10n-sync"]
 
 
+@register_target_task("android-l10n-sync-beta-to-release")
+def target_tasks_android_l10n_sync_beta_to_release(
+    full_task_graph, parameters, graph_config
+):
+    return [
+        l
+        for l, t in full_task_graph.tasks.items()
+        if l == "android-l10n-sync-beta-to-release"
+    ]
+
+
 @register_target_task("os-integration")
 def target_tasks_os_integration(full_task_graph, parameters, graph_config):
     candidate_attrs = load_yaml(os.path.join(TEST_CONFIGS, "os-integration.yml"))
@@ -1752,6 +1766,9 @@ def target_firefox_pull_requests(full_task_graph, parameters, graph_config):
 
     labels = []
     for label, task in full_task_graph.tasks.items():
+        if not standard_filter(task, parameters):
+            continue
+
         if task.attributes.get("code-review") or task.kind == "code-review":
             labels.append(label)
 

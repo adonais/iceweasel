@@ -17,7 +17,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
- * Convert ISO timestamp string to microseconds (moz_places format).
+ * Convert ISO timestamp string to microseconds (moz_places format / PRTime).
  *
  * @param {string|null} iso
  * @returns {number|null}
@@ -97,6 +97,174 @@ function buildHistoryRow(row, fromNode = false) {
     visitCount: visitCount || 0,
     relevanceScore: relevanceScore || 0, // Use embedding's distance as relevance score when available
   };
+}
+
+/**
+ * Hybrid merge of semantic + Places history search results using Reciprocal Rank Fusion (RRF).
+ *
+ * RRF combines multiple ranked result lists by assigning each entry a score
+ * based on its rank in each list:
+ *
+ *   score += 1 / (k + rank)
+ *
+ * where `rank` is the 1-based position in the list and `k` is a constant that
+ * dampens the impact of top-ranked results. Entries appearing in both lists
+ * accumulate higher scores.
+ *
+ * This implementation:
+ *   - Deduplicates results by URL.
+ *   - Accumulates RRF scores across semantic and Places history rankings.
+ *   - Merges missing metadata (title, visitDate, visitCount) from either source.
+ *   - Sorts by fused RRF score, then by recency (visitDate), then by visitCount.
+ *   - Returns at most `historyLimit` results with the fused score as relevanceScore.
+ *
+ * @param {HistoryRow[]} semanticRows - History entry results from semantic history search (ranked by distance).
+ * @param {HistoryRow[]} keywordRows - History entry results from Places history search (ranked by frecency).
+ * @param {number} historyLimit - Maximum number of history results to return.
+ * @param {number} [k=60] - RRF constant controlling rank influence (larger values reduce top-rank dominance).
+ * @returns {HistoryRow[]} - Fused, deduplicated, and ranked history results.
+ */
+function mergeHistoryResultsRRF(
+  semanticRows,
+  keywordRows,
+  historyLimit,
+  k = 60
+) {
+  const byUrl = new Map();
+
+  for (let i = 0; i < semanticRows.length; i++) {
+    const row = semanticRows[i];
+    if (!byUrl.has(row.url)) {
+      byUrl.set(row.url, { ...row, _rrf: 0 });
+    }
+    byUrl.get(row.url)._rrf += 1 / (k + i + 1);
+  }
+
+  for (let i = 0; i < keywordRows.length; i++) {
+    const row = keywordRows[i];
+    if (!byUrl.has(row.url)) {
+      byUrl.set(row.url, { ...row, _rrf: 0 });
+    }
+
+    const entry = byUrl.get(row.url);
+    entry._rrf += 1 / (k + i + 1);
+
+    // Prefer Places metadata when available, since Places is the source of truth.
+    if (row.title) {
+      entry.title = row.title;
+    }
+    if (row.visitDate) {
+      entry.visitDate = row.visitDate;
+    }
+    if (row.visitCount !== undefined && row.visitCount !== null) {
+      entry.visitCount = row.visitCount;
+    }
+  }
+
+  const entries = [...byUrl.values()];
+
+  for (const entry of entries) {
+    const ms = entry.visitDate ? new Date(entry.visitDate).getTime() : 0;
+    entry._visitMs = Number.isFinite(ms) ? ms : 0;
+  }
+
+  // Sort by fused RRF score first, then break ties by newer visitDate,
+  // then by higher visitCount.
+  entries.sort((a, b) => {
+    const rrfDiff = b._rrf - a._rrf;
+    if (rrfDiff !== 0) {
+      return rrfDiff;
+    }
+
+    if (b._visitMs !== a._visitMs) {
+      return b._visitMs - a._visitMs;
+    }
+
+    return (b.visitCount || 0) - (a.visitCount || 0);
+  });
+
+  return entries.slice(0, historyLimit).map(({ _rrf, _visitMs, ...row }) => ({
+    ...row,
+    relevanceScore: _rrf, // Final fused score for hybrid results
+  }));
+}
+
+/**
+ * Hybrid browsing history search using semantic search and Places history search.
+ *
+ * This runs semantic search and Places history search independently, then
+ * combines the two ranked result sets with Reciprocal Rank Fusion (RRF).
+ *
+ * If the fused results do not fill `historyLimit`, a domain-based fallback may
+ * add more results for broad category queries (e.g. "games", "news") where
+ * semantic embeddings over page titles are insufficient. This acts as a
+ * temporary heuristic and only fills remaining slots without overriding the
+ * fused ranking.
+ *
+ * @param {object} params
+ * @param {string} params.searchTerm
+ * @param {number|null} params.startTs
+ * @param {number|null} params.endTs
+ * @param {number} params.historyLimit
+ * @param {number} params.distanceThreshold
+ * @returns {Promise<HistoryRow[]>} - Fused, deduplicated, and ranked history results.
+ */
+async function searchBrowsingHistoryHybrid({
+  searchTerm,
+  startTs,
+  endTs,
+  historyLimit,
+  distanceThreshold,
+}) {
+  // Fetch deeper from both sources, then fuse down to historyLimit.
+  const hybridFetchLimit = Math.max(historyLimit * 3, 50);
+
+  const [semanticRows, keywordRows] = await Promise.all([
+    searchBrowsingHistorySemantic({
+      searchTerm,
+      startTs,
+      endTs,
+      historyLimit: hybridFetchLimit,
+      distanceThreshold,
+    }),
+    searchBrowsingHistoryBasic({
+      searchTerm,
+      startTs,
+      endTs,
+      historyLimit: hybridFetchLimit,
+    }),
+  ]);
+
+  let rows = mergeHistoryResultsRRF(semanticRows, keywordRows, historyLimit);
+
+  // Domain fallback for general-category queries (games, movies, news, etc.)
+  // Keep hybrid ranking primary, only top-up if we have room.
+  if (rows.length < historyLimit) {
+    const domains =
+      lazy.SearchBrowsingHistoryDomainBoost.matchDomains(searchTerm);
+    if (domains?.length) {
+      const semanticManager = lazy.getPlacesSemanticHistoryManager();
+      let conn = await semanticManager.getConnection();
+
+      const domainRows =
+        await lazy.SearchBrowsingHistoryDomainBoost.searchByDomains({
+          conn,
+          domains,
+          startTs,
+          endTs,
+          historyLimit: Math.max(historyLimit * 2, 200), // extra for dedupe
+          buildHistoryRow,
+        });
+
+      return lazy.SearchBrowsingHistoryDomainBoost.mergeDedupe(
+        rows,
+        domainRows,
+        historyLimit
+      );
+    }
+  }
+
+  return rows;
 }
 
 /**
@@ -202,11 +370,11 @@ function extractVectorFromTensor(tensor) {
  *
  * This performs a two-stage retrieval for performance:
  * 1. Coarse search: over the quantized embeddings (`embedding_coarse`) to
- *    quickly select up to 100 candidate rows. This hard limit keeps the
- *    expensive cosine-distance computation bounded.
- * 2. Refined search: computes the exact cosine distance for those candidates
- *    and applies the caller-provided `historyLimit` and `distanceThreshold`
- *    filters.
+ *    quickly select a dynamically sized candidate set (`coarseLimit`).
+ *    This bounds the expensive cosine-distance computation.
+ * 2. Refined search: computes the exact cosine distance for those candidates,
+ *    applies the caller-provided `distanceThreshold`, and returns the best
+ *    matches up to `historyLimit`.
  *
  * @param {object} params
  * @param {string} params.searchTerm
@@ -214,7 +382,7 @@ function extractVectorFromTensor(tensor) {
  * @param {number|null} params.endTs
  * @param {number} params.historyLimit
  * @param {number} params.distanceThreshold
- * @returns {Promise<HistoryRow[]>}
+ * @returns {Promise<HistoryRow[]>} - Semantic history search results ranked by distance.
  */
 async function searchBrowsingHistorySemantic({
   searchTerm,
@@ -231,6 +399,9 @@ async function searchBrowsingHistorySemantic({
   const vec = extractVectorFromTensor(tensor);
   const vector = lazy.PlacesUtils.tensorToSQLBindable(vec);
 
+  // Coarse-stage candidate pool (dynamic)
+  const coarseLimit = Math.max(historyLimit * 15, 200);
+
   let conn = await semanticManager.getConnection();
   const results = await conn.executeCached(
     `
@@ -240,7 +411,7 @@ async function searchBrowsingHistorySemantic({
       FROM vec_history
       WHERE embedding_coarse match vec_quantize_binary(:vector)
       ORDER BY distance
-      LIMIT 100
+      LIMIT :coarseLimit
     ),
     matches AS (
       SELECT url_hash, vec_distance_cosine(embedding, :vector) AS distance
@@ -268,6 +439,7 @@ async function searchBrowsingHistorySemantic({
       vector,
       distanceThreshold,
       limit: historyLimit,
+      coarseLimit,
       startTs,
       endTs,
     }
@@ -278,42 +450,25 @@ async function searchBrowsingHistorySemantic({
     rows.push(buildHistoryRow(row));
   }
 
-  // Domain fallback for general-category queries (games, movies, news, etc.)
-  // Keep semantic ranking primary, only top-up if we have room.
-  if (rows.length < historyLimit) {
-    const domains =
-      lazy.SearchBrowsingHistoryDomainBoost.matchDomains(searchTerm);
-    if (domains?.length) {
-      const domainRows =
-        await lazy.SearchBrowsingHistoryDomainBoost.searchByDomains({
-          conn,
-          domains,
-          startTs,
-          endTs,
-          historyLimit: Math.max(historyLimit * 2, 200), // extra for dedupe
-          buildHistoryRow,
-        });
-
-      return lazy.SearchBrowsingHistoryDomainBoost.mergeDedupe(
-        rows,
-        domainRows,
-        historyLimit
-      );
-    }
-  }
-
   return rows;
 }
 
 /**
- * Browsing history search using the default history search.
+ * Browsing history search using the default Places history search.
  *
  * @param {object} params
  * @param {string} params.searchTerm
+ * @param {number|null} params.startTs
+ * @param {number|null} params.endTs
  * @param {number} params.historyLimit
  * @returns {Promise<HistoryRow[]>}
  */
-async function searchBrowsingHistoryBasic({ searchTerm, historyLimit }) {
+async function searchBrowsingHistoryBasic({
+  searchTerm,
+  startTs = null,
+  endTs = null,
+  historyLimit,
+}) {
   let root;
   let openedRoot = false;
 
@@ -324,6 +479,16 @@ async function searchBrowsingHistoryBasic({ searchTerm, historyLimit }) {
 
     // Use Places' built-in text filtering
     query.searchTerms = searchTerm;
+
+    // Add time range filter
+    if (startTs !== null) {
+      query.beginTime = startTs;
+      query.beginTimeReference = Ci.nsINavHistoryQuery.TIME_RELATIVE_EPOCH;
+    }
+    if (endTs !== null) {
+      query.endTime = endTs;
+      query.endTimeReference = Ci.nsINavHistoryQuery.TIME_RELATIVE_EPOCH;
+    }
 
     // Simple URI results, ranked by frecency
     opts.resultType = Ci.nsINavHistoryQueryOptions.RESULTS_AS_URI;
@@ -366,19 +531,19 @@ async function searchBrowsingHistoryBasic({ searchTerm, historyLimit }) {
  */
 
 /**
- * Searches browser history using semantic search when possible, otherwise basic
- * text search or time-range filtering.
+ * Searches browser history using hybrid semantic search when possible,
+ * otherwise Places history search or time-range filtering.
  *
  * Rules:
  *   - Empty searchTerm: time-range search (if start/end given) or recent history.
- *   - Non-empty searchTerm: semantic search when available, otherwise basic text
- *     search (ignore time filtering).
+ *   - Non-empty searchTerm: hybrid semantic + Places history search when available,
+ *     otherwise Places history search with time filtering.
  *
  * @param {object} params
  *  The search parameters.
  * @param {string} params.searchTerm
- *  The search string. If null or empty, semantic search is skipped and
- *  results are filtered by time range and sorted by last_visit_date and frecency.
+ *  The search string. If null or empty, text search is skipped and results are
+ *  filtered by time range and sorted by last_visit_date and frecency.
  * @param {string|null} params.startTs
  *  Optional local ISO-8601 start timestamp (e.g. "2025-11-07T09:00:00").
  * @param {string|null} params.endTs
@@ -400,7 +565,7 @@ export async function searchBrowsingHistory({
   let rows = [];
 
   try {
-    // Convert ISO timestamp strings to microseconds to match the format used in moz_places
+    // Convert ISO timestamp strings to microseconds to match the format used in moz_places / PRTime
     const startUs = isoToMicroseconds(startTs);
     const endUs = isoToMicroseconds(endTs);
 
@@ -425,8 +590,8 @@ export async function searchBrowsingHistory({
         historyLimit,
       });
     } else if (canUseSemantic) {
-      // Semantic search
-      rows = await searchBrowsingHistorySemantic({
+      // Hybrid search: semantic + Places history search
+      rows = await searchBrowsingHistoryHybrid({
         searchTerm,
         startTs: startUs,
         endTs: endUs,
@@ -434,9 +599,11 @@ export async function searchBrowsingHistory({
         distanceThreshold,
       });
     } else {
-      // Fallback to basic search without time window if semantic search not enable or insufficient records.
+      // Fallback to Places history search with time window if semantic search is not enabled or insufficient records.
       rows = await searchBrowsingHistoryBasic({
         searchTerm,
+        startTs: startUs,
+        endTs: endUs,
         historyLimit,
       });
     }

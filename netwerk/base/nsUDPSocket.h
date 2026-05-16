@@ -6,6 +6,7 @@
 #define nsUDPSocket_h_
 
 #include "nsIUDPSocket.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/net/DNS.h"
 #include "nsIOutputStream.h"
@@ -70,7 +71,7 @@ class nsUDPSocket final : public nsASocketHandler, public nsIUDPSocket {
   nsCOMPtr<nsIUDPSocketListener> mListener;
   nsCOMPtr<nsIUDPSocketSyncListener> mSyncListener;
   nsCOMPtr<nsIEventTarget> mListenerTarget;
-  bool mAttached{false};
+  Atomic<bool, ReleaseAcquire> mAttached{false};
   RefPtr<nsSocketTransportService> mSts;
 
   uint64_t mByteReadCount{0};

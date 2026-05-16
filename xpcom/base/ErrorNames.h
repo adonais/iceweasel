@@ -24,4 +24,7 @@ const char* GetStaticErrorName(nsresult rv);
 
 }  // namespace mozilla
 
+// Same as calling GetErrorName, but more convenient for {fmt}.
+nsCString format_as(nsresult rv);
+
 #endif  // mozilla_ErrorNames_h

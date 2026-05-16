@@ -8,7 +8,7 @@
 
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::derives::*;
-use crate::dom::TElement;
+use crate::dom::{AttributeTracker, TElement};
 use crate::logical_geometry::{LogicalSize, WritingMode};
 use crate::parser::ParserContext;
 use crate::properties::ComputedValues;
@@ -29,16 +29,9 @@ use euclid::default::Size2D;
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use selectors::kleene_value::KleeneValue;
 use servo_arc::Arc;
-use smallvec::SmallVec;
 use std::fmt::{self, Write};
+use style_traits::arc_slice::ArcSlice;
 use style_traits::{CssStringWriter, CssWriter, ParseError, StyleParseErrorKind, ToCss};
-
-/// Contains all container conditions for a container rule.
-///
-/// https://drafts.csswg.org/css-conditional-5/#container-rule
-#[derive(Clone, Debug, ToCss, ToShmem)]
-#[css(comma)]
-pub struct ContainerConditions(#[css(iterable)] pub SmallVec<[Arc<ContainerCondition>; 1]>);
 
 /// A container rule.
 #[derive(Debug, ToShmem)]
@@ -52,26 +45,6 @@ pub struct ContainerRule {
 }
 
 impl ContainerRule {
-    /// Returns the query condition, if any.
-    ///
-    /// This currently only returns the query condition for the first condition.
-    /// The spec is currently incomplete on how this should be handled.
-    /// https://github.com/w3c/csswg-drafts/issues/10845
-    pub fn query_condition(&self) -> Option<&QueryCondition> {
-        debug_assert_eq!(self.conditions.0.len(), 1);
-        self.conditions.0[0].condition.as_ref()
-    }
-
-    /// Returns the query name filter.
-    ///
-    /// This currently only returns the container name for the first condition.
-    /// The spec is currently incomplete on how this should be handled.
-    /// https://github.com/w3c/csswg-drafts/issues/10845
-    pub fn container_name(&self) -> &ContainerName {
-        debug_assert_eq!(self.conditions.0.len(), 1);
-        &self.conditions.0[0].name
-    }
-
     /// Measure heap usage.
     #[cfg(feature = "gecko")]
     pub fn size_of(&self, guard: &SharedRwLockReadGuard, ops: &mut MallocSizeOfOps) -> usize {
@@ -102,6 +75,13 @@ impl ToCssWithGuard for ContainerRule {
         self.rules.read_with(guard).to_css_block(guard, dest)
     }
 }
+
+/// Contains all container conditions for a container rule.
+///
+/// https://drafts.csswg.org/css-conditional-5/#container-rule
+#[derive(Clone, Debug, ToCss, ToShmem)]
+#[css(comma)]
+pub struct ContainerConditions(#[css(iterable)] pub ArcSlice<ContainerCondition>);
 
 /// A container condition and filter, combined.
 #[derive(Debug, ToShmem, ToCss)]
@@ -173,6 +153,16 @@ where
 }
 
 impl ContainerCondition {
+    /// Get the name of this condition.
+    #[inline]
+    pub fn name(&self) -> &ContainerName {
+        &self.name
+    }
+    /// Get the query condition of this condition
+    #[inline]
+    pub fn query_condition(&self) -> Option<&QueryCondition> {
+        self.condition.as_ref()
+    }
     /// Parse a container condition.
     pub fn parse<'a>(
         context: &ParserContext,
@@ -276,7 +266,7 @@ impl ContainerCondition {
     }
 
     /// Tries to match a container query condition for a given element.
-    pub(crate) fn matches<E>(
+    pub fn matches<E>(
         &self,
         stylist: &Stylist,
         element: E,
@@ -295,6 +285,14 @@ impl ContainerCondition {
                 return KleeneValue::from(result.is_some());
             },
         };
+        // We have to tag the invalidation flags here because style container
+        // query matching may return early if we cannot find a suitable
+        // container element right now. However, we must also consider the case
+        // when an ancestor becomes a container and we have to invalidate this
+        // element from not matching to matching.
+        if self.flags.contains(FeatureFlags::STYLE) {
+            invalidation_flags.insert(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY);
+        }
         let (container, info) = match result {
             Some(r) => (r.element, (r.info, r.style)),
             None => {
@@ -308,22 +306,24 @@ impl ContainerCondition {
         let size_query_container_lookup = ContainerSizeQuery::for_element(
             container, /* known_parent_style = */ None, /* is_pseudo = */ false,
         );
+        let mut attribute_tracker = AttributeTracker::new(&container);
         Context::for_container_query_evaluation(
             stylist.device(),
             Some(stylist),
             Some(info),
             size_query_container_lookup,
             |context| {
-                let matches = condition.matches(context, &mut CustomMediaEvaluator::none());
+                let matches = condition.matches(
+                    context,
+                    &mut CustomMediaEvaluator::none(),
+                    &mut attribute_tracker,
+                );
                 let flags = context.style().flags();
                 if flags.contains(ComputedValueFlags::USES_VIEWPORT_UNITS) {
                     // TODO(emilio): Might need something similar to improve
                     // invalidation of font relative container-query lengths.
                     invalidation_flags
                         .insert(ComputedValueFlags::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES);
-                }
-                if flags.contains(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY) {
-                    invalidation_flags.insert(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY);
                 }
                 matches
             },

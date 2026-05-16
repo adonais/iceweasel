@@ -1,4 +1,3 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -20,6 +19,7 @@
 #include "mozilla/IOInterposer.h"
 #include "mozilla/ipc/UtilityProcessChild.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PreferenceSheet.h"
 #include "mozilla/Printf.h"
@@ -54,6 +54,8 @@
 
 #ifdef XP_MACOSX
 #  include "nsVersionComparator.h"
+#  include "nsCocoaFeatures.h"
+#  include "mozilla/glean/WidgetCocoaMetrics.h"
 #  include "MacLaunchHelper.h"
 #  include "MacApplicationDelegate.h"
 #  include "MacAutoreleasePool.h"
@@ -145,9 +147,9 @@
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
+#  include "mozilla/a11y/Platform.h"
 #  if defined(XP_WIN)
 #    include "mozilla/a11y/Compatibility.h"
-#    include "mozilla/a11y/Platform.h"
 #  endif
 #endif
 
@@ -1426,25 +1428,22 @@ nsXULAppInfo::GetAccessibilityEnabled(bool* aResult) {
 
 NS_IMETHODIMP
 nsXULAppInfo::GetAccessibilityInstantiator(nsAString& aInstantiator) {
-#if defined(ACCESSIBILITY) && defined(XP_WIN)
-  if (!GetAccService()) {
-    aInstantiator.Truncate();
-    return NS_OK;
-  }
-  nsAutoString ipClientInfo;
-  a11y::Compatibility::GetHumanReadableConsumersStr(ipClientInfo);
-  aInstantiator.Append(ipClientInfo);
-  aInstantiator.AppendLiteral("|");
-
-  nsCOMPtr<nsIFile> oopClientExe;
-  if (a11y::GetInstantiator(getter_AddRefs(oopClientExe))) {
-    nsAutoString oopClientInfo;
-    if (NS_SUCCEEDED(oopClientExe->GetPath(oopClientInfo))) {
-      aInstantiator.Append(oopClientInfo);
-    }
-  }
-#else
   aInstantiator.Truncate();
+#if defined(ACCESSIBILITY)
+  if (GetAccService()) {
+    a11y::GetHumanReadableInstantiatorStr(aInstantiator);
+#  if defined(XP_WIN)
+    aInstantiator.AppendLiteral("|");
+
+    nsCOMPtr<nsIFile> oopClientExe;
+    if (a11y::GetInstantiator(getter_AddRefs(oopClientExe))) {
+      nsAutoString oopClientInfo;
+      if (NS_SUCCEEDED(oopClientExe->GetPath(oopClientInfo))) {
+        aInstantiator.Append(oopClientInfo);
+      }
+    }
+#  endif
+  }
 #endif
   return NS_OK;
 }
@@ -2289,6 +2288,9 @@ static void SetupAlteredPrefetchPref() {
                                 PREF_WIN_ALTERED_DLL_PREFETCH);
 }
 
+static LazyLogModule gSkeletonLog("PreXULSkeletonUI");
+#  define SKELETON_LOG(str, ...) \
+    MOZ_LOG(gSkeletonLog, LogLevel::Debug, (str, ##__VA_ARGS__))
 static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
   (void)aPref;
   (void)aData;
@@ -2296,11 +2298,20 @@ static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
   RefPtr<nsToolkitProfileService> mProfileSvc;
   mProfileSvc = NS_GetToolkitProfileService();
 
-  bool shouldBeEnabled =
-      !mProfileSvc->HasShowProfileSelector() &&
-      Preferences::GetBool(kPrefPreXulSkeletonUI, false) &&
-      Preferences::GetBool(kPrefBrowserStartupBlankWindow, false) &&
-      LookAndFeel::DrawInTitlebar();
+  bool hasShowProfileSelector = mProfileSvc->HasShowProfileSelector();
+  bool skeletonUIPref = StaticPrefs::browser_startup_preXulSkeletonUI();
+  bool startupBlankWindowPref = StaticPrefs::browser_startup_blankWindow();
+  bool drawInTitlebar = LookAndFeel::DrawInTitlebar();
+  SKELETON_LOG(
+      "ReflectSkeletonUIPrefToRegistry: hasShowProfileSelector %d, "
+      "skeletonUIPref %d, startupBlankWindowPref %d, drawInTitlebar %d",
+      hasShowProfileSelector ? 1 : 0, skeletonUIPref ? 1 : 0,
+      startupBlankWindowPref ? 1 : 0, drawInTitlebar ? 1 : 0);
+
+  bool shouldBeEnabled = !hasShowProfileSelector && skeletonUIPref &&
+                         startupBlankWindowPref && drawInTitlebar;
+  SKELETON_LOG("ReflectSkeletonUIPrefToRegistry: shouldBeEnabled %d",
+               shouldBeEnabled ? 1 : 0);
   if (shouldBeEnabled && Preferences::HasUserValue(kPrefThemeId)) {
     nsCString themeId;
     Preferences::GetCString(kPrefThemeId, themeId);
@@ -2311,16 +2322,25 @@ static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
     } else if (themeId.EqualsLiteral("firefox-compact-light@mozilla.org")) {
       (void)SetPreXULSkeletonUIThemeId(ThemeMode::Light);
     } else {
+      SKELETON_LOG(
+          "ReflectSkeletonUIPrefToRegistry: clearing shouldBeEnabled "
+          "because of bad themeId %s",
+          themeId.get());
       shouldBeEnabled = false;
     }
   } else if (shouldBeEnabled) {
     (void)SetPreXULSkeletonUIThemeId(ThemeMode::Default);
   }
 
+  SKELETON_LOG(
+      "ReflectSkeletonUIPrefToRegistry: old enabled %d, new enabled "
+      "%d",
+      GetPreXULSkeletonUIEnabled() ? 1 : 0, shouldBeEnabled ? 1 : 0);
   if (GetPreXULSkeletonUIEnabled() != shouldBeEnabled) {
     (void)SetPreXULSkeletonUIEnabledIfAllowed(shouldBeEnabled);
   }
 }
+#  undef SKELETON_LOG
 
 class ShowProfileSelectorObserver final : public nsIObserver {
  public:
@@ -2692,7 +2712,7 @@ static nsresult ProfileMissingDialog(nsINativeAppSupport* aNative) {
 
     nsCOMPtr<nsIStringBundle> sb;
     sbs->CreateBundle(kProfileProperties, getter_AddRefs(sb));
-    NS_ENSURE_TRUE_LOG(sbs, NS_ERROR_FAILURE);
+    NS_ENSURE_TRUE_LOG(sb, NS_ERROR_FAILURE);
 
     NS_ConvertUTF8toUTF16 appName(gAppData->name);
     AutoTArray<nsString, 2> params = {appName, appName};
@@ -4252,6 +4272,11 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
   xreBinDirectory = mDirProvider.GetGREBinDir();
 
   if ((mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER) &&
+      NS_FAILED(CrashReporter::OOPInit(xreBinDirectory))) {
+    NS_WARNING("Could not launch the crash helper");
+  }
+
+  if ((mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER) &&
       NS_SUCCEEDED(CrashReporter::SetExceptionHandler(xreBinDirectory))) {
     nsCOMPtr<nsIFile> file;
     rv = nsXREDirProvider::GetUserAppDataDirectory(getter_AddRefs(file));
@@ -5384,6 +5409,13 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
   CrashReporter::RecordAnnotationBool(
       CrashReporter::Annotation::StartupCacheValid, cachesOK && versionOK);
 
+#ifdef XP_MACOSX
+  static bool status = nsCocoaFeatures::ProcessIsRosettaTranslated();
+  CrashReporter::RecordAnnotationBool(CrashReporter::Annotation::RosettaStatus,
+                                      status);
+  mozilla::glean::widget::rosetta_status.Set(status);
+#endif
+
   // Every time a profile is loaded by a build with a different version,
   // it updates the compatibility.ini file saying what version last wrote
   // the fastload caches.  On subsequent launches if the version matches,
@@ -6153,8 +6185,11 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   // detect hangs -- they show up as crashes.  We do this as late as possible.
   // In particular, after ProcessRuntime is destroyed on Windows.
   auto unsetExceptionHandler = MakeScopeExit([&] {
-    if (mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER)
-      return CrashReporter::UnsetExceptionHandler();
+    if (mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER) {
+      nsresult rv = CrashReporter::UnsetExceptionHandler();
+      CrashReporter::OOPDeinit();
+      return rv;
+    }
     return NS_OK;
   });
 

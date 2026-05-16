@@ -1,6 +1,13 @@
 .logo-and-wordmark-wrapper {
   // Override default h1 margins
   margin-block: 0;
+
+  .nova-enabled .content & {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+  }
+
 }
 
 .logo-and-wordmark {
@@ -9,17 +16,26 @@
 
   // @nova-cleanup(remove-conditional): Make default behavior, remove .nova-enabled selector
   .nova-enabled & {
+    justify-content: flex-start;
+
     .wordmark {
       display: none;
     }
 
-    @include at-outer-grid-cols(6) {
+    @include at-outer-grid-cols(8) {
       width: max-content;
 
       .wordmark {
         display: inline-block;
       }
     }
+  }
+
+  .nova-enabled .content & {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
   }
 
   align-items: center;

@@ -4,9 +4,9 @@
 
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 
+#include "ReadableByteStreamControllerAbstract.h"
 #include "StreamUtils.h"
 #include "js/experimental/TypedData.h"
-#include "mozilla/dom/ReadableByteStreamController.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
@@ -242,6 +242,12 @@ InputToReadableStreamAlgorithms::InputToReadableStreamAlgorithms(
       mInput(new InputStreamHolder(aStream->GetParentObject(), this, aInput)),
       mStream(aStream) {
   mInput->Init(aCx);
+}
+
+InputToReadableStreamAlgorithms::~InputToReadableStreamAlgorithms() {
+  if (mInput) {
+    mInput->Shutdown();
+  }
 }
 
 already_AddRefed<Promise> InputToReadableStreamAlgorithms::PullCallbackImpl(

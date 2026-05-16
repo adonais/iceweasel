@@ -485,6 +485,21 @@ mozilla::pkix::Result DoOCSPRequest(
   return Success;
 }
 
+// Helper struct to simplify thread coordination in `ShowProtectedAuthPrompt`.
+struct BackgroundPromptStatus final {
+  explicit BackgroundPromptStatus(PK11SlotInfo* slot)
+      : mSlot(slot), mDone(false), mResult(SECFailure) {}
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BackgroundPromptStatus)
+
+  UniquePK11SlotInfo mSlot;
+  Atomic<bool> mDone;
+  SECStatus mResult;
+
+ private:
+  ~BackgroundPromptStatus() = default;
+};
+
 static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot, nsIPrompt* prompt) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(slot);
@@ -495,12 +510,13 @@ static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot, nsIPrompt* prompt) {
 
   // Dispatch a background task to (eventually) call C_Login. The call will
   // block until the protected authentication succeeds or fails.
-  Atomic<bool> done;
-  Atomic<SECStatus> result;
-  nsresult rv =
-      NS_DispatchBackgroundTask(NS_NewRunnableFunction(__func__, [&]() mutable {
-        result = PK11_CheckUserPassword(slot, nullptr);
-        done = true;
+  RefPtr<BackgroundPromptStatus> backgroundPromptStatus(
+      new BackgroundPromptStatus(PK11_ReferenceSlot(slot)));
+  nsresult rv = NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(__func__, [backgroundPromptStatus]() mutable {
+        backgroundPromptStatus->mResult = PK11_CheckUserPassword(
+            backgroundPromptStatus->mSlot.get(), nullptr);
+        backgroundPromptStatus->mDone = true;
       }));
   if (NS_FAILED(rv)) {
     return nullptr;
@@ -523,15 +539,23 @@ static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot, nsIPrompt* prompt) {
   if (NS_FAILED(errorResult.StealNSResult())) {
     return nullptr;
   }
+
+  // The idea here is to dispatch the background task before showing the
+  // (synchronous) alert, so that the browser is telling the user what to do
+  // while waiting for the protected authentication (if the alert were shown
+  // before dispatching the task, the user would have to dismiss it first).
   rv = prompt->Alert(nullptr, NS_ConvertUTF8toUTF16(promptString).get());
   if (NS_FAILED(rv)) {
     return nullptr;
   }
 
+  // Spin the event loop until the background task has completed.
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
-      "ShowProtectedAuthPrompt"_ns, [&]() { return static_cast<bool>(done); }));
+      "ShowProtectedAuthPrompt"_ns, [backgroundPromptStatus]() {
+        return static_cast<bool>(backgroundPromptStatus->mDone);
+      }));
 
-  switch (result) {
+  switch (backgroundPromptStatus->mResult) {
     case SECSuccess:
       return ToNewCString(nsDependentCString(PK11_PW_AUTHENTICATED));
     case SECWouldBlock:
@@ -1141,18 +1165,4 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
 
   infoObject->NoteTimeUntilReady();
   infoObject->SetHandshakeCompleted();
-}
-
-void SecretCallback(PRFileDesc* fd, PRUint16 epoch, SSLSecretDirection dir,
-                    PK11SymKey* secret, void* arg) {
-  // arg must be set to an NSSSocketControl* in SSL_SecretCallback
-  MOZ_ASSERT(arg);
-  NSSSocketControl* infoObject = (NSSSocketControl*)arg;
-  if (epoch == 2 && dir == ssl_secret_read) {
-    // |secret| is the server_handshake_traffic_secret. Set a flag to indicate
-    // that the Server Hello has been processed successfully. We use this when
-    // deciding whether to retry a connection in which an mlkem768x25519 share
-    // was sent.
-    infoObject->SetHasTls13HandshakeSecrets();
-  }
 }

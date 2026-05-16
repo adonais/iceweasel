@@ -1027,6 +1027,10 @@ static inline void chroma_check(AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
   const YV12_BUFFER_CONFIG *yv12_alt = get_ref_frame_yv12_buf(cm, ALTREF_FRAME);
   const struct scale_factors *const sf =
       get_ref_scale_factors_const(cm, LAST_FRAME);
+  const struct scale_factors *const sf_g =
+      get_ref_scale_factors_const(cm, GOLDEN_FRAME);
+  const struct scale_factors *const sf_alt =
+      get_ref_scale_factors_const(cm, ALTREF_FRAME);
   struct buf_2d dst;
   unsigned int uv_sad_g = 0;
   unsigned int uv_sad_alt = 0;
@@ -1063,7 +1067,7 @@ static inline void chroma_check(AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
         uint8_t *src = (plane == 1) ? yv12_g->u_buffer : yv12_g->v_buffer;
         setup_pred_plane(&dst, xd->mi[0]->bsize, src, yv12_g->uv_crop_width,
                          yv12_g->uv_crop_height, yv12_g->uv_stride, xd->mi_row,
-                         xd->mi_col, sf, xd->plane[plane].subsampling_x,
+                         xd->mi_col, sf_g, xd->plane[plane].subsampling_x,
                          xd->plane[plane].subsampling_y);
         uv_sad_g = cpi->ppi->fn_ptr[bs].sdf(p->src.buf, p->src.stride, dst.buf,
                                             dst.stride);
@@ -1074,7 +1078,7 @@ static inline void chroma_check(AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
         uint8_t *src = (plane == 1) ? yv12_alt->u_buffer : yv12_alt->v_buffer;
         setup_pred_plane(&dst, xd->mi[0]->bsize, src, yv12_alt->uv_crop_width,
                          yv12_alt->uv_crop_height, yv12_alt->uv_stride,
-                         xd->mi_row, xd->mi_col, sf,
+                         xd->mi_row, xd->mi_col, sf_alt,
                          xd->plane[plane].subsampling_x,
                          xd->plane[plane].subsampling_y);
         uv_sad_alt = cpi->ppi->fn_ptr[bs].sdf(p->src.buf, p->src.stride,
@@ -1336,10 +1340,8 @@ static void do_int_pro_motion_estimation(AV1_COMP *cpi, MACROBLOCK *x,
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mi = xd->mi[0];
   const int is_screen = cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN;
-  const int increase_col_sw = source_sad_nonrd > kMedSad &&
-                              !cpi->rc.high_motion_content_screen_rtc &&
-                              (cpi->svc.temporal_layer_id == 0 ||
-                               cpi->rc.num_col_blscroll_last_tl0 > 2);
+  const int increase_col_sw =
+      source_sad_nonrd > kMedSad && !cpi->rc.high_motion_content_screen_rtc;
   int me_search_size_col = is_screen
                                ? increase_col_sw ? 512 : 96
                                : block_size_wide[cm->seq_params->sb_size] >> 1;
@@ -1348,15 +1350,14 @@ static void do_int_pro_motion_estimation(AV1_COMP *cpi, MACROBLOCK *x,
   int me_search_size_row = is_screen
                                ? source_sad_nonrd > kMedSad ? 512 : 192
                                : block_size_high[cm->seq_params->sb_size] >> 1;
-  if (cm->width * cm->height >= 3840 * 2160 &&
-      cpi->svc.temporal_layer_id == 0 && cpi->svc.number_temporal_layers > 1) {
+  if (cm->width * cm->height >= 3840 * 2160) {
     me_search_size_row = me_search_size_row << 1;
     me_search_size_col = me_search_size_col << 1;
   }
   unsigned int y_sad_zero;
   *y_sad = av1_int_pro_motion_estimation(
       cpi, x, cm->seq_params->sb_size, mi_row, mi_col, &kZeroMv, &y_sad_zero,
-      me_search_size_col, me_search_size_row);
+      me_search_size_col, me_search_size_row, 1);
   // The logic below selects whether the motion estimated in the
   // int_pro_motion() will be used in nonrd_pickmode. Only do this
   // for screen for now.

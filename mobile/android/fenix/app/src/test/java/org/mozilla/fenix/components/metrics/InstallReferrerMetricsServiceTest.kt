@@ -19,7 +19,7 @@ internal class InstallReferrerMetricsServiceTest {
     @Test
     fun `WHEN Install referrer metrics service should track is called THEN it should always return false`() {
         val service = InstallReferrerMetricsService(context)
-        assertFalse(service.shouldTrack(Event.GrowthData.FirstAppOpenForDay))
+        assertFalse(service.shouldTrack(Event.GrowthData.ConversionEvent2))
     }
 
     @Test

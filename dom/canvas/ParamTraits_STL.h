@@ -6,6 +6,7 @@
 #define MOZILLA_PARAMTRAITS_STL_H
 
 #include "ipc/IPCMessageUtils.h"
+#include "mozilla/IntegerRange.h"
 
 namespace IPC {
 

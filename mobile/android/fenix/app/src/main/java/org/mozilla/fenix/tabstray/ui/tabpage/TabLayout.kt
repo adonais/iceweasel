@@ -8,6 +8,8 @@ import android.content.res.Configuration
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
@@ -38,7 +41,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,13 +52,15 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
+import mozilla.components.compose.base.modifier.thenConditional
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.tabgroups.TabGroupCard
@@ -73,7 +80,10 @@ import org.mozilla.fenix.tabstray.ui.tabitems.TabListTabItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
+import org.mozilla.fenix.tabstray.ui.tabitems.tabItemBorderFocused
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.ThemedValue
+import org.mozilla.fenix.theme.ThemedValueProvider
 import kotlin.math.max
 
 // Key for the span item at the bottom of the tray, used to make the item not reorderable.
@@ -98,23 +108,25 @@ private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 5
 
 private val TabListPadding = 16.dp
 private val TabListItemCornerRadius = 12.dp
-private val TabListCornerShape = RoundedCornerShape(
-    topStart = TabListItemCornerRadius,
-    topEnd = TabListItemCornerRadius,
-    bottomStart = TabListItemCornerRadius,
-    bottomEnd = TabListItemCornerRadius,
-)
 private val TabListLastItemShape = RoundedCornerShape(
     bottomStart = TabListItemCornerRadius,
     bottomEnd = TabListItemCornerRadius,
 )
+
+private val TabListFirstItemShape = RoundedCornerShape(
+    topStart = TabListItemCornerRadius,
+    topEnd = TabListItemCornerRadius,
+)
+
+private val TabListSingleItemShape = RoundedCornerShape(TabListItemCornerRadius)
+private val TabListBorderMiddleItemShape = RoundedCornerShape(4.dp)
 
 /**
  * Top-level UI for displaying a list of tabs.
  *
  * @param tabs The list of [TabsTrayItem] to display.
  * @param displayTabsInGrid Whether the tabs should be displayed in a grid.
- * @param selectedTabId The ID of the currently selected tab.
+ * @param selectedItemIndex The index of the currently selected tab. This will be scrolled to on first-render.
  * @param selectionMode [TabsTrayState.Mode] indicating whether the Tabs Tray is in single selection
  * or multi-selection and contains the set of selected tabs.
  * @param modifier [Modifier] to be applied to the layout.
@@ -123,6 +135,8 @@ private val TabListLastItemShape = RoundedCornerShape(
  * @param onItemLongClick Invoked when the user long clicks a tab.
  * @param onMove Invoked when the user moves a tab.
  * @param onTabDragStart Invoked when starting to drag a tab.
+ * @param onDeleteTabGroup Invoked when the user clicks on delete tab group.
+ * @param editTabGroupClick Invoked when the user clicks to edit a tab group.
  * @param header Optional layout to display before [tabs].
  * @param contentPadding Optional PaddingValues to pad the tab's content.
  */
@@ -131,7 +145,7 @@ private val TabListLastItemShape = RoundedCornerShape(
 fun TabLayout(
     tabs: List<TabsTrayItem>,
     displayTabsInGrid: Boolean,
-    selectedTabId: String?,
+    selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     modifier: Modifier = Modifier,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
@@ -139,24 +153,15 @@ fun TabLayout(
     onItemLongClick: (TabsTrayItem) -> Unit,
     onMove: (String, String?, Boolean) -> Unit,
     onTabDragStart: () -> Unit,
+    onDeleteTabGroup: (TabsTrayItem.TabGroup) -> Unit,
+    editTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     header: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = defaultTabLayoutContentPadding(),
 ) {
-    var selectedTabIndex = 0
-    selectedTabId?.let {
-        tabs.forEachIndexed { index, tab ->
-            if (tab is TabsTrayItem.Tab && tab.id == selectedTabId) {
-                selectedTabIndex = index
-                return@forEachIndexed
-            }
-        }
-    }
-
     if (displayTabsInGrid) {
         TabGrid(
             tabs = tabs,
-            selectedTabId = selectedTabId,
-            selectedTabIndex = selectedTabIndex,
+            selectedItemIndex = selectedItemIndex,
             selectionMode = selectionMode,
             modifier = modifier,
             onTabClose = onTabClose,
@@ -164,14 +169,15 @@ fun TabLayout(
             onItemLongClick = onItemLongClick,
             onMove = onMove,
             onTabDragStart = onTabDragStart,
+            onDeleteTabGroup = onDeleteTabGroup,
+            editTabGroupClick = editTabGroupClick,
             header = header,
             contentPadding = contentPadding,
         )
     } else {
         TabList(
             tabs = tabs,
-            selectedTabId = selectedTabId,
-            selectedTabIndex = selectedTabIndex,
+            selectedItemIndex = selectedItemIndex,
             selectionMode = selectionMode,
             modifier = modifier,
             onTabClose = onTabClose,
@@ -184,12 +190,62 @@ fun TabLayout(
     }
 }
 
+@Composable
+private fun TabLayoutScrollHelper(
+    state: ScrollableState,
+    selectedTabIndex: Int,
+    bottomPadding: Dp,
+    isHeaderPresent: Boolean,
+) {
+    val density = LocalDensity.current
+    val bottomPaddingPx = with(density) { bottomPadding.roundToPx() }
+
+    LaunchedEffect(Unit) {
+        if (selectedTabIndex < 0) return@LaunchedEffect
+
+        val targetIndex = selectedTabIndex + (if (isHeaderPresent) 1 else 0)
+
+        val scrollToItem: suspend (Int, Int) -> Unit = when (state) {
+            is LazyListState -> state::scrollToItem
+            is LazyGridState -> state::scrollToItem
+            else -> return@LaunchedEffect
+        }
+
+        snapshotFlow { calculateScrollDimensions(state) }
+            .filterNotNull()
+            .first { (viewportHeight, itemHeight) ->
+                viewportHeight > 0 && itemHeight > 0
+            }
+            .let { (viewportHeight, itemHeight) ->
+                val offset = -(viewportHeight - itemHeight - bottomPaddingPx)
+                withFrameNanos { }
+                scrollToItem(targetIndex, offset)
+            }
+    }
+}
+
+private fun calculateScrollDimensions(state: ScrollableState): Pair<Int, Int>? {
+    val (viewportHeight, items) = when (state) {
+        is LazyListState -> state.layoutInfo.viewportSize.height to state.layoutInfo.visibleItemsInfo.map {
+            it.key to it.size
+        }
+        is LazyGridState -> state.layoutInfo.viewportSize.height to state.layoutInfo.visibleItemsInfo.map {
+            it.key to it.size.height
+        }
+        else -> return null
+    }
+
+    if (viewportHeight <= 0) return null
+
+    val itemHeight = items.firstOrNull { it.first != HEADER_ITEM_KEY }?.second ?: 0
+    return viewportHeight to itemHeight
+}
+
 @Suppress("LongParameterList", "LongMethod")
 @Composable
 private fun TabGrid(
     tabs: List<TabsTrayItem>,
-    selectedTabId: String?,
-    selectedTabIndex: Int,
+    selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues,
@@ -198,9 +254,19 @@ private fun TabGrid(
     onItemLongClick: (TabsTrayItem) -> Unit,
     onMove: (String, String?, Boolean) -> Unit,
     onTabDragStart: () -> Unit,
+    onDeleteTabGroup: (TabsTrayItem.TabGroup) -> Unit,
+    editTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     header: (@Composable () -> Unit)? = null,
 ) {
-    val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = selectedTabIndex)
+    val gridState = rememberLazyGridState()
+
+    TabLayoutScrollHelper(
+        state = gridState,
+        selectedTabIndex = selectedItemIndex,
+        bottomPadding = contentPadding.calculateBottomPadding(),
+        isHeaderPresent = header != null,
+    )
+
     val tabGridBottomPadding = dimensionResource(id = R.dimen.tab_tray_grid_bottom_padding)
     val isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
 
@@ -258,13 +324,14 @@ private fun TabGrid(
                     index = index,
                     thumbnailSizePx = thumbnailSizePx,
                     hasHeader = header != null,
-                    isSelected = tab.id == selectedTabId,
                     isInMultiSelectMode = isInMultiSelectMode,
-                    isMultiSelected = selectionMode.selectedTabs.any { it.id == tab.id },
+                    isMultiSelected = selectionMode.contains(tab),
                     reorderState = reorderState,
                     gridState = gridState,
                     onTabClose = onTabClose,
                     onItemClick = onItemClick,
+                    onDeleteTabGroup = onDeleteTabGroup,
+                    editTabGroupClick = editTabGroupClick,
                 )
             }
 
@@ -282,13 +349,14 @@ private fun LazyGridItemScope.TabGridItemContent(
     index: Int,
     thumbnailSizePx: Int,
     hasHeader: Boolean,
-    isSelected: Boolean,
     isInMultiSelectMode: Boolean,
     isMultiSelected: Boolean,
     reorderState: GridReorderState,
     gridState: LazyGridState,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
+    onDeleteTabGroup: (TabsTrayItem.TabGroup) -> Unit,
+    editTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
 ) {
     val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
     val density = LocalDensity.current
@@ -310,9 +378,9 @@ private fun LazyGridItemScope.TabGridItemContent(
         position = index + if (hasHeader) 1 else 0,
         key = tabsTrayItem.id,
         swipingActive = swipingActive,
-    ) {
+    ) { interactionState ->
         val selectionState = TabsTrayItemSelectionState(
-            isFocused = isSelected,
+            isFocused = tabsTrayItem.isFocused,
             isSelected = isMultiSelected,
             multiSelectEnabled = isInMultiSelectMode,
         )
@@ -326,6 +394,7 @@ private fun LazyGridItemScope.TabGridItemContent(
                     swipeState = swipeState,
                     onCloseClick = onTabClose,
                     onClick = onItemClick,
+                    interactionState = interactionState,
                 )
             }
 
@@ -334,6 +403,9 @@ private fun LazyGridItemScope.TabGridItemContent(
                     group = tabsTrayItem,
                     selectionState = selectionState,
                     clickHandler = TabsTrayItemClickHandler(onClick = onItemClick),
+                    interactionState = interactionState,
+                    onDeleteTabGroup = onDeleteTabGroup,
+                    editTabGroupClick = { editTabGroupClick(tabsTrayItem) },
                 )
             }
         }
@@ -351,7 +423,7 @@ private val BoxWithConstraintsScope.thumbnailSizePx: Int
     get() {
         val density = LocalDensity.current
         val totalSpacing = horizontalGridPadding * (numberOfGridColumns - 1) +
-                FirefoxTheme.layout.space.static50 * numberOfGridColumns * 2
+            FirefoxTheme.layout.space.static50 * numberOfGridColumns * 2
         val thumbnailWidth = constraints.maxWidth - with(density) { totalSpacing.roundToPx() }
         val thumbnailHeight = (thumbnailWidth / gridItemAspectRatio).toInt()
         return max(thumbnailWidth, thumbnailHeight)
@@ -361,8 +433,7 @@ private val BoxWithConstraintsScope.thumbnailSizePx: Int
 @Composable
 private fun TabList(
     tabs: List<TabsTrayItem>,
-    selectedTabId: String?,
-    selectedTabIndex: Int,
+    selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     modifier: Modifier = Modifier,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
@@ -372,8 +443,16 @@ private fun TabList(
     header: (@Composable () -> Unit)? = null,
     onTabDragStart: () -> Unit = {},
 ) {
-    val state = rememberLazyListState(initialFirstVisibleItemIndex = selectedTabIndex)
+    val state = rememberLazyListState()
     val tabListBottomPadding = dimensionResource(id = R.dimen.tab_tray_list_bottom_padding)
+
+    TabLayoutScrollHelper(
+        state = state,
+        selectedTabIndex = selectedItemIndex,
+        bottomPadding = tabListBottomPadding,
+        isHeaderPresent = header != null,
+    )
+
     val isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
     val reorderState = createListReorderState(
         listState = state,
@@ -410,7 +489,6 @@ private fun TabList(
                     start = TabListPadding,
                     end = TabListPadding,
                 )
-                .clip(TabListCornerShape)
                 .background(MaterialTheme.colorScheme.surface)
                 .detectListPressAndDrag(
                     listState = state,
@@ -428,11 +506,15 @@ private fun TabList(
                 }
             }
 
+            // As groups are not shown, this impacts the visible index of the tab being shown,
+            // which is needed to know the correct shape
+            // todo This logic should be updated when TabList is supported for groups
+            val firstVisibleIndex = tabs.indexOfFirst { it is TabsTrayItem.Tab }
+            val lastVisibleIndex = tabs.indexOfLast { it is TabsTrayItem.Tab }
             itemsIndexed(
                 items = tabs,
                 key = { _, tab -> tab.id },
             ) { index, tab ->
-
                 when (tab) {
                     is TabsTrayItem.Tab -> {
                         DragItemContainer(
@@ -440,16 +522,24 @@ private fun TabList(
                             position = index + if (header != null) 1 else 0,
                             key = tab.id,
                         ) {
+                            val tabShapeInfo = getTabShapeInfo(
+                                firstVisibleIndex = firstVisibleIndex,
+                                lastVisibleIndex = lastVisibleIndex,
+                                itemIndex = index,
+                                size = tabs.size,
+                            )
                             TabListTabItem(
                                 tab = tab,
-                                modifier = if (index == tabs.size - 1) {
-                                    Modifier.clip(TabListLastItemShape)
-                                } else {
-                                    Modifier
-                                },
-                                isSelected = tab.id == selectedTabId,
-                                multiSelectionEnabled = isInMultiSelectMode,
-                                multiSelectionSelected = selectionMode.selectedTabs.any { it.id == tab.id },
+                                modifier = Modifier
+                                    .tabListItemShapeStyling(
+                                        tabShapeInfo = tabShapeInfo,
+                                        tab = tab,
+                                    ),
+                                selectionState = TabsTrayItemSelectionState(
+                                    isFocused = tab.isFocused,
+                                    multiSelectEnabled = isInMultiSelectMode,
+                                    isSelected = selectionMode.contains(tab),
+                                ),
                                 shouldClickListen = reorderState.draggingItemKey != tab.id,
                                 swipingEnabled = !state.isScrollInProgress,
                                 onCloseClick = onTabClose,
@@ -478,8 +568,8 @@ private val numberOfGridColumns: Int
     get() {
         val configuration = LocalConfiguration.current
         val screenWidthDp = with(LocalDensity.current) {
-                LocalWindowInfo.current.containerSize.width.toDp().value
-            }
+            LocalWindowInfo.current.containerSize.width.toDp().value
+        }
 
         return if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             numberOfGridColumnsLandscape(screenWidthDp = screenWidthDp)
@@ -507,166 +597,176 @@ private data class TabLayoutPreviewModel(
     val tabGroupIndices: List<Int> = emptyList(),
 )
 
-private class TabLayoutPreviewParameterProvider : PreviewParameterProvider<TabLayoutPreviewModel> {
-    val data = listOf(
-        Pair(
-            "50 Tabs, 10th selected",
-            TabLayoutPreviewModel(
-                tabCount = 50,
-                selectedTabIndex = 10,
-            ),
+private val tabLayoutPreviewData: List<Pair<String, TabLayoutPreviewModel>> = listOf(
+    Pair(
+        "50 Tabs, 25th selected",
+        TabLayoutPreviewModel(
+            tabCount = 50,
+            selectedTabIndex = 25,
         ),
-        Pair(
-            "10 Tabs, 1st selected",
-            TabLayoutPreviewModel(tabCount = 10, selectedTabIndex = 0),
-        ),
-        Pair(
-            "10 Groups, 1st selected",
-            TabLayoutPreviewModel(tabCount = 10, tabGroupIndices = (0..9).toList(), selectedTabIndex = 0),
-        ),
-        Pair(
-            "10 Tabs, 3 groups, 2nd selected",
-            TabLayoutPreviewModel(tabCount = 10, tabGroupIndices = listOf(3, 6, 9), selectedTabIndex = 1),
-        ),
-        Pair(
-            "Single, selected tab",
-            TabLayoutPreviewModel(tabCount = 1),
-        ),
-        Pair(
-            "Single, selected group",
-            TabLayoutPreviewModel(tabCount = 1, tabGroupIndices = listOf(0)),
-        ),
-    )
+    ),
+    Pair(
+        "10 Tabs, first selected",
+        TabLayoutPreviewModel(tabCount = 10, selectedTabIndex = 0),
+    ),
+    Pair(
+        "10 Tabs, last selected",
+        TabLayoutPreviewModel(tabCount = 10, selectedTabIndex = 9),
+    ),
+    Pair(
+        "10 Groups, 1st selected",
+        TabLayoutPreviewModel(tabCount = 10, tabGroupIndices = (0..9).toList(), selectedTabIndex = 0),
+    ),
+    Pair(
+        "10 Tabs, 3 groups, 2nd selected",
+        TabLayoutPreviewModel(tabCount = 10, tabGroupIndices = listOf(3, 6, 9), selectedTabIndex = 1),
+    ),
+    Pair(
+        "Single, selected tab",
+        TabLayoutPreviewModel(tabCount = 1),
+    ),
+    Pair(
+        "Single, selected group",
+        TabLayoutPreviewModel(tabCount = 1, tabGroupIndices = listOf(0)),
+    ),
+)
 
-    override val values: Sequence<TabLayoutPreviewModel>
-        get() = data.map { it.second }.asSequence()
+private class TabLayoutPreviewParameterProvider : ThemedValueProvider<TabLayoutPreviewModel>(
+    baseValues = tabLayoutPreviewData.map { it.second }.asSequence(),
+    getDisplayName = { index, _ -> tabLayoutPreviewData[index].first },
+)
 
-    override fun getDisplayName(index: Int): String? {
-        return data[index].first
-    }
-}
-
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
 private fun TabListPreview(
-    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
+    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: ThemedValue<TabLayoutPreviewModel>,
 ) {
     val tabs = remember {
         generateFakeTabsList(
-            tabCount = previewModel.tabCount,
-            tabGroupIndices = previewModel.tabGroupIndices,
+            tabCount = previewModel.value.tabCount,
+            tabGroupIndices = previewModel.value.tabGroupIndices,
         ).toMutableStateList()
     }
 
-    FirefoxTheme {
+    FirefoxTheme(theme = previewModel.theme) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
             TabLayout(
                 tabs = tabs,
-                selectedTabId = tabs[previewModel.selectedTabIndex].id,
+                selectedItemIndex = previewModel.value.selectedTabIndex,
                 selectionMode = TabsTrayState.Mode.Normal,
                 displayTabsInGrid = false,
                 onTabClose = tabs::remove,
                 onItemClick = {},
                 onItemLongClick = {},
                 onTabDragStart = {},
+                onDeleteTabGroup = {},
                 onMove = { _, _, _ -> },
+                editTabGroupClick = {},
             )
         }
     }
 }
 
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 @Composable
 private fun TabGridPreview(
-    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
+    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: ThemedValue<TabLayoutPreviewModel>,
 ) {
     val tabs = remember {
         generateFakeTabsList(
-            tabCount = previewModel.tabCount,
-            tabGroupIndices = previewModel.tabGroupIndices,
+            tabCount = previewModel.value.tabCount,
+            tabGroupIndices = previewModel.value.tabGroupIndices,
         ).toMutableStateList()
     }
 
-    FirefoxTheme {
+    FirefoxTheme(theme = previewModel.theme) {
         TabLayout(
             tabs = tabs,
-            selectedTabId = tabs[previewModel.selectedTabIndex].id,
             selectionMode = TabsTrayState.Mode.Normal,
+            selectedItemIndex = previewModel.value.selectedTabIndex,
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
             displayTabsInGrid = true,
             onTabClose = tabs::remove,
             onItemClick = {},
             onItemLongClick = {},
             onTabDragStart = {},
+            onDeleteTabGroup = {},
             onMove = { _, _, _ -> },
+            editTabGroupClick = {},
         )
     }
 }
 
 private const val SELECTED_TAB_COUNT_PREVIEW = 4
 
-@PreviewLightDark
+@Preview
 @Composable
 private fun TabGridMultiSelectPreview(
-    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
+    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: ThemedValue<TabLayoutPreviewModel>,
 ) {
-    val tabs = generateFakeTabsList(
-        tabCount = previewModel.tabCount,
-        tabGroupIndices = previewModel.tabGroupIndices,
+    MultiSelectPreview(
+        previewModel = previewModel,
+        displayTabsInGrid = true,
     )
-    val selectedTabs = remember { tabs.take(SELECTED_TAB_COUNT_PREVIEW).toMutableStateList() }
-
-    FirefoxTheme {
-        TabLayout(
-            tabs = tabs,
-            selectedTabId = tabs[0].id,
-            selectionMode = TabsTrayState.Mode.Select(selectedTabs.toSet()),
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
-            displayTabsInGrid = true,
-            onTabClose = {},
-            onItemClick = { tab ->
-                if (selectedTabs.contains(tab)) {
-                    selectedTabs.remove(tab)
-                } else {
-                    selectedTabs.add(tab)
-                }
-            },
-            onItemLongClick = {},
-            onTabDragStart = {},
-            onMove = { _, _, _ -> },
-        )
-    }
 }
 
-@PreviewLightDark
+@Preview
 @Composable
 private fun TabListMultiSelectPreview(
-    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
+    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: ThemedValue<TabLayoutPreviewModel>,
+) {
+    MultiSelectPreview(
+        previewModel = previewModel,
+        displayTabsInGrid = false,
+    )
+}
+
+@Composable
+private fun MultiSelectPreview(
+    previewModel: ThemedValue<TabLayoutPreviewModel>,
+    displayTabsInGrid: Boolean,
 ) {
     val tabs = generateFakeTabsList(
-        tabCount = previewModel.tabCount,
-        tabGroupIndices = previewModel.tabGroupIndices,
+        tabCount = previewModel.value.tabCount,
+        tabGroupIndices = previewModel.value.tabGroupIndices,
     )
-    val selectedTabs = remember { tabs.take(SELECTED_TAB_COUNT_PREVIEW).toMutableStateList() }
+    val selectedTabs = remember {
+        tabs.take(SELECTED_TAB_COUNT_PREVIEW).filterIsInstance<TabsTrayItem.Tab>().toMutableStateList()
+    }
+    val selectedTabGroups = remember {
+        tabs.take(SELECTED_TAB_COUNT_PREVIEW).filterIsInstance<TabsTrayItem.TabGroup>().toMutableStateList()
+    }
 
-    FirefoxTheme {
+    FirefoxTheme(theme = previewModel.theme) {
         TabLayout(
             tabs = tabs,
-            selectedTabId = tabs[0].id,
-            selectionMode = TabsTrayState.Mode.Select(selectedTabs.toSet()),
+            selectedItemIndex = previewModel.value.selectedTabIndex,
+            selectionMode = TabsTrayState.Mode.Select(
+                selectedTabs = selectedTabs.toSet(),
+                selectedTabGroups = selectedTabGroups.toSet(),
+            ),
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
-            displayTabsInGrid = false,
+            displayTabsInGrid = displayTabsInGrid,
             onTabClose = {},
             onItemClick = { tab ->
-                if (selectedTabs.contains(tab)) {
-                    selectedTabs.remove(tab)
-                } else {
-                    selectedTabs.add(tab)
+                when (tab) {
+                    is TabsTrayItem.Tab -> if (selectedTabs.contains(tab)) {
+                        selectedTabs.remove(tab)
+                    } else {
+                        selectedTabs.add(tab)
+                    }
+                    is TabsTrayItem.TabGroup -> if (selectedTabGroups.contains(tab)) {
+                        selectedTabGroups.remove(tab)
+                    } else {
+                        selectedTabGroups.add(tab)
+                    }
                 }
             },
             onItemLongClick = {},
             onTabDragStart = {},
+            onDeleteTabGroup = {},
             onMove = { _, _, _ -> },
+            editTabGroupClick = {},
         )
     }
 }
@@ -681,7 +781,7 @@ private fun generateFakeTabsList(
             createTabGroup(
                 title = "Group $index",
                 theme = TabGroupTheme.Pink,
-                tabs = hashSetOf(
+                tabs = mutableListOf(
                     createTab(
                         id = "groupTab1",
                         url = "www.mozilla.com",
@@ -715,6 +815,30 @@ private fun generateFakeTabsList(
 }
 
 /**
+ * Data class to store a TabList's item shape information.
+ * @property borderShape: The [RoundedCornerShape] representing the item's border
+ * @property clipTabToFit: Whether the TabItem will be clipped to fit the border shape
+ */
+private data class TabListShapeInfo(
+    val borderShape: RoundedCornerShape,
+    val clipTabToFit: Boolean,
+)
+
+private fun getTabShapeInfo(
+    firstVisibleIndex: Int,
+    lastVisibleIndex: Int,
+    itemIndex: Int,
+    size: Int,
+): TabListShapeInfo {
+    return when {
+        size == 1 -> TabListShapeInfo(TabListSingleItemShape, true)
+        firstVisibleIndex == itemIndex -> TabListShapeInfo(TabListFirstItemShape, true)
+        lastVisibleIndex == itemIndex -> TabListShapeInfo(TabListLastItemShape, true)
+        else -> TabListShapeInfo(TabListBorderMiddleItemShape, false)
+    }
+}
+
+/**
  * The default horizontal content padding used by TabLayout.
  * In some cases, such as when a tab layout is embedded inside another view,
  * we may wish to override this content padding.
@@ -729,3 +853,22 @@ private fun defaultTabLayoutContentPadding(): PaddingValues = PaddingValues(
     },
     vertical = 24.dp,
 )
+
+@Composable
+private fun Modifier.tabListItemShapeStyling(
+    tabShapeInfo: TabListShapeInfo,
+    tab: TabsTrayItem,
+): Modifier {
+    return this
+        .thenConditional(
+            Modifier.clip(tabShapeInfo.borderShape),
+            { tabShapeInfo.clipTabToFit },
+        )
+        .thenConditional(
+            modifier = Modifier.border(
+                border = tabItemBorderFocused(),
+                shape = tabShapeInfo.borderShape,
+            ),
+            { tab.isFocused },
+        )
+}

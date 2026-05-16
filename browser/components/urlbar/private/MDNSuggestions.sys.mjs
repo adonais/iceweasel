@@ -67,7 +67,7 @@ export class MDNSuggestions extends SuggestProvider {
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
       isBestMatch: true,
-      isNovaSuggestion: true,
+      isBottomUrlSuggestion: true,
       payload: {
         icon: "chrome://global/skin/icons/mdn.svg",
         url: url.href,

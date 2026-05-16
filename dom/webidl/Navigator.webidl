@@ -249,6 +249,12 @@ partial interface Navigator {
   readonly attribute XRSystem xr;
 };
 
+// https://wicg.github.io/serial/
+partial interface Navigator {
+  [SecureContext, Throws, SameObject, Pref="dom.webserial.enabled"]
+  readonly attribute Serial serial;
+};
+
 // http://webaudio.github.io/web-midi-api/#requestmidiaccess
 partial interface Navigator {
   [UseCounter, NewObject, Func="Navigator::HasMidiSupport"]

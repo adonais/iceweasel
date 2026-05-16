@@ -67,6 +67,7 @@
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/Try.h"
+#include "mozilla/UseCounter.h"
 #include "mozilla/dom/AnimatableBinding.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/Attr.h"
@@ -449,7 +450,7 @@ void nsIContent::UpdateEditableState(bool aNotify) {
     }
   }
 
-  nsIContent* parent = GetParent();
+  nsINode* parent = GetParentNode();
   SetEditableFlag(parent && parent->HasFlag(NODE_IS_EDITABLE));
 }
 
@@ -917,8 +918,8 @@ void Element::ScrollIntoView(const ScrollIntoViewOptions& aOptions) {
   }
 
   presShell->ScrollContentIntoView(
-      this, ScrollAxis(block, WhenToScroll::Always),
-      ScrollAxis(inline_, WhenToScroll::Always), scrollFlags);
+      this, AxisScrollParams(block, WhenToScroll::Always),
+      AxisScrollParams(inline_, WhenToScroll::Always), scrollFlags);
 }
 
 void Element::ScrollTo(double aXScroll, double aYScroll) {
@@ -1371,7 +1372,7 @@ void Element::SetSlot(const nsAString& aName, ErrorResult& aError) {
 void Element::GetSlot(nsAString& aName) { GetAttr(nsGkAtoms::slot, aName); }
 
 // https://dom.spec.whatwg.org/#dom-element-shadowroot
-ShadowRoot* Element::GetShadowRootByMode() const {
+ShadowRoot* Element::GetShadowRootForBindings() const {
   /**
    * 1. Let shadow be context object's shadow root.
    * 2. If shadow is null or its mode is "closed", then return null.
@@ -1384,6 +1385,17 @@ ShadowRoot* Element::GetShadowRootByMode() const {
   /**
    * 3. Return shadow.
    */
+  return shadowRoot;
+}
+
+ShadowRoot* Element::GetOpenOrClosedShadowRoot(nsIPrincipal& aSubject) const {
+  ShadowRoot* shadowRoot = GetShadowRoot();
+  if (!shadowRoot) {
+    return nullptr;
+  }
+  if (!aSubject.IsSystemPrincipal() && shadowRoot->IsUAWidget()) {
+    return nullptr;
+  }
   return shadowRoot;
 }
 
@@ -2582,13 +2594,19 @@ void Element::AddDocOrShadowObserversForAttrAssociatedElement(
         ReferenceTargetChangedAttrAssociatedElementCallback, callbackData);
   } else {
     MOZ_ASSERT(observerData->mLastKnownAttrValue);
-    aContainingDocOrShadow.AddIDTargetObserver(
+    Element* idTarget = aContainingDocOrShadow.AddIDTargetObserver(
         observerData->mLastKnownAttrValue,
         IDTargetChangedAttrAssociatedElementCallback, callbackData, false);
 
-    Element* idTarget = aContainingDocOrShadow.GetElementById(
-        observerData->mLastKnownAttrValue);
     if (idTarget) {
+      if (nsCOMPtr<Element> element =
+              do_QueryReferent(observerData->mLastKnownAttrElement)) {
+        Element* lastAttrElement = element.get();
+        if (idTarget != lastAttrElement) {
+          IDTargetChangedAttrAssociatedElementCallback(lastAttrElement,
+                                                       idTarget, callbackData);
+        }
+      }
       idTarget->AddReferenceTargetChangeObserver(
           ReferenceTargetChangedAttrAssociatedElementCallback, callbackData);
     }
@@ -3432,6 +3450,7 @@ nsresult Element::LeaveLink(nsPresContext* aPresContext) {
   if (!shell) {
     return NS_OK;
   }
+  aPresContext->EventStateManager()->SetLinkOverFrame(nullptr);
   return nsDocShell::Cast(shell)->OnLeaveLink();
 }
 
@@ -4752,9 +4771,15 @@ void Element::ReleaseCapture() {
   }
 }
 
-already_AddRefed<Promise> Element::RequestFullscreen(CallerType aCallerType,
-                                                     ErrorResult& aRv) {
-  auto request = FullscreenRequest::Create(this, aCallerType, aRv);
+already_AddRefed<Promise> Element::RequestFullscreen(
+    const FullscreenOptions& aOptions, CallerType aCallerType,
+    ErrorResult& aRv) {
+  if (aOptions.mKeyboardLock == FullscreenKeyboardLock::Browser) {
+    OwnerDoc()->SetUseCounter(eUseCounter_custom_RequestedKeyboardLock);
+  }
+
+  auto request =
+      FullscreenRequest::Create(this, aOptions.mKeyboardLock, aCallerType, aRv);
   RefPtr<Promise> promise = request->GetPromise();
 
   // Only grant fullscreen requests if this is called from inside a trusted
@@ -5782,6 +5807,21 @@ void Element::SetCustomElementData(UniquePtr<CustomElementData> aData) {
   slots->mCustomElementData = std::move(aData);
 }
 
+void Element::ClearCustomElementData() {
+  MOZ_ASSERT(HasCustomElementData());
+
+  ClearHasCustomElementData();
+
+  // This is correct for something like <div is="custom-div">, because
+  // after "removing" the custom elements data, this is again a known
+  // built-in and thus defined element.
+  SetDefined(!nsContentUtils::IsCustomElementName(NodeInfo()->NameAtom(),
+                                                  NodeInfo()->NamespaceID()));
+
+  nsExtendedDOMSlots* slots = ExtendedDOMSlots();
+  slots->mCustomElementData = nullptr;
+}
+
 nsTArray<RefPtr<nsAtom>>& Element::EnsureCustomStates() {
   MOZ_ASSERT(IsHTMLElement());
   nsExtendedDOMSlots* slots = ExtendedDOMSlots();
@@ -6255,8 +6295,7 @@ StylePropertyMapReadOnly* Element::ComputedStyleMap() {
   nsDOMSlots* slots = DOMSlots();
 
   if (!slots->mComputedStyleMap) {
-    slots->mComputedStyleMap =
-        MakeRefPtr<StylePropertyMapReadOnly>(this, /* aComputed */ true);
+    slots->mComputedStyleMap = MakeRefPtr<StylePropertyMapReadOnly>(this);
   }
 
   return slots->mComputedStyleMap;

@@ -135,6 +135,13 @@ bool ScriptBytecodeDecompress(Vector<uint8_t>& aCompressedBytecodeBuf,
   PerfStats::AutoMetricRecording<PerfStats::Metric::JSBC_Decompression>
       autoRecording;
 
+  if (aBytecodeOffset > aCompressedBytecodeBuf.length() ||
+      aCompressedBytecodeBuf.length() - aBytecodeOffset <
+          sizeof(ScriptBytecodeCompressedDataLayout::UncompressedLengthType)) {
+    LOG(("ScriptLoadRequest: compressed buffer is corrupted and too short"));
+    return false;
+  }
+
   ScriptBytecodeDataLayout uncompressedLayout(aBytecodeBufOut, aBytecodeOffset);
   ScriptBytecodeCompressedDataLayout compressedLayout(
       aCompressedBytecodeBuf, uncompressedLayout.preludeLength());

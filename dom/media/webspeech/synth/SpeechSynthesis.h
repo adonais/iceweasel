@@ -57,6 +57,8 @@ class SpeechSynthesis final : public DOMEventTargetHelper,
 
   void ForceEnd();
 
+  void DisconnectFromOwner() override;
+
   IMPL_EVENT_HANDLER(voiceschanged)
 
  private:

@@ -54,6 +54,7 @@ UNIFIED_SOURCES += [
     "TestSnappyStreams.cpp",
     "TestStateMirroring.cpp",
     "TestStateWatching.cpp",
+    "TestStaticBackgroundTaskQueue.cpp",
     "TestStopGapEventTarget.cpp",
     "TestStorageStream.cpp",
     "TestStrings.cpp",
@@ -159,6 +160,7 @@ if CONFIG["MOZ_MEMORY"]:
     ]
 
 SOURCES += [
+    "TestAsyncPlatformPipes.cpp",
     "TestCOMArray.cpp",
     "TestCOMPtr.cpp",  # Redefines IFoo and IBar
     "TestHashtables.cpp",  # Redefines IFoo

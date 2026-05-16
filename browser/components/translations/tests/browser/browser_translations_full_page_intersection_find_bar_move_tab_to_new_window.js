@@ -11,6 +11,7 @@
 add_task(
   async function test_findbar_open_switches_to_content_eager_mode_after_moving_tab_to_new_window() {
     const window1 = window;
+    await focusWindow(window1);
     const { cleanup, resolveDownloads, runInPage, tab } = await loadTestPage({
       page: SPANISH_PAGE_URL,
       languagePairs: LANGUAGE_PAIRS,
@@ -51,6 +52,7 @@ add_task(
       "SwapDocShells"
     );
     await swapDocShellPromise;
+    await focusWindow(window2);
 
     await SpecialPowers.pushPrefEnv({
       set: [["security.allow_eval_with_system_principal", true]],
@@ -126,6 +128,7 @@ add_task(
 add_task(
   async function test_findbar_close_switches_to_lazy_mode_after_moving_tab_to_new_window() {
     const window1 = window;
+    await focusWindow(window1);
     const { cleanup, resolveDownloads, runInPage, tab } = await loadTestPage({
       page: SPANISH_PAGE_URL,
       languagePairs: LANGUAGE_PAIRS,
@@ -174,6 +177,7 @@ add_task(
       "SwapDocShells"
     );
     await swapDocShellPromise;
+    await focusWindow(window2);
 
     const tab2 = window2.gBrowser.selectedTab;
     function runInPage2(callback, data = {}) {

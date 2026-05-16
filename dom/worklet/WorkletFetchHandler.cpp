@@ -462,14 +462,11 @@ void WorkletFetchHandler::ResolvePromises() {
 
 nsresult WorkletFetchHandler::StartFetch(JSContext* aCx, nsIURI* aURI,
                                          nsIURI* aReferrer) {
-  nsAutoCString spec;
-  nsresult res = aURI->GetSpec(spec);
+  RequestOrUTF8String requestInput;
+  nsresult res = aURI->GetSpec(requestInput.SetAsUTF8String());
   if (NS_WARN_IF(NS_FAILED(res))) {
     return NS_ERROR_FAILURE;
   }
-
-  RequestOrUTF8String requestInput;
-  requestInput.SetAsUTF8String().ShareOrDependUpon(spec);
 
   RootedDictionary<RequestInit> requestInit(aCx);
   requestInit.mCredentials.Construct(mCredentials);

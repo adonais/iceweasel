@@ -1,0 +1,17 @@
+{
+  "label": "coldwellbankerhomes.com",
+  "bugs": {
+    "1770962": {
+      "issue": "broken-images",
+      "matches": ["*://*.coldwellbankerhomes.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1770962-coldwellbankerhomes.com-image-height.css"]
+      }
+    }
+  ]
+}

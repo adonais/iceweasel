@@ -67,6 +67,16 @@ GeneratedFile(
     inputs=["!/toolkit/crashreporter/annotations/validated.yaml"],
 )
 
+GeneratedFile(
+    "webcompat_addon_run.js",
+    script="/browser/extensions/webcompat/codegen.py",
+    entry_point="generate_run_js",
+    inputs=[
+        "/browser/extensions/webcompat/run.js",
+        "/browser/extensions/webcompat/data/interventions",
+    ],
+)
+
 CONFIGURE_SUBST_FILES += ["installer/Makefile"]
 
 DIRS += [

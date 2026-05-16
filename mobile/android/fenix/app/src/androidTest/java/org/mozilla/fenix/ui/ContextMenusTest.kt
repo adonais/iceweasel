@@ -8,13 +8,16 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertExternalAppOpens
 import org.mozilla.fenix.helpers.Constants.PackageName.YOUTUBE_APP
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
+import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.RetryTestRule
+import org.mozilla.fenix.helpers.RetryableComposeTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.externalLinksAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.imageAsset
@@ -46,12 +49,13 @@ import org.mozilla.fenix.ui.robots.shareOverlay
 class ContextMenusTest {
 
     @get:Rule(order = 0)
+    val retryTestRule = RetryTestRule(3)
+
+    @get:Rule(order = 1)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
-
-    @get:Rule
-    val composeTestRule =
+    @get:Rule(order = 2)
+    val retryableComposeTestRule = RetryableComposeTestRule<HomeActivity, HomeActivityTestRule> {
         AndroidComposeTestRule(
             HomeActivityIntentTestRule(
                 // workaround for toolbar at top position by default
@@ -59,13 +63,12 @@ class ContextMenusTest {
                 shouldUseBottomToolbar = true,
             ),
         ) { it.activity }
+    }
 
-    @get:Rule
+    @get:Rule(order = 3)
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
-    @Rule
-    @JvmField
-    val retryTestRule = RetryTestRule(3)
+    private val mockWebServer get() = fenixTestRule.mockWebServer
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243837
     @Test
@@ -73,16 +76,16 @@ class ContextMenusTest {
         val pageLinks = mockWebServer.getGenericAsset(4)
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
             mDevice.waitForIdle()
-            longClickPageObject(composeTestRule, itemWithText("Link 1"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("Link 1"))
             verifyContextMenuForLocalHostLinks(genericURL.url)
             clickContextMenuItem("Open link in new tab")
             verifySnackBarText("New tab opened")
-            clickSnackbarButton(composeTestRule, "SWITCH")
+            clickSnackbarButton(retryableComposeTestRule.current, "SWITCH")
             verifyUrl(genericURL.url.toString())
-        }.openTabDrawer(composeTestRule) {
+        }.openTabDrawer(retryableComposeTestRule.current) {
             verifyNormalBrowsingButtonIsSelected()
             verifyExistingOpenTabs("Test_Page_1")
             verifyExistingOpenTabs("Test_Page_4")
@@ -95,16 +98,16 @@ class ContextMenusTest {
         val pageLinks = mockWebServer.getGenericAsset(4)
         val genericURL = mockWebServer.getGenericAsset(2)
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
             mDevice.waitForIdle()
-            longClickPageObject(composeTestRule, itemWithText("Link 2"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("Link 2"))
             verifyContextMenuForLocalHostLinks(genericURL.url)
             clickContextMenuItem("Open link in private tab")
             verifySnackBarText("New private tab opened")
-            clickSnackbarButton(composeTestRule, "SWITCH")
+            clickSnackbarButton(retryableComposeTestRule.current, "SWITCH")
             verifyUrl(genericURL.url.toString())
-        }.openTabDrawer(composeTestRule) {
+        }.openTabDrawer(retryableComposeTestRule.current) {
             verifyPrivateBrowsingButtonIsSelected()
             verifyExistingOpenTabs("Test_Page_2")
         }
@@ -116,10 +119,10 @@ class ContextMenusTest {
         val pageLinks = mockWebServer.getGenericAsset(4)
         val genericURL = mockWebServer.getGenericAsset(3)
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
             mDevice.waitForIdle()
-            longClickPageObject(composeTestRule, itemWithText("Link 3"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("Link 3"))
             verifyContextMenuForLocalHostLinks(genericURL.url)
             clickContextMenuItem("Copy link")
             verifySnackBarText("Link copied to clipboard")
@@ -134,10 +137,10 @@ class ContextMenusTest {
         val pageLinks = mockWebServer.getGenericAsset(4)
         val genericURL = mockWebServer.getGenericAsset(3)
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
             mDevice.waitForIdle()
-            longClickPageObject(composeTestRule, itemWithText("Link 3"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("Link 3"))
             verifyContextMenuForLocalHostLinks(genericURL.url)
             clickContextMenuItem("Copy link text")
             verifySnackBarText("Link text copied to clipboard")
@@ -150,10 +153,10 @@ class ContextMenusTest {
         val pageLinks = mockWebServer.getGenericAsset(4)
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
             mDevice.waitForIdle()
-            longClickPageObject(composeTestRule, itemWithText("Link 1"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("Link 1"))
             verifyContextMenuForLocalHostLinks(genericURL.url)
             clickContextMenuItem("Share link")
             shareOverlay {
@@ -169,14 +172,14 @@ class ContextMenusTest {
         val pageLinks = mockWebServer.getGenericAsset(4)
         val imageResource = mockWebServer.imageAsset
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
             mDevice.waitForIdle()
-            longClickPageObject(composeTestRule, itemWithText("test_link_image"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("test_link_image"))
             verifyLinkImageContextMenuItems(imageResource.url)
             clickContextMenuItem("Open image in new tab")
             verifySnackBarText("New tab opened")
-            clickSnackbarButton(composeTestRule, "SWITCH")
+            clickSnackbarButton(retryableComposeTestRule.current, "SWITCH")
             verifyUrl(imageResource.url.toString())
         }
     }
@@ -187,10 +190,10 @@ class ContextMenusTest {
         val pageLinks = mockWebServer.getGenericAsset(4)
         val imageResource = mockWebServer.imageAsset
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
             mDevice.waitForIdle()
-            longClickPageObject(composeTestRule, itemWithText("test_link_image"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("test_link_image"))
             verifyLinkImageContextMenuItems(imageResource.url)
             clickContextMenuItem("Copy image location")
             verifySnackBarText("Link copied to clipboard")
@@ -206,17 +209,17 @@ class ContextMenusTest {
         val pageLinks = mockWebServer.getGenericAsset(4)
         val imageResource = mockWebServer.imageAsset
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
             mDevice.waitForIdle()
-            longClickPageObject(composeTestRule, itemWithText("test_link_image"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("test_link_image"))
             verifyLinkImageContextMenuItems(imageResource.url)
             clickContextMenuItem("Save image")
         }
 
-        downloadRobot(composeTestRule) {
+        downloadRobot(retryableComposeTestRule.current) {
             verifyDownloadCompleteSnackbar(fileName = "rabbit.jpg")
-            clickSnackbarButton(composeTestRule = composeTestRule, "OPEN")
+            clickSnackbarButton(composeTestRule = retryableComposeTestRule.current, "OPEN")
             verifyPhotosAppOpens()
         }
     }
@@ -228,16 +231,16 @@ class ContextMenusTest {
         val genericURL = mockWebServer.getGenericAsset(1)
         val imageResource = mockWebServer.imageAsset
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(pageLinks.url) {
             mDevice.waitForIdle()
-            longClickPageObject(composeTestRule, itemWithText("Link 1"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("Link 1"))
             verifyContextMenuForLocalHostLinks(genericURL.url)
             dismissContentContextMenu()
-            longClickPageObject(composeTestRule, itemWithText("test_link_image"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("test_link_image"))
             verifyLinkImageContextMenuItems(imageResource.url)
             dismissContentContextMenu()
-            longClickPageObject(composeTestRule, itemWithText("test_no_link_image"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("test_no_link_image"))
             verifyNoLinkImageContextMenuItems(imageResource.url)
         }
     }
@@ -247,12 +250,12 @@ class ContextMenusTest {
     fun verifyPDFContextMenuLinkVariationsTest() {
         val genericURL = mockWebServer.getGenericAsset(3)
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
-            clickPageObject(composeTestRule, itemWithText("PDF form file"))
+            clickPageObject(retryableComposeTestRule.current, itemWithText("PDF form file"))
             waitForPageToLoad()
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
-            longClickPageObject(composeTestRule, itemWithText("Wikipedia link"))
+            clickPageObject(retryableComposeTestRule.current, itemContainingText("Cancel"))
+            longClickPageObject(retryableComposeTestRule.current, itemWithText("Wikipedia link"))
             verifyContextMenuForLinksToOtherHosts("wikipedia.org".toUri())
             dismissContentContextMenu()
             // Some options are missing from the linked and non liked images context menus in PDF files
@@ -268,9 +271,9 @@ class ContextMenusTest {
     fun verifyOpenLinkInAppContextMenuOptionTest() {
         val defaultWebPage = mockWebServer.externalLinksAsset
 
-        navigationToolbar(composeTestRule) {
+        navigationToolbar(retryableComposeTestRule.current) {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
-            longClickPageObject(composeTestRule, itemContainingText("Youtube full link"))
+            longClickPageObject(retryableComposeTestRule.current, itemContainingText("Youtube full link"))
             verifyContextMenuForLinksToOtherApps("youtube.com")
             clickContextMenuItem("Open link in external app")
             assertExternalAppOpens(YOUTUBE_APP)

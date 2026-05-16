@@ -3328,15 +3328,6 @@ bool gfxFont::ProcessShapedWordInternal(
     if (!mWordCache) {
       mWordCache = MakeUnique<HashMap<WordCacheKey, UniquePtr<gfxShapedWord>,
                                       WordCacheKey::HashPolicy>>();
-    } else {
-      // If the cache is getting too big, flush it and start over.
-      uint32_t wordCacheMaxEntries =
-          gfxPlatform::GetPlatform()->WordCacheMaxEntries();
-      if (mWordCache->count() > wordCacheMaxEntries) {
-        // Flush the cache if it is getting overly big.
-        NS_WARNING("flushing shaped-word cache");
-        ClearCachedWordsLocked();
-      }
     }
 
     // Update key so that it references the text stored in the newShapedWord,
@@ -4746,7 +4737,7 @@ gfxFontStyle::gfxFontStyle()
       variantCaps(NS_FONT_VARIANT_CAPS_NORMAL),
       variantSubSuper(NS_FONT_VARIANT_POSITION_NORMAL),
       sizeAdjustBasis(uint8_t(FontSizeAdjust::Tag::None)),
-      systemFont(true),
+      systemFont(false),
       printerFont(false),
 #ifdef XP_WIN
       allowForceGDIClassic(true),

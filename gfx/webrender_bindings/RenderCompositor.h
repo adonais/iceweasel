@@ -178,7 +178,6 @@ class RenderCompositor {
                                 size_t aNumDirtyRects,
                                 const wr::DeviceIntRect* aOpaqueRects,
                                 size_t aNumOpaqueRects) {}
-  virtual void EnableNativeCompositor(bool aEnable) {}
   virtual void DeInit() {}
   // Overrides any of the default compositor capabilities for behavior this
   // compositor might require.

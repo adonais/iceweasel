@@ -9,10 +9,6 @@
 #include "mozilla/TaskQueue.h"
 #include "nsThreadUtils.h"
 
-#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-#  include "fmt/format.h"
-#endif
-
 namespace mozilla {
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
 class InvocableRunnable final : public nsIRunnable, public nsINamed {

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -12,7 +10,6 @@
 #include "mozilla/intl/Calendar.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/Currency.h"
-#include "mozilla/intl/MeasureUnitGenerated.h"
 #include "mozilla/intl/TimeZone.h"
 
 #include <algorithm>
@@ -24,6 +21,7 @@
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/LocaleNegotiation.h"
+#include "builtin/intl/MeasureUnitGenerated.h"
 #include "builtin/intl/NumberingSystemsGenerated.h"
 #include "builtin/intl/SharedIntlData.h"
 #include "ds/Sort.h"
@@ -482,8 +480,7 @@ static ArrayObject* AvailableTimeZones(JSContext* cx) {
 }
 
 template <size_t N>
-constexpr auto MeasurementUnitNames(
-    const mozilla::intl::SimpleMeasureUnit (&units)[N]) {
+constexpr auto MeasurementUnitNames(const SimpleMeasureUnit (&units)[N]) {
   std::array<const char*, N> array = {};
   for (size_t i = 0; i < N; ++i) {
     array[i] = units[i].name;
@@ -496,7 +493,7 @@ constexpr auto MeasurementUnitNames(
  */
 static ArrayObject* AvailableUnits(JSContext* cx) {
   static constexpr auto simpleMeasureUnitNames =
-      MeasurementUnitNames(mozilla::intl::simpleMeasureUnits);
+      MeasurementUnitNames(simpleMeasureUnits);
 
   return CreateArrayFromSortedList(cx, simpleMeasureUnitNames);
 }

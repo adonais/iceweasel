@@ -1538,8 +1538,83 @@ const MESSAGES = () => [
           },
         },
       ],
-      transitions: true,
     },
+  },
+  {
+    weight: 100,
+    id: "FEATURE_CALLOUT_ADDON_TEST",
+    template: "feature_callout",
+    description: "Test ASRouter support for installing or updating addons.",
+    content: {
+      id: "FEATURE_CALLOUT_ADDON_TEST",
+      position: "callout",
+      backdrop: "transparent",
+      transitions: false,
+      disableHistoryUpdates: true,
+      metrics: "block",
+      screens: [
+        {
+          id: "FEATURE_CALLOUT_ADDON_TEST",
+          anchors: [
+            {
+              selector: "#unified-extensions-button",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topright",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            width: "332px",
+            logo: {
+              imageURL:
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/7dee7c77-1940-4d21-8e56-f1a4dd3c35f4.svg",
+              darkModeImageURL:
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/dbbff09d-3c15-4d59-8f8d-cc7eebb9979c.svg",
+              height: "182px",
+            },
+            tiles: {
+              type: "addons-picker",
+              data: [
+                {
+                  id: "d634138d-c276-4fc8-924b-40a0ea21d284",
+                  name: "1Password",
+                  icon: "https://addons.mozilla.org/user-media/addon_icons/950/950528-64.png?modified=bd35add9",
+                  type: "extension",
+                  description:
+                    "Easily sign in to sites, generate passwords, and store secure information, including logins, credit cards, notes, and more.",
+                  source_id: "ADD_EXTENSION_BUTTON",
+                  action: {
+                    type: "INSTALL_ADDON_FROM_URL",
+                    advance_screens: { direction: 1 },
+                    data: {
+                      url: "https://addons.mozilla.org/firefox/downloads/file/4321525/1password_x_password_manager-2.26.1.xpi",
+                      telemetrySource: "featurecallout-addon",
+                    },
+                  },
+                },
+              ],
+            },
+            title: {
+              string_id: "amo-picker-title",
+            },
+            subtitle: {
+              string_id: "amo-picker-subtitle",
+            },
+            dismiss_button: {
+              size: "small",
+              action: {
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+    targeting: 'providerCohorts.panel_local_testing == "SHOW_TEST"',
+    groups: [],
+    provider: "panel_local_testing",
   },
   {
     id: "WNP_THANK_YOU",
@@ -2805,6 +2880,7 @@ const MESSAGES = () => [
           dismiss: true,
         },
       },
+      position: "ABOVE_TOPSITES",
     },
     frequency: {
       lifetime: 3,

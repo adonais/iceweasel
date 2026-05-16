@@ -476,7 +476,7 @@ HWND WinUtils::GetTopLevelHWND(HWND aWnd, bool aStopIfNotChild,
 
 // Map from native window handles to nsWindow structures. Does not AddRef.
 // Inherently unsafe to access outside the main thread.
-MOZ_RUNINIT static nsTHashMap<HWND, nsWindow*> sExtantNSWindows;
+constinit static nsTHashMap<HWND, nsWindow*> sExtantNSWindows;
 
 /* static */
 void WinUtils::SetNSWindowPtr(HWND aWnd, nsWindow* aWindow) {

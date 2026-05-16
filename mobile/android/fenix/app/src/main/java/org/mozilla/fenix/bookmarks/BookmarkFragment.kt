@@ -28,6 +28,7 @@ import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.LensFeature
 import org.mozilla.fenix.components.QrScanFenixFeature
 import org.mozilla.fenix.components.VoiceSearchFeature
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
@@ -72,6 +73,12 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
     private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             voiceSearchFeature?.get()?.handleVoiceSearchResult(result.resultCode, result.data)
+        }
+    private var lensFeature: ViewBoundFeatureWrapper<LensFeature>? =
+        ViewBoundFeatureWrapper<LensFeature>()
+    private val lensLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            lensFeature?.get()?.handleImageResult(result.resultCode, result.data)
         }
 
     @Suppress("LongMethod")
@@ -200,6 +207,7 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
         if (requireContext().settings().shouldUseComposableToolbar) {
             qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
             voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
+            lensFeature = LensFeature.register(this, lensLauncher)
         }
     }
 
@@ -263,6 +271,7 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                     BrowserStoreToFenixSearchMapperMiddleware(
                         browserStore = requireComponents.core.store,
                         scope = lifecycleScope,
+                        appStore = requireComponents.appStore,
                     ),
                     FenixSearchMiddleware(
                         fragment = this@BookmarkFragment,

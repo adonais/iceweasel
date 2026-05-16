@@ -12,7 +12,7 @@ const L10N = new LocalizationHelper(STRINGS_URI);
 requestLongerTimeout(2);
 
 const { MAX_CAPTURE_DIMENSION, MAX_CAPTURE_AREA } = ChromeUtils.importESModule(
-  "resource:///modules/ScreenshotsUtils.sys.mjs"
+  "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs"
 );
 
 // Calculate test dimensions that will trigger area cropping.

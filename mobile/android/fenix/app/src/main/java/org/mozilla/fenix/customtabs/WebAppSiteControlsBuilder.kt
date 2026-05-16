@@ -32,7 +32,7 @@ class WebAppSiteControlsBuilder(
             return
         }
 
-        builder.setSmallIcon(iconsR.drawable.mozac_ic_private_mode_24)
+        builder.setSmallIcon(iconsR.drawable.mozac_ic_private_mode_fill_24)
         builder.setContentTitle(context.getString(R.string.pwa_site_controls_title_private, manifest.name))
     }
 

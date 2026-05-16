@@ -1,0 +1,20 @@
+{
+  "label": "gracobaby.ca",
+  "bugs": {
+    "1896571": {
+      "issue": "broken-scrolling",
+      "matches": ["*://www.gracobaby.ca/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "pref_check": {
+        "layout.css.webkit-fill-available.enabled": false
+      },
+      "content_scripts": {
+        "css": ["bug1896571-gracobaby.ca-unlock-scrolling.css"]
+      }
+    }
+  ]
+}

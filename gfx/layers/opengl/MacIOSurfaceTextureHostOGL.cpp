@@ -16,9 +16,9 @@ namespace layers {
 MacIOSurfaceTextureHostOGL::MacIOSurfaceTextureHostOGL(
     TextureFlags aFlags, const SurfaceDescriptorMacIOSurface& aDescriptor)
     : TextureHost(TextureHostType::MacIOSurface, aFlags),
-      mSurface(MacIOSurface::LookupSurface(aDescriptor.surfaceId(),
-                                           !aDescriptor.isOpaque(),
-                                           aDescriptor.yUVColorSpace())),
+      mSurface(MacIOSurface::LookupSurface(
+          aDescriptor.surfaceId(), !aDescriptor.isOpaque(),
+          aDescriptor.yUVColorSpace(), aDescriptor.transferFunction())),
       mGpuFence(aDescriptor.gpuFence()) {
   MOZ_COUNT_CTOR(MacIOSurfaceTextureHostOGL);
   if (!mSurface) {
@@ -67,6 +67,13 @@ gfx::ColorRange MacIOSurfaceTextureHostOGL::GetColorRange() const {
   }
   return mSurface->IsFullRange() ? gfx::ColorRange::FULL
                                  : gfx::ColorRange::LIMITED;
+}
+
+gfx::TransferFunction MacIOSurfaceTextureHostOGL::GetTransferFunction() const {
+  if (!mSurface) {
+    return gfx::TransferFunction::BT709;
+  }
+  return mSurface->GetTransferFunction();
 }
 
 void MacIOSurfaceTextureHostOGL::CreateRenderTexture(

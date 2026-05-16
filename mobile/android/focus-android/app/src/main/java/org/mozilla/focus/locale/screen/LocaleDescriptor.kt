@@ -41,8 +41,8 @@ class LocaleDescriptor(private val localeTag: String) : Comparable<LocaleDescrip
         languageCodeAndNameMap["jv"] = "Basa Jawa"
         languageCodeAndNameMap["meh"] = "Tu'un Savi Yucuhiti"
         languageCodeAndNameMap["mix"] = "Tu'un savi"
-        languageCodeAndNameMap["nv"] = "Navajo"
-        languageCodeAndNameMap["oc"] = "occitan"
+        languageCodeAndNameMap["nv"] = "Diné bizaad"
+        languageCodeAndNameMap["oc"] = "Occitan"
         languageCodeAndNameMap["pai"] = "Paa ipai"
         languageCodeAndNameMap["ppl"] = "Náhuat Pipil"
         languageCodeAndNameMap["quc"] = "K'iche'"
@@ -56,7 +56,8 @@ class LocaleDescriptor(private val localeTag: String) : Comparable<LocaleDescrip
         languageCodeAndNameMap["wo"] = "Wolof"
         languageCodeAndNameMap["yua"] = "Maayat’aan"
         languageCodeAndNameMap["zam"] = "DíɁztè"
-        languageCodeAndNameMap["zh-CN"] = "中文 (中国大陆)"
+        languageCodeAndNameMap["zh-CN"] = "简体中文"
+        languageCodeAndNameMap["zh-TW"] = "正體中文"
     }
 
     private fun setupLocaleDescriptor() {

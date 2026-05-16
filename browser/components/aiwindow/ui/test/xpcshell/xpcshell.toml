@@ -5,6 +5,8 @@ run-if = [
   "os != 'android'",
 ]
 
+["test_ChatModelChoice.js"]
+
 ["test_ChatConversation.js"]
 
 ["test_ChatMessage.js"]

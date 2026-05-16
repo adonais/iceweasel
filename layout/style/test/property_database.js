@@ -13443,10 +13443,9 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
     domProp: "positionAnchor",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    initial_values: ["none"],
-    other_values: ["auto", "--foo"],
+    initial_values: ["normal"],
+    other_values: ["none", "auto", "--foo"],
     invalid_values: [
-      "normal",
       "none, auto",
       "--foo none",
       "--foo, auto",
@@ -13977,16 +13976,14 @@ gCSSProperties["math-style"] = {
   invalid_values: [],
 };
 
-if (IsCSSPropertyPrefEnabled("mathml.math_shift.enabled")) {
-  gCSSProperties["math-shift"] = {
-    domProp: "mathShift",
-    inherited: true,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["normal"],
-    other_values: ["compact"],
-    invalid_values: [],
-  };
-}
+gCSSProperties["math-shift"] = {
+  domProp: "mathShift",
+  inherited: true,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["normal"],
+  other_values: ["compact"],
+  invalid_values: [],
+};
 
 gCSSProperties["forced-color-adjust"] = {
   domProp: "forcedColorAdjust",

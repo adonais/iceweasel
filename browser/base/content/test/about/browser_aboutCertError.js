@@ -1139,12 +1139,13 @@ add_task(async function checkReturnToPreviousPage_feltPrivacyToTrue() {
       true
     );
     await SpecialPowers.spawn(bc, [useFrame], async function () {
-      const netErrorCard =
-        content.document.querySelector("net-error-card").wrappedJSObject;
-      await netErrorCard.getUpdateComplete();
-      const returnButton = netErrorCard.returnButton;
-      returnButton.scrollIntoView(true);
-      EventUtils.synthesizeMouseAtCenter(returnButton, {}, content);
+      const netErrorCard = await ContentTaskUtils.waitForCondition(
+        () => content.document.querySelector("net-error-card")?.wrappedJSObject
+      );
+      const returnButton = await ContentTaskUtils.waitForCondition(
+        () => netErrorCard.returnButton
+      );
+      returnButton.click();
     });
     await pageShownPromise;
 

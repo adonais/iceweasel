@@ -228,6 +228,33 @@ describe("PrefsFeed", () => {
     feed.onPocketExperimentUpdated({}, "feature-rollout-loaded");
     assert.notCalled(feed.store.dispatch);
   });
+  it("should set initialWallpaper when currentWallpaper is set and initialWallpaper is unset", () => {
+    sandbox
+      .stub(global.NimbusFeatures.pocketNewtab, "getAllVariables")
+      .returns({
+        currentWallpaper: "celestial",
+      });
+    feed.onPocketExperimentUpdated();
+    assert.calledWith(
+      feed._prefs.set,
+      "newtabWallpapers.initialWallpaper",
+      "celestial"
+    );
+  });
+  it("should not overwrite initialWallpaper if it is already set", () => {
+    FAKE_PREFS.set("newtabWallpapers.initialWallpaper", "celestial");
+    sandbox
+      .stub(global.NimbusFeatures.pocketNewtab, "getAllVariables")
+      .returns({
+        currentWallpaper: "celestial",
+      });
+    feed.onPocketExperimentUpdated();
+    assert.neverCalledWith(
+      feed._prefs.set,
+      "newtabWallpapers.initialWallpaper",
+      sinon.match.any
+    );
+  });
   it("should send a PREF_CHANGED actions when onExperimentUpdated is called", () => {
     sandbox.stub(global.NimbusFeatures.newtab, "getAllVariables").returns({
       prefsButtonIcon: "icon-new",

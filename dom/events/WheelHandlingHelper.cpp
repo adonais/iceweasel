@@ -533,8 +533,8 @@ bool ScrollbarsForWheel::IsActive() {
   if (sActiveOwner) {
     return true;
   }
-  for (size_t i = 0; i < kNumberOfTargets; ++i) {
-    if (sActivatedScrollTargets[i]) {
+  for (auto& sActivatedScrollTarget : sActivatedScrollTargets) {
+    if (sActivatedScrollTarget) {
       return true;
     }
   }
@@ -565,8 +565,8 @@ void ScrollbarsForWheel::TemporarilyActivateAllPossibleScrollTargets(
 
 /* static */
 void ScrollbarsForWheel::DeactivateAllTemporarilyActivatedScrollTargets() {
-  for (size_t i = 0; i < kNumberOfTargets; i++) {
-    AutoWeakFrame* scrollTarget = &sActivatedScrollTargets[i];
+  for (auto& sActivatedScrollTarget : sActivatedScrollTargets) {
+    AutoWeakFrame* scrollTarget = &sActivatedScrollTarget;
     if (*scrollTarget) {
       nsIScrollbarMediator* scrollbarMediator = do_QueryFrame(*scrollTarget);
       if (scrollbarMediator) {

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -1218,6 +1216,11 @@ class FlowGraphSummary {
     // or Entry::Column_HasMultipleEdge.
 
     uint32_t prevLineno = script->lineno();
+    if (prevLineno == Entry::Line_HasNoEdge) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_BAD_LINE_NUMBER);
+      return false;
+    }
     uint32_t prevColumn = 1;
     JSOp prevOp = JSOp::Nop;
     for (BytecodeRangeWithPosition r(cx, script, SkipPrologueOps::Yes);
@@ -1243,6 +1246,15 @@ class FlowGraphSummary {
       if (r.frontIsEntryPoint()) {
         lineno = r.frontLineNumber();
         column = r.frontColumnNumber().oneOriginValue();
+        if (lineno == Entry::Line_HasNoEdge) {
+          JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                    JSMSG_BAD_LINE_NUMBER);
+          return false;
+        }
+        // NOTE: The column data types cannot represent Column_HasMultipleEdge,
+        //       and also the column number is limited in the frontend.
+        //       See GeneralTokenStreamChars::computeColumn.
+        MOZ_ASSERT(column != Entry::Column_HasMultipleEdge);
       }
 
       if (IsJumpOpcode(op)) {

@@ -2327,6 +2327,10 @@ void nsSocketTransport::OnSocketDetached(PRFileDesc* fd) {
   {
     MutexAutoLock lock(mLock);
     if (mFD.IsInitialized()) {
+      auto callback = std::move(mFDDetachCallback);
+      if (callback) {
+        callback(mFD);
+      }
       ReleaseFD_Locked(mFD);
       // flag mFD as unusable; this prevents other consumers from
       // acquiring a reference to mFD.

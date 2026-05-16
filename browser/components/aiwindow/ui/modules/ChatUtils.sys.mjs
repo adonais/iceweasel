@@ -59,6 +59,7 @@ export function parseConversationRow(row) {
       row.getResultByName("security_properties")
     ),
     seenUrls: Array.isArray(seenUrlsArray) ? seenUrlsArray : [],
+    memoriesToggled: row.getResultByName("memories_toggled"),
   });
 }
 

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -1189,31 +1187,32 @@ static bool ResolveLocale(JSContext* cx,
   // Changes from "Intl era and monthCode" proposal.
   //
   // https://tc39.es/proposal-intl-era-monthcode/#sec-createdatetimeformat
-  auto ca = resolved.extension(UnicodeExtensionKey::Calendar);
-  MOZ_ASSERT(ca, "resolved calendar is non-null");
+  if (auto ca = resolved.extension(UnicodeExtensionKey::Calendar)) {
+    if (StringEqualsLiteral(ca, "islamic")) {
+      if (!WarnNumberASCII(cx, JSMSG_ISLAMIC_FALLBACK)) {
+        return false;
+      }
 
-  if (StringEqualsLiteral(ca, "islamic")) {
-    if (!WarnNumberASCII(cx, JSMSG_ISLAMIC_FALLBACK)) {
-      return false;
+      // Fallback to "islamic-tbla" calendar.
+      auto* str = NewStringCopyZ<CanGC>(cx, "islamic-tbla");
+      if (!str) {
+        return false;
+      }
+      dateTimeFormat->setCalendar(str);
+    } else if (StringEqualsLiteral(ca, "islamic-rgsa")) {
+      // Fallback to "islamic-tbla" calendar for 147 uplift compatibility.
+      // The above warning text isn't suitable, and per 2025-12 TG2 meeting
+      // treatment as unknown is expected going forward (bug 2005702).
+      auto* str = NewStringCopyZ<CanGC>(cx, "islamic-tbla");
+      if (!str) {
+        return false;
+      }
+      dateTimeFormat->setCalendar(str);
+    } else {
+      dateTimeFormat->setCalendar(ca);
     }
-
-    // Fallback to "islamic-tbla" calendar.
-    auto* str = NewStringCopyZ<CanGC>(cx, "islamic-tbla");
-    if (!str) {
-      return false;
-    }
-    dateTimeFormat->setCalendar(str);
-  } else if (StringEqualsLiteral(ca, "islamic-rgsa")) {
-    // Fallback to "islamic-tbla" calendar for 147 uplift compatibility.
-    // The above warning text isn't suitable, and per 2025-12 TG2 meeting
-    // treatment as unknown is expected going forward (bug 2005702).
-    auto* str = NewStringCopyZ<CanGC>(cx, "islamic-tbla");
-    if (!str) {
-      return false;
-    }
-    dateTimeFormat->setCalendar(str);
   } else {
-    dateTimeFormat->setCalendar(ca);
+    dateTimeFormat->setCalendar(cx->names().default_);
   }
 
   auto hc = resolved.extension(UnicodeExtensionKey::HourCycle);
@@ -1235,11 +1234,16 @@ static bool ResolveLocale(JSContext* cx,
       MOZ_ASSERT(StringEqualsLiteral(hc, "h24"));
       dtfOptions.hourCycle = mozilla::Some(H24);
     }
+  } else {
+    // The first element of [[LocaleData]].[[<locale>]].[[hc]] is |null|, so
+    // hour-cycle is left unset if no explicit option was present.
   }
 
-  auto nu = resolved.extension(UnicodeExtensionKey::NumberingSystem);
-  MOZ_ASSERT(nu, "resolved numbering system is non-null");
-  dateTimeFormat->setNumberingSystem(nu);
+  if (auto nu = resolved.extension(UnicodeExtensionKey::NumberingSystem)) {
+    dateTimeFormat->setNumberingSystem(nu);
+  } else {
+    dateTimeFormat->setNumberingSystem(cx->names().default_);
+  }
 
   auto* locale = resolved.toLocale(cx);
   if (!locale) {
@@ -1253,6 +1257,36 @@ static bool ResolveLocale(JSContext* cx,
   MOZ_ASSERT(dateTimeFormat->isLocaleResolved(),
              "locale successfully resolved");
   return true;
+}
+
+static JSLinearString* ResolveCalendar(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat) {
+  MOZ_ASSERT(dateTimeFormat->isLocaleResolved());
+
+  auto* calendar = dateTimeFormat->getCalendar();
+  if (calendar == cx->names().default_) {
+    calendar = DefaultCalendar(cx, dateTimeFormat->getLocale());
+    if (!calendar) {
+      return nullptr;
+    }
+    dateTimeFormat->setCalendar(calendar);
+  }
+  return calendar;
+}
+
+static JSLinearString* ResolveNumberingSystem(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat) {
+  MOZ_ASSERT(dateTimeFormat->isLocaleResolved());
+
+  auto* numberingSystem = dateTimeFormat->getNumberingSystem();
+  if (numberingSystem == cx->names().default_) {
+    numberingSystem = DefaultNumberingSystem(cx, dateTimeFormat->getLocale());
+    if (!numberingSystem) {
+      return nullptr;
+    }
+    dateTimeFormat->setNumberingSystem(numberingSystem);
+  }
+  return numberingSystem;
 }
 
 enum class HourCycle {
@@ -1277,13 +1311,24 @@ static UniqueChars DateTimeFormatLocale(
 
   // ICU expects calendar, numberingSystem, and hourCycle as Unicode locale
   // extensions on locale.
+  //
+  // We don't add any Unicode extension keywords when the default values can be
+  // used, because ICU optimizes for this case.
 
   JS::RootedVector<UnicodeExtensionKeyword> keywords(cx);
-  if (!keywords.emplaceBack("ca", dateTimeFormat->getCalendar())) {
-    return nullptr;
+
+  auto* calendar = dateTimeFormat->getCalendar();
+  if (calendar != cx->names().default_) {
+    if (!keywords.emplaceBack("ca", calendar)) {
+      return nullptr;
+    }
   }
-  if (!keywords.emplaceBack("nu", dateTimeFormat->getNumberingSystem())) {
-    return nullptr;
+
+  auto* numberingSystem = dateTimeFormat->getNumberingSystem();
+  if (numberingSystem != cx->names().default_) {
+    if (!keywords.emplaceBack("nu", numberingSystem)) {
+      return nullptr;
+    }
   }
 
   if (hourCycle) {
@@ -2343,7 +2388,10 @@ static bool ResolveCalendarValue(JSContext* cx,
     return false;
   }
 
-  Rooted<JSString*> calendarString(cx, dateTimeFormat->getCalendar());
+  Rooted<JSString*> calendarString(cx, ResolveCalendar(cx, dateTimeFormat));
+  if (!calendarString) {
+    return false;
+  }
 
   Rooted<CalendarValue> calendar(cx);
   if (!CanonicalizeCalendar(cx, calendarString, &calendar)) {
@@ -3265,13 +3313,13 @@ static constexpr uint32_t DateTimeFormatFunction_DateTimeFormat = 0;
 /**
  * DateTime Format Functions
  */
-static bool DateTimeCompareFunction(JSContext* cx, unsigned argc, Value* vp) {
+static bool DateTimeFormatFunction(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   // Steps 1-2.
-  auto* compare = &args.callee().as<JSFunction>();
+  auto* format = &args.callee().as<JSFunction>();
   auto dtfValue =
-      compare->getExtendedSlot(DateTimeFormatFunction_DateTimeFormat);
+      format->getExtendedSlot(DateTimeFormatFunction_DateTimeFormat);
   Rooted<DateTimeFormatObject*> dateTimeFormat(
       cx, &dtfValue.toObject().as<DateTimeFormatObject>());
 
@@ -3297,7 +3345,7 @@ static bool dateTimeFormat_format(JSContext* cx, const CallArgs& args) {
   if (!boundFormat) {
     Handle<PropertyName*> funName = cx->names().empty_;
     auto* fn =
-        NewNativeFunction(cx, DateTimeCompareFunction, 1, funName,
+        NewNativeFunction(cx, DateTimeFormatFunction, 1, funName,
                           gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
     if (!fn) {
       return false;
@@ -3436,13 +3484,21 @@ static bool dateTimeFormat_resolvedOptions(JSContext* cx,
     return false;
   }
 
+  auto* calendar = ResolveCalendar(cx, dateTimeFormat);
+  if (!calendar) {
+    return false;
+  }
   if (!options.emplaceBack(NameToId(cx->names().calendar),
-                           StringValue(dateTimeFormat->getCalendar()))) {
+                           StringValue(calendar))) {
     return false;
   }
 
+  auto* numberingSystem = ResolveNumberingSystem(cx, dateTimeFormat);
+  if (!numberingSystem) {
+    return false;
+  }
   if (!options.emplaceBack(NameToId(cx->names().numberingSystem),
-                           StringValue(dateTimeFormat->getNumberingSystem()))) {
+                           StringValue(numberingSystem))) {
     return false;
   }
 

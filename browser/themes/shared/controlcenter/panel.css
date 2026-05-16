@@ -19,18 +19,18 @@
 #permission-popup,
 #trustpanel-popup,
 #protections-popup {
-  --popup-width: 30.81em;
+  --panel-width: 30.81em;
   /* Set default fill for icons in the identity popup.
      Individual icons can override this. */
   fill: currentColor;
-  --horizontal-padding: calc(var(--arrowpanel-menuitem-padding-inline) * 2);
+  --horizontal-padding: calc(var(--panel-menuitem-padding-inline) * 2);
   --vertical-section-padding: 0.9em;
   --height-offset: 0px;
   font: menu;
 }
 
 #protections-popup[toast] {
-  --popup-width: 27.12em;
+  --panel-width: 27.12em;
 }
 
 #protections-popup[infoMessageShowing] {
@@ -94,8 +94,8 @@
 #trustpanel-popup-mainView,
 #trustpanel-blockerView,
 #protections-popup-mainView {
-  min-width: var(--popup-width);
-  max-width: var(--popup-width);
+  min-width: var(--panel-width);
+  max-width: var(--panel-width);
 }
 
 #protections-popup[toast] #protections-popup-mainView > :not(#protections-popup-mainView-panel-header-section),
@@ -147,7 +147,7 @@
 #permission-popup .panel-header > h1 > span,
 #identity-popup .panel-header > h1 > span {
   /* This is needed for the overflow-wrap to work correctly when the domain name is really long. */
-  max-width: calc(var(--popup-width) - 2 * var(--arrowpanel-menuitem-margin-inline));
+  max-width: calc(var(--panel-width) - 2 * var(--panel-menuitem-margin-inline));
   overflow-wrap: break-word;
 }
 
@@ -156,17 +156,17 @@
    * icon-full-width is included twice to compensate for the margin-inline-start of the text,
    * used to center it even if the header includes a info button. See .panel-header-with-info-button */
   /* prettier-ignore */
-  max-width: calc(var(--popup-width)
-                  - var(--arrowpanel-menuitem-margin-inline) * 2
-                  - var(--arrowpanel-header-info-icon-full-width) * 2);
+  max-width: calc(var(--panel-width)
+                  - var(--panel-menuitem-margin-inline) * 2
+                  - var(--panel-header-info-icon-full-width) * 2);
 }
 
 #identity-popup .panel-header > .subviewbutton-back + h1 > span {
   /* Same idea as above, but in the identity popup when there's a back button. */
   /* prettier-ignore */
-  max-width: calc(var(--popup-width)
-                  - var(--arrowpanel-menuitem-margin-inline) * 2
-                  - var(--arrowpanel-header-back-icon-full-width) * 2);
+  max-width: calc(var(--panel-width)
+                  - var(--panel-menuitem-margin-inline) * 2
+                  - var(--panel-header-back-icon-full-width) * 2);
 }
 
 #protections-popup:not([infoMessageShowing]) #protections-popup-mainView-panel-header-section + toolbarseparator {
@@ -204,20 +204,20 @@
 }
 
 .identity-popup-section {
-  margin-inline: var(--arrowpanel-menuitem-margin-inline);
-  padding-inline: var(--arrowpanel-menuitem-padding-inline);
+  margin-inline: var(--panel-menuitem-margin-inline);
+  padding-inline: var(--panel-menuitem-padding-inline);
 }
 
 .identity-popup-section.indented {
   /* Align with the text displayed following the lock icon, in the connection status button above.
      16px is the icon size and 8px is the inline-start padding of the text. */
-  padding-inline: calc(var(--arrowpanel-menuitem-padding-inline) + 16px + 8px);
+  padding-inline: calc(var(--panel-menuitem-padding-inline) + 16px + 8px);
 }
 
 .identity-popup-security-connection {
   list-style-image: url(chrome://global/skin/icons/security-broken.svg);
-  margin: var(--arrowpanel-menuitem-margin);
-  padding: var(--arrowpanel-menuitem-padding);
+  margin: var(--panel-menuitem-margin);
+  padding: var(--panel-menuitem-padding);
   -moz-context-properties: fill;
   min-height: 24px;
 }
@@ -393,7 +393,7 @@
   }
 
   > tooltip {
-    max-width: var(--popup-width);
+    max-width: var(--panel-width);
   }
 }
 
@@ -568,8 +568,8 @@
 /* Protection popup footer categories */
 
 #protections-popup-trackers-blocked-counter-box {
-  margin: var(--arrowpanel-menuitem-margin);
-  padding: var(--arrowpanel-menuitem-padding);
+  margin: var(--panel-menuitem-margin);
+  padding: var(--panel-menuitem-padding);
   visibility: hidden;
   opacity: 0;
   transition: opacity 200ms linear;
@@ -678,8 +678,8 @@
 
 .protections-popup-section-header,
 .protections-popup-switch-section-header {
-  padding: var(--arrowpanel-menuitem-padding);
-  margin: var(--arrowpanel-menuitem-margin);
+  padding: var(--panel-menuitem-padding);
+  margin: var(--panel-menuitem-margin);
 }
 
 .identity-popup-expander:focus-visible,
@@ -779,18 +779,18 @@
 .protections-popup-smartblock-section {
   background-color: var(--background-color-information);
   border-radius: var(--border-radius-small);
-  margin-inline: var(--arrowpanel-menuitem-margin-inline);
+  margin-inline: var(--panel-menuitem-margin-inline);
   margin-block-start: var(--space-small);
   padding-block: var(--space-small);
 }
 
 .protections-popup-smartblock-toggle-box {
-  margin-inline: var(--arrowpanel-menuitem-margin-inline);
-  padding-inline: var(--arrowpanel-menuitem-padding-inline);
+  margin-inline: var(--panel-menuitem-margin-inline);
+  padding-inline: var(--panel-menuitem-padding-inline);
 }
 
 .protections-popup-smartblock-toggle-box > moz-toggle {
-  padding-block-end: var(--arrowpanel-menuitem-padding-block);
+  padding-block-end: var(--panel-menuitem-padding-block);
 }
 
 /* Trustpanel popup */
@@ -915,8 +915,8 @@
 }
 
 .trustpanel-section {
-  padding: var(--arrowpanel-menuitem-padding);
-  margin: var(--arrowpanel-menuitem-margin);
+  padding: var(--panel-menuitem-padding);
+  margin: var(--panel-menuitem-margin);
 }
 
 #trustpanel-toggle-section {

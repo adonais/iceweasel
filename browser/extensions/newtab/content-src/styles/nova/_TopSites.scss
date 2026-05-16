@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 // @nova-cleanup(merge-styles): Merge nova/_TopSites.scss back to TopSites/_TopSites.scss after ship
 
 .nova-enabled .top-sites {
@@ -47,14 +51,16 @@
   margin-block-end: 0;
 
   .top-site-button {
+    display: grid;
+    grid-template-rows: var(--col-width) auto;
     padding: 0;
-    justify-content: flex-end;
   }
 
   .tile {
-    box-shadow: none; // @nova-cleanup(remove-conditional): Nova gets rid of box shadow at rest
-    margin-block-start: var(--space-medium);
-    transition: width 100ms ease-out, height 100ms ease-out, margin-block-start 100ms ease-out;
+    align-self: end;
+    box-shadow: var(--card-box-shadow);
+    border: var(--border-width) solid var(--button-border-color-ghost);
+    transition: width 100ms ease-out, height 100ms ease-out;
   }
 
   &:is(:hover, :focus-within, .active) {
@@ -63,8 +69,7 @@
       width: var(--col-width);
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       height: var(--col-width);
-      margin-block-start: 0;
-      box-shadow: var(--card-box-shadow);
+      border-color: var(--button-border-color-ghost-hover);
     }
 
     .icon-pin-small,
@@ -72,6 +77,14 @@
       opacity: 1;
       transition: opacity 100ms ease-out 50ms;
     }
+  }
+
+  &:active .tile {
+    border-color: var(--button-border-color-ghost-active);
+  }
+
+  &.add-button .tile {
+    color-scheme: initial;
   }
 
   .top-site-inner > a:focus .tile {
@@ -89,7 +102,25 @@
   .context-menu-button {
     inset-inline-end: var(--space-xxsmall);
     inset-block-start: var(--space-xxsmall);
+    border: var(--border-width) solid var(--button-border-color-ghost);
     border-radius: var(--border-radius-circle);
+    color: var(--button-text-color-ghost);
+    fill: var(--button-icon-fill);
+
+    &:hover {
+      background-color: var(--button-background-color-ghost-hover);
+      border-color: var(--button-border-color-ghost-hover);
+      color: var(--button-text-color-ghost-hover);
+
+      &:active {
+        background-color: var(--button-background-color-ghost-active);
+        border-color: var(--button-border-color-ghost-active);
+      }
+    }
+
+    &:focus-visible {
+      background-color: var(--button-background-color-ghost); // @nova-cleanup(remove-conditional): overrides classic focus background
+    }
 
     .lightWallpaper &,
     .darkWallpaper & {
@@ -111,10 +142,48 @@
     }
   }
 
-  .title .title-label {
-    font-weight: var(--font-weight-semibold);
-    padding: 0;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    width: var(--col-width);
+  &.add-button .tile {
+    background: var(--newtab-background-card);
+  }
+
+  .title {
+    .title-label {
+      padding: 0;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      width: var(--col-width);
+    }
+
+    // Allow a bit more character space for sponsored tile labels
+    &.sponsored > .title-label {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      width: calc(var(--col-width) + 8px);
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .nova-enabled .top-site-outer .tile {
+    background-color: var(--button-background-color);
+  }
+
+  .nova-enabled .top-site-outer .context-menu-button {
+    background-color: var(--button-background-color);
+  }
+
+  .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
+    background-color: var(--button-background-color-hover);
+  }
+
+  .nova-enabled .top-site-outer .sponsored-label {
+    color: var(--text-color);
+  }
+
+  .nova-enabled .top-site-outer.add-button .tile .icon-wrapper {
+    color: var(--button-text-color-ghost);
+    fill: var(--button-icon-fill);
+  }
+
+  .nova-enabled .top-site-outer.add-button:hover .tile .icon-wrapper {
+    color: var(--button-text-color-ghost-hover);
   }
 }

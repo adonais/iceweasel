@@ -1,6 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -587,6 +584,23 @@ BEGIN_TEST(testBufferAllocator_API) {
   return true;
 }
 END_TEST(testBufferAllocator_API)
+
+BEGIN_TEST(testBufferAllocator_largeAllocOverflow) {
+  AutoLeaveZeal leaveZeal(cx);
+
+  JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
+
+  Zone* zone = cx->zone();
+  size_t initialGCHeapSize = zone->gcHeapSize.bytes();
+  size_t initialMallocHeapSize = zone->mallocHeapSize.bytes();
+
+  CHECK(AllocBuffer(zone, size_t(-1), false) == nullptr);
+  CHECK(zone->gcHeapSize.bytes() == initialGCHeapSize);
+  CHECK(zone->mallocHeapSize.bytes() == initialMallocHeapSize);
+
+  return true;
+}
+END_TEST(testBufferAllocator_largeAllocOverflow)
 
 BEGIN_TEST(testBufferAllocator_realloc) {
   AutoLeaveZeal leaveZeal(cx);

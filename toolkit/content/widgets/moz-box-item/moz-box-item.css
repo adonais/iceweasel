@@ -23,23 +23,26 @@
   padding-inline-start: calc(var(--button-size-icon) + var(--space-small));
 }
 
-.text-content.has-support-page {
+.text-content {
   .label-wrapper {
     grid-area: label;
-    display: flex;
-    gap: var(--space-xsmall);
-    align-items: center;
-    flex-wrap: wrap;
   }
 
   .description-wrapper {
     grid-area: description;
   }
 
-  &:not(.has-description) .description-wrapper {
+  &.has-support-page .label,
+  &.has-support-page .description {
+    margin-inline-end: var(--space-xsmall);
+  }
+
+  &:not(.has-description) .description-wrapper,
+  &:not(.has-support-page) slot[name="support-link"] {
     display: none;
   }
 
+  .label,
   .description,
   .support-page {
     display: inline;
@@ -48,10 +51,6 @@
 
 .description + .support-page {
   font-size: var(--font-size-small);
-}
-
-.text-content:not(.has-description) slot[name="description"] {
-  display: none;
 }
 
 .box-container {

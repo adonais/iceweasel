@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -140,7 +138,7 @@ static void CloseLiveIteratorIon(JSContext* cx,
   RootedObject iterObject(cx, &v.toObject());
 
   if (isDestructuring) {
-    RootedValue doneValue(cx, si.read());
+    RootedValue doneValue(cx, si.maybeRead(recover));
     MOZ_RELEASE_ASSERT(!doneValue.isMagic());
     bool done = ToBoolean(doneValue);
     // Do not call IteratorClose if the destructuring iterator is already
@@ -1480,6 +1478,11 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
 #ifdef ENABLE_WASM_JSPI
       if (wasmFrameIter.currentFrameStackSwitched()) {
         highestByteVisitedInPrevWasmFrame = 0;
+        if (wasmFrameIter.contStack()) {
+          // Trace the fields on the continuation stack itself. The frames on
+          // the stack will be traced below.
+          wasmFrameIter.contStack()->traceFields(trc);
+        }
       }
 #endif
       wasm::Instance* instance = wasmFrameIter.instance();
@@ -1490,13 +1493,36 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
   }
 }
 
+#ifdef ENABLE_WASM_JSPI
+static void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
+  gc::AssertRootMarkingPhase(trc);
+
+  // If we're tenuring, then unconditionally trace all suspended stacks. This
+  // is needed as they may point at nursery entries, but also don't have any
+  // store buffer entries.
+  //
+  // If we're not tenuring, then the suspended ones will be traced through
+  // references to their continuation object.
+  if (!trc->isTenuringTracer()) {
+    return;
+  }
+
+  for (wasm::ContStack* stack : cx->wasm().stacks()) {
+    if (stack->canResume()) {
+      stack->traceSuspended(trc);
+    }
+  }
+}
+#endif
+
 void TraceJitActivations(JSContext* cx, JSTracer* trc) {
   for (JitActivationIterator activations(cx); !activations.done();
        ++activations) {
     TraceJitActivation(trc, activations->asJit());
   }
+
 #ifdef ENABLE_WASM_JSPI
-  cx->wasm().traceRoots(trc);
+  TraceWasmSuspendedContStacks(cx, trc);
 #endif
 }
 
@@ -1534,6 +1560,13 @@ void UpdateJitActivationsForMinorGC(JSRuntime* rt) {
       }
     }
   }
+#ifdef ENABLE_WASM_JSPI
+  for (wasm::ContStack* stack : cx->wasm().stacks()) {
+    if (stack->canResume()) {
+      stack->updateSuspendedForMovingGC(nursery);
+    }
+  }
+#endif
 }
 
 void UpdateJitActivationsForCompactingGC(JSRuntime* rt) {
@@ -1550,6 +1583,13 @@ void UpdateJitActivationsForCompactingGC(JSRuntime* rt) {
       }
     }
   }
+#ifdef ENABLE_WASM_JSPI
+  for (wasm::ContStack* stack : cx->wasm().stacks()) {
+    if (stack->canResume()) {
+      stack->updateSuspendedForMovingGC(nursery);
+    }
+  }
+#endif
 }
 
 JSScript* GetTopJitJSScript(JSContext* cx) {
@@ -2268,8 +2308,11 @@ void SnapshotIterator::storeInstructionResult(const Value& v) {
 }
 
 Value SnapshotIterator::fromInstructionResult(uint32_t index) const {
-  MOZ_ASSERT(!(*instructionResults_)[index].isMagic(JS_ION_BAILOUT));
-  return (*instructionResults_)[index];
+  MOZ_RELEASE_ASSERT(instructionResults_,
+                     "missing instruction results for recovered allocation");
+  Value v = (*instructionResults_)[index];
+  MOZ_RELEASE_ASSERT(!v.isMagic());
+  return v;
 }
 
 void SnapshotIterator::settleOnFrame() {

@@ -32,6 +32,7 @@ namespace dom {
 class AddonManager;
 class BodyExtractorBase;
 class Geolocation;
+class Serial;
 class systemMessageCallback;
 class MediaDevices;
 struct MediaStreamConstraints;
@@ -129,6 +130,8 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   void GetDoNotTrack(nsAString& aResult);
   bool GlobalPrivacyControl();
   Geolocation* GetGeolocation(ErrorResult& aRv);
+  dom::Serial* GetSerial(ErrorResult& aRv);
+  dom::Serial* GetExistingSerial() { return mSerial; }
   Promise* GetBattery(ErrorResult& aRv);
   dom::WakeLockJS* WakeLock();
 
@@ -295,6 +298,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   RefPtr<nsPluginArray> mPlugins;
   RefPtr<Permissions> mPermissions;
   RefPtr<Geolocation> mGeolocation;
+  RefPtr<dom::Serial> mSerial;
   RefPtr<battery::BatteryManager> mBatteryManager;
   RefPtr<Promise> mBatteryPromise;
   RefPtr<network::Connection> mConnection;

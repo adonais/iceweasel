@@ -801,7 +801,7 @@ browser.backup:
 
   restore_started:
     type: event
-    description: Dispatched when a file is chosen to be restored.
+    description: Dispatched when the user starts the restore of the selected backup file.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1992809
     data_reviews:

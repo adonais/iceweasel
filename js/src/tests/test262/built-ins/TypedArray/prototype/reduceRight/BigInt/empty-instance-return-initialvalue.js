@@ -27,7 +27,7 @@ info: |
   8. Repeat, while k ≥ 0
     ...
   9. Return accumulator.
-includes: [testBigIntTypedArray.js]
+includes: [testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
@@ -39,6 +39,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
 
   assert.sameValue(result, 42);
   assert.sameValue(called, false);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

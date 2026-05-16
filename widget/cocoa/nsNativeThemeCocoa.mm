@@ -344,7 +344,7 @@ nsNativeThemeCocoa::~nsNativeThemeCocoa() {
 // CGContextDrawImage(), and also to avoid very poor drawing performance in
 // CGContextDrawImage() when it scales the bitmap (particularly if xscale or
 // yscale is less than but near 1 -- e.g. 0.9).  This value was determined
-// by trial and error, on OS X 10.4.11 and 10.5.4, and on systems with
+// by trial and error, on macOS 10.4.11 and 10.5.4, and on systems with
 // different amounts of RAM.
 #define BITMAP_MAX_AREA 500000
 

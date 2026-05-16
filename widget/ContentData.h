@@ -5,8 +5,6 @@
 #ifndef mozilla_ContentData_h
 #define mozilla_ContentData_h
 
-#include <sstream>
-
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/WritingModes.h"

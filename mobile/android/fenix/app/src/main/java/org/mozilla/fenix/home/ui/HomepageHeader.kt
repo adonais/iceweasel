@@ -23,6 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -46,6 +48,8 @@ fun HomepageHeader(
     privateBrowsingButtonColor: Color,
     browsingMode: BrowsingMode,
     browsingModeChanged: (BrowsingMode) -> Unit,
+    onLogoClicked: () -> Unit,
+    onLogoLongClicked: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -54,7 +58,10 @@ fun HomepageHeader(
             .padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 32.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        WordmarkLogo()
+        WordmarkLogo(
+            onLogoClicked = onLogoClicked,
+            onLogoLongClicked = onLogoLongClicked,
+        )
 
         WordmarkText(wordmarkTextColor)
 
@@ -82,6 +89,7 @@ private fun PrivateBrowsingButton(
             )
             .size(40.dp)
             .semantics {
+                role = Role.Switch
                 testTagsAsResourceId = true
                 testTag = PRIVATE_BROWSING_HOMEPAGE_BUTTON
             },
@@ -92,7 +100,7 @@ private fun PrivateBrowsingButton(
     ) {
         Icon(
             tint = color,
-            painter = painterResource(iconsR.drawable.mozac_ic_private_mode_24),
+            painter = painterResource(iconsR.drawable.mozac_ic_private_mode_fill_24),
             contentDescription = stringResource(R.string.content_description_private_browsing),
         )
     }
@@ -123,6 +131,8 @@ private fun HomepageHeaderPreview(
                 ),
                 browsingMode = BrowsingMode.Normal,
                 browsingModeChanged = {},
+                onLogoClicked = {},
+                onLogoLongClicked = {},
             )
         }
     }

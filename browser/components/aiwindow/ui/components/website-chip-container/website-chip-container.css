@@ -11,6 +11,14 @@
   min-width: 0;
 }
 
+:host(.smartbar-context-chips-header) .chip-container {
+  padding-inline-start: var(--space-medium);
+  /* This padding aligns with border-width to maintain consistent spacing that creates the visual that the chips are coming to the edge. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-inline-end: var(--border-width);
+  padding-block-start: var(--space-large);
+}
+
 .scroller {
   display: flex;
   align-items: center;
@@ -48,4 +56,8 @@
   height: var(--size-item-small);
   flex-shrink: 0;
   opacity: 0.5;
+
+  @media (forced-colors) {
+    opacity: 1;
+  }
 }

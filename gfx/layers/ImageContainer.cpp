@@ -219,7 +219,8 @@ ImageContainer::~ImageContainer() {
 
   aStride = stride.value();
 
-  aSdBuffer.desc() = RGBDescriptor(aSize, aFormat);
+  aSdBuffer.desc() = RGBDescriptor(aSize, aFormat, gfx::ColorSpace2::SRGB,
+                                   gfx::TransferFunction::SRGB);
   aSdBuffer.data() = aAllocate(length.value());
 
   const layers::MemoryOrShmem& memOrShmem = aSdBuffer.data();
@@ -845,7 +846,8 @@ nsresult PlanarYCbCrImage::BuildSurfaceDescriptorBuffer(
   aSdBuffer.desc() = YCbCrDescriptor(
       pdata->mPictureRect, ySize, pdata->mYStride, cbcrSize, pdata->mCbCrStride,
       yOffset, cbOffset, crOffset, pdata->mStereoMode, pdata->mColorDepth,
-      pdata->mYUVColorSpace, pdata->mColorRange, pdata->mChromaSubsampling);
+      pdata->mYUVColorSpace, pdata->mColorRange, pdata->mTransferFunction,
+      pdata->mChromaSubsampling);
 
   CopyPlane(buffer + yOffset, pdata->mYChannel, ySize, pdata->mYStride,
             pdata->mYSkip);

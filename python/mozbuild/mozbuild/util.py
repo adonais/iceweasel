@@ -21,6 +21,12 @@ import time
 from io import BytesIO, StringIO
 from pathlib import Path
 
+try:
+    # FIXME: requires python 3.10
+    from types import NoneType
+except ImportError:
+    NoneType = type(None)
+
 from mozbuild.dirutils import ensureParentDir
 
 try:
@@ -465,7 +471,7 @@ class List(list):
     def __add__(self, other):
         # Allow None and EmptyValue is a special case because it makes undefined
         # variable references in moz.build behave better.
-        other = [] if isinstance(other, (type(None), EmptyValue)) else other
+        other = [] if isinstance(other, (NoneType, EmptyValue)) else other
         if not isinstance(other, list):
             raise ValueError("Only lists can be appended to lists.")
 
@@ -474,7 +480,7 @@ class List(list):
         return new_list
 
     def __iadd__(self, other):
-        other = [] if isinstance(other, (type(None), EmptyValue)) else other
+        other = [] if isinstance(other, (NoneType, EmptyValue)) else other
         if not isinstance(other, list):
             raise ValueError("Only lists can be appended to lists.")
 
@@ -986,6 +992,33 @@ def TypedNamedTuple(name, fields):
     return TypedTuple
 
 
+class CompilerFlag(str):
+    """
+    A compiler Flag that cannot be a warning.
+    """
+
+    def __new__(cls, f):
+        if f.startswith("-W") and not f.startswith("-Wno-"):
+            ishost = cls.__name__.startswith("Host")
+            iscxx = cls.__name__.endswith("CxxCompilerFlag")
+            raise ValueError(
+                f"Warning flag '{f}' must be added to {'HOST_' if ishost else ''}COMPILE_FLAGS['WARNINGS_C{'XX' if iscxx else ''}FLAGS']"
+            )
+        return super().__new__(cls, f)
+
+
+class CCompilerFlag(CompilerFlag): ...
+
+
+class CxxCompilerFlag(CompilerFlag): ...
+
+
+class HostCCompilerFlag(CompilerFlag): ...
+
+
+class HostCxxCompilerFlag(CompilerFlag): ...
+
+
 @functools.cache
 def TypedList(type, base_class=List):
     """A list with type coercion.
@@ -1030,11 +1063,13 @@ def TypedList(type, base_class=List):
             return super().__setitem__(key, val)
 
         def __add__(self, other):
+            other = [] if isinstance(other, (NoneType, EmptyValue)) else other
             other = self._ensure_type(other)
 
             return super().__add__(other)
 
         def __iadd__(self, other):
+            other = [] if isinstance(other, (NoneType, EmptyValue)) else other
             other = self._ensure_type(other)
 
             return super().__iadd__(other)
@@ -1431,3 +1466,8 @@ def find_task_from_index(index_paths):
             pass
 
     return None
+
+
+def set_taskcluster_root_url():
+    if "TASKCLUSTER_ROOT_URL" not in os.environ:
+        os.environ["TASKCLUSTER_ROOT_URL"] = TASKCLUSTER_ROOT_URL

@@ -357,6 +357,7 @@ include = [
   "PhysicalSide",
   "QueryFontMetricsFlags",
   "AllowAnchorPosResolutionInCalcPercentage",
+  "ListStyleType",
 ]
 item_types = [
   "enums",
@@ -1124,12 +1125,12 @@ renaming_overrides_prefixing = true
 
 "AnimationName" = """
  public:
-  StyleAnimationName() : _0(nsGkAtoms::_empty) {}
+  StyleAnimationName();
 """
 
 "TimelineIdent" = """
  public:
-  StyleTimelineIdent() : _0(nsGkAtoms::_empty) {}
+  StyleTimelineIdent();
   nsAtom* AsAtom() const { return _0.AsAtom(); }
 """
 
@@ -1162,9 +1163,7 @@ renaming_overrides_prefixing = true
 """
 
 "FontPalette" = """
-  inline static StyleFontPalette Normal() {
-    return StyleFontPalette{StyleAtom(nsGkAtoms::normal->ToAddRefed())};
-  }
+  inline static StyleFontPalette Normal();
 """
 
 "GenericOffsetPath" = """
@@ -1293,8 +1292,8 @@ renaming_overrides_prefixing = true
   inline Span<const mozilla::StyleAtom> AsSpan() const;
 """
 
-"PropertyTypedValue" = """
-  StylePropertyTypedValue(StylePropertyTypedValue&& other)
+"PropertyTypedValueList" = """
+  StylePropertyTypedValueList(StylePropertyTypedValueList&& other)
       : tag(other.tag) {
     switch (tag) {
       case Tag::None:
@@ -1309,10 +1308,10 @@ renaming_overrides_prefixing = true
     }
   }
 
-  StylePropertyTypedValue& operator=(StylePropertyTypedValue&& other) {
+  StylePropertyTypedValueList& operator=(StylePropertyTypedValueList&& other) {
     if (this != &other) {
-      this->~StylePropertyTypedValue();
-      new (this) StylePropertyTypedValue(std::move(other));
+      this->~StylePropertyTypedValueList();
+      new (this) StylePropertyTypedValueList(std::move(other));
     }
     return *this;
   }

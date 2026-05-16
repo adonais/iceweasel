@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -930,13 +928,13 @@ MOZ_RUNINIT ScalarMapType gScalarNameIDMap(kScalarCount);
 // The (Process Id -> (Scalar ID -> Scalar Object)) map. This is a
 // nsClassHashtable, it owns the scalar instances and takes care of deallocating
 // them when they are removed from the map.
-MOZ_RUNINIT ProcessesScalarsMapType gScalarStorageMap;
+constinit ProcessesScalarsMapType gScalarStorageMap;
 // As above, for the keyed scalars.
-MOZ_RUNINIT ProcessesKeyedScalarsMapType gKeyedScalarStorageMap;
+constinit ProcessesKeyedScalarsMapType gKeyedScalarStorageMap;
 // Provide separate storage for "dynamic builtin" plain and keyed scalars,
 // needed to support "build faster" in local developer builds.
-MOZ_RUNINIT ProcessesScalarsMapType gDynamicBuiltinScalarStorageMap;
-MOZ_RUNINIT ProcessesKeyedScalarsMapType gDynamicBuiltinKeyedScalarStorageMap;
+constinit ProcessesScalarsMapType gDynamicBuiltinScalarStorageMap;
+constinit ProcessesKeyedScalarsMapType gDynamicBuiltinKeyedScalarStorageMap;
 }  // namespace
 
 ////////////////////////////////////////////////////////////////////////
@@ -2421,7 +2419,7 @@ nsresult TelemetryScalar::RegisterScalars(const nsACString& aCategoryName,
       }
       // In the event of the usual case (just "main"), save the storage.
       if (stores.Length() == 1 && stores[0].EqualsLiteral("main")) {
-        stores.TruncateLength(0);
+        stores.ClearAndRetainStorage();
       }
     }
 

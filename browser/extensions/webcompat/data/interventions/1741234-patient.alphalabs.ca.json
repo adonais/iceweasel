@@ -1,0 +1,17 @@
+{
+  "label": "patient.alphalabs.ca",
+  "bugs": {
+    "1741234": {
+      "issue": "broken-layout",
+      "matches": ["*://patient.alphalabs.ca/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "css": ["bug1741234-patient.alphalabs.ca-height-fix.css"]
+      }
+    }
+  ]
+}

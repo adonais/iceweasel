@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -1319,8 +1317,8 @@ void Shape::dump(js::JSONPrinter& json) const {
 
 template <typename KnownF, typename UnknownF>
 void ForEachObjectFlag(ObjectFlags flags, KnownF known, UnknownF unknown) {
-  uint16_t raw = flags.toRaw();
-  for (uint16_t i = 1; i; i = i << 1) {
+  uint32_t raw = flags.toRaw();
+  for (uint32_t i = 1; i; i = i << 1) {
     if (!(raw & i)) {
       continue;
     }

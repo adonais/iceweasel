@@ -131,7 +131,9 @@ class TabbedBrowsingTest {
             verifyExistingOpenTabs(webPages[1].title)
             swipeTabRight(webPages[0].title)
             verifySnackBarText("Tab closed")
+            waitForAppWindowToBeUpdated()
             clickSnackbarButton(composeTestRule, "UNDO")
+            waitForAppWindowToBeUpdated()
             verifyExistingOpenTabs(webPages[0].title)
             verifyExistingOpenTabs(webPages[1].title)
             swipeTabRight(webPages[0].title)
@@ -140,7 +142,9 @@ class TabbedBrowsingTest {
             verifyExistingOpenTabs(webPages[1].title)
             swipeTabLeft(webPages[1].title)
             verifySnackBarText("Tab closed")
+            waitForAppWindowToBeUpdated()
             clickSnackbarButton(composeTestRule, "UNDO")
+            waitForAppWindowToBeUpdated()
         }
         browserScreen(composeTestRule) {
             verifyPageContent(webPages[1].content)
@@ -203,6 +207,7 @@ class TabbedBrowsingTest {
         }.openTabDrawer {
             verifyNormalBrowsingButtonIsSelected()
             verifyPrivateBrowsingButtonIsSelected(false)
+            verifyTabGroupsButtonIsSelected(false)
             verifySyncedTabsButtonIsSelected(false)
             verifyNoOpenTabsInNormalBrowsing()
             verifyFab()
@@ -221,6 +226,7 @@ class TabbedBrowsingTest {
         }.toggleToPrivateTabs {
             verifyNormalBrowsingButtonIsSelected(false)
             verifyPrivateBrowsingButtonIsSelected(true)
+            verifyTabGroupsButtonIsSelected(false)
             verifySyncedTabsButtonIsSelected(false)
             verifyNoOpenTabsInPrivateBrowsing()
             verifyFab()
@@ -241,6 +247,7 @@ class TabbedBrowsingTest {
         }.openTabDrawer(composeTestRule) {
             verifyNormalBrowsingButtonIsSelected()
             verifyPrivateBrowsingButtonIsSelected(isSelected = false)
+            verifyTabGroupsButtonIsSelected(isSelected = false)
             verifySyncedTabsButtonIsSelected(isSelected = false)
             verifyThreeDotButton()
             verifyNormalTabsList()
@@ -268,6 +275,7 @@ class TabbedBrowsingTest {
         }.openTabDrawer(composeTestRule) {
             verifyNormalBrowsingButtonIsSelected(false)
             verifyPrivateBrowsingButtonIsSelected(true)
+            verifyTabGroupsButtonIsSelected(false)
             verifySyncedTabsButtonIsSelected(false)
             verifyThreeDotButton()
             verifyPrivateTabsList()

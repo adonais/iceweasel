@@ -104,7 +104,9 @@ bool YCbCrTextureClientAllocationHelper::IsCompatible(
       bufferData->GetStereoMode().isNothing() ||
       bufferData->GetStereoMode().ref() != mData.mStereoMode ||
       bufferData->GetChromaSubsampling().isNothing() ||
-      bufferData->GetChromaSubsampling().ref() != mData.mChromaSubsampling) {
+      bufferData->GetChromaSubsampling().ref() != mData.mChromaSubsampling ||
+      bufferData->GetTransferFunction().isNothing() ||
+      bufferData->GetTransferFunction().ref() != mData.mTransferFunction) {
     return false;
   }
   return true;
@@ -115,8 +117,8 @@ already_AddRefed<TextureClient> YCbCrTextureClientAllocationHelper::Allocate(
   return TextureClient::CreateForYCbCr(
       aKnowsCompositor, mData.mPictureRect, mYSize, mData.mYStride, mCbCrSize,
       mData.mCbCrStride, mData.mStereoMode, mData.mColorDepth,
-      mData.mYUVColorSpace, mData.mColorRange, mData.mChromaSubsampling,
-      mTextureFlags);
+      mData.mYUVColorSpace, mData.mColorRange, mData.mTransferFunction,
+      mData.mChromaSubsampling, mTextureFlags);
 }
 
 TextureClientRecycleAllocator::TextureClientRecycleAllocator(

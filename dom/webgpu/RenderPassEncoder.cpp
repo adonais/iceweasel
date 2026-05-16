@@ -333,17 +333,21 @@ void RenderPassEncoder::SetIndexBuffer(const Buffer& aBuffer,
                                                   iformat, aOffset, sizeRef);
 }
 
-void RenderPassEncoder::SetVertexBuffer(uint32_t aSlot, const Buffer& aBuffer,
+void RenderPassEncoder::SetVertexBuffer(uint32_t aSlot,
+                                        const Buffer* const aBuffer,
                                         uint64_t aOffset,
                                         const dom::Optional<uint64_t>& aSize) {
   if (!mValid) {
     return;
   }
-  mUsedBuffers.AppendElement(&aBuffer);
-
+  RawId bufferId = 0;
+  if (aBuffer) {
+    mUsedBuffers.AppendElement(aBuffer);
+    bufferId = aBuffer->GetId();
+  }
   const uint64_t* sizeRef = aSize.WasPassed() ? &aSize.Value() : nullptr;
-  ffi::wgpu_recorded_render_pass_set_vertex_buffer(
-      mPass.get(), aSlot, aBuffer.GetId(), aOffset, sizeRef);
+  ffi::wgpu_recorded_render_pass_set_vertex_buffer(mPass.get(), aSlot, bufferId,
+                                                   aOffset, sizeRef);
 }
 
 void RenderPassEncoder::Draw(uint32_t aVertexCount, uint32_t aInstanceCount,

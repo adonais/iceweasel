@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -63,7 +61,7 @@ bool ExecutionTracerIntegration::WriteNodeSummary(
                         uint8_t(NodeSubkind::Document));
     RefPtr<Location> location = doc->GetLocation();
     nsAutoCString href;
-    if (location->GetHref(href) != NS_OK) {
+    if (location && location->GetHref(href) != NS_OK) {
       JS_ReportErrorASCII(aCx, "Failed to get document location's href");
       return false;
     }

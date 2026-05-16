@@ -7,8 +7,6 @@
 #ifndef nsGenConList_h_
 #define nsGenConList_h_
 
-#include <functional>
-
 #include "mozilla/FunctionRef.h"
 #include "mozilla/LinkedList.h"
 #include "nsStyleStruct.h"

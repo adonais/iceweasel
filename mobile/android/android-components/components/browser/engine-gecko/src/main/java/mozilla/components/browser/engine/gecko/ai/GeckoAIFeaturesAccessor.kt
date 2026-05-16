@@ -96,6 +96,7 @@ internal class DefaultGeckoAIFeaturesAccessor : GeckoAIFeaturesAccessor {
                             id = feature.id,
                             isEnabled = feature.isEnabled,
                             isAllowed = feature.isAllowed,
+                            isBlocked = feature.isBlocked,
                         )
                     },
                 )
@@ -118,14 +119,14 @@ internal class DefaultGeckoAIFeaturesAccessor : GeckoAIFeaturesAccessor {
         )
     }
 
-    /** See [AIFeaturesRuntime.resetFeature]. */
-    override fun resetFeature(
+    /** See [AIFeaturesRuntime.makeFeatureAvailable]. */
+    override fun makeFeatureAvailable(
         featureId: String,
         onSuccess: () -> Unit,
         onError: (AIFeaturesError) -> Unit,
     ) {
         handleVoidGeckoResult(
-            AIFeaturesController.RuntimeAIFeatures.resetFeature(featureId),
+            AIFeaturesController.RuntimeAIFeatures.makeFeatureAvailable(featureId),
             onSuccess,
             onError,
         )

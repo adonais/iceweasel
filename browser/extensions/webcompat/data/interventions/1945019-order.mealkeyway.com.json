@@ -1,0 +1,17 @@
+{
+  "label": "order.mealkeyway.com",
+  "bugs": {
+    "1945019": {
+      "issue": "unsupported-warning",
+      "matches": ["https://order.mealkeyway.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "js": ["bug1945019-order.mealkeyway.com-prevent-unsupported-message.js"]
+      }
+    }
+  ]
+}

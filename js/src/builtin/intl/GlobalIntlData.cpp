@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -47,20 +45,12 @@ void js::intl::GlobalIntlData::resetDateTimeFormat() {
 }
 
 bool js::intl::GlobalIntlData::ensureRealmLocale(JSContext* cx) {
-  const char* locale = cx->realm()->getLocale();
-  if (!locale) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  if (!realmLocale_ || !StringEqualsAscii(realmLocale_, locale)) {
-    realmLocale_ = NewStringCopyZ<CanGC>(cx, locale);
-    if (!realmLocale_) {
-      return false;
-    }
+  auto locale = cx->realm()->getLocale();
+  if (realmLocale_ != locale) {
+    realmLocale_ = locale;
 
     // Clear the cached default locale.
-    defaultLocale_ = nullptr;
+    defaultLocale_ = LanguageId::und();
 
     // Clear all cached instances when the realm locale has changed.
     resetCollator();
@@ -97,18 +87,26 @@ bool js::intl::GlobalIntlData::ensureRealmTimeZone(JSContext* cx) {
   return true;
 }
 
-JSLinearString* js::intl::GlobalIntlData::defaultLocale(JSContext* cx) {
+bool js::intl::GlobalIntlData::defaultLocale(JSContext* cx,
+                                             LanguageId* result) {
   // Ensure the realm locale didn't change.
   if (!ensureRealmLocale(cx)) {
-    return nullptr;
+    return false;
   }
 
   // If we didn't have a cache hit, compute the candidate default locale.
-  if (!defaultLocale_) {
+  if (defaultLocale_ == LanguageId::und()) {
     // Cache the computed locale until the realm locale changes.
-    defaultLocale_ = ComputeDefaultLocale(cx);
+    auto locale = LanguageId::und();
+    if (!ComputeDefaultLocale(cx, &locale)) {
+      return false;
+    }
+    MOZ_ASSERT(locale != LanguageId::und(), "default locale is not 'und'");
+
+    defaultLocale_ = locale;
   }
-  return defaultLocale_;
+  *result = defaultLocale_;
+  return true;
 }
 
 JSLinearString* js::intl::GlobalIntlData::defaultTimeZone(JSContext* cx) {
@@ -308,9 +306,6 @@ JS::Symbol* js::intl::GlobalIntlData::fallbackSymbol(JSContext* cx) {
 }
 
 void js::intl::GlobalIntlData::trace(JSTracer* trc) {
-  TraceNullableEdge(trc, &realmLocale_, "GlobalIntlData::realmLocale_");
-  TraceNullableEdge(trc, &defaultLocale_, "GlobalIntlData::defaultLocale_");
-
   TraceNullableEdge(trc, &realmTimeZone_, "GlobalIntlData::realmTimeZone_");
   TraceNullableEdge(trc, &defaultTimeZone_, "GlobalIntlData::defaultTimeZone_");
   TraceNullableEdge(trc, &defaultTimeZoneObject_,

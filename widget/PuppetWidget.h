@@ -195,10 +195,16 @@ class PuppetWidget final : public nsIWidget,
   BrowserChild* GetOwningBrowserChild() override { return mBrowserChild; }
   LayersId GetLayersId() const override;
 
-  void UpdateBackingScaleCache(float aDpi, int32_t aRounding, double aScale) {
+  void UpdateBackingScaleCache(float aDpi, int32_t aRounding, double aScale,
+                               double aDesktopToDeviceScale) {
     mDPI = aDpi;
     mRounding = aRounding;
     mDefaultScale = aScale;
+    mDesktopToDeviceScale = aDesktopToDeviceScale;
+  }
+
+  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override {
+    return mozilla::DesktopToLayoutDeviceScale(mDesktopToDeviceScale);
   }
 
   // safe area insets support
@@ -357,6 +363,7 @@ class PuppetWidget final : public nsIWidget,
   float mDPI = GetFallbackDPI();
   int32_t mRounding = 1;
   double mDefaultScale = GetFallbackDefaultScale().scale;
+  double mDesktopToDeviceScale = 1.0;
 
   LayoutDeviceIntMargin mSafeAreaInsets;
   RefPtr<TextEventDispatcherListener> mNativeTextEventDispatcherListener;

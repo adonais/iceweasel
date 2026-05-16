@@ -8,7 +8,6 @@ import { GROUP_TYPES } from "chrome://global/content/elements/moz-box-group.mjs"
 
 const DIRECTION_RIGHT = "Right";
 const DIRECTION_LEFT = "Left";
-
 const NAVIGATION_DIRECTIONS = {
   LTR: {
     FORWARD: DIRECTION_RIGHT,
@@ -20,6 +19,14 @@ const NAVIGATION_DIRECTIONS = {
   },
 };
 
+const NAVIGATION_FORWARD = "forward";
+const NAVIGATION_BACKWARD = "backward";
+
+const NAVIGATION_VALUE = {
+  [NAVIGATION_FORWARD]: 1,
+  [NAVIGATION_BACKWARD]: -1,
+};
+
 /**
  * A custom element used for highlighting important information and/or providing
  * context for specific settings.
@@ -28,8 +35,10 @@ const NAVIGATION_DIRECTIONS = {
  * @property {string} label - Label for the button.
  * @property {string} description - Descriptive text for the button.
  * @property {string} iconSrc - The src for an optional icon shown next to the label.
+ * @property {string} supportPage - The name of the SUMO support page to link to.
  * @property {"default"|"medium-icon"|"large-icon"} layout - Layout style for the box content.
  * @slot default - Slot for the box item's content, which overrides label and description.
+ * @slot support-link - Slot for custom support link element.
  * @slot description - Slot for custom description content.
  * @slot actions - Slot for the actions positioned at the end of the component container.
  * @slot actions-start - Slot for the actions positioned at the start of the component container.
@@ -40,6 +49,7 @@ export default class MozBoxItem extends MozBoxBase {
   static properties = {
     layout: { type: String, reflect: true },
     supportPage: { type: String, attribute: "support-page" },
+    _hasSlottedSupportLink: { type: Boolean, state: true },
     _hasSlottedDescription: { type: Boolean, state: true },
   };
 
@@ -57,10 +67,20 @@ export default class MozBoxItem extends MozBoxBase {
     this.addEventListener("keydown", e => this.handleKeydown(e));
   }
 
+  get hasSupportPage() {
+    return this.supportPage || this._hasSlottedSupportLink;
+  }
+
   get hasDescription() {
     return this.description || this._hasSlottedDescription;
   }
 
+  /** @param {Event} e */
+  checkSlottedSupportLink(e) {
+    this._hasSlottedSupportLink = !!e.target?.assignedNodes()?.length;
+  }
+
+  /** @param {Event} e */
   checkSlottedDescription(e) {
     this._hasSlottedDescription = !!e.target?.assignedNodes()?.length;
   }
@@ -72,31 +92,50 @@ export default class MozBoxItem extends MozBoxBase {
   handleKeydown(event) {
     let isHandleEvent = event.originalTarget === this.handleEl;
 
-    if (
-      !isHandleEvent &&
-      event.target?.slot !== "actions" &&
-      event.target?.slot !== "actions-start"
-    ) {
+    // Find which action element the event came from
+    let target = isHandleEvent
+      ? this.handleEl
+      : this.#actionEls.find(el => el.contains(event.target));
+    if (!target) {
       return;
     }
-
-    let target = isHandleEvent ? event.originalTarget : event.target;
 
     let directions = this.getNavigationDirections();
     switch (event.key) {
       case directions.FORWARD:
       case `Arrow${directions.FORWARD}`: {
-        let nextIndex = this.#actionEls.indexOf(target) + 1;
-        let nextEl = this.#actionEls[nextIndex];
-        nextEl?.focus();
+        this.navigate(target, NAVIGATION_FORWARD);
         break;
       }
       case directions.BACKWARD:
       case `Arrow${directions.BACKWARD}`: {
-        let prevIndex = this.#actionEls.indexOf(target) - 1;
-        let prevEl = this.#actionEls[prevIndex];
-        prevEl?.focus();
+        this.navigate(target, NAVIGATION_BACKWARD);
         break;
+      }
+    }
+  }
+
+  /**
+   * Navigate between action elements, skipping disabled elements.
+   *
+   * @param {HTMLElement} target - The currently focused action element
+   * @param {NAVIGATION_FORWARD | NAVIGATION_BACKWARD} direction - The navigation direction
+   */
+  navigate(target, direction) {
+    let actionEls = this.#actionEls;
+    let currentIndex = actionEls.indexOf(target);
+    let step = NAVIGATION_VALUE[direction];
+    for (
+      let nextIndex = currentIndex + step;
+      nextIndex >= 0 && nextIndex < actionEls.length;
+      nextIndex += step
+    ) {
+      let nextItem = actionEls[nextIndex];
+      nextItem.focus();
+      if (nextItem.contains(this.getRootNode().activeElement)) {
+        // If the next item became focused then we've navigated. This skips
+        // disabled elements or elements that can never receive focus.
+        return;
       }
     }
   }
@@ -180,33 +219,18 @@ export default class MozBoxItem extends MozBoxBase {
         @slotchange=${this.checkSlottedDescription}
       ></slot>`;
     }
-    return html`<span class="description text-deemphasized" id="description">
-      ${this.description}
-    </span>`;
+    return html`<span class="description text-deemphasized" id="description"
+      >${this.description}</span
+    >`;
   }
 
   textTemplate() {
-    if (this.supportPage) {
-      return this.supportTextTemplate();
-    }
     return html`<div
       class=${classMap({
         "text-content": true,
         "has-icon": this.iconSrc,
         "has-description": this.hasDescription,
-      })}
-    >
-      ${this.iconTemplate()}${this.labelTemplate()}${this.descriptionTemplate()}
-    </div>`;
-  }
-
-  supportTextTemplate() {
-    return html`<div
-      class=${classMap({
-        "text-content": true,
-        "has-icon": this.iconSrc,
-        "has-description": this.hasDescription,
-        "has-support-page": this.supportPage,
+        "has-support-page": this.hasSupportPage,
       })}
     >
       ${this.iconTemplate()}
@@ -233,7 +257,11 @@ export default class MozBoxItem extends MozBoxBase {
         aria-describedby=${this.description ? "description" : "label"}
       ></a>`;
     }
-    return "";
+    return html`<slot
+      name="support-link"
+      class="support-page"
+      @slotchange=${this.checkSlottedSupportLink}
+    ></slot>`;
   }
 
   render() {

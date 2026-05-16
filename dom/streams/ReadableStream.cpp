@@ -2,13 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/ReadableStream.h"
-
 #include "ReadIntoRequest.h"
+#include "ReadableByteStreamControllerAbstract.h"
+#include "ReadableStreamAbstract.h"
+#include "ReadableStreamBYOBReaderAbstract.h"
+#include "ReadableStreamDefaultControllerAbstract.h"
+#include "ReadableStreamDefaultReaderAbstract.h"
 #include "ReadableStreamPipeTo.h"
 #include "ReadableStreamTee.h"
 #include "StreamUtils.h"
 #include "TeeState.h"
+#include "WritableStreamAbstract.h"
 #include "js/Array.h"
 #include "js/Exception.h"
 #include "js/Iterator.h"
@@ -27,18 +31,13 @@
 #include "mozilla/dom/QueueWithSizes.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
 #include "mozilla/dom/ReadRequest.h"
-#include "mozilla/dom/ReadableByteStreamController.h"
-#include "mozilla/dom/ReadableStreamBYOBReader.h"
 #include "mozilla/dom/ReadableStreamBYOBRequest.h"
 #include "mozilla/dom/ReadableStreamBinding.h"
 #include "mozilla/dom/ReadableStreamControllerBase.h"
-#include "mozilla/dom/ReadableStreamDefaultController.h"
-#include "mozilla/dom/ReadableStreamDefaultReader.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
-#include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/WritableStreamDefaultWriter.h"
 #include "nsCOMPtr.h"
 #include "nsIGlobalObject.h"
@@ -1543,6 +1542,15 @@ void ReadableStream::GetCurrentBYOBRequestView(
 already_AddRefed<mozilla::dom::ReadableStreamDefaultReader>
 ReadableStream::GetReader(ErrorResult& aRv) {
   return AcquireReadableStreamDefaultReader(this, aRv);
+}
+
+// https://streams.spec.whatwg.org/#readablestream-cancel
+// To cancel a ReadableStream stream with reason, return !
+// ReadableStreamCancel(stream, reason). The return value will be a promise that
+// either fulfills with undefined, or rejects with a failure reason.
+already_AddRefed<Promise> ReadableStream::CancelNative(
+    JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
+  return ReadableStreamCancel(aCx, this, aReason, aRv);
 }
 
 }  // namespace mozilla::dom

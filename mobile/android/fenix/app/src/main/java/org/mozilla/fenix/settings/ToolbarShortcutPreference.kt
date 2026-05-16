@@ -12,7 +12,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.updateLayoutParams
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
@@ -50,28 +49,31 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     protected abstract fun readSelectedKey(): String
     protected abstract fun writeSelectedKey(key: String)
     protected abstract fun getToolbarType(): String
-    protected abstract fun getSelectedIconImageView(holder: PreferenceViewHolder): ImageView
+    protected abstract fun getSelectedIconImageView(holder: PreferenceViewHolder): ImageView?
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
 
         configureShortcutPreview(holder)
 
-        val selectedIcon = getSelectedIconImageView(holder)
+        getSelectedIconImageView(holder)?.let { imageView ->
+            getSelectedOption().icon?.let { iconResource ->
+                colorTertiary = holder.itemView.getMaterialColor(materialR.attr.colorTertiary)
+                colorOnSurface = holder.itemView.getMaterialColor(materialR.attr.colorOnSurface)
+                colorOnSurfaceVariant = holder.itemView.getMaterialColor(materialR.attr.colorOnSurfaceVariant)
 
-        colorTertiary = holder.itemView.getMaterialColor(materialR.attr.colorTertiary)
-        colorOnSurface = holder.itemView.getMaterialColor(materialR.attr.colorOnSurface)
-        colorOnSurfaceVariant = holder.itemView.getMaterialColor(materialR.attr.colorOnSurfaceVariant)
-
-        selectedIcon.setImageResource(getSelectedOption().icon)
+                imageView.setImageResource(iconResource)
+            }
+        }
     }
 
     private fun configureShortcutPreview(holder: PreferenceViewHolder) {
         val shortcutPreviewId = when (getToolbarType()) {
             EXPANDED_TOOLBAR_TYPE -> R.id.toolbar_expanded_shortcut_preview
+            NO_SHORTCUT_SIMPLE_TOOLBAR_TYPE -> R.id.toolbar_simple_no_shortcut_preview
             else -> R.id.toolbar_simple_shortcut_preview
         }
-        val shortcutPreview = holder.itemView.findViewById<ConstraintLayout>(shortcutPreviewId)
+        val shortcutPreview = holder.itemView.findViewById<View>(shortcutPreviewId)
 
         shortcutPreview?.updateLayoutParams<LinearLayout.LayoutParams> {
             if (context.isWideWindow()) {
@@ -121,7 +123,10 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
         onClickListener {
             CustomizationSettings.toolbarShortcutSelection.record(
                 CustomizationSettings.ToolbarShortcutSelectionExtra(
-                    toolbarType = getToolbarType(),
+                    toolbarType = when (getToolbarType()) {
+                        EXPANDED_TOOLBAR_TYPE -> EXPANDED_TOOLBAR_TYPE
+                        else -> SIMPLE_TOOLBAR_TYPE
+                    },
                     item = newOption.key.value,
                 ),
             )

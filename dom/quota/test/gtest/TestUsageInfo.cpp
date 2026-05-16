@@ -3,7 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <cstdint>
-#include <ostream>
 
 #include "gtest/gtest.h"
 #include "mozilla/Maybe.h"

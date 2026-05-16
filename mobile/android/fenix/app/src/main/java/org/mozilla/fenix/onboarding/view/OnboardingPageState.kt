@@ -6,6 +6,7 @@ package org.mozilla.fenix.onboarding.view
 
 import androidx.annotation.DrawableRes
 import org.mozilla.fenix.compose.LinkTextState
+import org.mozilla.fenix.nimbus.MarketingCardVariant
 
 /**
  * Model containing data for [OnboardingPage].
@@ -132,6 +133,7 @@ data class OnboardingTermsOfService(
  * Model containing data for the marketing data page during onboarding.
  */
 data class OnboardingMarketingData(
+    val marketingCardVariant: MarketingCardVariant,
     val bodyOneText: String,
     val bodyOneLinkText: String,
     val bodyTwoText: String,

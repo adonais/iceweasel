@@ -20,6 +20,8 @@ VideoPlaybackQuality::VideoPlaybackQuality(HTMLMediaElement* aElement,
       mTotalFrames(aTotalFrames),
       mDroppedFrames(aDroppedFrames) {}
 
+VideoPlaybackQuality::~VideoPlaybackQuality() = default;
+
 HTMLMediaElement* VideoPlaybackQuality::GetParentObject() const {
   return mElement;
 }

@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -8,6 +6,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 #include "jit/riscv64/MacroAssembler-riscv64.h"
+
+#include <bit>
 
 #include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
@@ -2525,7 +2525,7 @@ void MacroAssemblerRiscv64Compat::handleFailureWithHandlerTail(
 
   // Found a wasm catch handler, restore state and jump to it.
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), sp, a1, a2);
+  wasm::GenerateJumpToCatchHandler(asMasm(), sp, a1, a2, a3);
 }
 
 CodeOffset MacroAssemblerRiscv64Compat::toggledJump(Label* label) {
@@ -4529,9 +4529,9 @@ static void CompareExchange(MacroAssembler& masm,
 
   masm.andi(offsetTemp, scratch2, 3);
   masm.subPtr(offsetTemp, scratch2);
-#if !MOZ_LITTLE_ENDIAN()
-  masm.as_xori(offsetTemp, offsetTemp, 3);
-#endif
+  if constexpr (std::endian::native != std::endian::little) {
+    masm.xori(offsetTemp, offsetTemp, 3);
+  }
   masm.slli(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sll(maskTemp, maskTemp, offsetTemp);

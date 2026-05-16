@@ -424,6 +424,9 @@ static vpx_codec_err_t validate_img(vpx_codec_alg_priv_t *ctx,
 
   if (img->d_w != ctx->cfg.g_w || img->d_h != ctx->cfg.g_h)
     ERROR("Image size must match encoder init configuration size");
+  assert(img->fmt & VPX_IMG_FMT_PLANAR);
+  if (img->stride[VPX_PLANE_U] != img->stride[VPX_PLANE_V])
+    ERROR("Image U/V strides must match");
 
   return VPX_CODEC_OK;
 }
@@ -1347,7 +1350,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
                                       unsigned long duration,
                                       vpx_enc_frame_flags_t enc_flags,
                                       vpx_enc_deadline_t deadline) {
-  volatile vpx_codec_err_t res = VPX_CODEC_OK;
+  volatile vpx_codec_err_t res;
   volatile vpx_enc_frame_flags_t flags = enc_flags;
   volatile vpx_codec_pts_t pts = pts_val;
   VP9_COMP *const cpi = ctx->cpi;
@@ -1363,34 +1366,35 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
 
   if (img != NULL) {
     res = validate_img(ctx, img);
-    if (res == VPX_CODEC_OK) {
-      // There's no codec control for multiple alt-refs so check the encoder
-      // instance for its status to determine the compressed data size.
-      data_sz = ctx->cfg.g_w * ctx->cfg.g_h * get_image_bps(img) / 8 *
-                (cpi->multi_layer_arf ? 8 : 2);
-      if (data_sz < kMinCompressedSize) data_sz = kMinCompressedSize;
-      if (ctx->cx_data == NULL || ctx->cx_data_sz < data_sz) {
-        ctx->cx_data_sz = data_sz;
-        free(ctx->cx_data);
-        ctx->cx_data = (unsigned char *)malloc(ctx->cx_data_sz);
-        if (ctx->cx_data == NULL) {
-          return VPX_CODEC_MEM_ERROR;
-        }
+    if (res != VPX_CODEC_OK) {
+      return res;
+    }
+    // There's no codec control for multiple alt-refs so check the encoder
+    // instance for its status to determine the compressed data size.
+    data_sz = ctx->cfg.g_w * ctx->cfg.g_h * get_image_bps(img) / 8 *
+              (cpi->multi_layer_arf ? 8 : 2);
+    if (data_sz < kMinCompressedSize) data_sz = kMinCompressedSize;
+    if (ctx->cx_data == NULL || ctx->cx_data_sz < data_sz) {
+      ctx->cx_data_sz = data_sz;
+      free(ctx->cx_data);
+      ctx->cx_data = (unsigned char *)malloc(ctx->cx_data_sz);
+      if (ctx->cx_data == NULL) {
+        return VPX_CODEC_MEM_ERROR;
       }
+    }
 
-      int chroma_subsampling = -1;
-      if ((img->fmt & VPX_IMG_FMT_I420) == VPX_IMG_FMT_I420 ||
-          (img->fmt & VPX_IMG_FMT_NV12) == VPX_IMG_FMT_NV12 ||
-          (img->fmt & VPX_IMG_FMT_YV12) == VPX_IMG_FMT_YV12) {
-        chroma_subsampling = 1;  // matches default for Codec Parameter String
-      } else if ((img->fmt & VPX_IMG_FMT_I422) == VPX_IMG_FMT_I422) {
-        chroma_subsampling = 2;
-      } else if ((img->fmt & VPX_IMG_FMT_I444) == VPX_IMG_FMT_I444) {
-        chroma_subsampling = 3;
-      }
-      if (chroma_subsampling > ctx->global_header_subsampling) {
-        ctx->global_header_subsampling = chroma_subsampling;
-      }
+    int chroma_subsampling = -1;
+    if ((img->fmt & VPX_IMG_FMT_I420) == VPX_IMG_FMT_I420 ||
+        (img->fmt & VPX_IMG_FMT_NV12) == VPX_IMG_FMT_NV12 ||
+        (img->fmt & VPX_IMG_FMT_YV12) == VPX_IMG_FMT_YV12) {
+      chroma_subsampling = 1;  // matches default for Codec Parameter String
+    } else if ((img->fmt & VPX_IMG_FMT_I422) == VPX_IMG_FMT_I422) {
+      chroma_subsampling = 2;
+    } else if ((img->fmt & VPX_IMG_FMT_I444) == VPX_IMG_FMT_I444) {
+      chroma_subsampling = 3;
+    }
+    if (chroma_subsampling > ctx->global_header_subsampling) {
+      ctx->global_header_subsampling = chroma_subsampling;
     }
   }
 
@@ -1864,7 +1868,11 @@ static vpx_codec_err_t ctrl_set_svc_layer_id(vpx_codec_alg_priv_t *ctx,
   VP9_COMP *const cpi = (VP9_COMP *)ctx->cpi;
   SVC *const svc = &cpi->svc;
   int sl;
-
+  // Checks on valid spatial_layer_id input.
+  if (data->spatial_layer_id < 0 ||
+      data->spatial_layer_id >= (int)ctx->cfg.ss_number_layers) {
+    return VPX_CODEC_INVALID_PARAM;
+  }
   svc->spatial_layer_to_encode = data->spatial_layer_id;
   svc->first_spatial_layer_to_encode = data->spatial_layer_id;
   // TODO(jianj): Deprecated to be removed.
@@ -1874,7 +1882,7 @@ static vpx_codec_err_t ctrl_set_svc_layer_id(vpx_codec_alg_priv_t *ctx,
     svc->temporal_layer_id_per_spatial[sl] =
         data->temporal_layer_id_per_spatial[sl];
   }
-  // Checks on valid layer_id input.
+  // Checks on valid temporal_layer_id input.
   if (svc->temporal_layer_id < 0 ||
       svc->temporal_layer_id >= (int)ctx->cfg.ts_number_layers) {
     return VPX_CODEC_INVALID_PARAM;

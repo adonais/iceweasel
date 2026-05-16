@@ -12,12 +12,12 @@
 void LoadLibraryUsageChecker::registerMatchers(MatchFinder *AstMatcher) {
   AstMatcher->addMatcher(
       callExpr(
-          allOf(isFirstParty(),
+          isFirstParty(),
                 callee(functionDecl(anyOf(
                     allOf(isInSystemHeader(), anyOf(hasName("LoadLibraryA"),
                                                     hasName("LoadLibraryExA"))),
                     hasName("PR_LoadLibrary")))),
-                unless(hasArgument(0, stringLiteral()))))
+                unless(hasArgument(0, stringLiteral())))
           .bind("funcCall"),
       this);
 }

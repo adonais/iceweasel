@@ -85,6 +85,23 @@
     display: none;
   }
 
+  main.main-panel {
+    margin: 0 auto;
+    width: $wrapper-default-width;
+
+    @media (min-width: $break-point-medium) {
+      width: $wrapper-max-width-medium;
+    }
+
+    @media (min-width: $break-point-large) {
+      width: $wrapper-max-width-large;
+    }
+
+    @media (min-width: $break-point-widest) {
+      width: $wrapper-max-width-widest;
+    }
+  }
+
   h1 {
     font-size: var(--font-size-xxlarge);
   }

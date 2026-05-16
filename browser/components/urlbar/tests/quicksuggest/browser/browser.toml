@@ -31,12 +31,18 @@ prefs = ["browser.bookmarks.testing.skipDefaultBookmarksImport=true"]
 
 ["browser_quicksuggest_ping_amp.js"]
 tags = "search-telemetry"
+skip-if = [
+  "standalone && artifact" # Bug 2030286 && Bug 2030292
+]
 
 ["browser_quicksuggest_ping_deletionRequest.js"]
 tags = "search-telemetry"
 
 ["browser_quicksuggest_ping_merinoAndNullValues.js"]
 tags = "search-telemetry"
+skip-if = [
+  "standalone && artifact" # Bug 2030289 && Bug 2030292
+]
 
 ["browser_quicksuggest_realtime_flight_status.js"]
 
@@ -47,6 +53,10 @@ tags = "search-telemetry"
 ["browser_quicksuggest_realtime_yelp.js"]
 
 ["browser_quicksuggest_sports.js"]
+support-files = [
+  "moz.png",
+  "moz-flipped.png",
+]
 
 ["browser_quicksuggest_yelp.js"]
 

@@ -1,0 +1,39 @@
+{
+  "background": {
+    "color": {
+      "value": "{background.color.information}"
+    }
+  },
+  "border": {
+    "color": {
+      "value": {
+        "default": "oklch(from {message-bar.icon.color} l c h / 20%)",
+        "prefersContrast": "{border.color.@base}"
+      }
+    },
+    "radius": {
+      "value": "{border.radius.medium}"
+    },
+    "width": {
+      "value": "{border.width}"
+    }
+  },
+  "container": {
+    "min-height": {
+      "value": "{size.item.large}"
+    }
+  },
+  "icon": {
+    "color": {
+      "value": "{icon.color.information}"
+    },
+    "size": {
+      "value": "{icon.size.@base}"
+    }
+  },
+  "text": {
+    "color": {
+      "value": "{text.color.@base}"
+    }
+  }
+}

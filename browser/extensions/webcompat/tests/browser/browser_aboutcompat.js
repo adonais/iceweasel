@@ -78,13 +78,16 @@ add_task(async function test_about_compat_loads_properly() {
 
     // both should have their content scripts registered at startup
 
+    const { matches, excludeMatches } =
+      bgWin.interventions.getBlocksAndMatchesFor(
+        interventionWithContentScripts
+      );
     const interventionRCSId =
       bgWin.interventions.buildContentScriptRegistrations(
         interventionWithContentScripts.label,
         interventionWithContentScripts.interventions[0],
-        bgWin.interventions.getBlocksAndMatchesFor(
-          interventionWithContentScripts
-        ).matches
+        matches,
+        excludeMatches
       )[0].id;
     const shimRCSId = `SmartBlock shim for ${shimWithContentScripts.id}: ${JSON.stringify(shimWithContentScripts.contentScripts[0])}`;
     ok(

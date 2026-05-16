@@ -236,9 +236,21 @@ newtab-error-fallback-refresh-link = আবার চেষ্টা করত�
 
 newtab-custom-shortcuts-title = শর্টকাট
 newtab-custom-shortcuts-subtitle = আপনার সংরক্ষণ বা পরিদর্শন করা সাইট
+#  (developer note): @nova-cleanup(remove-string): Remove old string once Nova lands. The newtab-custom-shortcuts-nova string will take over
 newtab-custom-shortcuts-toggle =
     .label = শর্টকাট
     .description = আপনার সংরক্ষণ বা পরিদর্শন করা সাইট
+newtab-custom-shortcuts-nova =
+    .label = শর্টকাট
+# Variables
+#   $num (number) - Number of rows to display
+#  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
+newtab-custom-row-selector2 =
+    .label =
+        { $num ->
+            [one] { $num }টি সারি
+           *[other] { $num }টি সারি
+        }
 # Variables
 #   $num (number) - Number of rows to display
 newtab-custom-row-selector =

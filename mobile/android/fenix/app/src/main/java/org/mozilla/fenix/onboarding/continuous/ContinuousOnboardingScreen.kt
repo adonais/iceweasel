@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -40,6 +41,8 @@ import org.mozilla.fenix.onboarding.view.OnboardingPageState
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
+val maxCardWidth = 360.dp
+
 /**
  * A screen for displaying continuous onboarding.
  */
@@ -58,7 +61,10 @@ fun ContinuousOnboardingScreen(
         ),
     ) {
         Box(
-            modifier = Modifier.systemBarsPadding(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .systemBarsPadding(),
+            contentAlignment = Alignment.Center,
         ) {
             CardContent(
                 pageState = pageState,
@@ -79,8 +85,41 @@ private fun CardContent(
     onDismissRequest: () -> Unit,
     onCloseButtonClicked: () -> Unit,
 ) {
+    @Composable
+    fun Content() {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(36.dp),
+        ) {
+            Text(
+                text = pageState.title,
+                style = MaterialTheme.typography.headlineSmall,
+            )
+
+            Box(
+                modifier = Modifier
+                    .height(150.dp)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(pageState.imageRes),
+                    contentDescription = null,
+                )
+            }
+
+            Text(
+                text = pageState.description,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = FirefoxTheme.typography.subtitle1,
+            )
+        }
+    }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .widthIn(max = maxCardWidth)
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
@@ -101,37 +140,12 @@ private fun CardContent(
 
         Column(
             modifier = Modifier
+                .fillMaxWidth()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(36.dp),
-            ) {
-                Text(
-                    text = pageState.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-
-                Box(
-                    modifier = Modifier
-                        .height(150.dp)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = painterResource(pageState.imageRes),
-                        contentDescription = null,
-                    )
-                }
-
-                Text(
-                    text = pageState.description,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = FirefoxTheme.typography.subtitle1,
-                )
-            }
+            Content()
 
             Spacer(Modifier.height(36.dp))
 

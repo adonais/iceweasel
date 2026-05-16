@@ -15,7 +15,6 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MathAlgorithms.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/UniquePtr.h"
@@ -782,8 +781,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
 
   // start at size = 1 (size = 0 is the char at its normal size), except for
   // rtlm fonts since they might have a character there.
-  int32_t size =
-      (StaticPrefs::mathml_rtl_operator_mirroring_enabled() && aRtl) ? 0 : 1;
+  int32_t size = aRtl ? 0 : 1;
   nsGlyphCode ch;
   nscoord displayOperatorMinHeight = 0;
   if (largeopOnly) {
@@ -934,17 +932,15 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
   // come from the same font.
   if (aGlyphTable->IsUnicodeTable()) {
     gfxFont* unicodeFont = nullptr;
-    for (int32_t i = 0; i < 4; i++) {
-      if (!textRun[i]) {
+    for (const auto& i : textRun) {
+      if (!i) {
         continue;
       }
-      if (textRun[i]->GetLength() != 1 ||
-          textRun[i]->GetCharacterGlyphs()[0].IsMissing()) {
+      if (i->GetLength() != 1 || i->GetCharacterGlyphs()[0].IsMissing()) {
         return false;
       }
       uint32_t numGlyphRuns;
-      const gfxTextRun::GlyphRun* glyphRuns =
-          textRun[i]->GetGlyphRuns(&numGlyphRuns);
+      const gfxTextRun::GlyphRun* glyphRuns = i->GetGlyphRuns(&numGlyphRuns);
       if (numGlyphRuns != 1) {
         return false;
       }
@@ -1380,7 +1376,7 @@ nsresult nsMathMLChar::StretchInternal(
   }
 
   // If the scale_stretchy_operators option is disabled, we are done.
-  if (!Preferences::GetBool("mathml.scale_stretchy_operators.enabled", true)) {
+  if (!StaticPrefs::mathml_scale_stretchy_operators_enabled()) {
     return NS_OK;
   }
 
@@ -1473,9 +1469,6 @@ nsresult nsMathMLChar::Stretch(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
   mMirroringMethod = [&] {
     if (!aRTL || !nsMathMLOperators::IsMirrorableOperator(mData)) {
       return MirroringMethod::None;
-    }
-    if (!StaticPrefs::mathml_rtl_operator_mirroring_enabled()) {
-      return MirroringMethod::ScaleFallback;
     }
     // Character level mirroring (always supported)
     if (nsMathMLOperators::GetMirroredOperator(mData) != mData) {

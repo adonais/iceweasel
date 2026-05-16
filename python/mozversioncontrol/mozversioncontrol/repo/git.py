@@ -343,10 +343,13 @@ class GitRepository(Repository):
         self,
         remote: Optional[str] = None,
         ref: Optional[str] = None,
+        dest_branch: Optional[str] = None,
         force: bool = False,
     ):
         if ref and not remote:
             raise ValueError("Cannot specify ref without specifying remote")
+        if dest_branch and not ref:
+            raise ValueError("Cannot specify dest_branch without specifying ref")
 
         args = ["push"]
         if force:
@@ -354,7 +357,10 @@ class GitRepository(Repository):
         if remote:
             args.append(remote)
         if ref:
-            args.append(ref)
+            if dest_branch:
+                args.append(f"{ref}:refs/heads/{dest_branch}")
+            else:
+                args.append(ref)
         self._run(*args)
 
     def push_to_try(

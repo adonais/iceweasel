@@ -7,13 +7,12 @@
 :host,
 :root {
   --urlbar-container-min-width: 310px;
+
   /* Usually we wouldn't need snapping border widths manually, but we use this
    * for other layout calculations too */
   --urlbar-container-border-width: max(env(hairline), round(down, 1px, env(hairline)));
   --urlbar-container-padding: round(up, 1px, env(hairline));
-  --urlbar-container-border-padding: calc(var(--urlbar-container-border-width) + var(--urlbar-container-padding));
-  --urlbar-margin-inline: 5px;
-  --urlbar-padding-block: 4px;
+  --urlbar-container-inset: calc(var(--urlbar-container-border-width) + var(--urlbar-container-padding));
 
   @media (max-width: 770px) {
     --urlbar-container-min-width: 240px;
@@ -89,6 +88,7 @@ toolbar[inactive="true"] .urlbar,
   flex: 1;
   box-sizing: border-box;
   will-change: translate;
+  -moz-user-focus: ignore;
 
   /* Reset UA popover rules */
   width: initial;
@@ -138,12 +138,12 @@ toolbar[inactive="true"] .urlbar,
   background-color: var(--toolbar-field-background-color);
   background-clip: border-box;
   border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
-  border-radius: var(--toolbarbutton-border-radius);
+  border-radius: var(--urlbar-border-radius);
 }
 
 .urlbar-input-container,
 #searchbar {
-  border-radius: var(--toolbarbutton-border-radius);
+  border-radius: var(--urlbar-border-radius);
   overflow: clip;
 }
 
@@ -200,6 +200,13 @@ toolbar[inactive="true"] .urlbar,
   .urlbar:not([focused])[textoverflow="left"][domaindir="rtl"] > .urlbar-input-container > .urlbar-input-box > & {
     mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
   }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.nova.enabled") {
+    &::selection {
+      border-radius: var(--border-radius-xsmall);
+    }
+  }
 }
 
 #urlbar-scheme {
@@ -229,12 +236,12 @@ toolbar[inactive="true"] .urlbar,
 }
 
 [open] > .urlbar-background {
-  border-color: var(--arrowpanel-border-color);
+  border-color: var(--panel-border-color);
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.13);
 
   /* The border moves outwards in the open state, so increase the radius
      accordingly. */
-  border-radius: calc(var(--toolbarbutton-border-radius) + 2px);
+  border-radius: var(--urlbarview-border-radius);
 
   @media (-moz-platform: macos) and (prefers-contrast) {
     /* The "increase contrast" preference on macOS draws a 1px black line around
@@ -306,6 +313,9 @@ toolbar[inactive="true"] .urlbar,
   border: var(--urlbar-container-border-width) solid transparent;
   padding: var(--urlbar-container-padding);
   min-width: 0;
+  display: flex;
+  flex: 1;
+  box-sizing: border-box;
 }
 
 .urlbar-container[breakout] {
@@ -445,7 +455,6 @@ toolbar[inactive="true"] .urlbar,
 /* The page actions menu is hidden by default, it is only shown in small
    windows as the overflow target of multiple page action buttons */
 #pageActionButton {
-  /* TODO: display: none fixes browser_startup_images.js but breaks some tests. */
   display: none;
 }
 
@@ -493,7 +502,7 @@ toolbar[inactive="true"] .urlbar,
 /* Urlbar search mode indicator */
 #urlbar-search-mode-indicator {
   display: none;
-  background-color: var(--urlbar-box-bgcolor);
+  background-color: var(--urlbar-box-background-color);
   color: var(--urlbar-box-text-color);
   margin-inline-end: 8px;
   align-items: center;
@@ -501,7 +510,7 @@ toolbar[inactive="true"] .urlbar,
   padding-inline: 8px 6px;
 
   #urlbar[focused] > .urlbar-input-container > & {
-    background-color: var(--urlbar-box-focus-bgcolor);
+    background-color: var(--urlbar-box-background-color-focus);
   }
 
   #urlbar[searchmode] > .urlbar-input-container > & {
@@ -526,12 +535,12 @@ toolbar[inactive="true"] .urlbar,
   }
 
   &:hover {
-    background-color: var(--urlbar-box-hover-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-hover);
+    color: var(--urlbar-box-text-color-hover);
 
     &:active {
-      background-color: var(--urlbar-box-active-bgcolor);
-      color: var(--urlbar-box-hover-text-color);
+      background-color: var(--urlbar-box-background-color-active);
+      color: var(--urlbar-box-text-color-hover);
     }
   }
 }
@@ -632,8 +641,8 @@ toolbar[inactive="true"] .urlbar,
 .urlbar-revert-button,
 .urlbar-go-button,
 .search-go-button {
-  width: calc(var(--urlbar-min-height) - 2 * var(--urlbar-container-border-padding));
-  height: calc(var(--urlbar-min-height) - 2 * var(--urlbar-container-border-padding));
+  width: calc(var(--urlbar-min-height) - 2 * var(--urlbar-container-inset));
+  height: calc(var(--urlbar-min-height) - 2 * var(--urlbar-container-inset));
   border-radius: var(--urlbar-inner-border-radius);
   padding: var(--urlbar-icon-padding);
   color: inherit;
@@ -641,15 +650,15 @@ toolbar[inactive="true"] .urlbar,
   outline-offset: var(--toolbarbutton-outline-offset);
 
   &:not([disabled]):hover {
-    background-color: var(--urlbar-box-hover-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-hover);
+    color: var(--urlbar-box-text-color-hover);
     outline-color: var(--toolbarbutton-hover-outline-color);
   }
 
   &:not([disabled])[open],
   &:not([disabled]):hover:active {
-    background-color: var(--urlbar-box-active-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-active);
+    color: var(--urlbar-box-text-color-hover);
     outline-color: var(--toolbarbutton-active-outline-color);
   }
 }
@@ -663,10 +672,18 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-.urlbar-go-button,
+.urlbar-go-button {
+  content: url("chrome://browser/skin/forward.svg");
+  height: auto;
+  width: auto;
+}
+
 .search-go-button {
   list-style-image: url("chrome://browser/skin/forward.svg");
+}
 
+.urlbar-go-button,
+.search-go-button {
   &:-moz-locale-dir(rtl) {
     transform: scaleX(-1);
   }
@@ -813,7 +830,7 @@ toolbar[inactive="true"] .urlbar,
   transition-timing-function: ease-in-out, ease-in-out, step-end, step-end;
   transition-duration: var(--cfr-animation-duration);
   align-items: center;
-  margin-block: calc((var(--urlbar-min-height) - 24px) / 2 - var(--urlbar-container-border-padding));
+  margin-block: calc((var(--urlbar-min-height) - 24px) / 2 - var(--urlbar-container-inset));
 
   &:-moz-locale-dir(rtl) {
     mask-position-x: calc(var(--cfr-label-width) * -1);
@@ -990,22 +1007,22 @@ toolbar[inactive="true"] .urlbar,
   font-size: 0.8em;
   padding: 3px 7px;
   border-radius: var(--urlbar-inner-border-radius);
-  background-color: var(--urlbar-box-bgcolor);
+  background-color: var(--urlbar-box-background-color);
   color: var(--urlbar-box-text-color);
-  margin-block: calc((var(--urlbar-min-height) - 20px) / 2 - var(--urlbar-container-border-padding));
+  margin-block: calc((var(--urlbar-min-height) - 20px) / 2 - var(--urlbar-container-inset));
   overflow: hidden;
 
   :where(#urlbar[focused]) & {
-    background-color: var(--urlbar-box-focus-bgcolor);
+    background-color: var(--urlbar-box-background-color-focus);
   }
 
   &:hover {
-    background-color: var(--urlbar-box-hover-bgcolor);
-    color: var(--urlbar-box-hover-text-color);
+    background-color: var(--urlbar-box-background-color-hover);
+    color: var(--urlbar-box-text-color-hover);
 
     &:active {
-      background-color: var(--urlbar-box-active-bgcolor);
-      color: var(--urlbar-box-hover-text-color);
+      background-color: var(--urlbar-box-background-color-active);
+      color: var(--urlbar-box-text-color-hover);
     }
   }
 
@@ -1058,7 +1075,7 @@ toolbar[inactive="true"] .urlbar,
   }
 
   .widget-overflow-list > & {
-    margin: var(--arrowpanel-menuitem-margin);
+    margin: var(--panel-menuitem-margin);
     width: auto;
 
     :root[lwtheme] & > #searchbar {
@@ -1162,19 +1179,34 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .searchmode-switcher {
-  appearance: none;
-  border-radius: var(--urlbar-inner-border-radius);
-  margin: 0;
   margin-inline-end: var(--urlbar-searchmodeswitcher-margin-inline-end);
-  padding-inline: var(--urlbar-searchmodeswitcher-inline-padding);
+  height: auto;
+  --button-padding: 0 var(--space-small);
+  --button-min-height: 100%;
+  --button-font-weight: normal;
+  --focus-outline-offset: var(--focus-outline-inset);
 
-  &:focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: var(--focus-outline-inset);
+  --button-background-color-active: var(--button-background-color);
+  --button-background-color-hover: var(--button-background-color);
+  /* Ideally, we'd use this variable instead of the &[open] rule.
+  Unfortunately, it gets overridden by --button-background-color-active
+  during clicks.*/
+  --button-background-color-selected: var(--button-background-color);
+
+  --button-background-color: var(--urlbar-box-background-color);
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
+    --button-background-color: transparent;
+  }
+
+  > .searchmode-switcher-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-small);
   }
 
   &[open] {
-    background-color: var(--urlbar-box-focus-bgcolor);
+    --button-background-color: var(--urlbar-box-background-color-focus);
   }
 
   /* No need space if page information icons such as lock and shield is shown */
@@ -1183,11 +1215,11 @@ toolbar[inactive="true"] .urlbar,
   }
 
   .urlbar[searchmode] & {
-    background-color: var(--urlbar-box-bgcolor);
+    --button-background-color: var(--urlbar-box-background-color);
   }
 
   .urlbar[focused] & {
-    background-color: var(--urlbar-box-focus-bgcolor);
+    --button-background-color: var(--urlbar-box-background-color-focus);
   }
 
   .urlbar:not(#searchbar-new) & {
@@ -1199,44 +1231,41 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-.searchmode-switcher-icon {
-  width: 16px;
-  height: 16px;
-  -moz-context-properties: fill;
-  fill: currentColor;
-  list-style-image: url("chrome://global/skin/icons/search-glass.svg");
-}
-
 .searchmode-switcher-title {
   display: none;
   margin: 0;
-  align-items: center;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
   max-width: var(--search-engine-name-max-width);
-  margin-inline: var(--urlbar-searchmodeswitcher-inline-padding);
 
   .urlbar:not(#searchbar-new)[searchmode] & {
-    display: inline-flex;
+    display: block;
   }
 }
 
 .searchmode-switcher-close {
   display: none;
-  appearance: none;
-  pointer-events: all;
+  border: 0;
+  align-self: center;
 
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
     .urlbar[searchmode] & {
-      display: inline-flex;
+      display: revert;
     }
   }
 }
 
+.searchmode-switcher-panel {
+  /* Override definition for toolbar-menupopup.  */
+  --panel-padding: 0 !important;
+}
+
 .searchmode-switcher-dropmarker {
-  margin-inline-start: var(--urlbar-searchmodeswitcher-inline-padding);
+  -moz-context-properties: fill;
+  fill: currentColor;
+  content: url("chrome://global/skin/icons/arrow-down-12.svg");
 
   @media (prefers-reduced-motion: no-preference) {
     transition: 300ms transform ease-in-out;
@@ -1255,7 +1284,7 @@ toolbar[inactive="true"] .urlbar,
     }
   }
 
-  .searchmode-switcher[open] > & {
+  .searchmode-switcher[open] & {
     transform: rotate(-180deg);
 
     &:-moz-locale-dir(rtl) {
@@ -1264,34 +1293,66 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-.searchmode-switcher-popup {
-  --panel-padding: 4px 0;
+.searchmode-switcher-panel-list {
   max-width: var(--search-engine-name-max-width);
+  /* TODO bug 2032017: clean this up after 1826841 is done */
+  --panel-list-background-color: var(--panel-background);
+  --panel-list-border-radius: var(--panel-border-radius);
+  padding: var(--panel-subview-body-padding);
 
-  > menuitem {
-    margin-inline: 4px;
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.nova.enabled") {
+    min-width: 17em;
+  }
 
-    &.searchmode-switcher-addEngine::before {
-      content: "";
-      position: relative;
-      display: flex;
-      background: url(chrome://browser/skin/search-indicator-badge-add.svg) no-repeat center;
-      height: 11px;
-      width: 11px;
-      margin-inline: 10px -21px;
-      margin-top: -13px;
-    }
+  > panel-item::part(button) {
+    -moz-context-properties: fill;
+    fill: currentColor;
+    /* The --icon-url variable allows setting an icon in JS. */
+    background-image: var(--icon-url, url("chrome://global/skin/icons/search-glass.svg"));
+    background-size: 16px 16px;
+    /* TODO bug 2032017: clean this up after 1826841 is done */
+    padding: var(--panel-menuitem-padding);
+    padding-inline-start: calc(var(--panel-menuitem-padding-inline) + 22px);
+    border-radius: var(--menuitem-border-radius);
+    margin: var(--panel-menuitem-margin);
+  }
+
+  > .searchmode-switcher-panel-search-settings-button::part(button) {
+    background-image: url("chrome://global/skin/icons/settings.svg");
+  }
+
+  /* Add badge */
+  > .searchmode-switcher-addEngine::part(button)::before {
+    content: "";
+    position: absolute;
+    display: flex;
+    background: url(chrome://browser/skin/search-indicator-badge-add.svg) no-repeat center;
+    height: 11px;
+    width: 11px;
+    top: 4px;
+    inset-inline-start: 17px;
+  }
+
+  > hr {
+    margin: var(--panel-menuitem-margin);
   }
 }
 
-.searchmode-switcher-popup-description {
-  font-weight: revert;
+.searchmode-switcher-panel-description {
+  color: var(--text-color-deemphasized);
+  padding: var(--panel-menuitem-padding);
+  margin: var(--panel-menuitem-margin);
 }
 
-.searchmode-switcher-popup-search-settings-button,
-.searchmode-switcher-local {
-  -moz-context-properties: fill;
-  fill: currentColor;
+.urlbar-visually-hidden {
+  font-size: 0;
+  position: absolute;
+}
+
+/* Hide footer separator if there are no menuitems between both separators */
+.searchmode-switcher-panel-installed-engine-separator + .searchmode-switcher-panel-footer-separator {
+  display: none;
 }
 
 /* stylelint-disable-next-line media-query-no-invalid */
@@ -1312,12 +1373,9 @@ toolbar[inactive="true"] .urlbar,
 
 /* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-  .searchmode-switcher {
-    background-color: var(--urlbar-box-bgcolor);
-    .urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > & {
-      /* Display as off-screen to get focus */
-      position: fixed;
-      top: -999px;
-    }
+  .urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > .searchmode-switcher {
+    /* Display as off-screen to get focus */
+    position: fixed;
+    top: -999px;
   }
 }

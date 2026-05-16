@@ -17,6 +17,10 @@ const {
   style: { ELEMENT_STYLE },
 } = require("resource://devtools/shared/constants.js");
 
+const {
+  toFixed,
+} = require("resource://devtools/shared/inspector/font-utils.js");
+
 loader.lazyRequireGetter(
   this,
   "StyleRuleActor",
@@ -440,8 +444,22 @@ class PageStyleActor extends Actor {
       }
 
       if (options.includeVariations && FONT_VARIATIONS_ENABLED) {
-        fontFace.variationAxes = font.getVariationAxes();
-        fontFace.variationInstances = font.getVariationInstances();
+        // Round font variation axes values
+        fontFace.variationAxes = font.getVariationAxes().map(axis => ({
+          ...axis,
+          minValue: toFixed(axis.minValue, 3),
+          maxValue: toFixed(axis.maxValue, 3),
+          defaultValue: toFixed(axis.defaultValue, 3),
+        }));
+        fontFace.variationInstances = font
+          .getVariationInstances()
+          .map(instance => ({
+            ...instance,
+            values: instance.values.map(variationValue => ({
+              ...variationValue,
+              value: toFixed(variationValue.value, 3),
+            })),
+          }));
       }
 
       fontsArray.push(fontFace);
@@ -941,6 +959,8 @@ class PageStyleActor extends Actor {
         // FIXME: Bug 1909173. Need to handle view transitions peudo-elements
         // for DevTools. For now we skip them.
         return false;
+      case "::-webkit-scrollbar":
+        return false;
       default:
         console.error("Unhandled pseudo-element " + pseudo);
         return false;
@@ -980,6 +1000,8 @@ class PageStyleActor extends Actor {
 
     const doc = this.inspector.targetActor.window.document;
 
+    let hasClosestAppearanceBaseNode = null;
+
     // getMatchingCSSRules returns ordered from least-specific to
     // most-specific.
     for (let i = domRules.length - 1; i >= 0; i--) {
@@ -1016,6 +1038,49 @@ class PageStyleActor extends Actor {
 
         if (!hasInherited) {
           continue;
+        }
+      }
+
+      if (isSystem) {
+        // Rules inside @appearance-base only apply if the effective appearance value is
+        // base / base-select in the element or any of its ancestors.
+        // For now, if we don't match those condition, we're not going to show those rules
+        // in the UI so it doesn't interfere with how we're handling overridden declarations.
+        // Ideally, this should be done in C++ for better performance (see Bug 2028761).
+        let currentRule = domRule;
+        let hasClosestAppearanceBaseRule = false;
+        while (currentRule) {
+          if (
+            ChromeUtils.getClassName(currentRule) === "CSSAppearanceBaseRule"
+          ) {
+            hasClosestAppearanceBaseRule = true;
+            break;
+          }
+          currentRule = currentRule.parentRule;
+        }
+
+        if (hasClosestAppearanceBaseRule) {
+          // lazyily compute this as this can be costly
+          if (hasClosestAppearanceBaseNode === null) {
+            hasClosestAppearanceBaseNode = false;
+            let currentNode = node;
+            while (currentNode) {
+              const computed = CssLogic.getComputedStyle(currentNode);
+              const appearance = computed
+                ? computed.getPropertyValue("appearance")
+                : null;
+              if (appearance === "base" || appearance === "base-select") {
+                hasClosestAppearanceBaseNode = true;
+                break;
+              }
+              currentNode = currentNode.parentElement;
+            }
+          }
+
+          if (!hasClosestAppearanceBaseNode) {
+            // We don't want to display @appearance-base rules if they will be inactive
+            continue;
+          }
         }
       }
 

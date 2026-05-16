@@ -46,7 +46,7 @@ nsScrollbarFrame* ScrollbarDrawing::GetParentScrollbarFrame(nsIFrame* aFrame) {
 /*static*/
 bool ScrollbarDrawing::IsParentScrollbarRolledOver(nsIFrame* aFrame) {
   if (nsScrollbarFrame* f = GetParentScrollbarFrame(aFrame)) {
-    if (f->PresContext()->UseOverlayScrollbars()) {
+    if (nsLayoutUtils::UseOverlayScrollbars(f)) {
       return f->HasBeenHovered();
     }
     return f->GetContent()->AsElement()->State().HasState(ElementState::HOVER);
@@ -65,8 +65,8 @@ bool ScrollbarDrawing::IsParentScrollbarHoveredOrActive(nsIFrame* aFrame) {
 }
 
 /*static*/
-bool ScrollbarDrawing::IsScrollbarWidthThin(const ComputedStyle& aStyle) {
-  auto scrollbarWidth = aStyle.StyleUIReset()->ScrollbarWidth();
+bool ScrollbarDrawing::IsScrollbarWidthThin(const nsIFrame* aFrame) {
+  auto scrollbarWidth = nsLayoutUtils::ScrollbarWidthFor(aFrame);
   return scrollbarWidth == StyleScrollbarWidth::Thin;
 }
 
@@ -100,10 +100,9 @@ LayoutDeviceIntCoord ScrollbarDrawing::GetScrollbarSize(
 
 LayoutDeviceIntCoord ScrollbarDrawing::GetScrollbarSize(
     const nsPresContext* aPresContext, nsIFrame* aFrame) {
-  auto* style = nsLayoutUtils::StyleForScrollbar(aFrame);
-  auto width = style->StyleUIReset()->ScrollbarWidth();
+  auto width = nsLayoutUtils::ScrollbarWidthFor(aFrame);
   auto overlay =
-      aPresContext->UseOverlayScrollbars() ? Overlay::Yes : Overlay::No;
+      nsLayoutUtils::UseOverlayScrollbars(aFrame) ? Overlay::Yes : Overlay::No;
   return GetScrollbarSize(aPresContext, width, overlay);
 }
 
@@ -181,7 +180,7 @@ bool ScrollbarDrawing::DoPaintDefaultScrollbar(
     ScrollbarKind aScrollbarKind, nsIFrame* aFrame, const ComputedStyle& aStyle,
     const ElementState& aElementState, const Colors& aColors,
     const DPIRatio& aDpiRatio) {
-  const bool overlay = aFrame->PresContext()->UseOverlayScrollbars();
+  const bool overlay = nsLayoutUtils::UseOverlayScrollbars(aFrame);
   if (overlay && !aElementState.HasAtLeastOneOfStates(ElementState::HOVER |
                                                       ElementState::ACTIVE)) {
     return true;
@@ -374,8 +373,8 @@ bool ScrollbarDrawing::PaintScrollbarButton(
     case StyleAppearance::ScrollbarbuttonUp:
       break;
     case StyleAppearance::ScrollbarbuttonDown:
-      for (int32_t i = 0; i < arrowNumPoints; i++) {
-        arrowPolygonY[i] *= -1;
+      for (float& y : arrowPolygonY) {
+        y *= -1;
       }
       break;
     case StyleAppearance::ScrollbarbuttonLeft:

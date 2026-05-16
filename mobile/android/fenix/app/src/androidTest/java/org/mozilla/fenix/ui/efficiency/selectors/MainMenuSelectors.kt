@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
@@ -68,6 +69,49 @@ object MainMenuSelectors {
         groups = listOf("requiredForPage"),
     )
 
+    val BOOKMARK_THIS_PAGE_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_bookmark_this_page_2),
+        description = "Bookmark this page button",
+        groups = listOf("bookmarkActions"),
+    )
+
+    val EDIT_BOOKMARK_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_edit_bookmark),
+        description = "Edit bookmark button",
+        groups = listOf("editBookmarkActions"),
+    )
+
+    val FIND_IN_PAGE_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_find_in_page),
+        description = "Main menu Find in page button",
+        groups = listOf(),
+    )
+
+    // TODO (M. Barone 3/20/2026): add getting 'appName' to our base helpers
+    val DEFAULT_BROWSER_BANNER_TITLE = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = getStringResource(R.string.browser_menu_default_banner_title, appName),
+        description = "Make Firefox your default banner title",
+        groups = listOf("homeBanner"),
+    )
+
+    val DEFAULT_BROWSER_BANNER_SUBTITLE = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = getStringResource(R.string.browser_menu_default_banner_subtitle_2),
+        description = "Make Firefox your default banner subtitle",
+        groups = listOf("homeBanner"),
+    )
+
+    val DEFAULT_BROWSER_BANNER_DISMISS = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_default_banner_dismiss_promotion),
+        description = "Make Firefox your default banner dismiss button",
+        groups = listOf("homeBanner"),
+    )
+
     val all = listOf(
         NEW_PRIVATE_TAB_BUTTON,
         EXTENSIONS_BUTTON,
@@ -77,5 +121,11 @@ object MainMenuSelectors {
         PASSWORDS_BUTTON,
         SIGN_IN_BUTTON,
         SETTINGS_BUTTON,
+        BOOKMARK_THIS_PAGE_BUTTON,
+        EDIT_BOOKMARK_BUTTON,
+        FIND_IN_PAGE_BUTTON,
+        DEFAULT_BROWSER_BANNER_TITLE,
+        DEFAULT_BROWSER_BANNER_SUBTITLE,
+        DEFAULT_BROWSER_BANNER_DISMISS,
     )
 }

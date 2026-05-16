@@ -92,7 +92,10 @@ class ShortcutsFragment : Fragment(), SystemInsetsPaddedFragment {
                 .collectAsState(initial = emptyList())
 
             ShortcutsScreen(
-                state = ShortcutsState(topSites = topSites),
+                state = ShortcutsState(
+                    topSites = topSites,
+                    showAddShortcut = components.settings.enableAddShortcutsImprovement,
+                ),
                 interactor = interactor,
                 onNavigationIconClick = {
                     this@ShortcutsFragment.findNavController().popBackStack()

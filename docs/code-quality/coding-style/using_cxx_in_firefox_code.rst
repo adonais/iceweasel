@@ -59,14 +59,10 @@ list of acceptable features is given below:
      - 4.8.1
      - 2.9
      - Yes
-   * - default member-initializers (except for bit-fields)
-     - 4.7
-     - 3.0
-     - Yes
-   * - default member-initializers (for bit-fields)
+   * - default member-initializers (including bit-fields)
      - 8
      - 6
-     - **No**
+     - Yes
    * - variadic templates
      - 4.3
      - 2.9
@@ -122,7 +118,7 @@ list of acceptable features is given below:
    * - ``[[attributes]]``
      - 4.8
      - 3.3
-     - **No** (see notes)
+     - Yes (see notes)
    * - ``constexpr``
      - 4.6
      - 3.1
@@ -243,10 +239,10 @@ list of acceptable features is given below:
      - 5.0
      - 3.4
      - **No** (see notes)
-   * - Concepts (Concepts TS)
-     - 6.0
-     - —
-     - **No**
+   * - Concepts (C++20)
+     - 10.0
+     - 10.0
+     - **Yes** (but see notes)
    * - Inline variables (C++17)
      - 7.0
      - 3.9
@@ -256,9 +252,9 @@ list of acceptable features is given below:
      - 3.9
      - Yes
    * - constexpr lambdas (C++17)
-     - —
-     - —
-     - **No**
+     - 7.0
+     - 5.0
+     - Yes
    * - Structured bindings (C++17)
      - 7.0
      - 4.0
@@ -291,6 +287,19 @@ list of acceptable features is given below:
      - 8.0
      - —
      - **No**
+   * - ``std::format`` (C++20)
+     - 13.0
+     - 17.0
+     - **No** (see notes)
+   * - Coroutines (C++20)
+     - 11.0
+     - 14.0
+     - **No** (see notes)
+   * - ``using enum`` (C++20)
+     - 11.0
+     - 13.0
+     - **No** (see notes)
+
 
 Sources
 ~~~~~~~
@@ -325,11 +334,14 @@ Sized deallocation
   work <https://bugzilla.mozilla.org/show_bug.cgi?id=1250998>`__ would need to
   be done to make it an efficiency win with our custom memory allocator.
 
+Concepts
+  libstdc++10 doesn't support concepts, so we can't use concept functionality that requires standard library support, like the <concepts>, <iterator>, and <ranges> headers. We can however use concepts's core language functionality that is implemented purely by the compiler, like ``concept`` definitions and ``requires`` clauses.
+
 Aligned allocation/deallocation
   Our custom memory allocator doesn't have support for these functions.
 
 Thread locals
-  ``thread_local`` is not supported on Android.
+  ``thread_local`` is not natively supported until Android 10.
 
 Designated initializers
   Despite their late addition to C++ (and lack of *official* support by
@@ -339,6 +351,17 @@ Designated initializers
   <https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html>`__ -- and this
   subset has been accepted without comment in C++ code since at least GCC 4.7
   and Clang 3.0.
+
+``std::format``
+  C++20's ``std::format`` is not fully supported in GCC libstdc++ until GCC 13.
+  Use the ``fmt/format.h`` library instead, which has also been patched to match
+  Gecko's floating point formatting (bug 1717448).
+
+Coroutines
+  Clang's implementation of coroutines is `"out of maintenance" on Windows <https://reviews.llvm.org/D146187?id=506821>`__ due to `ABI and stability issues on 32-bit Windows <https://github.com/llvm/llvm-project/issues/59382>`__.
+
+``using enum``
+  Not supported until GCC 11 and we still support GCC 10. If you're eager to use ``using enum`` in the meantime, consider promoting UsingEnum.h's ``USING_ENUM`` macro to MFBT for reuse.
 
 
 C++ and Mozilla standard libraries
@@ -546,15 +569,18 @@ Algorithms
 
 .. list-table::
    :widths: 25 25
+   :header-rows: 1
 
+   * - Name
+     - Header
    * - ``mozilla::BinarySearch``
      - ``mfbt/BinarySearch.h``
-   * - ``mozilla::BitwiseCast``
-     - ``mfbt/Casting.h`` (strict aliasing-safe cast)
-   * - ``mozilla/MathAlgorithms.h``
-     - (rotate, ctlz, popcount, gcd, abs, lcm)
+   * - ``mozilla::BitwiseCast`` (strict aliasing-safe cast)
+     - ``mfbt/Casting.h``
+   * - ``rotate``, ``ctlz``, ``popcount``, ``gcd``, ``abs``, ``lcm``, etc
+     - ``mozilla/MathAlgorithms.h``
    * - ``mozilla::RollingMean``
-     - ``mfbt/RollingMean.h`` ()
+     - ``mfbt/RollingMean.h``
 
 
 Concurrency

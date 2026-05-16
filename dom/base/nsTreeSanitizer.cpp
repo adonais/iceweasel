@@ -1143,7 +1143,7 @@ bool nsTreeSanitizer::SanitizeInlineStyle(
 
   nsAutoString sanitizedStyle;
   SanitizeStyleSheet(styleText, sanitizedStyle, aElement->OwnerDoc(),
-                     aElement->GetBaseURI(), StyleSanitizationKind::Standard);
+                     aElement->GetBaseURI(), aSanitizationKind);
   RemoveAllAttributesFromDescendants(aElement);
   nsContentUtils::SetNodeTextContent(aElement, sanitizedStyle, true);
 
@@ -1260,7 +1260,7 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
       }
       // else not allowed
     }
-    aElement->UnsetAttr(kNameSpaceID_None, attrLocal, false);
+    aElement->UnsetAttr(attrNs, attrLocal, false);
     if (mLogRemovals) {
       LogMessage("Removed unsafe attribute.", aElement->OwnerDoc(), aElement,
                  attrLocal);

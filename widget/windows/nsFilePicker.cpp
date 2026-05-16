@@ -105,13 +105,13 @@ NS_IMPL_ISUPPORTS(nsFilePicker, nsIFilePicker)
 
 NS_IMETHODIMP nsFilePicker::Init(
     mozilla::dom::BrowsingContext* aBrowsingContext, const nsAString& aTitle,
-    nsIFilePicker::Mode aMode) {
+    nsIFilePicker::Mode aMode, nsISupports* aGlobal) {
   // Don't attempt to open a real file-picker in headless mode.
   if (gfxPlatform::IsHeadless()) {
-    return nsresult::NS_ERROR_NOT_AVAILABLE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
-  return nsBaseFilePicker::Init(aBrowsingContext, aTitle, aMode);
+  return nsBaseFilePicker::Init(aBrowsingContext, aTitle, aMode, aGlobal);
 }
 
 namespace mozilla::detail {

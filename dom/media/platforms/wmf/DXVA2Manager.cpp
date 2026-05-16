@@ -891,7 +891,8 @@ HRESULT D3D11DXVA2Manager::WrapTextureWithImage(IMFSample* aVideoSample,
 
   RefPtr<D3D11TextureIMFSampleImage> image = new D3D11TextureIMFSampleImage(
       aVideoSample, texture, arrayIndex, gfx::IntSize(mWidth, mHeight), aRegion,
-      format, ToColorSpace2(mYUVColorSpace), mColorRange, mColorDepth);
+      format, ToColorSpace2(mYUVColorSpace), mColorRange, mTransferFunction,
+      mColorDepth);
   image->AllocateTextureClient(mKnowsCompositor, mZeroCopyUsageInfo,
                                mWriteFence);
 
@@ -910,7 +911,8 @@ HRESULT D3D11DXVA2Manager::WrapTextureWithImage(
   NS_ENSURE_TRUE(aOutImage, E_POINTER);
   RefPtr<D3D11TextureAVFrameImage> image = new D3D11TextureAVFrameImage(
       aTextureWrapper, gfx::IntSize(mWidth, mHeight), aRegion,
-      ToColorSpace2(mYUVColorSpace), mColorRange, mColorDepth);
+      ToColorSpace2(mYUVColorSpace), mColorRange, mTransferFunction,
+      mColorDepth);
   image->AllocateTextureClient(mKnowsCompositor, mZeroCopyUsageInfo,
                                mWriteFence);
   image.forget(aOutImage);
@@ -1266,7 +1268,8 @@ HRESULT D3D11DXVA2Manager::CopyTextureToImage(
 
   RefPtr<D3D11ShareHandleImage> image = new D3D11ShareHandleImage(
       gfx::IntSize(mWidth, mHeight), aInTexture.mRegion,
-      ToColorSpace2(mYUVColorSpace), mColorRange, mColorDepth);
+      ToColorSpace2(mYUVColorSpace), mColorRange, mTransferFunction,
+      mColorDepth);
 
   if (!image->AllocateTexture(mTextureClientAllocator, mDevice)) {
     LOG("Failed to allocate texture!");
@@ -1325,9 +1328,9 @@ HRESULT D3D11DXVA2Manager::CopyTextureToImage(
         LOG("Failed to get a video processor");
         return E_FAIL;
       }
-      VideoProcessorD3D11::InputTextureInfo info(ToColorSpace2(mYUVColorSpace),
-                                                 mColorRange, aInTexture.mIndex,
-                                                 aInTexture.mTexture);
+      VideoProcessorD3D11::InputTextureInfo info(
+          ToColorSpace2(mYUVColorSpace), mColorRange, mTransferFunction,
+          aInTexture.mIndex, aInTexture.mTexture);
       if (!processor->CallVideoProcessorBlt(info, texture.get())) {
         LOG("Failed on CallVideoProcessorBlt!");
         return E_FAIL;

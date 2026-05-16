@@ -38,6 +38,7 @@ static const DelegateInfo sPermissionsMap[] = {
     {"midi", nullptr, DelegatePolicy::eDelegateUseIframeOrigin},
     // Like "midi" but with sysex support.
     {"midi-sysex", nullptr, DelegatePolicy::eDelegateUseIframeOrigin},
+    {"serial", nullptr, DelegatePolicy::eDelegateUseFeaturePolicy},
     {"storage-access", nullptr, DelegatePolicy::eDelegateUseIframeOrigin},
     {"camera", u"camera", DelegatePolicy::eDelegateUseFeaturePolicy},
     {"microphone", u"microphone", DelegatePolicy::eDelegateUseFeaturePolicy},
@@ -266,7 +267,23 @@ nsresult PermissionDelegateHandler::GetPermission(const nsACString& aType,
     }
   }
 
-  return (mPermissionManager->*testPermission)(principal, aType, aPermission);
+  nsresult rv =
+      (mPermissionManager->*testPermission)(principal, aType, aPermission);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (*aPermission == nsIPermissionManager::UNKNOWN_ACTION && bc) {
+    uint64_t browserId = bc->Top()->BrowserId();
+    if (browserId) {
+      uint32_t browserPerm = nsIPermissionManager::UNKNOWN_ACTION;
+      mPermissionManager->TestForBrowser(principal, aType, browserId,
+                                         &browserPerm);
+      if (browserPerm != nsIPermissionManager::UNKNOWN_ACTION) {
+        *aPermission = browserPerm;
+      }
+    }
+  }
+
+  return NS_OK;
 }
 
 nsresult PermissionDelegateHandler::GetPermissionForPermissionsAPI(
@@ -289,6 +306,9 @@ void PermissionDelegateHandler::PopulateAllDelegatedPermissions() {
   DelegatedPermissionList list;
   DelegatedPermissionList exactHostMatchList;
 
+  RefPtr<BrowsingContext> bc = mDocument->GetBrowsingContext();
+  uint64_t browserId = bc ? bc->Top()->BrowserId() : 0;
+
   for (const auto& perm : sPermissionsMap) {
     size_t idx = std::distance(sPermissionsMap, &perm);
 
@@ -297,12 +317,28 @@ void PermissionDelegateHandler::PopulateAllDelegatedPermissions() {
     uint32_t permission = nsIPermissionManager::UNKNOWN_ACTION;
     (void)mPermissionManager->TestPermissionFromPrincipal(mPrincipal, type,
                                                           &permission);
+    if (permission == nsIPermissionManager::UNKNOWN_ACTION && browserId) {
+      uint32_t browserPerm = nsIPermissionManager::UNKNOWN_ACTION;
+      mPermissionManager->TestForBrowser(mPrincipal, type, browserId,
+                                         &browserPerm);
+      if (browserPerm != nsIPermissionManager::UNKNOWN_ACTION) {
+        permission = browserPerm;
+      }
+    }
     list.mPermissions[idx] = permission;
 
     // Populate the exact-host-match permission.
     permission = nsIPermissionManager::UNKNOWN_ACTION;
     (void)mPermissionManager->TestExactPermissionFromPrincipal(mPrincipal, type,
                                                                &permission);
+    if (permission == nsIPermissionManager::UNKNOWN_ACTION && browserId) {
+      uint32_t browserPerm = nsIPermissionManager::UNKNOWN_ACTION;
+      mPermissionManager->TestForBrowser(mPrincipal, type, browserId,
+                                         &browserPerm);
+      if (browserPerm != nsIPermissionManager::UNKNOWN_ACTION) {
+        permission = browserPerm;
+      }
+    }
     exactHostMatchList.mPermissions[idx] = permission;
   }
 
@@ -371,6 +407,21 @@ bool PermissionDelegateHandler::UpdateDelegatePermissionInternal(
 
   uint32_t permission = nsIPermissionManager::UNKNOWN_ACTION;
   (void)(mPermissionManager->*aTestFunc)(mPrincipal, aType, &permission);
+
+  if (permission == nsIPermissionManager::UNKNOWN_ACTION) {
+    RefPtr<BrowsingContext> bc = mDocument->GetBrowsingContext();
+    if (bc) {
+      uint64_t browserId = bc->Top()->BrowserId();
+      if (browserId) {
+        uint32_t browserPerm = nsIPermissionManager::UNKNOWN_ACTION;
+        mPermissionManager->TestForBrowser(mPrincipal, aType, browserId,
+                                           &browserPerm);
+        if (browserPerm != nsIPermissionManager::UNKNOWN_ACTION) {
+          permission = browserPerm;
+        }
+      }
+    }
+  }
 
   if (aList.mPermissions[aIdx] != permission) {
     aList.mPermissions[aIdx] = permission;

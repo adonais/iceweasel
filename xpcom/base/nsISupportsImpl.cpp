@@ -150,5 +150,22 @@ void ProxyDeleteVoid(const char* aName, nsISerialEventTarget* aTarget,
     NS_WARNING(nsPrintfCString("failed to post '%s', leaking!", aName).get());
   }
 }
+
+void ProxyDeleteMainVoid(const char* aName, void* aPtr,
+                         DeleteVoidFunction* aDeleteFunc) {
+  MOZ_ASSERT(aName);
+  MOZ_ASSERT(aPtr);
+  MOZ_ASSERT(aDeleteFunc);
+  if (NS_IsMainThread()) {
+    aDeleteFunc(aPtr);
+    return;
+  }
+  nsresult rv = NS_DispatchToMainThread(
+      MakeAndAddRef<ProxyDeleteVoidRunnable>(aName, aPtr, aDeleteFunc),
+      NS_DISPATCH_NORMAL);
+  if (NS_FAILED(rv)) {
+    NS_WARNING(nsPrintfCString("failed to post '%s', leaking!", aName).get());
+  }
+}
 }  // namespace mozilla::detail
 #endif

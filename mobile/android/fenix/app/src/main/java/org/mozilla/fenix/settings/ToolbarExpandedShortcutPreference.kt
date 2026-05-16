@@ -32,9 +32,11 @@ internal class ToolbarExpandedShortcutPreference @JvmOverloads constructor(
 
     override fun getSelectedIconImageView(holder: PreferenceViewHolder): ImageView {
         val simplePreview = holder.findViewById(R.id.toolbar_simple_shortcut_preview)
+        val simpleNoShortcutPreview = holder.findViewById(R.id.toolbar_simple_no_shortcut_preview)
         val expandedPreview = holder.findViewById(R.id.toolbar_expanded_shortcut_preview)
 
         simplePreview.visibility = GONE
+        simpleNoShortcutPreview.visibility = GONE
         expandedPreview.visibility = VISIBLE
 
         return expandedPreview.findViewById(R.id.selected_expanded_shortcut_icon)

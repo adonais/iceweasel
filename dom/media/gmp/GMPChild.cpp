@@ -51,6 +51,7 @@
 
 #  include "WinUtils.h"
 #  include "mozilla/Services.h"
+#  include "mozilla/StaticPrefs_dom.h"
 #  include "mozilla/WinDllServices.h"
 #  include "nsIObserverService.h"
 #else
@@ -465,46 +466,39 @@ GMPChild::MakeCDMHostVerificationPaths(const nsACString& aPluginLibPath) {
   paths.AppendElement(
       std::make_pair(nsCString(aPluginLibPath), aPluginLibPath + ".sig"_ns));
 
-  // Plugin-container binary path.
+  // Current process binary path.
   // Note: clang won't let us initialize an nsString from a wstring, so we
   // need to go through UTF8 to get to an nsString.
-  const std::string pluginContainer =
+  const std::string currentProcessBinary =
       WideToUTF8(CommandLine::ForCurrentProcess()->program());
   nsString str;
 
-  CopyUTF8toUTF16(nsDependentCString(pluginContainer.c_str()), str);
+  CopyUTF8toUTF16(nsDependentCString(currentProcessBinary.c_str()), str);
   nsCOMPtr<nsIFile> path;
   if (NS_FAILED(NS_NewLocalFile(str, getter_AddRefs(path))) ||
       !AppendHostPath(path, paths)) {
-    // Without successfully determining plugin-container's path, we can't
-    // determine libxul's or Firefox's. So give up.
+    // Without successfully determining our path, we can't determine libxul's or
+    // Firefox's. So give up.
     return paths;
   }
 
 #if defined(XP_WIN)
-  // On Windows on ARM64, we should also append the x86 plugin-container's
-  // xul.dll.
-  const bool isWindowsOnARM64 =
-      IsFileLeafEqualToASCII(GetParentFile(path), "i686");
-  if (isWindowsOnARM64) {
-    nsCOMPtr<nsIFile> x86XulPath =
-        AppendFile(GetParentFile(path), XUL_LIB_FILE);
-    if (!AppendHostPath(x86XulPath, paths)) {
-      return paths;
-    }
-  }
+  bool addFirefoxBinaryPath = !StaticPrefs::dom_ipc_alwaysUseParentBinary();
+#else
+  bool addFirefoxBinaryPath = true;
 #endif
 
   // Firefox application binary path.
   nsCOMPtr<nsIFile> appDir = GetFirefoxAppPath(path);
-  path = AppendFile(CloneFile(appDir), FIREFOX_FILE);
-  if (!AppendHostPath(path, paths)) {
-    return paths;
+  if (addFirefoxBinaryPath) {
+    path = AppendFile(CloneFile(appDir), FIREFOX_FILE);
+    if (!AppendHostPath(path, paths)) {
+      return paths;
+    }
   }
 
   // Libxul path. Note: re-using 'appDir' var here, as we assume libxul is in
   // the same directory as Firefox executable.
-  appDir->GetPath(str);
   path = AppendFile(CloneFile(appDir), XUL_LIB_FILE);
   if (!AppendHostPath(path, paths)) {
     return paths;

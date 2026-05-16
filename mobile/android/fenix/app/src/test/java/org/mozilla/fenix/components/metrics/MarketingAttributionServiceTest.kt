@@ -10,6 +10,7 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.ext.packageManagerWrapper
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.fake.FakeMetricController
@@ -17,6 +18,9 @@ import org.mozilla.fenix.distributions.DistributionBrowserStoreProvider
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.distributions.DistributionProviderChecker
 import org.mozilla.fenix.distributions.DistributionSettings
+import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.nimbus.MarketingOnboardingCard
 
 @RunWith(AndroidJUnit4::class)
 internal class MarketingAttributionServiceTest {
@@ -55,6 +59,26 @@ internal class MarketingAttributionServiceTest {
         metricController = FakeMetricController(),
         appPreinstalledOnVivoDevice = { true },
     )
+
+    @Before
+    fun setUp() {
+        MarketingAttributionService.response = null
+        testContext.settings().shouldShowMarketingOnboarding = true
+        FxNimbus.features.marketingOnboardingCard.withCachedValue(MarketingOnboardingCard(enabled = true))
+    }
+
+    @Test
+    fun `WHEN the marketing onboarding Nimbus flag is disabled THEN we should not show marketing onboarding`() =
+        runBlocking {
+            FxNimbus.features.marketingOnboardingCard.withCachedValue(MarketingOnboardingCard(enabled = false))
+            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding("gclid=12345", distributionIdManager))
+        }
+
+    @Test
+    fun `WHEN the marketing onboarding Nimbus flag is enabled THEN we should show marketing onboarding`() =
+        runBlocking {
+            assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding("gclid=12345", distributionIdManager))
+        }
 
     @Test
     fun `WHEN installReferrerResponse is empty or null THEN we should not show marketing onboarding`() =

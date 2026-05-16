@@ -1082,7 +1082,7 @@ class BuildReader:
         for p in mozbuild_paths:
             full = os.path.join(self.config.topsrcdir, p)
 
-            with open(full) as fh:
+            with open(full, encoding="utf-8") as fh:
                 source = fh.read()
 
             # No need to do the heavy parsing if there is no literal mention of

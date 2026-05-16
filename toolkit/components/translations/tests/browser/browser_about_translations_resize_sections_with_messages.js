@@ -19,13 +19,6 @@ const expandingInput = `\
 ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
 ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß`;
 
-const UNSUPPORTED_LANGUAGE_PAIRS = [
-  { fromLang: "en", toLang: "fr" },
-  { fromLang: "fr", toLang: "en" },
-  { fromLang: "en", toLang: "de" },
-  { fromLang: "de", toLang: "en" },
-];
-
 const SPANISH_TEXT = "Hola, ¿cómo estás?";
 const longSpanishInput = `${SPANISH_TEXT}\n`.repeat(50).trim();
 
@@ -173,7 +166,7 @@ add_task(
   async function test_about_translations_section_heights_with_unsupported_language_message() {
     const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
       {
-        languagePairs: UNSUPPORTED_LANGUAGE_PAIRS,
+        languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
         autoDownloadFromRemoteSettings: false,
       }
     );

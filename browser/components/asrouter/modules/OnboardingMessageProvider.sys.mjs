@@ -62,6 +62,97 @@ const isMSIX =
 
 const BASE_MESSAGES = () => [
   {
+    id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
+    template: "menu_message",
+    layout: "column",
+    content: {
+      messageType: "default_cta",
+      imageURL:
+        "chrome://browser/content/asrouter/assets/fox-with-checkmark.svg",
+      imageWidth: 68,
+      primaryText: {
+        string_id: "set-default-menu-message-row-layout-title",
+      },
+      secondaryText: {
+        string_id: "set-default-menu-message-row-layout-subtitle",
+      },
+      primaryActionText: {
+        string_id: "set-default-menu-message-primary-button-variant",
+      },
+      primaryButtonSize: "small",
+      primaryAction: {
+        type: "MULTI_ACTION",
+        data: {
+          actions: [
+            {
+              type: "SET_DEFAULT_BROWSER",
+            },
+          ],
+        },
+      },
+      closeAction: {
+        type: "BLOCK_MESSAGE",
+        data: {
+          id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
+        },
+      },
+    },
+    targeting:
+      "source == 'app_menu' && os.isWindows && os.windowsVersion >= 10 && !isDefaultBrowserUncached && !hasActiveEnterprisePolicies && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features' | preferenceValue != false",
+    trigger: {
+      id: "menuOpened",
+    },
+    groups: [],
+    skip_in_tests: "it's covered by browser_asrouter_menu_messages.js",
+  },
+  {
+    id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
+    template: "menu_message",
+    layout: "column",
+    content: {
+      imageURL:
+        "chrome://browser/content/asrouter/assets/fox-with-checkmark.svg",
+      imageWidth: 68,
+      messageType: "default_cta",
+      primaryText: {
+        string_id: "set-default-menu-message-row-layout-title",
+      },
+      secondaryText: {
+        string_id: "set-default-menu-message-row-layout-subtitle-variant",
+      },
+      primaryActionText: {
+        string_id: "set-default-menu-message-primary-button-variant",
+      },
+      primaryButtonSize: "small",
+      primaryAction: {
+        type: "MULTI_ACTION",
+        data: {
+          actions: [
+            {
+              type: "SET_DEFAULT_BROWSER",
+            },
+            {
+              type: "PIN_FIREFOX_TO_TASKBAR",
+            },
+          ],
+        },
+      },
+      closeAction: {
+        type: "BLOCK_MESSAGE",
+        data: {
+          id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
+        },
+      },
+    },
+    targeting:
+      "source == 'app_menu' && os.isMac && !isDefaultBrowserUncached && !hasActiveEnterprisePolicies && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features' | preferenceValue != false",
+    trigger: {
+      id: "menuOpened",
+    },
+    groups: [],
+    skip_in_tests: "it's covered by browser_asrouter_menu_messages.js",
+  },
+  {
     id: "AI_WINDOW_TOU_EXISTING_USERS_MODAL",
     template: "spotlight",
     frequency: {
@@ -2995,6 +3086,78 @@ const BASE_MESSAGES = () => [
     targeting:
       "('termsofuse.acceptedDate'|preferenceValue != '0') && (('termsofuse.acceptedDate'|preferenceValue * 1) < 1765972800000)",
   },
+  {
+    id: "RELAY_50_MASKS_ANNOUNCEMENT",
+    template: "feature_callout",
+    groups: ["cfr"],
+    trigger: {
+      id: "defaultBrowserCheck",
+    },
+    targeting:
+      "source == 'startup' && isFxASignedIn && isRelayFreeTier && relayEmailMasksCount > 1 && !activeNotifications && !isMajorUpgrade && userPrefs.cfrFeatures && (currentDate|date - profileAgeCreated|date) / 86400000 > 3",
+    frequency: {
+      lifetime: 1,
+    },
+    skip_in_tests: "We don't want it to pop up in tests",
+    content: {
+      id: "RELAY_50_MASKS_ANNOUNCEMENT",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      disableHistoryUpdates: true,
+      screens: [
+        {
+          id: "RELAY_SURVEY_SCREEN",
+          anchors: [
+            {
+              selector: "#PanelUI-menu-button",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topright",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            width: "280px",
+            logo: {
+              imageURL:
+                "chrome://browser/content/asrouter/assets/hero-relay-email-masks.svg",
+              alt: "Firefox Relay email masks",
+              height: "132px",
+            },
+            title: {
+              string_id: "relay-50-masks-announcement-title",
+            },
+            subtitle: {
+              string_id: "relay-50-masks-announcement-subtitle",
+            },
+            primary_button: {
+              label: {
+                string_id: "relay-50-masks-announcement-primary-button",
+              },
+              action: {
+                type: "OPEN_URL",
+                data: {
+                  args: "https://relay.firefox.com",
+                  where: "tabshifted",
+                },
+                dismiss: true,
+              },
+            },
+            secondary_button: {
+              label: {
+                string_id: "relay-50-masks-announcement-secondary-button",
+              },
+              action: {
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+  },
 ];
 
 const PREONBOARDING_MESSAGES = () => [
@@ -3007,7 +3170,42 @@ const PREONBOARDING_MESSAGES = () => [
     firstRunURL: "https://www.mozilla.org/privacy/firefox/",
     screens: [
       {
+        id: "TOU_ONBOARDING_LOADING",
+        targeting:
+          "'browser.aboutwelcome.experimentsGate.enabled'|preferenceValue && (!'browser.aboutwelcome.experimentsGate.skipSplashIfLoaded'|preferenceValue || !experimentsLoaded)",
+        advance_on_experiment_load: {
+          minDisplayMs: 3000,
+          maxDisplayMs: 10000,
+        },
+        force_hide_steps_indicator: true,
+        content: {
+          screen_style: {
+            overflow: "auto",
+            display: "block",
+            padding: "0",
+            width: "100vw",
+            height: "100vh",
+          },
+          main_content_style: {
+            display: "none",
+          },
+          logo: {
+            imageURL:
+              "chrome://activity-stream/content/data/content/assets/splash-logo.svg",
+            height: "500px",
+            width: "500px",
+            style: {
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexGrow: "1",
+            },
+          },
+        },
+      },
+      {
         id: "TOU_ONBOARDING",
+        force_hide_steps_indicator: true,
         content: {
           action_buttons_above_content: true,
           screen_style: {
@@ -3150,7 +3348,6 @@ const PREONBOARDING_MESSAGES = () => [
               paddingBlock: "4px",
               paddingInline: "16px",
             },
-            should_focus_button: true,
             action: {
               type: "MULTI_ACTION",
               collectSelect: true,

@@ -222,6 +222,26 @@ already_AddRefed<mozilla::MediaByteBuffer> AnnexB::ConvertHVCCExtraDataToAnnexB(
   const HVCCConfig hvcc = rv.unwrap();
   RefPtr<mozilla::MediaByteBuffer> annexB = new mozilla::MediaByteBuffer;
   for (const auto& nalu : hvcc.mNALUs) {
+#ifdef MOZ_WMF
+    if (nalu.mNalUnitType == H265NALU::NAL_TYPES::PREFIX_SEI_NUT) {
+      RefPtr<MediaByteBuffer> filteredNalu =
+          H265::FilterPrefixSEIForWindows(nalu);
+      if (!filteredNalu) {
+        LOGV(
+            "Skipping PREFIX_SEI_NUT (size=%zu) from AnnexB extradata on "
+            "Windows because it only contains unregistered user data",
+            nalu.mNALU.Length());
+        continue;
+      }
+      annexB->AppendElements(kAnnexBDelimiter, std::size(kAnnexBDelimiter));
+      annexB->AppendElements(filteredNalu->Elements(), filteredNalu->Length());
+      LOGV(
+          "Insert filtered PREFIX_SEI_NUT (old size=%zu, new size=%zu) to "
+          "AnnexB (size=%zu)",
+          nalu.mNALU.Length(), filteredNalu->Length(), annexB->Length());
+      continue;
+    }
+#endif
     annexB->AppendElements(kAnnexBDelimiter, std::size(kAnnexBDelimiter));
     annexB->AppendElements(nalu.mNALU.Elements(), nalu.mNALU.Length());
     LOGV("Insert NALU (type=%hhu, size=%zu) to AnnexB (size=%zu)",

@@ -296,14 +296,6 @@ struct SimplePayloadMarkerTemplate
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
-
-  static void StreamJSONMarkerData(
-      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-      const typename ArgTypes::type&... args) {
-    mozilla::BaseMarkerType<
-        SimplePayloadMarkerTemplate<ArgName, ArgTableLabel, ArgTypes...>>::
-        StreamJSONMarkerDataImpl(aWriter, args...);
-  }
 };
 }  // namespace geckoprofiler::markers
 

@@ -82,6 +82,7 @@
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsStringIterator.h"
+#include "nsTextNode.h"
 #include "nsTreeSanitizer.h"
 #include "nsXPCOM.h"
 #include "nscore.h"
@@ -1627,7 +1628,13 @@ void HTMLEditor::HTMLTransferablePreparer::AddDataFlavorsInBestOrder(
         break;
     }
   }
-  DebugOnly<nsresult> rvIgnored = aTransferable.AddDataFlavor(kTextMime);
+  // GetAnyTransferData() uses this order, so put URL data before text in HTML
+  // editors to preserve pasted links.
+  DebugOnly<nsresult> rvIgnored = aTransferable.AddDataFlavor(kURLDataMime);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvIgnored),
+      "nsITransferable::AddDataFlavor(kURLDataMime) failed, but ignored");
+  rvIgnored = aTransferable.AddDataFlavor(kTextMime);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rvIgnored),
       "nsITransferable::AddDataFlavor(kTextMime) failed, but ignored");
@@ -2145,6 +2152,10 @@ nsresult HTMLEditor::InsertFromTransferableAtSelection(
     CopyASCIItoUTF16(bestFlavor, flavor);
     const SafeToInsertData safeToInsertData = IsSafeToInsertData(nullptr);
 
+    const bool isPlaintextEditor =
+        IsPlaintextMailComposer() ||
+        aEditingHost.IsContentEditablePlainTextOnly();
+
     if (bestFlavor.EqualsLiteral(kFileMime) ||
         bestFlavor.EqualsLiteral(kJPEGImageMime) ||
         bestFlavor.EqualsLiteral(kJPGImageMime) ||
@@ -2210,7 +2221,8 @@ nsresult HTMLEditor::InsertFromTransferableAtSelection(
     }
     if (bestFlavor.EqualsLiteral(kHTMLMime) ||
         bestFlavor.EqualsLiteral(kTextMime) ||
-        bestFlavor.EqualsLiteral(kMozTextInternal)) {
+        bestFlavor.EqualsLiteral(kMozTextInternal) ||
+        bestFlavor.EqualsLiteral(kURLDataMime)) {
       nsAutoString stuffToPaste;
       if (!GetString(genericDataObj, stuffToPaste)) {
         nsAutoCString text;
@@ -2232,6 +2244,17 @@ nsresult HTMLEditor::InsertFromTransferableAtSelection(
                 "HTMLEditor::InsertHTMLWithContextAsSubAction("
                 "DeleteSelectedContent::Yes, "
                 "InlineStylesAtInsertionPoint::Clear) failed");
+            return rv;
+          }
+        } else if (bestFlavor.EqualsLiteral(kURLDataMime) &&
+                   !isPlaintextEditor) {
+          AutoPlaceholderBatch treatAsOneTransaction(
+              *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
+          EditorDOMPoint pointToInsert(SelectionRef().AnchorRef());
+          nsresult rv = InsertURLAsLinkInternal(stuffToPaste, pointToInsert,
+                                                DeleteSelectedContent::Yes);
+          if (NS_FAILED(rv)) {
+            NS_WARNING("InsertURLAsLink() failed");
             return rv;
           }
         } else {
@@ -2394,10 +2417,21 @@ nsresult HTMLEditor::InsertFromDataTransfer(
                                "InlineStylesAtInsertionPoint::Clear) failed");
           return rv;
         }
+      } else if (type.EqualsLiteral(kURLDataMime)) {
+        // Handle URL data before text so HTML editors insert a link here.
+        nsAutoString url;
+        GetStringFromDataTransfer(aDataTransfer, type, aIndex, url);
+        AutoPlaceholderBatch treatAsOneTransaction(
+            *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
+        nsresult rv =
+            InsertURLAsLinkInternal(url, aDroppedAt, aDeleteSelectedContent);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "InsertURLAsLink() failed");
+        return rv;
       }
     }
 
-    if (type.EqualsLiteral(kTextMime) || type.EqualsLiteral(kMozTextInternal)) {
+    if (type.EqualsLiteral(kTextMime) || type.EqualsLiteral(kMozTextInternal) ||
+        type.EqualsLiteral(kURLDataMime)) {
       nsAutoString text;
       GetStringFromDataTransfer(aDataTransfer, type, aIndex, text);
       AutoPlaceholderBatch treatAsOneTransaction(
@@ -2409,6 +2443,47 @@ nsresult HTMLEditor::InsertFromDataTransfer(
     }
   }
 
+  return NS_OK;
+}
+
+nsresult HTMLEditor::InsertURLAsLinkInternal(
+    const nsAString& aURL, const EditorDOMPoint& aPointToInsert,
+    DeleteSelectedContent aDeleteSelectedContent) {
+  if (aURL.IsEmpty()) {
+    return NS_OK;
+  }
+  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+  nsresult rv = PrepareToInsertContent(aPointToInsert, aDeleteSelectedContent);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::PrepareToInsertContent() failed");
+    return rv;
+  }
+  // PrepareToInsertContent() has already updated the selection state
+  // according to aDeleteSelectedContent, so DeleteSelectionAndCreateElement()
+  // just creates the <a> element at the prepared insertion point.
+  Result<RefPtr<Element>, nsresult> linkOrError =
+      DeleteSelectionAndCreateElement(
+          *nsGkAtoms::a, [&aURL](HTMLEditor& aEditor, Element& aNewElement,
+                                 const EditorDOMPoint&) {
+            nsresult rv = aNewElement.SetAttr(kNameSpaceID_None,
+                                              nsGkAtoms::href, aURL, false);
+            if (NS_FAILED(rv)) {
+              NS_WARNING("Element::SetAttr(href) failed");
+              return rv;
+            }
+            RefPtr<nsTextNode> textNode = aEditor.CreateTextNode(aURL);
+            if (NS_WARN_IF(!textNode)) {
+              return NS_ERROR_FAILURE;
+            }
+            aNewElement.AppendChildTo(textNode, false, IgnoreErrors());
+            return NS_OK;
+          });
+  if (MOZ_UNLIKELY(linkOrError.isErr())) {
+    NS_WARNING("HTMLEditor::DeleteSelectionAndCreateElement() failed");
+    return linkOrError.unwrapErr();
+  }
   return NS_OK;
 }
 
@@ -2777,10 +2852,10 @@ nsresult HTMLEditor::PasteNoFormattingAsAction(
 // The following arrays contain the MIME types that we can paste. The arrays
 // are used by CanPaste() and CanPasteTransferable() below.
 
-static const char* textEditorFlavors[] = {kTextMime};
-static const char* textHtmlEditorFlavors[] = {kTextMime,      kHTMLMime,
-                                              kJPEGImageMime, kJPGImageMime,
-                                              kPNGImageMime,  kGIFImageMime};
+static const char* textEditorFlavors[] = {kTextMime, kURLDataMime};
+static const char* textHtmlEditorFlavors[] = {
+    kURLDataMime,  kTextMime,     kHTMLMime,    kJPEGImageMime,
+    kJPGImageMime, kPNGImageMime, kGIFImageMime};
 
 bool HTMLEditor::CanPaste(nsIClipboard::ClipboardType aClipboardType) const {
   if (AreClipboardCommandsUnconditionallyEnabled()) {

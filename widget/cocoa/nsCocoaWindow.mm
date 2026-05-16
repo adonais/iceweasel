@@ -85,6 +85,10 @@
 #include "mozilla/widget/Screen.h"
 #include <algorithm>
 
+#ifdef ACCESSIBILITY
+#  include "mozilla/a11y/DocAccessible.h"
+#endif
+
 #undef DEBUG_UPDATE
 #undef INVALIDATE_DEBUGGING  // flash areas as they are invalidated
 
@@ -495,6 +499,26 @@ nsresult nsCocoaWindow::SynthesizeNativeMouseEvent(
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
+nsresult nsCocoaWindow::SynthesizeNativeMouseMove(
+    LayoutDeviceIntPoint aPoint, nsISynthesizedEventCallback* aCallback) {
+  if (IsNativePointerLocked()) {
+    AutoSynthesizedEventCallbackNotifier notifier(aCallback);
+    sNativeLockedPoint = aPoint - WidgetToScreenOffset();
+
+    WidgetMouseEvent event(true, eMouseMove, this, WidgetMouseEvent::eReal);
+    event.mRefPoint = sNativeLockedPoint;
+    event.mTimeStamp = nsCocoaUtils::GetEventTimeStamp(0);
+    event.mMovement = Some(LayoutDeviceIntPoint(0, 0));
+    DispatchInputEvent(&event);
+
+    return NS_OK;
+  }
+
+  return SynthesizeNativeMouseEvent(
+      aPoint, NativeMouseMessage::Move, mozilla::MouseButton::eNotPressed,
+      nsIWidget::Modifiers::NO_MODIFIERS, aCallback);
+}
+
 nsresult nsCocoaWindow::SynthesizeNativeMouseScrollEvent(
     mozilla::LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
     double aDeltaX, double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
@@ -623,13 +647,15 @@ void nsCocoaWindow::PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) {
   // 1. If the page is loading, interrupt loading.
   // 2. Give a website an opportunity to handle the event and call
   //    preventDefault() on it.
-  // 3. If the browser is fullscreen and the page isn't loading, exit
-  //    fullscreen.
+  // 3. If the browser is fullscreen, we do not have fullscreen keyboard lock
+  //    enabled, and the page isn't loading, exit fullscreen.
   // 4. Ignore.
   // Case 1 and 2 are handled before we get here. Below, we handle case 3.
+  Document* doc = GetDocument();
   if (StaticPrefs::browser_fullscreen_exit_on_escape() &&
       [cocoaEvent keyCode] == kVK_Escape &&
-      [[mChildView window] styleMask] & NSWindowStyleMaskFullScreen) {
+      [[mChildView window] styleMask] & NSWindowStyleMaskFullScreen &&
+      !(doc && doc->HasFullscreenKeyboardLockEnabled())) {
     [[mChildView window] toggleFullScreen:nil];
   }
 
@@ -1383,7 +1409,7 @@ void nsCocoaWindow::DispatchAPZWheelInputEvent(InputData& aEvent) {
         break;
       }
       case SCROLLWHEEL_INPUT: {
-        // For wheel events on OS X, send it to APZ using the WidgetInputEvent
+        // For wheel events on macOS, send it to APZ using the WidgetInputEvent
         // variant of ReceiveInputEvent, because the APZInputBridge version of
         // that function has special handling (for delta multipliers etc.) that
         // we need to run. Using the InputData variant would bypass that and
@@ -1479,8 +1505,16 @@ void nsCocoaWindow::LookUpDictionary(
 }
 
 #ifdef ACCESSIBILITY
-already_AddRefed<a11y::LocalAccessible> nsCocoaWindow::GetDocumentAccessible() {
+already_AddRefed<a11y::LocalAccessible> nsCocoaWindow::GetWindowAccessible() {
   if (!mozilla::a11y::ShouldA11yBeEnabled()) return nullptr;
+
+  if (GetWindowType() == WindowType::Popup &&
+      GetPopupType() != PopupType::Panel) {
+    // If we are a non-panel popup, like a menu or tooltip, we want to return
+    // null. We rely on the gecko tree hierarchy instead of the native widget
+    // one to expose this accessible.
+    return nullptr;
+  }
 
   // mAccessible might be dead if accessibility was previously disabled and is
   // now being enabled again.
@@ -1494,6 +1528,14 @@ already_AddRefed<a11y::LocalAccessible> nsCocoaWindow::GetDocumentAccessible() {
   // need to fetch the accessible anew, because it has gone away.
   // cache the accessible in our weak ptr
   RefPtr<a11y::LocalAccessible> acc = GetRootAccessible();
+  if (GetWindowType() == WindowType::Popup) {
+    // If we're a popup panel, we want to return the accessible for the
+    // content of the panel, not the accessible for the document.
+    if (nsIFrame* popupFrame = GetFrame()) {
+      acc = acc->AsDoc()->GetAccessible(popupFrame->GetContent());
+    }
+  }
+
   mAccessible = do_GetWeakReference(acc.get());
 
   return acc.forget();
@@ -2322,9 +2364,9 @@ NSEvent* gLastDragMouseDownEvent = nil;  // [strong]
   gLastDragView = nil;
 
   if (!mGeckoChild || mBlockedLastMouseDown || mPerformedDrag) {
-    // There is case that mouseUp event will be fired right after DnD on OSX. As
-    // mPerformedDrag will be YES at end of DnD processing, ignore this mouseUp
-    // event fired right after DnD.
+    // There is case that mouseUp event will be fired right after DnD on macOS.
+    // As mPerformedDrag will be YES at end of DnD processing, ignore this
+    // mouseUp event fired right after DnD.
     return;
   }
 
@@ -2840,7 +2882,21 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   NSPoint locationInWindow =
       nsCocoaUtils::EventLocationForWindow(aMouseEvent, [self window]);
 
-  outGeckoEvent->mRefPoint = [self convertWindowCoordinates:locationInWindow];
+  // If the pointer is locked, we need to track the reference point ourselves,
+  // because EventStateManager uses the mouse event's mRefPoint to determine
+  // whether the pointer needs to be re-centered.
+  if (nsCocoaWindow::IsNativePointerLocked()) {
+    outGeckoEvent->mRefPoint = nsCocoaWindow::GetNativeLockedPoint();
+    WidgetMouseEvent* widgetMouseEvent = outGeckoEvent->AsMouseEvent();
+    if (widgetMouseEvent && widgetMouseEvent->mMessage == eMouseMove) {
+      // XXX maybe we would like to ignore the the mousemove event with zero
+      // movement, since they don't cause any chanage of the pointer?
+      widgetMouseEvent->mMovement = Some(LayoutDeviceIntPoint(
+          int32_t(aMouseEvent.deltaX), int32_t(aMouseEvent.deltaY)));
+    }
+  } else {
+    outGeckoEvent->mRefPoint = [self convertWindowCoordinates:locationInWindow];
+  }
 
   WidgetMouseEventBase* mouseEvent = outGeckoEvent->AsMouseEventBase();
   mouseEvent->mButtons = 0;
@@ -4301,8 +4357,7 @@ nsresult nsCocoaWindow::RestoreHiDPIMode() {
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
   RefPtr<nsCocoaWindow> geckoChild(mGeckoChild);
-  RefPtr<a11y::LocalAccessible> accessible =
-      geckoChild->GetDocumentAccessible();
+  RefPtr<a11y::LocalAccessible> accessible = geckoChild->GetWindowAccessible();
   if (!accessible) return nil;
 
   accessible->GetNativeInterface((void**)&nativeAccessible);
@@ -4323,6 +4378,10 @@ nsresult nsCocoaWindow::RestoreHiDPIMode() {
 
 - (id)representedView {
   return self;
+}
+
+- (BOOL)hasMozAccessible {
+  return [self accessible] != nil;
 }
 
 - (BOOL)isRoot {
@@ -4399,16 +4458,13 @@ nsresult nsCocoaWindow::RestoreHiDPIMode() {
   if (!mozilla::a11y::ShouldA11yBeEnabled())
     return [super accessibilityAttributeValue:attribute];
 
-  id<mozAccessible> accessible = [self accessible];
-
-  // if we're the root (topmost) accessible, we need to return our native
-  // AXParent as we traverse outside to the hierarchy of whoever embeds us.
-  // thus, fall back on NSView's default implementation for this attribute.
-  if ([attribute isEqualToString:NSAccessibilityParentAttribute] &&
-      [accessible isRoot]) {
-    id parentAccessible = [super accessibilityAttributeValue:attribute];
-    return parentAccessible;
+  if ([attribute isEqualToString:NSAccessibilityParentAttribute]) {
+    // Ensure native accessibles with corresponding mozAccessibles reference
+    // their native parent, not their mozAccessible parent.
+    return [super accessibilityAttributeValue:attribute];
   }
+
+  id<mozAccessible> accessible = [self accessible];
 
   return [accessible accessibilityAttributeValue:attribute];
 
@@ -5598,7 +5654,7 @@ void nsCocoaWindow::GetWorkspaceID(nsAString& workspaceID) {
 int32_t nsCocoaWindow::GetWorkspaceID() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  // Mac OSX space IDs start at '1' (default space), so '0' means 'unknown',
+  // macOS space IDs start at '1' (default space), so '0' means 'unknown',
   // effectively.
   CGSSpaceID sid = 0;
 
@@ -5658,7 +5714,7 @@ void nsCocoaWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
 void nsCocoaWindow::MoveVisibleWindowToWorkspace(int32_t workspaceID) {
   CGSConnection cid = _CGSDefaultConnection();
   int32_t currentSpace = GetWorkspaceID();
-  // If an empty workspace ID is passed in (not valid on OSX), or when the
+  // If an empty workspace ID is passed in (not valid on macOS), or when the
   // window is already on this workspace, we don't need to do anything.
   if (!workspaceID || workspaceID == currentSpace) {
     return;
@@ -5905,6 +5961,13 @@ void nsCocoaWindow::CocoaWindowWillEnterFullscreen(bool aFullscreen) {
 
   mHasStartedNativeFullscreen = true;
 
+  // Snapshot the pre-fullscreen bounds so GetRestoredBounds() can report
+  // them while the window is in fullscreen. This fires before macOS starts
+  // resizing the window for the fullscreen animation.
+  if (aFullscreen && mSizeMode == nsSizeMode_Normal) {
+    mRestoredBounds = Some(mBounds);
+  }
+
   // Ensure that we update our fullscreen state as early as possible, when the
   // resize happens.
   mUpdateFullscreenOnResize =
@@ -6086,6 +6149,11 @@ void nsCocoaWindow::ProcessTransitions() {
 
       case TransitionType::EmulatedFullscreen: {
         if (!mInFullScreenMode) {
+          // Snapshot pre-fullscreen bounds for GetRestoredBounds() before the
+          // upcoming resize overwrites mBounds.
+          if (mSizeMode == nsSizeMode_Normal) {
+            mRestoredBounds = Some(mBounds);
+          }
           mSuppressSizeModeEvents = true;
           // The order here matters. When we exit full screen mode, we need to
           // show the Dock first, otherwise the newly-created window won't have
@@ -6154,6 +6222,10 @@ void nsCocoaWindow::ProcessTransitions() {
 
       case TransitionType::Miniaturize:
         if (!mWindow.miniaturized) {
+          // Snapshot pre-minimize bounds for GetRestoredBounds().
+          if (mSizeMode == nsSizeMode_Normal) {
+            mRestoredBounds = Some(mBounds);
+          }
           // This triggers an async animation, so continue.
           [mWindow miniaturize:nil];
           continue;
@@ -6170,6 +6242,11 @@ void nsCocoaWindow::ProcessTransitions() {
 
       case TransitionType::Zoom:
         if (!mWindow.zoomed) {
+          // Snapshot pre-zoom bounds for GetRestoredBounds() before the
+          // zoom resizes the window to fill the screen.
+          if (mSizeMode == nsSizeMode_Normal) {
+            mRestoredBounds = Some(mBounds);
+          }
           [mWindow zoom:nil];
         }
         break;
@@ -6382,6 +6459,18 @@ LayoutDeviceIntRect nsCocoaWindow::GetScreenBounds() {
   return mBounds;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(LayoutDeviceIntRect(0, 0, 0, 0));
+}
+
+nsresult nsCocoaWindow::GetRestoredBounds(LayoutDeviceIntRect& aRect) {
+  if (SizeMode() == nsSizeMode_Normal) {
+    aRect = GetScreenBounds();
+    return NS_OK;
+  }
+  if (mRestoredBounds.isSome()) {
+    aRect = *mRestoredBounds;
+    return NS_OK;
+  }
+  return NS_ERROR_FAILURE;
 }
 
 double nsCocoaWindow::GetDefaultScaleInternal() { return BackingScaleFactor(); }
@@ -6730,7 +6819,7 @@ void nsCocoaWindow::CaptureRollupEvents(bool aDoCapture) {
     // non-native popup window).  In these cases the "active" popup window
     // should be the topmost -- the (nested) context menu the mouse is currently
     // over, or the combo-box's drop-down list (when it's displayed).  But
-    // (among windows that have the same "level") OS X makes topmost the window
+    // (among windows that have the same "level") macOS makes topmost the window
     // that last received a mouse-down event, which may be incorrect (in the
     // combo-box case, it makes topmost the window containing the combo-box).
     // So here we fiddle with a non-native popup window's level to make sure the
@@ -7150,6 +7239,52 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   // Resizing might have changed our zoom state.
   DispatchSizeModeEvent();
   ReportSizeEvent();
+}
+
+void nsCocoaWindow::LockNativePointer() {
+  if (!StaticPrefs::dom_pointer_lock_native_lock_enabled()) {
+    return;
+  }
+
+  if (sIsNativePointerLocked) {
+    // XXX Maybe we should avoid calling LockNativePointer() again when the
+    // content changes the pointer lock element while the pointer is already
+    // locked.
+    return;
+  }
+
+  sIsNativePointerLocked = true;
+  CGAssociateMouseAndMouseCursorPosition(false);
+}
+
+void nsCocoaWindow::UnlockNativePointer() {
+  if (!StaticPrefs::dom_pointer_lock_native_lock_enabled()) {
+    return;
+  }
+
+  if (NS_WARN_IF(!sIsNativePointerLocked)) {
+    return;
+  }
+
+  sIsNativePointerLocked = false;
+  CGAssociateMouseAndMouseCursorPosition(true);
+  sNativeLockedPoint = LayoutDeviceIntPoint(0, 0);
+}
+
+/* static */ bool nsCocoaWindow::sIsNativePointerLocked = false;
+/* static */ LayoutDeviceIntPoint nsCocoaWindow::sNativeLockedPoint;
+
+/* static */
+bool nsCocoaWindow::IsNativePointerLocked() {
+  MOZ_ASSERT_IF(sIsNativePointerLocked,
+                StaticPrefs::dom_pointer_lock_native_lock_enabled());
+  return sIsNativePointerLocked;
+}
+
+/* static */
+LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
+  MOZ_ASSERT(IsNativePointerLocked());
+  return sNativeLockedPoint;
 }
 
 - (void)windowDidResize:(NSNotification*)aNotification {
@@ -7917,9 +8052,17 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
 - (id)accessibilityAttributeValue:(NSString*)attribute {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
+  if ([self isKindOfClass:[PopupWindow class]]) {
+    if ([attribute isEqualToString:NSAccessibilityRoleAttribute]) {
+      // If this is a popup window give it a proper role so VoiceOver
+      // picks it up correctly.
+      return NSAccessibilityPopoverRole;
+    }
+  }
+
   id retval = [super accessibilityAttributeValue:attribute];
 
-  // The following works around a problem with Text-to-Speech on OS X 10.7.
+  // The following works around a problem with Text-to-Speech on macOS 10.7.
   // See bug 674612 for more info.
   //
   // When accessibility is off, AXUIElementCopyAttributeValue(), when called
@@ -7931,10 +8074,10 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
   // AXWindow object will always have four "accessible" children, one of which
   // is an AXStaticText object (the title bar's "title"; the other three are
   // the close, minimize and zoom buttons).  This means that (for complicated
-  // reasons, for which see bug 674612) Text-to-Speech on OS X 10.7 will often
+  // reasons, for which see bug 674612) Text-to-Speech on macOS 10.7 will often
   // "speak" the window title, no matter what text is selected, or even if no
   // text at all is selected.  (This always happens when accessibility is off.
-  // It doesn't happen in Firefox releases because Apple has (on OS X 10.7)
+  // It doesn't happen in Firefox releases because Apple has (on macOS 10.7)
   // special-cased the handling of apps whose CFBundleIdentifier is
   // org.mozilla.firefox.)
   //
@@ -7962,6 +8105,15 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
   return retval;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
+}
+
+- (BOOL)isAccessibilityElement {
+  if (!mozilla::a11y::ShouldA11yBeEnabled())
+    return [super isAccessibilityElement];
+
+  // If the main child view does not have a gecko accessible associated with it,
+  // this window should not be present in the accessible tree.
+  return [self.mainChildView hasMozAccessible];
 }
 
 - (void)releaseJSObjects {
@@ -8345,7 +8497,9 @@ static const NSUInteger kWindowShadowOptionsTooltip = 4;
     return parent;
   }
   NSMutableDictionary* copy = [parent mutableCopy];
-  for (auto* key : {@"com.apple.WindowShadowRimDensityActive",
+  for (auto* key : {@"com.apple.WindowShadowInnerRimDensityActive",
+                    @"com.apple.WindowShadowInnerRimDensityInactive",
+                    @"com.apple.WindowShadowRimDensityActive",
                     @"com.apple.WindowShadowRimDensityInactive"}) {
     if ([parent objectForKey:key] != nil) {
       [copy setValue:@(0) forKey:key];

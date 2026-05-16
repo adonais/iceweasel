@@ -28,6 +28,7 @@ import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SearchState
+import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesBookmarksStorage
@@ -70,6 +71,9 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppAction.LensAction.LensRequested
+import org.mozilla.fenix.components.appstate.AppAction.LensAction.LensResultAvailable
+import org.mozilla.fenix.components.appstate.AppAction.LensAction.LensResultConsumed
 import org.mozilla.fenix.components.appstate.AppAction.QrScannerAction.QrScannerInputAvailable
 import org.mozilla.fenix.components.appstate.AppAction.QrScannerAction.QrScannerInputConsumed
 import org.mozilla.fenix.components.appstate.AppAction.QrScannerAction.QrScannerRequested
@@ -83,6 +87,7 @@ import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.search.EditPageEndActionsInteractions.ClearSearchClicked
+import org.mozilla.fenix.search.EditPageEndActionsInteractions.LensButtonClicked
 import org.mozilla.fenix.search.EditPageEndActionsInteractions.QrScannerClicked
 import org.mozilla.fenix.search.EditPageEndActionsInteractions.VoiceSearchButtonClicked
 import org.mozilla.fenix.search.SearchSelectorEvents.SearchSelectorClicked
@@ -93,6 +98,7 @@ import org.mozilla.fenix.search.fixtures.assertSearchSelectorEquals
 import org.mozilla.fenix.search.fixtures.buildExpectedSearchSelector
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.telemetry.ACTION_CLEAR_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_LENS_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_MICROPHONE_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_QR_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_SEARCH_ENGINE_SELECTOR_CLICKED
@@ -124,7 +130,9 @@ class BrowserToolbarSearchMiddlewareTest {
         every { navigate(any<NavDirections>()) } just Runs
         every { navigate(any<Int>()) } just Runs
     }
-    val browsingModeManager: BrowsingModeManager = mockk()
+    val browsingModeManager: BrowsingModeManager = mockk {
+        every { mode } returns Normal
+    }
 
     @Test
     fun `WHEN the toolbar enters in edit mode THEN a new search selector button is added`() {
@@ -1023,6 +1031,106 @@ class BrowserToolbarSearchMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN homepage as a new tab is disabled and the source tab is available WHEN search term is committed THEN perform search in the source tab`() {
+        val searchTerm = "Firefox"
+        val captorMiddleware = CaptureActionsMiddleware<AppState, AppAction>()
+        val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+        val components: Components = mockk(relaxed = true) {
+            every { useCases.fenixBrowserUseCases } returns browserUseCases
+        }
+        val settings: Settings = mockk(relaxed = true) {
+            every { enableHomepageAsNewTab } returns false
+        }
+        val browsingModeManager: BrowsingModeManager = mockk(relaxed = true) {
+            every { mode } returns Normal
+        }
+        val appStore = AppStore(
+            initialState = AppState(
+                searchState = AppSearchState.EMPTY.copy(sourceTabId = "test"),
+            ),
+            middlewares = listOf(captorMiddleware),
+        )
+        val browserStore = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    createTab("https://test.com", id = "test"),
+                ),
+                search = fakeSearchState(),
+            ),
+            middleware = listOf(captureBrowserActionsMiddleware),
+        )
+        val (_, store) = buildMiddlewareAndAddToStore(
+            appStore = appStore,
+            browserStore = browserStore,
+            components = components,
+            settings = settings,
+            browsingModeManager = browsingModeManager,
+        )
+
+        store.dispatch(CommitUrl(searchTerm))
+
+        verifyOrder {
+            navController.navigate(NavGraphDirections.actionGlobalBrowser())
+            browserUseCases.loadUrlOrSearch(
+                searchTermOrURL = searchTerm,
+                newTab = false,
+                forceSearch = false,
+                private = false,
+                searchEngine = any(),
+            )
+        }
+        captureBrowserActionsMiddleware.assertFirstAction(EngagementFinished::class) { action ->
+            assertFalse(action.abandoned)
+        }
+        captorMiddleware.assertLastAction(SearchEnded::class) {}
+    }
+
+    @Test
+    fun `GIVEN homepage as a new tab is disabled and the source tab is not available WHEN search term is committed THEN perform search in a new tab`() {
+        val searchTerm = "Firefox"
+        val captorMiddleware = CaptureActionsMiddleware<AppState, AppAction>()
+        val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+        val components: Components = mockk(relaxed = true) {
+            every { useCases.fenixBrowserUseCases } returns browserUseCases
+        }
+        val settings: Settings = mockk(relaxed = true) {
+            every { enableHomepageAsNewTab } returns false
+        }
+        val browsingModeManager: BrowsingModeManager = mockk(relaxed = true) {
+            every { mode } returns Normal
+        }
+        val appStore = AppStore(
+            initialState = AppState(
+                searchState = AppSearchState.EMPTY.copy(sourceTabId = "test"),
+            ),
+            middlewares = listOf(captorMiddleware),
+        )
+        val (_, store) = buildMiddlewareAndAddToStore(
+            appStore = appStore,
+            components = components,
+            settings = settings,
+            browsingModeManager = browsingModeManager,
+        )
+
+        store.dispatch(CommitUrl(searchTerm))
+
+        verifyOrder {
+            navController.navigate(NavGraphDirections.actionGlobalBrowser())
+            browserUseCases.loadUrlOrSearch(
+                searchTermOrURL = searchTerm,
+                newTab = true,
+                forceSearch = false,
+                private = false,
+                searchEngine = any(),
+            )
+        }
+        captureBrowserActionsMiddleware.assertFirstAction(EngagementFinished::class) { action ->
+            assertFalse(action.abandoned)
+        }
+        captorMiddleware.assertLastAction(SearchEnded::class) {}
+    }
+
+    @Test
     fun `GIVEN the toolbar is in edit mode WHEN updateSearchActionsEnd is triggered via ToggleEditMode THEN a voice search action button is added to the end actions`() {
         every { settings.shouldShowVoiceSearch } returns true
         val middleware = spyk(buildMiddleware(appStore = appStore))
@@ -1160,6 +1268,166 @@ class BrowserToolbarSearchMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN Google search engine and Lens enabled WHEN toolbar enters edit mode with blank query THEN a Lens button is shown`() {
+        every { settings.googleLensIntegrationEnabled } returns true
+        val appStore: AppStore = mockk(relaxed = true) {
+            every { state.searchState.selectedSearchEngine?.searchEngine } returns googleSearchEngine()
+        }
+        val (_, store) = buildMiddlewareAndAddToStore(appStore = appStore)
+
+        store.dispatch(EnterEditMode(false))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
+
+        val actions = store.state.editState.editActionsEnd
+        val lensButton = actions.filterIsInstance<ActionButtonRes>().find { it.onClick == LensButtonClicked }
+        assertEquals(expectedLensButton, lensButton)
+    }
+
+    @Test
+    fun `GIVEN non-Google search engine WHEN toolbar enters edit mode THEN no Lens button is shown`() {
+        every { settings.googleLensIntegrationEnabled } returns true
+        val (_, store) = buildMiddlewareAndAddToStore()
+
+        store.dispatch(EnterEditMode(false))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
+
+        val actions = store.state.editState.editActionsEnd
+        val lensButton = actions.filterIsInstance<ActionButtonRes>().find { it.onClick == LensButtonClicked }
+        assertEquals(null, lensButton)
+    }
+
+    @Test
+    fun `GIVEN Lens disabled WHEN toolbar enters edit mode with Google engine THEN no Lens button is shown`() {
+        every { settings.googleLensIntegrationEnabled } returns false
+        val appStore: AppStore = mockk(relaxed = true) {
+            every { state.searchState.selectedSearchEngine?.searchEngine } returns googleSearchEngine()
+        }
+        val (_, store) = buildMiddlewareAndAddToStore(appStore = appStore)
+
+        store.dispatch(EnterEditMode(false))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
+
+        val actions = store.state.editState.editActionsEnd
+        val lensButton = actions.filterIsInstance<ActionButtonRes>().find { it.onClick == LensButtonClicked }
+        assertEquals(null, lensButton)
+    }
+
+    @Test
+    fun `WHEN the Lens button is clicked THEN dispatch LensRequested and record telemetry`() {
+        every { settings.googleLensIntegrationEnabled } returns true
+        val appStore: AppStore = mockk(relaxed = true) {
+            every { state.searchState.selectedSearchEngine?.searchEngine } returns googleSearchEngine()
+        }
+        val (_, store) = buildMiddlewareAndAddToStore(appStore = appStore)
+        store.dispatch(EnterEditMode(false))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
+
+        val lensButton = store.state.editState.editActionsEnd
+            .filterIsInstance<ActionButtonRes>()
+            .find { it.onClick == LensButtonClicked }!!
+
+        store.dispatch(lensButton.onClick as BrowserToolbarEvent)
+        assertTelemetryRecorded(ACTION_LENS_CLICKED)
+        verify { appStore.dispatch(LensRequested) }
+    }
+
+    @Test
+    fun `GIVEN Lens scan in normal mode WHEN receiving a result THEN open it as a new normal tab`() {
+        val appStoreActionsCaptor = CaptureActionsMiddleware<AppState, AppAction>()
+        val appStore = AppStore(
+            initialState = AppState(
+                searchState = AppSearchState.EMPTY.copy(
+                    selectedSearchEngine = SelectedSearchEngine(
+                        searchEngine = googleSearchEngine(),
+                        isUserSelected = false,
+                    ),
+                ),
+            ),
+            middlewares = listOf(appStoreActionsCaptor),
+        )
+        val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+        every { components.useCases.fenixBrowserUseCases } returns browserUseCases
+        every { settings.googleLensIntegrationEnabled } returns true
+        val browsingModeManager: BrowsingModeManager = mockk(relaxed = true) {
+            every { mode } returns Normal
+        }
+        val (_, store) = buildMiddlewareAndAddToStore(
+            appStore = appStore,
+            components = components,
+            browsingModeManager = browsingModeManager,
+        )
+        store.dispatch(EnterEditMode(false))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
+
+        val lensButton = store.state.editState.editActionsEnd
+            .filterIsInstance<ActionButtonRes>()
+            .find { it.onClick == LensButtonClicked }!!
+
+        store.dispatch(lensButton.onClick as BrowserToolbarEvent)
+        appStore.dispatch(LensResultAvailable("https://lens.google.com/results"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        appStoreActionsCaptor.assertLastAction(LensResultConsumed::class)
+        verify {
+            browserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "https://lens.google.com/results",
+                newTab = true,
+                flags = EngineSession.LoadUrlFlags.external(),
+                private = false,
+            )
+        }
+        verify { navController.navigate(R.id.action_global_browser) }
+    }
+
+    @Test
+    fun `GIVEN Lens scan in private mode WHEN receiving a result THEN open it as a new private tab`() {
+        val appStoreActionsCaptor = CaptureActionsMiddleware<AppState, AppAction>()
+        val appStore = AppStore(
+            initialState = AppState(
+                searchState = AppSearchState.EMPTY.copy(
+                    selectedSearchEngine = SelectedSearchEngine(
+                        searchEngine = googleSearchEngine(),
+                        isUserSelected = false,
+                    ),
+                ),
+            ),
+            middlewares = listOf(appStoreActionsCaptor),
+        )
+        val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+        every { components.useCases.fenixBrowserUseCases } returns browserUseCases
+        every { settings.googleLensIntegrationEnabled } returns true
+        val browsingModeManager: BrowsingModeManager = mockk(relaxed = true) {
+            every { mode } returns Private
+        }
+        val (_, store) = buildMiddlewareAndAddToStore(
+            appStore = appStore,
+            components = components,
+            browsingModeManager = browsingModeManager,
+        )
+        store.dispatch(EnterEditMode(true))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
+
+        val lensButton = store.state.editState.editActionsEnd
+            .filterIsInstance<ActionButtonRes>()
+            .find { it.onClick == LensButtonClicked }!!
+
+        store.dispatch(lensButton.onClick as BrowserToolbarEvent)
+        appStore.dispatch(LensResultAvailable("https://lens.google.com/results"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        appStoreActionsCaptor.assertLastAction(LensResultConsumed::class)
+        verify {
+            browserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "https://lens.google.com/results",
+                newTab = true,
+                flags = EngineSession.LoadUrlFlags.external(),
+                private = true,
+            )
+        }
+        verify { navController.navigate(R.id.action_global_browser) }
+    }
+
+    @Test
     fun `WHEN the voice action is tapped THEN add a new voice input request to the AppStore`() {
         val appStore: AppStore = mockk(relaxed = true) {
             every { state } returns mockk(relaxed = true)
@@ -1197,6 +1465,13 @@ class BrowserToolbarSearchMiddlewareTest {
         contentDescription = qrR.string.mozac_feature_qr_scanner,
         state = ActionButton.State.DEFAULT,
         onClick = QrScannerClicked,
+    )
+
+    private val expectedLensButton = ActionButtonRes(
+        drawableResId = iconsR.drawable.mozac_ic_image_24,
+        contentDescription = R.string.lens_search_content_description,
+        state = ActionButton.State.DEFAULT,
+        onClick = LensButtonClicked,
     )
 
     private val expectedVoiceSearchButton = ActionButtonRes(
@@ -1329,6 +1604,14 @@ class BrowserToolbarSearchMiddlewareTest {
         regionDefaultSearchEngineId = null,
         userSelectedSearchEngineId = "engine-c",
         userSelectedSearchEngineName = null,
+    )
+
+    private fun googleSearchEngine() = SearchEngine(
+        id = "google",
+        name = "Google",
+        icon = mockk(relaxed = true),
+        type = SearchEngine.Type.BUNDLED,
+        isGeneral = true,
     )
 
     private fun assertTelemetryRecorded(item: String) {

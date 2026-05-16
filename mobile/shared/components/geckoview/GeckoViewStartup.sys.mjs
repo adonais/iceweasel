@@ -11,7 +11,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.sys.mjs",
   DoHController: "moz-src:///toolkit/components/doh/DoHController.sys.mjs",
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
+  NimbusGeckoViewQATelemetry:
+    "resource://gre/modules/NimbusGeckoViewQATelemetry.sys.mjs",
   PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
+  GeckoViewPreferences: "resource://gre/modules/GeckoViewPreferences.sys.mjs",
 });
 
 const { debug, warn } = GeckoViewUtils.initLogging("Startup");
@@ -35,6 +38,12 @@ const JSPROCESSACTORS = {
         "PeerConnection:request",
       ],
     },
+  },
+  GeckoViewPush: {
+    parent: {
+      esModuleURI: "resource:///actors/GeckoViewPushParent.sys.mjs",
+    },
+    includeParent: true,
   },
 };
 
@@ -207,7 +216,7 @@ export class GeckoViewStartup {
           ged: [
             "GeckoView:AIFeature:ListFeatures",
             "GeckoView:AIFeature:SetEnabled",
-            "GeckoView:AIFeature:Reset",
+            "GeckoView:AIFeature:MakeAvailable",
           ],
         });
 
@@ -238,16 +247,18 @@ export class GeckoViewStartup {
           ged: ["GeckoView:Autofill:GetAddressStructure"],
         });
 
-        GeckoViewUtils.addLazyGetter(this, "GeckoViewPreferences", {
-          module: "resource://gre/modules/GeckoViewPreferences.sys.mjs",
-          ged: [
+        // We don't register this using the LazyGetter because it needs to be ready before
+        // the first call to the listener is received.
+        lazy.EventDispatcher.instance.registerListener(
+          lazy.GeckoViewPreferences,
+          [
             "GeckoView:Preferences:GetPref",
             "GeckoView:Preferences:SetPref",
             "GeckoView:Preferences:ClearPref",
             "GeckoView:Preferences:RegisterObserver",
             "GeckoView:Preferences:UnregisterObserver",
-          ],
-        });
+          ]
+        );
 
         break;
       }
@@ -283,6 +294,8 @@ export class GeckoViewStartup {
 
         Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
         Services.obs.addObserver(this, "handlersvc-store-initialized");
+
+        lazy.NimbusGeckoViewQATelemetry.init();
 
         Services.obs.notifyObservers(null, "geckoview-startup-complete");
         break;

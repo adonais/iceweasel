@@ -1,5 +1,4 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -81,6 +80,10 @@ var BrowserCommands = {
     const historyindex = aEvent.target.getAttribute("historyindex");
     duplicateTabIn(gBrowser.selectedTab, where, Number(historyindex));
     return true;
+  },
+
+  duplicateTab() {
+    duplicateTabIn(gBrowser.selectedTab, "tab");
   },
 
   reloadOrDuplicate(aEvent) {
@@ -208,7 +211,9 @@ var BrowserCommands = {
     let werePassedURL = !!url;
     url ??= BROWSER_NEW_TAB_URL;
     let searchClipboard =
-      gMiddleClickNewTabUsesPasteboard && event?.button == 1;
+      event?.button == 1 &&
+      Services.prefs.getBoolPref("middlemouse.paste") &&
+      gMiddleClickNewTabUsesPasteboard;
 
     let relatedToCurrent = false;
     let where = "tab";

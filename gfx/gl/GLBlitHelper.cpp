@@ -914,7 +914,8 @@ std::unique_ptr<const DrawBlitProg> GLBlitHelper::CreateDrawBlitProg(
 static RefPtr<MacIOSurface> LookupSurface(
     const layers::SurfaceDescriptorMacIOSurface& sd) {
   return MacIOSurface::LookupSurface(sd.surfaceId(), !sd.isOpaque(),
-                                     sd.yUVColorSpace());
+                                     sd.yUVColorSpace(),
+                                     gfx::TransferFunction::SRGB);
 }
 #endif
 
@@ -1596,7 +1597,8 @@ bool GLBlitHelper::BlitImage(layers::GPUVideoImage* const srcImage,
         TSurfaceDescriptorMacIOSurface: {
       const auto& subdesc = subdescUnion.get_SurfaceDescriptorMacIOSurface();
       RefPtr<MacIOSurface> surface = MacIOSurface::LookupSurface(
-          subdesc.surfaceId(), !subdesc.isOpaque(), subdesc.yUVColorSpace());
+          subdesc.surfaceId(), !subdesc.isOpaque(), subdesc.yUVColorSpace(),
+          subdesc.transferFunction());
       MOZ_ASSERT(surface);
       if (!surface) {
         return false;
@@ -1914,7 +1916,7 @@ color::ColorspaceDesc ToColorspaceDesc(const gfx::YUVRangedColorSpace cs) {
     case gfx::YUVRangedColorSpace::BT601_Narrow:
       return {
           .chrom = color::Chromaticities::Rec601_525_Ntsc(),
-          .tf = color::PiecewiseGammaDesc::Rec709(),
+          .tf = color::TransferFunctionDesc::Rec709(),
           .yuv =
               color::YuvDesc{
                   .yCoeffs = color::YuvLumaCoeffs::Rec709(),
@@ -1924,7 +1926,7 @@ color::ColorspaceDesc ToColorspaceDesc(const gfx::YUVRangedColorSpace cs) {
     case gfx::YUVRangedColorSpace::BT601_Full:
       return {
           .chrom = color::Chromaticities::Rec601_525_Ntsc(),
-          .tf = color::PiecewiseGammaDesc::Rec709(),
+          .tf = color::TransferFunctionDesc::Rec709(),
           .yuv =
               color::YuvDesc{
                   .yCoeffs = color::YuvLumaCoeffs::Rec709(),
@@ -1934,7 +1936,7 @@ color::ColorspaceDesc ToColorspaceDesc(const gfx::YUVRangedColorSpace cs) {
     case gfx::YUVRangedColorSpace::BT709_Narrow:
       return {
           .chrom = color::Chromaticities::Rec709(),
-          .tf = color::PiecewiseGammaDesc::Rec709(),
+          .tf = color::TransferFunctionDesc::Rec709(),
           .yuv =
               color::YuvDesc{
                   .yCoeffs = color::YuvLumaCoeffs::Rec709(),
@@ -1944,7 +1946,7 @@ color::ColorspaceDesc ToColorspaceDesc(const gfx::YUVRangedColorSpace cs) {
     case gfx::YUVRangedColorSpace::BT709_Full:
       return {
           .chrom = color::Chromaticities::Rec709(),
-          .tf = color::PiecewiseGammaDesc::Rec709(),
+          .tf = color::TransferFunctionDesc::Rec709(),
           .yuv =
               color::YuvDesc{
                   .yCoeffs = color::YuvLumaCoeffs::Rec709(),
@@ -1954,7 +1956,7 @@ color::ColorspaceDesc ToColorspaceDesc(const gfx::YUVRangedColorSpace cs) {
     case gfx::YUVRangedColorSpace::BT2020_Narrow:
       return {
           .chrom = color::Chromaticities::Rec2020(),
-          .tf = color::PiecewiseGammaDesc::Rec2020_12bit(),
+          .tf = color::TransferFunctionDesc::Rec2020_12bit(),
           .yuv =
               color::YuvDesc{
                   .yCoeffs = color::YuvLumaCoeffs::Rec709(),
@@ -1964,7 +1966,47 @@ color::ColorspaceDesc ToColorspaceDesc(const gfx::YUVRangedColorSpace cs) {
     case gfx::YUVRangedColorSpace::BT2020_Full:
       return {
           .chrom = color::Chromaticities::Rec2020(),
-          .tf = color::PiecewiseGammaDesc::Rec2020_12bit(),
+          .tf = color::TransferFunctionDesc::Rec2020_12bit(),
+          .yuv =
+              color::YuvDesc{
+                  .yCoeffs = color::YuvLumaCoeffs::Rec2020(),
+                  .ycbcr = color::YcbcrDesc::Full8(),
+              },
+      };
+    case gfx::YUVRangedColorSpace::BT2100_PQ_Narrow:
+      return {
+          .chrom = color::Chromaticities::Rec2020(),
+          .tf = color::TransferFunctionDesc::Rec2100_PQ(),
+          .yuv =
+              color::YuvDesc{
+                  .yCoeffs = color::YuvLumaCoeffs::Rec709(),
+                  .ycbcr = color::YcbcrDesc::Narrow8(),
+              },
+      };
+    case gfx::YUVRangedColorSpace::BT2100_PQ_Full:
+      return {
+          .chrom = color::Chromaticities::Rec2020(),
+          .tf = color::TransferFunctionDesc::Rec2100_PQ(),
+          .yuv =
+              color::YuvDesc{
+                  .yCoeffs = color::YuvLumaCoeffs::Rec2020(),
+                  .ycbcr = color::YcbcrDesc::Full8(),
+              },
+      };
+    case gfx::YUVRangedColorSpace::BT2100_HLG_Narrow:
+      return {
+          .chrom = color::Chromaticities::Rec2020(),
+          .tf = color::TransferFunctionDesc::Rec2100_HLG(),
+          .yuv =
+              color::YuvDesc{
+                  .yCoeffs = color::YuvLumaCoeffs::Rec709(),
+                  .ycbcr = color::YcbcrDesc::Narrow8(),
+              },
+      };
+    case gfx::YUVRangedColorSpace::BT2100_HLG_Full:
+      return {
+          .chrom = color::Chromaticities::Rec2020(),
+          .tf = color::TransferFunctionDesc::Rec2100_HLG(),
           .yuv =
               color::YuvDesc{
                   .yCoeffs = color::YuvLumaCoeffs::Rec2020(),
@@ -1974,7 +2016,7 @@ color::ColorspaceDesc ToColorspaceDesc(const gfx::YUVRangedColorSpace cs) {
     case gfx::YUVRangedColorSpace::GbrIdentity:
       return {
           .chrom = color::Chromaticities::Rec709(),
-          .tf = color::PiecewiseGammaDesc::Rec709(),
+          .tf = color::TransferFunctionDesc::Rec709(),
           .yuv =
               color::YuvDesc{
                   .yCoeffs = color::YuvLumaCoeffs::Gbr(),
@@ -1997,8 +2039,15 @@ namespace gl {
 
 /* static */
 std::optional<color::ColorProfileDesc> GLBlitHelper::ToColorProfileDesc(
-    const gfx::ColorSpace2 cspace) {
+    const gfx::ColorSpace2 cspace, const gfx::TransferFunction tf) {
   color::ColorspaceDesc cspaceDesc;
+
+  const bool rec709GammaAsSrgb =
+      StaticPrefs::gfx_color_management_rec709_gamma_as_srgb();
+  const bool rec2020GammaAsRec709 =
+      StaticPrefs::gfx_color_management_rec2020_gamma_as_rec709();
+
+  // Pairings of Colorspace2 and TransferFunction have a few unique interactions
   switch (cspace) {
     case gfx::ColorSpace2::Display:
       if (kIsWindows) {
@@ -2009,24 +2058,132 @@ std::optional<color::ColorProfileDesc> GLBlitHelper::ToColorProfileDesc(
       return {};
 
     case gfx::ColorSpace2::SRGB:
-      cspaceDesc = {.chrom = color::Chromaticities::Srgb(),
-                    .tf = color::PiecewiseGammaDesc::Srgb()};
+      cspaceDesc.chrom = color::Chromaticities::Srgb();
+      cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+      switch (tf) {
+        case gfx::TransferFunction::SRGB:
+          cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+          break;
+        case gfx::TransferFunction::BT709:
+          if (rec709GammaAsSrgb) {
+            cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+          } else {
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+          }
+          break;
+        case gfx::TransferFunction::HLG:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+          break;
+        case gfx::TransferFunction::PQ:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+          break;
+        case gfx::TransferFunction::LINEAR:
+          cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+          break;
+      }
       break;
     case gfx::ColorSpace2::DISPLAY_P3:
-      cspaceDesc = {.chrom = color::Chromaticities::DisplayP3(),
-                    .tf = color::PiecewiseGammaDesc::DisplayP3()};
+      cspaceDesc.chrom = color::Chromaticities::DisplayP3();
+      cspaceDesc.tf = color::TransferFunctionDesc::DisplayP3();
+      switch (tf) {
+        case gfx::TransferFunction::SRGB:
+          cspaceDesc.tf = color::TransferFunctionDesc::DisplayP3();
+          break;
+        case gfx::TransferFunction::BT709:
+          if (rec709GammaAsSrgb) {
+            cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+          } else {
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+          }
+          break;
+        case gfx::TransferFunction::HLG:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+          break;
+        case gfx::TransferFunction::PQ:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+          break;
+        case gfx::TransferFunction::LINEAR:
+          cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+          break;
+      }
       break;
     case gfx::ColorSpace2::BT601_525:  // aka smpte170m NTSC
-      cspaceDesc = {.chrom = color::Chromaticities::Rec601_525_Ntsc(),
-                    .tf = color::PiecewiseGammaDesc::Rec709()};
+      cspaceDesc.chrom = color::Chromaticities::Rec601_525_Ntsc();
+      cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+      switch (tf) {
+        case gfx::TransferFunction::SRGB:
+          cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+          break;
+        case gfx::TransferFunction::BT709:
+          if (rec709GammaAsSrgb) {
+            cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+          } else {
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+          }
+          break;
+        case gfx::TransferFunction::HLG:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+          break;
+        case gfx::TransferFunction::PQ:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+          break;
+        case gfx::TransferFunction::LINEAR:
+          cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+          break;
+      }
       break;
     case gfx::ColorSpace2::BT709:  // Same gamut as SRGB, but different gamma.
-      cspaceDesc = {.chrom = color::Chromaticities::Rec709(),
-                    .tf = color::PiecewiseGammaDesc::Rec709()};
+      cspaceDesc.chrom = color::Chromaticities::Rec709();
+      cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+      switch (tf) {
+        case gfx::TransferFunction::SRGB:
+          cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+          break;
+        case gfx::TransferFunction::BT709:
+          if (rec709GammaAsSrgb) {
+            cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+          } else {
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+          }
+          break;
+        case gfx::TransferFunction::HLG:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+          break;
+        case gfx::TransferFunction::PQ:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+          break;
+        case gfx::TransferFunction::LINEAR:
+          cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+          break;
+      }
       break;
     case gfx::ColorSpace2::BT2020:
-      cspaceDesc = {.chrom = color::Chromaticities::Rec2020(),
-                    .tf = color::PiecewiseGammaDesc::Rec2020_12bit()};
+      cspaceDesc.chrom = color::Chromaticities::Rec2020();
+      cspaceDesc.tf = color::TransferFunctionDesc::Rec2020_12bit();
+      switch (tf) {
+        case gfx::TransferFunction::SRGB:
+          cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+          break;
+        case gfx::TransferFunction::BT709:
+          // BT2020 uses a higher precision version of BT709/BT1886 values.
+          if (rec2020GammaAsRec709 && rec709GammaAsSrgb) {
+            cspaceDesc.tf = color::TransferFunctionDesc::Srgb();
+          } else if (rec2020GammaAsRec709) {
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec709();
+          } else {
+            cspaceDesc.tf = color::TransferFunctionDesc::Rec2020_12bit();
+          }
+          break;
+        case gfx::TransferFunction::HLG:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_HLG();
+          break;
+        case gfx::TransferFunction::PQ:
+          cspaceDesc.tf = color::TransferFunctionDesc::Rec2100_PQ();
+          break;
+        case gfx::TransferFunction::LINEAR:
+          cspaceDesc.tf = color::TransferFunctionDesc::Linear();
+          break;
+      }
       break;
   }
   const auto profileDesc = color::ColorProfileDesc::From(cspaceDesc);
@@ -2070,10 +2227,10 @@ std::shared_ptr<gl::Texture> GLBlitHelper::GetColorLutTex(
 
     const std::optional<color::ColorProfileDesc> srcProfile =
         std::visit(overloaded{
-                       [&](const gfx::ColorSpace2& cs)
+                       [&](const GLBlitHelper::CSTF& cs)
                            -> std::optional<color::ColorProfileDesc> {
                          MOZ_ASSERT(cs != request.dst);
-                         const auto cpd = ToColorProfileDesc(cs);
+                         const auto cpd = ToColorProfileDesc(cs.cs, cs.tf);
                          return cpd;
                        },
                        [&](const gfx::YUVRangedColorSpace& cs)
@@ -2086,7 +2243,7 @@ std::shared_ptr<gl::Texture> GLBlitHelper::GetColorLutTex(
                    request.src);
     MOZ_ASSERT(srcProfile);
 
-    const auto dstProfile = ToColorProfileDesc(request.dst);
+    const auto dstProfile = ToColorProfileDesc(request.dst.cs, request.dst.tf);
     if (kIsWindows) {
       MOZ_ASSERT(dstProfile);
     }

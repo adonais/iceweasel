@@ -34,7 +34,6 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMJSClass.h"
 #include "mozilla/dom/DOMJSProxyHandler.h"
-#include "mozilla/dom/FakeString.h"
 #include "mozilla/dom/JSSlots.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"
 #include "mozilla/dom/Nullable.h"
@@ -2108,10 +2107,7 @@ static inline bool ConvertJSValueToString(
   return ConvertJSValueToString(cx, v, eStringify, eStringify, result);
 }
 
-[[nodiscard]] bool NormalizeUSVString(nsAString& aString);
-
-[[nodiscard]] bool NormalizeUSVString(
-    binding_detail::FakeString<char16_t>& aString);
+[[nodiscard]] bool NormalizeUSVString(nsAString&);
 
 template <typename T>
 static inline bool ConvertJSValueToUSVString(
@@ -2680,34 +2676,20 @@ const T& NonNullHelper(const OwningNonNull<T>& aArg) {
   return aArg;
 }
 
+// These overloads are here to make sure that we never end up applying
+// NonNullHelper to a NonNull<nsAutoString>. If we try to, it should fail to
+// compile, since presumably the caller will try to use our nonexistent return
+// value.
 template <typename CharT>
-inline void NonNullHelper(NonNull<binding_detail::FakeString<CharT>>& aArg) {
-  // This overload is here to make sure that we never end up applying
-  // NonNullHelper to a NonNull<binding_detail::FakeString>. If we
-  // try to, it should fail to compile, since presumably the caller will try to
-  // use our nonexistent return value.
-}
-
+inline void NonNullHelper(NonNull<nsTAutoString<CharT>>&) {}
 template <typename CharT>
-inline void NonNullHelper(
-    const NonNull<binding_detail::FakeString<CharT>>& aArg) {
-  // This overload is here to make sure that we never end up applying
-  // NonNullHelper to a NonNull<binding_detail::FakeString>. If we
-  // try to, it should fail to compile, since presumably the caller will try to
-  // use our nonexistent return value.
-}
-
+inline void NonNullHelper(const NonNull<nsTAutoString<CharT>>&) {}
 template <typename CharT>
-inline void NonNullHelper(binding_detail::FakeString<CharT>& aArg) {
-  // This overload is here to make sure that we never end up applying
-  // NonNullHelper to a FakeString before we've constified it.  If we
-  // try to, it should fail to compile, since presumably the caller will try to
-  // use our nonexistent return value.
-}
+inline void NonNullHelper(nsTAutoString<CharT>&) {}
 
 template <typename CharT>
 MOZ_ALWAYS_INLINE const nsTSubstring<CharT>& NonNullHelper(
-    const binding_detail::FakeString<CharT>& aArg) {
+    const nsTAutoString<CharT>& aArg) {
   return aArg;
 }
 

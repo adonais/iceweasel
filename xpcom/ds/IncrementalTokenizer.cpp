@@ -16,15 +16,7 @@ IncrementalTokenizer::IncrementalTokenizer(Consumer&& aConsumer,
                                            const char* aWhitespaces,
                                            const char* aAdditionalWordChars,
                                            uint32_t aRawMinBuffered)
-    : TokenizerBase(aWhitespaces, aAdditionalWordChars)
-#ifdef DEBUG
-      ,
-      mConsuming(false)
-#endif
-      ,
-      mNeedMoreInput(false),
-      mRollback(false),
-      mInputCursor(0),
+    : TokenizerBase(aWhitespaces, aAdditionalWordChars),
       mConsumer(std::move(aConsumer)) {
   mInputFinished = false;
   mMinRawDelivery = aRawMinBuffered;
@@ -58,9 +50,6 @@ nsresult IncrementalTokenizer::FeedInput(nsIInputStream* aInput,
         std::min<nsCString::index_type>(aCount, PR_UINT32_MAX - remainder);
 
     if (!load) {
-      // To keep the API simple, we fail if the input data buffer if filled.
-      // It's highly unlikely there will ever be such amout of data cumulated
-      // unless a logic fault in the consumer code.
       NS_ERROR("IncrementalTokenizer consumer not reading data?");
       return NS_ERROR_OUT_OF_MEMORY;
     }
@@ -74,12 +63,13 @@ nsresult IncrementalTokenizer::FeedInput(nsIInputStream* aInput,
     uint32_t read;
     rv = aInput->Read(buffer, load, &read);
     if (NS_SUCCEEDED(rv)) {
-      // remainder + load fits the uint32_t size, so must remainder + read.
       mInput.SetLength(remainder + read);
       aCount -= read;
-
-      rv = Process();
     }
+  }
+
+  if (NS_SUCCEEDED(rv)) {
+    rv = Process();
   }
 
   return rv;

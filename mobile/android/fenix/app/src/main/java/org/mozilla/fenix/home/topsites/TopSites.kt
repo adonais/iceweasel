@@ -76,8 +76,8 @@ const val TOP_SITES_ITEM_SIZE = 84
 private const val TOP_SITES_TO_SHOW = 8
 private const val TOP_SITES_PER_ROW = 4
 private const val TOP_SITES_ROW_WIDTH = TOP_SITES_PER_ROW * TOP_SITES_ITEM_SIZE
-private const val TOP_SITES_FAVICON_CARD_SIZE = 60
-private const val TOP_SITES_FAVICON_SIZE = 36
+internal const val TOP_SITES_FAVICON_CARD_SIZE = 60
+internal const val TOP_SITES_FAVICON_SIZE = 36
 
 /**
  * A list of top sites.
@@ -319,8 +319,8 @@ fun TopSiteItem(
                     ) {
                         Image(
                             modifier = Modifier.size(12.dp),
-                            painter = painterResource(id = iconsR.drawable.mozac_ic_pin_fill_24),
-                            colorFilter = ColorFilter.tint(PhotonColors.DarkGrey90),
+                            painter = painterResource(id = iconsR.drawable.mozac_ic_pin_8),
+                            colorFilter = ColorFilter.tint(PhotonColors.LightGrey80),
                             contentDescription = null,
                         )
                     }
@@ -339,11 +339,13 @@ fun TopSiteItem(
                         .semantics {
                             testTagsAsResourceId = true
                         }
+                        .padding(horizontal = 4.dp)
                         .testTag(TopSitesTestTag.TOP_SITE_TITLE),
                     text = topSite.title ?: topSite.url,
                     color = topSiteColors.titleTextColor,
+                    textAlign = TextAlign.Center,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 1,
+                    maxLines = topSite.getMaxLinesForTitle(),
                     style = FirefoxTheme.typography.caption.copy(fontWeight = FontWeight.W700),
                 )
             }
@@ -497,6 +499,13 @@ internal fun getMenuItems(
     }
 
     return result
+}
+
+/**
+ * Returns the maximum number of lines for a top site title based on its type.
+ */
+private fun TopSite.getMaxLinesForTitle(): Int {
+    return if (this is TopSite.Provided) 1 else 2
 }
 
 @FlexibleWindowPreview

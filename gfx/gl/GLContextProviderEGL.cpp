@@ -104,7 +104,7 @@ class WaylandOffscreenGLSurface {
   struct wl_egl_window* mEGLWindow = nullptr;
 };
 
-MOZ_RUNINIT static nsTHashMap<nsPtrHashKey<void>, WaylandOffscreenGLSurface*>
+constinit static nsTHashMap<nsPtrHashKey<void>, WaylandOffscreenGLSurface*>
     sWaylandOffscreenGLSurfaces;
 
 void DeleteWaylandOffscreenGLSurface(EGLSurface surface) {

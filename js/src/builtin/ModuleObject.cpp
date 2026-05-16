@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -92,16 +90,6 @@ static ImportPhase ValueToImportPhase(const Value& value) {
     return &value.toString()->asAtom();                      \
   }
 
-#define DEFINE_UINT32_ACCESSOR_METHOD(cls, name, slot) \
-  uint32_t cls::name() const {                         \
-    Value value = getReservedSlot(slot);               \
-    MOZ_ASSERT(value.toNumber() >= 0);                 \
-    if (value.isInt32()) {                             \
-      return value.toInt32();                          \
-    }                                                  \
-    return JS::ToUint32(value.toDouble());             \
-  }
-
 ///////////////////////////////////////////////////////////////////////////
 // ImportEntry
 
@@ -158,7 +146,7 @@ RequestedModule::RequestedModule(Handle<ModuleRequestObject*> moduleRequest,
       columnNumber_(columnNumber) {}
 
 void RequestedModule::trace(JSTracer* trc) {
-  TraceEdge(trc, &moduleRequest_, "ExportEntry::moduleRequest_");
+  TraceEdge(trc, &moduleRequest_, "RequestedModule::moduleRequest_");
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -247,6 +235,9 @@ static bool GetModuleType(JSContext* cx,
       else if (JS::Prefs::experimental_import_bytes() &&
                js::EqualStrings(typeStr, cx->names().bytes)) {
         moduleType = JS::ModuleType::Bytes;
+      } else if (JS::Prefs::experimental_import_text() &&
+                 js::EqualStrings(typeStr, cx->names().text)) {
+        moduleType = JS::ModuleType::Text;
       }
 #endif
       else {
@@ -766,6 +757,109 @@ void AsyncEvaluationOrder::setDone(JSRuntime* rt) {
   value = ASYNC_EVALUATING_POST_ORDER_DONE;
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+///////////////////////////////////////////////////////////////////////////
+// AbstractModuleSourceObject
+
+// https://tc39.es/proposal-source-phase-imports/#sec-%abstractmodulesource%-constructor
+static bool AbstractModuleSourceConstructor(JSContext* cx, unsigned argc,
+                                            Value* vp) {
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_ABSTRACT_MODULE_SOURCE_CTOR);
+  return false;
+}
+
+// https://tc39.es/proposal-source-phase-imports/#sec-get-%abstractmodulesource%.prototype.@@tostringtag
+static bool AbstractModuleSource_toStringTagGetter(JSContext* cx, unsigned argc,
+                                                   Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  // Step 2. If O is not an Object, return undefined.
+  if (!args.thisv().isObject()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  // Step 1. Let O be the this value.
+  JSObject* obj = &args.thisv().toObject();
+
+  // Step 3. Let module be HostGetModuleSourceModuleRecord(O).
+  // Step 4. If module is not-a-source, return undefined.
+  // NOTE: All current modules are `not-a-source`, with the
+  // exception of the `<module source>` module used in test262,
+  // which is an instance of <ModuleSourceObject>.
+  if (!obj->is<ModuleSourceObject>()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  MOZ_ASSERT(
+      JS::Prefs::experimental_source_phase_imports_test262_module_source());
+
+  // Step 5. Let name be module.GetModuleSourceKind().
+  JSAtom* name = cx->names().Module;
+
+  // Step 6. Assert: name is a String.
+  // (not applicable in our implementation)
+
+  // Step 7. Return name.
+  args.rval().setString(name);
+  return true;
+}
+
+static const JSPropertySpec abstract_module_source_proto_accessors[] = {
+    JS_SYM_GET(toStringTag, AbstractModuleSource_toStringTagGetter, 0),
+    JS_PS_END,
+};
+
+static JSObject* CreateAbstractModuleSourcePrototype(JSContext* cx,
+                                                     JSProtoKey key) {
+  return GlobalObject::createBlankPrototype(
+      cx, cx->global(), &AbstractModuleSourceObject::class_);
+}
+
+static const ClassSpec AbstractModuleSourceObjectClassSpec = {
+    GenericCreateConstructor<AbstractModuleSourceConstructor, 0,
+                             gc::AllocKind::FUNCTION>,
+    CreateAbstractModuleSourcePrototype,
+    nullptr,
+    nullptr,
+    nullptr,
+    abstract_module_source_proto_accessors,
+    nullptr,
+    ClassSpec::DontDefineConstructor,
+};
+
+/* static */ const JSClass AbstractModuleSourceObject::class_ = {
+    "AbstractModuleSource",
+    JSCLASS_HAS_CACHED_PROTO(JSProto_AbstractModuleSource),
+    JS_NULL_CLASS_OPS,
+    &AbstractModuleSourceObjectClassSpec,
+};
+
+///////////////////////////////////////////////////////////////////////////
+// ModuleSourceObject
+
+/* static */ const JSClass ModuleSourceObject::class_ = {
+    "ModuleSource",
+};
+
+/* static */
+bool ModuleSourceObject::isInstance(HandleValue value) {
+  return value.isObject() && value.toObject().is<ModuleSourceObject>();
+}
+
+/* static */
+ModuleSourceObject* ModuleSourceObject::create(JSContext* cx) {
+  RootedObject proto(
+      cx, GlobalObject::getOrCreatePrototype(cx, JSProto_AbstractModuleSource));
+  if (!proto) {
+    return nullptr;
+  }
+  return NewObjectWithGivenProto<ModuleSourceObject>(cx, proto);
+}
+#endif
+
 ///////////////////////////////////////////////////////////////////////////
 // SyntheticModuleFields
 
@@ -1078,6 +1172,16 @@ ScriptSourceObject* ModuleObject::scriptSourceObject() const {
   return cyclicModuleFields()->scriptSourceObject;
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+ModuleSourceObject* ModuleObject::moduleSource() const {
+  Value value = getReservedSlot(ModuleSourceSlot);
+  if (value.isUndefined()) {
+    return nullptr;
+  }
+  return &value.toObject().as<ModuleSourceObject>();
+}
+#endif
+
 void ModuleObject::initAsyncSlots(JSContext* cx, bool hasTopLevelAwait,
                                   Handle<ListObject*> asyncParentModules) {
   cyclicModuleFields()->hasTopLevelAwait = hasTopLevelAwait;
@@ -1091,6 +1195,13 @@ void ModuleObject::initScriptSlots(HandleScript script) {
   initReservedSlot(ScriptSlot, PrivateGCThingValue(script));
   cyclicModuleFields()->scriptSourceObject = script->sourceObject();
 }
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+void ModuleObject::initModuleSourceSlot(
+    Handle<ModuleSourceObject*> moduleSource) {
+  initReservedSlot(ModuleSourceSlot, ObjectValue(*moduleSource));
+}
+#endif
 
 void ModuleObject::setInitialEnvironment(
     Handle<ModuleEnvironmentObject*> initialEnvironment) {
@@ -1828,7 +1939,12 @@ ModuleRequestObject* frontend::StencilModuleMetadata::createModuleRequestObject(
   MOZ_ASSERT(specifier);
 
   Rooted<ModuleRequestObject*> moduleRequestObject(
-      cx, ModuleRequestObject::create(cx, specifier, attributes));
+      cx,
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+      ModuleRequestObject::create(cx, specifier, attributes, request.phase));
+#else
+      ModuleRequestObject::create(cx, specifier, attributes));
+#endif
   if (!moduleRequestObject) {
     return nullptr;
   }
@@ -1972,14 +2088,10 @@ bool frontend::StencilModuleMetadata::initModule(
                            localExportEntries, &exportEntriesVector)) {
     return false;
   }
-
-  Rooted<ExportEntryVector> indirectExportEntriesVector(cx);
   if (!createExportEntries(cx, atomCache, moduleRequestsVector,
                            indirectExportEntries, &exportEntriesVector)) {
     return false;
   }
-
-  Rooted<ExportEntryVector> starExportEntriesVector(cx);
   if (!createExportEntries(cx, atomCache, moduleRequestsVector,
                            starExportEntries, &exportEntriesVector)) {
     return false;
@@ -2046,10 +2158,11 @@ bool ModuleBuilder::processAttributes(frontend::StencilModuleRequest& request,
 bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
   using namespace js::frontend;
 
-  MOZ_ASSERT(importNode->isKind(ParseNodeKind::ImportDecl));
-
-  auto* specList = &importNode->left()->as<ListNode>();
-  MOZ_ASSERT(specList->isKind(ParseNodeKind::ImportSpecList));
+  MOZ_ASSERT(importNode->isKind(ParseNodeKind::ImportDecl)
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+             || importNode->isKind(ParseNodeKind::ImportSourceDecl)
+#endif
+  );
 
   auto* moduleRequest = &importNode->right()->as<BinaryNode>();
   MOZ_ASSERT(moduleRequest->isKind(ParseNodeKind::ImportModuleRequest));
@@ -2057,10 +2170,44 @@ bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
   auto* moduleSpec = &moduleRequest->left()->as<NameNode>();
   MOZ_ASSERT(moduleSpec->isKind(ParseNodeKind::StringExpr));
 
+  auto specifier = moduleSpec->atom();
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (importNode->isKind(ParseNodeKind::ImportSourceDecl)) {
+    auto* localNameNode = &importNode->left()->as<NameNode>();
+    MOZ_ASSERT(localNameNode->isKind(ParseNodeKind::Name));
+
+    MaybeModuleRequestIndex moduleRequestIndex =
+        appendModuleRequest(specifier, nullptr, ImportPhase::Source);
+    if (!moduleRequestIndex.isSome()) {
+      return false;
+    }
+
+    if (!maybeAppendRequestedModule(moduleRequestIndex, moduleSpec)) {
+      return false;
+    }
+
+    auto localName = localNameNode->atom();
+    markUsedByStencil(localName);
+
+    uint32_t line;
+    JS::LimitedColumnNumberOneOrigin column;
+    eitherParser_.computeLineAndColumn(localNameNode->pn_pos.begin, &line,
+                                       &column);
+
+    auto entry = StencilModuleEntry::importNamespaceEntry(
+        moduleRequestIndex, localName, line, JS::ColumnNumberOneOrigin(column));
+
+    return importEntries_.put(localName, entry);
+  }
+#endif
+
+  auto* specList = &importNode->left()->as<ListNode>();
+  MOZ_ASSERT(specList->isKind(ParseNodeKind::ImportSpecList));
+
   auto* attributeList = &moduleRequest->right()->as<ListNode>();
   MOZ_ASSERT(attributeList->isKind(ParseNodeKind::ImportAttributeList));
 
-  auto specifier = moduleSpec->atom();
   MaybeModuleRequestIndex moduleRequestIndex =
       appendModuleRequest(specifier, attributeList);
   if (!moduleRequestIndex.isSome()) {
@@ -2113,19 +2260,6 @@ bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
 
   return true;
 }
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-bool ModuleBuilder::processImportSource(frontend::BinaryNode* importNode) {
-  using namespace js::frontend;
-
-  MOZ_ASSERT(importNode->isKind(ParseNodeKind::ImportSourceDecl));
-
-  // TODO: Support for import source will be added in Bug 2011284.
-  // For now, we'll return true rather than signal an error, so we
-  // can write tests for parsing.
-  return true;
-}
-#endif
 
 bool ModuleBuilder::processExport(frontend::ParseNode* exportNode) {
   using namespace js::frontend;
@@ -2417,12 +2551,18 @@ bool ModuleBuilder::appendExportEntry(
 
 frontend::MaybeModuleRequestIndex ModuleBuilder::appendModuleRequest(
     frontend::TaggedParserAtomIndex specifier,
-    frontend::ListNode* attributeList) {
+    frontend::ListNode* attributeList, ImportPhase phase) {
   markUsedByStencil(specifier);
   auto request = frontend::StencilModuleRequest(specifier);
 
-  if (!processAttributes(request, attributeList)) {
-    return MaybeModuleRequestIndex();
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  request.phase = phase;
+  if (phase == ImportPhase::Evaluation)
+#endif
+  {
+    if (!processAttributes(request, attributeList)) {
+      return MaybeModuleRequestIndex();
+    }
   }
 
   if (auto ptr = moduleRequestIndexes_.lookup(request)) {
@@ -2485,8 +2625,7 @@ JSObject* js::GetOrCreateModuleMetaObject(JSContext* cx,
     return nullptr;
   }
 
-  RootedValue modulePrivate(cx, JS::GetModulePrivate(module));
-  if (!func(cx, modulePrivate, metaObject)) {
+  if (!func(cx, module, metaObject)) {
     return nullptr;
   }
 
@@ -2498,15 +2637,13 @@ JSObject* js::GetOrCreateModuleMetaObject(JSContext* cx,
 bool ModuleObject::topLevelCapabilityResolve(JSContext* cx,
                                              Handle<ModuleObject*> module) {
   RootedValue rval(cx);
-  Rooted<PromiseObject*> promise(
-      cx, &module->topLevelCapability()->as<PromiseObject>());
+  Rooted<PromiseObject*> promise(cx, module->topLevelCapability());
   return AsyncFunctionReturned(cx, promise, rval);
 }
 
 bool ModuleObject::topLevelCapabilityReject(JSContext* cx,
                                             Handle<ModuleObject*> module,
                                             HandleValue error) {
-  Rooted<PromiseObject*> promise(
-      cx, &module->topLevelCapability()->as<PromiseObject>());
+  Rooted<PromiseObject*> promise(cx, module->topLevelCapability());
   return AsyncFunctionThrown(cx, promise, error);
 }

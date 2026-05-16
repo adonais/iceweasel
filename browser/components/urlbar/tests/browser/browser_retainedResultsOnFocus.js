@@ -389,7 +389,7 @@ add_task(async function test_allowAutofill() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   await UrlbarTestUtils.promisePopupOpen(win, async () => {
-    await selectAndPaste("e", win);
+    await UrlbarTestUtils.selectAndPaste("e", win);
   });
   Assert.equal(win.gURLBar.value, "e", "Should not autofill");
   let context = await win.gURLBar.lastQueryContextPromise;

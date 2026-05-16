@@ -33,8 +33,8 @@ float ComputeAutoCorrelation(int inverted_lag,
   RTC_DCHECK_LT(inverted_lag, kRefineNumLags24kHz);
   static_assert(kMaxPitch24kHz < kBufSize24kHz, "");
   return vector_math.DotProduct(
-      pitch_buffer.subview(/*offset=*/kMaxPitch24kHz),
-      pitch_buffer.subview(inverted_lag, kFrameSize20ms24kHz));
+      pitch_buffer.subspan(/*offset=*/kMaxPitch24kHz),
+      pitch_buffer.subspan(inverted_lag, kFrameSize20ms24kHz));
 }
 
 // Given an auto-correlation coefficient `curr_auto_correlation` and its
@@ -130,7 +130,11 @@ constexpr int kMaxPitchPeriods24kHz =
 
 // Collection of inverted lags.
 class InvertedLagsIndex {
+  using Storage = std::array<int, kMaxPitchPeriods24kHz>;
+
  public:
+  using const_iterator = Storage::const_iterator;
+
   InvertedLagsIndex() : num_entries_(0) {}
   // Adds an inverted lag to the index. Cannot add more than
   // `kMaxPitchPeriods24kHz` values.
@@ -140,6 +144,9 @@ class InvertedLagsIndex {
   }
   const int* data() const { return inverted_lags_.data(); }
   int size() const { return num_entries_; }
+
+  const_iterator begin() const { return inverted_lags_.begin(); }
+  const_iterator end() const { return begin() + size(); }
 
  private:
   std::array<int, kMaxPitchPeriods24kHz> inverted_lags_;
@@ -295,7 +302,7 @@ void ComputeSlidingFrameSquareEnergies24kHz(
     AvailableCpuFeatures cpu_features) {
   VectorMath vector_math(cpu_features);
   static_assert(kFrameSize20ms24kHz < kBufSize24kHz, "");
-  const auto frame_20ms_view = pitch_buffer.subview(0, kFrameSize20ms24kHz);
+  const auto frame_20ms_view = pitch_buffer.subspan(0, kFrameSize20ms24kHz);
   float yy = vector_math.DotProduct(frame_20ms_view, frame_20ms_view);
   y_energy[0] = yy;
   static_assert(kMaxPitch24kHz - 1 + kFrameSize20ms24kHz < kBufSize24kHz, "");
@@ -333,7 +340,7 @@ CandidatePitchPeriods ComputePitchPeriod12kHz(
 
   VectorMath vector_math(cpu_features);
   static_assert(kFrameSize20ms12kHz + 1 < kBufSize12kHz, "");
-  const auto frame_view = pitch_buffer.subview(0, kFrameSize20ms12kHz + 1);
+  const auto frame_view = pitch_buffer.subspan(0, kFrameSize20ms12kHz + 1);
   float denominator = 1.f + vector_math.DotProduct(frame_view, frame_view);
   // Search best and second best pitches by looking at the scaled
   // auto-correlation.

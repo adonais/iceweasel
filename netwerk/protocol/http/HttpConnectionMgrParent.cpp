@@ -19,7 +19,7 @@
 
 namespace mozilla::net {
 
-MOZ_RUNINIT nsTHashMap<uint32_t, nsCOMPtr<nsIHttpUpgradeListener>>
+constinit nsTHashMap<uint32_t, nsCOMPtr<nsIHttpUpgradeListener>>
     HttpConnectionMgrParent::sHttpUpgradeListenerMap;
 uint32_t HttpConnectionMgrParent::sListenerId = 0;
 StaticMutex HttpConnectionMgrParent::sLock;

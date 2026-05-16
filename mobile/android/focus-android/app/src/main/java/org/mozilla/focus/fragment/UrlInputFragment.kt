@@ -506,7 +506,17 @@ class UrlInputFragment :
         // this transaction is committed. To avoid this we commit while allowing a state loss here.
         // We do not save any state in this fragment (It's getting destroyed) so this should not be a problem.
 
-        context?.components?.appStore?.dispatch(AppAction.FinishEdit(tab!!.id))
+        val components = context?.components ?: return
+        val tabId = tab?.id ?: return
+        val currentTabState = components.store.state.findTab(tabId)
+        if (currentTabState?.content?.url?.isEmpty() == true) {
+            components.tabsUseCases.removeTab(tabId, selectParentIfExists = false)
+            components.store.state.selectedTabId?.let { nextId ->
+                components.appStore.dispatch(AppAction.FinishEdit(nextId))
+            }
+        } else {
+            components.appStore.dispatch(AppAction.FinishEdit(tabId))
+        }
     }
 
     internal fun onCommit(input: String) {

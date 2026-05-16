@@ -172,10 +172,7 @@ TEST_F(TestDeviceInputTrack, DeviceInputConsumerTrack) {
   EXPECT_TRUE(track2->ConnectedToNonNativeDevice());
 
   track2->Destroy();
-  mGraph->RemoveTrackGraphThread(track2);
-
   track1->Destroy();
-  mGraph->RemoveTrackGraphThread(track1);
 }
 
 TEST_F(TestDeviceInputTrack, NativeInputTrackData) {
@@ -232,9 +229,8 @@ TEST_F(TestDeviceInputTrack, NativeInputTrackData) {
     EXPECT_EQ(chunk.mPrincipalHandle, testPrincipal);
   }
 
-  // Tear down: Destroy the NativeInputTrack and remove it from mGraph.
+  // Tear down: Destroy the NativeInputTrack.
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }
 
 class MockEventListener : public AudioInputSource::EventListener {
@@ -348,9 +344,8 @@ TEST_F(TestDeviceInputTrack, StartAndStop) {
     (void)WaitFor(cubeb->StreamDestroyEvent());
   }
 
-  // Tear down: Destroy the NativeInputTrack and remove it from mGraph.
+  // Tear down: Destroy the NativeInputTrack.
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }
 
 TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
@@ -444,9 +439,8 @@ TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
     EXPECT_TRUE(data.IsNull());
   }
 
-  // Tear down: Destroy the NonNativeInputTrack and remove it from mGraph.
+  // Tear down: Destroy the NonNativeInputTrack.
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }
 
 TEST_F(TestDeviceInputTrack, NonNativeDeviceChangedCallback) {
@@ -502,9 +496,8 @@ TEST_F(TestDeviceInputTrack, NonNativeDeviceChangedCallback) {
   DispatchFunction([&] { track->StopAudio(); });
   (void)WaitFor(cubeb->StreamDestroyEvent());
 
-  // Tear down: Destroy the NonNativeInputTrack and remove it from mGraph.
+  // Tear down: Destroy the NonNativeInputTrack.
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }
 
 TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
@@ -562,7 +555,6 @@ TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
   DispatchFunction([&] { track->StopAudio(); });
   (void)WaitFor(cubeb->StreamDestroyEvent());
 
-  // Tear down: Destroy the NonNativeInputTrack and remove it from mGraph.
+  // Tear down: Destroy the NonNativeInputTrack.
   track->Destroy();
-  mGraph->RemoveTrackGraphThread(track);
 }

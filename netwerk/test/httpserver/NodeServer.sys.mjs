@@ -157,11 +157,47 @@ export class BaseNodeServer {
       rootDir = parent;
     }
 
-    let certFile = rootDir.clone();
-    certFile.append("netwerk");
-    certFile.append("test");
-    certFile.append("unit");
-    certFile.append(filename);
+    function findCertPath(dir) {
+      let candidates = [
+        ["netwerk", "test", "unit", filename],
+        // This one works for mochitests
+        ["_tests", "xpcshell", "netwerk", "test", "unit", filename],
+      ];
+      for (let candidate of candidates) {
+        let certpath = dir.clone().QueryInterface(Ci.nsIFile);
+        for (let part of candidate) {
+          certpath.append(part);
+        }
+        if (certpath.exists()) {
+          return certpath;
+        }
+      }
+      return null;
+    }
+
+    let certFile = findCertPath(rootDir);
+    if (!certFile) {
+      // mochitest browser-chrome: the cert is shipped via TEST_HARNESS_FILES
+      // (see netwerk/test/moz.build) and exposed under chrome://mochitests/.
+      try {
+        let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
+          Ci.nsIChromeRegistry
+        );
+        let resolved = chromeReg.convertChromeURL(
+          Services.io.newURI(
+            `chrome://mochitests/content/tests/netwerk/test/unit/${filename}`
+          )
+        );
+        let resolvedFile = resolved.QueryInterface(Ci.nsIFileURL).file;
+        if (resolvedFile.exists()) {
+          certFile = resolvedFile;
+        }
+      } catch (e) {}
+    }
+    if (!certFile) {
+      console.log(`Error installing cert: file not found.}`);
+      return;
+    }
 
     try {
       let pem = readFile(certFile)
@@ -171,7 +207,7 @@ export class BaseNodeServer {
       certdb.addCertFromBase64(pem, "CTu,u,u");
     } catch (e) {
       let errStr = e.toString();
-      console.log(`Error installing cert ${errStr}`);
+      console.log(`Error installing cert ${errStr} path:${certFile.path}`);
       if (errStr.includes("0x805a1fe8")) {
         // Can't install the cert without a profile
         // Let's show an error, otherwise this will be difficult to diagnose.
@@ -1177,17 +1213,19 @@ export class HTTP3Server {
     // Execute the regex on the input string
     let match = regex.exec(result.output);
 
-    if (match) {
-      // Extract the ports as an array of numbers
-      let ports = match.slice(1, 7).map(Number);
-      this._port = ports[0];
-      this._reverse_proxy_port = ports[3];
-      this._no_response_port = ports[4];
-      this._masque_proxy_port = ports[5];
-      return ports[0];
+    if (!match) {
+      throw new Error(
+        `HTTP3Server: unexpected server output: ${result.output.slice(0, 500)}`
+      );
     }
 
-    return undefined;
+    // Extract the ports as an array of numbers
+    let ports = match.slice(1, 7).map(Number);
+    this._port = ports[0];
+    this._reverse_proxy_port = ports[3];
+    this._no_response_port = ports[4];
+    this._masque_proxy_port = ports[5];
+    return ports[0];
   }
 }
 

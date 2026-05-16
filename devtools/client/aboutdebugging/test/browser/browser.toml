@@ -78,6 +78,9 @@ tags = "webextensions"
 ["browser_aboutdebugging_addons_temporary_install_error.js"]
 
 ["browser_aboutdebugging_addons_temporary_install_path.js"]
+skip-if = [
+  "debug && standalone", # Bug 2026756
+]
 
 ["browser_aboutdebugging_addons_temporary_reload_error.js"]
 
@@ -136,6 +139,10 @@ skip-if = [
 ["browser_aboutdebugging_devtoolstoolbox_splitconsole_key.js"]
 
 ["browser_aboutdebugging_devtoolstoolbox_target_destroyed.js"]
+skip-if = [
+  "os == 'win' && opt && standalone", # Bug 2026757
+  "debug && standalone", # Bug 2026757
+]
 
 ["browser_aboutdebugging_devtoolstoolbox_tooltip_markupview.js"]
 fail-if = [

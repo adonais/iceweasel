@@ -368,9 +368,13 @@ firefox.ai.runtime:
       character_count:
         description: The number of characters generated for text generation tasks.
         type: quantity
+      system_memory_mb:
+        description: The total physical system memory in MB.
+        type: quantity
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1992779
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1997016
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029250
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1992779
       - https://phabricator.services.mozilla.com/D270909

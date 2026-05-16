@@ -249,6 +249,13 @@ gfx::YUVRangedColorSpace RenderTextureHostWrapper::GetYUVColorSpace() const {
   return gfx::YUVRangedColorSpace::Default;
 }
 
+gfx::TransferFunction RenderTextureHostWrapper::GetTransferFunction() const {
+  if (RenderTextureHostSWGL* swglHost = EnsureRenderTextureHostSWGL()) {
+    return swglHost->GetTransferFunction();
+  }
+  return gfx::TransferFunction::BT709;
+}
+
 bool RenderTextureHostWrapper::MapPlane(RenderCompositor* aCompositor,
                                         uint8_t aChannelIndex,
                                         PlaneInfo& aPlaneInfo) {

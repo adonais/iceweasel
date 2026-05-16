@@ -11,9 +11,9 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string_view>
 
-#include "api/array_view.h"
 #include "api/make_ref_counted.h"
 #include "api/scoped_refptr.h"
 #include "api/stats/rtc_stats_report.h"
@@ -41,7 +41,7 @@ scoped_refptr<const RTCStatsReport> GetStatsAndProcess(
 
 std::optional<scoped_refptr<const RTCStatsReport>> GetFirstReportAtOrAfter(
     Timestamp time,
-    ArrayView<const scoped_refptr<const RTCStatsReport>> reports) {
+    std::span<const scoped_refptr<const RTCStatsReport>> reports) {
   if (reports.empty()) {
     return std::nullopt;
   }
@@ -72,6 +72,16 @@ TimeDelta GetAverageRoundTripTime(
 
   return TimeDelta::Seconds(*stats[0]->total_round_trip_time /
                             *stats[0]->responses_received);
+}
+
+TimeDelta GetCurrentRoundTripTime(
+    const scoped_refptr<const RTCStatsReport>& report) {
+  auto stats = report->GetStatsOfType<RTCIceCandidatePairStats>();
+  if (stats.empty() || !stats[0]->current_round_trip_time.has_value()) {
+    return TimeDelta::PlusInfinity();
+  }
+
+  return TimeDelta::Seconds(*stats[0]->current_round_trip_time);
 }
 
 int64_t GetPacketsSentWithEct1(
@@ -136,6 +146,18 @@ int64_t GetPacketsReceived(const scoped_refptr<const RTCStatsReport>& report) {
   int64_t number_of_packets = 0;
   for (const RTCInboundRtpStreamStats* stream_stats : stats) {
     number_of_packets += stream_stats->packets_received.value_or(0);
+  }
+  return number_of_packets;
+}
+
+int64_t GetPacketsLost(const scoped_refptr<const RTCStatsReport>& report) {
+  auto stats = report->GetStatsOfType<RTCInboundRtpStreamStats>();
+  if (stats.empty()) {
+    return 0;
+  }
+  int64_t number_of_packets = 0;
+  for (const RTCInboundRtpStreamStats* stream_stats : stats) {
+    number_of_packets += stream_stats->packets_lost.value_or(0);
   }
   return number_of_packets;
 }

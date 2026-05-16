@@ -254,6 +254,7 @@ class nsIGlobalObject : public nsISupports {
   // Returns a pointer to this object as an inner window if this is one or
   // nullptr otherwise.
   nsPIDOMWindowInner* GetAsInnerWindow();
+  bool IsInnerWindow() const { return mIsInnerWindow; }
 
   virtual void TriggerUpdateCCFlag() {}
 

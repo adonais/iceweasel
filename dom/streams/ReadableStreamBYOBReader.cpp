@@ -2,21 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/ReadableStreamBYOBReader.h"
-
 #include "ReadIntoRequest.h"
+#include "ReadableByteStreamControllerAbstract.h"
+#include "ReadableStreamAbstract.h"
+#include "ReadableStreamBYOBReaderAbstract.h"
+#include "ReadableStreamGenericReaderAbstract.h"
 #include "js/ArrayBuffer.h"
 #include "js/experimental/TypedData.h"
-#include "mozilla/dom/ReadableStream.h"
-#include "mozilla/dom/ReadableStreamBYOBReader.h"
 #include "mozilla/dom/ReadableStreamBYOBReaderBinding.h"
-#include "mozilla/dom/ReadableStreamGenericReader.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
 
 // Temporary Includes
-#include "mozilla/dom/ReadableByteStreamController.h"
 #include "mozilla/dom/ReadableStreamBYOBRequest.h"
 
 namespace mozilla::dom {

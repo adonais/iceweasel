@@ -43,6 +43,6 @@ testWithTypedArrayConstructors(function(TA) {
   };
 
   assert.sameValue(sample.lastIndexOf(undefined, fromIndex), -1);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

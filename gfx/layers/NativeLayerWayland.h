@@ -7,6 +7,7 @@
 
 #include <deque>
 
+#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/layers/NativeLayer.h"
 #include "mozilla/layers/SurfacePoolWayland.h"
@@ -86,7 +87,10 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
     return mRootSurface;
   }
 
-  RefPtr<widget::DRMFormat> GetDRMFormat() { return mDRMFormat; }
+  already_AddRefed<widget::DRMFormat> GetDRMFormat() {
+    return do_AddRef(static_cast<widget::DRMFormat*>(mDRMFormat));
+  }
+  void SetDRMFormat(widget::DRMFormat* aFormat);
 
   void FrameCallbackHandler(uint32_t aTime);
 
@@ -143,7 +147,7 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   RefPtr<widget::WaylandSurface> mRootSurface;
 
   // Copy of DRM format we use to create DMABuf surfaces
-  RefPtr<widget::DRMFormat> mDRMFormat;
+  Atomic<widget::DRMFormat*> mDRMFormat{nullptr};
 
   // Empty buffer attached to mSurface. We need to have something
   // attached to make mSurface and all child visible.

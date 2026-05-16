@@ -41,7 +41,6 @@ moz-card {
   background-color: var(--sidebar-box-background);
   color: var(--sidebar-box-color);
   border: var(--sidebar-box-border);
-  border-radius: var(--border-radius-medium);
 
   &::part(summary) {
     padding-block: var(--space-medium);
@@ -72,7 +71,7 @@ moz-card {
   }
 
   .sidebar-panel-scrollable-content {
-    overflow-y: auto;
+    overflow: hidden auto;
     height: 100%;
     padding: var(--space-xsmall);
   }

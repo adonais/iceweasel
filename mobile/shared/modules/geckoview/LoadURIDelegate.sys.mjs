@@ -26,7 +26,6 @@ export const LoadURIDelegate = {
       (aTriggeringPrincipal.isNullPrincipal ? null : aTriggeringPrincipal.URI);
 
     const message = {
-      type: "GeckoView:OnLoadRequest",
       uri: aUri ? aUri.displaySpec : "",
       where: aWhere,
       flags: aFlags,
@@ -35,7 +34,10 @@ export const LoadURIDelegate = {
     };
 
     try {
-      return await aEventDispatcher.sendRequestForResult(message);
+      return await aEventDispatcher.sendRequestForResult(
+        "GeckoView:OnLoadRequest",
+        message
+      );
     } catch (e) {
       // There was an error or listener was not registered in GeckoSession,
       // treat as unhandled.

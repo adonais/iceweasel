@@ -100,6 +100,7 @@ UNIFIED_SOURCES += [
     'hb-raster-svg-fill.cc',
     'hb-raster-svg-gradient.cc',
     'hb-raster-svg-parse.cc',
+    'hb-raster-svg-render.cc',
     'hb-raster-svg-use.cc',
     'hb-raster.cc',
     'hb-set.cc',
@@ -127,16 +128,12 @@ UNIFIED_SOURCES += [
     'hb-subset.cc',
     'hb-unicode.cc',
     'hb-vector-svg-draw.cc',
+    'hb-vector-svg-paint.cc',
     'hb-vector-svg-path.cc',
     'hb-vector-svg-subset.cc',
     'hb-vector-svg-utils.cc',
     'hb-vector.cc',
     'hb-zlib.cc',
-]
-
-SOURCES = [
-    'hb-raster-svg-render.cc',
-    'hb-vector-svg-paint.cc',
 ]
 
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk':

@@ -24,6 +24,8 @@ internal object SearchReducer {
             is SearchAction.UpdateCustomSearchEngineAction -> state.updateCustomSearchEngine(action)
             is SearchAction.RemoveCustomSearchEngineAction -> state.removeSearchEngine(action)
             is SearchAction.SelectSearchEngineAction -> state.selectSearchEngine(action)
+            is SearchAction.SelectPrivateSearchEngineAction -> state.selectPrivateSearchEngine(action)
+            is SearchAction.ClearPrivateSearchEngineAction -> state.clearPrivateSearchEngine()
             is SearchAction.ShowSearchEngineAction -> state.maybeShowSearchEngine(action)
             is SearchAction.HideSearchEngineAction -> state.hideSearchEngine(action)
             is SearchAction.AddAdditionalSearchEngineAction -> state.addAdditionalSearchEngine(action)
@@ -54,6 +56,8 @@ private fun BrowserState.setSearchEngines(
             customSearchEngines = action.customSearchEngines,
             userSelectedSearchEngineId = action.userSelectedSearchEngineId,
             userSelectedSearchEngineName = action.userSelectedSearchEngineName,
+            userSelectedPrivateSearchEngineId = action.userSelectedPrivateSearchEngineId,
+            userSelectedPrivateSearchEngineName = action.userSelectedPrivateSearchEngineName,
             regionDefaultSearchEngineId = action.regionDefaultSearchEngineId,
             hiddenSearchEngines = action.hiddenSearchEngines,
             disabledSearchEngineIds = action.disabledSearchEngineIds,
@@ -123,6 +127,26 @@ private fun BrowserState.selectSearchEngine(
         search = search.copy(
             userSelectedSearchEngineId = action.searchEngineId,
             userSelectedSearchEngineName = action.searchEngineName,
+        ),
+    )
+}
+
+private fun BrowserState.selectPrivateSearchEngine(
+    action: SearchAction.SelectPrivateSearchEngineAction,
+): BrowserState {
+    return copy(
+        search = search.copy(
+            userSelectedPrivateSearchEngineId = action.searchEngineId,
+            userSelectedPrivateSearchEngineName = action.searchEngineName,
+        ),
+    )
+}
+
+private fun BrowserState.clearPrivateSearchEngine(): BrowserState {
+    return copy(
+        search = search.copy(
+            userSelectedPrivateSearchEngineId = null,
+            userSelectedPrivateSearchEngineName = null,
         ),
     )
 }

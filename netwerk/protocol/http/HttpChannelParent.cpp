@@ -1066,7 +1066,7 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRemoveCorsPreflightCacheEntry(
 
 mozilla::ipc::IPCResult HttpChannelParent::RecvSetCookies(
     const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes,
-    nsIURI* aHost, const bool& aFromHttp, const bool& aIsThirdParty,
+    nsIURI* aHost, const bool& aIsThirdParty,
     nsTArray<CookieStruct>&& aCookies) {
   net::PCookieServiceParent* csParent =
       LoneManagedOrNullAsserts(Manager()->ManagedPCookieServiceParent());
@@ -1080,7 +1080,7 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvSetCookies(
   }
 
   return cs->SetCookies(nsCString(aBaseDomain), aOriginAttributes, aHost,
-                        aFromHttp, aIsThirdParty, aCookies, browsingContext);
+                        aIsThirdParty, aCookies, browsingContext);
 }
 
 //-----------------------------------------------------------------------------
@@ -1142,7 +1142,7 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
 
   LOG(("HttpChannelParent::OnStartRequest [this=%p, aRequest=%p]\n", this,
        aRequest));
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
   Maybe<uint32_t> multiPartID;
   bool isFirstPartOfMultiPart = false;
@@ -1187,15 +1187,28 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
 
   HttpChannelOnStartRequestArgs args;
 
-  // Send down any permissions/cookies which are relevant to this URL if we are
-  // performing a document load. We can't do that if mIPCClosed is set.
-  if (!mIPCClosed) {
-    PContentParent* pcp = Manager()->Manager();
-    MOZ_ASSERT(pcp, "We should have a manager if our IPC isn't closed");
-    DebugOnly<nsresult> rv =
-        static_cast<ContentParent*>(pcp)->AboutToLoadHttpDocumentForChild(
-            chan, &args.shouldWaitForOnStartRequestSent());
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  // Send down any cookies which are relevant to this URL if we are performing a
+  // cookie-requesting document load. We can't do that if mIPCClosed is set.
+  //
+  // NOTE: Transferring cookies in this way happens here, rather than in
+  // `AboutToLoadDocumentForChild`, as we need the PCookieService actor to be
+  // initialized before we can transmit cookies.
+  if (!mIPCClosed && chan->IsNavigation()) {
+    // FIXME: We should consider skipping sending cookies if the response isn't
+    // going to result in the document being rendered (e.g. if we're going to
+    // display a load error)
+    nsLoadFlags loadFlags;
+    MOZ_ALWAYS_SUCCEEDS(chan->GetLoadFlags(&loadFlags));
+    if (loadFlags & nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE) {
+      PNeckoParent* neckoParent = Manager();
+      MOZ_ASSERT(neckoParent,
+                 "We should have a manager if our IPC isn't closed");
+      if (PCookieServiceParent* csParent = LoneManagedOrNullAsserts(
+              neckoParent->ManagedPCookieServiceParent())) {
+        static_cast<CookieServiceParent*>(csParent)->TrackCookieLoad(chan);
+        args.shouldWaitForOnStartRequestSent() = true;
+      }
+    }
   }
 
   args.multiPartID() = multiPartID;
@@ -1209,20 +1222,12 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   if (httpChannelImpl) {
     httpChannelImpl->IsFromCache(&args.isFromCache());
     httpChannelImpl->GetCacheDisposition(&args.cacheDisposition());
-    httpChannelImpl->IsRacing(&args.isRacing());
     httpChannelImpl->GetCacheEntryId(&args.cacheEntryId());
     httpChannelImpl->GetCacheTokenFetchCount(&args.cacheFetchCount());
     httpChannelImpl->GetCacheTokenExpirationTime(&args.cacheExpirationTime());
     httpChannelImpl->GetProtocolVersion(args.protocolVersion());
 
     mDataSentToChildProcess = httpChannelImpl->DataSentToChildProcess();
-
-    // If RCWN is enabled and cache wins, we can't use the ODA from socket
-    // process.
-    if (args.isRacing()) {
-      mDataSentToChildProcess =
-          httpChannelImpl->DataSentToChildProcess() && !args.isFromCache();
-    }
     args.dataFromSocketProcess() = mDataSentToChildProcess;
   }
 
@@ -1348,6 +1353,10 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   if (mIPCClosed) {
     rv = NS_ERROR_UNEXPECTED;
   } else {
+    MOZ_DIAGNOSTIC_ASSERT(
+        responseHead == &cleanedUpResponseHead ||
+            responseHead == chan->GetResponseHead(),
+        "mResponseHead changed between GetResponseHead and copy");
     nsHttpResponseHead newResponseHead = *responseHead;
     if (!mBgParent->OnStartRequest(
             std::move(newResponseHead), useResponseHead,
@@ -1359,9 +1368,9 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
 
   requestHead->Exit();
 
-  // Need to wait for the cookies/permissions to content process, which is sent
-  // via PContent in AboutToLoadHttpFtpDocumentForChild. For multipart channel,
-  // send only one time since the cookies/permissions are the same.
+  // Need to wait for the cookies to be sent to the content process, which is
+  // sent via PContent in ContentParent::UpdateCookieStatus. For multipart
+  // channel, send only one time since the cookies/permissions are the same.
   if (NS_SUCCEEDED(rv) && args.shouldWaitForOnStartRequestSent() &&
       multiPartID.valueOr(0) == 0) {
     LOG(("HttpChannelParent::SendOnStartRequestSent\n"));
@@ -1909,6 +1918,7 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
   mozilla::ipc::LoadInfoToParentLoadInfoForwarder(loadInfo,
                                                   &loadInfoForwarderArg);
 
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   nsHttpResponseHead* responseHead = mChannel->GetResponseHead();
 
   nsHttpResponseHead cleanedUpResponseHead;

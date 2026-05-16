@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -639,7 +637,7 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
   MOZ_DIAGNOSTIC_ASSERT(endStackAddress_);
 #ifndef ENABLE_WASM_JSPI
   // The stack addresses are monotonically increasing, except when
-  // suspendable stacks are present (e.g. when JS PI is enabled).
+  // cont stacks are present (e.g. when JS PI is enabled).
   MOZ_DIAGNOSTIC_ASSERT(stackAddr >= endStackAddress_);
 #endif
 

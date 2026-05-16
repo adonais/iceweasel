@@ -1,6 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
+/*
  * Copyright 2021 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -565,7 +563,7 @@ using TagOffsetVector = Vector<uint32_t, 2, SystemAllocPolicy>;
 
 class TagType : public AtomicRefCounted<TagType> {
   SharedTypeDef type_;
-  TagOffsetVector argOffsets_;
+  TagOffsetVector exceptionArgOffsets_;
   uint32_t size_;
 
  public:
@@ -575,8 +573,17 @@ class TagType : public AtomicRefCounted<TagType> {
 
   const TypeDef& type() const { return *type_; }
   const ValTypeVector& argTypes() const { return type_->funcType().args(); }
-  const TagOffsetVector& argOffsets() const { return argOffsets_; }
-  ResultType resultType() const { return ResultType::Vector(argTypes()); }
+  const ValTypeVector& resultTypes() const {
+    return type_->funcType().results();
+  }
+
+  // When this tag is used for WasmExceptionObject, what offset does each
+  // argument reside in.
+  const TagOffsetVector& exceptionArgOffsets() const {
+    return exceptionArgOffsets_;
+  }
+
+  ResultType argResultType() const { return ResultType::Vector(argTypes()); }
 
   uint32_t tagSize() const { return size_; }
 
@@ -605,7 +612,36 @@ struct TagDesc {
 };
 
 using TagDescVector = Vector<TagDesc, 0, SystemAllocPolicy>;
-using ElemExprOffsetVector = Vector<size_t, 0, SystemAllocPolicy>;
+
+#ifdef ENABLE_WASM_JSPI
+
+class HandlerExpr {
+  uint32_t tagIndex_;
+  uint32_t labelDepth_;
+
+  static constexpr uint32_t IsSwitch = UINT32_MAX;
+
+ public:
+  explicit HandlerExpr(uint32_t tagIndex)
+      : tagIndex_(tagIndex), labelDepth_(IsSwitch) {
+    MOZ_ASSERT(isSwitch());
+  }
+  HandlerExpr(uint32_t tagIndex, uint32_t labelDepth)
+      : tagIndex_(tagIndex), labelDepth_(labelDepth) {
+    MOZ_ASSERT(!isSwitch());
+  }
+
+  uint32_t tagIndex() const { return tagIndex_; }
+  bool isSwitch() const { return labelDepth_ == IsSwitch; }
+  uint32_t labelDepth() const {
+    MOZ_ASSERT(!isSwitch());
+    return labelDepth_;
+  }
+};
+
+using HandlerExprVector = Vector<HandlerExpr, 2, SystemAllocPolicy>;
+
+#endif  // ENABLE_WASM_JSPI
 
 // This holds info about elem segments that is needed for instantiation.  It
 // can be dropped when the associated wasm::Module is dropped.

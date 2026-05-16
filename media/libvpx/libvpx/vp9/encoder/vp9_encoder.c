@@ -2177,15 +2177,24 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
     update_frame_size(cpi);
 
   if (last_w != cpi->oxcf.width || last_h != cpi->oxcf.height) {
+    int svc_alloc_mi_area = cm->mi_rows * cm->mi_cols;
+    if (cpi->svc.number_spatial_layers > 1 && cpi->initial_width > 0 &&
+        cpi->initial_height > 0) {
+      int init_mi_rows, init_mi_cols, init_mi_stride;
+      vp9_set_mi_size(&init_mi_rows, &init_mi_cols, &init_mi_stride,
+                       cpi->initial_width, cpi->initial_height);
+      svc_alloc_mi_area = VPXMAX(svc_alloc_mi_area, init_mi_rows * init_mi_cols);
+    }
+
     vpx_free(cpi->consec_zero_mv);
     CHECK_MEM_ERROR(
         &cm->error, cpi->consec_zero_mv,
-        vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(*cpi->consec_zero_mv)));
+        vpx_calloc(svc_alloc_mi_area, sizeof(*cpi->consec_zero_mv)));
 
     vpx_free(cpi->skin_map);
     CHECK_MEM_ERROR(
         &cm->error, cpi->skin_map,
-        vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(*cpi->skin_map)));
+        vpx_calloc(svc_alloc_mi_area, sizeof(*cpi->skin_map)));
 
     if (cpi->svc.number_spatial_layers > 1) {
 #if CONFIG_VP9_TEMPORAL_DENOISING
@@ -2207,15 +2216,15 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
           vpx_free(lc->map);
           CHECK_MEM_ERROR(
               &cm->error, lc->map,
-              vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(*lc->map)));
+              vpx_calloc(svc_alloc_mi_area, sizeof(*lc->map)));
           vpx_free(lc->last_coded_q_map);
           CHECK_MEM_ERROR(&cm->error, lc->last_coded_q_map,
-                          vpx_malloc(cm->mi_rows * cm->mi_cols *
+                          vpx_malloc(svc_alloc_mi_area *
                                      sizeof(*lc->last_coded_q_map)));
-          memset(lc->last_coded_q_map, MAXQ, cm->mi_rows * cm->mi_cols);
+          memset(lc->last_coded_q_map, MAXQ, svc_alloc_mi_area);
           vpx_free(lc->consec_zero_mv);
           CHECK_MEM_ERROR(&cm->error, lc->consec_zero_mv,
-                          vpx_calloc(cm->mi_rows * cm->mi_cols,
+                          vpx_calloc(svc_alloc_mi_area,
                                      sizeof(*lc->consec_zero_mv)));
         }
         cpi->refresh_golden_frame = 1;
@@ -3494,9 +3503,13 @@ void vp9_scale_references(VP9_COMP *cpi) {
         int new_fb = cpi->scaled_ref_idx[ref_frame - 1];
         if (new_fb == INVALID_IDX) {
           new_fb = get_free_fb(cm);
+          if (new_fb == INVALID_IDX) {
+            assert(cm->error.setjmp);
+            vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                               "Unable to find free frame buffer");
+          }
           force_scaling = 1;
         }
-        if (new_fb == INVALID_IDX) return;
         new_fb_ptr = &pool->frame_bufs[new_fb];
         if (force_scaling || new_fb_ptr->buf.y_crop_width != cm->width ||
             new_fb_ptr->buf.y_crop_height != cm->height) {

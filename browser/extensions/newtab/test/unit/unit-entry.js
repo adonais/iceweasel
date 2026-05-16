@@ -451,26 +451,7 @@ const TEST_GLOBAL = {
         spec,
       }),
     },
-    /**
-     * @backward-compat { version 149 }
-     *   The search service was replaced by a singleton in 149.
-     */
-    search: {
-      init() {
-        return Promise.resolve();
-      },
-      getVisibleEngines: () =>
-        Promise.resolve([{ identifier: "google" }, { identifier: "bing" }]),
-      defaultEngine: {
-        identifier: "google",
-        aliases: ["@google"],
-      },
-      defaultPrivateEngine: {
-        identifier: "bing",
-        aliases: ["@bing"],
-      },
-      getEngineByAlias: async () => null,
-    },
+
     scriptSecurityManager: {
       createNullPrincipal() {},
       getSystemPrincipal() {},

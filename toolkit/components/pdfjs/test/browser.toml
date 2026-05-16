@@ -80,6 +80,7 @@ support-files = ["file_pdfjs_js.pdf"]
 skip-if = [
   "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
   "tsan",
+  "os == 'linux' && debug && standalone", # Bug 2028655
 ]
 
 ["browser_pdfjs_load_telemetry.js"]

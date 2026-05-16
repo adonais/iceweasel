@@ -684,6 +684,16 @@ class Rule {
       this.darkColorScheme !== appliedStyle.darkColorScheme;
     this.darkColorScheme = appliedStyle.darkColorScheme;
 
+    // The `domRule`'s StyleRule actor doesn't change (this.domRule == appliedStyle.rule)
+    // but the appliedStyle may object may update any of its other attributes.
+    // Here we may select two distinct elements, matching the same CSS Rule,
+    // but the inheritance may be different.
+    // (this is covered by browser_inspector_pseudoclass-lock.js)
+    if (appliedStyle.inherited != this.inherited) {
+      this.inherited = appliedStyle.inherited;
+      this.#inheritedSectionLabel = null;
+    }
+
     const newTextProps = this.#getTextProperties();
 
     // The element style rule behaves differently on refresh. We basically need to update

@@ -93,9 +93,12 @@ class DownloadsUseCases(
     class RemoveDownloadUseCase(private val store: BrowserStore) {
         /**
          * Removes the download with the given [downloadId].
+         * @param downloadId The ID of the download to remove.
+         * @param removeFromDisk If true, forcibly delete the file from storage. If false,
+         * remove the download from history. If null, fall back to the global user preference.
          */
-        operator fun invoke(downloadId: String) {
-            store.dispatch(DownloadAction.RemoveDownloadAction(downloadId))
+        operator fun invoke(downloadId: String, removeFromDisk: Boolean? = null) {
+            store.dispatch(DownloadAction.RemoveDownloadAction(downloadId, removeFromDisk))
         }
     }
 

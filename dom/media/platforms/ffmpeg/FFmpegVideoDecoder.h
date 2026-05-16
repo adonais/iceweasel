@@ -15,6 +15,7 @@
 #include "SimpleMap.h"
 #include "nsTHashSet.h"
 #if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
+#  include "mozilla/DataMutex.h"
 #  include "mozilla/layers/TextureClient.h"
 #endif
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
@@ -114,7 +115,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
     return mLib->avcodec_default_get_buffer2(aCodecContext, aFrame, aFlags);
   }
   void ReleaseAllocatedImage(ImageBufferWrapper* aImage) {
-    mAllocatedImages.Remove(aImage);
+    auto lock = mAllocatedImages.Lock();
+    lock->Remove(aImage);
   }
 #endif
   bool IsHardwareAccelerated() const {
@@ -390,7 +392,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
   // When an image is removed from mAllocatedImages it's recycled
   // for a new frame by AllocateTextureClientForImage() in
   // FFmpegVideoDecoder::GetVideoBuffer().
-  nsTHashSet<RefPtr<ImageBufferWrapper>> mAllocatedImages;
+  DataMutex<nsTHashSet<RefPtr<ImageBufferWrapper>>> mAllocatedImages{
+      "FFmpegVideoDecoder::mAllocatedImages"};
 #endif
 
   // Convert dav1d output to 8-bit when GPU doesn't support higher bit images.

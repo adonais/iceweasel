@@ -149,7 +149,7 @@ class ScrollContainerFrame : public nsContainerFrame,
                     nsFrameList&& aFrameList) final;
   void RemoveFrame(DestroyContext&, ChildListID, nsIFrame*) final;
 
-  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) final;
+  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
   void Destroy(DestroyContext&) override;
 
@@ -170,14 +170,20 @@ class ScrollContainerFrame : public nsContainerFrame,
   }
 
   // nsIAnonymousContentCreator
-  nsresult CreateAnonymousContent(nsTArray<ContentInfo>&) final;
-  void AppendAnonymousContentTo(nsTArray<nsIContent*>&, uint32_t aFilter) final;
+  nsresult CreateAnonymousContent(nsTArray<ContentInfo>&) override;
+  void AppendAnonymousContentTo(nsTArray<nsIContent*>&,
+                                uint32_t aFilter) override;
 
   /**
    * Get the frame for the content that we are scrolling within
    * this scrollable frame.
    */
   nsIFrame* GetScrolledFrame() const { return mScrolledFrame; }
+
+  // Returns the frame for the "button box" (e.g., number spin-box, password
+  // reveal button) that lives outside the scrolled area. Used by
+  // nsTextControlFrame.
+  virtual nsIFrame* GetButtonBoxFrame() const { return nullptr; }
 
   /**
    * Get the overflow styles (StyleOverflow::Scroll, StyleOverflow::Hidden, or
@@ -203,7 +209,11 @@ class ScrollContainerFrame : public nsContainerFrame,
   };
 
   static PerAxisScrollDirections ComputePerAxisScrollDirections(
-      const nsIFrame* aScrolledFrame);
+      const nsIFrame* aScrolledFrame, bool aForTextInput = false);
+
+  PerAxisScrollDirections ComputePerAxisScrollDirections() const {
+    return ComputePerAxisScrollDirections(mScrolledFrame, IsTextInputFrame());
+  }
 
   /**
    * Get the overscroll-behavior styles.
@@ -525,6 +535,9 @@ class ScrollContainerFrame : public nsContainerFrame,
    * container of changes.
    */
   void ScrollbarCurPosChanged(bool aDoScroll = true);
+
+  void DisableOverlayScrollbars();
+  void EnableOverlayScrollbars();
 
   /**
    * Allows the docshell to request that the scroll frame post an event
@@ -1003,6 +1016,12 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsExpirationState* GetExpirationState() { return &mActivityExpirationState; }
 
   bool UseOverlayScrollbars() const;
+
+  // NOTE: |aStyle| needs to be the computed styles for this scroll container,
+  // not for the scrollbars.
+  StyleScrollbarWidth ScrollbarWidth(
+      const ComputedStyle* aStyle = nullptr) const;
+
   bool IsLastSnappedTarget(const nsIFrame* aFrame) const;
 
   // If aBuilder is non-null, returns the value cached on aBuilder. Pass null
@@ -1091,18 +1110,10 @@ class ScrollContainerFrame : public nsContainerFrame,
   void LayoutScrollbars(ScrollReflowInput& aState,
                         const nsRect& aInsideBorderArea,
                         const nsRect& aOldScrollPort);
+  void LayoutButtonBox(const ScrollReflowInput& aState, nsIFrame* aButtonBox);
 
   void LayoutScrollbarPartAtRect(const ScrollReflowInput&,
                                  ReflowInput& aKidReflowInput, const nsRect&);
-
-  /**
-   * Override this to return false if computed bsize/min-bsize/max-bsize
-   * should NOT be propagated to child content.
-   * nsListControlFrame uses this.
-   */
-  virtual bool ShouldPropagateComputedBSizeToScrolledContent() const {
-    return true;
-  }
 
   PhysicalAxes GetOverflowAxes() const;
 
@@ -1263,7 +1274,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool HasPerspective() const { return ChildrenHavePerspective(); }
   bool HasBgAttachmentLocal() const;
   StyleDirection GetScrolledFrameDir() const;
-  static StyleDirection GetScrolledFrameDir(const nsIFrame*);
 
   // Ask APZ to smooth scroll to |aDestination|.
   // This method does not clamp the destination; callers should clamp it to
@@ -1282,6 +1292,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   void RemoveObservers();
 
  private:
+  static StyleDirection GetScrolledFrameDir(const nsIFrame*,
+                                            bool aForTextInput);
+
   class AsyncScroll;
   class AsyncSmoothMSDScroll;
   class AutoMinimumScaleSizeChangeDetector;
@@ -1428,6 +1441,10 @@ class ScrollContainerFrame : public nsContainerFrame,
   // encountered.
   Maybe<uint32_t> mIsFirstScrollableFrameSequenceNumber;
 
+  // Computed style of ::webkit-scrollbar pseudo element for this scroll
+  // container.
+  RefPtr<ComputedStyle> mWebKitScrollbarStyle;
+
   // Representing whether the APZC corresponding to this frame is now in the
   // middle of handling a gesture (e.g. a pan gesture).
   InScrollingGesture mInScrollingGesture : 1;
@@ -1543,6 +1560,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   // Whether we need to ensure a scrollend is fired at the end of a scrollbar
   // click and hold gesture.
   bool mScrollbarClickAndHoldScrollendPending : 1;
+
+  // Whether the overlay scrollbars are disabled on this container.
+  bool mForceDisableOverlayScrollbars : 1;
 
 #ifdef MOZ_WIDGET_ANDROID
   // True if this scrollable frame was vertically overflowed on the last reflow.

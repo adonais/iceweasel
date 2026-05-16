@@ -95,6 +95,8 @@ class SearchMiddleware(
             is SearchAction.UpdateCustomSearchEngineAction -> saveCustomSearchEngine(action)
             is SearchAction.RemoveCustomSearchEngineAction -> removeCustomSearchEngine(action)
             is SearchAction.SelectSearchEngineAction -> updateSearchEngineSelection(action)
+            is SearchAction.SelectPrivateSearchEngineAction -> updatePrivateSearchEngineSelection(action)
+            is SearchAction.ClearPrivateSearchEngineAction -> clearPrivateSearchEngineSelection()
             else -> {
                 // no-op
             }
@@ -209,12 +211,15 @@ class SearchMiddleware(
             filteredRegionSearchEngines + customSearchEngines.await() + additionalSearchEngines,
         )
         val userChoice = async(ioDispatcher) { metadataStorage.getUserSelectedSearchEngine() }
+        val userPrivateChoice = async(ioDispatcher) { metadataStorage.getUserSelectedPrivateSearchEngine() }
 
         val action = SearchAction.SetSearchEnginesAction(
             regionSearchEngines = filteredRegionSearchEngines,
             regionDefaultSearchEngineId = regionBundle.await().defaultSearchEngineId,
             userSelectedSearchEngineId = userChoice.await()?.searchEngineId,
             userSelectedSearchEngineName = userChoice.await()?.searchEngineName,
+            userSelectedPrivateSearchEngineId = userPrivateChoice.await()?.searchEngineId,
+            userSelectedPrivateSearchEngineName = userPrivateChoice.await()?.searchEngineName,
             customSearchEngines = customSearchEngines.await(),
             hiddenSearchEngines = hiddenSearchEngines,
             disabledSearchEngineIds = disabledSearchEngineIds.await(),
@@ -250,6 +255,19 @@ class SearchMiddleware(
             action.searchEngineId,
             action.searchEngineName,
         )
+    }
+
+    private fun updatePrivateSearchEngineSelection(
+        action: SearchAction.SelectPrivateSearchEngineAction,
+    ) = scope.launch {
+        metadataStorage.setUserSelectedPrivateSearchEngine(
+            action.searchEngineId,
+            action.searchEngineName,
+        )
+    }
+
+    private fun clearPrivateSearchEngineSelection() = scope.launch {
+        metadataStorage.clearUserSelectedPrivateSearchEngine()
     }
 
     private fun removeCustomSearchEngine(
@@ -443,6 +461,23 @@ class SearchMiddleware(
          * Sets the ID (and optionally name) of the default search engine the user has picked.
          */
         suspend fun setUserSelectedSearchEngine(id: String, name: String?)
+
+        /**
+         * Gets the ID (and optionally name) of the default search engine the user has picked for
+         * private browsing. Returns `null` if the user has not made a choice.
+         */
+        suspend fun getUserSelectedPrivateSearchEngine(): UserChoice?
+
+        /**
+         * Sets the ID (and optionally name) of the default search engine the user has picked for
+         * private browsing.
+         */
+        suspend fun setUserSelectedPrivateSearchEngine(id: String, name: String?)
+
+        /**
+         * Clears the user's private browsing search engine selection.
+         */
+        suspend fun clearUserSelectedPrivateSearchEngine()
 
         /**
          * Sets the list of IDs of hidden search engines.

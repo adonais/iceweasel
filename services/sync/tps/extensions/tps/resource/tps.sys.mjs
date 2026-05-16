@@ -108,6 +108,8 @@ export var TPS = {
   shouldValidatePasswords: false,
   shouldValidateForms: false,
   _placesInitDeferred: Promise.withResolvers(),
+  SYNC_WIPE_CLIENT,
+  SYNC_WIPE_REMOTE,
   ACTIONS: [
     ACTION_ADD,
     ACTION_DELETE,
@@ -326,7 +328,7 @@ export var TPS = {
             "profile must be defined when verifying tabs"
           );
           lazy.Logger.AssertTrue(
-            await !lazy.BrowserTabs.Find(tab.uri, tab.title, tab.profile),
+            !(await lazy.BrowserTabs.Find(tab.uri, tab.title, tab.profile)),
             "tab found which was expected to be absent"
           );
           break;
