@@ -16,6 +16,7 @@ export class WebChannelParent extends JSWindowActorParent {
       browser: this.browsingContext.top.embedderElement,
       eventTarget: msg.data.eventTarget,
       principal: msg.data.principal,
+      remoteType: this.manager.remoteType,
     };
     // data must be a string except for a few legacy origins allowed by browser-content.js.
     if (typeof data == "string") {

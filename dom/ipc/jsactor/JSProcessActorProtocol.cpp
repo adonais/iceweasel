@@ -115,16 +115,6 @@ void JSProcessActorProtocol::RemoveObservers() {
   }
 }
 
-bool JSProcessActorProtocol::RemoteTypePrefixMatches(
-    const nsDependentCSubstring& aRemoteType) {
-  for (auto& remoteType : mRemoteTypes) {
-    if (StringBeginsWith(aRemoteType, remoteType)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool JSProcessActorProtocol::Matches(const nsACString& aRemoteType,
                                      ErrorResult& aRv) {
   if (!mIncludeParent && aRemoteType.IsEmpty()) {
@@ -133,8 +123,7 @@ bool JSProcessActorProtocol::Matches(const nsACString& aRemoteType,
     return false;
   }
 
-  if (!mRemoteTypes.IsEmpty() &&
-      !RemoteTypePrefixMatches(RemoteTypePrefix(aRemoteType))) {
+  if (!RemoteTypePrefixMatches(aRemoteType)) {
     aRv.ThrowNotSupportedError(nsPrintfCString(
         "Process protocol '%s' doesn't support remote type '%s'", mName.get(),
         PromiseFlatCString(aRemoteType).get()));

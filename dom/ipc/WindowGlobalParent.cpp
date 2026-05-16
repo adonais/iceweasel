@@ -531,6 +531,10 @@ const nsACString& WindowGlobalParent::GetRemoteType() {
   return NOT_REMOTE_TYPE;
 }
 
+void WindowGlobalParent::GetRemoteType(nsACString& aRemoteType) {
+  aRemoteType = GetRemoteType();
+}
+
 void WindowGlobalParent::NotifyContentBlockingEvent(
     uint32_t aEvent, nsIRequest* aRequest, bool aBlocked,
     const nsACString& aTrackingOrigin,
