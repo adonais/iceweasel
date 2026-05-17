@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">نجی %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -256,8 +256,6 @@
   <string name="default_locale_text">فون دی لگی بولی ورتو</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
   <string name="locale_search_hint">کھوج دی بولی</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">کھوج انجݨ دیاں ترجیحاں</string>
   <!--
     Search Fragment
 
@@ -368,8 +366,6 @@
   <string name="preferences_category_general">عام</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">بارے</string>
-  <!-- Preference category for settings related to changing the default search engine -->
-  <string name="preferences_category_select_default_search_engine">اک چݨو</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">بدلویں کھوج انجݨاں دا انتئام کرو</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -770,8 +766,6 @@
   <string name="preference_gestures_website_pull_to_refresh">تازہ کرن لئی کھچو</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">ٹول‌بار لکاوݨ لئی سکرول کرو</string>
-  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
-  <string name="preference_gestures_swipe_toolbar_show_tabs">ٹیباں کھولھݨ لئی ٹول‌بار تے ول سرکاؤ</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ٹیباں چ بدلݨ لئی سرناواں پٹی نوں پاسے ول سرکاؤ</string>
   <!--
@@ -918,8 +912,6 @@
   <string name="tab_tray_menu_tab_settings">ٹیب سیٹنگاں</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">ساریاں ٹیباں بند کرو</string>
-  <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">چݨیاں ٹیباں سانجھیاں کرو</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">چݨیاں ٹیباں دا مینو</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -1004,8 +996,6 @@
   <string name="edit_bookmark_snackbar_action">سودھو</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">سودھو</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">کاپی کرو</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">سانجھا کرو</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -1042,8 +1032,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s مٹا گیا</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">موڑو</string>
   <!--
     Bookmark undo button for deletion snackbar action
 
@@ -1264,24 +1252,6 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">فائرفاکس نوں آپݨا ڈفالٹ براؤزر بݨاؤ</string>
-  <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">نجی براؤز کرن نوں ازماؤ</string>
-  <!--
-    Text shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s وچ بناں کسے سنبھالے کوکی جاں تاریخ دے براؤز کرو</string>
-  <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">بناں پیڑاں چھڈے براؤز کرو</string>
-  <!--
-    Text A shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s نال نجی براؤز کرن سمیں تہاڈی جاݨکاری سنبھالدا نہیں اے۔</string>
-  <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">آپݨی پہلی کھوج کرو</string>
-  <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">نیڑے تیڑے کجھ لبھو۔ جاں کجھ موج مستی لئی لبھو۔</string>
   <!--
     Survey
 

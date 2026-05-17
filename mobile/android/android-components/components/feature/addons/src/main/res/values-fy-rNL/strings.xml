@@ -354,8 +354,6 @@
   <string name="mozac_extension_install_progress_caption">Utwreiding downloade en ferifiearje…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">Koe útwreidingen net lade. Probearje it letter nochris.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">Sykjen nei útwreidingen mislearre!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Gjin oersetting foar locale %1$s of foar de standerttaal %2$s fûn</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

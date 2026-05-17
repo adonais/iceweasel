@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this file,
+  You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <!-- Title shown in the protection dashboard indicating the user is protected -->
+  <string name="mozac_protections_dashboard_youre_protected">Jste chráněni</string>
+  <!-- Tracker category: Advertising trackers -->
+  <string name="protections_dashboard_category_ads">Reklamy</string>
+  <!-- Tracker category: Analytics trackers -->
+  <string name="protections_dashboard_category_analytics">Analytika</string>
+  <!-- Tracker category: Social media trackers -->
+  <string name="protections_dashboard_category_social">Sociální sítě</string>
+  <!-- Tracker category: Other trackers -->
+  <string name="protections_dashboard_category_others">Ostatní</string>
+</resources>

@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">ಖಾಸಗಿ %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -85,8 +85,6 @@
   <string name="default_locale_text">ಸಾಧನ ಭಾಷೆಯನ್ನು ಅನುಸರಿಸಿ</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
   <string name="locale_search_hint">ಭಾಷೆಗಳನ್ನು ಹುಡುಕು</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">ಸರ್ಚ್ ಎಂಜಿನ್ ಸಿದ್ದತೆಗಳು</string>
   <!--
     Search Fragment
 
@@ -353,8 +351,6 @@
   <string name="edit_bookmark_snackbar_action">ಸಂಪಾದಿಸಿ</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">ಸಂಪಾದನೆ</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">ಪ್ರತಿ ಮಾಡು</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">ಹಂಚು</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -387,8 +383,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s ಅಳಿಸಲಾಗಿದೆ</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">ರದ್ದುಗೊಳಿಸಿ</string>
   <!--
     Site Permissions
 
@@ -538,8 +532,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">ಟ್ಯಾಬ್ ಮುಚ್ಚಲಾಗಿದೆ</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">ಟ್ಯಾಬ್‌ಗಳನ್ನು ಮುಚ್ಚಲಾಗಿದೆ</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">ಖಾಸಗಿ ಟ್ಯಾಬ್ ಮುಚ್ಚಲಾಗಿದೆ</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->

@@ -19,12 +19,16 @@
   <string name="mozac_summarize_shake_consent_off_device_negative_button">ਹੁਣੇ ਨਹੀਂ</string>
   <!-- Title for the on-device shake summarization and download consent screen -->
   <string name="mozac_summarize_shake_consent_on_device_title">ਇਸ ਸਫ਼ੇ ਦਾ ਸਾਰ</string>
+  <!-- Message for the on-device shake summarization and download consent screen. %s will be replaced by app name. -->
+  <string name="mozac_summarize_shake_consent_on_device_message">ਇੱਕ ਵਾਰ ਦੇ ਫ਼ੌਰੀ ਡਾਊਨਲੋਡ ਦੇ ਬਾਅਦ %s ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਨੂੰ ਹਿਲਾਉਣ ਦੇ ਬਾਅਦ ਸਫ਼ੇ ਦਾ ਸਾਰ ਤਿਆਰ ਕਰ ਸਕਦਾ ਹੈ।</string>
   <!-- Button text for the on-device shake summarization and download consent screen approving shake and download consent -->
   <string name="mozac_summarize_shake_consent_on_device_button_positive">ਸਾਰ ਲੈਣ ਲਈ ਡਾਊਨਲੋਡ ਕਰੋ</string>
   <!-- Button text for the on-device shake summarization and download consent screen denying shake and download consent -->
   <string name="mozac_summarize_shake_consent_on_device_negative_button">ਹੁਣੇ ਨਹੀਂ</string>
   <!-- Title for the download consent screen -->
   <string name="mozac_summarize_download_consent_title">ਪ੍ਰਾਈਵੇਟ ਸਾਰ ਲਈ ਸੈਟਅੱਪ ਕਰੋ</string>
+  <!-- Message for the consent to download when using an on-device model. %s will be replaced by app name. -->
+  <string name="mozac_summarize_download_nano_consent_message">ਇੱਕ ਵਾਰ ਡਾਊਨਲੋਡ ਕਰਨ ਨਾਲ %s ਤੁਹਾਡੇ ਵਲੋਂ ਕੰਟਰੋਲ ਹੇਠ ਰਹਿਣ ਵਾਲੇ ਸਫ਼ੇ ਸਾਰ ਤਿਆਰ ਕਰਦਾ ਹੈ।</string>
   <!-- Button text for the consent to download an on-device model approving download consent -->
   <string name="mozac_summarize_download_consent_button_positive">ਸਾਰ ਲੈਣ ਲਈ ਡਾਊਨਲੋਡ ਕਰੋ</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->
@@ -61,6 +65,8 @@
   <string name="mozac_summarize_settings_title">ਸਫ਼ਾ ਸਾਰ</string>
   <!-- Label for the summarize pages toggle in settings -->
   <string name="mozac_summarize_settings_summarize_pages">ਸਫ਼ਿਆਂ ਦਾ ਸਾਰ</string>
+  <!-- Description for the summarize pages toggle -->
+  <string name="mozac_summarize_settings_summarize_pages_cloud">AI ਨਾਲ ਸਫ਼ੇ ਦੇ ਸਾਰ ਤਿਆਰ ਕਰੋ। ਸਫ਼ੇ ਅਤੇ ਸਾਰ ਪ੍ਰਾਈਵੇਟ ਰਹਿੰਦੇ ਹਨ ਅਤੇ ਕਦੇ ਵੀ ਸੰਭਾਲੇ ਨਹੀਂ ਜਾਂਦੇ ਹਨ।</string>
   <!-- Link text to learn more about page summaries in settings -->
   <string name="mozac_summarize_settings_learn_more">ਹੋਰ ਜਾਣੋ</string>
   <!-- Section header for gesture settings -->

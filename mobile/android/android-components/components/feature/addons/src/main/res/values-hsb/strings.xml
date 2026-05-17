@@ -356,8 +356,6 @@
   <string name="mozac_extension_install_progress_caption">Rozšěrjenje so sćahuje a přepruwuje…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">Rozšěrjenja njedachu so začitać. Spytajće hišće raz.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">Rozšěrjenja njedachu so naprašować!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Přełožk njeje so namakał, ani za lokale %1$s ani za standardnu rěč %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

@@ -351,8 +351,6 @@
   <string name="mozac_feature_addons_not_yet_supported_caption2">Aktualisht jemi duke krijuar mbulim për një përzgjedhje fillestare Zgjerimesh të Rekomanduar.</string>
   <!-- This is the caption for the extension installation progress overlay -->
   <string name="mozac_extension_install_progress_caption">Po shkarkohet dhe verifikohet zgjerimi…</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">S’u arrit të kërkohet te Zgjerimet!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">S’u gjet përkthim, as për vendoren %1$s, as për gjuhën parazgjedhje %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->
