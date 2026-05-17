@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">అంతరంగిక %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -156,8 +156,6 @@
   <string name="default_locale_text">పరికరపు భాషను అనుసరించు</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
   <string name="locale_search_hint">భాషను వెతకండి</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">శోధన యంత్ర అమరికలు</string>
   <!--
     Search Fragment
 
@@ -226,8 +224,6 @@
   <string name="preferences_category_general">సాధారణం</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">గురించి</string>
-  <!-- Preference category for settings related to changing the default search engine -->
-  <string name="preferences_category_select_default_search_engine">ఒకటి ఎంచుకోండి</string>
   <!-- Preference for settings related to changing the default search engine -->
   <string name="preferences_default_search_engine">అప్రమేయ శోధన యంత్రం</string>
   <!-- Preference for settings related to Search -->
@@ -553,8 +549,6 @@
   <string name="tab_tray_menu_tab_settings">ట్యాబు అమరికలు</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">ట్యాబులన్నీ మూసివేయి</string>
-  <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ఎంచుకున్న ట్యాబులను పంచుకో</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">ఎంచుకున్న ట్యాబుల మెనూ</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -639,8 +633,6 @@
   <string name="edit_bookmark_snackbar_action">మార్చు</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">మార్చు</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">కాపీచేయి</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">పంచుకోండి</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -675,8 +667,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s తొలగించబడింది</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">చర్య రద్దు</string>
   <!--
     Site Permissions
 
@@ -858,8 +848,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">ట్యాబు మూసివేయబడింది</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">ట్యాబులు మూసివేయబడ్డాయి</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">అంతరంగిక ట్యాబు మూసివేయబడింది</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->

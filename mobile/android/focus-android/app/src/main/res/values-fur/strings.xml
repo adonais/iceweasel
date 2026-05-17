@@ -919,7 +919,7 @@
 
     Tool Tip Title
   -->
-  <string name="tool_tip_title">Tu sês protet!</string>
+  <string name="tool_tip_title">Protezion ative!</string>
   <!-- Tool Tip Message -->
   <string name="tool_tip_message">Chestis impostazions predefinidis a ufrissin une buine protezion. Ma al è facile modificâ lis impostazions par lâ incuintri aes tôs specifichis necessitâts.</string>
   <!-- Tool Tip "X" button Content description (not visible, for screen readers etc.) :Button that closes the tool tip -->

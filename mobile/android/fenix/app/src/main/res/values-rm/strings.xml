@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">%s privat</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -292,8 +292,6 @@
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Nov</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Annunziar problems cun questa website…</string>
-  <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Annunziar problems cun la website</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Translatà</string>
@@ -427,8 +425,6 @@
     Button in the search view that lets a user search by scanning a QR code
   -->
   <string name="search_scan_button_2">Scannar il code QR</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">Parameters da la maschina da tschertgar</string>
   <!--
     Search Fragment
 
@@ -805,8 +801,6 @@
   <string name="preferences_category_general">General</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Davart</string>
-  <!-- Preference category for settings related to changing the default search engine -->
-  <string name="preferences_category_select_default_search_engine">Tscherner in\'opziun</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Administrar maschinas da tschertgar alternativas</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -1019,12 +1013,6 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Ti n’has betg il dretg d’utilisar quest ordinatur. Emprova da tscherner in auter.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Administrar las telechargiadas cun in’autra app</string>
-  <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_downloads_settings_clean_up_files_title">Stizzar da %s e da l’apparat</string>
-  <!-- Summary for the setting to automatically clean up downloaded files -->
-  <string name="preferences_downloads_settings_clean_up_files_summary">Cun stizzar datotecas da tes administratur da telechargiadas, vegnan ellas era stizzadas da tes apparat</string>
-  <!-- Preference for downloads -->
-  <string name="preferences_downloads">Telechargiadas</string>
   <!-- Preference for enabling gecko engine logs -->
   <string name="preferences_enable_gecko_logs">Activar la protocollaziun da Gecko</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
@@ -1407,8 +1395,6 @@
   <string name="preference_gestures_website_pull_to_refresh">Trair per actualisar</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Scrollar per zuppentar la trav d\'utensils</string>
-  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
-  <string name="preference_gestures_swipe_toolbar_show_tabs">Stritgar ensi la trav d\'utensils per avrir tabs</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Stritgar da la vart la trav d’adressas per midar tabs</string>
   <!--
@@ -1578,18 +1564,6 @@
     The %1$s will be replaced by the number of opened synced tabs
   -->
   <string name="tabs_header_synced_tabs_counter_title">Tabs sincronisads averts: %1$s. Tutgar per midar tab.</string>
-  <!-- Text for the tabs header private tabs -->
-  <string name="tabs_header_private_tabs_title">Privat</string>
-  <!-- Text for the tabs header normal tabs -->
-  <string name="tabs_header_normal_tabs_title">Tabs</string>
-  <!-- Text for the tabs header synced tabs -->
-  <string name="tabs_header_synced_tabs_title">Sincronisads</string>
-  <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
-  <string name="tab_manager_floating_action_button_new_normal_tab">Nov tab</string>
-  <!-- Text for the new tab button in the Tab Manager to indicate opening a new private tab -->
-  <string name="tab_manager_floating_action_button_new_private_tab">Nov tab privat</string>
-  <!-- Text for floating action button in the Tab Manager used to initiate a re-sync of synced tabs -->
-  <string name="tab_manager_floating_action_button_sync_tabs">Sincronisar ils tabs</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Agiuntar in tab</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1620,8 +1594,6 @@
   <string name="tab_manager_multiselect_menu_item_share">Cundivider</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Agiuntar a la collecziun</string>
-  <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Cundivider ils tabs tschernids</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Menu da tabs tschernids</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1965,8 +1937,6 @@
   <string name="bookmark_menu_move_button">Spustar</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Modifitgar</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Copiar</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Cundivider</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2021,12 +1991,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Stizzà %1$s</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">REVOCAR</string>
-  <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">Stizzà %s</string>
-  <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Elements stizzads: %s</string>
   <!--
     Bookmark undo button for deletion snackbar action
 
@@ -2297,24 +2261,6 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Fa da Firefox tes navigatur da standard</string>
-  <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Emprova il modus privat</string>
-  <!--
-    Text shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Navighescha senza memorisar ni cookies ni la cronologia en %1$s</string>
-  <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Navighescha senza laschar fastizs</string>
-  <!--
-    Text A shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">En il modus privat da %1$s na vegnan tias datas betg memorisadas.</string>
-  <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Tschertga per l\'emprima giada</string>
-  <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Chatta insatge en la vischinanza. U scuvra rauba divertenta.</string>
   <!--
     Survey
 
@@ -2332,8 +2278,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">Serrà il tab</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">Serrà ils tabs</string>
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Tabs serrads: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
@@ -2342,8 +2286,6 @@
   <string name="snackbar_added_to_shortcuts">Agiuntà a las scursanidas!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Serrà il tab privat</string>
-  <!-- Text shown in snackbar when user erases their private browsing data -->
-  <string name="snackbar_private_data_deleted">Stizzà las datas da la navigaziun privata</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">REVOCAR</string>
   <!--
@@ -3355,8 +3297,6 @@
   <string name="translation_error_could_not_translate_warning_text">Igl ha dà in problem cun translatar. Emprova per plaschair anc ina giada.</string>
   <!-- The title of the warning card informs the user that the list of languages cannot be loaded. -->
   <string name="translation_error_could_not_load_languages_warning_text">Impussibel da chargiar las linguas. Controllescha tia connexiun cun l’internet ed emprova anc ina giada.</string>
-  <!-- The title of the warning card informs the user that a language is not supported. %1$s is the name of the language that is not supported. -->
-  <string name="translation_error_language_not_supported_warning_text" tools:ignore="UnusedResources" moz:removedIn="150">Perstgisa, nus na sustegnain anc betg %1$s.</string>
   <!-- Snackbar title shown if the user closes the Translation Request dialogue and a translation is in progress. -->
   <string name="translation_in_progress_snackbar">Translatar…</string>
   <!--

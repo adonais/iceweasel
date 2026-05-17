@@ -143,8 +143,6 @@
   <string name="default_locale_text">Sunda ang device language</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
   <string name="locale_search_hint">Search language</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">Mga setting sa search engine</string>
   <!--
     Search Fragment
 

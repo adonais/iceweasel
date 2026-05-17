@@ -354,8 +354,6 @@
   <string name="mozac_extension_install_progress_caption">გაფართოება ჩამოიტვირთება და დამოწმდება…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">გაფართოებები ვერ ჩაიტვირთა. სცადეთ მოგვიანებით.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">გაფართოების მოთხოვნა ვერ მოხერხდა!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">თარგმანი არ მოიპოვება არც %1$s და არც ნაგულისხმევი %2$s ენისთვის</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

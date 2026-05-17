@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">கமுக்க %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -111,8 +111,6 @@
   <string name="default_locale_text">சாதன மொழியைப் பின்பற்று</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
   <string name="locale_search_hint">மொழியைத் தேடவும்</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">தேடுபொறி அமைவுகள்</string>
   <!--
     Search Fragment
 
@@ -428,8 +426,6 @@
   <string name="edit_bookmark_snackbar_action">தொகு</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">தொகு</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">நகலெடு</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">பகிர்</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -462,8 +458,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s அழிக்கப்பட்டது</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">செயல்தவிர்</string>
   <!--
     Site Permissions
 
@@ -608,8 +602,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">கீற்று மூடப்பட்டது</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">கீற்றுகள் மூடப்பட்டன</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">கமுக்கக் கீற்று மூடப்பட்டது</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->

@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     Home Fragment
 
@@ -310,8 +310,6 @@
   <string name="preferences_open_links_in_apps_ask">ملنگ ان مست ارف</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">ہچ</string>
-  <!-- Preference for downloads -->
-  <string name="preferences_downloads">ڈاونلوڈآک</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">اعلاناک</string>
   <!-- Hint displayed on input field for custom collection name -->
@@ -435,8 +433,6 @@
   <string name="opening_screen_homepage">مون نا پنہ</string>
   <!-- Option for always opening the user's last-open tab when re-opening the app -->
   <string name="opening_screen_last_tab">گڈیکو ٹیب</string>
-  <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
-  <string name="tab_manager_floating_action_button_new_normal_tab">پوسکنو ٹیب اس</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">ٹیباتیٹ پٹبو</string>
   <!-- Text shown in the menu to view recently closed tabs -->
@@ -447,8 +443,6 @@
   <string name="tab_manager_multiselect_menu_item_close_content_description">گچین ٹیب تے بند کبو</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">مون پنہ</string>
-  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
-  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">پن</string>
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">تاریخچہ مٹائفبو</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
