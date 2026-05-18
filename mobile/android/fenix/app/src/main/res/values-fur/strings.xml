@@ -709,8 +709,32 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Condivît cemût che tu âs scuviert Firefox e il fat che tu lu dopris cui colaboradôrs comerciâi di Mozilla. Chescj dâts no vegnin mai vendûts. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Condivît cemût che tu âs scuviert Firefox e il fat che tu lu dopris cui colaboradôrs pe comercializazion di Mozilla. Chescj dâts no vegnin mai vendûts.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Tu puedis judânus a fâ cognossi Firefox a altre int permetint a Mozilla di comunicâ, ai canâi di promozion di Firefox, che tu lu dopris.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Tu puedis judânus a fâ cognossi Firefox a plui personis permetint a Mozilla di segnalâ, ae plateforme che ti à puartât a savê di Firefox, che tu lu dopris.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Judinus a fâ cognossi Firefox a plui personis, permetint a Mozilla di segnalâ ae plateforme che ti à puartât a savê di Firefox, che tu lu dopris.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">Judinus a fâ cognossi Firefox a plui personis, permetint a Mozilla di segnalâ ae plateforme, che ti à puartât a savê di Firefox, che tu lu dopris. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Cemût che o doprìn i dâts</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Jude Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">No graciis</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Lis notifichis ti judin a restâ al sigûr cun Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -725,6 +749,23 @@
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Zonte widget di Firefox</string>
   <!-- Customize prompt onboarding title. -->
   <string name="nova_onboarding_customize_prompt_title" tools:ignore="UnusedResources">Facil di personalizâ e plui riservât a ogni tocjade</string>
+  <plurals name="nova_onboarding_customize_prompt_body" tools:ignore="UnusedResources">
+    <!--
+      Customize prompt onboarding body.
+      %1$s is replaced by the product name (for example "Firefox"),
+      %2$,d is replaced by the number of trackers blocked. The comma represents the thousand
+      separator (e.g. 1,000 in English), and it will automatically use the correct character
+      for your locale (don't change or remove it).
+    -->
+    <item quantity="one">%1$s al à blocât %2$,d spie intant che tu navigavis.</item>
+    <item quantity="other">%1$s al à blocât %2$,d spiis intant che tu navigavis.</item>
+  </plurals>
+  <!-- Customize prompt onboarding positive button. -->
+  <string name="nova_onboarding_customize_prompt_positive_button" tools:ignore="UnusedResources">Scomence a personalizâ</string>
+  <!-- App icon onboarding title. -->
+  <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Sielç une icone personalizade pe aplicazion</string>
+  <!-- App icon onboarding body. -->
+  <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Met la tô man ae schermade iniziâl par personalizâle.</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -790,6 +831,12 @@
   <string name="preferences_category_general">Gjenerâl</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Informazions</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Motôr di ricercje predefinît pe navigazion normâl</string>
+  <!-- Preference category for settings related to changing the private browsing search engine -->
+  <string name="preferences_category_select_private_search_engine">Motôr di ricercje predefinît pe navigazion privade</string>
+  <!-- Option to set the private browsing mode to use the normal default search engine -->
+  <string name="search_engine_use_default">Dopre il stes motôr i ricercje de navigazion normâl</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Gjestìs motôrs di ricercje alternatîfs</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -802,6 +849,8 @@
   <string name="preferences_search">Ricercje</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Motôrs di ricercje</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Widget te schermade iniziâl</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Sugjeriments dai motôrs di ricercje</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -973,6 +1022,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Sugjeriments di %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Oten sugjeriments dal web relatîfs ae tô ricercje</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Oten sugjeriments di Mozilla intant che tu scrivis</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Condivision colegaments</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -991,8 +1042,26 @@
   <string name="preferences_open_links_in_apps_ask">Domande prime di vierzi</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Mai</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Archiviazion files</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Posizion predefinide pai files discjariâts</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">No ti âs i permès par acedi a cheste cartele. Prove cuntune altre.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Gjestìs i files discjariâts cuntune altre aplicazion</string>
+  <!-- Preference category for deleting or removing downloads -->
+  <string name="preferences_category_delete_or_remove_downloads">Elimine o gjave downloads</string>
+  <string name="preferences_downloads_delete_from_device">Elimine dal dispositîf</string>
+  <string name="preferences_downloads_delete_from_device_description">Il file al ven eliminât dal to dispositîf e gjavât de cronologjie dai discjariâts</string>
+  <string name="preferences_downloads_remove_from_download_history">Gjave de cronologjie dai discjariâts</string>
+  <string name="preferences_downloads_remove_from_download_history_description">Il file al ven gjavât de cronologjie dai discjariâts, ma al restarà salvât sul to dispositîf</string>
+  <string name="preferences_downloads_ask_when_to_delete_files">Domande cuant che o elimini i files</string>
+  <!-- Preference for downloads -->
+  <string name="preferences_downloads_2">Impostazions files discjariâts</string>
   <!-- Preference for enabling gecko engine logs -->
   <string name="preferences_enable_gecko_logs">Ative i regjistris Gecko</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
@@ -1045,6 +1114,12 @@
   <string name="customize_addon_collection_user_hint">Proprietari de racuelte (ID utent)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Racuelte di estensions modificade. La aplicazion e vignarà sierade par aplicâ lis modifichis…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Rapuart su la riservatece</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Ripie di chi</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -1062,6 +1137,8 @@
   <string name="customize_wallpapers">Fonts</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Scurtis sponsorizadis</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Cope dal mont</string>
   <!--
     Wallpapers
 
@@ -1343,6 +1420,8 @@
   <string name="toolbar_customize_shortcut_homepage">Pagjine iniziâl</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">Indaûr</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">Nissune</string>
   <!--
     App icon Preferences
 
@@ -1375,8 +1454,12 @@
   <string name="preference_gestures_website_pull_to_refresh">Tire par inzornâ</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Scor par platâ la sbare dai struments</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Scor la sbare dai struments in verticâl par viodi lis schedis viertis</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Scor la sbare de direzion di une bande o chê altre par cambiâ schede</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Scjasse par meti in struc</string>
   <!--
     Library
 
@@ -1509,8 +1592,24 @@
   <string name="studies_remove">Gjave</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Atîfs</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox al selezione a câs i utents par provâ gnovis funzionalitâts, cussì di miorâ la cualitât dal navigadôr par ducj.</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Permet studis su lis funzionalitâts</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Plui informazions</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Permet mioraments di lontan</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox al miorarà funzionalitâts, prestazions e stabilitât di un inzornament a chel altri. Lis modifichis a vignaran aplicadis di lontan.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Plui informazions</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Mioraments di lontan</string>
   <!--
     Sessions
 
@@ -1523,6 +1622,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Schedis privadis viertis: %1$s. Tocje par cambiâ schede.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">Viert %1$d grup di schedis. Tocje par cambiâ schede.</item>
+    <item quantity="other">Vierts %1$d grups di schedis. Tocje par cambiâ schede.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1558,6 +1665,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Condivît</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Zonte a une racuelte</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Zonte a un grup</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Menù schedis selezionadis</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1596,6 +1705,40 @@
   <string name="pwa_site_controls_title_private">%1$s (modalitât privade)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Vierç ricercje tes schedis</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Cree grup di schedis</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Modifiche grup</string>
+  <string name="create_tab_group_save_button">Salve</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Grup %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="create_tab_group_name_label">Non</string>
+  <!-- Title for adding more tabs to a tab group. -->
+  <string name="add_to_tab_group_title">Zonte a</string>
+  <!-- Label for adding to a new tab group. -->
+  <string name="add_to_new_tab_group_title">Gnûf grup di schedis</string>
+  <plurals name="tab_group_tabs_count_subtitle">
+    <!--
+      Subtitle for the number of tabs in a tab group.
+      %1$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%1$d schede</item>
+    <item quantity="other">%1$d schedis</item>
+  </plurals>
+  <!-- Title for the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_title">Eliminâ grup di schedis?</string>
+  <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_body">Cheste operazion e eliminarà par simpri il grup.</string>
+  <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_confirm">Elimine grup</string>
   <!--
     History
 
@@ -1701,6 +1844,14 @@
   <string name="download_delete_multi_select_dialog_confirm">Elimine</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Anule</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_history">Gjave nome de cronologjie dai discjariâts</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">Anule</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">Conferme</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Il non che tu âs inserît al modifiche nole lis maiusculis o lis minusculis. Sielç un altri non pal file.</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">In cors</string>
   <!--
@@ -1772,6 +1923,16 @@
   <string name="download_content_type_filter_document">Documents</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">Altri</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location before downloading it.
+    %s is the formatted size of the file (e.g., "12.5 MB").
+  -->
+  <string name="download_rename_and_change_location_dialog_title">Discjariâ il file?\n(%s)</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location
+    when the file size is not available before downloading it.
+  -->
+  <string name="download_rename_and_change_location_dialog_title_with_unknown_size">Discjariâ il file?</string>
   <!--
     WebCompat Reporter
 
@@ -1893,6 +2054,8 @@
   <string name="bookmark_error_edit_bookmark">Impussibil modificâ il segnelibri</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">MODIFICHE</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Selezione</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Sposte</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1923,6 +2086,12 @@
   <string name="bookmark_sort_menu_a_to_z">Ordene de A ae Z</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Ordene de Z ae A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Impuarte di file</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Impussibil impuartâ i segnelibris. Torne prove.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Segnelibris impuartâts</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1969,10 +2138,18 @@
   <string name="select_bookmark_search_button_content_description">Cîr tes cartelis</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Menù par %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Slargje cartele: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Siere cartele: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Siere segnelibris</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Impuarte di file</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Ancjemò nissun segnelibri</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Met adun ducj i tiei segnelibris preferîts</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Segnelibris te cartele: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2160,6 +2337,24 @@
   <string name="menu_print">Stampe</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Invie a dispositîf</string>
+  <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
+  <string name="send_to_devices_bottom_sheet_close_content_description">Siere e invie a dispositîf</string>
+  <!-- Text for the QR code action in the native share sheet -->
+  <string name="share_qr_code">Codiç QR</string>
+  <!-- Title shown in the QR code display screen -->
+  <string name="qr_code_display_title">Codiç QR</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">Siere</string>
+  <!-- Heading on the QR code display screen -->
+  <string name="qr_code_display_share_nearby">Condivît colegament tai contors</string>
+  <!-- Body text on the QR code display screen instructing the user to have others scan the code -->
+  <string name="qr_code_display_instructions">Par condividi chest colegament cun cui che ti sta dongje, domandii di scansionâ il codiç QR chi sot.</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">Discjame</string>
+  <!-- Toast shown when the QR code is successfully saved to Downloads -->
+  <string name="qr_code_download_success">Codiç QR salvât tai discjariâts</string>
+  <!-- Toast shown when saving the QR code to Downloads fails -->
+  <string name="qr_code_download_failure">Impussibil salvâ il codiç QR</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">Dutis lis azions</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2384,6 +2579,19 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s ti protêç des tantis e plui comunis spiis che a cirin di stâti daûr a ce che tu fasis in rêt.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Plui informazions</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d spie blocade</item>
+    <item quantity="other">%d spiis blocadis</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Protezion ative</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Jude a caturâ lis spiis</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standard (predefinide)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2762,6 +2970,75 @@
   <string name="saved_logins_sort_strategy_last_used">Ultime doprade</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Menù par ordenâ lis passwords</string>
+  <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">Mascaris di e-mail</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Sugjerìs mascaris di e-mail</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Plate la tô vere direzion e-mail par protezi la tô casele di pueste dal spam. Cualchi sît nol supuarte lis mascaris di e-mail.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Plui informazions</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Gjestìs mascaris di e-mail</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Tu âs za doprât lis tôs 5 mascaris di e-mail gratuitis, duncje o\'nt vint sielt une di tornâ a doprâ.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">In chest moment lis mascaris di e-mail no son disponibilis. Torne prove ca di cualchi minût.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">VPN integrade</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">La VPN integrade di %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Navighe cuntune protezion in plui platant la tô posizion, ancje cuant che tu dopris il Wi-Fi public.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Plui informazions</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Limit dâts mensîl</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">A restin %1$.1f GB di %2$.1f GB</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Al ven ristabilît a %1$.0f GB al prin di ogni mês.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Posizion</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Conseade</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Selezione la posizion VPN plui svelte par te.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Ative</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Disativade</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Rivâts al limit di %1$d GB</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Tu âs doprât ducj i %1$d GB di dâts disponibii pe VPN. L’acès al vignarà ristabilît tal prossim mês.</string>
   <!--
     Autofill
 

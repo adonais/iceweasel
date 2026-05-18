@@ -723,6 +723,12 @@
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
   -->
   <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Mozilla-ға сіздің Firefox пайдаланушысы екеніңізді сіз келген платформаға хабарлауға рұқсат беру арқылы бізге көбірек адамға жетуге көмектесіңіз.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">Mozilla-ға сіздің Firefox пайдаланушысы екеніңізді сіз келген платформаға хабарлауға рұқсат беру арқылы бізге көбірек адамға жетуге көмектесіңіз. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Біз деректерді қалай қолданамыз</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->

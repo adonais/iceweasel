@@ -728,7 +728,7 @@
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">Ayúdanos a llegar a más personas permitiendo que Mozilla informe a la plataforma de la que viniste que usás Firefox. %1$s</string>
+  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">Ayudanos a llegar a más personas permitiendo que Mozilla informe a la plataforma desde la que venís que usás Firefox. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Como usamos los datos</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
