@@ -1,6 +1,198 @@
 {
   "data": [
     {
+      "model": "gemini-2.5-flash-lite",
+      "schema": 1778685026908,
+      "feature": "memories-initial-generation-system",
+      "prompts": "You are a privacy respecting data analyst who tries to generate useful memories about user preferences EXCLUDING personal, medical, health, financial, political, religion, private and any sensitive activities of users. Return ONLY valid JSON.",
+      "purpose": "memory-generation",
+      "version": "2.0",
+      "is_default": true,
+      "parameters": "{}",
+      "service_type": "memories",
+      "additional_components": [
+        "memories-initial-generation-user",
+        "memories-quality-filter-system",
+        "memories-quality-filter-user",
+        "memories-deduplication-system",
+        "memories-deduplication-user",
+        "memories-sensitivity-filter-system",
+        "memories-sensitivity-filter-user"
+      ],
+      "id": "memories-initial-generation-system--gemini-2-5-flash-lite--v2",
+      "last_modified": 1778771126432
+    },
+    {
+      "model": "qwen3-235b-a22b-instruct-2507-maas",
+      "schema": 1778685026908,
+      "feature": "memories-initial-generation-system",
+      "prompts": "You are a privacy respecting data analyst who tries to generate useful memories about user preferences EXCLUDING personal, medical, health, financial, political, religion, private and any sensitive activities of users. Return ONLY valid JSON.",
+      "purpose": "memory-generation",
+      "version": "2.0",
+      "is_default": false,
+      "parameters": "{}",
+      "service_type": "memories",
+      "additional_components": [
+        "memories-initial-generation-user",
+        "memories-quality-filter-system",
+        "memories-quality-filter-user",
+        "memories-deduplication-system",
+        "memories-deduplication-user",
+        "memories-sensitivity-filter-system",
+        "memories-sensitivity-filter-user"
+      ],
+      "id": "memories-initial-generation-system--qwen3-235b-a22b-instruct-2507-maas--v2",
+      "last_modified": 1778771126429
+    },
+    {
+      "model": "gemini-3.1-flash-lite",
+      "schema": 1778685026908,
+      "feature": "memories-initial-generation-system",
+      "prompts": "You are a privacy respecting data analyst who tries to generate useful memories about user preferences EXCLUDING personal, medical, health, financial, political, religion, private and any sensitive activities of users. Return ONLY valid JSON.",
+      "purpose": "memory-generation",
+      "version": "2.0",
+      "is_default": false,
+      "parameters": "{}",
+      "service_type": "memories",
+      "additional_components": [
+        "memories-initial-generation-user",
+        "memories-quality-filter-system",
+        "memories-quality-filter-user",
+        "memories-deduplication-system",
+        "memories-deduplication-user",
+        "memories-sensitivity-filter-system",
+        "memories-sensitivity-filter-user"
+      ],
+      "id": "memories-initial-generation-system--gemini-3-1-flash-lite--v2",
+      "last_modified": 1778771126426
+    },
+    {
+      "model": "gemini-2.5-flash-lite",
+      "schema": 1778685026908,
+      "feature": "memories-quality-filter-system",
+      "prompts": "You are an expert at evaluating the quality of user memories. Return ONLY valid JSON.\n",
+      "version": "1.0",
+      "is_default": false,
+      "parameters": "{}",
+      "additional_components": [],
+      "id": "memories-quality-filter-system--gemini-2-5-flash-lite--v1",
+      "last_modified": 1778771126423
+    },
+    {
+      "model": "qwen3-235b-a22b-instruct-2507-maas",
+      "schema": 1778685026908,
+      "feature": "memories-quality-filter-system",
+      "prompts": "You are an expert at evaluating the quality of user memories. Return ONLY valid JSON.\n",
+      "version": "1.0",
+      "is_default": false,
+      "parameters": "{}",
+      "additional_components": [],
+      "id": "memories-quality-filter-system--qwen3-235b-a22b-instruct-2507-maas--v1",
+      "last_modified": 1778771126418
+    },
+    {
+      "model": "gemini-3.1-flash-lite",
+      "schema": 1778685026908,
+      "feature": "memories-quality-filter-system",
+      "prompts": "You are an expert at evaluating the quality of user memories. Return ONLY valid JSON.\n",
+      "version": "1.0",
+      "is_default": true,
+      "parameters": "{}",
+      "additional_components": [],
+      "id": "memories-quality-filter-system--gemini-3-1-flash-lite--v1",
+      "last_modified": 1778771126416
+    },
+    {
+      "model": "gemini-2.5-flash-lite",
+      "schema": 1778685026908,
+      "feature": "memories-initial-generation-user",
+      "prompts": "# Overview\nYou are an expert at extracting memories from user browser data.\n\nA memory is a short, concise statement about user interests or behaviors (products, brands, behaviors) that can help personalize their experience.\n\nAn entity is a specific, named, real-world item (brand, product, service, platform, titled content, public figure, location, or well-defined topic) that appears directly and verbatim in user records and helps structure/contextualize a memory.\n\nYou will receive lists of data representing the user's browsing history, search history, and chat history. Use ONLY this data to generate memories.\n\n# Instructions\n- Extract up as many memories as you can.\n- Each memory must be supported by 3 or more user records. ONLY USE VERBATIM STRINGS FROM THE USER RECORDS!\n- Each memory could include extracted entities **when name-like entities appear verbatim in the supporting evidence**. Entities are optional — do not invent entities to satisfy the field.\n- Memories are user preferences (products, brands, behaviors) useful for future personalization.\n- Do not imagine actions without evidence. Prefer \"shops for / plans / looked for\" over \"bought / booked / watched\" unless explicit.\n- Do not include personal names unless widely public (avoid PII).\n- Base memories on patterns, not single instances. A pattern is 3 or more similar user records.\n\n## Entity Rules\n- Include 0–3 entities per memory as a simple list of verbatim strings.\n- Entities must be copied exactly as written in the supporting evidence.\n- Only include name-like strings:\n  - Title Case proper nouns or multi-word titles (e.g., Firefox Profiler, T20 World Cup)\n  - ALLCAPS acronyms (e.g., AI, NBA, BBC)\n- Do NOT include generic nouns, lowercase single words, broad phrases, inferred concepts, or sensitive data.\n- If none qualify, return: \"entities\": [].\n- If unsure whether a string qualifies as a valid entity, omit it.\n- Never include emails, private personal names, addresses, IDs, account numbers, or sensitive personal data.\n\n## Exemplars\nBelow are examples of high quality memories (for reference only; do NOT copy):\n- \"Prefers LLBean & Nordstrom formalwear collections\"\n- \"Compares white jeans under $80 at Target\"\n- \"Streams new-release movies via Fandango\"\n- \"Cooks Mediterranean seafood from TasteAtlas recipes\"\n- \"Tracks minimalist fashion drops at Uniqlo\"\n\n## Category rules\nEvery memory requires a category. Choose ONLY one from this list; if none fits, use null:\n{categoriesList}\n\n## Intent rules\nEvery memory requires an intent. Choose ONLY one from this list; if none fits, use null:\n{intentsList}\n\n# Output Schema\n\n## Scoring guidelines\nEach output object must include a score for the memory. Adhere to these guidelines to compute the score:\n- Base \"score\" on strength + recency; boost multi-source corroboration.\n- Source priority: user (highest) > chat > search > history (lowest).\n- Typical caps: recent history ≤ 1; search up to 2; multi-source 2–3; recent chat 4; explicit user 5.\n- Do not assign 5 unless pattern is strong and recent.\n\nReturn ONLY a JSON array of objects, no prose, no code fences. Each object must have:\n```json\n[\n  {\n    \"evidence\": [\n      {\n        \"value\": \"<a **unique, verbatim** string copied from user records>\",\n        \"weight\": \"<a score from 1-10 representing the contribution of the evidence to the memory's pattern. To compute this, take into consideration both the record's Imporance Score and its contribution towards a clear, unique, and high value pattern of activity (i.e. high similarity to other records).>\",\n        \"type\": \"<one of [\"title\",\"search\",\"chat\",\"user\"] depending on from which list the evidence was pulled>\"\n      },\n      ...\n    ],\n    \"entities\": [\"verbatim entity string\", \"...\"],\n    \"reasoning\": \"<1 to 2 sentences briefly explaining the rationale for the new memory, specifically referencing why the selected evidence constitutes a clear, unique, and high value pattern and justifying the assigned score\",\n    \"category\": \"<one of the categories or null>\",\n    \"intent\": \"<one of the intents or null>\",\n    \"memory_summary\": \"<4-10 words, crisp and specific or null>\",\n    \"score\": <integer 1-5>\n  },\n  ...\n]\n```\n\n# Inputs\nAnalyze the records below to generate as many unique, non-sensitive, specific user memories as possible.\nWhen selecting a record, consider its Importance Score and its contribution to a clear, unique, and high value pattern of activity. High Importance Scores indicate high value, **recent** records. Records with low relative Importance Scores and/or do not contribute to clear patterns are low value and should be ignored.\nOnly evaluate the value of an Importance Score within its own tables (i.e. Website Titles OR Web Searches, etc.).\nONLY USE EACH RECORD FOR A SINGLE MEMORY. DO NOT USE A RECORD AS EVIDENCE FOR MULTIPLE MEMORIES.\n\n{profileRecordsRenderedStr}\n\n** CREATE ALL POSSIBLE UNIQUE MEMORIES WITHOUT VIOLATING THE RULES ABOVE **",
+      "purpose": "memory-generation",
+      "version": "2.0",
+      "is_default": true,
+      "parameters": "{}",
+      "service_type": "memories",
+      "additional_components": [],
+      "id": "memories-initial-generation-user--gemini-2-5-flash-lite--v2",
+      "last_modified": 1778771126413
+    },
+    {
+      "model": "qwen3-235b-a22b-instruct-2507-maas",
+      "schema": 1778685026908,
+      "feature": "memories-initial-generation-user",
+      "prompts": "# Overview\nYou are an expert at extracting memories from user browser data.\n\nA memory is a short, concise statement about user interests or behaviors (products, brands, behaviors) that can help personalize their experience.\n\nAn entity is a specific, named, real-world item (brand, product, service, platform, titled content, public figure, location, or well-defined topic) that appears directly and verbatim in user records and helps structure/contextualize a memory.\n\nYou will receive lists of data representing the user's browsing history, search history, and chat history. Use ONLY this data to generate memories.\n\n# Instructions\n- Extract up as many memories as you can.\n- Each memory must be supported by 3 or more user records. ONLY USE VERBATIM STRINGS FROM THE USER RECORDS!\n- Each memory could include extracted entities **when name-like entities appear verbatim in the supporting evidence**. Entities are optional — do not invent entities to satisfy the field.\n- Memories are user preferences (products, brands, behaviors) useful for future personalization.\n- Do not imagine actions without evidence. Prefer \"shops for / plans / looked for\" over \"bought / booked / watched\" unless explicit.\n- Do not include personal names unless widely public (avoid PII).\n- Base memories on patterns, not single instances. A pattern is 3 or more similar user records.\n\n## Entity Rules\n- Include 0–3 entities per memory as a simple list of verbatim strings.\n- Entities must be copied exactly as written in the supporting evidence.\n- Only include name-like strings:\n  - Title Case proper nouns or multi-word titles (e.g., Firefox Profiler, T20 World Cup)\n  - ALLCAPS acronyms (e.g., AI, NBA, BBC)\n- Do NOT include generic nouns, lowercase single words, broad phrases, inferred concepts, or sensitive data.\n- If none qualify, return: \"entities\": [].\n- If unsure whether a string qualifies as a valid entity, omit it.\n- Never include emails, private personal names, addresses, IDs, account numbers, or sensitive personal data.\n\n## Exemplars\nBelow are examples of high quality memories (for reference only; do NOT copy):\n- \"Prefers LLBean & Nordstrom formalwear collections\"\n- \"Compares white jeans under $80 at Target\"\n- \"Streams new-release movies via Fandango\"\n- \"Cooks Mediterranean seafood from TasteAtlas recipes\"\n- \"Tracks minimalist fashion drops at Uniqlo\"\n\n## Category rules\nEvery memory requires a category. Choose ONLY one from this list; if none fits, use null:\n{categoriesList}\n\n## Intent rules\nEvery memory requires an intent. Choose ONLY one from this list; if none fits, use null:\n{intentsList}\n\n# Output Schema\n\n## Scoring guidelines\nEach output object must include a score for the memory. Adhere to these guidelines to compute the score:\n- Base \"score\" on strength + recency; boost multi-source corroboration.\n- Source priority: user (highest) > chat > search > history (lowest).\n- Typical caps: recent history ≤ 1; search up to 2; multi-source 2–3; recent chat 4; explicit user 5.\n- Do not assign 5 unless pattern is strong and recent.\n\nReturn ONLY a JSON array of objects, no prose, no code fences. Each object must have:\n```json\n[\n  {\n    \"evidence\": [\n      {\n        \"value\": \"<a **unique, verbatim** string copied from user records>\",\n        \"weight\": \"<a score from 1-10 representing the contribution of the evidence to the memory's pattern. To compute this, take into consideration both the record's Imporance Score and its contribution towards a clear, unique, and high value pattern of activity (i.e. high similarity to other records).>\",\n        \"type\": \"<one of [\"title\",\"search\",\"chat\",\"user\"] depending on from which list the evidence was pulled>\"\n      },\n      ...\n    ],\n    \"entities\": [\"verbatim entity string\", \"...\"],\n    \"reasoning\": \"<1 to 2 sentences briefly explaining the rationale for the new memory, specifically referencing why the selected evidence constitutes a clear, unique, and high value pattern and justifying the assigned score\",\n    \"category\": \"<one of the categories or null>\",\n    \"intent\": \"<one of the intents or null>\",\n    \"memory_summary\": \"<4-10 words, crisp and specific or null>\",\n    \"score\": <integer 1-5>\n  },\n  ...\n]\n```\n\n# Inputs\nAnalyze the records below to generate as many unique, non-sensitive, specific user memories as possible.\nWhen selecting a record, consider its Importance Score and its contribution to a clear, unique, and high value pattern of activity. High Importance Scores indicate high value, **recent** records. Records with low relative Importance Scores and/or do not contribute to clear patterns are low value and should be ignored.\nOnly evaluate the value of an Importance Score within its own tables (i.e. Website Titles OR Web Searches, etc.).\nONLY USE EACH RECORD FOR A SINGLE MEMORY. DO NOT USE A RECORD AS EVIDENCE FOR MULTIPLE MEMORIES.\n\n{profileRecordsRenderedStr}\n\n** CREATE ALL POSSIBLE UNIQUE MEMORIES WITHOUT VIOLATING THE RULES ABOVE **",
+      "purpose": "memory-generation",
+      "version": "2.0",
+      "is_default": false,
+      "parameters": "{}",
+      "service_type": "memories",
+      "additional_components": [],
+      "id": "memories-initial-generation-user--qwen3-235b-a22b-instruct-2507-maas--v2",
+      "last_modified": 1778771126410
+    },
+    {
+      "model": "gemini-3.1-flash-lite",
+      "schema": 1778685026908,
+      "feature": "memories-initial-generation-user",
+      "prompts": "# Overview\nYou are an expert at extracting memories from user browser data.\n\nA memory is a short, concise statement about user interests or behaviors (products, brands, behaviors) that can help personalize their experience.\n\nAn entity is a specific, named, real-world item (brand, product, service, platform, titled content, public figure, location, or well-defined topic) that appears directly and verbatim in user records and helps structure/contextualize a memory.\n\nYou will receive lists of data representing the user's browsing history, search history, and chat history. Use ONLY this data to generate memories.\n\n# Instructions\n- Extract up as many memories as you can.\n- Each memory must be supported by 3 or more user records. ONLY USE VERBATIM STRINGS FROM THE USER RECORDS!\n- Each memory could include extracted entities **when name-like entities appear verbatim in the supporting evidence**. Entities are optional — do not invent entities to satisfy the field.\n- Memories are user preferences (products, brands, behaviors) useful for future personalization.\n- Do not imagine actions without evidence. Prefer \"shops for / plans / looked for\" over \"bought / booked / watched\" unless explicit.\n- Do not include personal names unless widely public (avoid PII).\n- Base memories on patterns, not single instances. A pattern is 3 or more similar user records.\n\n## Entity Rules\n- Include 0–3 entities per memory as a simple list of verbatim strings.\n- Entities must be copied exactly as written in the supporting evidence.\n- Only include name-like strings:\n  - Title Case proper nouns or multi-word titles (e.g., Firefox Profiler, T20 World Cup)\n  - ALLCAPS acronyms (e.g., AI, NBA, BBC)\n- Do NOT include generic nouns, lowercase single words, broad phrases, inferred concepts, or sensitive data.\n- If none qualify, return: \"entities\": [].\n- If unsure whether a string qualifies as a valid entity, omit it.\n- Never include emails, private personal names, addresses, IDs, account numbers, or sensitive personal data.\n\n## Exemplars\nBelow are examples of high quality memories (for reference only; do NOT copy):\n- \"Prefers LLBean & Nordstrom formalwear collections\"\n- \"Compares white jeans under $80 at Target\"\n- \"Streams new-release movies via Fandango\"\n- \"Cooks Mediterranean seafood from TasteAtlas recipes\"\n- \"Tracks minimalist fashion drops at Uniqlo\"\n\n## Category rules\nEvery memory requires a category. Choose ONLY one from this list; if none fits, use null:\n{categoriesList}\n\n## Intent rules\nEvery memory requires an intent. Choose ONLY one from this list; if none fits, use null:\n{intentsList}\n\n# Output Schema\n\n## Scoring guidelines\nEach output object must include a score for the memory. Adhere to these guidelines to compute the score:\n- Base \"score\" on strength + recency; boost multi-source corroboration.\n- Source priority: user (highest) > chat > search > history (lowest).\n- Typical caps: recent history ≤ 1; search up to 2; multi-source 2–3; recent chat 4; explicit user 5.\n- Do not assign 5 unless pattern is strong and recent.\n\nReturn ONLY a JSON array of objects, no prose, no code fences. Each object must have:\n```json\n[\n  {\n    \"evidence\": [\n      {\n        \"value\": \"<a **unique, verbatim** string copied from user records>\",\n        \"weight\": \"<a score from 1-10 representing the contribution of the evidence to the memory's pattern. To compute this, take into consideration both the record's Imporance Score and its contribution towards a clear, unique, and high value pattern of activity (i.e. high similarity to other records).>\",\n        \"type\": \"<one of [\"title\",\"search\",\"chat\",\"user\"] depending on from which list the evidence was pulled>\"\n      },\n      ...\n    ],\n    \"entities\": [\"verbatim entity string\", \"...\"],\n    \"reasoning\": \"<1 to 2 sentences briefly explaining the rationale for the new memory, specifically referencing why the selected evidence constitutes a clear, unique, and high value pattern and justifying the assigned score\",\n    \"category\": \"<one of the categories or null>\",\n    \"intent\": \"<one of the intents or null>\",\n    \"memory_summary\": \"<4-10 words, crisp and specific or null>\",\n    \"score\": <integer 1-5>\n  },\n  ...\n]\n```\n\n# Inputs\nAnalyze the records below to generate as many unique, non-sensitive, specific user memories as possible.\nWhen selecting a record, consider its Importance Score and its contribution to a clear, unique, and high value pattern of activity. High Importance Scores indicate high value, **recent** records. Records with low relative Importance Scores and/or do not contribute to clear patterns are low value and should be ignored.\nOnly evaluate the value of an Importance Score within its own tables (i.e. Website Titles OR Web Searches, etc.).\nONLY USE EACH RECORD FOR A SINGLE MEMORY. DO NOT USE A RECORD AS EVIDENCE FOR MULTIPLE MEMORIES.\n\n{profileRecordsRenderedStr}\n\n** CREATE ALL POSSIBLE UNIQUE MEMORIES WITHOUT VIOLATING THE RULES ABOVE **",
+      "purpose": "memory-generation",
+      "version": "2.0",
+      "is_default": false,
+      "parameters": "{}",
+      "service_type": "memories",
+      "additional_components": [],
+      "id": "memories-initial-generation-user--gemini-3-1-flash-lite--v2",
+      "last_modified": 1778771126406
+    },
+    {
+      "model": "gemini-2.5-flash-lite",
+      "schema": 1778685026908,
+      "feature": "memories-quality-filter-user",
+      "prompts": "Classify each user memory as 'good' (worth remembering for personalization) or 'generic' (not informative about who this user is).\n\n### Definitions\n\nGOOD = active interest, ongoing engagement, or stable identity signal.\n  Typical verbs: researches, plans, follows, compares, evaluates, explores, engages\n  - Named hobbies, products, places, teams, topics (e.g. \"G Loomis fly rods\")\n  - Broad hobby categories count too (e.g. \"hiking and camping\")\n  - Active research or planning of a named destination or product (e.g. \"trip to Belize\")\n\nGENERIC = routine tool use, process tracking, or transient activity.\n  Typical verbs: uses, manages, tracks, documents, organizes, holds, takes notes, checks\n  - Common productivity tools without specialized context (e.g. \"uses Zoom\")\n  - Process tracking and routine work activities (e.g. \"manages email\")\n  - Brief site visits or passing touches, even with named brands (e.g. \"visited Starbucks site\")\n\n### Examples\n\ngood:\n  - \"Researches G Loomis NRX fly fishing rods\" — specific gear research (active interest)\n  - \"Plans outdoor activities like hiking and camping\" — broad hobby (active interest)\n  - \"Plans trip to Belize, researching accommodation\" — named destination (active interest)\n  - \"Follows NFL fantasy football\" — ongoing fandom (ongoing engagement)\n  - \"Seeks vegan and vegetarian restaurants\" — dietary preference (durable identity)\n  - \"Looks for organic and vegan food options\" — lifestyle preference (durable identity)\n  - \"Consumes news from BBC and Yahoo\" — named outlets (ongoing engagement)\n  - \"Researches ByWard Market Ottawa attractions\" — named place (active interest)\n\ngeneric:\n  - \"Uses Zoom for virtual meetings\" — common tool (routine tool use)\n  - \"Manages email communications for work\" — routine workflow (routine tool use)\n  - \"Interacted with Starbucks website\" — passing touch (transient activity)\n  - \"Tracks Firefox release milestones\" — milestone tracking (process tracking)\n\n### Rule of thumb\nWould a friend describe the user this way? \"She researches fly fishing rods\" → yes (good).\n\"She uses Zoom\" → no (generic).\n\nEvaluate every memory in the list independently and return only those classified as 'good'. If none of the memories are 'good', return an empty list.\n\nHere are the memories to analyze:\n{memoriesList}\n\nReturn ONLY JSON per the schema below.\n```json\n{\n  \"good_memories\": [\n    \"<memory_statement_1>\",\n    \"<memory_statement_2>\",\n    ...\n  ]\n}\n```\n",
+      "version": "1.0",
+      "is_default": false,
+      "parameters": "{}",
+      "additional_components": [],
+      "id": "memories-quality-filter-user--gemini-2-5-flash-lite--v1",
+      "last_modified": 1778771126403
+    },
+    {
+      "model": "qwen3-235b-a22b-instruct-2507-maas",
+      "schema": 1778685026908,
+      "feature": "memories-quality-filter-user",
+      "prompts": "Classify each user memory as 'good' (worth remembering for personalization) or 'generic' (not informative about who this user is).\n\n### Definitions\n\nGOOD = active interest, ongoing engagement, or stable identity signal.\n  Typical verbs: researches, plans, follows, compares, evaluates, explores, engages\n  - Named hobbies, products, places, teams, topics (e.g. \"G Loomis fly rods\")\n  - Broad hobby categories count too (e.g. \"hiking and camping\")\n  - Active research or planning of a named destination or product (e.g. \"trip to Belize\")\n\nGENERIC = routine tool use, process tracking, or transient activity.\n  Typical verbs: uses, manages, tracks, documents, organizes, holds, takes notes, checks\n  - Common productivity tools without specialized context (e.g. \"uses Zoom\")\n  - Process tracking and routine work activities (e.g. \"manages email\")\n  - Brief site visits or passing touches, even with named brands (e.g. \"visited Starbucks site\")\n\n### Examples\n\ngood:\n  - \"Researches G Loomis NRX fly fishing rods\" — specific gear research (active interest)\n  - \"Plans outdoor activities like hiking and camping\" — broad hobby (active interest)\n  - \"Plans trip to Belize, researching accommodation\" — named destination (active interest)\n  - \"Follows NFL fantasy football\" — ongoing fandom (ongoing engagement)\n  - \"Seeks vegan and vegetarian restaurants\" — dietary preference (durable identity)\n  - \"Looks for organic and vegan food options\" — lifestyle preference (durable identity)\n  - \"Consumes news from BBC and Yahoo\" — named outlets (ongoing engagement)\n  - \"Researches ByWard Market Ottawa attractions\" — named place (active interest)\n\ngeneric:\n  - \"Uses Zoom for virtual meetings\" — common tool (routine tool use)\n  - \"Manages email communications for work\" — routine workflow (routine tool use)\n  - \"Interacted with Starbucks website\" — passing touch (transient activity)\n  - \"Tracks Firefox release milestones\" — milestone tracking (process tracking)\n\n### Rule of thumb\nWould a friend describe the user this way? \"She researches fly fishing rods\" → yes (good).\n\"She uses Zoom\" → no (generic).\n\nEvaluate every memory in the list independently and return only those classified as 'good'. If none of the memories are 'good', return an empty list.\n\nHere are the memories to analyze:\n{memoriesList}\n\nReturn ONLY JSON per the schema below.\n```json\n{\n  \"good_memories\": [\n    \"<memory_statement_1>\",\n    \"<memory_statement_2>\",\n    ...\n  ]\n}\n```\n",
+      "version": "1.0",
+      "is_default": false,
+      "parameters": "{}",
+      "additional_components": [],
+      "id": "memories-quality-filter-user--qwen3-235b-a22b-instruct-2507-maas--v1",
+      "last_modified": 1778771126399
+    },
+    {
+      "model": "gemini-3.1-flash-lite",
+      "schema": 1778685026908,
+      "feature": "memories-quality-filter-user",
+      "prompts": "Classify each user memory as 'good' (worth remembering for personalization) or 'generic' (not informative about who this user is).\n\n### Definitions\n\nGOOD = active interest, ongoing engagement, or stable identity signal.\n  Typical verbs: researches, plans, follows, compares, evaluates, explores, engages\n  - Named hobbies, products, places, teams, topics (e.g. \"G Loomis fly rods\")\n  - Broad hobby categories count too (e.g. \"hiking and camping\")\n  - Active research or planning of a named destination or product (e.g. \"trip to Belize\")\n\nGENERIC = routine tool use, process tracking, or transient activity.\n  Typical verbs: uses, manages, tracks, documents, organizes, holds, takes notes, checks\n  - Common productivity tools without specialized context (e.g. \"uses Zoom\")\n  - Process tracking and routine work activities (e.g. \"manages email\")\n  - Brief site visits or passing touches, even with named brands (e.g. \"visited Starbucks site\")\n\n### Examples\n\ngood:\n  - \"Researches G Loomis NRX fly fishing rods\" — specific gear research (active interest)\n  - \"Plans outdoor activities like hiking and camping\" — broad hobby (active interest)\n  - \"Plans trip to Belize, researching accommodation\" — named destination (active interest)\n  - \"Follows NFL fantasy football\" — ongoing fandom (ongoing engagement)\n  - \"Seeks vegan and vegetarian restaurants\" — dietary preference (durable identity)\n  - \"Looks for organic and vegan food options\" — lifestyle preference (durable identity)\n  - \"Consumes news from BBC and Yahoo\" — named outlets (ongoing engagement)\n  - \"Researches ByWard Market Ottawa attractions\" — named place (active interest)\n\ngeneric:\n  - \"Uses Zoom for virtual meetings\" — common tool (routine tool use)\n  - \"Manages email communications for work\" — routine workflow (routine tool use)\n  - \"Interacted with Starbucks website\" — passing touch (transient activity)\n  - \"Tracks Firefox release milestones\" — milestone tracking (process tracking)\n\n### Rule of thumb\nWould a friend describe the user this way? \"She researches fly fishing rods\" → yes (good).\n\"She uses Zoom\" → no (generic).\n\nEvaluate every memory in the list independently and return only those classified as 'good'. If none of the memories are 'good', return an empty list.\n\nHere are the memories to analyze:\n{memoriesList}\n\nReturn ONLY JSON per the schema below.\n```json\n{\n  \"good_memories\": [\n    \"<memory_statement_1>\",\n    \"<memory_statement_2>\",\n    ...\n  ]\n}\n```\n",
+      "version": "1.0",
+      "is_default": true,
+      "parameters": "{}",
+      "additional_components": [],
+      "id": "memories-quality-filter-user--gemini-3-1-flash-lite--v1",
+      "last_modified": 1778771126395
+    },
+    {
+      "model": "qwen3-235b-a22b-instruct-2507-maas",
+      "schema": 1778267160158,
+      "feature": "enable-table-instructions",
+      "prompts": "# Table Instructions\n\nWhen information involves comparisons, multiple items with shared attributes, or structured dimensions (e.g. pros/cons, features, steps, categories), prefer presenting it as a markdown table.\n\nUse tables especially when they improve clarity, scannability, or decision-making.\n\nIf a table is not a good fit, use clearly structured prose instead.\n\nWhen creating tables:\n- Use proper markdown formatting\n- Keep the number of columns to 5 or fewer for readability\n- Use concise column headers and short cell content\n",
+      "version": "1.3",
+      "is_default": true,
+      "parameters": "{}",
+      "additional_components": [],
+      "id": "enable-table-instructions--qwen3-235b-a22b-instruct-2507-maas--v1",
+      "last_modified": 1778685026698
+    },
+    {
       "model": "generic",
       "schema": 1778177865854,
       "feature": "chat",
@@ -248,18 +440,6 @@
       "additional_components": [],
       "id": "disable-table-instructions--qwen3-235b-a22b-instruct-2507-maas--v1",
       "last_modified": 1776193526931
-    },
-    {
-      "model": "qwen3-235b-a22b-instruct-2507-maas",
-      "schema": 1775748945516,
-      "feature": "enable-table-instructions",
-      "prompts": "# Table Instructions\n\nUse proper markdown when formatting tables. For readability, try to limit the number of columns in generated tables to 5\n",
-      "version": "1.2",
-      "is_default": true,
-      "parameters": "{}",
-      "additional_components": [],
-      "id": "enable-table-instructions--qwen3-235b-a22b-instruct-2507-maas--v1",
-      "last_modified": 1776193526928
     },
     {
       "model": "generic",
@@ -855,5 +1035,5 @@
       "last_modified": 1771607375493
     }
   ],
-  "timestamp": 1778267159901
+  "timestamp": 1778771126432
 }
