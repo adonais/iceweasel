@@ -231,6 +231,7 @@ mingw-cap:
         symbol: misc(mingw)
     run:
         mach: lint -v -l mingw-capitalization -f treeherder -f json:/builds/worker/mozlint.json .
+    run-on-projects: []
     when:
         files-changed:
             - '**/*.cpp'
