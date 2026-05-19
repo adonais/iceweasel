@@ -71,17 +71,3 @@ linux64-nasm:
         toolchain:
             - linux64-clang-toolchain
             - sysroot-x86_64-linux-gnu
-
-linux64-nasm-2.14.02:
-    description: "nasm linux64 minimum supported version build"
-    treeherder:
-        symbol: TL(nasm-2.14.02)
-    run:
-        script: build-nasm.sh
-        arguments: ['linux64']
-    fetches:
-        fetch:
-            - nasm-2.14.02
-        toolchain:
-            - linux64-clang-toolchain
-            - sysroot-x86_64-linux-gnu
