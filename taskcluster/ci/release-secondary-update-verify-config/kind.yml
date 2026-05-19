@@ -98,15 +98,3 @@ jobs:
         extra:
             platform: win64
             updater-platform: linux-x86_64
-
-    firefox-secondary-win64-aarch64:
-        treeherder:
-            symbol: UVCS
-            platform: windows2012-aarch64-shippable/opt
-            kind: test
-            tier: 1
-        attributes:
-            build_platform: win64-aarch64-shippable
-        extra:
-            platform: win64-aarch64
-            updater-platform: linux-x86_64

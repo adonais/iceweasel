@@ -101,25 +101,3 @@ jobs:
             platform: win64-shippable/opt
         dependencies:
             repackage-signing: repackage-signing-win64-shippable/opt
-
-    win64-aarch64-shippable/opt:
-        label: attribution-win64-aarch64-shippable/opt
-        shipping-product: firefox
-        attributes:
-            build_platform: win64-aarch64-shippable
-            build_type: opt
-        treeherder:
-            platform: win64-aarch64-shippable/opt
-        dependencies:
-            repackage-signing: repackage-signing-win64-aarch64-shippable/opt
-
-    win64-aarch64-devedition/opt:
-        label: attribution-win64-aarch64-devedition/opt
-        shipping-product: devedition
-        attributes:
-            build_platform: win64-aarch64-devedition
-            build_type: opt
-        treeherder:
-            platform: win64-aarch64-devedition/opt
-        dependencies:
-            repackage-signing: repackage-signing-win64-aarch64-devedition/opt
