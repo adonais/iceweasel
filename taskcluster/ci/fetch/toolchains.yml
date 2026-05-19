@@ -320,13 +320,6 @@ llvm-mingw:
         repo: https://github.com/mstorsjo/llvm-mingw
         revision: 9f8e5cebd6dbbb7546e8917e6c59284699a48d26
 
-android-ndk-rs:
-    description: android-ndk-rs source code
-    fetch:
-        type: git
-        repo: https://github.com/jamienicol/android-ndk-rs
-        revision: 595f4e14a78371e3ab59b12f7bd8131f2ec5b4a1
-
 clang-7.0:
     description: clang 7.0.0 source code
     fetch:

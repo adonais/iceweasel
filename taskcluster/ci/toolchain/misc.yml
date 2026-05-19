@@ -277,8 +277,6 @@ wrench-deps:
             - 'gfx/wr/ci-scripts/install-meson.sh'
         toolchain-artifact: public/build/wrench-deps.tar.zst
     fetches:
-        fetch:
-            - android-ndk-rs
         toolchain:
             - linux64-rust  # whatever m-c is built with
 

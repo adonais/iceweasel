@@ -17,8 +17,6 @@ job-defaults:
 # so locally bootstrap will use sdkmanager to download the corresponding system
 # images.
 linux64-android-avd-x86_64-repack:
-    attributes:
-        local-toolchain: true
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
         symbol: TL(avd-x86_64-linux)
@@ -36,8 +34,6 @@ linux64-android-avd-x86_64-repack:
             - linux64-jdk-repack
 
 linux64-android-avd-arm-repack:
-    attributes:
-        local-toolchain: true
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
         symbol: TL(avd-arm-linux)
@@ -55,8 +51,6 @@ linux64-android-avd-arm-repack:
             - linux64-jdk-repack
 
 linux64-android-avd-arm64-repack:
-    attributes:
-        local-toolchain: true
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
         symbol: TL(avd-arm64-linux)

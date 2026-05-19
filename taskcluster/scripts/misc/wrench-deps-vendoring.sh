@@ -15,13 +15,6 @@ mkdir .cargo
 cargo vendor --sync ./Cargo.toml > .cargo/config
 mkdir wrench-deps
 mv vendor .cargo wrench-deps/
-mkdir wrench-deps/cargo-apk
-# Until there's a version of cargo-apk published on crates.io that has
-# https://github.com/rust-windowing/android-ndk-rs/pull/236, we need to use
-# an unpublished version. Additionally, until we update the NDK version used
-# in gecko we must use our own patched version. See bug 1615148.
-(cd $MOZ_FETCHES_DIR/android-ndk-rs/cargo-apk; cargo update -p home --precise 0.5.5 && cargo update -p unicode-ident --precise 1.0.22 && cargo update -p syn@2.0.117 --precise 2.0.114)
-cargo install --locked --path $MOZ_FETCHES_DIR/android-ndk-rs/cargo-apk --root wrench-deps/cargo-apk cargo-apk
 
 ci-scripts/install-meson.sh
 mv meson wrench-deps/meson
