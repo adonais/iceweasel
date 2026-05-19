@@ -2700,8 +2700,18 @@ preferences-etp-custom-cookies-enabled =
 preferences-etp-custom-cookie-behavior =
     .aria-label = Cookies
 
-preferences-etpc-custom-cookie-behavior-accept-all =
+preferences-etp-custom-cookie-behavior-accept-all =
     .label = Allow all cookies
+preferences-etp-custom-cookie-behavior-block-cross-site-cookies =
+    .label = Block cross-site cookies
+preferences-etp-custom-cookie-behavior-isolate-cross-site-cookies =
+    .label = Isolate cross-site cookies
+preferences-etp-custom-cookie-behavior-block-unvisited =
+    .label = Block cookies from unvisited websites
+preferences-etp-custom-cookie-behavior-block-all-cross-site-cookies =
+    .label = Block all cross-site cookies (may cause websites to break)
+preferences-etp-custom-cookie-behavior-block-all =
+    .label = Block all cookies (will cause websites to break)
 
 preferences-etp-custom-tracking-protection-enabled =
     .label = Tracking content
