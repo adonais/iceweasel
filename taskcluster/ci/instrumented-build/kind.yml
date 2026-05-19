@@ -42,36 +42,6 @@ job-defaults:
     run-on-projects: ['release']
 
 jobs:
-    linux-shippable/opt:
-        description: "Linux Instrumented"
-        index:
-            product: firefox
-            job-name: instrumented-linux
-        shipping-product: firefox
-        treeherder:
-            platform: linux32-shippable/opt
-        worker-type: b-linux-gcp
-        run:
-            config:
-                - builds/releng_base_firefox.py
-                - builds/releng_base_linux_32_builds.py
-            mozconfig-variant: profile-generate
-            tooltool-downloads: public
-        run-on-projects: ['release']
-        fetches:
-            toolchain:
-                - linux64-clang
-                - linux64-rust
-                - linux64-rust-size
-                - linux64-cbindgen
-                - linux64-dump_syms
-                - linux64-nasm
-                - linux64-node
-                - linux64-pkgconf
-                - sysroot-i686-linux-gnu
-                - sysroot-x86_64-linux-gnu
-                - sysroot-wasm32-wasi
-
     linux64-shippable/opt:
         description: "Linux64 Instrumented"
         index:

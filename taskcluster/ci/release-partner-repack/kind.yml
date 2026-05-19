@@ -44,13 +44,6 @@ job-defaults:
                 production: false
 
 jobs:
-    linux-shippable:
-        attributes:
-            build_platform: linux-shippable
-            build_type: opt
-            artifact_prefix: releng/partner
-            shippable: true
-
     linux64-shippable:
         attributes:
             build_platform: linux64-shippable

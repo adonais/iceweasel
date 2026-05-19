@@ -38,25 +38,6 @@ job-defaults:
         tier: 1
 
 jobs:
-    linux32:
-        dependencies:
-            build-signing: build-signing-linux-shippable/opt
-        run:
-            using: run-task
-            cwd: "{checkout}"
-        extra-config:
-            upstream_kind: build-signing
-            upstream_artifact: target.tar.bz2
-            binary: firefox
-        worker-type: b-linux-gcp
-        worker:
-            docker-image: {in-tree: ubuntu1804-test}
-        shipping-product: firefox
-        attributes:
-            build_platform: linux-shippable
-        treeherder:
-            platform: linux-shippable/opt
-
     linux64:
         dependencies:
             build-signing: build-signing-linux64-shippable/opt

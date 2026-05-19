@@ -24,37 +24,6 @@ job-defaults:
     run-on-projects: ['release']
 
 jobs:
-    linux-shippable/opt:
-        description: "Linux Profile Generation"
-        shipping-phase: build
-        shipping-product: firefox
-        index:
-            product: firefox
-            job-name: linux-profile
-        treeherder:
-            platform: linux32-shippable/opt
-        worker-type: b-linux-gcp
-        worker:
-            chain-of-trust: true
-            env:
-                NEED_XVFB: "true"
-            max-run-time: 1200
-            docker-image: {in-tree: ubuntu1804-test}
-            artifacts:
-                - type: directory
-                  name: public/build
-                  path: /builds/worker/artifacts/
-        run:
-            using: run-task
-            cwd: '{checkout}'
-            command: >
-                ./taskcluster/scripts/misc/run-profileserver.sh
-        run-on-projects: ['release']
-        fetches:
-            toolchain:
-                - linux64-clang
-                - linux64-minidump-stackwalk
-
     linux64-shippable/opt:
         description: "Linux64 Profile Generation"
         shipping-phase: build
