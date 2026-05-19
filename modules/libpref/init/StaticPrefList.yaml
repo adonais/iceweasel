@@ -10824,11 +10824,7 @@
 # avoid sending annotations hugely far away from the base.
 - name: layout.css.ruby.normalize-metrics-factor
   type: uint32_t
-#ifdef NIGHTLY_BUILD
   value: 100
-#else
-  value: 0
-#endif
   mirror: always
 
 - name: layout.css.scroll-snap.damping-ratio
