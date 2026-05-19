@@ -268,15 +268,15 @@ user-login = "jrmuizel"
 user-name = "Jeff Muizelaar"
 
 [[publisher.glean]]
-version = "67.3.1"
-when = "2026-05-08"
+version = "67.3.2"
+when = "2026-05-15"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
 
 [[publisher.glean-core]]
-version = "67.3.1"
-when = "2026-05-08"
+version = "67.3.2"
+when = "2026-05-15"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
