@@ -62,6 +62,7 @@
 #  ifdef XP_MACOSX
 #    include "MacApplicationDelegate.h"
 #  endif
+#  include "nsComponentManagerUtils.h"
 #endif
 
 #include <stdlib.h>
