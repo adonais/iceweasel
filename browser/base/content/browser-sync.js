@@ -679,6 +679,10 @@ var gSync = {
     ).addEventListener("mouseover", this);
     PanelMultiView.getViewNode(
       document,
+      "PanelUI-fxa-menu-sendtab-sign-in-button"
+    ).addEventListener("click", this);
+    PanelMultiView.getViewNode(
+      document,
       "PanelUI-fxa-menu-sendtab-enable-sync-button"
     ).addEventListener("click", this);
     PanelMultiView.getViewNode(
@@ -876,6 +880,9 @@ var gSync = {
       case "PanelUI-fxa-menu-vpn-button":
         this.openVPNLink(button);
         break;
+      case "PanelUI-fxa-menu-sendtab-sign-in-button":
+        this.signInToSync(button);
+        break;
       case "PanelUI-fxa-menu-sendtab-enable-sync-button":
         this.enableSync();
         break;
@@ -1004,18 +1011,9 @@ var gSync = {
 
   showSendToDeviceViewFromFxaMenu(anchor) {
     (async () => {
-      const entryPoint =
-        this._getEntryPointForElement(anchor) === "fxa_app_menu"
-          ? "send-tab-app-menu"
-          : "send-tab-account-menu";
-
       switch (true) {
         case this.isSignedIn === false:
-          var url = await FxAccounts.config.promiseConnectAccountURI(
-            entryPoint,
-            {}
-          );
-          switchToTabHavingURI(url, true, {});
+          PanelUI.showSubView("PanelUI-fxa-menu-sendtab-sign-in", anchor);
           return;
         case this.isSignedInWithSyncDisabled:
           PanelUI.showSubView("PanelUI-fxa-menu-sendtab-enable-sync", anchor);
@@ -1151,7 +1149,6 @@ var gSync = {
       }
 
       sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
-      sendTabButton.classList.remove("subviewbutton-nav");
 
       // If we're signed out but have the PXI pref enabled
       // we should show the PXI panel instead of taking the user
@@ -1188,7 +1185,6 @@ var gSync = {
     } else {
       sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-device");
     }
-    sendTabButton.classList.add("subviewbutton-nav");
 
     if (anchor.getAttribute("open") == "true") {
       PanelUI.hide();
@@ -2730,6 +2726,15 @@ var gSync = {
       // Fall back to opening prefs
       this.openPrefs(entryPoint);
     }
+  },
+
+  async signInToSync(sourceElement) {
+    const entryPoint =
+      this._getEntryPointForElement(sourceElement) === "fxa_app_menu"
+        ? "send-tab-app-menu"
+        : "send-tab-account-menu";
+    var url = await FxAccounts.config.promiseConnectAccountURI(entryPoint, {});
+    switchToTabHavingURI(url, true, {});
   },
 
   enableSync() {
