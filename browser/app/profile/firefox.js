@@ -2942,7 +2942,7 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 pref("browser.toolbars.share-button.enabled", true);
 
 // Felt Privacy pref to control simplified private browsing UI
-pref("browser.privatebrowsing.felt-privacy-v1", false);
+pref("browser.privatebrowsing.felt-privacy-v1", true);
 pref("security.certerrors.felt-privacy-v1", true);
 
 
