@@ -1891,24 +1891,33 @@ if (SECURITY_PRIVACY_STATUS_CARD_ENABLED) {
       id: "appUpdateStatus",
       cachedValue: undefined,
       setup(emitChange) {
-        if (lazy.AppConstants.MOZ_UPDATER && !lazy.isPackagedApp) {
-          let appUpdater = new lazy.AppUpdater();
-          /**
-           * @param {number} appStatus
-           * @param {any[]} _args
-           */
-          let listener = (appStatus, ..._args) => {
-            this.cachedValue = appStatus;
-            emitChange();
-          };
-          appUpdater.addListener(listener);
-          appUpdater.check();
-          return () => {
-            appUpdater.removeListener(listener);
-            appUpdater.stop();
-          };
+        if (!lazy.AppConstants.MOZ_UPDATER || lazy.isPackagedApp) {
+          return () => {};
         }
-        return () => {};
+        // Reuse the AppUpdater driven by about-firefox.mjs's updateState
+        // setting so we don't kick off a parallel update check and download.
+        let sharedAppUpdater = window.gAppUpdater?._appUpdater;
+        let appUpdater = sharedAppUpdater ?? new lazy.AppUpdater();
+        /**
+         * @param {number} appStatus
+         * @param {any[]} _args
+         */
+        let listener = (appStatus, ..._args) => {
+          this.cachedValue = appStatus;
+          emitChange();
+        };
+        appUpdater.addListener(listener);
+        if (sharedAppUpdater) {
+          this.cachedValue = appUpdater.status;
+        } else {
+          appUpdater.check();
+        }
+        return () => {
+          appUpdater.removeListener(listener);
+          if (!sharedAppUpdater) {
+            appUpdater.stop();
+          }
+        };
       },
       get() {
         return this.cachedValue;
