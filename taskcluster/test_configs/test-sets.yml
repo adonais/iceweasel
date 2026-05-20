@@ -564,16 +564,16 @@ android14-x86_64-tests:
 android-hw-aarch64-opt-unittests:
     - jittest
 
-android-hw-arm7-pgo-unittests:
-    - jittest-all
-
 android-hw-aarch64-pgo-unittests:
     - jittest
 
-android-hw-arm7-debug-unittests:
+android-hw-aarch64-debug-unittests:
     - jittest
 
-android-hw-aarch64-debug-unittests:
+android-hw-arm7-pgo-unittests:
+    - jittest-all
+
+android-hw-arm7-debug-unittests:
     - jittest
 
 android-hw-aarch64:
