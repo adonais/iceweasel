@@ -254,13 +254,6 @@ gn:
         repo: https://gn.googlesource.com/gn
         revision: 7e05276308f3d49f8514ef02afe4f94487b1efb2
 
-grcov:
-    description: grcov source code
-    fetch:
-        type: git
-        repo: https://github.com/mozilla/grcov
-        revision: 6ccd61964a0ab60d193394f18c0986eb37d14b9e
-
 sccache:
     description: sccache source code
     fetch:

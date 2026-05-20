@@ -904,56 +904,6 @@ win64-rusttests/debug:
     optimization:
         test-inclusive: [rusttests]
 
-win64-ccov/opt:
-    description: "Win64 Opt Code Coverage"
-    index:
-        product: firefox
-        job-name: win64-ccov-opt
-    attributes:
-        enable-build-signing: true
-    treeherder:
-        platform: windows2012-64/ccov
-        symbol: B
-        tier: 2
-    worker-type: b-win2022
-    worker:
-        artifacts:
-            - name: public/code-coverage-grcov.zip
-              path: workspace\obj-build\code-coverage-grcov.zip
-              type: file
-        max-run-time: 9000
-        env:
-            RUSTC_BOOTSTRAP: '1'
-            MOZ_AUTOMATION_PACKAGE_TESTS: "1"
-    run:
-        options: [append-env-variables-from-configs]
-        script: mozharness/scripts/fx_desktop_build.py
-        secrets: true
-        config:
-            - builds/releng_base_firefox.py
-            - builds/taskcluster_base_windows.py
-            - builds/taskcluster_base_win64.py
-            - builds/taskcluster_sub_win64/ccov_opt.py
-        mozconfig-variant: code-coverage
-    run-on-projects: ['mozilla-central']
-    use-sccache: false
-    fetches:
-        toolchain:
-            - win64-clang
-            - win64-rust
-            - win64-rust-size
-            - win64-cbindgen
-            - win64-grcov
-            - win64-sccache
-            - win64-nasm
-            - win64-node
-            - win64-winchecksec
-            - win64-mozmake
-            - win64-dump_syms
-            - vs
-            - nsis
-            - sysroot-wasm32-wasi
-
 win64-asan/debug:
     description: "Win64 Debug ASAN"
     index:

@@ -120,10 +120,6 @@ awsy:
     - awsy-base-dmd
     - awsy-tp6
 
-ccov-code-coverage-tests:
-    - test-coverage
-    - test-coverage-wpt
-
 mochitest-valgrind:
     - mochitest-valgrind
 
@@ -144,7 +140,6 @@ linux1804-tests:
     - crashtest
     - firefox-ui-functional
     - gtest
-    # - jittest  # See comment in linux1804-ccov-tests set.
     - jsreftest
     - marionette
     - mochitest-a11y
@@ -169,13 +164,6 @@ linux1804-tests:
     - test-verify-gpu
     - test-verify-wpt
     - xpcshell
-
-linux1804-ccov-tests:
-    # jittest run on regular linux builds is redundant with SM(p), so we omit it
-    # from the linux1804-tests and linux1804-qr-tests sets. But, we still want
-    # to run it on ccov builds, so we have this set that has it and which runs
-    # on ccov builds.
-    - jittest
 
 linux2204-wayland-tests:
     - mochitest-plain
@@ -249,15 +237,6 @@ windows10-2009-tests:
     - mochitest-plain
     - mochitest-plain-gpu
     - xpcshell
-
-windows11-64-2009-ccov-tests:
-    - jittest
-    - test-coverage
-    - web-platform-tests
-    - web-platform-tests-crashtest
-    - web-platform-tests-print-reftest
-    - web-platform-tests-reftest
-    - web-platform-tests-wdspec
 
 windows11-2009-tests:
     - cppunit
