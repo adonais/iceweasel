@@ -624,6 +624,16 @@ class WallpapersUseCasesTest {
         )
     }
 
+    @Test
+    fun `GIVEN EdgeToEdgeBackground feature is disabled by Nimbus WHEN EdgeToEdge wallpaper is persisted THEN default wallpaper is selected`() = runTest {
+        every { mockSettings.enableHomepageEdgeToEdgeBackgroundFeature } returns false
+        every { mockSettings.currentWallpaperName } returns Wallpaper.EDGE_TO_EDGE
+
+        WallpapersUseCases.DefaultFetchCurrentWallpaperUseCase(mockSettings, appStore).invoke()
+
+        assertEquals(Wallpaper.Default, appStore.state.wallpaperState.currentWallpaper)
+    }
+
     private enum class TimeRelation {
         BEFORE,
         NOW,
