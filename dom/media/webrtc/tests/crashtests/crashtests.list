@@ -1,4 +1,4 @@
-defaults pref(media.navigator.permission.disabled,true) pref(media.devices.insecure.enabled,true) pref(media.getusermedia.insecure.enabled,true)
+defaults pref(media.navigator.permission.disabled,true) pref(media.devices.insecure.enabled,true) pref(media.getusermedia.insecure.enabled,true) pref(media.peerconnection.ice.obfuscate_host_addresses,false)
 
 load 1674892.html
 load 1770075.html
