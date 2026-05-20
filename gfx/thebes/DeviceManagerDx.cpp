@@ -178,31 +178,38 @@ nsTArray<DXGI_OUTPUT_DESC1> DeviceManagerDx::EnumerateOutputs() {
   return outputs;
 }
 
-bool DeviceManagerDx::GetOutputFromMonitor(HMONITOR monitor,
+bool DeviceManagerDx::GetOutputFromMonitor(HMONITOR aMonitor,
                                            RefPtr<IDXGIOutput>* aOutOutput) {
-  RefPtr<IDXGIAdapter> adapter = GetDXGIAdapter();
-
-  if (!adapter) {
-    NS_WARNING("Failed to acquire a DXGI adapter for GetOutputFromMonitor.");
+  MutexAutoLock lock(mDeviceLock);
+  if (!EnsureFactoryLocked()) {
     return false;
   }
 
-  for (UINT i = 0;; ++i) {
-    RefPtr<IDXGIOutput> output = nullptr;
-    if (FAILED(adapter->EnumOutputs(i, getter_AddRefs(output)))) {
+  RefPtr<IDXGIAdapter1> adapter;
+  for (UINT adapterIndex = 0;; adapterIndex++) {
+    if (FAILED(
+            mFactory->EnumAdapters1(adapterIndex, getter_AddRefs(adapter)))) {
       break;
     }
 
-    DXGI_OUTPUT_DESC desc;
-    if (FAILED(output->GetDesc(&desc))) {
-      continue;
-    }
+    for (UINT outputIndex = 0;; outputIndex++) {
+      RefPtr<IDXGIOutput> output;
+      if (FAILED(adapter->EnumOutputs(outputIndex, getter_AddRefs(output)))) {
+        break;
+      }
 
-    if (desc.Monitor == monitor) {
-      *aOutOutput = output;
-      return true;
+      DXGI_OUTPUT_DESC desc;
+      if (FAILED(output->GetDesc(&desc))) {
+        continue;
+      }
+
+      if (desc.Monitor == aMonitor) {
+        *aOutOutput = output;
+        return true;
+      }
     }
   }
+
   return false;
 }
 

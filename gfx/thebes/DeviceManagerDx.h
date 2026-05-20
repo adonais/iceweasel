@@ -94,7 +94,7 @@ class DeviceManagerDx final {
 
   // find the IDXGIOutput with a description.Monitor matching
   // 'monitor'; returns false if not found or some error occurred.
-  bool GetOutputFromMonitor(HMONITOR monitor, RefPtr<IDXGIOutput>* aOutOutput);
+  bool GetOutputFromMonitor(HMONITOR aMonitor, RefPtr<IDXGIOutput>* aOutOutput);
 
   void PostUpdateMonitorInfo();
   void UpdateMonitorInfo();
