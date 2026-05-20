@@ -1362,9 +1362,20 @@ add_task(async function test_ui_state_signed_out_send_tab() {
   gSync.updateAllUI(state);
   await openFxaPanel();
 
+  let profilesButton = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-profiles-button"
+  );
+
   let sendTabButton = PanelMultiView.getViewNode(
     document,
     "PanelUI-fxa-menu-sendtab-button"
+  );
+
+  Assert.equal(
+    profilesButton.compareDocumentPosition(sendTabButton),
+    4, // Equates to Node.DOCUMENT_POSITION_FOLLOWING (4)
+    "Profiles button is above the send tab button"
   );
 
   Assert.equal(
