@@ -39,7 +39,6 @@ jobs-from:
     - libunwind.yml
     - llvm-symbolizer.yml
     - macos-sdk.yml
-    - mingw.yml
     - minidump-stackwalk.yml
     - misc.yml
     - nasm.yml

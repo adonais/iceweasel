@@ -26,7 +26,6 @@ jobs-from:
     - macosx.yml
     - macosx-native.yml
     - windows.yml
-    - windows-mingw.yml
 
 job-defaults:
     worker:

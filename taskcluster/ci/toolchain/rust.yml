@@ -223,17 +223,3 @@ macosx64-rust-1.69:
             '--target', 'x86_64-apple-darwin',
         ]
         toolchain-alias: macosx64-rust
-
-mingw32-rust-1.69:
-    treeherder:
-        symbol: TMW(rust)
-    run:
-        arguments: [
-            '--channel', '1.69.0',
-            '--host', 'x86_64-unknown-linux-gnu',
-            '--target', 'i686-unknown-linux-gnu',
-            '--target', 'i686-pc-windows-gnu',
-            '--target', 'x86_64-pc-windows-gnu',
-            '--target', 'x86_64-unknown-linux-gnu',
-        ]
-        toolchain-alias: mingw32-rust

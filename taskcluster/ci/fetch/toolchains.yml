@@ -137,14 +137,6 @@ wix-3.14.0:
         sha256: 13f067f38969faf163d93a804b48ea0576790a202c8f10291f2000f0e356e934
         size: 41282726
 
-zlib-1.2.13:
-    description: zlib 1.2.13 source code
-    fetch:
-        type: static-url
-        url: https://zlib.net/fossils/zlib-1.2.13.tar.gz
-        sha256: b3a24de97a8fdbc835b9833169501030b8977031bcb54b3b3ac13740f846ab30
-        size: 1497445
-
 nsis-3.07:
     description: nsis 3.07 source code
     fetch:
@@ -276,13 +268,6 @@ sccache:
         repo: https://github.com/mozilla/sccache
         # 0.4.1 release
         revision: d0d1beadd2739653ed878055215c0d9b7decb3b9
-
-fxc2:
-    description: fxc2 source code
-    fetch:
-        type: git
-        repo: https://github.com/mozilla/fxc2
-        revision: 63ad74b7faa7033f2c1be9cc1cd0225241a1a9a5
 
 mingw-w64:
     description: mingw-w64 source code

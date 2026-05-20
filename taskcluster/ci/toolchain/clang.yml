@@ -73,31 +73,6 @@ macosx64-clang-14-raw:
             - linux64-clang-14-stage1
             - macosx64-sdk-toolchain
 
-linux64-clang-16-mingw-x86:
-    description: "MinGW-Clang 16 x86 toolchain build"
-    treeherder:
-        symbol: TMW(clang-16-x86)
-    worker-type: b-linux-gcp
-    run:
-        script: build-clang-mingw.sh
-        arguments:
-            - 'x86'
-        resources:
-            - 'taskcluster/scripts/misc/mingw-*.patch'
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: linux64-clang-mingw-x86
-        toolchain-artifact: public/build/clangmingw.tar.zst
-    fetches:
-        fetch:
-            - clang-16
-            - mingw-w64
-            - llvm-mingw
-            - gcc-9.5.0
-        toolchain:
-            - linux64-clang-16
-
 linux64-clang-16-mingw-x64:
     description: "MinGW-Clang 16 x64 toolchain build"
     treeherder:
