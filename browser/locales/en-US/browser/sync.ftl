@@ -43,11 +43,9 @@ fxa-menu-send-to-mobile =
 ## The following strings are for displaying elements in the FxA send tab submenu to prompt users to sign in, enable sync, pair a device, or troubleshoot device issues.
 
 fxa-menu-send-to-mobile-sign-in = Sign in to send tabs
-fxa-menu-send-to-mobile-enable-sync2 = Enable sync to send a tab
-fxa-menu-send-to-mobile-connect-phone2 = Connect your phone
-fxa-menu-send-to-mobile-device-missing2 = Don’t see your device?
 fxa-menu-send-to-mobile-turn-on-sync = Turn on sync to send tabs
 fxa-menu-send-to-mobile-connect-device = Connect a device to send tabs
+fxa-menu-send-to-mobile-device-missing2 = Don’t see your device?
 
 ##
 
