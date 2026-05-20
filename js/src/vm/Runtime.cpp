@@ -231,9 +231,6 @@ void JSRuntime::destroyRuntime() {
     CancelOffThreadDelazify(this);
     CancelOffThreadCompressions(this);
 
-    /* Wait for GC tasks to finish, including background allocation. */
-    gc.waitForBackgroundTasks();
-
     /*
      * Flag us as being destroyed. This allows the GC to free things like
      * interned atoms and Ion trampolines.

@@ -20,7 +20,6 @@
 
 #include "gc/GCLock.h"
 #include "gc/Memory.h"
-#include "gc/Zone.h"
 #include "jit/Assembler.h"
 #include "threading/Thread.h"
 #include "vm/BigIntType.h"
@@ -107,6 +106,8 @@ bool Arena::allocated() const {
   bool result = !chunk()->decommittedPages[pageIndex] &&
                 !chunk()->freeCommittedArenas[arenaIndex] &&
                 IsValidAllocKind(allocKind);
+  MOZ_ASSERT_IF(result, zone_);
+  MOZ_ASSERT_IF(result, (uintptr_t(zone_) & 7) == 0);
 
 #if defined(DEBUG) && defined(MOZ_VALGRIND)
   // Reenable error reporting for the range we just said to ignore.
@@ -163,6 +164,8 @@ void Arena::staticAsserts() {
                 "We haven't defined all offsets.");
   static_assert(std::size(ThingsPerArena) == AllocKindCount,
                 "We haven't defined all counts.");
+  static_assert(ArenaZoneOffset == offsetof(Arena, zone_),
+                "The hardcoded API zone offset must match the actual offset.");
   static_assert(sizeof(Arena) == ArenaSize,
                 "ArenaSize must match the actual size of the Arena structure.");
   static_assert(
@@ -360,13 +363,11 @@ void ArenaChunk::decommitFreeArenas(GCRuntime* gc, const bool& cancel,
 
 void ArenaChunk::releaseArena(GCRuntime* gc, Arena* arena,
                               const AutoLockGC& lock) {
-  MOZ_ASSERT(info.zone);
-
   if (info.isCurrentChunk) {
     // The main thread is allocating out of this chunk without holding the
     // lock. Don't touch any data structures it is using but add the arena to a
     // pending set. This will be merged back by mergePendingFreeArenas.
-    auto& bitmap = info.zone->pendingFreeCommittedArenas.ref();
+    auto& bitmap = gc->pendingFreeCommittedArenas.ref();
     MOZ_ASSERT(!bitmap[arenaIndex(arena)]);
     bitmap[arenaIndex(arena)] = true;
     return;
@@ -443,7 +444,6 @@ void ArenaChunk::updateFreeCountsAfterAlloc(GCRuntime* gc,
                                             const AutoLockGC& lock) {
   MOZ_ASSERT(!info.isCurrentChunk);
   MOZ_ASSERT(numArenasAlloced > 0);
-  MOZ_ASSERT(info.zone);
 
   bool wasEmpty = isEmpty();
 
@@ -454,23 +454,22 @@ void ArenaChunk::updateFreeCountsAfterAlloc(GCRuntime* gc,
 
   if (MOZ_UNLIKELY(wasEmpty)) {
     gc->emptyChunks(lock).remove(this);
-    info.zone->availableChunks(lock).push(this);
+    gc->availableChunks(lock).push(this);
     return;
   }
 
   if (MOZ_UNLIKELY(isFull())) {
-    info.zone->availableChunks(lock).remove(this);
-    info.zone->fullChunks(lock).push(this);
+    gc->availableChunks(lock).remove(this);
+    gc->fullChunks(lock).push(this);
     return;
   }
 
-  MOZ_ASSERT(info.zone->availableChunks(lock).contains(this));
+  MOZ_ASSERT(gc->availableChunks(lock).contains(this));
 }
 
 void ArenaChunk::updateCurrentChunkAfterAlloc(GCRuntime* gc) {
   MOZ_ASSERT(info.isCurrentChunk);  // Can access without holding lock.
-  MOZ_ASSERT(info.zone);
-  MOZ_ASSERT(info.zone->currentChunk_ == this);
+  MOZ_ASSERT(gc->isCurrentChunk(this));
 
   MOZ_ASSERT(info.numArenasFree >= 1);
   MOZ_ASSERT(info.numArenasFreeCommitted >= 1);
@@ -483,7 +482,7 @@ void ArenaChunk::updateCurrentChunkAfterAlloc(GCRuntime* gc) {
     AutoLockGC lock(gc);
     mergePendingFreeArenas(gc, lock);
     if (isFull()) {
-      gc->clearCurrentChunk(info.zone, lock);
+      gc->clearCurrentChunk(lock);
     }
   }
 }
@@ -495,7 +494,6 @@ void ArenaChunk::updateFreeCountsAfterFree(GCRuntime* gc, size_t numArenasFreed,
   MOZ_ASSERT(numArenasFreed > 0);
   MOZ_ASSERT(info.numArenasFree + numArenasFreed <= ArenasPerChunk);
   MOZ_ASSERT(info.numArenasFreeCommitted + numArenasFreed <= ArenasPerChunk);
-  MOZ_ASSERT(info.zone);
 
   bool wasFull = isFull();
 
@@ -505,37 +503,34 @@ void ArenaChunk::updateFreeCountsAfterFree(GCRuntime* gc, size_t numArenasFreed,
   }
 
   if (MOZ_UNLIKELY(wasFull)) {
-    info.zone->fullChunks(lock).remove(this);
-    info.zone->availableChunks(lock).push(this);
+    gc->fullChunks(lock).remove(this);
+    gc->availableChunks(lock).push(this);
     return;
   }
 
   if (MOZ_UNLIKELY(isEmpty())) {
-    info.zone->availableChunks(lock).remove(this);
-    info.zone = nullptr;
+    gc->availableChunks(lock).remove(this);
     gc->recycleChunk(this, lock);
     return;
   }
 
-  MOZ_ASSERT(info.zone->availableChunks(lock).contains(this));
+  MOZ_ASSERT(gc->availableChunks(lock).contains(this));
 }
 
-void GCRuntime::setCurrentChunk(Zone* zone, ArenaChunk* chunk,
-                                const AutoLockGC& lock) {
-  MOZ_ASSERT(!zone->currentChunk_);
-  MOZ_ASSERT(zone->pendingFreeCommittedArenas.ref().IsEmpty());
+void GCRuntime::setCurrentChunk(ArenaChunk* chunk, const AutoLockGC& lock) {
+  MOZ_ASSERT(!currentChunk_);
+  MOZ_ASSERT(pendingFreeCommittedArenas.ref().IsEmpty());
   MOZ_ASSERT(chunk);
   MOZ_ASSERT(!chunk->info.isCurrentChunk);
-  MOZ_ASSERT(chunk->info.zone == zone);
 
-  zone->currentChunk_ = chunk;
+  currentChunk_ = chunk;
   chunk->info.isCurrentChunk = true;  // Lock needed here.
 }
 
-void GCRuntime::clearCurrentChunk(Zone* zone, const AutoLockGC& lock) {
+void GCRuntime::clearCurrentChunk(const AutoLockGC& lock) {
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
 
-  ArenaChunk* chunk = zone->currentChunk_;
+  ArenaChunk* chunk = currentChunk_;
   if (!chunk) {
     return;
   }
@@ -543,30 +538,27 @@ void GCRuntime::clearCurrentChunk(Zone* zone, const AutoLockGC& lock) {
   chunk->mergePendingFreeArenas(this, lock);
 
   MOZ_ASSERT(chunk->info.isCurrentChunk);
-  MOZ_ASSERT(chunk->info.zone == zone);
   chunk->info.isCurrentChunk = false;  // Lock needed here.
-  zone->currentChunk_ = nullptr;
+  currentChunk_ = nullptr;
 
   if (chunk->isFull()) {
-    zone->fullChunks(lock).push(chunk);
+    fullChunks(lock).push(chunk);
     return;
   }
 
   if (chunk->isEmpty()) {
-    chunk->info.zone = nullptr;
     emptyChunks(lock).push(chunk);
     return;
   }
 
   MOZ_ASSERT(chunk->hasAvailableArenas());
-  zone->availableChunks(lock).push(chunk);
+  availableChunks(lock).push(chunk);
 }
 
 void ArenaChunk::mergePendingFreeArenas(GCRuntime* gc, const AutoLockGC& lock) {
   MOZ_ASSERT(info.isCurrentChunk);
-  MOZ_ASSERT(info.zone);
 
-  auto& bitmap = info.zone->pendingFreeCommittedArenas.ref();
+  auto& bitmap = gc->pendingFreeCommittedArenas.ref();
   if (bitmap.IsEmpty()) {
     return;
   }

@@ -472,7 +472,7 @@ JS::Zone* TenuredCell::zone() const {
   return zone;
 }
 
-JS::Zone* TenuredCell::zoneFromAnyThread() const { return chunk()->info.zone; }
+JS::Zone* TenuredCell::zoneFromAnyThread() const { return arena()->zone(); }
 
 bool TenuredCell::isInsideZone(JS::Zone* zone) const {
   return zone == zoneFromAnyThread();
