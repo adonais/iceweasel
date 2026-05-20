@@ -137,16 +137,10 @@ void PlatformPipeLink::Close(nsresult aStatus, bool aInternal) {
     CancelIoEx(mHandle.get(), &mIOContext.overlapped);
     // CancelIoEx only requests cancellation; the IRP for the read is still
     // alive in the kernel and holds a reference to the file object until
-    // the cancellation actually completes. CloseHandle by itself does not
-    // wait for that to happen, so a subsequent CreateFileW for the same
-    // device (e.g. a fast close→open from JS) can still see the device as
-    // in-use and fail with ERROR_ACCESS_DENIED. Wait here for the IRP to
-    // drain before letting our caller proceed. GetOverlappedResult uses
-    // mHandle to wait when mIOContext.overlapped.hEvent is null, which is
-    // fine because we only ever have a single overlapped read in flight.
-    DWORD transferred = 0;
-    GetOverlappedResult(mHandle.get(), &mIOContext.overlapped, &transferred,
-                        /*bWait=*/TRUE);
+    // the cancellation actually completes. We used to call
+    // GetOverlappedResult() to trigger this but doing that here can lead to
+    // hangs - see bug 2040979. Instead we handle this by retrying in
+    // Win32SerialPlatformService::Open().
 #else
     // On POSIX, we can't cancel the FileDescriptorWatcher from an arbitrary
     // thread. Instead, we'll asynchronously dispatch a runnable to the IPC I/O
