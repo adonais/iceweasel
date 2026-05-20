@@ -1736,7 +1736,8 @@ export const LoginHelper = {
       };
     }
 
-    // So there's a primary password. But since checkPassword didn't succeed, we're logged out (per nsIPK11Token.idl).
+    // So there's a primary password. But since checkPassword didn't succeed,
+    // we're logged out (per nsIPKCS11Token.idl).
     try {
       // Relogin and ask for the primary password.
       token.login(true); // 'true' means always prompt for token password. User will be prompted until

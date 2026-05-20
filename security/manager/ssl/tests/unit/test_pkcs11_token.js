@@ -54,7 +54,7 @@ function checkBasicAttributes(token) {
  * The token should already have been init with a password and be logged into.
  * The password of the token will be reset after calling this function.
  *
- * @param {nsIPK11Token} token
+ * @param {nsIPKCS11Token} token
  *        The token to test.
  * @param {string} initialPW
  *        The password that the token should have been init with.
