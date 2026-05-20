@@ -148,6 +148,8 @@ class DeviceManagerDx final {
   // we attempt to create a compositor.
   static void PreloadAttachmentsOnCompositorThread();
 
+  bool EnsureFactoryLocked() MOZ_REQUIRES(mDeviceLock);
+
   already_AddRefed<IDXGIAdapter1> GetDXGIAdapter();
   IDXGIAdapter1* GetDXGIAdapterLocked() MOZ_REQUIRES(mDeviceLock);
 
