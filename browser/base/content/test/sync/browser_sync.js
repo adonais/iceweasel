@@ -1348,6 +1348,67 @@ async function closeTabAndMainPanel() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 }
 
+add_task(async function test_ui_state_unverified_send_tab() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(gSync, "isUnverified").get(() => true);
+
+  let state = {
+    status: UIState.STATUS_NOT_VERIFIED,
+    syncEnabled: false,
+    email: "foo@bar.com",
+    displayName: "Foo Bar",
+    avatarURL: "https://foo.bar",
+    lastSync: new Date(),
+    syncing: false,
+  };
+
+  gSync.updateAllUI(state);
+  await openFxaPanel();
+
+  let sendTabButton = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-button"
+  );
+
+  Assert.equal(
+    sendTabButton.getAttribute("data-l10n-id"),
+    "fxa-menu-send-to-mobile",
+    "'Send to Mobile' displayed on send tab button when all targets are mobile"
+  );
+
+  sendTabButton.click();
+
+  let verifyAccountView = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-verify-account"
+  );
+  await BrowserTestUtils.waitForEvent(verifyAccountView, "ViewShown");
+
+  let unverifiedAccountButton = verifyAccountView.querySelector(
+    "#PanelUI-fxa-menu-sendtab-unverified-button"
+  );
+  ok(
+    BrowserTestUtils.isVisible(unverifiedAccountButton),
+    "expected unverified account button to be visible after opening"
+  );
+  Assert.equal(
+    unverifiedAccountButton.getAttribute("disabled"),
+    "true",
+    "expected unverified account button to be disabled"
+  );
+
+  let verifyAccountButton = verifyAccountView.querySelector(
+    "#PanelUI-fxa-menu-sendtab-verify-account-button"
+  );
+  ok(
+    BrowserTestUtils.isVisible(verifyAccountButton),
+    "expected verify account button to be visible after opening"
+  );
+
+  await closeFxaPanel();
+  sandbox.restore();
+});
+
 add_task(async function test_ui_state_signed_out_send_tab() {
   let state = {
     status: UIState.STATUS_NOT_CONFIGURED,

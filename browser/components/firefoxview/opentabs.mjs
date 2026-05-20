@@ -893,6 +893,12 @@ class OpenTabsContextMenu extends MozLitElement {
     });
   }
 
+  onSendTabVerifyAccountClick() {
+    this.ownerViewPage
+      .getWindow()
+      .openTrustedLinkIn("about:preferences#sync", "tab");
+  }
+
   sendTabDevicesTemplate() {
     return html` <panel-list slot="submenu" id="send-tab-menu">
       ${this.devices.map(device => {
@@ -903,6 +909,28 @@ class OpenTabsContextMenu extends MozLitElement {
         `;
       })}
     </panel-list>`;
+  }
+
+  sendTabAccountUnverifiedTemplate() {
+    return html`<panel-item
+      data-l10n-id="fxviewtabrow-send-to-mobile"
+      data-l10n-attrs="accesskey"
+      submenu="send-tab-menu4"
+    >
+      <panel-list slot="submenu" id="send-tab-menu4">
+        <panel-item
+          data-l10n-id="fxviewtabrow-send-to-mobile-not-verified"
+          disabled="true"
+        >
+        </panel-item>
+        <hr />
+        <panel-item
+          data-l10n-id="fxviewtabrow-send-to-mobile-verify-account"
+          @click=${this.onSendTabVerifyAccountClick}
+        >
+        </panel-item>
+      </panel-list>
+    </panel-item>`;
   }
 
   sendTabSignedOutTemplate() {
@@ -982,6 +1010,9 @@ class OpenTabsContextMenu extends MozLitElement {
     }
 
     switch (true) {
+      case gSync.isUnverified:
+        sendTabPanel = this.sendTabAccountUnverifiedTemplate();
+        break;
       case gSync.isSignedIn === false:
         sendTabPanel = this.sendTabSignedOutTemplate();
         break;

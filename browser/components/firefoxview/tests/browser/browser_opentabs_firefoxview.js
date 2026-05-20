@@ -692,3 +692,67 @@ add_task(async function test_send_mobile_single_device_submenu_text() {
     }
   });
 });
+
+add_task(async function test_send_mobile_unverified_account_text() {
+  const sandbox = setupSyncFxAMocks({
+    state: UIState.STATUS_NOT_VERIFIED,
+    fxaDevices: [],
+  });
+  sandbox.stub(gSync, "getSendTabTargets").callsFake(() => []);
+  sandbox.stub(gSync, "isUnverified").get(() => true);
+
+  await withFirefoxView({}, async () => {
+    // TEST_URL2 is our only tab, left over from previous test
+    Assert.deepEqual(
+      getVisibleTabURLs(),
+      [TEST_URL2],
+      `We initially have a single ${TEST_URL2} tab`
+    );
+
+    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+    let [cards, rows] = await moreMenuSetup([TEST_URL3]);
+
+    let firstTab = rows[0];
+    let panelList = await openContextMenuForItem(firstTab, cards[0]);
+
+    let sendTabPanelItem = panelList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile]"
+    );
+
+    ok(sendTabPanelItem, "Send tabs to mobile panel item exists");
+
+    let sendTabSubmenuList = sendTabPanelItem.shadowRoot.querySelector(
+      "panel-list[id=send-tab-menu4]"
+    );
+    ok(sendTabSubmenuList, "Send tabs to mobile submenu panel list exists");
+
+    let unverifiedPanelItem = sendTabSubmenuList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-not-verified]"
+    );
+
+    ok(
+      unverifiedPanelItem,
+      "Send tabs to mobile unverified account panel item exists"
+    );
+    Assert.equal(
+      unverifiedPanelItem.getAttribute("disabled"),
+      "true",
+      "Send tabs to mobile unverified account panel item is disabled"
+    );
+
+    let verifyAccountPanelItem = sendTabSubmenuList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-verify-account]"
+    );
+
+    ok(
+      verifyAccountPanelItem,
+      "Send tabs to mobile verify account panel item exists"
+    );
+
+    sandbox.restore();
+    TabsSetupFlowManager.resetInternalState();
+    while (gBrowser.tabs.length > 1) {
+      BrowserTestUtils.removeTab(gBrowser.tabs[0]);
+    }
+  });
+});

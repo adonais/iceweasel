@@ -526,6 +526,10 @@ var gSync = {
     return UIState.get().status == UIState.STATUS_SIGNED_IN;
   },
 
+  get isUnverified() {
+    return UIState.get().status == UIState.STATUS_NOT_VERIFIED;
+  },
+
   get isSignedInWithSyncDisabled() {
     const state = UIState.get();
     return state.status == UIState.STATUS_SIGNED_IN && !state.syncEnabled;
@@ -684,6 +688,10 @@ var gSync = {
     PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-sendtab-enable-sync-button"
+    ).addEventListener("click", this);
+    PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sendtab-verify-account-button"
     ).addEventListener("click", this);
     PanelMultiView.getViewNode(
       document,
@@ -886,6 +894,9 @@ var gSync = {
       case "PanelUI-fxa-menu-sendtab-enable-sync-button":
         this.enableSync();
         break;
+      case "PanelUI-fxa-menu-sendtab-verify-account-button":
+        this.verifyAccount();
+        break;
       case "PanelUI-fxa-menu-sendtab-connect-phone-button":
         this.openPairDevice(button);
         break;
@@ -1012,6 +1023,12 @@ var gSync = {
   showSendToDeviceViewFromFxaMenu(anchor) {
     (async () => {
       switch (true) {
+        case this.isUnverified:
+          PanelUI.showSubView(
+            "PanelUI-fxa-menu-sendtab-verify-account",
+            anchor
+          );
+          return;
         case this.isSignedIn === false:
           PanelUI.showSubView("PanelUI-fxa-menu-sendtab-sign-in", anchor);
           return;
@@ -1178,6 +1195,7 @@ var gSync = {
     let sendTabTargets = this.getSendTabTargets();
 
     if (
+      fxaStatus == "unverified" ||
       !sendTabTargets.length ||
       this.hasOnlyMobileSendTabTargets(sendTabTargets)
     ) {
@@ -2762,6 +2780,10 @@ var gSync = {
       entrypoint: entryPoint,
     });
     switchToTabHavingURI(url, true, {});
+  },
+
+  async verifyAccount() {
+    openTrustedLinkIn("about:preferences#sync", "tab");
   },
 
   openSendTabHelp() {

@@ -87,3 +87,5 @@ fxviewtabrow-send-to-mobile-sign-in = Sign in to Send Tabs
 fxviewtabrow-send-to-mobile-turn-on-sync = Turn on Sync to Send Tabs
 fxviewtabrow-send-to-mobile-connect-device = Connect a Device to Send Tabs
 fxviewtabrow-send-to-mobile-device-missing2 = Don’t See Your Device?
+fxviewtabrow-send-to-mobile-not-verified = Account Not Verified
+fxviewtabrow-send-to-mobile-verify-account = Verify Your Account
