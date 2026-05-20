@@ -24,7 +24,6 @@ job-defaults:
         using: toolchain-script
 
 jobs-from:
-    - android.yml
     - cargo-vet.yml
     - cbindgen.yml
     - clang-tidy.yml

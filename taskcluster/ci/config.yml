@@ -215,8 +215,6 @@ treeherder:
 index:
     products:
         - 'firefox'
-        - 'fennec'
-        - 'mobile'
         - 'static-analysis'
         - 'devedition'
         - 'source'
@@ -252,7 +250,6 @@ try:
 release-promotion:
     products:
         - 'devedition'
-        - 'fennec'
         - 'firefox'
     flavors:
         promote_devedition:

@@ -15,11 +15,9 @@ transforms:
 
 kind-dependencies:
     - build
-    - build-fat-aar
 
 primary-dependency:
     - build
-    - build-fat-aar
 
 only-for-attributes:
     - nightly

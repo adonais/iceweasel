@@ -21,12 +21,10 @@ def rebuild_cached_tasks_action(
     decision_task_id, full_task_graph, label_to_taskid = fetch_graph_and_labels(
         parameters, graph_config
     )
-    # Android is not built on esr115; skip android-labeled cached tasks so
-    # this action doesn't trigger them.
     cached_tasks = [
         label
         for label, task in full_task_graph.tasks.items()
-        if task.attributes.get("cached_task", False) and "android" not in label
+        if task.attributes.get("cached_task", False)
     ]
     if cached_tasks:
         create_tasks(

@@ -49,8 +49,7 @@ def bootstrap_tasks(config, tasks):
             and not name.startswith(("toolchain-macos", "toolchain-win"))
         }
         # We don't test the artifacts variants, or js, because they are essentially subsets.
-        # Mobile and browser are different enough to warrant testing them separately.
-        for app in ("browser", "mobile_android"):
+        for app in ("browser",):
             commands = pre_commands + [
                 # MOZ_AUTOMATION changes the behavior, and we want something closer to user
                 # machines.
@@ -65,8 +64,6 @@ def bootstrap_tasks(config, tasks):
             ]
 
             os_specific = []
-            if app == "mobile_android":
-                os_specific += ["android*"]
             for os, filename in (
                 ("debian", "debian.py"),
                 ("ubuntu", "debian.py"),
@@ -90,10 +87,7 @@ def bootstrap_tasks(config, tasks):
                 "scopes": [],
                 "treeherder": {
                     "symbol": f"Boot({name})",
-                    "platform": {
-                        "browser": "linux64/opt",
-                        "mobile_android": "android-5-0-armv7/opt",
-                    }[app],
+                    "platform": "linux64/opt",
                     "kind": "other",
                     "tier": 2,
                 },

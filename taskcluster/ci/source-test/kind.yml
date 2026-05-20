@@ -23,7 +23,6 @@ jobs-from:
     - file-metadata.yml
     - jsshell.yml
     - mozlint.yml
-    - mozlint-android.yml
     - node.yml
     - puppeteer.yml
     - python.yml

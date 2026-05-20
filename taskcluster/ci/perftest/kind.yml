@@ -15,7 +15,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 jobs-from:
-    - android.yml
     - linux.yml
     - macosx.yml
     - windows.yml

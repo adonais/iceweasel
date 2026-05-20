@@ -557,21 +557,15 @@ def target_tasks_mozilla_esr102(full_task_graph, parameters, graph_config):
 
 @_target_task("mozilla_esr115_tasks")
 def target_tasks_mozilla_esr115(full_task_graph, parameters, graph_config):
-    """Select the set of tasks required for a promotable beta or release build
-    of desktop, without android CI. The candidates build process involves a pipeline
-    of builds and signing, but does not include beetmover or balrog jobs."""
+    """Select the set of tasks required for a promotable release build of
+    desktop. The candidates build process involves a pipeline of builds and
+    signing, but does not include beetmover or balrog jobs."""
 
     def filter(task):
         if not filter_release_tasks(task, parameters):
             return False
 
         if not standard_filter(task, parameters):
-            return False
-
-        platform = task.attributes.get("build_platform")
-
-        # Android is not built on esr115.
-        if platform and "android" in platform:
             return False
 
         return True
