@@ -3110,6 +3110,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">VPN intégré à %s</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">Naviguez avec une protection supplémentaire en masquant votre localisation, même sur un Wi-Fi public. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">Naviguez avec une protection supplémentaire en masquant votre localisation, même sur un Wi-Fi public.</string>
   <!-- Link text that opens additional information about the browser VPN -->

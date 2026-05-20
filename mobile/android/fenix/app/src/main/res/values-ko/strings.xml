@@ -962,7 +962,7 @@
   <!-- Preference for customizing the app icon -->
   <string name="preferences_app_icon">앱 아이콘</string>
   <!-- Preference for showing the tab strip -->
-  <string name="preferences_tab_strip">탭 표시줄 디스플레이</string>
+  <string name="preferences_tab_strip">탭 표시줄</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_toolbar_shortcut">도구 모음 바로 가기</string>
   <!-- Preference for gestures based actions -->
@@ -1057,7 +1057,7 @@
   <string name="preferences_downloads_delete_from_device">기기에서 삭제</string>
   <string name="preferences_downloads_delete_from_device_description">기기에서 삭제되며 다운로드 기록에서도 삭제됨</string>
   <string name="preferences_downloads_remove_from_download_history">다운로드 기록에서 삭제</string>
-  <string name="preferences_downloads_remove_from_download_history_description">파일이 다운로드 기록에서는 삭제되었지만 기기에는 남음</string>
+  <string name="preferences_downloads_remove_from_download_history_description">파일이 다운로드 기록에서는 삭제되지만, 기기에는 남음</string>
   <string name="preferences_downloads_ask_when_to_delete_files">파일을 삭제할 때 확인</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads_2">다운로드 설정</string>
@@ -3102,6 +3102,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">%s에 내장된 VPN</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">공용 Wi-Fi에서도 위치를 숨겨 탐색을 추가 보호합니다. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">공용 Wi-Fi에서도 위치를 숨겨 탐색을 추가 보호합니다.</string>
   <!-- Link text that opens additional information about the browser VPN -->
