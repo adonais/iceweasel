@@ -81,27 +81,6 @@ sysroot-wasm32-wasi-clang-16:
             - linux64-clang-16-stage1
             - wasm32-wasi-compiler-rt-16
 
-sysroot-wasm32-wasi-clang-trunk:
-    description: "Sysroot for wasi"
-    attributes:
-        cached_task: false
-    treeherder:
-        symbol: TL(sysroot-wasi-trunk)
-    run:
-        script: build-sysroot-wasi.sh
-        toolchain-alias:
-            by-project:
-                toolchains: sysroot-wasm32-wasi
-                default: null
-        toolchain-artifact: public/build/sysroot-wasm32-wasi.tar.zst
-    fetches:
-        fetch:
-            - clang-trunk
-            - wasi-sdk
-        toolchain:
-            - linux64-clang-trunk-stage1
-            - wasm32-wasi-compiler-rt-trunk
-
 sysroot-aarch64-linux-gnu:
     description: "Sysroot for linux64 aarch64 builds"
     attributes:

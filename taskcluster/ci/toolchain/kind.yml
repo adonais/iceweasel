@@ -46,7 +46,6 @@ jobs-from:
     - node.yml
     - pkgconf.yml
     - python.yml
-    - resourcemonitor.yml
     - rust.yml
     - rust-size.yml
     - sccache.yml

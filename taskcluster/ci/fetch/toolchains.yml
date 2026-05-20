@@ -2,20 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
-binutils-2.31.1:
-    description: binutils 2.31.1 source code
-    fetch:
-        type: static-url
-        url: https://ftpmirror.gnu.org/gnu/binutils/binutils-2.31.1.tar.xz
-        sha256: 5d20086ecf5752cc7d9134246e9588fa201740d540f7eb84d795b1f7a93bca86
-        size: 20467996
-        gpg-signature:
-            sig-url: "{url}.sig"
-            key-path: build/unix/build-binutils/3A24BC1E8FB409FA9F14371813FCEF89DD9E3C4F.key
-        artifact-name: binutils-source.tar.zst
-        strip-components: 1
-        add-prefix: binutils-source/
-
 binutils-2.36.1:
     description: binutils 2.36.1 source code
     fetch:
@@ -85,14 +71,6 @@ gmp-6.1.0:
         artifact-name: gmp-source.tar.zst
         strip-components: 1
         add-prefix: gmp-source/
-
-go-1.14.4:
-    description: Golang 1.14.4 build tools
-    fetch:
-        type: static-url
-        url: https://dl.google.com/go/go1.14.4.linux-amd64.tar.gz
-        sha256: aed845e4185a0b2a3c3d5e1d0a35491702c55889192bb9c30e67a3de6849c067
-        size: 123711003
 
 isl-0.16.1:
     description: ISL 0.16.1 source code
@@ -319,13 +297,6 @@ llvm-mingw:
         type: git
         repo: https://github.com/mstorsjo/llvm-mingw
         revision: 9f8e5cebd6dbbb7546e8917e6c59284699a48d26
-
-clang-7.0:
-    description: clang 7.0.0 source code
-    fetch:
-        type: git
-        repo: https://github.com/llvm/llvm-project
-        revision: 00b161b8971bc6d3cb55f13502288b8fe0dbaa42
 
 clang-14:
     description: clang 14.0.5 source code
@@ -573,13 +544,6 @@ pkgconf:
         artifact-name: pkgconf.tar.zst
         strip-components: 1
         add-prefix: pkgconf/
-
-afl-2.5:
-    description: AFL 2.5x source
-    fetch:
-        type: git
-        repo: https://github.com/google/AFL
-        revision: e75894a889fe854c02b9435186bd1e2927d6d490
 
 cargo-vet:
     description: cargo-vet source
