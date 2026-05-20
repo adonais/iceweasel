@@ -271,6 +271,11 @@
       margin: var(--space-xsmall);
       position: relative;
       width: unset;
+
+      /* stylelint-disable-next-line media-query-no-invalid */
+      @media -moz-pref("browser.nova.enabled") and -moz-pref("sidebar.revamp") {
+        margin: var(--chrome-window-gap);
+      }
     }
 
     /* Ensure any dialogs are clipped in an inactive/not-selected panel. */
@@ -313,11 +318,17 @@
 
     .split-view-panel[column="0"] {
       order: 0;
-      margin-inline-start: 0;
       margin-inline-end: 0;
 
       @media not (-moz-platform: macos) {
         z-index: 1;
+      }
+
+      /* stylelint-disable-next-line media-query-no-invalid */
+      @media -moz-pref("browser.nova.enabled") {
+        #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]) & {
+          margin-inline-start: 0;
+        }
       }
     }
 
