@@ -95,12 +95,6 @@ desktop-screenshot-capture:
 ### Specific platform test sets
 
 # Linux
-linux32-gtest:
-    - gtest
-
-linux32-tests:
-    - web-platform-tests
-
 linux1804-tests:
     - cppunit
     - crashtest
@@ -233,42 +227,6 @@ windows11-2009-tests:
     - test-verify-gpu
     - test-verify-wpt
     - xpcshell
-
-mingwclang-tests-debug:
-    - cppunit
-    - firefox-ui-functional
-    - mochitest-a11y
-    - mochitest-chrome-gpu
-    - mochitest-plain-gpu
-    - mochitest-webgl1-core
-    - mochitest-webgl1-ext
-    - mochitest-webgl2-core
-    - mochitest-webgl2-ext
-    - mochitest-webgpu
-    - reftest
-    - telemetry-tests-client
-
-# The following is the same as the above block, minus reftests.
-# Reftests were disabled due to frequent hangs; see bug 1642719
-# for re-enabling.
-mingwclang-win32-tests-debug:
-    - cppunit
-    - firefox-ui-functional
-    - mochitest-a11y
-    - mochitest-chrome-gpu
-    - mochitest-plain-gpu
-    - mochitest-webgl1-core
-    - mochitest-webgl1-ext
-    - mochitest-webgl2-core
-    - mochitest-webgl2-ext
-    - mochitest-webgpu
-    # - reftest - disabled, see bug 1642719
-    - telemetry-tests-client
-
-mingwclang-tests-opt:
-    - cppunit
-    - mochitest-chrome-gpu
-    - mochitest-plain-gpu
 
 windows-talos:
     - talos-bcv

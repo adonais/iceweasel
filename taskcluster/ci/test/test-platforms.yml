@@ -19,23 +19,6 @@
 # Linux platforms (matching /linux.*/)
 # Linux1804-64 uses Ubuntu 18.04 and is run on docker
 
-linux1804-32-qr/debug:
-    build-platform: linux/debug
-    test-sets:
-        - linux32-gtest
-
-linux1804-32-qr/opt:
-    build-platform: linux/opt
-    test-sets:
-        - linux32-tests
-        - linux32-gtest
-
-linux1804-32-shippable-qr/opt:
-    build-platform: linux-shippable/opt
-    test-sets:
-        - linux32-tests
-        - linux32-gtest
-
 linux1804-64-qr/opt:
     build-platform: linux64/opt
     test-sets:
@@ -151,16 +134,6 @@ windows11-32-2009-qr/debug:
         - windows-7-tests
         - windows32-2009-tests
 
-windows11-32-2009-mingwclang-qr/debug:
-    build-platform: win32-mingwclang/debug
-    test-sets:
-        - mingwclang-win32-tests-debug
-
-windows11-32-2009-mingwclang-qr/opt:
-    build-platform: win32-mingwclang/opt
-    test-sets:
-        - mingwclang-tests-opt
-
 # win64
 windows10-64-qr/opt:
     build-platform: win64/opt
@@ -251,16 +224,6 @@ windows11-64-2009-devedition-qr/opt:
         - desktop-screenshot-capture
         - web-platform-tests
         - windows11-2009-tests
-
-windows11-64-2009-mingwclang-qr/debug:
-    build-platform: win64-mingwclang/debug
-    test-sets:
-        - mingwclang-tests-debug
-
-windows11-64-2009-mingwclang-qr/opt:
-    build-platform: win64-mingwclang/opt
-    test-sets:
-        - mingwclang-tests-opt
 
 ##
 # MacOS X platforms (matching /macosx.*/)

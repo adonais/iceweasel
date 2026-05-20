@@ -44,20 +44,6 @@ gcc-9.5.0:
         strip-components: 1
         add-prefix: gcc-source/
 
-gcc-11.4.0:
-    description: GCC 11.4.0 source code
-    fetch:
-        type: static-url
-        url: https://ftpmirror.gnu.org/gnu/gcc/gcc-11.4.0/gcc-11.4.0.tar.xz
-        sha256: 3f2db222b007e8a4a23cd5ba56726ef08e8b1f1eb2055ee72c1402cea73a8dd9
-        size: 79837032
-        gpg-signature:
-            sig-url: "{url}.sig"
-            key-path: build/unix/build-gcc/D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62.key
-        artifact-name: gcc-source.tar.zst
-        strip-components: 1
-        add-prefix: gcc-source/
-
 gmp-6.1.0:
     description: GMP 6.1.0 source code
     fetch:

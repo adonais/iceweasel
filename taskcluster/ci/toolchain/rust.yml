@@ -98,11 +98,6 @@ linux64-rust-cross-beta:
             '--target', 'x86_64-pc-windows-msvc',
             '--target', 'i686-pc-windows-msvc',
             '--target', 'aarch64-pc-windows-msvc',
-            '--target', 'armv7-linux-androideabi',
-            '--target', 'thumbv7neon-linux-androideabi',
-            '--target', 'aarch64-linux-android',
-            '--target', 'i686-linux-android',
-            '--target', 'x86_64-linux-android',
         ]
 
 linux64-rust-static-1.69:
@@ -190,14 +185,3 @@ win64-rust-1.69:
             '--target', 'aarch64-pc-windows-msvc',
         ]
         toolchain-alias: win64-rust
-
-macosx64-rust-1.69:
-    treeherder:
-        symbol: TM(rust)
-    run:
-        arguments: [
-            '--channel', '1.69.0',
-            '--host', 'x86_64-apple-darwin',
-            '--target', 'x86_64-apple-darwin',
-        ]
-        toolchain-alias: macosx64-rust
