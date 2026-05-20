@@ -37,7 +37,14 @@ class PlatformPipeLink
  public:
   PlatformPipeLink(UniqueFileHandle aHandle, uint32_t aBufferSize);
 
-  void CloseLocked(nsresult aStatus) MOZ_REQUIRES(mMutex);
+  // NOTE: This performs potentially-blocking I/O to close mHandle, so should
+  // not be called on the IO thread!
+  void Close(nsresult aStatus, bool aInternal) MOZ_EXCLUDES(mMutex)
+      MOZ_EXCLUDES(mIOThread);
+
+  // Dispatch an internal Close(...) call to be performed in a background task.
+  // Called when background I/O operations fail.
+  void DispatchClose(nsresult aStatus);
 
   // Dispatch notification of mCallback to another thread.
   //
@@ -47,6 +54,8 @@ class PlatformPipeLink
   void DispatchNotify() MOZ_REQUIRES(mMutex);
 
   void AdvanceIO() MOZ_EXCLUDES(mMutex) MOZ_REQUIRES(mIOThread);
+
+  void AdvanceIOLocked() MOZ_REQUIRES(mMutex, mIOThread);
 
 #ifdef XP_WIN
   void OnIOCompleted(MessageLoopForIO::IOContext* aContext,
@@ -59,7 +68,7 @@ class PlatformPipeLink
   const EventTargetCapability<nsISerialEventTarget> mIOThread;
   Mutex mMutex{"PlatformPipeReader"};
 
-  UniqueFileHandle mHandle MOZ_GUARDED_BY(mIOThread);
+  UniqueFileHandle mHandle MOZ_GUARDED_BY(mMutex);
   const UniquePtr<char[]> mBuffer;
   const uint32_t mBufferSize;
 
@@ -79,10 +88,10 @@ class PlatformPipeLink
   // A reference keeping `this` alive while I/O is in-flight.
   // This is particularly important on Windows where mBuffer needs to be kept
   // alive while Overlapped IO is ongoing.
-  RefPtr<PlatformPipeLink> mPending MOZ_GUARDED_BY(mIOThread);
+  RefPtr<PlatformPipeLink> mPending MOZ_GUARDED_BY(mMutex);
 
 #ifdef XP_WIN
-  MessageLoopForIO::IOContext mIOContext MOZ_GUARDED_BY(mIOThread) = {};
+  MessageLoopForIO::IOContext mIOContext MOZ_GUARDED_BY(mMutex) = {};
 #else
   MessageLoopForIO::FileDescriptorWatcher mWatcher MOZ_GUARDED_BY(mIOThread);
 #endif
@@ -109,15 +118,60 @@ PlatformPipeLink::PlatformPipeLink(UniqueFileHandle aHandle,
 #endif
 }
 
-void PlatformPipeLink::CloseLocked(nsresult aStatus) {
+void PlatformPipeLink::Close(nsresult aStatus, bool aInternal) {
+  MutexAutoLock lock(mMutex);
+  MOZ_RELEASE_ASSERT(aInternal || !mProcessingSegment,
+                     "Cannot close pipe during ReadSegments callback");
   if (NS_FAILED(mStatus)) {
     return;
   }
 
   mStatus = NS_SUCCEEDED(aStatus) ? NS_BASE_STREAM_CLOSED : aStatus;
   DispatchNotify();
-  mIOThread.Dispatch(NewRunnableMethod("PlatformPipeLink::AdvanceIO", this,
-                                       &PlatformPipeLink::AdvanceIO));
+
+  if (mPending) {
+#ifdef XP_WIN
+    // If we still have pending I/O, cancel it. We don't clear mPending,
+    // as we need to keep our buffers alive until the cancelled I/O
+    // completes.
+    CancelIoEx(mHandle.get(), &mIOContext.overlapped);
+    // CancelIoEx only requests cancellation; the IRP for the read is still
+    // alive in the kernel and holds a reference to the file object until
+    // the cancellation actually completes. We used to call
+    // GetOverlappedResult() to trigger this but doing that here can lead to
+    // hangs - see bug 2040979. Instead we handle this by retrying in
+    // Win32SerialPlatformService::Open().
+#else
+    // On POSIX, we can't cancel the FileDescriptorWatcher from an arbitrary
+    // thread. Instead, we'll asynchronously dispatch a runnable to the IPC I/O
+    // thread and cancel there. That runnable will dispatch another event to
+    // actually close mHandle.
+    // It's OK that we don't synchronously close the handle on POSIX, as FDs are
+    // not exclusive like they are on Windows.
+    mIOThread.Dispatch(NewRunnableMethod("PlatformPipeLink::AdvanceIO", this,
+                                         &PlatformPipeLink::AdvanceIO));
+    return;
+#endif
+  }
+
+  // Now that I/O cancellation has been initiated, if required, it is safe for
+  // us to close our handle. On Windows, mPending will keep the buffer alive
+  // while the I/O completes. We do this synchronously, as otherwise the file
+  // may not be possible to re-open immediately on Windows.
+  mHandle = nullptr;
+}
+
+void PlatformPipeLink::DispatchClose(nsresult aStatus) {
+  // This is called when the PlatformPipeLink enters an error state internally.
+  //
+  // This dispatches the close operation so that it happens in a background task
+  // which is allowed to block. This is important, as the Close() operation will
+  // synchronously close the pipe, which may do expensive I/O operations.
+  NS_DispatchBackgroundTask(
+      NewRunnableMethod<nsresult, bool>("PlatformPipeLink::Close", this,
+                                        &PlatformPipeLink::Close, aStatus,
+                                        /* aInternal */ true),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
 }
 
 void PlatformPipeLink::DispatchNotify() {
@@ -134,24 +188,26 @@ void PlatformPipeLink::DispatchNotify() {
 }
 
 void PlatformPipeLink::AdvanceIO() {
+  MutexAutoLock lock(mMutex);
+  AdvanceIOLocked();
+}
+
+void PlatformPipeLink::AdvanceIOLocked() {
   if (!mHandle) {
     return;
   }
 
-  MutexAutoLock lock(mMutex);
   if (NS_FAILED(mStatus)) {
-    if (mPending) {
 #ifdef XP_WIN
-      // If we still have pending I/O, cancel it. We don't clear mPending,
-      // as we need to keep our buffers alive until the cancelled I/O
-      // completes.
-      CancelIo(mHandle.get());
+    // On Windows, tearing down the HANDLE is handled synchronously in Close.
+    return;
 #else
-      // On posix, immediately cancel our pending I/O by clearing the
-      // watcher.
+    // On POSIX, we may end up in AdvanceIO with a pending mWatcher and a failed
+    // status. In that case, we need to tear down the watcher, then close the
+    // handle asynchronously.
+    if (mPending) {
       mWatcher.StopWatchingFileDescriptor();
       mPending = nullptr;
-#endif
     }
 
     // The `close` operation can be slow and perform blocking I/O, so we want to
@@ -163,6 +219,7 @@ void PlatformPipeLink::AdvanceIO() {
             [handle = std::move(mHandle)]() mutable { handle = nullptr; }),
         NS_DISPATCH_EVENT_MAY_BLOCK);
     return;
+#endif
   }
 
   // We still have outstanding I/O, or our buffer already has data waiting to
@@ -187,9 +244,9 @@ void PlatformPipeLink::AdvanceIO() {
       return;
     }
     if (error == ERROR_BROKEN_PIPE || error == ERROR_HANDLE_EOF) {
-      CloseLocked(NS_BASE_STREAM_CLOSED);
+      DispatchClose(NS_BASE_STREAM_CLOSED);
     } else {
-      CloseLocked(NS_ERROR_FAILURE);
+      DispatchClose(NS_ERROR_FAILURE);
     }
     return;
   }
@@ -207,7 +264,7 @@ void PlatformPipeLink::AdvanceIO() {
   }
 
   if (rv == 0) {
-    CloseLocked(NS_BASE_STREAM_CLOSED);
+    DispatchClose(NS_BASE_STREAM_CLOSED);
     return;
   }
 
@@ -224,7 +281,7 @@ void PlatformPipeLink::AdvanceIO() {
     }
   }
 
-  CloseLocked(NS_ERROR_FAILURE);
+  DispatchClose(NS_ERROR_FAILURE);
 #endif
 }
 
@@ -232,6 +289,7 @@ void PlatformPipeLink::AdvanceIO() {
 void PlatformPipeLink::OnIOCompleted(MessageLoopForIO::IOContext* aContext,
                                      DWORD aBytesTransferred, DWORD aError) {
   mIOThread.AssertOnCurrentThread();
+  MutexAutoLock lock(mMutex);
   if (aContext != &mIOContext) {
     return;
   }
@@ -241,7 +299,6 @@ void PlatformPipeLink::OnIOCompleted(MessageLoopForIO::IOContext* aContext,
     return;
   }
 
-  MutexAutoLock lock(mMutex);
   if (NS_FAILED(mStatus)) {
     return;
   }
@@ -249,15 +306,15 @@ void PlatformPipeLink::OnIOCompleted(MessageLoopForIO::IOContext* aContext,
   if (aError != ERROR_SUCCESS) {
     if (aError == ERROR_BROKEN_PIPE || aError == ERROR_HANDLE_EOF ||
         aError == ERROR_OPERATION_ABORTED) {
-      CloseLocked(NS_BASE_STREAM_CLOSED);
+      DispatchClose(NS_BASE_STREAM_CLOSED);
     } else {
-      CloseLocked(NS_ERROR_FAILURE);
+      DispatchClose(NS_ERROR_FAILURE);
     }
     return;
   }
 
   if (aBytesTransferred == 0) {
-    CloseLocked(NS_BASE_STREAM_CLOSED);
+    DispatchClose(NS_BASE_STREAM_CLOSED);
     return;
   }
 
@@ -270,8 +327,9 @@ void PlatformPipeLink::OnIOCompleted(MessageLoopForIO::IOContext* aContext,
 #else
 void PlatformPipeLink::OnFileCanReadWithoutBlocking(int fd) {
   mIOThread.AssertOnCurrentThread();
+  MutexAutoLock lock(mMutex);
   RefPtr<PlatformPipeLink> pending = mPending.forget();
-  AdvanceIO();
+  AdvanceIOLocked();
 }
 
 void PlatformPipeLink::OnFileCanWriteWithoutBlocking(int fd) {
@@ -368,10 +426,7 @@ NS_IMETHODIMP PlatformPipeReader::IsNonBlocking(bool* aNonBlocking) {
 }
 
 NS_IMETHODIMP PlatformPipeReader::CloseWithStatus(nsresult aStatus) {
-  MutexAutoLock lock(mLink->mMutex);
-  MOZ_RELEASE_ASSERT(!mLink->mProcessingSegment,
-                     "Cannot close pipe during ReadSegments callback");
-  mLink->CloseLocked(aStatus);
+  mLink->Close(aStatus, /* aInternal */ false);
   return NS_OK;
 }
 
