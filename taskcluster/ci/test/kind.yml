@@ -30,7 +30,6 @@ transforms:
 
 jobs-from:
     - awsy.yml
-    - browsertime-desktop.yml
     - compiled.yml
     - firefox-ui.yml
     - marionette.yml

@@ -46,7 +46,6 @@ linux1804-64-qr/opt:
         - web-platform-tests
         - web-platform-tests-backlog
         - talos
-        - browsertime
 
 linux1804-64-shippable-qr/opt:
     build-platform: linux64-shippable/opt
@@ -59,13 +58,6 @@ linux1804-64-shippable-qr/opt:
         - web-platform-tests-backlog
         - talos
         - talos-profiling
-        - browsertime
-        - browsertime-profiling
-
-linux1804-64-nightlyasrelease-qr/opt:
-    build-platform: linux64-nightlyasrelease/opt
-    test-sets:
-        - browsertime
 
 linux1804-64-qr/debug:
     build-platform: linux64/debug
@@ -94,12 +86,6 @@ linux1804-64-devedition-qr/opt:
         - desktop-screenshot-capture
         - linux1804-tests
         - web-platform-tests
-
-linux1804-64-clang-trunk-qr/opt:
-    build-platform: linux64-plain-clang-trunk/opt
-    test-sets:
-        - awsy
-        - browsertime-clang
 
 linux2204-64-wayland/opt:
     build-platform: linux64/opt
@@ -133,13 +119,11 @@ windows10-32-shippable-qr/opt:
     build-platform: win32-shippable/opt
     build-signing-label: build-signing-win32-shippable/opt
     test-sets:
-        - browsertime
         - windows-talos
 
 windows10-32-qr/opt:
     build-platform: win32/opt
     test-sets:
-        - browsertime
         - windows-talos
 
 # win11-32
@@ -182,7 +166,6 @@ windows10-64-qr/opt:
     build-platform: win64/opt
     test-sets:
         - windows-talos
-        - browsertime
 
 windows10-64-ref-hw-2017-qr/opt:
     build-platform: win64-shippable/opt
@@ -193,12 +176,6 @@ windows10-64-shippable-qr/opt:
     build-platform: win64-shippable/opt
     test-sets:
         - windows-talos
-        - browsertime
-
-windows10-64-nightlyasrelease-qr/opt:
-    build-platform: win64-nightlyasrelease/opt
-    test-sets:
-        - browsertime
 
 # win10-64 2004
 windows10-64-2009-qr/debug:
@@ -292,19 +269,12 @@ macosx1015-64-shippable-qr/opt:
     build-platform: macosx64-shippable/opt
     test-sets:
         - awsy
-        - browsertime
-        - browsertime-profiling
         - desktop-screenshot-capture
         - macosx1015-64-qr-tests
         - macosx64-talos
         - talos-profiling
         - web-platform-tests
         - web-platform-tests-backlog
-
-macosx1015-64-nightlyasrelease-qr/opt:
-    build-platform: macosx64-nightlyasrelease/opt
-    test-sets:
-        - browsertime
 
 macosx1015-64-devedition-qr/opt:
     build-platform: macosx64-devedition/opt

@@ -1048,25 +1048,6 @@ def target_tasks_updatebot_cron(full_task_graph, parameters, graph_config):
     return ["updatebot-cron"]
 
 
-@_target_task("customv8_update")
-def target_tasks_customv8_update(full_task_graph, parameters, graph_config):
-    """Select tasks required for building latest d8/v8 version."""
-    return ["toolchain-linux64-custom-v8"]
-
-
-@_target_task("chromium_update")
-def target_tasks_chromium_update(full_task_graph, parameters, graph_config):
-    """Select tasks required for building latest chromium versions."""
-    return [
-        "fetch-linux64-chromium",
-        "fetch-win32-chromium",
-        "fetch-win64-chromium",
-        "fetch-mac-chromium",
-        "toolchain-linux64-custom-car",
-        "toolchain-win64-custom-car",
-    ]
-
-
 @_target_task("file_update")
 def target_tasks_file_update(full_task_graph, parameters, graph_config):
     """Select the set of tasks required to perform nightly in-tree file updates"""
