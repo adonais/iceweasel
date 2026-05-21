@@ -408,11 +408,11 @@ internal class DefaultMetricsStorage(
 
         /**
          * Determines whether events should be tracked based on some general criteria:
-         * - user has installed as a result of a campaign
+         * - user has accepted the marketing onboarding card
          * - this is a release build
          */
         fun shouldSendGenerally(context: Context): Boolean {
-            return context.settings().adjustCampaignId.isNotEmpty() && Config.channel.isRelease
+            return context.settings().isMarketingTelemetryEnabled && Config.channel.isRelease
         }
 
         fun getInstalledTime(context: Context): Long = context.packageManagerCompatHelper
