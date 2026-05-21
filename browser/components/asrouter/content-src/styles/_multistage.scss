@@ -3331,3 +3331,65 @@ html {
     position: relative;
   }
 }
+
+.SMARTWINDOW_FEEDBACK_SCREEN {
+  .welcome-text {
+    align-items: start;
+    margin: 0 0 8px;
+  }
+
+  .main-content-inner {
+    justify-content: flex-start;
+    padding: 32px;
+  }
+
+  .main-content.no-steps {
+    padding-bottom: 0;
+  }
+
+  #content-tiles-container {
+    margin: 0 8px;
+
+    .content-tile,
+    .textarea-container {
+      margin-inline: 0;
+    }
+
+    .tile-title-container {
+      margin-block: 0 8px;
+    }
+
+    .content-tile .multi-select-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      justify-items: start;
+      align-items: start;
+      gap: 8px;
+      margin-inline: 0;
+      padding: 12px;
+
+      .checkbox-container {
+        align-items: flex-start;
+      }
+    }
+  }
+
+  .tile-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .link-paragraph {
+    text-align: start;
+    padding: 0 8px;
+    margin-block: 12px 20px;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+    padding: 0 4px;
+    gap: 8px;
+  }
+}

@@ -1958,6 +1958,7 @@ const EmbeddedBrowserInner = ({
     }
     const browserEl = document.createXULElement("browser");
     const remoteType = window.AWPredictRemoteType({
+      browserEl,
       url
     });
     const attributes = [["disableglobalhistory", "true"], ["type", "content"], ["remote", "true"], ["maychangeremoteness", "true"], ["nodefaultsrc", "true"], ["remoteType", remoteType]];
