@@ -66,6 +66,12 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
       do_QueryInterface(aGlobal.GetAsSupports());
   MOZ_ASSERT(window);
 
+  if (!window->IsCurrentInnerWindow()) {
+    aRv.ThrowInvalidStateError(
+        "Cannot create worker for a going to be discarded document");
+    return nullptr;
+  }
+
   // Our current idiom is that storage-related APIs specialize for the system
   // principal themselves, which is consistent with StorageAllowedForwindow not
   // specializing for the system principal.  Without this specialization we
