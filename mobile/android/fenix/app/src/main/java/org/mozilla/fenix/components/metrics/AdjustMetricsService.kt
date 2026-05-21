@@ -106,6 +106,7 @@ class AdjustMetricsService(
 
             config.setLogLevel(LogLevel.SUPPRESS)
 
+            config.disableFbIdReading()
             if (settings.isUserMetaAttributed) {
                 enableOnlyMetaThirdPartySharing()
             } else {
