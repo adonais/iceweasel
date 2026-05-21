@@ -322,3 +322,24 @@ addAccessibleTask(
   },
   { chrome: true, topLevel: true }
 );
+
+/**
+ * Test the name of an HTML select which becomes the document element. This
+ * isn't something that anyone should actually do, but we still need to cope
+ * with it.
+ */
+addAccessibleTask(
+  `content`,
+  async function testSelectAtRoot(browser, docAcc) {
+    let changed = waitForEvent(EVENT_NAME_CHANGE, docAcc);
+    await invokeContentTask(browser, [], () => {
+      const a = content.document.createElement("select");
+      a.role = "application";
+      content.document.replaceChild(a, content.document.childNodes[1]);
+      content.document.title = "after";
+    });
+    await changed;
+    testName(docAcc, null);
+  },
+  { topLevel: true, chrome: true }
+);

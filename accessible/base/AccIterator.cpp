@@ -258,6 +258,11 @@ LocalAccessible* HTMLLabelIterator::Next() {
   // Go up tree to get a name of ancestor label if there is one (an ancestor
   // <label> implicitly points to us). Don't go up farther than form or
   // document.
+  if (mAcc->IsDoc()) {
+    // Bug 2021491: It's possible, albeit very silly, for a labelable element to
+    // be at the root of a document.
+    return nullptr;
+  }
   LocalAccessible* walkUp = mAcc->LocalParent();
   while (walkUp && !walkUp->IsDoc()) {
     nsIContent* walkUpEl = walkUp->GetContent();
