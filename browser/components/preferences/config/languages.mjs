@@ -934,6 +934,7 @@ SettingGroupManager.registerGroups({
   },
   translations: {
     inProgress: true,
+    subcategory: "translations",
     l10nId: "settings-translations-header",
     iconSrc: "chrome://browser/skin/translations.svg",
     supportPage: "website-translation",
