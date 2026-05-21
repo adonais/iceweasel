@@ -83,13 +83,15 @@ struct ParamTraits<mozilla::WidgetEvent> {
             ToChar(aExpectedEventClassID), ToChar(aResult->mClass),
             ToChar(aResult->mMessage))
             .c_str());
-    if (aResult->mClass == aExpectedEventClassID) [[likely]] {
+    if (aResult->mClass == aExpectedEventClassID &&
+        mozilla::IsValidMessageForIPC(aResult->mMessage, aExpectedEventClassID))
+        [[likely]] {
       return true;
     }
     // Clear mClass value to avoid the assertion failure in the destructor in
     // the debug build because it's not a fault in this process.
     aResult->mClass = mozilla::eEventClassUninitialized;
-    // Don't allow illegal mClass value.
+    // Don't allow illegal mClass/mMessage combination.
     return false;
   }
 

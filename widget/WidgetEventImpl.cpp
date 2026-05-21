@@ -185,6 +185,75 @@ bool IsForbiddenDispatchingToNonElementContent(EventMessage aMessage) {
   }
 }
 
+bool IsValidMessageForIPC(EventMessage aMessage, EventClassID aClassID) {
+  switch (aMessage) {
+    case eKeyDown:
+    case eKeyUp:
+    case eKeyPress:
+      return aClassID == eKeyboardEventClass;
+    case eMouseMove:
+    case eMouseUp:
+    case eMouseDown:
+    case eMouseEnterIntoWidget:
+    case eMouseExitFromWidget:
+    case eMouseDoubleClick:
+    case eMouseActivate:
+    case eMouseOver:
+    case eMouseOut:
+    case eMouseHitTest:
+    case eMouseEnter:
+    case eMouseLeave:
+    case eMouseTouchDrag:
+    case eMouseLongTap:
+    case eMouseExploreByTouch:
+      return aClassID == eMouseEventClass;
+    case eWheel:
+    case eWheelOperationStart:
+    case eWheelOperationEnd:
+      return aClassID == eWheelEventClass;
+    case eDragEnter:
+    case eDragOver:
+    case eDragExit:
+    case eDrag:
+    case eDragEnd:
+    case eDragStart:
+    case eDrop:
+    case eDragLeave:
+      return aClassID == eDragEventClass;
+    case ePointerMove:
+    case ePointerUp:
+    case ePointerDown:
+    case ePointerOver:
+    case ePointerOut:
+    case ePointerEnter:
+    case ePointerLeave:
+    case ePointerCancel:
+    case ePointerRawUpdate:
+    case ePointerGotCapture:
+    case ePointerLostCapture:
+    case ePointerClick:
+    case ePointerAuxClick:
+    case eContextMenu:
+      return aClassID == ePointerEventClass;
+    case eTouchStart:
+    case eTouchMove:
+    case eTouchEnd:
+    case eTouchCancel:
+    case eTouchPointerCancel:
+      return aClassID == eTouchEventClass;
+    case eCompositionStart:
+    case eCompositionEnd:
+    case eCompositionChange:
+    case eCompositionCommitAsIs:
+    case eCompositionCommit:
+      return aClassID == eCompositionEventClass;
+    case eSetSelection:
+      return aClassID == eSelectionEventClass;
+    default:
+      return false;
+  }
+}
+
 const char* ToChar(EventClassID aEventClassID) {
   switch (aEventClassID) {
 #define NS_ROOT_EVENT_CLASS(aPrefix, aName) \

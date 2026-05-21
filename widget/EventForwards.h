@@ -117,6 +117,15 @@ enum EventClassID : uint8_t {
 
 const char* ToChar(EventClassID aEventClassID);
 
+/**
+ * Return true if aMessage is a valid EventMessage value for aClassID when an
+ * event is read from another process.  This is used to reject events whose
+ * mMessage/mClass combination is inconsistent and therefore likely tampered
+ * with by a compromised content process.
+ */
+[[nodiscard]] bool IsValidMessageForIPC(EventMessage aMessage,
+                                        EventClassID aClassID);
+
 typedef uint16_t Modifiers;
 
 #define NS_DEFINE_KEYNAME(aCPPName, aDOMKeyName) KEY_NAME_INDEX_##aCPPName,
