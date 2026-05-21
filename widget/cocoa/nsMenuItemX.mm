@@ -93,26 +93,26 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
   if (mType != eSeparatorMenuItemType) {
     // Most menu items share a single (action, target) pair and are
     // differentiated by a unique (representedObject, tag) pair, but the
-    // standard Edit menu items use macOS-default selectors with no fixed
-    // target so they propagate via the responder chain. This lets native
-    // text fields (e.g. an NSSavePanel sheet's filename field, bug
-    // 2036608) handle Cmd+C/V/X/Z/A natively, and ensures that the macOS
+    // standard text-editing menu items use macOS-default selectors with no
+    // fixed target so they propagate via the responder chain. This lets
+    // native text fields (e.g. an NSSavePanel sheet's filename field, bug
+    // 2036608) handle Cmd+C/V/X natively, and ensures that the macOS
     // "Copy" menu item gets the Emoji picker / writing-tools sub-items
     // populated in multi-language environments (bug 1478347). When no
     // responder in the chain handles them, our application delegate
-    // forwards each selector to [nsMenuBarX::sNativeEventTarget
-    // menuItemHit:].
+    // forwards each selector to
+    // [nsMenuBarX::sNativeEventTarget menuItemHit:].
+    //
+    // menu_undo and menu_redo intentionally stay on menuItemHit::
+    // NSResponder ships with default undo:/redo: implementations that look
+    // up the responder's undoManager and silently no-op when it is nil,
+    // which it always is in Gecko (we use our own TransactionManager).
+    // Routing those two through the responder chain would consume the
+    // action before the AppDelegate forwarder is reached, leaving menu-bar
+    // Undo/Redo dead across the browser (bug 2040809).
     SEL standardEditSelector = nil;
     if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
-                                           u"menu_undo"_ns, eCaseMatters)) {
-      standardEditSelector = @selector(undo:);
-    } else if (mContent->AsElement()->AttrValueIs(
-                   kNameSpaceID_None, nsGkAtoms::id, u"menu_redo"_ns,
-                   eCaseMatters)) {
-      standardEditSelector = @selector(redo:);
-    } else if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                  nsGkAtoms::id, u"menu_cut"_ns,
-                                                  eCaseMatters)) {
+                                           u"menu_cut"_ns, eCaseMatters)) {
       standardEditSelector = @selector(cut:);
     } else if (mContent->AsElement()->AttrValueIs(
                    kNameSpaceID_None, nsGkAtoms::id, u"menu_copy"_ns,
