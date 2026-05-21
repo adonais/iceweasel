@@ -59,6 +59,10 @@ class HomepageEdgeToEdgeFeature(
     private var wallpaperScope: CoroutineScope? = null
 
     override fun start() {
+        if (!settings.enableHomepageEdgeToEdgeBackgroundFeature) {
+            return
+        }
+
         observeWallpaperUpdates()
     }
 
