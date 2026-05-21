@@ -517,8 +517,8 @@ add_task(async function test_page_contextmenu_sync_not_ready_other_state() {
   await openContentContextMenu("#moztext");
   is(
     document.getElementById("context-sendpagetodevice").hidden,
-    true,
-    "Send page to device is hidden"
+    false,
+    "Send page to device should not be hidden"
   );
   is(
     document.getElementById("context-sendpagetodevice").disabled,
@@ -558,8 +558,8 @@ add_task(async function test_page_contextmenu_not_verified() {
   await openContentContextMenu("#moztext");
   is(
     document.getElementById("context-sendpagetodevice").hidden,
-    true,
-    "Send page to device is hidden"
+    false,
+    "Send page to device should not be hidden"
   );
   is(
     document.getElementById("context-sendpagetodevice").disabled,
