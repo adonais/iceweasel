@@ -18,6 +18,7 @@ BROWSER_CHROME_MANIFESTS += [
     "tests/etp/browser.toml",
     "tests/experimental_features/browser-srd.toml",
     "tests/experimental_features/browser.toml",
+    "tests/home/browser-srd.toml",
     "tests/home/browser.toml",
     "tests/languages/browser-srd.toml",
     "tests/languages/browser.toml",

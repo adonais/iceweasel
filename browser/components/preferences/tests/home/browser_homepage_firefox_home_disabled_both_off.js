@@ -17,7 +17,6 @@ const CLASSIC_WEATHER_SYSTEM_PREF =
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       ["identity.fxaccounts.account.device.name", ""],
       // Set both to non-Firefox-Home values
       [HOMEPAGE_PREF, BLANK_HOMEPAGE_URL],

@@ -17,7 +17,6 @@ const CLASSIC_WEATHER_SYSTEM_PREF =
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       ["identity.fxaccounts.account.device.name", ""],
       // New windows = blank, New tabs = Firefox Home
       [HOMEPAGE_PREF, BLANK_HOMEPAGE_URL],
