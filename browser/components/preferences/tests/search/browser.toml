@@ -42,6 +42,8 @@ fail-if = [
 
 ["browser_search_quickactions.js"]
 
+["browser_search_results.js"]
+
 ["browser_search_searchTerms.js"]
 
 ["browser_search_subdialog_tooltip_saved_addresses.js"]

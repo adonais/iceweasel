@@ -146,12 +146,16 @@ var gSearchResultsPane = {
       return [];
     }
     let all = [];
+    let originalNode = node;
     for (node = node.firstChild; node; node = node.nextSibling) {
       if (node.nodeType === node.TEXT_NODE) {
         all.push(node);
-      } else {
+      } else if (!node.hidden) {
         all = all.concat(this.textNodeDescendants(node));
       }
+    }
+    if (originalNode.shadowRoot) {
+      all = all.concat(this.textNodeDescendants(originalNode.shadowRoot));
     }
     return all;
   },
@@ -476,11 +480,6 @@ var gSearchResultsPane = {
         nodeObject.localName !== "moz-input-box")
     ) {
       let simpleTextNodes = this.textNodeDescendants(nodeObject);
-      if (nodeObject.shadowRoot) {
-        simpleTextNodes.push(
-          ...this.textNodeDescendants(nodeObject.shadowRoot)
-        );
-      }
       for (let node of simpleTextNodes) {
         let result = this.highlightMatches(
           [node],
