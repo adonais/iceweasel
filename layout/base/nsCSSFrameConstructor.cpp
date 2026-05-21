@@ -5811,7 +5811,7 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
       AssertAnonymousFlexOrGridItemParent(aInsertion->mParentFrame);
       if (!prevSibling->GetNextSibling() &&
           (!aChild->IsText() || aChild->TextIsOnlyWhitespace())) {
-        prevSibling = aInsertion->mParentFrame;
+        prevSibling = aInsertion->mParentFrame->GetTailContinuation();
         aInsertion->mParentFrame = prevSibling->GetParent();
       }
     }
@@ -5830,7 +5830,8 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
       AssertAnonymousFlexOrGridItemParent(aInsertion->mParentFrame);
       if (!nextSibling->GetPrevSibling() &&
           (!aChild->IsText() || aChild->TextIsOnlyWhitespace())) {
-        aInsertion->mParentFrame = aInsertion->mParentFrame->GetParent();
+        aInsertion->mParentFrame =
+            aInsertion->mParentFrame->FirstContinuation()->GetParent();
       }
     }
   } else {
