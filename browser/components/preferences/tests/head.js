@@ -300,6 +300,11 @@ async function waitForAndAssertPrefState(pref, expectedValue, message) {
  * @param {string} value - The history mode to select.
  */
 async function selectHistoryMode(win, value) {
+  if (Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)) {
+    await selectRedesignedHistoryMode(win, value);
+    return;
+  }
+
   let historyMode = win.document.getElementById("historyMode").inputEl;
 
   // Find the index of the option with the given value. Do this before the first

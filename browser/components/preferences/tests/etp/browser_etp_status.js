@@ -6,8 +6,6 @@
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      // Show the ETP status section in the privacy pane.
-      ["browser.settings-redesign.enabled", true],
       // Ensure we start from ETP "standard".
       ["browser.contentblocking.category", "standard"],
     ],
