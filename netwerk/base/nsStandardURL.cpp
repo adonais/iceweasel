@@ -3716,6 +3716,8 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
   NS_ENSURE_TRUE(isSubSegment(mHost, mAuthority), false);
   NS_ENSURE_TRUE(isSubSegment(mUsername, mAuthority), false);
   NS_ENSURE_TRUE(isSubSegment(mPassword, mAuthority), false);
+  NS_ENSURE_TRUE(isSubSegment(mQuery, mPath), false);
+  NS_ENSURE_TRUE(isSubSegment(mRef, mPath), false);
 
   if (!IsValid()) {
     return false;
