@@ -2753,7 +2753,7 @@
   <!-- Option for enhanced tracking protection for the custom protection settings for cookies -->
   <string name="preference_enhanced_tracking_protection_custom_cookies_3">ყველა გარეშე ფუნთუშა (იწვევს ზოგი საიტის გაუმართაობას)</string>
   <!-- Option for enhanced tracking protection for the custom protection settings for cookies -->
-  <string name="preference_enhanced_tracking_protection_custom_cookies_4">ყველა ფუნთუშა (იწვევს ზოგი საიტის გაუმართაობას)</string>
+  <string name="preference_enhanced_tracking_protection_custom_cookies_4">ყველა ფუნთუშა (იწვევს საიტების გაუმართაობას)</string>
   <!-- Option for enhanced tracking protection for the custom protection settings for cookies -->
   <string name="preference_enhanced_tracking_protection_custom_cookies_5">საიტთაშორისი ფუნთუშების გამიჯვნა</string>
   <!-- Preference for Global Privacy Control for the custom privacy settings for Global Privacy Control. '&amp;' is replaced with the ampersand symbol: & -->
@@ -3110,6 +3110,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">%s ჩაშენებული VPN-ით</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">იმოგზაურეთ ინტერნეტში დამატებითი დაცვით, მდებარეობის დაფარვით, მათ შორის საჯარო WiFi-ქსელებში. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">იმოგზაურეთ ინტერნეტში დამატებითი დაცვით, მდებარეობის დაფარვით, მათ შორის საჯარო WiFi-ქსელებში.</string>
   <!-- Link text that opens additional information about the browser VPN -->

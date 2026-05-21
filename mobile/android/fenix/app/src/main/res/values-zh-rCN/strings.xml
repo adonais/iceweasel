@@ -713,6 +713,8 @@
   <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">与 Mozilla 的营销合作伙伴分享您发现 Firefox 的途径及使用方式。我们绝不会出售此数据。</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">我们如何使用您的数据</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">帮助 Firefox</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text">不了，谢谢</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -1696,6 +1698,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">编辑群组</string>
   <string name="create_tab_group_save_button">保存</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">新建群组，折叠拖拽手柄</string>
   <!--
     Default tab group name when creating a tab group
     %d is the number of existing tab groups + 1.

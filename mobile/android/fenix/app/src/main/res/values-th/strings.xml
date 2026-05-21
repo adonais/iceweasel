@@ -3102,6 +3102,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">VPN ในตัวของ %s</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">ท่องเว็บได้อย่างปลอดภัยยิ่งขึ้นด้วยการซ่อนตำแหน่งที่ตั้งของคุณ แม้ว่าจะใช้ Wi-Fi สาธารณะก็ตาม %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">ท่องเว็บได้อย่างปลอดภัยยิ่งขึ้นด้วยการซ่อนตำแหน่งที่ตั้งของคุณ แม้ว่าจะใช้ Wi-Fi สาธารณะก็ตาม</string>
   <!-- Link text that opens additional information about the browser VPN -->

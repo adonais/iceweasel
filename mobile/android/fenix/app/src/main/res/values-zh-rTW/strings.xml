@@ -3104,6 +3104,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">%s 內建的 VPN</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">隱藏您的實際所在位置，就算是使用公共 Wi-Fi 也能獲得額外保護。%s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">隱藏您的實際所在位置，就算是使用公共 Wi-Fi 也能獲得額外保護。</string>
   <!-- Link text that opens additional information about the browser VPN -->

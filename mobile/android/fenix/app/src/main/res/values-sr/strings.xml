@@ -3113,6 +3113,8 @@
   <string name="ip_protection_toggle_label">ВПН</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">Уграђени ВПН у %s</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">Претражујте уз додатну заштиту скривањем локације, чак и на јавној бежичној мрежи. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">Прегледајте веб-странице уз додатну заштиту скривањем ваше локације, чак и на јавним бежичним мрежама.</string>
   <!-- Link text that opens additional information about the browser VPN -->
