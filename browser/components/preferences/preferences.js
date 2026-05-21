@@ -373,7 +373,7 @@ const CONFIG_PANES = Object.freeze({
   passwordsAutofill: {
     l10nId: "preferences-passwords-autofill-header",
     iconSrc: "chrome://browser/skin/login.svg",
-    groupIds: ["passwords", "addresses", "payments"],
+    groupIds: ["passwords", "payments", "addresses"],
     module:
       "chrome://browser/content/preferences/config/passwords-autofill.mjs",
     visible: () => srdSectionEnabled("passwordsAutofill"),
