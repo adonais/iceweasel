@@ -4,7 +4,7 @@
       "order": 10,
       "theme": "light",
       "title": "firefox-c",
-      "schema": 1779125035105,
+      "schema": 1779126584430,
       "category": "firefox",
       "attachment": {
         "hash": "054a4389ea9087583091de88a5aa45740a3ef067667a963c587208648df87176",
@@ -13,9 +13,9 @@
         "location": "main-workspace/newtab-wallpapers-v2/f633134b-dc81-4b54-a8c0-61681e36c56e.svg",
         "mimetype": "image/svg+xml"
       },
-      "background_position": "center left",
+      "background_position": "top left",
       "id": "429c288c-8d92-4baa-aefb-a04719882454",
-      "last_modified": 1779126584340
+      "last_modified": 1779289118010
     },
     {
       "order": 6,
@@ -1294,5 +1294,5 @@
       "last_modified": 1718647622926
     }
   ],
-  "timestamp": 1779126584340
+  "timestamp": 1779289118010
 }
