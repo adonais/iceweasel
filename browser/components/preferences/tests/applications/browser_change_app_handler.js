@@ -135,6 +135,49 @@ add_task(async function () {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
+/**
+ * Regression test for bug 2032690: to ensure the default application shows
+ * the real default app's icon ({@link HandlerInfoWrapper.iconURLForSystemDefault}) rather than
+ * the hard-coded generic placeholder. Test uses PDF application for use-case.
+ */
+add_task(async function systemDefaultIconUsesHandlerIconURL() {
+  let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
+  await openPreferencesViaOpenPreferencesAPI("downloads", { leaveOpen: true });
+  await appHandlerInitialized;
+
+  let win = gBrowser.selectedBrowser.contentWindow;
+  let pdfItem = win.document.querySelector(
+    "moz-box-item[type='application/pdf']"
+  );
+  let actionsMenu = pdfItem.querySelector(".actionsMenu");
+  let useDefaultOption = actionsMenu.querySelector(
+    `moz-option[action="${Ci.nsIHandlerInfo.useSystemDefault}"]`
+  );
+
+  if (!useDefaultOption) {
+    info(
+      "PDF has no OS default handler in this environment, so skipping icon assertion."
+    );
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+    return;
+  }
+
+  ok(
+    actionsMenu.querySelector(
+      `moz-option[action="${Ci.nsIHandlerInfo.handleInternally}"]`
+    ),
+    "PDF has the internal 'Open in Firefox' option alongside the OS default"
+  );
+
+  let iconsrc = useDefaultOption.getAttribute("iconsrc");
+  ok(
+    iconsrc?.startsWith("moz-icon:"),
+    `iconsrc should resolve to an OS icon (moz-icon:), got '${iconsrc}'`
+  );
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
 registerCleanupFunction(function () {
   let infoToModify = gMimeSvc.getFromTypeAndExtension(testItemType, null);
   gHandlerSvc.remove(infoToModify);
