@@ -738,6 +738,8 @@ export const SpecialMessageActions = {
             private: false,
             triggeringPrincipal:
               Services.scriptSecurityManager.createNullPrincipal({}),
+            width: action.data.width,
+            height: action.data.height,
           }
         );
         break;
