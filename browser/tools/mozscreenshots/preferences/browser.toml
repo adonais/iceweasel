@@ -4,7 +4,5 @@ support-files = ["../head.js"]
 
 ["browser_preferences.js"]
 skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # macosx1014 times out, see 1570086
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # macosx1014 times out, see 1570086
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # macosx1014 times out, see 1570086
+  "true"
 ]
