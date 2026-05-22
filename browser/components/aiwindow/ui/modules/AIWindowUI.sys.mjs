@@ -11,6 +11,10 @@ import {
 
 const gFadingWindows = new WeakSet();
 
+/**
+ * @typedef {import("../components/ai-window/ai-window.mjs").SmartbarInputState} SmartbarInputState
+ */
+
 export const AIWindowUI = {
   BOX_ID: "ai-window-box",
   SPLITTER_ID: "ai-window-splitter",
@@ -340,12 +344,14 @@ export const AIWindowUI = {
   },
 
   /**
-   * Updates the sidebar input with the specified value.
+   * Updates the sidebar input with the specified state.
    *
    * @param {Window} win
-   * @param {string} value The new input value
+   * @param {SmartbarInputState} state
+   *   The structured input state to restore: plain text plus the list of
+   *   inline mention chips with their text-character offsets.
    */
-  updateSidebarInput(win, value) {
+  updateSidebarInput(win, state) {
     if (!this.isSidebarOpen(win)) {
       return;
     }
@@ -355,7 +361,7 @@ export const AIWindowUI = {
       return;
     }
 
-    aiWindowEl.updateInput(value);
+    aiWindowEl.updateInput(state);
   },
 
   /**

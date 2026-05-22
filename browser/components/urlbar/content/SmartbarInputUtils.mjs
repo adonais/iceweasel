@@ -398,6 +398,18 @@ function setupMentionsPlugin(editorElement, panelList) {
     getAllMentions: {
       value: () => plugin.mentions.getAll(),
     },
+    /**
+     * Inserts an inline mention at the specified text offset
+     *
+     * @param {Node} mention
+     * @param {number} textOffset
+     */
+    insertMention: {
+      value: (mention, textOffset) => {
+        const pos = editorElement.textOffsetToPos(textOffset);
+        plugin.mentions.insertNode(mention, pos);
+      },
+    },
   });
 
   return plugin;

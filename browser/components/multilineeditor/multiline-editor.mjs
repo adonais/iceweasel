@@ -206,6 +206,47 @@ export class MultilineEditor extends MozLitElement {
   }
 
   /**
+   * The plain-text content of the editor with atom nodes (e.g. mentions)
+   * contributing zero characters. Useful for persisting input alongside a
+   * structured list of inline atoms.
+   *
+   * @type {string}
+   */
+  get plainText() {
+    if (!this.#view) {
+      return this.#pendingValue;
+    }
+    return this.#view.state.doc.textBetween(
+      0,
+      this.#view.state.doc.content.size,
+      "\n",
+      ""
+    );
+  }
+
+  /**
+   * Convert a ProseMirror document position to a text-character offset that
+   * matches `plainText`.
+   *
+   * @param {number} pos
+   * @returns {number}
+   */
+  posToTextOffset(pos) {
+    return this.#textOffsetFromPos(pos, this.#view?.state.doc, "\n", "");
+  }
+
+  /**
+   * Convert a text-character offset (matching `plainText`) to a ProseMirror
+   * document position.
+   *
+   * @param {number} offset
+   * @returns {number}
+   */
+  textOffsetToPos(offset) {
+    return this.#posFromTextOffset(offset);
+  }
+
+  /**
    * The start offset of the selection.
    *
    * @type {number}
@@ -667,11 +708,16 @@ export class MultilineEditor extends MozLitElement {
     return schema.node("doc", null, paragraphs);
   }
 
-  #textOffsetFromPos(pos, doc = this.#view?.state.doc) {
+  #textOffsetFromPos(
+    pos,
+    doc = this.#view?.state.doc,
+    blockSeparator = "\n",
+    leafText = "\n"
+  ) {
     if (!doc) {
       return 0;
     }
-    return doc.textBetween(0, pos, "\n", "\n").length;
+    return doc.textBetween(0, pos, blockSeparator, leafText).length;
   }
 
   #posFromTextOffset(offset, doc = this.#view?.state.doc) {

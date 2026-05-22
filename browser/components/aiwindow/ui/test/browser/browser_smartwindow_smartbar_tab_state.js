@@ -303,7 +303,7 @@ describe("Smartbar tab state input tracking", () => {
           detail: {
             tab,
             mode: "fullpage",
-            input: "youtube.com",
+            input: { text: "youtube.com", mentions: [] },
             conversationId: mockConversation.id,
           },
         })
