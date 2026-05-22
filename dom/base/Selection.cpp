@@ -3947,12 +3947,11 @@ void Selection::NotifySelectionListeners() {
   if (PresShell* presShell = GetPresShell()) {
     doc = presShell->GetDocument();
     presShell->ScheduleContentRelevancyUpdate(ContentRelevancyReason::Selected);
-  }
-
-  if (mSelectionType == SelectionType::eNormal && RangeCount()) {
-    // Focus navigation should start from the new selection, instead
-    // of the last focused element.
-    doc->SetFocusNavigationStartingPoint(nullptr);
+    if (mSelectionType == SelectionType::eNormal && RangeCount() && doc) {
+      // Focus navigation should start from the new selection, instead
+      // of the last focused element.
+      doc->SetFocusNavigationStartingPoint(nullptr);
+    }
   }
 
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;

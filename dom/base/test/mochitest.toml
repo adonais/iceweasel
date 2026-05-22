@@ -642,6 +642,9 @@ support-files = ["file_sandbox_and_document_uri.html"]
 
 ["test_script_loader_crossorigin_data_url.html"]
 
+["test_selection_change_null_presshell.html"]
+support-files = ["file_selection_change_null_presshell.html"]
+
 ["test_setInterval_from_start.html"]
 
 ["test_setInterval_uncatchable_exception.html"]
