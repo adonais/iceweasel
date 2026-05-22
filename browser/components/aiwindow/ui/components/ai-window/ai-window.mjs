@@ -1561,7 +1561,7 @@ export class AIWindow extends MozLitElement {
       location: this.mode === MODE.FULLPAGE ? "home" : MODE.SIDEBAR,
       chat_id: this.conversationId,
       message_seq: messageCount,
-      request_id: lastAssistantMessage?.id,
+      request_id: lastAssistantMessage?.parentMessageId,
       intent: "chat",
       tokens: lazy.Chat.lastUsage?.completion_tokens ?? 0,
       memories: lastAssistantMessage?.memoriesApplied?.length ?? 0,
