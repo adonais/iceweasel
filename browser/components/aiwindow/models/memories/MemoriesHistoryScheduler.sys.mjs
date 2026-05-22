@@ -18,6 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs",
   HISTORY:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs",
+  openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", function () {
@@ -58,6 +59,9 @@ export class MemoriesHistoryScheduler {
   #intervalHandle = 0;
   #destroyed = false;
   #running = false;
+  // Earliest time we'll attempt a run again after a budget-exceeded failure.
+  // In-memory only: a browser restart resets this.
+  #backoffUntilMs = 0;
 
   /** @type {MemoriesHistoryScheduler | null} */
   static #instance = null;
@@ -204,6 +208,16 @@ export class MemoriesHistoryScheduler {
       return;
     }
 
+    if (this.#backoffUntilMs && Date.now() < this.#backoffUntilMs) {
+      const remainingMin = Math.ceil(
+        (this.#backoffUntilMs - Date.now()) / (60 * 1000)
+      );
+      lazy.console.debug(
+        `In budget-exceeded backoff for another ${remainingMin}m; skipping.`
+      );
+      return;
+    }
+
     this.#running = true;
     this.#stopInterval();
 
@@ -290,7 +304,16 @@ export class MemoriesHistoryScheduler {
 
       lazy.console.debug("History memories generation complete.");
     } catch (error) {
-      lazy.console.error("Failed to generate history memories", error);
+      if (lazy.openAIEngine.is429Error(error)) {
+        this.#backoffUntilMs = Date.now() + MEMORIES_SCHEDULER_COOLDOWN_MS;
+        lazy.console.warn(
+          `Rate limited (HTTP 429); deferring next history memories run by ${Math.floor(
+            MEMORIES_SCHEDULER_COOLDOWN_MS / (60 * 60 * 1000)
+          )}h.`
+        );
+      } else {
+        lazy.console.error("Failed to generate history memories", error);
+      }
     } finally {
       if (
         !this.#destroyed &&
@@ -328,6 +351,16 @@ export class MemoriesHistoryScheduler {
    */
   setPagesVisitedForTesting(count) {
     this.#pagesVisited = count;
+  }
+
+  /**
+   * Testing helper: set the backoff deadline (ms since epoch).
+   * Pass 0 to clear the backoff window. Not used in production code.
+   *
+   * @param {number} untilMs
+   */
+  setBackoffUntilMsForTesting(untilMs) {
+    this.#backoffUntilMs = untilMs;
   }
 
   /**
