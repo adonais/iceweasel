@@ -735,7 +735,12 @@ export class IPProtectionPanel {
     // Asynchronously enroll and entitle the user.
     // It will only need to finish before the proxy can start.
     const enrolling = lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
-    if (!this.active) {
+    // Only auto-open the panel if the toolbar widget is placed in a visible
+    // area.
+    let placement = lazy.CustomizableUI.getPlacementOfWidget(
+      IPProtectionPanel.WIDGET_ID
+    );
+    if (placement && !this.active) {
       await this.open();
     }
     const result = await enrolling;

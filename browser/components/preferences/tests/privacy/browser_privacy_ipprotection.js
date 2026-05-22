@@ -16,6 +16,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
   IPPEnrollAndEntitleManager:
     "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs",
+  IPProtection:
+    "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
+  IPProtectionWidget:
+    "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
 });
 
 const { BANDWIDTH } = ChromeUtils.importESModule(
@@ -634,6 +638,81 @@ add_task(async function test_get_started_button() {
 
   sandbox.restore();
 });
+
+// Tests flow when we click "Get started" in settings while the VPN widget
+// is not visible in the toolbar.
+add_task(
+  async function test_get_started_button_VPN_widget_not_visible_in_toolbar() {
+    let sandbox = sinon.createSandbox();
+    let fxaStub = sandbox
+      .stub(lazy.SpecialMessageActions, "fxaSignInFlow")
+      .resolves(true);
+    let enrollStub = sandbox
+      .stub(lazy.IPPEnrollAndEntitleManager, "maybeEnrollAndEntitle")
+      .resolves(true);
+
+    await setupVpnPrefs({
+      feature: true,
+      entitlementCache: "",
+    });
+
+    CustomizableUI.removeWidgetFromArea(lazy.IPProtectionWidget.WIDGET_ID);
+
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url: "about:preferences#privacy" },
+      async function (browser) {
+        let settingGroup = testSettingsGroupVisible(browser);
+        let getStartedButton = settingGroup?.querySelector("#getStartedButton");
+        is_element_visible(
+          getStartedButton,
+          "Get started button is shown when entitlementCache is empty"
+        );
+
+        let window = browser.ownerGlobal;
+        let popupSpy = sandbox.spy();
+        window.document.addEventListener("popupshown", popupSpy, true);
+
+        let enrollPromise = TestUtils.waitForCondition(
+          () => enrollStub.calledOnce,
+          "enroll should be called after sign-in succeeds"
+        );
+
+        getStartedButton.click();
+
+        await enrollPromise;
+
+        Assert.ok(
+          fxaStub.calledOnce,
+          "fxaSignInFlow should still be called when widget is not visible"
+        );
+        Assert.ok(
+          enrollStub.calledOnce,
+          "maybeEnrollAndEntitle should still complete when widget is not visible"
+        );
+
+        let panel = lazy.IPProtection.getPanel(window);
+        Assert.ok(panel, "panel instance is created for the window");
+        Assert.ok(
+          !panel.active,
+          "panel should not auto-open and be active when widget is not visible"
+        );
+        Assert.ok(
+          !popupSpy.called,
+          "no popup should be shown when widget is not visible"
+        );
+
+        window.document.removeEventListener("popupshown", popupSpy, true);
+      }
+    );
+
+    // Restore widget
+    CustomizableUI.addWidgetToArea(
+      lazy.IPProtectionWidget.WIDGET_ID,
+      CustomizableUI.AREA_NAVBAR
+    );
+    sandbox.restore();
+  }
+);
 
 // Test that clicking "Get started" in settings passes vpn_integration_settings
 // as the entrypoint to fxaSignInFlow.
