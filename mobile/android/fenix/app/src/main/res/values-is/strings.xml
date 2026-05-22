@@ -4351,9 +4351,9 @@
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_south_america">Suður-Ameríka</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england" tools:ignore="UnusedResources">England</string>
+  <string name="sports_widget_country_england">England</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Skotland</string>
+  <string name="sports_widget_country_scotland">Skotland</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live">Í BEINNI</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
@@ -4375,9 +4375,9 @@
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">Úrslitaleikur um brons</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed">Upplýsingar um leikinn eru ekki tiltækar eins og er. Reyndu aftur eftir nokkrar mínútur.</string>
+  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">Upplýsingar um leikinn eru ekki tiltækar eins og er. Reyndu aftur eftir nokkrar mínútur.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted">Tenging rofin — uppfærslur í beinni eru í bið.</string>
+  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">Tenging rofin — uppfærslur í beinni eru í bið.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Endurlesa</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4415,7 +4415,7 @@
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(leik lokið)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Leik lokið</string>
+  <string name="sports_widget_match_full_time_2">Leik lokið</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4469,11 +4469,11 @@
   -->
   <string name="sports_widget_countdown_minutes">M</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Loka liðsvali</string>
+  <string name="sports_widget_close_team_selection_sheet_content_description">Loka liðsvali</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">Loka</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Fleiri valkostir</string>
+  <string name="sports_widget_more_options_content_description">Fleiri valkostir</string>
   <!--
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
@@ -4485,13 +4485,13 @@
     Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
   -->
-  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Væntanlegt: %1$s á móti %2$s, %3$s kl. %4$s</string>
+  <string name="sports_widget_upcoming_match_content_description">Væntanlegt: %1$s á móti %2$s, %3$s kl. %4$s</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
   -->
-  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, síða %2$d af %3$d</string>
+  <string name="sports_widget_page_position_content_description">%1$s, síða %2$d af %3$d</string>
   <!--
     Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
     %1$d is the current page number, and %2$d is the total number of pages.

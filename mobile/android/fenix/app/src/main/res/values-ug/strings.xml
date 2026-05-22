@@ -1852,6 +1852,12 @@
   <string name="download_delete_multi_select_dialog_confirm">ئۆچۈر</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">ۋاز كەچ</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_device">ئۈسكۈنىدىن ئۆچۈر</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">ۋاز كەچ</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">جەزملە</string>
   <!-- Title for the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_title">ھۆججەت ئاتىنى ئۆزگەرت</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
@@ -1949,6 +1955,11 @@
   <string name="download_content_type_filter_document">پۈتۈك</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">باشقا</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location
+    when the file size is not available before downloading it.
+  -->
+  <string name="download_rename_and_change_location_dialog_title_with_unknown_size">ھۆججەتنى چۈشۈرەمدۇ؟</string>
   <!--
     WebCompat Reporter
 
@@ -2345,6 +2356,10 @@
   <string name="share_device_subheader">ئۈسكۈنىگە يوللا</string>
   <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
   <string name="send_to_devices_bottom_sheet_close_content_description">«ئۈسكۈنىگە يوللا» نى ياپ</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">ياپ</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">چۈشۈر</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">بارلىق مەشغۇلات</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2976,10 +2991,24 @@
   <string name="email_masks_max_free_tier_reached">سىز 5 ھەقسىز ئېلخەت نىقابىنى ئىشلەتتىڭىز شۇڭا قايتا ئىشلىتىشىڭىز ئۈچۈن بىرنى تاللىدۇق.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">ھازىر ئىلخەت نىقابىنى ئىشلەتكىلى بولمايدۇ. بىر قانچە مىنۇتتىن كېيىن قايتا سىناڭ.</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">سىناق نەشرى</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">تەپسىلاتى</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">ئورنى</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">تەۋسىيەلەندى</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">ئوچۇق</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">تاقاق</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">ھازىر ئەمەس</string>
   <!--
     Autofill
 
@@ -4200,6 +4229,8 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">سىز %1$s ھەققىدە مول بىلىمگە ئېرىشەلەيسىز.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">بۇ جاي</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa">ئافرىقا</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

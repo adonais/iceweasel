@@ -1705,6 +1705,14 @@
   <string name="pwa_site_controls_title_private">%1$s (navigation privée)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Ouvrir la recherche d’onglet</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Créer un groupe d’onglets</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Faites glisser des onglets vers un autre pour les regrouper.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Sélectionnez plusieurs onglets pour créer un groupe.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Fermer l’accueil du groupe d’onglets</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Essayez les groupes d’onglets pour gagner en efficacité</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -4435,9 +4443,9 @@
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_south_america">Amérique du Sud</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Angleterre</string>
+  <string name="sports_widget_country_england">Angleterre</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Écosse</string>
+  <string name="sports_widget_country_scotland">Écosse</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live">EN\u00a0DIRECT</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
@@ -4459,9 +4467,9 @@
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">Petite finale</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed">Les informations concernant le match ne sont pas disponibles pour le moment. Essayez d’actualiser dans quelques minutes.</string>
+  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">Les informations concernant le match ne sont pas disponibles pour le moment. Essayez d’actualiser dans quelques minutes.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted">Connexion interrompue — les mises à jour en direct sont suspendues.</string>
+  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">Connexion interrompue — les mises à jour en direct sont suspendues.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Actualiser</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4499,7 +4507,7 @@
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(Match terminé)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Match terminé</string>
+  <string name="sports_widget_match_full_time_2">Match terminé</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4553,11 +4561,11 @@
   -->
   <string name="sports_widget_countdown_minutes">M</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Fermer le panneau de sélection de l’équipe</string>
+  <string name="sports_widget_close_team_selection_sheet_content_description">Fermer le panneau de sélection de l’équipe</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">Fermer</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Options supplémentaires</string>
+  <string name="sports_widget_more_options_content_description">Options supplémentaires</string>
   <!--
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
@@ -4569,25 +4577,37 @@
     Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
   -->
-  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Prochainement\u00a0: %1$s contre %2$s, %3$s à %4$s</string>
+  <string name="sports_widget_upcoming_match_content_description">Prochainement\u00a0: %1$s contre %2$s, %3$s à %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
+    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
+    or a match status like "Full time").
+  -->
+  <string name="sports_widget_match_content_description">%1$s contre %2$s, %3$s</string>
   <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
     or Final represented by sports_widget_final).
   -->
-  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, match en direct</string>
+  <string name="sports_widget_live_game_content_description">%s, match en direct</string>
   <!--
     Content description (for accessibility, not displayed) announcing a live score.
     %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
     and %5$s is the match elapsed time (e.g. 72 minutes).
   -->
-  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, en direct</string>
+  <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, en direct</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
+  -->
+  <string name="sports_widget_match_elapsed_minutes">Temps écoulé en minutes\u00a0: %1$s</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
   -->
-  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, page %2$d sur %3$d</string>
+  <string name="sports_widget_page_position_content_description">%1$s, page %2$d sur %3$d</string>
   <!--
     Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
     %1$d is the current page number, and %2$d is the total number of pages.
@@ -4604,11 +4624,15 @@
   <!-- Sports widget match status label shown during second half of a match. -->
   <string name="sports_widget_second_half" tools:ignore="UnusedResources">Deuxième mi-temps</string>
   <!-- Sports widget error card title shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">On dirait que vous êtes hors connexion.</string>
+  <string name="sports_widget_error_connection_offline_title">On dirait que vous êtes hors connexion.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Vérifiez votre connexion Internet puis réessayez.</string>
+  <string name="sports_widget_error_connection_offline_description">Vérifiez votre connexion Internet puis réessayez.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Phase de groupes</string>
+  <!-- Sports widget error card title shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_title">Les informations de correspondance ne sont pas disponibles pour le moment.</string>
+  <!-- Sports widget error card description shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_description">Essayez d’actualiser dans quelques minutes.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

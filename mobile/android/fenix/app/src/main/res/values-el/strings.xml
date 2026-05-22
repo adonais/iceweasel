@@ -4435,9 +4435,9 @@
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_south_america">Νότια Αμερική</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Αγγλία</string>
+  <string name="sports_widget_country_england">Αγγλία</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Σκωτία</string>
+  <string name="sports_widget_country_scotland">Σκωτία</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live">ΖΩΝΤΑΝΑ</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
@@ -4459,9 +4459,9 @@
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">Αγώνας τρίτης θέσης</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed">Δεν διατίθενται πληροφορίες αγώνων αυτήν τη στιγμή. Δοκιμάστε να κάνετε ανανέωση σε λίγα λεπτά.</string>
+  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">Δεν διατίθενται πληροφορίες αγώνων αυτήν τη στιγμή. Δοκιμάστε να κάνετε ανανέωση σε λίγα λεπτά.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted">Η σύνδεση διακόπηκε: ζωντανές ενημερώσεις σε παύση.</string>
+  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">Η σύνδεση διακόπηκε: ζωντανές ενημερώσεις σε παύση.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Ανανέωση</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4499,7 +4499,7 @@
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(Κανονική διάρκεια)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Κανονική διάρκεια</string>
+  <string name="sports_widget_match_full_time_2">Κανονική διάρκεια</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4553,11 +4553,11 @@
   -->
   <string name="sports_widget_countdown_minutes">Λ</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Κλείσιμο σελίδας επιλογής ομάδας</string>
+  <string name="sports_widget_close_team_selection_sheet_content_description">Κλείσιμο σελίδας επιλογής ομάδας</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">Κλείσιμο</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Περισσότερες επιλογές</string>
+  <string name="sports_widget_more_options_content_description">Περισσότερες επιλογές</string>
   <!--
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
@@ -4569,25 +4569,25 @@
     Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
   -->
-  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Επερχόμενος: %1$s εναντίον %2$s, %3$s στις %4$s</string>
+  <string name="sports_widget_upcoming_match_content_description">Επερχόμενος: %1$s εναντίον %2$s, %3$s στις %4$s</string>
   <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
     or Final represented by sports_widget_final).
   -->
-  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, ζωντανός αγώνας</string>
+  <string name="sports_widget_live_game_content_description">%s, ζωντανός αγώνας</string>
   <!--
     Content description (for accessibility, not displayed) announcing a live score.
     %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
     and %5$s is the match elapsed time (e.g. 72 minutes).
   -->
-  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, ζωντανά</string>
+  <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, ζωντανά</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
   -->
-  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, σελίδα %2$d από %3$d</string>
+  <string name="sports_widget_page_position_content_description">%1$s, σελίδα %2$d από %3$d</string>
   <!--
     Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
     %1$d is the current page number, and %2$d is the total number of pages.
@@ -4604,9 +4604,9 @@
   <!-- Sports widget match status label shown during second half of a match. -->
   <string name="sports_widget_second_half" tools:ignore="UnusedResources">Δεύτερο ημίχρονο</string>
   <!-- Sports widget error card title shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Φαίνεται ότι είστε εκτός σύνδεσης.</string>
+  <string name="sports_widget_error_connection_offline_title">Φαίνεται ότι είστε εκτός σύνδεσης.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Ελέγξτε τη σύνδεσή σας στο διαδίκτυο και δοκιμάστε ξανά.</string>
+  <string name="sports_widget_error_connection_offline_description">Ελέγξτε τη σύνδεσή σας στο διαδίκτυο και δοκιμάστε ξανά.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Φάση ομίλου</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
