@@ -150,18 +150,16 @@ add_task(async function test_makeValid() {
     shareResult = await ContentSharingUtils.validateSchema(shareResult);
 
     if (shouldPass) {
-      Assert.ok(
-        !shareResult.errors.length,
-        "There should be no errors in the share result"
+      Assert.equal(
+        shareResult.error,
+        null,
+        "There should be no error in the share result"
       );
     } else {
-      Assert.ok(
-        shareResult.errors.length,
-        "There should be errors in the share result"
-      );
-      Assert.ok(
-        shareResult.errors.includes(ERRORS.INVALID_SCHEMA),
-        "ERRORS.INVALID_SCHEMA should be in the share result errors"
+      Assert.equal(
+        shareResult.error,
+        ERRORS.INVALID_SCHEMA,
+        "ERRORS.INVALID_SCHEMA should be set on the share result"
       );
     }
   }

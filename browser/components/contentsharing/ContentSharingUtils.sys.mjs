@@ -77,39 +77,24 @@ export const WARNINGS = Object.freeze({
 });
 
 /**
- * A class containing the necessary information to pass around for a given
- * share
+ * @typedef {object} ShareResult
+ * @property {object|null} share The share object to send to the server.
+ * @property {string|null} error A single error from {@link ERRORS}, if any.
+ * @property {string|null} warning A single warning from {@link WARNINGS}, if any.
+ * @property {string|null} url The share URL returned by the server on success.
+ * @property {boolean|null} isSchemaValid Whether the share passed schema validation.
+ * @property {boolean|null} isSignedIn Whether the user is signed in.
  */
-export class ShareResult {
-  constructor({
-    share = null,
-    error = null,
-    errors = null,
-    warning = null,
-    warnings = null,
-    url = null,
-    isSchemaValid = null,
-    isSignedIn = null,
-  } = {}) {
-    this.share = share;
-    this.errors = Array.isArray(errors) ? Array.from(errors) : [];
-    if (error) {
-      this.errors.push(error);
-    }
-    this.warnings = Array.isArray(warnings) ? Array.from(warnings) : [];
-    if (warning) {
-      this.warnings.push(warning);
-    }
-    this.url = url;
-    this.isSchemaValid = isSchemaValid;
-    this.isSignedIn = isSignedIn;
 
-    Object.freeze(this);
-  }
-
-  with(updates) {
-    return new ShareResult({ ...this, ...updates });
-  }
+export function makeShareResult({ share = null } = {}) {
+  return {
+    share,
+    error: null,
+    warning: null,
+    url: null,
+    isSchemaValid: null,
+    isSignedIn: null,
+  };
 }
 
 /**
@@ -325,7 +310,7 @@ class ContentSharingUtilsClass {
     // and updated across recursive calls.
     currentCount.value = currentCount.value ?? 0;
 
-    let shareResult = new ShareResult();
+    const shareResult = makeShareResult();
     const share = {
       type: shareObject.type ?? "bookmarks",
       title: shareObject.title.slice(0, 100),
@@ -334,7 +319,7 @@ class ContentSharingUtilsClass {
     let links = [];
     for (let linkOrNestShare of shareObject.children ?? []) {
       if (currentCount.value >= MAX_ITEM_COUNT) {
-        shareResult = shareResult.with({ warning: WARNINGS.TOO_MANY_LINKS });
+        shareResult.warning = WARNINGS.TOO_MANY_LINKS;
         break;
       }
 
@@ -353,8 +338,8 @@ class ContentSharingUtilsClass {
     }
 
     share.links = links;
-
-    return shareResult.with({ share });
+    shareResult.share = share;
+    return shareResult;
   }
 
   /**
@@ -370,19 +355,17 @@ class ContentSharingUtilsClass {
     // Note: the result object contains either the URL or an error. It's safe
     // to pass into the modal, which handles error UI as needed.
     shareResult = await this.createShareableLink(shareResult);
-    shareResult = shareResult.with({
-      isSignedIn:
-        this.isSignedIn() && !shareResult.errors.includes(ERRORS.UNAUTHORIZED),
-    });
+    shareResult.isSignedIn =
+      this.isSignedIn() && shareResult.error !== ERRORS.UNAUTHORIZED;
 
     let window = Services.wm.getMostRecentBrowserWindow();
 
     // Note: we deliberately do not await the open.
     window.gDialogBox.open(CONTENT_SHARING_MODAL_URL, shareResult);
-    if (shareResult.errors.length && !shareResult.isSignedIn) {
+    if (shareResult.error && !shareResult.isSignedIn) {
       console.error(
         `ContentSharingUtils: failed to share ${context}`,
-        shareResult.errors.join(", ")
+        shareResult.error
       );
     }
 
@@ -396,10 +379,10 @@ class ContentSharingUtilsClass {
 
       // Now that we are logged in, try to create again.
       shareResult = await this.createShareableLink(shareResult);
-      if (shareResult.errors.length) {
+      if (shareResult.error) {
         console.error(
           "ContentSharingUtils: something went wrong after login: ",
-          shareResult.errors.join(", ")
+          shareResult.error
         );
         return;
       }
@@ -435,7 +418,8 @@ class ContentSharingUtilsClass {
 
     if (!this.serverURL) {
       console.error("ContentSharingUtils: server URL is not set");
-      return shareResult.with({ error: ERRORS.GENERIC });
+      shareResult.error = ERRORS.GENERIC;
+      return shareResult;
     }
 
     // Only allow insecure http connections in automation and in local builds.
@@ -445,11 +429,13 @@ class ContentSharingUtilsClass {
       !this.serverURL.startsWith("https://")
     ) {
       console.error("ContentSharingUtils: server URL must be HTTPS");
-      return shareResult.with({ error: ERRORS.GENERIC });
+      shareResult.error = ERRORS.GENERIC;
+      return shareResult;
     }
 
     if (!this.isSignedIn()) {
-      return shareResult.with({ error: ERRORS.UNAUTHORIZED });
+      shareResult.error = ERRORS.UNAUTHORIZED;
+      return shareResult;
     }
 
     while (canRetry) {
@@ -457,7 +443,7 @@ class ContentSharingUtilsClass {
         console.error(
           "ContentSharingUtils: tried to request the server the maximum number times"
         );
-        shareResult = shareResult.with({ error: ERRORS.MAX_REQUEST_ATTEMPTS });
+        shareResult.error = ERRORS.MAX_REQUEST_ATTEMPTS;
         break;
       }
 
@@ -483,19 +469,13 @@ class ContentSharingUtilsClass {
         } else if (!response.ok && response.status >= 400) {
           canRetry = false;
           if (response.status === 401) {
-            shareResult = shareResult.with({
-              error: ERRORS.UNAUTHORIZED,
-            });
+            shareResult.error = ERRORS.UNAUTHORIZED;
           }
           if (response.status === 410) {
-            shareResult = shareResult.with({
-              error: ERRORS.DISABLED,
-            });
+            shareResult.error = ERRORS.DISABLED;
             this.disable();
           } else {
-            shareResult = shareResult.with({
-              error: ERRORS.GENERIC,
-            });
+            shareResult.error = ERRORS.GENERIC;
           }
         } else if (
           response.ok &&
@@ -507,13 +487,13 @@ class ContentSharingUtilsClass {
       } catch (error) {
         console.error(error);
         canRetry = false;
-        shareResult = shareResult.with({ error: ERRORS.MAX_REQUEST_ATTEMPTS });
+        shareResult.error = ERRORS.MAX_REQUEST_ATTEMPTS;
       }
 
       attempts += 1;
     }
 
-    if (shareResult.errors.length) {
+    if (shareResult.error) {
       return shareResult;
     }
 
@@ -527,27 +507,25 @@ class ContentSharingUtilsClass {
         console.error(
           `ContentSharingUtils: share URL ${url} does not match configured server origin`
         );
-        return shareResult.with({
-          error: ERRORS.GENERIC,
-        });
+        shareResult.error = ERRORS.GENERIC;
+        return shareResult;
       }
 
-      return shareResult.with({
-        url,
-      });
+      shareResult.url = url;
     } catch (error) {
       console.error(error);
-      shareResult = shareResult.with({
-        error: ERRORS.GENERIC,
-      });
+      shareResult.error = ERRORS.GENERIC;
     }
 
     return shareResult;
   }
 
   async createShareableLink(shareResult) {
-    shareResult = await this.validateSchema(shareResult);
-
+    shareResult.error = null;
+    await this.validateSchema(shareResult);
+    if (shareResult.error) {
+      return shareResult;
+    }
     return this.#doRequest(shareResult);
   }
 
@@ -572,9 +550,9 @@ class ContentSharingUtilsClass {
     const validator = await this.getValidator();
     const result = validator.validate(shareResult.share);
 
-    shareResult = shareResult.with({ isSchemaValid: result.valid });
+    shareResult.isSchemaValid = result.valid;
     if (!result.valid || this.countItems(shareResult.share) > MAX_ITEM_COUNT) {
-      shareResult = shareResult.with({ error: ERRORS.INVALID_SCHEMA });
+      shareResult.error = ERRORS.INVALID_SCHEMA;
     }
 
     return shareResult;

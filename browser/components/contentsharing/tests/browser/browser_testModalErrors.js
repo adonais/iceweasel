@@ -25,16 +25,14 @@ add_task(async function test_tooManyLinks() {
 
     const body = server.requests[0].body;
 
-    await assertContentSharingModal(
-      window,
-      new ShareResult({
-        share: body,
-        url: server.mockResponse.url,
-        isSignedIn: true,
-        isSchemaValid: true,
-        warnings: [WARNINGS.TOO_MANY_LINKS],
-      })
-    );
+    await assertContentSharingModal(window, {
+      share: body,
+      error: null,
+      warning: WARNINGS.TOO_MANY_LINKS,
+      url: server.mockResponse.url,
+      isSchemaValid: true,
+      isSignedIn: true,
+    });
 
     Assert.equal(body.type, "tabs", "Share type is 'tabs'");
     Assert.equal(
@@ -86,15 +84,14 @@ add_task(async function test_genericError() {
 
     const body = server.requests[0].body;
 
-    await assertContentSharingModal(
-      window,
-      new ShareResult({
-        share: body,
-        isSignedIn: true,
-        isSchemaValid: true,
-        errors: [ERRORS.GENERIC],
-      })
-    );
+    await assertContentSharingModal(window, {
+      share: body,
+      error: ERRORS.GENERIC,
+      warning: null,
+      url: null,
+      isSchemaValid: true,
+      isSignedIn: true,
+    });
 
     Assert.equal(body.type, "tabs", "Share type is 'tabs'");
     Assert.equal(

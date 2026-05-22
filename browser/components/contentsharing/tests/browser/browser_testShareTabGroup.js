@@ -34,15 +34,14 @@ add_task(async function test_handleShareTabGroup() {
     );
     const body = server.requests[0].body;
 
-    await assertContentSharingModal(
-      window,
-      new ShareResult({
-        share: body,
-        url: server.mockResponse.url,
-        isSignedIn: true,
-        isSchemaValid: true,
-      })
-    );
+    await assertContentSharingModal(window, {
+      share: body,
+      error: null,
+      warning: null,
+      url: server.mockResponse.url,
+      isSchemaValid: true,
+      isSignedIn: true,
+    });
 
     Assert.equal(body.type, "tab_group", "Share type is 'tab_group'");
     Assert.equal(body.links.length, 2, "Share contains 2 links");

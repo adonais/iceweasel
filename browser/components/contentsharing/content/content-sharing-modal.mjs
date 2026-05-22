@@ -99,7 +99,7 @@ export class ContentSharingModal extends MozLitElement {
   }
 
   linksInfoTemplate() {
-    if (this.shareResult.warnings.includes(WARNINGS.TOO_MANY_LINKS)) {
+    if (this.shareResult.warning === WARNINGS.TOO_MANY_LINKS) {
       return html`<div
         class="too-many-links"
         data-l10n-id="content-sharing-modal-too-many-links"
@@ -184,17 +184,16 @@ export class ContentSharingModal extends MozLitElement {
     // if were not signed in and got an unauthorized error
     if (
       this.shareResult.url ||
-      !this.shareResult.errors.length ||
+      !this.shareResult.error ||
       (!this.shareResult.isSignedIn &&
-        this.shareResult.errors.length === 1 &&
-        this.shareResult.errors.includes(ERRORS.UNAUTHORIZED))
+        this.shareResult.error === ERRORS.UNAUTHORIZED)
     ) {
       return html`<moz-button-group
         >${this.buttonsTemplate()}</moz-button-group
       >`;
     }
 
-    if (this.shareResult.errors.length) {
+    if (this.shareResult.error) {
       return html`<moz-message-bar
         type="critical"
         data-l10n-id="content-sharing-modal-generic-error"

@@ -15,7 +15,7 @@ add_task(async function test_Server410Response() {
       "Server URL is set"
     );
 
-    let shareResult = new ShareResult({
+    let shareResult = makeShareResult({
       share: {
         type: "tabs",
         title: "1 Tabs",
@@ -32,7 +32,7 @@ add_task(async function test_Server410Response() {
     server.mockResponseStatus = 410;
     server.mockResponse = {};
 
-    shareResult = new ShareResult({
+    shareResult = makeShareResult({
       share: {
         type: "tabs",
         title: "1 Tabs",

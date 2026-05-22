@@ -1,7 +1,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   ContentSharingUtils:
     "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
-  ShareResult: "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
+  makeShareResult:
+    "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
   ERRORS: "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
   WARNINGS: "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
 });
@@ -99,7 +100,7 @@ async function assertContentSharingModal(window, expected) {
     "Modal has the expected number of links. Max of 3 links"
   );
 
-  if (expected.errors.length) {
+  if (expected.error) {
     Assert.ok(
       BrowserTestUtils.isVisible(modalEl.errorMessageBar),
       "Error message is visible"
@@ -117,7 +118,7 @@ async function assertContentSharingModal(window, expected) {
   }
 
   if (expected.share.links.length > 3) {
-    if (expected.warnings.includes(WARNINGS.TOO_MANY_LINKS)) {
+    if (expected.warning === WARNINGS.TOO_MANY_LINKS) {
       Assert.ok(
         BrowserTestUtils.isVisible(modalEl.tooManyLinks),
         "Too many links warning is visible"

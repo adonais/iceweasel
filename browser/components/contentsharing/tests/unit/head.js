@@ -6,7 +6,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   ContentSharingUtils:
     "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
-  ShareResult: "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
+  makeShareResult:
+    "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
   ERRORS: "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
 });
 

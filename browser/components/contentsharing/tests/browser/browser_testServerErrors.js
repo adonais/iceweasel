@@ -5,7 +5,7 @@
 
 add_task(async function test_ServerErrors() {
   await withContentSharingMockServer(async server => {
-    let shareResult = new ShareResult({
+    let shareResult = makeShareResult({
       share: {
         type: "tabs",
         title: "1 Tabs",
@@ -22,7 +22,7 @@ add_task(async function test_ServerErrors() {
     server.mockResponseStatus = 503;
     server.mockResponse = {};
 
-    shareResult = new ShareResult({
+    shareResult = makeShareResult({
       share: {
         type: "tabs",
         title: "1 Tabs",
@@ -43,7 +43,7 @@ add_task(async function test_ServerErrors() {
     server.mockResponseStatus = 401;
     server.mockResponse = {};
 
-    shareResult = new ShareResult({
+    shareResult = makeShareResult({
       share: {
         type: "tabs",
         title: "1 Tabs",
@@ -58,7 +58,7 @@ add_task(async function test_ServerErrors() {
     server.mockResponseStatus = 503;
     server.mockResponse = {};
 
-    shareResult = new ShareResult({
+    shareResult = makeShareResult({
       share: {
         type: "tabs",
         title: "1 Tabs",
