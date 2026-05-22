@@ -39,7 +39,10 @@ export default class IPProtectionStatusCard extends MozLitElement {
     showLocationButtonBadge: { type: Boolean },
   };
 
+  #actionButtonFocused = false;
+
   handleButtonClick() {
+    this.#actionButtonFocused = true;
     const type = this.protectionEnabled
       ? this.TOGGLE_OFF_EVENT
       : this.TOGGLE_ON_EVENT;
@@ -64,9 +67,27 @@ export default class IPProtectionStatusCard extends MozLitElement {
     );
   }
 
+  updated(changedProperties) {
+    super.updated(changedProperties);
+    // a11y: For screen readers, returns focus to the title after the button state changes (Bug 2027928)
+    if (
+      this.#actionButtonFocused &&
+      (changedProperties.has("protectionEnabled") ||
+        changedProperties.has("isActivating") ||
+        changedProperties.has("hasExclusion"))
+    ) {
+      this.#actionButtonFocused = false;
+      this.statusBoxEl.updateComplete.then(() => {
+        this.statusBoxEl.titleEl.focus();
+      });
+    }
+  }
+
   focus() {
     const button = this.shadowRoot.querySelector(`moz-button[slot="action"]`);
-    button?.focus();
+    if (!button?.disabled) {
+      button?.focus();
+    }
   }
 
   bandwidthUsageTemplate() {
@@ -160,54 +181,41 @@ export default class IPProtectionStatusCard extends MozLitElement {
   }
 
   render() {
+    let type = "disconnected";
+    let headerL10nId = "ipprotection-connection-status-disconnected";
+    let buttonL10nId = "ipprotection-button-turn-vpn-on";
+    let buttonDisabled = false;
+    let iconSrc = null;
+
     if (this.isActivating) {
-      return html`
-        ${this.statusTemplate({
-          type: "connecting",
-          headerL10nId: "ipprotection-connection-status-connecting",
-          buttonL10nId: "ipprotection-button-connecting",
-          iconSrc:
-            "chrome://browser/content/ipprotection/assets/states/ipprotection-loading.svg",
-          buttonType: "primary",
-          buttonDisabled: true,
-        })}
-      `;
+      type = "connecting";
+      headerL10nId = "ipprotection-connection-status-connecting";
+      buttonL10nId = "ipprotection-button-connecting";
+      iconSrc =
+        "chrome://browser/content/ipprotection/assets/states/ipprotection-loading.svg";
+      buttonDisabled = true;
+    } else if (this.hasExclusion && this.protectionEnabled) {
+      type = "excluded";
+      headerL10nId = "ipprotection-connection-status-excluded";
+      buttonL10nId = "ipprotection-button-turn-vpn-off-excluded-site";
+      iconSrc =
+        "chrome://browser/content/ipprotection/assets/states/ipprotection-excluded.svg";
+    } else if (this.protectionEnabled) {
+      type = "connected";
+      headerL10nId = "ipprotection-connection-status-connected";
+      buttonL10nId = "ipprotection-button-turn-vpn-off";
+      iconSrc =
+        "chrome://browser/content/ipprotection/assets/states/ipprotection-on.svg";
     }
 
-    if (this.hasExclusion && this.protectionEnabled) {
-      return html`
-        ${this.statusTemplate({
-          type: "excluded",
-          headerL10nId: "ipprotection-connection-status-excluded",
-          buttonL10nId: "ipprotection-button-turn-vpn-off-excluded-site",
-          buttonType: "primary",
-          iconSrc:
-            "chrome://browser/content/ipprotection/assets/states/ipprotection-excluded.svg",
-        })}
-      `;
-    }
-
-    if (this.protectionEnabled) {
-      return html`
-        ${this.statusTemplate({
-          type: "connected",
-          headerL10nId: "ipprotection-connection-status-connected",
-          buttonL10nId: "ipprotection-button-turn-vpn-off",
-          buttonType: "primary",
-          iconSrc:
-            "chrome://browser/content/ipprotection/assets/states/ipprotection-on.svg",
-        })}
-      `;
-    }
-
-    return html`
-      ${this.statusTemplate({
-        type: "disconnected",
-        headerL10nId: "ipprotection-connection-status-disconnected",
-        buttonL10nId: "ipprotection-button-turn-vpn-on",
-        buttonType: "primary",
-      })}
-    `;
+    return this.statusTemplate({
+      type,
+      headerL10nId,
+      buttonL10nId,
+      buttonType: "primary",
+      buttonDisabled,
+      iconSrc,
+    });
   }
 }
 
