@@ -247,9 +247,24 @@
                 },
                 "where": {
                   "type": "string",
-                  "enum": ["current", "save", "tab", "tabshifted", "window"],
+                  "enum": [
+                    "chromeless",
+                    "current",
+                    "save",
+                    "tab",
+                    "tabshifted",
+                    "window"
+                  ],
                   "description": "Where the URL is opened",
                   "default": "tab"
+                },
+                "width": {
+                  "type": "integer",
+                  "description": "Width of the window when where is chromeless"
+                },
+                "height": {
+                  "type": "integer",
+                  "description": "Height of the window when where is chromeless"
                 }
               },
               "required": ["args", "where"],

@@ -74,8 +74,12 @@ function openInWindow(url, params, sourceWindow) {
     policyContainer,
     resolveOnContentBrowserCreated,
     chromeless,
+    width,
+    height,
   } = params;
-  const CHROMELESS_FEATURES = `resizable,minimizable,titlebar,close`;
+  const chromelessDimensions =
+    chromeless && width && height ? `,width=${width},height=${height}` : "";
+  const CHROMELESS_FEATURES = `resizable,minimizable,titlebar,close${chromelessDimensions}`;
   let features = `chrome,dialog=no,${chromeless ? CHROMELESS_FEATURES : "all"}`;
   if (params.private) {
     features += ",private";
