@@ -11,6 +11,11 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * Emits `aiwindow-context-button:on-click`.
  */
 export class ContextIconButton extends MozLitElement {
+  static shadowRootOptions = {
+    ...MozLitElement.shadowRootOptions,
+    delegatesFocus: true,
+  };
+
   static properties = {
     active: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },

@@ -3230,6 +3230,143 @@ ${
     return this.querySelector(".smartbar-button-container");
   }
 
+  /**
+   * Move focus to the first focusable button in the smartbar action button
+   * container, skipping any that are hidden or disabled. Only meaningful
+   * in smartbar mode, where at least one action button is always visible
+   * and enabled.
+   */
+  focusFirstActionButton() {
+    /** @type {HTMLElement} */ (
+      this.smartbarButtonContainer.querySelector(
+        ":scope > :not([hidden]):not([disabled])"
+      )
+    ).focus();
+  }
+
+  /**
+   * Move focus to the last focusable element in the smartbar action button
+   * container. Recurses through visible shadow trees so split-button
+   * hosts (e.g. input-cta's chevron) land on their deepest last
+   * tabbable, making the reverse Tab cycle symmetric with the forward
+   * one. Layout-agnostic: doesn't assume a particular last button or
+   * wrapping element. Only meaningful in smartbar mode.
+   */
+  focusLastActionButton() {
+    const buttons = this.smartbarButtonContainer.querySelectorAll(
+      ":scope > :not([hidden]):not([disabled])"
+    );
+    const lastHost = /** @type {HTMLElement} */ (buttons[buttons.length - 1]);
+    let last = lastHost;
+    const walk = node => {
+      if (node.checkVisibility && !node.checkVisibility()) {
+        return;
+      }
+      if (this.#isTabbable(node)) {
+        last = node;
+      }
+      if (node.shadowRoot) {
+        for (const child of node.shadowRoot.children) {
+          walk(child);
+        }
+      }
+      for (const child of node.children) {
+        walk(child);
+      }
+    };
+    walk(lastHost);
+    /** @type {HTMLElement} */ (last).focus();
+  }
+
+  /**
+   * Whether `el` participates in Tab navigation. Matches the browser's
+   * tab-order rule (`tabIndex >= 0`, excluding disabled and `<link>`)
+   * so callers can predict where default Tab would land.
+   *
+   * @param {Element | null | undefined} el
+   * @returns {boolean}
+   */
+  #isTabbable(el) {
+    return el && !el.disabled && el.tabIndex >= 0 && el.localName != "link";
+  }
+
+  /**
+   * Walks up from `target` through normal DOM and shadow root boundaries
+   * (via `parentNode || host`) to determine whether `container` is an
+   * ancestor. Works regardless of shadow root mode (open or closed).
+   *
+   * @param {Node | null | undefined} target
+   * @param {Node | null | undefined} container
+   * @returns {boolean}
+   */
+  #isInsideContainer(target, container) {
+    while (target && target != container) {
+      target = target.parentNode || target.host;
+    }
+    return !!target;
+  }
+
+  /**
+   * Tab handler for keydown events originating inside the smartbar action
+   * button container. Mirrors the urlbar's circular Tab pattern: Tab from
+   * the last action button wraps back to the first result; Shift+Tab from
+   * the first wraps to the last.
+   *
+   * @param {KeyboardEvent} event
+   */
+  #onActionButtonsKeyDown(event) {
+    // Escape from any action button closes the suggestions and returns
+    // focus to the input, mirroring the behaviour when Escape is pressed
+    // from the input itself.
+    if (event.keyCode == KeyEvent.DOM_VK_ESCAPE && this.view.isOpen) {
+      this.view.close();
+      this.focus();
+      event.preventDefault();
+      return;
+    }
+    if (event.keyCode != KeyEvent.DOM_VK_TAB || !this.view.isOpen) {
+      return;
+    }
+    const container = this.smartbarButtonContainer;
+    const buttons = [
+      ...container.querySelectorAll(":scope > :not([hidden]):not([disabled])"),
+    ];
+    if (!buttons.length) {
+      return;
+    }
+    // Walk up from the composed target through normal DOM and shadow
+    // root boundaries (via `parentNode || host`) to find the action
+    // button host containing the focused element. composedPath() would
+    // skip closed shadow root boundaries, so we walk manually.
+    let focused = event.composedTarget;
+    while (focused && !buttons.includes(focused)) {
+      focused = focused.parentNode || focused.host;
+    }
+    if (!focused) {
+      return;
+    }
+    // The inner focused element (e.g. the main button or chevron of a
+    // split moz-button). If a tabbable sibling exists in the same shadow
+    // tree, let default Tab cycle into it before wrapping.
+    const innerTarget = /** @type {HTMLElement} */ (event.composedTarget);
+    const adjacent = event.shiftKey
+      ? innerTarget?.previousElementSibling
+      : innerTarget?.nextElementSibling;
+    if (this.#isTabbable(adjacent)) {
+      return;
+    }
+
+    if (event.shiftKey && focused == buttons[0]) {
+      this.focus();
+      this.view.selectBy(1, { reverse: true, userPressedTab: true });
+      event.preventDefault();
+    } else if (!event.shiftKey && focused == buttons[buttons.length - 1]) {
+      this.focus();
+      this.view.selectBy(1, { reverse: false, userPressedTab: true });
+      event.preventDefault();
+    }
+  }
+
   get value() {
     return this.#smartbarInputController?.value ?? this.inputField.value;
   }
@@ -5527,10 +5664,11 @@ ${
     }
 
     // Respect the autohide preference for easier inspecting/debugging via
-    // the browser toolbox.
+    // the browser toolbox. Keep the view open when focus moves to any
+    // action button so the user can Tab back to the result list.
     if (
       !lazy.UrlbarPrefs.get("ui.popup.disable_autohide") &&
-      !this._inputCta?.contains(event.relatedTarget)
+      !this.smartbarButtonContainer?.contains(event.relatedTarget)
     ) {
       this.view.close();
     }
@@ -6104,10 +6242,34 @@ ${
       // Ignore char key input while processing enter key.
       event.preventDefault();
     }
+    // Don't insert a space character into the contenteditable when SPACE
+    // is meant to activate a selected result-menu (or other button-like
+    // selectable element). The controller's keydown handler will open the
+    // menu; we just need to suppress the character insertion before the
+    // multiline editor's input pipeline picks it up.
+    if (
+      this.#isSmartbarMode &&
+      event.data == " " &&
+      this.view?.shouldSpaceActivateSelectedElement?.()
+    ) {
+      event.preventDefault();
+    }
   }
 
   _on_keydown(event) {
     if (event.currentTarget == this.window) {
+      // Tab/Shift+Tab/Escape on the smartbar action buttons goes through
+      // a dedicated handler. We detect membership via a manual ancestor
+      // walk so we work across shadow root boundaries regardless of mode.
+      if (
+        this.#isInsideContainer(
+          event.composedTarget,
+          this.smartbarButtonContainer
+        )
+      ) {
+        this.#onActionButtonsKeyDown(event);
+        return;
+      }
       // It would be great if we could more easily detect the user focusing the
       // address bar through a keyboard shortcut, but F6 and TAB bypass are
       // not going through commands handling.

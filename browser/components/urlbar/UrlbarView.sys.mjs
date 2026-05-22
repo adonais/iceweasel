@@ -3136,6 +3136,13 @@ export class UrlbarView {
       if (element != row) {
         row?.toggleAttribute("descendant-selected", true);
       }
+      // Keep the selected row in view in the smartbar, where the results
+      // list is scrollable. `block: "nearest"` is a no-op when the row is
+      // already visible. Scoped to smartbar to avoid changing classic
+      // urlbar behavior.
+      if (this.input.sapName == "smartbar") {
+        (row ?? element).scrollIntoView({ block: "nearest" });
+      }
     }
 
     let result = row?.result;
