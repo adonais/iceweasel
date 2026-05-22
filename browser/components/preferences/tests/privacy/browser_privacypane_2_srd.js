@@ -10,10 +10,4 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 run_test_subset([test_dependent_elements_redesigned]);

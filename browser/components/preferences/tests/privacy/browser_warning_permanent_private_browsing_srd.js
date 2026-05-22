@@ -9,7 +9,6 @@ function checkForPrompt(prefVal) {
       set: [
         ["privacy.history.custom", true],
         ["browser.privatebrowsing.autostart", !prefVal],
-        ["browser.settings-redesign.enabled", true],
       ],
     });
 

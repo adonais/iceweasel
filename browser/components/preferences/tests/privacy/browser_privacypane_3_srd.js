@@ -10,12 +10,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 run_test_subset([
   test_custom_retention_redesign("rememberHistory", "remember"),
   test_custom_retention_redesign("rememberHistory", "custom"),
