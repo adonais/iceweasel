@@ -3549,7 +3549,8 @@ pref("toolkit.contentRelevancy.log", false);
 // rotation altogether.
 pref("browser.contextual-services.contextId.rotation-in-days", 3);
 pref("browser.contextual-services.contextId.rust-component.enabled", true);
-
+// Pref to block feature callout messages related to IP protection
+pref("browser.ipProtection.blockIPProtectionCallouts", false);
 // Pref to enable the IP protection feature
 pref("browser.ipProtection.enabled", false);
 // Pref to track whether the user has opted out of using IP Protection
