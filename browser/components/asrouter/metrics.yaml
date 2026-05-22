@@ -974,6 +974,44 @@ microsurvey:
     send_in_pings:
       - microsurvey
 
+  smart_window_user_feedback_data:
+    type: object
+    description: |
+      Structured feedback and session metadata submitted via the Smart Window
+      feedback modal.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036194
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036194
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - firefox-ai-and-ml@mozilla.com
+    expires: never
+    send_in_pings:
+      - microsurvey
+    structure:
+      type: object
+      properties:
+        metadata:
+          type: object
+          description: Session metadata at the time of feedback submission.
+          properties:
+            model:
+              type: string
+              description: >
+                The model used during the chat session. For example:
+                "gemini-2.5-flash-lite". "custom-model" if a custom model
+                override is set.
+            turn_count:
+              type: number
+              description: >
+                Number of user messages in the chat session at the time of
+                feedback.
+            prompt_version:
+              type: number
+              description: The prompt version used during the chat session.
+
 microsurvey.attribution:
   source:
     <<: *attribution_source
