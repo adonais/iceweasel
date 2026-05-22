@@ -529,7 +529,7 @@ export let StartupTelemetry = {
       [Ci.nsIGNOMEShellService.DESKTOP_ENTRY_VISIBLE]: "visible",
     };
     let status = lazy.ShellService.getDesktopEntryStatus(
-      Services.appinfo.remotingName + ".desktop"
+      lazy.ShellService.getGlibPrgname() + ".desktop"
     );
 
     Glean.osEnvironment.desktopEntryExists.set(labels[status] ?? "other");

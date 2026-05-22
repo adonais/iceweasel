@@ -488,6 +488,11 @@ NS_IMETHODIMP nsGNOMEShellService::GetArgv0(nsACString& output) {
   return NS_OK;
 }
 
+NS_IMETHODIMP nsGNOMEShellService::GetGlibPrgname(nsACString& output) {
+  output.Assign(g_get_prgname());
+  return NS_OK;
+}
+
 NS_IMETHODIMP nsGNOMEShellService::GetDesktopEntryStatus(
     const nsACString& aDesktopId,
     nsIGNOMEShellService::DesktopEntryStatus* aResult) {

@@ -32,6 +32,15 @@ interface nsIGNOMEShellService : nsIShellService
   ACString getArgv0();
 
   /**
+   * Gets the program name from GLib, which is used as the default window
+   * class. This will often be identical to the app remotingName, but can be
+   * overridden with the '--name' command line argument.
+   *
+   * @returns the result of g_get_prgname.
+   */
+  ACString getGlibPrgname();
+
+  /**
    * Used for the return value of getDesktopEntryStatus. 'ABSENT' indicates the
    * desktop file doesn't exist (or does but is marked Hidden=); 'INVISIBLE'
    * indicates the desktop file exists, but will not be shown (e.g. via

@@ -165,12 +165,15 @@ add_task(async function check_desktop_entry_telemetry() {
         requested.push(name);
         return key;
       },
+      getGlibPrgname() {
+        return "glibprgnamehere";
+      },
     });
     StartupTelemetry.desktopEntryStatus();
     Assert.deepEqual(
       requested,
-      [Services.appinfo.remotingName + ".desktop"],
-      "The remoting name is passed as the desired desktop entry"
+      [ShellService.getGlibPrgname() + ".desktop"],
+      "The g_get_prgname value is passed as the desired desktop entry"
     );
     Assert.equal(
       Glean.osEnvironment.desktopEntryExists.testGetValue(),
