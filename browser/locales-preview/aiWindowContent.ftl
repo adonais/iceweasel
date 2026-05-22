@@ -25,7 +25,7 @@ aiwindow-memories-used = Memories used
 aiwindow-memories-callout-description = Memories helped personalize this response.
 aiwindow-memories-learn-more = Learn more
 aiwindow-manage-memories =
-    .label = Memories settings
+    .label = Memory settings
 aiwindow-retry-without-memories =
     .label = Retry without memories
 aiwindow-retry =
@@ -35,7 +35,9 @@ aiwindow-copy-message =
     .tooltiptext = Copy
     .aria-label = Copy message
 aiwindow-applied-memories-popover =
-    .aria-label = Applied memories
+    .aria-label = Memories panel
+aiwindow-applied-memories-list =
+    .aria-label = Memories
 
 ## Jump to Bottom Button
 
