@@ -323,11 +323,6 @@
 
   &:is([overflowedItem="true"], [cui-areatype="panel"]) {
     list-style-image: url("chrome://browser/content/ipprotection/assets/states/ipprotection-off.svg");
-
-    > .toolbarbutton-icon {
-      width: var(--icon-size-small);
-      height: var(--icon-size-small);
-    }
   }
 
   &.ipprotection-on {

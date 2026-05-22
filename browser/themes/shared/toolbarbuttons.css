@@ -723,16 +723,17 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 
 /* IP Protection */
 #ipprotection-button {
-  --icon-width: 48px;
-  --panel-and-palette-icon-size: var(--icon-width);
+  --panel-and-palette-icon-size: var(--size-image-small);
 
   > .toolbarbutton-icon {
-    width: calc(2 * var(--toolbarbutton-inner-padding) + var(--icon-width));
+    width: calc(2 * var(--toolbarbutton-padding-inner) + var(--size-image-small));
     padding-block: 0;
   }
 
-  > .toolbarbutton-badge-stack > .toolbarbutton-icon {
-    width: var(--icon-width);
+  &:not(:is([overflowedItem="true"], [cui-areatype="panel"])) {
+    > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+      width: var(--size-image-small);
+    }
   }
 
   toolbarpaletteitem[place="palette"] > & > .toolbarbutton-icon,
