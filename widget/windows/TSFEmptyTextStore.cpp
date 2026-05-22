@@ -254,6 +254,16 @@ STDMETHODIMP TSFEmptyTextStore::GetSelection(ULONG ulIndex, ULONG ulCount,
   }
 
   // XXX Should we treat selection as collapsed at the start?
+
+  // Returning TS_E_NOSELECTION causes Sogou IME crashes at least version 16.4.
+  // Thus, we return dummy selection collapsed at start in the empty text for
+  // Sogou.
+  if (TSFStaticSink::IsSogouActive()) {
+    *pSelection = TSFUtils::SelectionACPCollapsedAtStart();
+    *pcFetched = 1;
+    return S_OK;
+  }
+
   *pSelection = TSFUtils::EmptySelectionACP();
   *pcFetched = 0;
   return TS_E_NOSELECTION;
