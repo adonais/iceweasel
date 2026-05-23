@@ -445,6 +445,16 @@
             "id": {
               "type": "string",
               "enum": ["pageActionInUrlbar"]
+            },
+            "params": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Hosts to match against the current tab's host"
+            },
+            "patterns": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "URL patterns to match against the current tab's URL"
             }
           },
           "additionalProperties": false,

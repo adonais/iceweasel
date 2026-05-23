@@ -442,11 +442,24 @@ export var PageActions = {
       if (!win || buttonNode.hidden) {
         return;
       }
-      await lazy.ASRouter.sendTriggerMessage({
-        browser: win.gBrowser.selectedBrowser,
+      let trigger = {
         id: "pageActionInUrlbar",
+        browser: win.gBrowser.selectedBrowser,
         context: { pageAction: buttonNode.id },
-      });
+      };
+      let spec = "";
+      let host = "";
+      try {
+        ({ spec, host } = win.gBrowser.selectedBrowser?.currentURI || {});
+      } catch (e) {}
+      if (spec) {
+        let param = { url: spec };
+        if (host) {
+          param.host = host;
+        }
+        trigger.param = param;
+      }
+      await lazy.ASRouter.sendTriggerMessage(trigger);
     }, 500);
   },
 

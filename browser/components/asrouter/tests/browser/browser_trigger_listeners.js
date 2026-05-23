@@ -519,6 +519,12 @@ add_task(async function test_pageActionInUrlbarTrigger() {
   let pageAction = await receivedTrigger;
   ok(pageAction, "pageActionInUrlbar trigger sent with PiP button id");
 
+  is(
+    gBrowser.selectedBrowser.currentURI.host,
+    "example.com",
+    "host is example.com"
+  );
+
   await SpecialPowers.popPrefEnv();
   sandbox.restore();
 
