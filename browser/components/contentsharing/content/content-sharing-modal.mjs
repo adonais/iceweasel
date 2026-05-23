@@ -81,6 +81,10 @@ export class ContentSharingModal extends MozLitElement {
   }
 
   close() {
+    // Borrowing a hack from unexpectedScriptLoad.js, which we use to ensure
+    // opened tabs are foregrounded. To be fixed in bug 2040823.
+    window.top.document.documentElement.removeAttribute("window-modal-open");
+
     window.close();
   }
 
@@ -135,7 +139,7 @@ export class ContentSharingModal extends MozLitElement {
 
   handleViewPageClick() {
     this.close();
-    this.documentGlobal.frameElement.documentGlobal.openTrustedLinkIn(
+    this.documentGlobal.frameElement.documentGlobal.openWebLinkIn(
       this.shareResult.url,
       "tab"
     );
@@ -159,7 +163,7 @@ export class ContentSharingModal extends MozLitElement {
       : "/accounts/fxa/login/";
     const signInURL = lazy.CONTENT_SHARING_SERVER_URL + accountSlug;
     this.close();
-    this.documentGlobal.frameElement.documentGlobal.openTrustedLinkIn(
+    this.documentGlobal.frameElement.documentGlobal.openWebLinkIn(
       signInURL,
       "tab"
     );
@@ -172,7 +176,7 @@ export class ContentSharingModal extends MozLitElement {
     event.preventDefault();
     this.close();
     // Need to do this explicity because just clicking isn't opening a tab
-    this.documentGlobal.frameElement.documentGlobal.openTrustedLinkIn(
+    this.documentGlobal.frameElement.documentGlobal.openWebLinkIn(
       event.target.href,
       "tab"
     );

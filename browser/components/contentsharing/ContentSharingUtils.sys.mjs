@@ -389,6 +389,11 @@ class ContentSharingUtilsClass {
 
       // The most recent window may have changed during the login flow.
       window = Services.wm.getMostRecentBrowserWindow();
+
+      // Borrowing a hack from unexpectedScriptLoad.js, which we use to ensure
+      // opened tabs are foregrounded. To be fixed in bug 2040823.
+      window.top.document.documentElement.removeAttribute("window-modal-open");
+
       window.openWebLinkIn(shareResult.url, "tab");
     } catch (ex) {
       // Either we timed out waiting for the cookie to be set, or something
