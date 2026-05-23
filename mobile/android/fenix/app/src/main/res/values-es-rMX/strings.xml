@@ -1705,6 +1705,14 @@
   <string name="pwa_site_controls_title_private">%1$s (Modo Privado)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Abrir búsqueda en pestañas</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Crear un grupo de pestañas</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Arrastra una pestaña sobre otra para agruparlas.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Selecciona varias pestañas para crear un grupo.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Descartar incorporación a grupo de pestañas</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Prueba los grupos de pestañas: menos desplazamientos, más resultados</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -2363,9 +2371,9 @@
   <!-- Summary of studies data on quit preference if it is set to off -->
   <string name="studies_off">Desactivado</string>
   <!-- Toggle if desktop site is turned on -->
-  <string name="browser_feature_desktop_site_on">Activar</string>
+  <string name="browser_feature_desktop_site_on">Activado</string>
   <!-- Toggle if desktop site is turned off -->
-  <string name="browser_feature_desktop_site_off">Desactivar</string>
+  <string name="browser_feature_desktop_site_off">Desactivado</string>
   <!-- Category header of a preference that allows a user to alter settings related to web permissions. -->
   <string name="preferences_category_permissions">Permisos</string>
   <!-- Category header of a preference that allows a user to alter settings related to web content. -->
@@ -4583,6 +4591,11 @@
   -->
   <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, en vivo</string>
   <!--
+    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
+  -->
+  <string name="sports_widget_match_elapsed_minutes">Tiempo transcurrido en minutos: %1$s</string>
+  <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
@@ -4609,6 +4622,10 @@
   <string name="sports_widget_error_connection_offline_description">Revisa tu conexión a internet e inténtalo de nuevo.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Fase de grupos</string>
+  <!-- Sports widget error card title shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_title">La información del partido no está disponible en este momento.</string>
+  <!-- Sports widget error card description shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_description">Intenta actualizar en unos minutos.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

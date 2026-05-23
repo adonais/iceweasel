@@ -2730,11 +2730,11 @@
       Text shown on the trackers blocked card. %d is the number of trackers blocked.
     -->
     <item quantity="one">%d Traciwr wedi\'i rwystro</item>
-    <item quantity="zero">%d Traciwyr wedi\'u rwystro</item>
-    <item quantity="two">%d Draciwr wedi\'u rwystro</item>
-    <item quantity="few">%d Traciwr wedi\'u rwystro</item>
-    <item quantity="many">%d Traciwr wedi\'u rwystro</item>
-    <item quantity="other">%d Traciwr wedi\'u rwystro</item>
+    <item quantity="zero">%d Traciwyr wedi\'u rhwystro</item>
+    <item quantity="two">%d Draciwr wedi\'u rhwystro</item>
+    <item quantity="few">%d Traciwr wedi\'u rhwystro</item>
+    <item quantity="many">%d Traciwr wedi\'u rhwystro</item>
+    <item quantity="other">%d Traciwr wedi\'u rhwystro</item>
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Wedi\'ch diogelu</string>

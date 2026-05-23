@@ -709,8 +709,14 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Emombe’u marketing Mozilla-guápe mba’éichapa eikuaáraka’e Firefox ha ijeporu. Ko’ã mba’ekuaarã noñevendemo’ãi. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Emoherakuã marketing Mozilla-guápe mba’éicha eikuaáraka’e Firefox ha ijeporu. Ko’ã mba’ekuaarã araka’eve noñevendéi.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Mba’éichapa jaiporu mba’ekuaarãita</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Eipytyvõ Firefox-pe</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Nahániri, aguyje</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Umi marandu ne pytyvõta eime hag̃ua tekorosãme Firefox ndive</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -1681,6 +1687,8 @@
   <string name="pwa_site_controls_title_private">%1$s (Ayvu Ñemigua)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Embojuruja jehekaha tendayképe</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Emoheñói tendayke aty</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Eiporu tendayke aty eku’e’ive ha ejapove hag̃ua</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -3119,6 +3127,8 @@
   <string name="ip_protection_menu_paused">Mombytapyre</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Javy</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Eha’ã jey</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Open VPN ñemboheko</string>
   <!--
@@ -4564,6 +4574,12 @@
   <string name="sports_widget_team_followed_title">Upeigua: \n%s</string>
   <!-- Description shown on the sports widget immediately after the user has followed a team -->
   <string name="sports_widget_team_followed_description">Eporandu ko kuatiarogue ereko hag̃ua marandu partído og̃uahẽtavo torneo.</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Tiempo peteĩha</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Tiempo mokõiha</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage">Atygua jehuga</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

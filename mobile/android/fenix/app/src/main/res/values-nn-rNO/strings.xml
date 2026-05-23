@@ -374,21 +374,21 @@
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Du har alltid eit val i %s</string>
   <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
-  <string name="ai_controls_banner_supporting_text_2">Det inkluderer om du vil bruke funksjonar som er forbetra med AI. %s</string>
+  <string name="ai_controls_banner_supporting_text_2">Det inkluderer om du vil bruke funksjonar som er forbetra med KI. %s</string>
   <!-- Supporting text for the AI controls banner -->
-  <string name="ai_controls_banner_supporting_text">Det inkluderer om du vil bruke funksjonar som er forbetra med AI.</string>
+  <string name="ai_controls_banner_supporting_text">Det inkluderer om du vil bruke funksjonar som er forbetra med KI.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Les meir</string>
   <!-- Title for the block AI enhancements toggle -->
-  <string name="ai_controls_block_ai_title">Blokker AI-forbetringar</string>
+  <string name="ai_controls_block_ai_title">Blokker KI-forbetringar</string>
   <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_ai_description">Blokkering betyr at du ikkje vil sjå nye eller noverande AI-forbetringar i %s, eller sprettoppvindauge om dei.</string>
+  <string name="ai_controls_block_ai_description">Blokkering betyr at du ikkje vil sjå nye eller noverande KI-forbetringar i %s, eller sprettoppvindauge om dei.</string>
   <!-- Link text to see what AI enhancements are and aren’t included -->
   <string name="ai_controls_see_whats_included">Sjå kva som er og ikkje er inkludert</string>
   <!-- Banner text shown when AI enhancements are blocked -->
-  <string name="ai_controls_blocked_info_banner">Nye og eksisterande AI-forbetringar er blokkerte som standard. Opphev blokkeringa av spesifikke funksjonar nedanfor.</string>
+  <string name="ai_controls_blocked_info_banner">Nye og eksisterande KI-forbetringar er blokkerte som standard. Opphev blokkeringa av spesifikke funksjonar nedanfor.</string>
   <!-- Section header for the AI-powered features list -->
-  <string name="ai_controls_ai_powered_features">AI-drivne funksjonar</string>
+  <string name="ai_controls_ai_powered_features">KI-drivne funksjonar</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Omsettingar</string>
   <!-- Description for the translations AI feature toggle -->
@@ -402,9 +402,9 @@
   <!-- Description for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_description">Lyd blir konvertert til tekst av Google Speech Services.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
-  <string name="ai_controls_block_dialog_title">Blokkere AI-forbetringar?</string>
+  <string name="ai_controls_block_dialog_title">Blokkere KI-forbetringar?</string>
   <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_dialog_body">Du vil ikkje sjå nye eller eksisterande AI-forbetringar i %1$s, eller varsel om dei. Etterpå kan du oppheve blokkeringa av det du ønskjer å halde fram med å bruke.\n\nBlokkering påverkar også utvidingar som bruker AI levert av %1$s.</string>
+  <string name="ai_controls_block_dialog_body">Du vil ikkje sjå nye eller eksisterande KI-forbetringar i %1$s, eller varsel om dei. Etterpå kan du oppheve blokkeringa av det du ønskjer å halde fram med å bruke.\n\nBlokkering påverkar også utvidingar som brukar KI levert av %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Kva som vil bli blokkert:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -1707,6 +1707,12 @@
   <string name="tab_manager_open_tab_search">Opne fanesøk</string>
   <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
   <string name="tab_group_onboarding_item_title">Opprett ei fanegruppe</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Dra éi fane over på ei anna for å gruppere dei.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Vel fleire faner for å opprette ei gruppe.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Avvis introduksjon av fanegruppe</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Prøv fanegrupper for mindre skrolling og meir gjort</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->

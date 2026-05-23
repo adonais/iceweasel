@@ -1703,6 +1703,14 @@
   <string name="pwa_site_controls_title_private">%1$s (Chế độ riêng tư)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Mở tìm kiếm thẻ</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Tạo một nhóm thẻ</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Kéo một thẻ lên thẻ khác để nhóm chúng lại.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Chọn nhiều thẻ để tạo nhóm.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Bỏ qua giới thiệu nhóm thẻ</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Thử sử dụng nhóm thẻ để giảm thao tác cuộn, tập trung làm việc hơn</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -4563,6 +4571,13 @@
   -->
   <string name="sports_widget_upcoming_match_content_description">Sắp tới: %1$s vs %2$s, %3$s vào lúc %4$s</string>
   <!--
+    Content description (for accessibility, not displayed) announcing a soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
+    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
+    or a match status like "Full time").
+  -->
+  <string name="sports_widget_match_content_description">%1$s vs %2$s, %3$s</string>
+  <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
     or Final represented by sports_widget_final).
@@ -4574,6 +4589,11 @@
     and %5$s is the match elapsed time (e.g. 72 minutes).
   -->
   <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, trực tiếp</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
+  -->
+  <string name="sports_widget_match_elapsed_minutes">Thời gian đã trôi qua bằng phút: %1$s</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
@@ -4601,6 +4621,10 @@
   <string name="sports_widget_error_connection_offline_description">Kiểm tra kết nối internet của bạn và thử lại.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Vòng bảng</string>
+  <!-- Sports widget error card title shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_title">Hiện chưa có thông tin trận đấu.</string>
+  <!-- Sports widget error card description shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_description">Hãy thử làm mới lại sau vài phút.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

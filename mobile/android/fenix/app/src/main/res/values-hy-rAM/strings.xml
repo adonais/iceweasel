@@ -1705,6 +1705,14 @@
   <string name="pwa_site_controls_title_private">%1$s (Գաղտնի կերպ)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Բացել ներդիրների որոնումը</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Ստեղծել ներդիրների խումբ</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Քաշեք մեկ ներդիրը մյուսի վրա՝ դրանք խմբավորելու համար։</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Ընտրեք մի քանի ներդիրներ՝ խումբ ստեղծելու համար։</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Անջատել ներդիրների խմբի գրանցումը</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Փորձեք ներդիրների խմբերը՝ ավելի քիչ գլորելու և ավելի շատ գործելու համար</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -4621,6 +4629,10 @@
   <string name="sports_widget_error_connection_offline_description">Ստուգեք Ձեր համացանցային կապը և փորձեք կրկին:</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Խմբային փուլ</string>
+  <!-- Sports widget error card title shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_title">Խաղի մասին տեղեկատվությունն այս պահին հասանելի չէ։</string>
+  <!-- Sports widget error card description shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_description">Փորձեք թարմացնել մի քանի րոպեից։</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

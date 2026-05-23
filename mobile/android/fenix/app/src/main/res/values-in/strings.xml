@@ -19,6 +19,8 @@
   <string name="content_description_menu">Opsi lainnya</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Penjelajahan pribadi</string>
+  <!-- Content description (not visible, for screen readers etc.): "Normal Browsing" menu button. -->
+  <string name="content_description_normal_browsing">Penjelajahan normal</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Cari atau masukkan alamat</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -281,6 +283,8 @@
   <string name="browser_menu_edit_bookmark">Edit markah</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">Simpan sebagai PDF</string>
+  <!-- Browser menu label for moving the current private tab to a non-private tab -->
+  <string name="browser_menu_move_to_non_private_tab">Pindahkan ke tab non-pribadi</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Terjemahkan laman</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
@@ -341,6 +345,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Laman diterjemahkan dari %1$s ke %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Goyangkan perangkat Anda untuk meringkas laman ini dalam hitungan detik. ️</string>
   <!--
     Translation Toolbar
 
@@ -353,6 +359,46 @@
   <string name="translation_toolbar_expand_action">Buka lembar terjemahan</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Tutup pesan</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Ringkasan laman</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">Kendali AI</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Anda selalu punya pilihan di %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Itu termasuk apakah akan menggunakan fitur yang ditingkatkan dengan AI. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Itu termasuk jikalau akan menggunakan fitur yang ditingkatkan dengan AI.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Pelajari lebih lanjut</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Blokir peningkatan AI</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Memblokir berarti Anda tidak akan melihat peningkatan AI baru atau saat ini di %s, atau pop-up tentang mereka.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Lihat apa yang disertakan dan tidak disertakan</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Peningkatan AI baru dan terkini diblokir secara baku. Buka blokir fitur tertentu di bawah ini.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Fitur bertenaga AI</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Penerjemahan</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Semua terjemahan tetap pribadi di perangkat Anda.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Pengaturan terjemahan lainnya</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Pengaturan ringkasan laman lainnya</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Pencarian suara</string>
   <!--
     Locale Settings Fragment
 

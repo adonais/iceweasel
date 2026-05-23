@@ -1705,6 +1705,12 @@
   <string name="pwa_site_controls_title_private">%1$s (Ιδιωτική λειτουργία)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Αναζήτηση ανοικτών καρτελών</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Δημιουργία ομάδας καρτελών</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Σύρετε μια καρτέλα πάνω σε μια άλλη για να τις ομαδοποιήσετε.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Επιλέξτε πολλαπλές καρτέλες για να δημιουργήσετε μια ομάδα.</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Δοκιμάστε τις ομάδες καρτελών για λιγότερη κύλιση και περισσότερες εργασίες</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->

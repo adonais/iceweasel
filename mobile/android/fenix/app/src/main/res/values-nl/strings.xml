@@ -1707,6 +1707,12 @@
   <string name="tab_manager_open_tab_search">Tabblad zoeken openen</string>
   <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
   <string name="tab_group_onboarding_item_title">Een tabbladgroep maken</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Sleep het ene tabblad naar het andere om ze te groeperen.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Selecteer meerdere tabbladen om een groep aan te maken.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Welkomstbericht voor tabbladgroepen sluiten</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Probeer tabbladgroepen voor minder scrollen, meer doen</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
