@@ -1785,6 +1785,24 @@ export var PlacesUIUtils = {
       }
     }
   },
+
+  /**
+   * Event handler for experimental link sharing context menu item.
+   */
+  shareBookmarkFolder() {
+    let view = PlacesUIUtils.getViewForNode(
+      PlacesUIUtils.lastContextMenuTriggerNode
+    );
+    try {
+      lazy.ContentSharingUtils.createShareableLinkFromBookmarkFolders(
+        view.selectedNodes
+          .filter(n => lazy.PlacesUtils.nodeIsFolderOrShortcut(n))
+          .map(n => lazy.PlacesUtils.getConcreteItemGuid(n))
+      );
+    } catch (ex) {
+      console.error("Failed to create shareable link: ", ex);
+    }
+  },
 };
 
 /**

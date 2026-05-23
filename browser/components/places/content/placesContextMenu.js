@@ -23,16 +23,7 @@ document.addEventListener(
           PlacesUIUtils.openSelectionInTabs(event);
           break;
         case "contentsharing_sharefolder": {
-          let view = PlacesUIUtils.getViewForNode(
-            PlacesUIUtils.lastContextMenuTriggerNode
-          );
-
-          ContentSharingUtils.createShareableLinkFromBookmarkFolders(
-            view.selectedNodes
-              .filter(n => PlacesUtils.nodeIsFolderOrShortcut(n))
-              .map(n => PlacesUtils.getConcreteItemGuid(n))
-          );
-
+          PlacesUIUtils.shareBookmarkFolder();
           break;
         }
       }

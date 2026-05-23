@@ -16,6 +16,9 @@ prefs = [
 
 ["browser_testShareBookmarks.js"]
 
+["browser_testShareBookmarksFromSidebar.js"]
+support-files = [ "!/browser/components/places/tests/browser/head.js"]
+
 ["browser_testShareTabGroup.js"]
 
 ["browser_testShareTabs.js"]

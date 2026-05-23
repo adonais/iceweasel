@@ -3,29 +3,6 @@
 
 "use strict";
 
-async function createFolderWithBookmarks(
-  folderName,
-  parentGuid = PlacesUtils.bookmarks.toolbarGuid
-) {
-  const folder = await PlacesUtils.bookmarks.insert({
-    index: -1,
-    type: PlacesUtils.bookmarks.TYPE_FOLDER,
-    parentGuid,
-    title: folderName,
-  });
-
-  for (let i of [1, 2, 3, 4, 5]) {
-    await PlacesUtils.bookmarks.insert({
-      index: -1,
-      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
-      parentGuid: folder.guid,
-      url: `https://example.com/${i}`,
-      title: `Example ${i}`,
-    });
-  }
-  return folder;
-}
-
 add_setup(function () {
   registerCleanupFunction(async () => {
     await PlacesUtils.bookmarks.eraseEverything();
