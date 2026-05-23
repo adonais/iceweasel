@@ -274,6 +274,18 @@ export function isCorrectlySigned(addon) {
   return addon.isCorrectlySigned !== false;
 }
 
+export function isUnsignedWarningMessageDisabled() {
+  // While running in automation, in a local build or in a Thunderbird
+  // application instance, allow to hide the unsigned add-on message bars
+  // through the related about:config preference.
+  return (
+    (Cu.isInAutomation ||
+      !lazy.AppConstants.MOZILLA_OFFICIAL ||
+      lazy.AppConstants.MOZ_APP_NAME === "thunderbird") &&
+    Services.prefs.getBoolPref("extensions.ui.disableUnsignedWarnings", false)
+  );
+}
+
 export function isDisabledUnsigned(addon) {
   let signingRequired =
     addon.type == "locale"
@@ -539,14 +551,11 @@ export async function getAddonMessageInfo(
       type: "error",
     };
   } else if (
-    (Cu.isInAutomation || !lazy.AppConstants.MOZILLA_OFFICIAL) &&
-    Services.prefs.getBoolPref("extensions.ui.disableUnsignedWarnings", false)
+    !isCorrectlySigned(addon) &&
+    // In automation, local builds and Thunderbird application instances
+    // we allow to disable the unsigned addons message bar.
+    !isUnsignedWarningMessageDisabled()
   ) {
-    // In local builds, when this pref is set, pretend the file is correctly
-    // signed even if it isn't so that the UI looks like what users would
-    // normally see.
-    return {};
-  } else if (!isCorrectlySigned(addon)) {
     return {
       linkSumoPage: "unsigned-addons",
       messageId: "details-notification-unsigned2",
