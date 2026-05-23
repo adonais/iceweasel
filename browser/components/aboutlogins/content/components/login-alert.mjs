@@ -70,7 +70,7 @@ export class VulnerablePasswordAlert extends MozLitElement {
             data-l10n-args=${JSON.stringify({
               hostname: this.hostname,
             })}
-            href=${this.hostname}
+            href=${this.changePasswordURL || this.hostname}
             rel="noreferrer"
             target="_blank"
           ></a>
@@ -149,7 +149,7 @@ export class LoginBreachAlert extends MozLitElement {
                 hostname: this.displayHostname,
               })
             )}
-            href=${this.hostname}
+            href=${this.changePasswordURL || this.hostname}
             rel="noreferrer"
             target="_blank"
             @click=${this.handleBreachLinkClick}
