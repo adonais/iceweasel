@@ -94,6 +94,7 @@ export function makeShareResult({ share = null } = {}) {
     url: null,
     isSchemaValid: null,
     isSignedIn: null,
+    loadingPromise: null,
   };
 }
 
@@ -352,16 +353,29 @@ class ContentSharingUtilsClass {
    * @param {string} context Used in error logging (e.g. "tabs", "tab_group")
    */
   async #createLinkAndOpenModal(shareResult, context) {
-    // Note: the result object contains either the URL or an error. It's safe
-    // to pass into the modal, which handles error UI as needed.
-    shareResult = await this.createShareableLink(shareResult);
-    shareResult.isSignedIn =
-      this.isSignedIn() && shareResult.error !== ERRORS.UNAUTHORIZED;
+    let resolveLoading;
+    const loadingPromise = new Promise(resolve => {
+      resolveLoading = resolve;
+    });
 
     let window = Services.wm.getMostRecentBrowserWindow();
 
-    // Note: we deliberately do not await the open.
-    window.gDialogBox.open(CONTENT_SHARING_MODAL_URL, shareResult);
+    window.gDialogBox.open(CONTENT_SHARING_MODAL_URL, {
+      ...shareResult,
+      loadingPromise,
+    });
+
+    // Note: the result object contains either the URL or an error. It's safe
+    // to pass into the modal, which handles error UI as needed.
+    try {
+      shareResult = await this.createShareableLink(shareResult);
+      shareResult.isSignedIn =
+        this.isSignedIn() && shareResult.error !== ERRORS.UNAUTHORIZED;
+    } finally {
+      // Resolve with a new object so Lit detects the shareResult change
+      resolveLoading({ ...shareResult, loadingPromise: null });
+    }
+
     if (shareResult.error && !shareResult.isSignedIn) {
       console.error(
         `ContentSharingUtils: failed to share ${context}`,

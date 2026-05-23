@@ -74,11 +74,6 @@ async function withContentSharingMockServer(task) {
  */
 async function assertContentSharingModal(window, expected, leaveOpen = false) {
   Assert.ok(window.gDialogBox.isOpen, "Content sharing modal should be open");
-  Assert.deepEqual(
-    window.gDialogBox.dialog.frameContentWindow.arguments[0],
-    expected,
-    "The window has the expected arguments"
-  );
 
   // Wait for the modal to be fully rendered
   const modalEl = await TestUtils.waitForCondition(() =>
@@ -87,8 +82,22 @@ async function assertContentSharingModal(window, expected, leaveOpen = false) {
     )
   );
   await TestUtils.waitForCondition(() => BrowserTestUtils.isVisible(modalEl));
+
+  // If the modal is still loading, wait for the loadingPromise to resolve
+  // before asserting on the final shareResult state.
+  if (modalEl.shareResult?.loadingPromise) {
+    await modalEl.shareResult.loadingPromise;
+    await modalEl.getUpdateComplete();
+  }
+
   await TestUtils.waitForCondition(() => modalEl.getUpdateComplete);
   await modalEl.getUpdateComplete();
+
+  Assert.deepEqual(
+    modalEl.shareResult,
+    expected,
+    "Modal has the expected share result"
+  );
   await TestUtils.waitForCondition(
     () => modalEl.links?.length === Math.min(expected.share.links.length, 3)
   );

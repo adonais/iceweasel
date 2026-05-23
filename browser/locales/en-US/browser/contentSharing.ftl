@@ -22,6 +22,9 @@ content-sharing-modal-view-page =
 content-sharing-modal-copy-link =
   .label = Copy link
 
+content-sharing-modal-generating-page =
+  .label = Generating page…
+
 content-sharing-modal-link-copied =
   .label = Link copied
 
