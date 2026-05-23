@@ -120,6 +120,7 @@ firefox_desktop_metrics = [
     "browser/components/asrouter/metrics.yaml",
     "browser/components/attribution/metrics.yaml",
     "browser/components/backup/metrics.yaml",
+    "browser/components/contentsharing/metrics.yaml",
     "browser/components/contextualidentity/metrics.yaml",
     "browser/components/controlcenter/metrics.yaml",
     "browser/components/customkeys/metrics.yaml",

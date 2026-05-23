@@ -21,6 +21,8 @@ add_task(async function test_ServerErrors() {
     server.reset();
     server.mockResponseStatus = 503;
     server.mockResponse = {};
+    await Services.fog.testFlushAllChildren();
+    Services.fog.testResetFOG();
 
     shareResult = makeShareResult({
       share: {
@@ -38,10 +40,24 @@ add_task(async function test_ServerErrors() {
 
     Assert.equal(server.requests.length, 5, "Server received 5 requests");
 
+    let gleanData = Glean.collectionShare.error.testGetValue();
+    Assert.equal(
+      gleanData.length,
+      5,
+      "Should have the expected number of events"
+    );
+    Assert.equal(
+      gleanData[0].extra.status_code,
+      "503",
+      "Should have expected status code"
+    );
+
     // Set the response status to something that cannot be retried
     server.reset();
     server.mockResponseStatus = 401;
     server.mockResponse = {};
+    await Services.fog.testFlushAllChildren();
+    Services.fog.testResetFOG();
 
     shareResult = makeShareResult({
       share: {
@@ -52,11 +68,24 @@ add_task(async function test_ServerErrors() {
     });
     await ContentSharingUtils.createShareableLink(shareResult);
     Assert.equal(server.requests.length, 1, "Server received one request");
+    gleanData = Glean.collectionShare.error.testGetValue();
+    Assert.equal(
+      gleanData.length,
+      1,
+      "Should have the expected number of events"
+    );
+    Assert.equal(
+      gleanData[0].extra.status_code,
+      "401",
+      "Should have expected status code"
+    );
 
     // Set the response status to something that can be retried
     server.reset();
     server.mockResponseStatus = 503;
     server.mockResponse = {};
+    await Services.fog.testFlushAllChildren();
+    Services.fog.testResetFOG();
 
     shareResult = makeShareResult({
       share: {
@@ -79,5 +108,19 @@ add_task(async function test_ServerErrors() {
       1,
       "Server received more than one request"
     );
+    gleanData = Glean.collectionShare.error.testGetValue();
+    Assert.equal(
+      gleanData.length,
+      1,
+      "Should have the expected number of events"
+    );
+    Assert.equal(
+      gleanData[0].extra.status_code,
+      "503",
+      "Should have expected status code"
+    );
+
+    await Services.fog.testFlushAllChildren();
+    Services.fog.testResetFOG();
   });
 });

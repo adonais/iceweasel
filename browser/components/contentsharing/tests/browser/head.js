@@ -61,7 +61,18 @@ async function withContentSharingMockServer(task) {
   }
 }
 
-async function assertContentSharingModal(window, expected) {
+/**
+ * Asserts on the contents of the sharing modal.
+ * If leaveOpen is true, returns the sharing modal el.
+ *
+ * @param {Window} window - Chrome window in which to open the modal.
+ * @param {object} expected - expected result object with shape
+ *                            { share, url, isSignedIn }.
+ * @param {boolean} leaveOpen - If true, the modal element is returned and
+ *                              the dialog is left open. Otherwise the dialog
+ *                              is closed when the assert is finished.
+ */
+async function assertContentSharingModal(window, expected, leaveOpen = false) {
   Assert.ok(window.gDialogBox.isOpen, "Content sharing modal should be open");
   Assert.deepEqual(
     window.gDialogBox.dialog.frameContentWindow.arguments[0],
@@ -138,7 +149,11 @@ async function assertContentSharingModal(window, expected) {
     }
   }
 
+  if (leaveOpen) {
+    return modalEl;
+  }
   window.gDialogBox.dialog.close();
+  return null;
 }
 
 async function createFolderWithBookmarks(
