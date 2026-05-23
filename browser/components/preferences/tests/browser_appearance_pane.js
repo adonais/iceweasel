@@ -52,12 +52,7 @@ add_task(async function test_appearance_pane_loads_setting_groups() {
     () => doc.querySelector('setting-group[groupid="appearance"]')
   );
 
-  for (let groupId of [
-    "appearance",
-    "browserTheme",
-    "browserLayout",
-    "relatedSettings",
-  ]) {
+  for (let groupId of ["appearance", "browserTheme", "relatedSettings"]) {
     let group = doc.querySelector(`setting-group[groupid="${groupId}"]`);
     ok(group, `${groupId} setting-group exists`);
     is_element_visible(group, `${groupId} setting-group is visible`);
@@ -103,12 +98,6 @@ add_task(async function test_appearance_groups_removed_from_general() {
     ),
     "appearance group is removed from General pane when settings redesign is enabled"
   );
-  ok(
-    !doc.querySelector(
-      'setting-group[groupid="browserLayout"][data-srd-migrated]'
-    ),
-    "browserLayout group is removed from General pane when settings redesign is enabled"
-  );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
@@ -153,6 +142,50 @@ add_task(async function test_related_settings_home_link_navigates() {
   let paneLoaded = waitForPaneChange("home");
   synthesizeClick(getSettingControl("related-settings-home-link"));
   await paneLoaded;
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function test_related_settings_tabs_browsing_link_navigates() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", true]],
+  });
+  await openPreferencesViaOpenPreferencesAPI("appearance", {
+    leaveOpen: true,
+  });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+
+  await BrowserTestUtils.waitForMutationCondition(
+    doc.getElementById("mainPrefPane"),
+    { childList: true, subtree: true },
+    () => doc.querySelector('setting-group[groupid="relatedSettings"]')
+  );
+
+  let paneLoaded = waitForPaneChange("tabsBrowsing");
+  synthesizeClick(getSettingControl("related-settings-tabs-browsing-link"));
+  await paneLoaded;
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function test_browser_layout_group_in_tabs_browsing_pane() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", true]],
+  });
+  await openPreferencesViaOpenPreferencesAPI("tabsBrowsing", {
+    leaveOpen: true,
+  });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+
+  await BrowserTestUtils.waitForMutationCondition(
+    doc.getElementById("mainPrefPane"),
+    { childList: true, subtree: true },
+    () => doc.querySelector('setting-group[groupid="browserLayout"]')
+  );
+
+  let group = doc.querySelector('setting-group[groupid="browserLayout"]');
+  ok(group, "browserLayout setting-group exists in tabs-browsing pane");
+  is_element_visible(group, "browserLayout setting-group is visible");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

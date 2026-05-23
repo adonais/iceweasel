@@ -9,28 +9,7 @@ const FORCED_COLORS_QUERY = matchMedia("(forced-colors)");
 
 Preferences.addAll([
   { id: "layout.css.prefers-color-scheme.content-override", type: "int" },
-  { id: "sidebar.verticalTabs", type: "bool" },
-  { id: "sidebar.revamp", type: "bool" },
 ]);
-
-Preferences.addSetting({
-  id: "browserLayoutRadioGroup",
-  pref: "sidebar.verticalTabs",
-  get: prefValue => (prefValue ? "true" : "false"),
-  set: value => value === "true",
-});
-
-Preferences.addSetting({
-  id: "browserLayoutShowSidebar",
-  pref: "sidebar.revamp",
-  onUserChange(checked) {
-    if (checked) {
-      window.browsingContext.topChromeWindow.SidebarController?.enabledViaSettings(
-        true
-      );
-    }
-  },
-});
 
 Preferences.addSetting({
   id: "web-appearance-override-warning",
@@ -105,6 +84,14 @@ Preferences.addSetting({
   },
 });
 
+Preferences.addSetting({
+  id: "related-settings-tabs-browsing-link",
+  onUserClick: e => {
+    e.preventDefault();
+    window.gotoPref("paneTabsBrowsing-layout");
+  },
+});
+
 Preferences.addSetting({ id: "relatedSettingsBoxGroup" });
 
 SettingGroupManager.registerGroups({
@@ -171,43 +158,6 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
-  browserLayout: {
-    l10nId: "browser-layout-header2",
-    iconSrc: "chrome://browser/skin/sidebar-expanded.svg",
-    headingLevel: 2,
-    items: [
-      {
-        id: "browserLayoutRadioGroup",
-        control: "moz-visual-picker",
-        options: [
-          {
-            id: "browserLayoutHorizontalTabs",
-            value: "false",
-            l10nId: "browser-layout-horizontal-tabs2",
-            controlAttrs: {
-              class: "setting-chooser-item",
-              imagesrc:
-                "chrome://browser/content/preferences/browser-layout-horizontal.svg",
-            },
-          },
-          {
-            id: "browserLayoutVerticalTabs",
-            value: "true",
-            l10nId: "browser-layout-vertical-tabs2",
-            controlAttrs: {
-              class: "setting-chooser-item",
-              imagesrc:
-                "chrome://browser/content/preferences/browser-layout-vertical.svg",
-            },
-          },
-        ],
-      },
-      {
-        id: "browserLayoutShowSidebar",
-        l10nId: "browser-layout-show-sidebar2",
-      },
-    ],
-  },
   relatedSettings: {
     l10nId: "related-settings-group",
     headingLevel: 2,
@@ -230,6 +180,14 @@ SettingGroupManager.registerGroups({
             control: "moz-box-link",
             controlAttrs: {
               href: "about:preferences#home",
+            },
+          },
+          {
+            id: "related-settings-tabs-browsing-link",
+            l10nId: "related-settings-tabs-browsing-link",
+            control: "moz-box-link",
+            controlAttrs: {
+              href: "about:preferences#tabsBrowsing",
             },
           },
         ],
