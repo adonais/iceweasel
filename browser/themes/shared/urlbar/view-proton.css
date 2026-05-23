@@ -1419,6 +1419,9 @@
 
       > .urlbarView-realtime-description-bottom {
         font-size: var(--urlbarView-small-font-size);
+      }
+
+      .urlbarView-row:not([selected]) > .urlbarView-realtime-root > .urlbarView-realtime-item:not([selected]) > & > .urlbarView-realtime-description-bottom {
         color: var(--urlbarView-secondary-text-color);
       }
 
