@@ -1300,4 +1300,65 @@ class SettingsTest {
         val result = settings.termsOfUseAcceptedVersion
         assertEquals(0, result)
     }
+
+    @Test
+    fun `WHEN no preference is stored THEN delete download behavior should be ASK_WHEN_DELETING`() {
+        settings.preferences.edit {
+            remove("pref_key_downloads_delete_behavior_v2")
+        }
+
+        val result = settings.deleteDownloadBehavior
+        assertEquals(Settings.DeleteDownloadBehavior.ASK_WHEN_DELETING, result)
+    }
+
+    @Test
+    fun `WHEN old cleanup file preference is DELETE_FROM_DEVICE THEN delete behavior should be ASK_WHEN_DELETING`() {
+        // Bug 2002334 introduced a new key for the download deletion behavior.
+        // We want to make sure that the settings is ASK_WHEN_DELETING after the migration from version using the old preference.
+        settings.preferences.edit {
+            putBoolean("pref_key_downloads_clean_up_files_automatically", true)
+        }
+
+        val result = settings.deleteDownloadBehavior
+        assertEquals(Settings.DeleteDownloadBehavior.ASK_WHEN_DELETING, result)
+    }
+
+    @Test
+    fun `WHEN old download delete behavior preference is DELETE_FROM_DEVICE THEN delete behavior should be ASK_WHEN_DELETING`() {
+        // Bug 2041355 rotated the preference key for the deletion behavior. The settings should be ASK_WHEN_DELETING if
+        // the new key doesn't exist in the preference, no matter what was the value stored with the old key
+        settings.preferences.edit {
+            putInt("pref_key_downloads_delete_behavior", Settings.DeleteDownloadBehavior.DELETE_FROM_DEVICE.value)
+            remove("pref_key_downloads_delete_behavior_v2")
+        }
+
+        val result = settings.deleteDownloadBehavior
+        assertEquals(Settings.DeleteDownloadBehavior.ASK_WHEN_DELETING, result)
+    }
+
+    @Test
+    fun `WHEN old download delete behavior preference is REMOVE_FROM_HISTORY THEN delete behavior should be ASK_WHEN_DELETING`() {
+        // Bug 2041355 rotated the preference key for the deletion behavior. The settings should be ASK_WHEN_DELETING if
+        // the new key doesn't exist in the preference, no matter what was the value stored with the old key
+        settings.preferences.edit {
+            putInt("pref_key_downloads_delete_behavior", Settings.DeleteDownloadBehavior.REMOVE_FROM_HISTORY.value)
+            remove("pref_key_downloads_delete_behavior_v2")
+        }
+
+        val result = settings.deleteDownloadBehavior
+        assertEquals(Settings.DeleteDownloadBehavior.ASK_WHEN_DELETING, result)
+    }
+
+    @Test
+    fun `WHEN download deletion behavior preference is read THEN it should read from the new preference`() {
+        // Bug 2041355 rotated the preference key for the deletion behavior.
+        // We want to make sure we are getting the value from the right preference.
+        settings.preferences.edit {
+            putInt("pref_key_downloads_delete_behavior", Settings.DeleteDownloadBehavior.DELETE_FROM_DEVICE.value)
+            putInt("pref_key_downloads_delete_behavior_v2", Settings.DeleteDownloadBehavior.REMOVE_FROM_HISTORY.value)
+        }
+
+        val result = settings.deleteDownloadBehavior
+        assertEquals(Settings.DeleteDownloadBehavior.REMOVE_FROM_HISTORY, result)
+    }
 }

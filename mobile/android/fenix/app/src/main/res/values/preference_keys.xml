@@ -586,10 +586,10 @@
 
     <!-- Downloads Settings Radio Button-->
     <string name="pref_key_downloads_delete_or_remove_downloads_category" translatable="false">pref_key_downloads_delete_or_remove_downloads_category</string>
-    <string name="pref_key_downloads_delete_from_device" translatable="false">pref_key_downloads_delete_from_device</string>
-    <string name="pref_key_downloads_remove_from_downloads_history" translatable="false">pref_key_downloads_remove_from_downloads_history</string>
-    <string name="pref_key_downloads_ask_when_to_delete_files" translatable="false">pref_key_downloads_ask_when_to_delete_files</string>
-    <string name="pref_key_downloads_delete_behavior" translatable="false">pref_key_downloads_delete_behavior</string>
+    <!-- pref_key_downloads_delete_behavior was replaced by pref_key_downloads_delete_behavior_v2 with Bug 2041355,
+      to reset the default value to "Ask when I delete files" for all users.
+      -->
+    <string name="pref_key_downloads_delete_behavior_v2" translatable="false">pref_key_downloads_delete_behavior_v2</string>
 
     <!-- Tab Manager-->
     <string name="pref_key_tab_manager_opening_animation" translatable="false">pref_key_tab_manager_opening_animation</string>
