@@ -1444,72 +1444,25 @@ class Settings(
             /**
              * Converts an integer value into its corresponding [DeleteDownloadBehavior] enum constant.
              *
-             * If the integer does not match any known value, it defaults to [DELETE_FROM_DEVICE].
+             * If the integer does not match any known value, it defaults to [ASK_WHEN_DELETING].
              *
              * @param value The integer to convert.
              * @return The matching [DeleteDownloadBehavior] or the default.
              */
-            fun fromInt(value: Int) = entries.firstOrNull { it.value == value } ?: DELETE_FROM_DEVICE
-        }
-    }
-
-    /**
-     * Migrates legacy download deletion preferences to the new unified [DeleteDownloadBehavior] setting.
-     *
-     * Previously, the user's preference for handling deleted downloads was stored across multiple
-     * separate boolean keys (including a legacy "clean up files automatically" toggle). This
-     * function reads those old boolean values, maps them to the appropriate [DeleteDownloadBehavior]
-     * enum value, saves the new integer preference, and removes the legacy keys from
-     * [SharedPreferences].
-     *
-     * This migration ensures existing users do not lose their settings after updating the app.
-     * It will safely return early if the migration has already been performed.
-     */
-    fun migrateDeleteDownloadBehaviorIfNeeded() {
-        val newKey = appContext.getString(R.string.pref_key_downloads_delete_behavior)
-        if (preferences.contains(newKey)) return
-
-        val legacyCleanupKey = appContext.getString(
-            R.string.pref_key_downloads_clean_up_files_automatically,
-        )
-        val oldDeleteFromDeviceKey = appContext.getString(R.string.pref_key_downloads_delete_from_device)
-        val oldRemoveFromHistoryKey = appContext.getString(
-            R.string.pref_key_downloads_remove_from_downloads_history,
-        )
-        val oldAskWhenDeletingKey = appContext.getString(R.string.pref_key_downloads_ask_when_to_delete_files)
-
-        val migratedBehavior = when {
-            preferences.contains(legacyCleanupKey) -> {
-                if (preferences.getBoolean(legacyCleanupKey, false)) {
-                    DeleteDownloadBehavior.DELETE_FROM_DEVICE
-                } else {
-                    DeleteDownloadBehavior.REMOVE_FROM_HISTORY
-                }
-            }
-            preferences.getBoolean(oldRemoveFromHistoryKey, false) -> DeleteDownloadBehavior.REMOVE_FROM_HISTORY
-            preferences.getBoolean(oldAskWhenDeletingKey, false) -> DeleteDownloadBehavior.ASK_WHEN_DELETING
-            else -> DeleteDownloadBehavior.DELETE_FROM_DEVICE
-        }
-
-        preferences.edit {
-            putInt(newKey, migratedBehavior.value)
-            remove(legacyCleanupKey)
-            remove(oldDeleteFromDeviceKey)
-            remove(oldRemoveFromHistoryKey)
-            remove(oldAskWhenDeletingKey)
+            fun fromInt(value: Int) = entries.firstOrNull { it.value == value } ?: ASK_WHEN_DELETING
         }
     }
 
     var deleteDownloadBehavior: DeleteDownloadBehavior
         get() = DeleteDownloadBehavior.fromInt(
             preferences.getInt(
-                appContext.getString(R.string.pref_key_downloads_delete_behavior),
-                DeleteDownloadBehavior.DELETE_FROM_DEVICE.value,
+                appContext.getString(R.string.pref_key_downloads_delete_behavior_v2),
+                DeleteDownloadBehavior.ASK_WHEN_DELETING.value,
             ),
         )
         set(value) = preferences.edit {
             putInt(
-                appContext.getString(R.string.pref_key_downloads_delete_behavior),
+                appContext.getString(R.string.pref_key_downloads_delete_behavior_v2),
                 value.value,
             )
         }
