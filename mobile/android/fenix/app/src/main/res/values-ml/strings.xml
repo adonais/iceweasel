@@ -3884,7 +3884,7 @@
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">അടയ്ക്കുക</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">കൂടുതൽ സാധ്യതകൾ</string>
+  <string name="sports_widget_more_options_content_description">കൂടുതൽ സാധ്യതകൾ</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">ഒന്നാമ്പകുതി</string>
   <!-- Sports widget match status label shown during second half of a match. -->

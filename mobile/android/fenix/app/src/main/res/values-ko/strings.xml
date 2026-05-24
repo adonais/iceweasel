@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">기록에서 %1$s 삭제됨</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">기록 항목 삭제</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">%1$s에서 유지</string>
   <!--
     Home onboarding
 
@@ -723,6 +725,12 @@
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
   -->
   <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">여러분이 Firefox를 사용하는 플랫폼에 대해 Mozilla가 알릴 수 있도록 하여 더 많은 사람들에게 다가갈 수 있도록 도와주세요.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">여러분이 Firefox를 사용하는 플랫폼에 대해 Mozilla가 알릴 수 있도록 하여 더 많은 사람들에게 다가갈 수 있도록 도와주세요. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">저희가 데이터를 사용하는 방법</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
@@ -956,7 +964,7 @@
   <!-- Preference for customizing the app icon -->
   <string name="preferences_app_icon">앱 아이콘</string>
   <!-- Preference for showing the tab strip -->
-  <string name="preferences_tab_strip">탭 표시줄 디스플레이</string>
+  <string name="preferences_tab_strip">탭 표시줄</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_toolbar_shortcut">도구 모음 바로 가기</string>
   <!-- Preference for gestures based actions -->
@@ -1051,7 +1059,7 @@
   <string name="preferences_downloads_delete_from_device">기기에서 삭제</string>
   <string name="preferences_downloads_delete_from_device_description">기기에서 삭제되며 다운로드 기록에서도 삭제됨</string>
   <string name="preferences_downloads_remove_from_download_history">다운로드 기록에서 삭제</string>
-  <string name="preferences_downloads_remove_from_download_history_description">파일이 다운로드 기록에서는 삭제되었지만 기기에는 남음</string>
+  <string name="preferences_downloads_remove_from_download_history_description">파일이 다운로드 기록에서는 삭제되지만, 기기에는 남음</string>
   <string name="preferences_downloads_ask_when_to_delete_files">파일을 삭제할 때 확인</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads_2">다운로드 설정</string>
@@ -1697,6 +1705,14 @@
   <string name="pwa_site_controls_title_private">%1$s (사생활 보호 모드)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">탭 검색 열기</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">탭 그룹 만들기</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">그룹화하려면 탭을 다른 탭 위로 드래그하세요.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">여러 탭을 선택하여 그룹을 만드세요.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">탭 그룹 온보딩 닫기</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">탭 그룹을 활용해 스크롤은 줄이고 작업 효율은 높여보세요</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -2674,6 +2690,14 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s는 온라인 활동을 추적하는 가장 일반적인 여러 추적기로부터 사용자를 보호합니다.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">더 알아보기</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="other">추적기 %d개 차단됨</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -3064,6 +3088,8 @@
   <string name="saved_logins_sort_strategy_last_used">마지막 사용</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">비밀번호 정렬 메뉴</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">파일에서 가져오기</string>
   <!--
     Email Masks
 
@@ -3096,6 +3122,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">%s에 내장된 VPN</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">공용 Wi-Fi에서도 위치를 숨겨 탐색을 추가 보호합니다. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">공용 Wi-Fi에서도 위치를 숨겨 탐색을 추가 보호합니다.</string>
   <!-- Link text that opens additional information about the browser VPN -->
@@ -4419,17 +4447,17 @@
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_south_america">남아프리카</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england" tools:ignore="UnusedResources">잉글랜드</string>
+  <string name="sports_widget_country_england">잉글랜드</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">스코틀랜드</string>
+  <string name="sports_widget_country_scotland">스코틀랜드</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live">라이브</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026년 월드컵 우승팀</string>
+  <string name="sports_widget_champions_title">2026년 월드컵 우승팀</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
   <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">준우승</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">3위</string>
+  <string name="sports_widget_third_place_title">3위</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">32강</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4443,9 +4471,9 @@
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">동메달 결정전</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed">지금은 경기 정보를 사용할 수 없습니다. 몇 분 후에 새로 고침 해 보세요.</string>
+  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">지금은 경기 정보를 사용할 수 없습니다. 몇 분 후에 새로 고침 해 보세요.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted">연결이 중단됨 — 라이브 업데이트가 일시 중지되었습니다.</string>
+  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">연결이 중단됨 — 라이브 업데이트가 일시 중지되었습니다.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">새로 고침</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4483,7 +4511,7 @@
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(종료)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">경기 종료</string>
+  <string name="sports_widget_match_full_time_2">경기 종료</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4537,11 +4565,11 @@
   -->
   <string name="sports_widget_countdown_minutes">분</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">팀 선택 시트 닫기</string>
+  <string name="sports_widget_close_team_selection_sheet_content_description">팀 선택 시트 닫기</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">닫기</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">추가 옵션</string>
+  <string name="sports_widget_more_options_content_description">추가 옵션</string>
   <!--
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
@@ -4553,30 +4581,44 @@
     Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
   -->
-  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">예정: %1$s 대 %2$s, %3$s %4$s</string>
+  <string name="sports_widget_upcoming_match_content_description">예정: %1$s 대 %2$s, %3$s %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
+    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
+    or a match status like "Full time").
+  -->
+  <string name="sports_widget_match_content_description">%1$s 대 %2$s, %3$s</string>
   <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
     or Final represented by sports_widget_final).
   -->
-  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, 라이브 게임</string>
+  <string name="sports_widget_live_game_content_description">%s, 라이브 게임</string>
   <!--
     Content description (for accessibility, not displayed) announcing a live score.
     %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
     and %5$s is the match elapsed time (e.g. 72 minutes).
   -->
-  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, 라이브</string>
+  <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, 라이브</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
+  -->
+  <string name="sports_widget_match_elapsed_minutes">분 단위 경과 시간: %1$s</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
   -->
-  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, %2$d / %3$d 페이지</string>
+  <string name="sports_widget_page_position_content_description">%1$s, %2$d / %3$d 페이지</string>
   <!--
     Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">월드컵 최종 결과, %1$d / %2$d 페이지</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">월드컵 결승전 결과</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">홈에서 월드컵 제거</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4588,11 +4630,17 @@
   <!-- Sports widget match status label shown during second half of a match. -->
   <string name="sports_widget_second_half" tools:ignore="UnusedResources">후반전</string>
   <!-- Sports widget error card title shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">오프라인 상태인 것 같습니다.</string>
+  <string name="sports_widget_error_connection_offline_title">오프라인 상태인 것 같습니다.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">인터넷 연결을 확인하고 다시 시도하세요.</string>
+  <string name="sports_widget_error_connection_offline_description">인터넷 연결을 확인하고 다시 시도하세요.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">조별 예선</string>
+  <!-- Sports widget error card title shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_title">지금은 경기 정보를 사용할 수 없습니다.</string>
+  <!-- Sports widget error card description shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_description">몇 분 후 새로 고침 해 보세요.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">팀 결정</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

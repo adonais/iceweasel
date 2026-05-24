@@ -4427,17 +4427,17 @@
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_south_america">Etelä-Amerikka</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Englanti</string>
+  <string name="sports_widget_country_england">Englanti</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Skotlanti</string>
+  <string name="sports_widget_country_scotland">Skotlanti</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live">SUORA</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Vuoden 2026 MM-kilpailujen mestarit</string>
+  <string name="sports_widget_champions_title">Vuoden 2026 MM-kilpailujen mestarit</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
   <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Toinen sija</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Kolmas sija</string>
+  <string name="sports_widget_third_place_title">Kolmas sija</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">32 parasta</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4451,9 +4451,9 @@
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">Pronssiottelu</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed">Ottelutietoja ei ole saatavilla juuri nyt. Yritä päivittää muutaman minuutin kuluttua.</string>
+  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">Ottelutietoja ei ole saatavilla juuri nyt. Yritä päivittää muutaman minuutin kuluttua.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted">Yhteys katkennut — reaaliaikaiset päivitykset keskeytetty.</string>
+  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">Yhteys katkennut — reaaliaikaiset päivitykset keskeytetty.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Päivitä</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4491,7 +4491,7 @@
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(Lopputulos)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Lopputulos</string>
+  <string name="sports_widget_match_full_time_2">Lopputulos</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4545,11 +4545,11 @@
   -->
   <string name="sports_widget_countdown_minutes">mn</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Sulje joukkueen valintataulukko</string>
+  <string name="sports_widget_close_team_selection_sheet_content_description">Sulje joukkueen valintataulukko</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">Sulje</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Lisää valintoja</string>
+  <string name="sports_widget_more_options_content_description">Lisää valintoja</string>
   <!--
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
@@ -4561,25 +4561,25 @@
     Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
   -->
-  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Tulossa: %1$s vastaan %2$s, %3$s klo %4$s</string>
+  <string name="sports_widget_upcoming_match_content_description">Tulossa: %1$s vastaan %2$s, %3$s klo %4$s</string>
   <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
     or Final represented by sports_widget_final).
   -->
-  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, suora ottelu</string>
+  <string name="sports_widget_live_game_content_description">%s, suora ottelu</string>
   <!--
     Content description (for accessibility, not displayed) announcing a live score.
     %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
     and %5$s is the match elapsed time (e.g. 72 minutes).
   -->
-  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, suora</string>
+  <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, suora</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
   -->
-  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, sivu %2$d/%3$d</string>
+  <string name="sports_widget_page_position_content_description">%1$s, sivu %2$d/%3$d</string>
   <!--
     Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
     %1$d is the current page number, and %2$d is the total number of pages.
@@ -4596,9 +4596,9 @@
   <!-- Sports widget match status label shown during second half of a match. -->
   <string name="sports_widget_second_half" tools:ignore="UnusedResources">Toinen puoliaika</string>
   <!-- Sports widget error card title shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Vaikuttaa siltä, että olet yhteydettömässä tilassa.</string>
+  <string name="sports_widget_error_connection_offline_title">Vaikuttaa siltä, että olet yhteydettömässä tilassa.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Tarkista Internet-yhteytesi ja yritä uudelleen.</string>
+  <string name="sports_widget_error_connection_offline_description">Tarkista Internet-yhteytesi ja yritä uudelleen.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Lohkovaihe</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->

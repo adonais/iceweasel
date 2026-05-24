@@ -351,6 +351,8 @@
   <string name="mozac_feature_addons_not_yet_supported_caption2">បច្ចុប្បន្នយើងកំពុងបង្កើតការគាំទ្រសម្រាប់ការជ្រើសរើសដំបូងនៃផ្នែកបន្ថែមដែលបានណែនាំ។</string>
   <!-- This is the caption for the extension installation progress overlay -->
   <string name="mozac_extension_install_progress_caption">កំពុងទាញយក និងផ្ទៀងផ្ទាត់កម្មវិធីបន្ថែម…</string>
+  <!-- Error shown when extensions could not be loaded -->
+  <string name="mozac_feature_addons_failed_to_load_extensions">មិនអាចផ្ទុកផ្នែកបន្ថែមបានទេ។ សូមព្យាយាមម្ដងទៀតនៅពេលក្រោយ។</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">រកមិនឃើញការបកប្រែទេ សម្រាប់មូលដ្ឋាន %1$s ទាំងភាសាលំនាំដើម %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

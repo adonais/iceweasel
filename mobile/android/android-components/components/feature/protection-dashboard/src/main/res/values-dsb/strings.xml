@@ -15,10 +15,10 @@
       above this string and is used to select the correct plural form. Do not include the number in
       the translation.
     -->
-    <item quantity="one">Pśeslědowak, kótaryž jo se blokěrował</item>
-    <item quantity="two">Pśeslědowaka, kótarejž stej se blokěrowałej</item>
-    <item quantity="few">Pśeslědowaki, kótare su se blokěrowali</item>
-    <item quantity="other">Pśeslědowaki, kótare su se blokěrowali</item>
+    <item quantity="one">Pśeslědowak, kótaryž jo se blokěrował toś ten tyźeń</item>
+    <item quantity="two">Pśeslědowaka, kótarejž stej se blokěrowałej toś ten tyźeń</item>
+    <item quantity="few">Pśeslědowaki, kótare su se blokěrowali toś ten tyźeń</item>
+    <item quantity="other">Pśeslědowaki, kótare su se blokěrowali toś ten tyźeń</item>
   </plurals>
   <plurals name="mozac_protections_dashboard_data_saved">
     <!-- Label showing data saved in megabytes. %1$d is the number of MB saved -->

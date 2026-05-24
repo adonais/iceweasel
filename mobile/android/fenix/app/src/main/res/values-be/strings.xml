@@ -351,6 +351,8 @@
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">Кіраванне штучным інтэлектам</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Падрабязней</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Пераклады</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -932,6 +934,12 @@
   <string name="customize_addon_collection_hint">Назва калекцыі</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Уладальнік калекцыі (ID карыстальніка)</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Справаздача аб прыватнасці</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Пераход назад да</string>
   <!-- Title for the customize home screen section with bookmarks. -->

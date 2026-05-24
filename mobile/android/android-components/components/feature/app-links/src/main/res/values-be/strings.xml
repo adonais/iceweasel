@@ -35,6 +35,8 @@
   <string name="mozac_feature_applinks_source_url">URL-адрас крыніцы</string>
   <!-- The label for the destination URL in the details section -->
   <string name="mozac_feature_applinks_destination_url">URL-адрас прызначэння</string>
+  <!-- The label for the unique identifier in the details section -->
+  <string name="mozac_feature_applinks_unique_identifier">Унікальны ідэнтыфікатар</string>
   <!-- The text shown when there is no Firefox URL -->
   <string name="mozac_feature_applinks_none">Няма</string>
 </resources>

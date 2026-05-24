@@ -284,7 +284,7 @@
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">حفظ كملف PDF</string>
   <!-- Browser menu label for moving the current private tab to a non-private tab -->
-  <string name="browser_menu_move_to_non_private_tab">انتقل إلى لسان غير خاص</string>
+  <string name="browser_menu_move_to_non_private_tab">انتقل إلى تبويب غير خاص</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">ترجمة الصفحة</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
@@ -723,6 +723,12 @@
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
   -->
   <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">ساعدنا في الوصول إلى المزيد من الأشخاص من خلال السماح لـ Mozilla بإبلاغ المنصة التي أتيت منها بأنك تستخدم Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">ساعدنا في الوصول إلى المزيد من الأشخاص من خلال السماح لـ Mozilla بإبلاغ المنصة التي أتيت منها بأنك تستخدم Firefox. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">كيفية استخدامنا للبيانات</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
@@ -1705,6 +1711,10 @@
   <string name="pwa_site_controls_title_private">‏%1$s (الوضع الخاص)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">فتح تبويب البحث</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">أنشئ مجموعة ألسنة</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">اسحب علامة تبويب واحدة فوق أخرى لتجميعها.</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">جرّب استخدام مجموعات اللسان لتقليل التمرير وزيادة الإنجاز</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -1714,7 +1724,7 @@
 
     Title for the create tab group bottom sheet
   -->
-  <string name="create_tab_group_title">أنشئ مجموعة لسان</string>
+  <string name="create_tab_group_title">أنشئ مجموعة تبويب</string>
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">حرّر على المجموعة</string>
   <string name="create_tab_group_save_button">احفظ</string>
@@ -1734,7 +1744,7 @@
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">أضف إلى مجموعة لسان جديدة</string>
   <!-- Label for adding to a new tab group. -->
-  <string name="add_to_new_tab_group_title">مجموعة لسان جديدة</string>
+  <string name="add_to_new_tab_group_title">مجموعة تبويب جديدة</string>
   <plurals name="tab_group_tabs_count_subtitle">
     <!--
       Subtitle for the number of tabs in a tab group.
@@ -1787,7 +1797,7 @@
     <item quantity="other">مجموعة لسان %1$s مع %2$d لسان، لون %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
-  <string name="delete_tab_group_confirmation_dialog_title">حذف مجموعة اللسان؟</string>
+  <string name="delete_tab_group_confirmation_dialog_title">حذف مجموعة التبويب؟</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_body">يؤدي هذا إلى حذف المجموعة نهائيًا.</string>
   <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
@@ -4455,15 +4465,15 @@
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_south_america">أمريكا الجنوبية</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england" tools:ignore="UnusedResources">إنجلترا</string>
+  <string name="sports_widget_country_england">إنجلترا</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">اسكتلندا</string>
+  <string name="sports_widget_country_scotland">اسكتلندا</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove">أزِل</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">أغلق</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">خيارات إضافية</string>
+  <string name="sports_widget_more_options_content_description">خيارات إضافية</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
