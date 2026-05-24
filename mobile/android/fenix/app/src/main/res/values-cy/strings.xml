@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">Wedi dileu %1$s o\'r hanes</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Dileu\'r cofnod hanes hwn</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">Arhoswch mewn %1$s</string>
   <!--
     Home onboarding
 
@@ -2723,6 +2725,19 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">Mae %s yn eich diogelu rhag llawer o’r tracwyr mwyaf cyffredin sy’n dilyn yr hyn rydych chi’n ei wneud ar-lein.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Darllen rhagor</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d traciwr wedi\'i rwystro</item>
+    <item quantity="zero">%d o dracwyr wedi\'u rhwystro</item>
+    <item quantity="two">%d o dracwyr wedi\'u rhwystro</item>
+    <item quantity="few">%d o dracwyr wedi\'u rhwystro</item>
+    <item quantity="many">%d o dracwyr wedi\'u rhwystro</item>
+    <item quantity="other">%d o dracwyr wedi\'u rhwystro</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -3118,6 +3133,8 @@
   <string name="saved_logins_sort_strategy_last_used">Defnyddiwyd Diwethaf</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Didoli dewislen cyfrineiriau</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Mewnforio o ffeil</string>
   <!--
     Email Masks
 
@@ -4481,11 +4498,11 @@
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live">BYW</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Pencampwyr Cwpan y Byd 2026</string>
+  <string name="sports_widget_champions_title">Pencampwyr Cwpan y Byd 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
   <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Yn Ail</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Yn Drydydd</string>
+  <string name="sports_widget_third_place_title">Yn Drydydd</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">Rownd o 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4645,6 +4662,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Canlyniadau terfynol Cwpan y Byd, tudalen %1$d o %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">Canlyniadau terfynol Cwpan y Byd</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Tynnu Cwpan y Byd o\'r cartref</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4665,6 +4684,8 @@
   <string name="sports_widget_error_load_failed_title">Nid yw gwybodaeth paru ar gael ar hyn o bryd.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">Ceisiwch adnewyddu mewn ychydig funudau.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">Tîm i fod yn benderfynol</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

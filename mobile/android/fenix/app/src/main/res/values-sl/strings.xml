@@ -4334,9 +4334,9 @@
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live">V ŽIVO</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Zmagovalci svetovnega prvenstva 2026</string>
+  <string name="sports_widget_champions_title">Zmagovalci svetovnega prvenstva 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Tretje mesto</string>
+  <string name="sports_widget_third_place_title">Tretje mesto</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
   <string name="sports_widget_quarter_final">Četrtfinali</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->

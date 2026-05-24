@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">기록에서 %1$s 삭제됨</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">기록 항목 삭제</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">%1$s에서 유지</string>
   <!--
     Home onboarding
 
@@ -2688,6 +2690,14 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s는 온라인 활동을 추적하는 가장 일반적인 여러 추적기로부터 사용자를 보호합니다.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">더 알아보기</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="other">추적기 %d개 차단됨</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -3078,6 +3088,8 @@
   <string name="saved_logins_sort_strategy_last_used">마지막 사용</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">비밀번호 정렬 메뉴</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">파일에서 가져오기</string>
   <!--
     Email Masks
 
@@ -4441,11 +4453,11 @@
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live">라이브</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026년 월드컵 우승팀</string>
+  <string name="sports_widget_champions_title">2026년 월드컵 우승팀</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
   <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">준우승</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">3위</string>
+  <string name="sports_widget_third_place_title">3위</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">32강</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4605,6 +4617,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">월드컵 최종 결과, %1$d / %2$d 페이지</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">월드컵 결승전 결과</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">홈에서 월드컵 제거</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4625,6 +4639,8 @@
   <string name="sports_widget_error_load_failed_title">지금은 경기 정보를 사용할 수 없습니다.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">몇 분 후 새로 고침 해 보세요.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">팀 결정</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

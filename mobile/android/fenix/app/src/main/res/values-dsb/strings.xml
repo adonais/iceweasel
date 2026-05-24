@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">%1$s z historije wulašowany</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Toś ten zapisk historije lašowaś</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">W %1$s wóstaś</string>
   <!--
     Home onboarding
 
@@ -2709,6 +2711,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s was pśed wjele z nejcesćejych pśeslědowakow šćita, kótarež slěduju, což online gótujośo.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Dalšne informacije</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d pśeslědowak blokěrowany</item>
+    <item quantity="two">%d pśeslědowaka blokěrowanej</item>
+    <item quantity="few">%d pśeslědowaki blokěrowane</item>
+    <item quantity="other">%d pśeslědowakow blokěrowane</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -3102,6 +3115,8 @@
   <string name="saved_logins_sort_strategy_last_used">Slědnem wužyśu</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Meni „Gronidła sortěrowaś“</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Z dataje importěrowaś</string>
   <!--
     Email Masks
 
@@ -4465,11 +4480,11 @@
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live">LIVE</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Swětowe mejstarje 2026</string>
+  <string name="sports_widget_champions_title">Swětowe mejstarje 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
   <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Druge městna</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Tśeśe městno</string>
+  <string name="sports_widget_third_place_title">Tśeśe městno</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">Koło z 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4629,6 +4644,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Kóńcne wuslědki swětowego mejstaŕstwa, bok %1$d z %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">Kóńcne wuslědki swětowego mejstaŕstwa</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Swětowe mejstaŕstwo ze startowego boka wótwónoźeś</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4649,6 +4666,8 @@
   <string name="sports_widget_error_load_failed_title">Informacije wó graśu njejsu tuchylu k dispoziciji.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">Aktualizěrujśo za mało minutow hyšći raz.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">Team, kótaryž se ma póstajiś</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
