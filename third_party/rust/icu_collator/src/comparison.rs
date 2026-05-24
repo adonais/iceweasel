@@ -1521,15 +1521,6 @@ impl<'data> CollatorBorrowed<'data> {
                                 right_ce32 = self.root.ce32_for_char(right_c);
                                 right_data = self.root;
                             }
-                            // We don't actually need to do this.
-
-                            // if self.options.numeric()
-                            //     && head_last_ce32.tag_checked() == Some(Tag::Digit)
-                            //     && (left_ce32.tag_checked() == Some(Tag::Digit)
-                            //         || right_ce32.tag_checked() == Some(Tag::Digit))
-                            // {
-                            //     break;
-                            // }
 
                             // We might be at at a good boundary unless either ce32 is a
                             // prefix ce32. Let's check for the happy path first, though.
@@ -1563,6 +1554,17 @@ impl<'data> CollatorBorrowed<'data> {
                                 // TODO: For the Japanese tailoring, it might actually be worthwhile
                                 // to handle the prefix ce32s inline above the quick check. We've already
                                 // read the last character from `head` anyway.
+                                break;
+                            }
+
+                            if numeric_primary.is_some()
+                                && head_last_ce32.tag_checked() == Some(Tag::Digit)
+                                && ((left_ce32.tag_checked() == Some(Tag::Digit)
+                                    && left_ce32.digit() == 0)
+                                    || (right_ce32.tag_checked() == Some(Tag::Digit)
+                                        && right_ce32.digit() == 0))
+                            {
+                                // Avoid giving the zero the leading zero treatment.
                                 break;
                             }
 
@@ -1643,10 +1645,12 @@ impl<'data> CollatorBorrowed<'data> {
                     if tail_first_ce32.tag_checked() == Some(Tag::Prefix) {
                         continue;
                     }
-                    if self.options.numeric()
+                    if numeric_primary.is_some()
                         && head_last_ce32.tag_checked() == Some(Tag::Digit)
                         && tail_first_ce32.tag_checked() == Some(Tag::Digit)
+                        && tail_first_ce32.digit() == 0
                     {
+                        // Avoid giving the zero the leading zero treatment.
                         continue;
                     }
                     // We are at a good boundary!
