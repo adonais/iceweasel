@@ -4458,7 +4458,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title">Wašomu teamoju slědowaś</string>
+  <string name="sports_widget_country_selector_title">Wašomu mustwoju slědowaś</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america">Pódpołnocna Amerika</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
@@ -4550,7 +4550,7 @@
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
   <string name="sports_widget_card_description">Dostańśo aktualizacije live a wěcej.</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team">Team změniś</string>
+  <string name="sports_widget_change_team">Mustwo změniś</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
   <string name="sports_widget_get_custom_wallpaper">Wobstarajśo se swójski slězynowy wobraz</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
@@ -4558,9 +4558,9 @@
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">Cośo dalej slědowaś?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team">Wubjeŕśo drugi team, aby wó swětowem mejstaŕstwje na běžnem wóstał.</string>
+  <string name="sports_widget_choose_another_team">Wubjeŕśo druge mustwo, aby wó swětowem mejstaŕstwje na běžnem wóstał.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team">Drugemu teamoju slědowaś</string>
+  <string name="sports_widget_follow_another_team">Drugemu mustwoju slědowaś</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
   <string name="sports_widget_countdown_to_world_cup">Countdown k swětowemu mejstaŕstwoju</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
@@ -4592,7 +4592,7 @@
   -->
   <string name="sports_widget_countdown_minutes">M</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description">Tabelu za wuběranje teama zacyniś</string>
+  <string name="sports_widget_close_team_selection_sheet_content_description">Tabelu za wuběranje mustwa zacyniś</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">Zacyniś</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
@@ -4667,7 +4667,7 @@
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">Aktualizěrujśo za mało minutow hyšći raz.</string>
   <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
-  <string name="sports_widget_team_to_be_determined">Team, kótaryž se ma póstajiś</string>
+  <string name="sports_widget_team_to_be_determined">Mustwo, kótarež se ma póstajiś</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

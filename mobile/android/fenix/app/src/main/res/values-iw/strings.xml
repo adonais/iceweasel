@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">‏%1$s נמחק מההיסטוריה</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">מחיקת רשומת היסטוריה זו</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">להישאר ב־%1$s</string>
   <!--
     Home onboarding
 
@@ -2702,6 +2704,16 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">‏%s מגן עליך מפני רוב רכיבי הריגול שעוקבים אחר הפעילות המקוונת שלך.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">מידע נוסף</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">נחסם רכיב מעקב אחד</item>
+    <item quantity="two">נחסמו %d רכיבי מעקב</item>
+    <item quantity="other">נחסמו %d רכיבי מעקב</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -3094,6 +3106,8 @@
   <string name="saved_logins_sort_strategy_last_used">שימוש אחרון</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">תפריט מיון ססמאות</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">ייבוא מקובץ</string>
   <!--
     Email Masks
 
@@ -4617,6 +4631,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">תוצאות גמר המונדיאל, עמוד %1$d מתוך %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">תוצאות גמר המונדיאל</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">הסרת המונדיאל ממסך הבית</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4637,6 +4653,8 @@
   <string name="sports_widget_error_load_failed_title">פרטי המשחק אינם זמינים כעת.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">נא לנסות לרענן בעוד מספר דקות.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">קבוצה שטרם נקבעה</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

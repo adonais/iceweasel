@@ -399,6 +399,12 @@
   <string name="ai_controls_more_page_summary_settings">Pengaturan ringkasan laman lainnya</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Pencarian suara</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Apa yang akan diblokir:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Batal</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Blokir</string>
   <!--
     Locale Settings Fragment
 
@@ -452,6 +458,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">Dihapus %1$s dari riwayat</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Hapus entri riwayat ini</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">Tetap di %1$s</string>
   <!--
     Home onboarding
 
@@ -631,8 +639,12 @@
 
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Lanjutkan</string>
+  <!-- "Continue browsing" onboarding button. -->
+  <string name="nova_onboarding_continue_browsing_button" tools:ignore="UnusedResources">Lanjutkan menjelajah</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Jangan sekarang</string>
+  <!-- "Skip" onboarding button. -->
+  <string name="nova_onboarding_skip_button" tools:ignore="UnusedResources">Lewati</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Bersiaplah untuk berlari bebas</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
@@ -695,6 +707,10 @@
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Bagikan bagaimana Anda menemukan Firefox, dan bahwa Anda menggunakannya, dengan mitra pemasaran Mozilla. Data ini tidak pernah dijual. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Bagaimana kami menggunakan data</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Bantu Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Tidak, Terima Kasih</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Notifikasi membantu Anda tetap aman dengan Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
