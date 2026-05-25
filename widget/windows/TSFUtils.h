@@ -248,6 +248,12 @@ class TSFUtils final {
         .style = {.ase = TS_AE_NONE, .fInterimChar = FALSE}};
   }
 
+  static TS_SELECTION_ACP SelectionACPCollapsedAtStart() {
+    return TS_SELECTION_ACP{.acpStart = 0,
+                            .acpEnd = 0,
+                            .style = {.ase = TS_AE_END, .fInterimChar = FALSE}};
+  }
+
  private:
   static void EnsureMessagePump();
   static void EnsureKeystrokeMgr();

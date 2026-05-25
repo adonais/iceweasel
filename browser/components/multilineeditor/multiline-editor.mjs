@@ -54,6 +54,21 @@ export class MultilineEditor extends MozLitElement {
     readOnly: { type: Boolean, reflect: true, attribute: "readonly" },
     plugins: { type: Array, attribute: false },
     maxLength: { type: Number, attribute: "maxlength" },
+    // ARIA combobox state forwarded from the host to the inner contenteditable.
+    // reflect:false so the host attribute stays the source of truth.
+    ariaControls: { type: String, attribute: "aria-controls", reflect: false },
+    ariaAutoComplete: {
+      type: String,
+      attribute: "aria-autocomplete",
+      reflect: false,
+    },
+    ariaExpanded: { type: String, attribute: "aria-expanded", reflect: false },
+    ariaActiveDescendant: {
+      type: String,
+      attribute: "aria-activedescendant",
+      reflect: false,
+    },
+    ariaHasPopup: { type: String, attribute: "aria-haspopup", reflect: false },
   };
 
   static schema = new Schema({
@@ -64,12 +79,26 @@ export class MultilineEditor extends MozLitElement {
     },
   });
 
+  /**
+   * ARIA state forwarded from the host's reactive Lit properties to the inner
+   * contenteditable. Each entry pairs the property name (used in `updated()`
+   * change detection) with the attribute name applied to the inner element.
+   */
+  static FORWARDED_ARIA = [
+    { prop: "ariaControls", attr: "aria-controls" },
+    { prop: "ariaAutoComplete", attr: "aria-autocomplete" },
+    { prop: "ariaExpanded", attr: "aria-expanded" },
+    { prop: "ariaActiveDescendant", attr: "aria-activedescendant" },
+    { prop: "ariaHasPopup", attr: "aria-haspopup" },
+  ];
+
   #pendingValue = "";
   #placeholderPlugin;
   #plugins;
   #suppressInputEvent = false;
   #view;
   #markdownSerializer;
+  #innerRole = null;
 
   constructor() {
     super();
@@ -174,6 +203,47 @@ export class MultilineEditor extends MozLitElement {
     } finally {
       this.#suppressInputEvent = false;
     }
+  }
+
+  /**
+   * The plain-text content of the editor with atom nodes (e.g. mentions)
+   * contributing zero characters. Useful for persisting input alongside a
+   * structured list of inline atoms.
+   *
+   * @type {string}
+   */
+  get plainText() {
+    if (!this.#view) {
+      return this.#pendingValue;
+    }
+    return this.#view.state.doc.textBetween(
+      0,
+      this.#view.state.doc.content.size,
+      "\n",
+      ""
+    );
+  }
+
+  /**
+   * Convert a ProseMirror document position to a text-character offset that
+   * matches `plainText`.
+   *
+   * @param {number} pos
+   * @returns {number}
+   */
+  posToTextOffset(pos) {
+    return this.#textOffsetFromPos(pos, this.#view?.state.doc, "\n", "");
+  }
+
+  /**
+   * Convert a text-character offset (matching `plainText`) to a ProseMirror
+   * document position.
+   *
+   * @param {number} offset
+   * @returns {number}
+   */
+  textOffsetToPos(offset) {
+    return this.#posFromTextOffset(offset);
   }
 
   /**
@@ -284,6 +354,14 @@ export class MultilineEditor extends MozLitElement {
    */
   connectedCallback() {
     super.connectedCallback();
+    // Capture a consumer-supplied role for the inner contenteditable before
+    // hiding this host element from the accessibility tree. With
+    // delegatesFocus, screen readers focus the inner contenteditable, so its
+    // role and ARIA state are what get announced.
+    const hostRole = this.getAttribute("role");
+    if (hostRole && hostRole !== "presentation") {
+      this.#innerRole = hostRole;
+    }
     this.setAttribute("role", "presentation");
   }
 
@@ -312,7 +390,8 @@ export class MultilineEditor extends MozLitElement {
     if (
       changedProps.has("placeholder") ||
       changedProps.has("plugins") ||
-      changedProps.has("readOnly")
+      changedProps.has("readOnly") ||
+      MultilineEditor.FORWARDED_ARIA.some(({ prop }) => changedProps.has(prop))
     ) {
       this.#refreshView();
     }
@@ -629,11 +708,16 @@ export class MultilineEditor extends MozLitElement {
     return schema.node("doc", null, paragraphs);
   }
 
-  #textOffsetFromPos(pos, doc = this.#view?.state.doc) {
+  #textOffsetFromPos(
+    pos,
+    doc = this.#view?.state.doc,
+    blockSeparator = "\n",
+    leafText = "\n"
+  ) {
     if (!doc) {
       return 0;
     }
-    return doc.textBetween(0, pos, "\n", "\n").length;
+    return doc.textBetween(0, pos, blockSeparator, leafText).length;
   }
 
   #posFromTextOffset(offset, doc = this.#view?.state.doc) {
@@ -690,12 +774,28 @@ export class MultilineEditor extends MozLitElement {
   }
 
   #viewAttributes() {
-    return {
+    const attrs = {
       "aria-label": this.placeholder,
-      "aria-multiline": "true",
       "aria-readonly": this.readOnly ? "true" : "false",
-      role: "textbox",
     };
+
+    if (this.#innerRole) {
+      // Combobox is a single-line widget per ARIA; omit aria-multiline so the
+      // role's semantics aren't muddled.
+      attrs.role = this.#innerRole;
+    } else {
+      attrs.role = "textbox";
+      attrs["aria-multiline"] = "true";
+    }
+
+    for (const { prop, attr } of MultilineEditor.FORWARDED_ARIA) {
+      const value = this[prop];
+      if (value != null) {
+        attrs[attr] = value;
+      }
+    }
+
+    return attrs;
   }
 
   render() {

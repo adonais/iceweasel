@@ -8011,7 +8011,6 @@ bool nsCSSFrameConstructor::ShouldHaveFirstLetterStyle(
 bool nsCSSFrameConstructor::HasFirstLetterStyle(nsIFrame* aBlockFrame) {
   MOZ_ASSERT(aBlockFrame, "Need a frame");
   NS_ASSERTION(aBlockFrame->IsBlockFrameOrSubclass(), "Not a block frame?");
-
   return aBlockFrame->HasAnyStateBits(NS_BLOCK_HAS_FIRST_LETTER_STYLE);
 }
 
@@ -8020,7 +8019,9 @@ bool nsCSSFrameConstructor::ShouldHaveFirstLineStyle(
   bool hasFirstLine = nsLayoutUtils::HasPseudoStyle(
       aContent, aComputedStyle, PseudoStyleType::FirstLine,
       mPresShell->GetPresContext());
-  return hasFirstLine && !aContent->IsHTMLElement(nsGkAtoms::fieldset);
+  return hasFirstLine &&
+         !aContent->IsAnyOfHTMLElements(nsGkAtoms::fieldset, nsGkAtoms::input,
+                                        nsGkAtoms::textarea);
 }
 
 void nsCSSFrameConstructor::ShouldHaveSpecialBlockStyle(

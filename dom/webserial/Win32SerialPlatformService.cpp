@@ -30,6 +30,15 @@ namespace {
 constexpr size_t kPropertyBufferSize = 256;
 constexpr unsigned int kDeviceChangeDelayMs = 200;
 constexpr wchar_t kDevicePathPrefix[] = L"\\\\.\\";
+
+// After a fast close→open sequence (e.g. esptool-js's reset/flash flow),
+// CreateFileW can transiently return ERROR_ACCESS_DENIED even though our
+// own CloseHandle calls have returned, because the kernel is still draining
+// a cancelled overlapped read IRP and the COM/USB driver hasn't yet
+// released its exclusive lock on the device. Retry a few times with a short
+// exponential backoff before giving up; if the device is genuinely held by
+// another process the ACCESS_DENIED persists and we propagate the failure.
+constexpr DWORD kOpenRetryDelaysMs[] = {25, 50, 100, 150, 200};
 }  // namespace
 
 Win32SerialPlatformService::Win32SerialPlatformService()
@@ -354,18 +363,34 @@ nsresult Win32SerialPlatformService::OpenImpl(
   nsString devicePath(kDevicePathPrefix);
   devicePath.Append(aPortId);
 
-  HANDLE handle =
-      CreateFileW(devicePath.get(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-                  OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
+  HANDLE handle = INVALID_HANDLE_VALUE;
+  DWORD lastError = ERROR_SUCCESS;
+  constexpr size_t kNumRetries = std::size(kOpenRetryDelaysMs);
+  for (size_t attempt = 0; attempt <= kNumRetries; ++attempt) {
+    handle = CreateFileW(devicePath.get(), GENERIC_READ | GENERIC_WRITE, 0,
+                         nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
+    if (handle != INVALID_HANDLE_VALUE) {
+      break;
+    }
+    lastError = GetLastError();
+    if (lastError != ERROR_ACCESS_DENIED || attempt == kNumRetries) {
+      break;
+    }
+    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+            ("Win32SerialPlatformService[%p]::Open ACCESS_DENIED on attempt "
+             "%zu for port '%s'; sleeping %lums",
+             this, attempt + 1, NS_ConvertUTF16toUTF8(aPortId).get(),
+             kOpenRetryDelaysMs[attempt]));
+    Sleep(kOpenRetryDelaysMs[attempt]);
+  }
 
   if (handle == INVALID_HANDLE_VALUE) {
-    DWORD error = GetLastError();
     MOZ_LOG(gWebSerialLog, LogLevel::Error,
             ("Win32SerialPlatformService[%p]::Open CreateFileW failed for port "
              "'%s' at path '%s': 0x%08lx",
              this, NS_ConvertUTF16toUTF8(aPortId).get(),
-             NS_ConvertUTF16toUTF8(devicePath).get(), error));
-    if (error == ERROR_ACCESS_DENIED) {
+             NS_ConvertUTF16toUTF8(devicePath).get(), lastError));
+    if (lastError == ERROR_ACCESS_DENIED) {
       return NS_ERROR_FILE_ACCESS_DENIED;
     }
     return NS_ERROR_NOT_AVAILABLE;

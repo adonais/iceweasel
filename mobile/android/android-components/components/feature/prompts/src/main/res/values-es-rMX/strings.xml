@@ -71,6 +71,8 @@
   <string name="mozac_feature_prompts_before_unload_leave">Abandonar el sitio</string>
   <!-- Message shown when a site wants to create a passkey for a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
   <string name="webauthn_related_origin_create_message">%1$s quiere crear una clave de acceso para %2$s.</string>
+  <!-- Message shown when a site wants to use a passkey from a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_use_message">%1$s quiere usar una llave de acceso para %2$s.</string>
   <!-- Continue button label for WebAuthn related origin prompt. -->
   <string name="webauthn_continue">Continuar</string>
   <!-- Title of the month chooser dialog. -->

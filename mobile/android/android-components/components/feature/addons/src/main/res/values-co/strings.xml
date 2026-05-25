@@ -354,8 +354,6 @@
   <string name="mozac_extension_install_progress_caption">Scaricamentu è verificazione di l’estensione…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">Impussibule di caricà l’estensioni. Pruvate torna un’altra volta.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">Impussibule d’ottene a lista di l’estensioni.</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Traduzzione micca trova, nè per a lucale %1$s, nè per a lingua predefinita %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

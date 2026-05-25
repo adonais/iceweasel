@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Ахатә %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -281,8 +281,6 @@
     Button in the search view that lets a user search by scanning a QR code
   -->
   <string name="search_scan_button_2">Асканер QR акод</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">Аԥшаага архиарақәа</string>
   <!--
     Search Fragment
 
@@ -398,8 +396,6 @@
   <string name="preferences_category_general">Еицырзеиԥшу</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Арзаҳал иазкны</string>
-  <!-- Preference category for settings related to changing the default search engine -->
-  <string name="preferences_category_select_default_search_engine">Алхра</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Альтернативтә ԥшаагақәа рнапхгара</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -802,8 +798,6 @@
   <string name="preference_gestures_website_pull_to_refresh">Арҿыцразы иҭгатәуп</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Аиҭагара амыругақәа рпанель аҵәахразы</string>
-  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
-  <string name="preference_gestures_swipe_toolbar_show_tabs">Аҵаҩыра аартразы амыругақәа рпанель аҟны аҩада инаскьатәуп</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Аҭаӡҩырақәа реиҭныԥсахларазы адресқәа рпанель аганахьала инаскьатәуп</string>
   <!--
@@ -950,8 +944,6 @@
   <string name="tab_tray_menu_tab_settings">Абларҭа архиарақәа</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Агәылаҵақәа зегьы арктәуп</string>
-  <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Иалху абларҭақәа еицашәыцеиҩшатәуп</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Иалху абларҭақәа рмениу</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -1046,8 +1038,6 @@
   <string name="bookmark_menu_move_button">Аиҭаҵра</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Аԥсахра</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Ақәҭыхра</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Ашара</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -1088,12 +1078,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s аныхуп</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">АԤЫХРА</string>
-  <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s аныхуп</string>
-  <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Ианыху ахәҭақәа: %s</string>
   <!--
     Bookmark undo button for deletion snackbar action
 
@@ -1336,24 +1320,6 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox браузерс иҟашәҵа</string>
-  <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Иԥышәшәа хатә ԥшаара</string>
-  <!--
-    Text shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Аԥшаара еиқәырхоу акукиқәеи аҭоурыхи рыда %1$s аҟны</string>
-  <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Ашьҭа нмыжькәа ауеб аԥшаара</string>
-  <!--
-    Text A shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Хаҭалатәи аԥшаара %1$s аҟны уусура еиқәнархаӡом.</string>
-  <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Раԥхьатәи аԥшаара алагара</string>
-  <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Ааигәа акы ԥшаа. Мамзаргьы иччархәу акы аԥшаара.</string>
   <!--
     Survey
 
@@ -1371,16 +1337,12 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">Абларҭа аркуп</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">Агәылаҵақәа аркуп</string>
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Аҭаӡҩырақәа аркуп: %1$s</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Аҿацәқәа ирыцҵоуп!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Ахатә абларҭа аркуп</string>
-  <!-- Text shown in snackbar when user erases their private browsing data -->
-  <string name="snackbar_private_data_deleted">Ахатә ԥшааратә дыррақәа аныхуп</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">АԤЫХРА</string>
   <!--
@@ -2148,8 +2110,6 @@
   <string name="translation_error_could_not_translate_warning_text">Аиҭагараҿы апроблема ыҟан. Даҽазнык шәҽазышәшәа.</string>
   <!-- The title of the warning card informs the user that the list of languages cannot be loaded. -->
   <string name="translation_error_could_not_load_languages_warning_text">Абызшәақәа рҭагалара алымшеит. Уинтернет аимадара гәаҭаны даҽазнык уҽазышәа.</string>
-  <!-- The title of the warning card informs the user that a language is not supported. %1$s is the name of the language that is not supported. -->
-  <string name="translation_error_language_not_supported_warning_text" tools:ignore="UnusedResources" moz:removedIn="150">Рыцҳарас иҟалаз, ҳара макьана %1$s ҳрыдгылаӡом.</string>
   <!-- Snackbar title shown if the user closes the Translation Request dialogue and a translation is in progress. -->
   <string name="translation_in_progress_snackbar">Аиҭагара…</string>
   <!--

@@ -358,8 +358,6 @@
   <string name="mozac_extension_install_progress_caption">يجري تنزيل الامتداد والتحقق منه…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">تعذّر تحميل الامتدادت. حاول مجددًا لاحقًا.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">فشل استعلام الامتدادات!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">لم يتم العثور على ترجمة، لا للغة %1$s ولا للغة الافتراضية %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

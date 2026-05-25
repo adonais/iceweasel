@@ -180,6 +180,94 @@ add_task(async function test_scheduler_skips_when_drift_not_triggered() {
   }
 });
 
+// HTTP 429 from MLPA => backoff prevents the next tick from retrying;
+// clearing the backoff allows another attempt.
+add_task(async function test_429_triggers_backoff() {
+  Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES_FROM_HISTORY, true);
+
+  const rateLimitErr = new Error("Too Many Requests");
+  rateLimitErr.status = 429;
+
+  const generateStub = sinon
+    .stub(MemoriesManager, "generateMemoriesFromBrowsingHistory")
+    .rejects(rateLimitErr);
+
+  const lastTsStub = sinon
+    .stub(MemoriesManager, "getLastHistoryMemoryTimestamp")
+    .resolves(0);
+
+  const countStub = sinon
+    .stub(MemoriesManager, "countRecentVisits")
+    .resolves(100);
+
+  const enableStub = sinon
+    .stub(MemoriesManager, "shouldEnableMemoriesFromSchedulers")
+    .returns(true);
+
+  let scheduler;
+  try {
+    scheduler = MemoriesHistoryScheduler.maybeInit();
+
+    // First tick: generate fails with 429 → backoff is set.
+    await scheduler.runNowForTesting();
+    sinon.assert.calledOnce(generateStub);
+
+    // Second tick within backoff window: should be a no-op.
+    await scheduler.runNowForTesting();
+    sinon.assert.calledOnce(generateStub);
+
+    // Clear backoff; next tick should attempt generation again.
+    scheduler.setBackoffUntilMsForTesting(0);
+    await scheduler.runNowForTesting();
+    sinon.assert.calledTwice(generateStub);
+  } finally {
+    scheduler?.destroy?.();
+    generateStub.restore();
+    lastTsStub.restore();
+    countStub.restore();
+    enableStub.restore();
+  }
+});
+
+// Non-429 errors must NOT trigger backoff — subsequent ticks should retry.
+add_task(async function test_non_429_error_does_not_backoff() {
+  Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES_FROM_HISTORY, true);
+
+  const generateStub = sinon
+    .stub(MemoriesManager, "generateMemoriesFromBrowsingHistory")
+    .rejects(new Error("network glitch"));
+
+  const lastTsStub = sinon
+    .stub(MemoriesManager, "getLastHistoryMemoryTimestamp")
+    .resolves(0);
+
+  const countStub = sinon
+    .stub(MemoriesManager, "countRecentVisits")
+    .resolves(100);
+
+  const enableStub = sinon
+    .stub(MemoriesManager, "shouldEnableMemoriesFromSchedulers")
+    .returns(true);
+
+  let scheduler;
+  try {
+    scheduler = MemoriesHistoryScheduler.maybeInit();
+
+    await scheduler.runNowForTesting();
+    sinon.assert.calledOnce(generateStub);
+
+    // Second tick should retry — no backoff for non-429 errors.
+    await scheduler.runNowForTesting();
+    sinon.assert.calledTwice(generateStub);
+  } finally {
+    scheduler?.destroy?.();
+    generateStub.restore();
+    lastTsStub.restore();
+    countStub.restore();
+    enableStub.restore();
+  }
+});
+
 // First run (no previous memories) => memories run even with small history.
 add_task(async function test_scheduler_runs_on_first_run_with_small_history() {
   Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES_FROM_HISTORY, true);

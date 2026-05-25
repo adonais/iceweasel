@@ -403,3 +403,27 @@ add_task(async function test_panel_get_started_signed_in() {
   await closePanel();
   cleanupService();
 });
+
+/**
+ * Tests edge case when no IPProtectionPanel instance exists for a window during
+ * enrollment. A new panel must be created.
+ */
+add_task(async function test_getPanel_creates_panel_when_widget_not_visible() {
+  // Mimic post-restart state by removing the widget, then init and uniniting
+  // IPProtection so that the panel weak maps are cleared.
+  CustomizableUI.removeWidgetFromArea(lazy.IPProtectionWidget.WIDGET_ID);
+  lazy.IPProtection.uninit();
+  lazy.IPProtection.init();
+
+  let panel = lazy.IPProtection.getPanel(window);
+  Assert.ok(
+    panel,
+    "getPanel constructs a panel when the widget is not visible"
+  );
+
+  CustomizableUI.addWidgetToArea(
+    lazy.IPProtectionWidget.WIDGET_ID,
+    CustomizableUI.AREA_NAVBAR
+  );
+  cleanupService();
+});

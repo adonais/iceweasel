@@ -353,8 +353,6 @@
   <string name="mozac_extension_install_progress_caption">Đang tải xuống và xác minh tiện ích…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">Không thể tải tiện ích mở rộng. Vui lòng thử lại sau.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">Không thể truy vấn tiện ích!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Không tìm thấy bản dịch, đối với ngôn ngữ %1$s cũng như ngôn ngữ mặc định %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

@@ -168,3 +168,63 @@ This is more content. {testToReplace2}
     "Should render the prompt correctly with provided replacement strings"
   );
 });
+
+add_task(function test_is429Error() {
+  Assert.equal(openAIEngine.is429Error(null), false, "null is not a 429 error");
+  Assert.equal(
+    openAIEngine.is429Error(undefined),
+    false,
+    "undefined is not a 429 error"
+  );
+  Assert.equal(
+    openAIEngine.is429Error(new Error("boom")),
+    false,
+    "Plain error is not a 429 error"
+  );
+
+  // status field is the primary signal.
+  const statusErr = new Error("Request failed");
+  statusErr.status = 429;
+  Assert.equal(
+    openAIEngine.is429Error(statusErr),
+    true,
+    "status === 429 is detected"
+  );
+
+  // Any 429 sub-code matches — we don't differentiate.
+  const budgetErr = new Error("Budget limit exceeded");
+  budgetErr.status = 429;
+  // MLPA spec code 1 = budgetExceeded
+  budgetErr.error = 1;
+  Assert.equal(
+    openAIEngine.is429Error(budgetErr),
+    true,
+    "429 with budget code is detected"
+  );
+
+  const rateLimitErr = new Error("Rate limit exceeded");
+  rateLimitErr.status = 429;
+  // MLPA spec code 2 = rateLimitExceeded
+  rateLimitErr.error = 2;
+  Assert.equal(
+    openAIEngine.is429Error(rateLimitErr),
+    true,
+    "429 with QPS rate-limit code is also detected"
+  );
+
+  // Fallback: message substring for cases where status isn't surfaced.
+  Assert.equal(
+    openAIEngine.is429Error(new Error("HTTP 429 status code returned")),
+    true,
+    "'429 status code' substring is detected as a fallback"
+  );
+
+  // 401 must not match.
+  const authErr = new Error("401 status code");
+  authErr.status = 401;
+  Assert.equal(
+    openAIEngine.is429Error(authErr),
+    false,
+    "401 auth errors must NOT match"
+  );
+});

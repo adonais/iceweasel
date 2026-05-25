@@ -31,6 +31,8 @@ support-files = [
 
 ["browser_aichat_content_overflow.js"]
 
+["browser_aichat_content_scrolling_position.js"]
+
 ["browser_aichat_message.js"]
 
 ["browser_aichat_open_link.js"]
@@ -124,6 +126,8 @@ skip-if = [
 ["browser_smartwindow_context_url.js"]
 
 ["browser_smartwindow_conversation_state.js"]
+
+["browser_smartwindow_default_startup.js"]
 
 ["browser_smartwindow_disclaimer.js"]
 

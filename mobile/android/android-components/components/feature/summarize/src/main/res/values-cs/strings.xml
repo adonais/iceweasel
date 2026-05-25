@@ -27,6 +27,8 @@
   <string name="mozac_summarize_shake_consent_on_device_negative_button">Teď ne</string>
   <!-- Title for the download consent screen -->
   <string name="mozac_summarize_download_consent_title">Nastavení soukromých souhrnů</string>
+  <!-- Message for the consent to download when using an on-device model. %s will be replaced by app name. -->
+  <string name="mozac_summarize_download_nano_consent_message">Jednorázové stažení umožní aplikaci %s vytvářet souhrny, nad kterými máte kontrolu.</string>
   <!-- Button text for the consent to download an on-device model approving download consent -->
   <string name="mozac_summarize_download_consent_button_positive">Stáhnout pro vytvoření souhrnu</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->

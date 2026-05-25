@@ -355,8 +355,6 @@
   <string name="mozac_extension_install_progress_caption">בתהליך הורדה ואימות הרחבה…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">לא ניתן היה לטעון את ההרחבות. נא לנסות שוב מאוחר יותר.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">תשאול ההרחבות נכשל!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">לא נמצא תרגום עבור השפה %1$s או עבור שפת ברירת המחדל %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

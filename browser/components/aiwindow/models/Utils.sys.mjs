@@ -685,6 +685,21 @@ export class openAIEngine {
   }
 
   /**
+   * Checks if an error is an HTTP 429 from MLPA. MLPA returns 429 for several
+   * sub-conditions (budget overage, QPS rate limit, upstream limit, etc.)
+   * callers should back off the same way regardless of the sub-code.
+   *
+   * @param {Error} error  The error to check
+   * @returns {boolean}    True if the error is a 429
+   */
+  static is429Error(error) {
+    if (!error) {
+      return false;
+    }
+    return error.status === 429 || !!error.message?.includes("429 status code");
+  }
+
+  /**
    * Creates an OpenAI engine instance
    *
    * @param {string} engineId     The identifier for the engine instance

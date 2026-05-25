@@ -160,7 +160,14 @@ void nsNetworkLinkService::GetDnsSuffixListInternal() {
       LOG(("DNS search domain from [%s]\n", res.dnsrch[i]));
       result.AppendElement(nsCString(res.dnsrch[i]));
     }
-    res_nclose(&res);
+    // Calls to res_ninit() should be matched with calls to res_ndestroy()
+    // when available, as it is on macOS. This resolves bug 2039387. On
+    // macOS 26.5 (and up?) a call to res_ninit() always triggers a call to
+    // notify_register_check(). But only res_ndestroy() triggers a
+    // corresponding call to notify_cancel(). res_nclose() doesn't. So
+    // calling only res_nclose() here leaks resources on macOS 26.5. And it
+    // eventually crashes our app when a "registration limit" is exceeded.
+    res_ndestroy(&res);
   }
 
   MutexAutoLock lock(mMutex);

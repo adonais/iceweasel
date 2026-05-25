@@ -45,8 +45,10 @@ const SIDEBAR_EMPTY_CLOSE_PROMPT_TRIGGER_COUNT = 2;
 const SESSION_STORE_KEY = "ai-window-tab-state";
 
 /**
+ * @typedef {import("chrome://browser/content/aiwindow/components/ai-window/ai-window.mjs").SmartbarInputState} SmartbarInputState
+ *
  * @typedef {{
- *   input: string,
+ *   input: SmartbarInputState,
  *   mode: string,
  *   pageUrl: URL,
  *   conversationId: string,
@@ -54,6 +56,15 @@ const SESSION_STORE_KEY = "ai-window-tab-state";
  *   conversation: ChatConversation,
  * }} TabState
  */
+
+export const EMPTY_SMARTBAR_INPUT_STATE = Object.freeze({
+  text: "",
+  mentions: [],
+});
+
+function hasInputContent(input) {
+  return Boolean(input?.text || input?.mentions?.length);
+}
 
 /**
  * Manages state changes of the tabs in AIWindow to keep both the
@@ -376,7 +387,10 @@ export class AIWindowTabStatesManager {
     }
 
     if (!shouldKeepSidebar) {
-      lazy.AIWindowUI.updateSidebarInput(this.#window, "");
+      lazy.AIWindowUI.updateSidebarInput(
+        this.#window,
+        EMPTY_SMARTBAR_INPUT_STATE
+      );
       lazy.AIWindowUI.closeSidebar(this.#window);
       return;
     }
@@ -406,7 +420,7 @@ export class AIWindowTabStatesManager {
     if (tabState?.state) {
       lazy.AIWindowUI.updateSidebarInput(
         this.#window,
-        tabState.state.input ?? ""
+        tabState.state.input ?? EMPTY_SMARTBAR_INPUT_STATE
       );
     }
   }
@@ -513,7 +527,7 @@ export class AIWindowTabStatesManager {
       selectedTab === tab &&
       mode === "fullpage" &&
       !isAIWindow &&
-      input &&
+      hasInputContent(input) &&
       conversation &&
       conversation.messages.length;
 
@@ -522,7 +536,7 @@ export class AIWindowTabStatesManager {
     if (needsSidebar) {
       lazy.AIWindowUI.updateSidebarInput(
         this.#window,
-        tabState.state.input ?? ""
+        tabState.state.input ?? EMPTY_SMARTBAR_INPUT_STATE
       );
     }
 
@@ -530,7 +544,7 @@ export class AIWindowTabStatesManager {
     if (mode === "sidebar" && selectedTab === tab) {
       lazy.AIWindowUI.updateSidebarInput(
         this.#window,
-        tabState.state.input ?? ""
+        tabState.state.input ?? EMPTY_SMARTBAR_INPUT_STATE
       );
     }
   };
@@ -616,12 +630,15 @@ export class AIWindowTabStatesManager {
       // tab is not stored in the value of the WeakMap
       delete newState.tab;
 
-      const oldState = tabState.state ?? { input: "" };
-      // Set input to "" if oldState.mode is fullpage so the input
+      const oldState = tabState.state ?? { input: EMPTY_SMARTBAR_INPUT_STATE };
+      // Set input to empty if oldState.mode is fullpage so the input
       // is empty when the fullpage mode swaps to sidebar mode. We
       // don't need to track the input state for fullpage mode so
       // it stays empty until it's in sidebar mode.
-      const oldInput = oldState.mode === "fullpage" ? "" : oldState.input;
+      const oldInput =
+        oldState.mode === "fullpage"
+          ? EMPTY_SMARTBAR_INPUT_STATE
+          : oldState.input;
 
       // Overlay the newState to override the oldState values
       tabState.state = {
@@ -633,7 +650,7 @@ export class AIWindowTabStatesManager {
       // Enforce the above: newState may carry an input value, but fullpage
       // mode input should never be stored.
       if (tabState.state.mode === "fullpage") {
-        tabState.state.input = "";
+        tabState.state.input = EMPTY_SMARTBAR_INPUT_STATE;
       }
 
       this.#tabStates.set(tab, tabState);
@@ -762,7 +779,7 @@ export class AIWindowTabStatesManager {
       }
       lazy.AIWindowUI.updateSidebarInput(
         this.#window,
-        currentTabState?.state?.input ?? ""
+        currentTabState?.state?.input ?? EMPTY_SMARTBAR_INPUT_STATE
       );
     } else {
       this.#updateEmptyCloseCount(conversation, isOpen, source);
@@ -806,7 +823,7 @@ export class AIWindowTabStatesManager {
       return;
     }
 
-    this.#getTabState(tab, { input: "" });
+    this.#getTabState(tab, { input: EMPTY_SMARTBAR_INPUT_STATE });
   };
 
   #onCloseSidebar = () => {
@@ -873,13 +890,15 @@ export class AIWindowTabStatesManager {
             this.#window,
             tabState.state.conversation
           );
-          tabState = this.#getTabState(tab, { input: "" });
+          tabState = this.#getTabState(tab, {
+            input: EMPTY_SMARTBAR_INPUT_STATE,
+          });
         }
 
         if (!isAiWindowUrl && lazy.AIWindowUI.isSidebarOpen(this.#window)) {
           lazy.AIWindowUI.updateSidebarInput(
             this.#window,
-            tabState.state.input ?? ""
+            tabState.state.input ?? EMPTY_SMARTBAR_INPUT_STATE
           );
         }
       },

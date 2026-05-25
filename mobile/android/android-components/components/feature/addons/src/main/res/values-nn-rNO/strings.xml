@@ -87,7 +87,7 @@
   <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">Tilgang til nettlesarhistorikken</string>
   <!-- Description for the "trialML" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_trial_ml_description">Last ned og køyr AI-modellar på eininga di</string>
+  <string name="mozac_feature_addons_permissions_trial_ml_description">Last ned og køyr KI-modellar på eininga di</string>
   <!-- Description for the "userScripts" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description">Tillat at ikkje stadfesta tredjepartsskript får tilgang til dataa dine</string>
   <!-- Description for the "devtools" WebExtensions API permission. -->
@@ -141,7 +141,7 @@
   <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_top_sites_description_for_update">Få tilgang til nettlesarhistorikken.</string>
   <!-- Description for the "trialML" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">Last ned og køyr AI-modellar på eininga di.</string>
+  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">Last ned og køyr KI-modellar på eininga di.</string>
   <!-- Description for the "userScripts" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">Tillat at ikkje stadfesta tredjepartsskript får tilgang til dataa dine.</string>
   <!-- Description for the "devtools" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -354,8 +354,6 @@
   <string name="mozac_extension_install_progress_caption">Lastar ned og stadfestar utvidinga…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">Klarte ikkje å laste inn utvidingar. Prøv på nytt seinare.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">Mislykka førespurnad etter utvidingar!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Fann ikkje omsettinga for språket %2$s, eller for standardspråket %1$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

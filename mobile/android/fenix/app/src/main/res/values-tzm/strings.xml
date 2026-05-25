@@ -50,8 +50,6 @@
   <string name="default_locale_text">Ḍfer tutlay n wallal</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
   <string name="locale_search_hint">Tutlayt n urezzu</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">Tisɣal n unesmassu n urezzu</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">ssureg</string>
   <!-- Button in the search suggestions onboarding that does not allow search suggestions in private sessions -->

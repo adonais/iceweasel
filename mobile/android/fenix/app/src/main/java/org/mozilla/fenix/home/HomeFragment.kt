@@ -730,7 +730,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
     private fun buildToolbar(activity: HomeActivity): FenixHomeToolbar {
         val toolbarStore by buildToolbarStore(activity)
 
-        if (isEdgeToEdgeBackgroundEnabled() && homepageEdgeToEdgeFeature.get() == null) {
+        if (homepageEdgeToEdgeFeature.get() == null) {
             homepageEdgeToEdgeFeature.set(
                 feature = HomepageEdgeToEdgeFeature(
                     appStore = requireComponents.appStore,

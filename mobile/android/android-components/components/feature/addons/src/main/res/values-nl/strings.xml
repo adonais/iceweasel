@@ -354,8 +354,6 @@
   <string name="mozac_extension_install_progress_caption">Extensie downloaden en verifiëren…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">Kan extensies niet laden. Probeer het later nogmaals.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">Zoeken naar extensies mislukt!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Geen vertaling voor locale %1$s of voor de standaardtaal %2$s gevonden</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

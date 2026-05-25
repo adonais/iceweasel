@@ -61,13 +61,13 @@ Object.defineProperty(SelectContentHelper, "open", {
 
 SelectContentHelper.prototype = {
   init() {
-    let win = this.element.ownerGlobal;
+    let win = this.element.ownerDocGlobal;
     win.addEventListener("pagehide", this, { mozSystemGroup: true });
     this.element.addEventListener("blur", this, { mozSystemGroup: true });
     this.element.addEventListener("transitionend", this, {
       mozSystemGroup: true,
     });
-    let MutationObserver = this.element.ownerGlobal.MutationObserver;
+    let MutationObserver = this.element.ownerDocGlobal.MutationObserver;
     this.mut = new MutationObserver(() => {
       // Something changed the <select> while it was open, so
       // we'll poke a DeferredTask to update the parent sometime
@@ -90,7 +90,7 @@ SelectContentHelper.prototype = {
 
   uninit() {
     this.element.openInParentProcess = false;
-    let win = this.element.ownerGlobal;
+    let win = this.element.ownerDocGlobal;
     win.removeEventListener("pagehide", this, { mozSystemGroup: true });
     this.element.removeEventListener("blur", this, { mozSystemGroup: true });
     this.element.removeEventListener("transitionend", this, {
@@ -110,7 +110,7 @@ SelectContentHelper.prototype = {
     let rect = this._getBoundingContentRect();
     let computedStyles = getComputedStyles(this.element);
     let options = this._buildOptionList();
-    let defaultStyles = this.element.ownerGlobal.getDefaultComputedStyle(
+    let defaultStyles = this.element.ownerDocGlobal.getDefaultComputedStyle(
       this.element
     );
     this.actor.sendAsyncMessage("Forms:ShowDropDown", {
@@ -185,7 +185,7 @@ SelectContentHelper.prototype = {
     // have :focus, though it is here for belt-and-suspenders.
     this._setupPseudoClassStyles();
     let computedStyles = getComputedStyles(this.element);
-    let defaultStyles = this.element.ownerGlobal.getDefaultComputedStyle(
+    let defaultStyles = this.element.ownerDocGlobal.getDefaultComputedStyle(
       this.element
     );
     this.actor.sendAsyncMessage("Forms:UpdateDropDown", {
@@ -225,7 +225,7 @@ SelectContentHelper.prototype = {
           return;
         }
 
-        let win = this.element.ownerGlobal;
+        let win = this.element.ownerDocGlobal;
 
         // Running arbitrary script below (dispatching events for example) can
         // close us, but we should still send events consistently.
@@ -282,7 +282,7 @@ SelectContentHelper.prototype = {
         break;
 
       case "Forms:MouseUp": {
-        let win = this.element.ownerGlobal;
+        let win = this.element.ownerDocGlobal;
         if (message.data.onAnchor) {
           this.dispatchMouseEvent(win, this.element, "mouseup");
         }
@@ -345,7 +345,7 @@ SelectContentHelper.prototype = {
 };
 
 function getComputedStyles(element) {
-  return element.ownerGlobal.getComputedStyle(element);
+  return element.ownerDocGlobal.getComputedStyle(element);
 }
 
 function supportedStyles(cs, supportedProps) {
@@ -414,7 +414,7 @@ function buildOptionListForChildren(node, uniqueStyles) {
         isHR,
       };
 
-      const defaultHRStyle = node.ownerGlobal.getDefaultComputedStyle(child);
+      const defaultHRStyle = node.ownerDocGlobal.getDefaultComputedStyle(child);
       if (cs.color != defaultHRStyle.color) {
         info.color = cs.color;
       }

@@ -27,6 +27,8 @@
   <string name="mozac_summarize_shake_consent_on_device_negative_button">暂时不要</string>
   <!-- Title for the download consent screen -->
   <string name="mozac_summarize_download_consent_title">设置保护隐私的摘要功能</string>
+  <!-- Message for the consent to download when using an on-device model. %s will be replaced by app name. -->
+  <string name="mozac_summarize_download_nano_consent_message">完成一次下载，即可让 %s 创建页面摘要，数据始终由您掌控。</string>
   <!-- Button text for the consent to download an on-device model approving download consent -->
   <string name="mozac_summarize_download_consent_button_positive">下载以生成摘要</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->

@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     Home Fragment
 
@@ -73,8 +73,6 @@
   <string name="default_locale_text">Úsáid teanga an ghléis</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
   <string name="locale_search_hint">Cuardaigh teangacha</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">Socruithe inneall cuardaigh</string>
   <!--
     Search Fragment
 
@@ -305,8 +303,6 @@
   <string name="edit_bookmark_snackbar_action">EAGAR</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Eagar</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Cóipeáil</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Comhroinn</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -339,8 +335,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Scriosadh %1$s</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">CEALAIGH</string>
   <!--
     Site Permissions
 
@@ -478,8 +472,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">Dúnadh an cluaisín</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">Dúnadh na cluaisíní</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Dúnadh an cluaisín príobháideach</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->

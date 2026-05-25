@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">%s Privat</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -290,8 +290,6 @@
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">E re</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Njoftoni për sajt të dëmtuar…</string>
-  <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Njoftoni për sajt të dëmtuar</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">E përkthyer</string>
@@ -375,8 +373,6 @@
     Button in the search view that lets a user search by scanning a QR code
   -->
   <string name="search_scan_button_2">Skanonin kodin QR</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">Rregullime motorësh kërkimesh</string>
   <!--
     Search Fragment
 
@@ -757,8 +753,6 @@
   <string name="preferences_category_general">Të përgjithshme</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Mbi</string>
-  <!-- Preference category for settings related to changing the default search engine -->
-  <string name="preferences_category_select_default_search_engine">Përzgjidhni një</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Administroni motorë alternativë kërkimesh</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -975,12 +969,6 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">S’keni leje të përdorni këtë dosje. Provoni të zgjidhni një tjetër.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Administroni shkarkime me aplikacion tjetër</string>
-  <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_downloads_settings_clean_up_files_title">Fshije nga %s dhe pajisja</string>
-  <!-- Summary for the setting to automatically clean up downloaded files -->
-  <string name="preferences_downloads_settings_clean_up_files_summary">Heqja e kartelave nga përgjegjësi juaj i shkarkimeve i heq edhe nga pajisja juaj</string>
-  <!-- Preference for downloads -->
-  <string name="preferences_downloads">Shkarkime</string>
   <!-- Preference for enabling gecko engine logs -->
   <string name="preferences_enable_gecko_logs">Aktivizo regjistra Gecko</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
@@ -1367,8 +1355,6 @@
   <string name="preference_gestures_website_pull_to_refresh">Tërhiqeni, që të rifreskohet</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Rrëshqiteni, që të fshihet paneli</string>
-  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
-  <string name="preference_gestures_swipe_toolbar_show_tabs">Fërkoni panelin për sipër, që të hapen skeda</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Që të ndërroni skeda, fërkojeni për anash shtyllën e adresave</string>
   <!--
@@ -1538,18 +1524,6 @@
     The %1$s will be replaced by the number of opened synced tabs
   -->
   <string name="tabs_header_synced_tabs_counter_title">Skeda të Njëkohësuara të Hapura: %1$s. Prekeni që të ndërroni skeda.</string>
-  <!-- Text for the tabs header private tabs -->
-  <string name="tabs_header_private_tabs_title">Private</string>
-  <!-- Text for the tabs header normal tabs -->
-  <string name="tabs_header_normal_tabs_title">Skeda</string>
-  <!-- Text for the tabs header synced tabs -->
-  <string name="tabs_header_synced_tabs_title">Njëkohësim</string>
-  <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
-  <string name="tab_manager_floating_action_button_new_normal_tab">Skedë e re</string>
-  <!-- Text for the new tab button in the Tab Manager to indicate opening a new private tab -->
-  <string name="tab_manager_floating_action_button_new_private_tab">Skedë e re private</string>
-  <!-- Text for floating action button in the Tab Manager used to initiate a re-sync of synced tabs -->
-  <string name="tab_manager_floating_action_button_sync_tabs">Njëkohëso skeda</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Shtoni skedë</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1582,8 +1556,6 @@
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Shtojeni në koleksion</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
   <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Shtojini në grup</string>
-  <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Nda skedat e përzgjedhura</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Menu skedash të përzgjedhura</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1631,9 +1603,6 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Përpunoni grupin</string>
   <string name="create_tab_group_save_button">Ruaje</string>
-  <string name="edit_tab_group_bottom_sheet_close_content_description">Mbylle Përpunimin e Grupit të Skedave</string>
-  <!-- Default tab group name when creating a tab group -->
-  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grup</string>
   <!--
     Default tab group name when creating a tab group
     %d is the number of existing tab groups + 1.
@@ -1641,12 +1610,8 @@
   <string name="create_tab_group_form_default_name">Grupi %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
   <string name="create_tab_group_name_label">Emër</string>
-  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
-  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Emër</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Shtoje te</string>
-  <!-- Content Description for closing the "Add to Tab Group" panel. -->
-  <string name="add_to_tab_group_bottom_sheet_close_content_description">Mbyll shtim te grup skedash</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Grup i ri skedash</string>
   <plurals name="tab_group_tabs_count_subtitle">
@@ -1990,8 +1955,6 @@
   <string name="bookmark_menu_move_button">Lëvize</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Përpunoni</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Kopjoje</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Ndajeni me të tjerët</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2046,12 +2009,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">U fshi %1$s</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">ZHBËJE</string>
-  <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">U fshi %s</string>
-  <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Objekte të fshirë: %s</string>
   <!--
     Bookmark undo button for deletion snackbar action
 
@@ -2322,24 +2279,6 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Bëjeni Firefox-in shfletuesin tuaj parazgjedhje</string>
-  <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Provoni shfletimin privat</string>
-  <!--
-    Text shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Shfletoni pa “cookies” të ruajtura ose historik te %1$s</string>
-  <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Shfletoni pa lënë gjurmë</string>
-  <!--
-    Text A shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Shfletimi privat në %1$s s’ruan informacion tuajin.</string>
-  <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Filloni kërkimin tuaj të parë</string>
-  <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Gjeni diçka atypari. Ose zbuloni diçka zbavitëse.</string>
   <!--
     Survey
 
@@ -2357,8 +2296,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">Skeda u mbyll</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">Skedat u mbyllën</string>
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Skeda të mbyllura: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
@@ -2367,8 +2304,6 @@
   <string name="snackbar_added_to_shortcuts">U shtua te shkurtoret!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Skeda private u mbyll</string>
-  <!-- Text shown in snackbar when user erases their private browsing data -->
-  <string name="snackbar_private_data_deleted">Të dhënat e shfletimit privat u fshinë</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">ZHBËJE</string>
   <!--
@@ -3395,8 +3330,6 @@
   <string name="translation_error_could_not_translate_warning_text">Pati një problem me përkthimin. Ju lutemi, riprovoni.</string>
   <!-- The title of the warning card informs the user that the list of languages cannot be loaded. -->
   <string name="translation_error_could_not_load_languages_warning_text">S’u ngarkuan dot gjuhë. Kontrolloni lidhjen tuaj internet dhe riprovoni.</string>
-  <!-- The title of the warning card informs the user that a language is not supported. %1$s is the name of the language that is not supported. -->
-  <string name="translation_error_language_not_supported_warning_text" tools:ignore="UnusedResources" moz:removedIn="150">Na ndjeni, s’e mbulojmë ende %1$s.</string>
   <!-- Snackbar title shown if the user closes the Translation Request dialogue and a translation is in progress. -->
   <string name="translation_in_progress_snackbar">Po përkthehet…</string>
   <!--

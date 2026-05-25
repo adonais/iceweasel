@@ -354,8 +354,6 @@
   <string name="mozac_extension_install_progress_caption">Uzantı indiriliyor ve doğrulanıyor…</string>
   <!-- Error shown when extensions could not be loaded -->
   <string name="mozac_feature_addons_failed_to_load_extensions">Uzantılar yüklenemedi. Daha sonra yeniden deneyin.</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">Uzantılar sorgulanamadı.</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">%1$s veya %2$s çeviri bulunamadı</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

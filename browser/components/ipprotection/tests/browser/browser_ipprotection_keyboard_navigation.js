@@ -5,6 +5,90 @@
 "use strict";
 
 /**
+ * Tests that focus remains on the action button after the VPN toggle is activated.
+ */
+add_task(async function test_focus_preserved_after_toggle() {
+  let content = await openPanel({
+    isEnrolledAndEntitled: true,
+    isProtectionEnabled: false,
+  });
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(content),
+    "ipprotection-content component should be present"
+  );
+
+  await BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.statusCardEl
+  );
+
+  let statusCard = content.statusCardEl;
+  let actionButton = statusCard.actionButtonEl;
+
+  actionButton.focus();
+  actionButton.click();
+
+  // Simulate the service responding with the updated state.
+  statusCard.protectionEnabled = true;
+  await statusCard.updateComplete;
+  await statusCard.actionButtonEl.updateComplete;
+
+  Assert.ok(
+    statusCard.statusBoxEl.titleEl.matches(":focus-within"),
+    "Focus switches to the title after action button toggled"
+  );
+
+  await closePanel();
+  cleanupService();
+});
+
+/**
+ * Tests that focus is restored to the action button after the VPN goes through
+ * the activating state (button disabled then re-enabled).
+ */
+add_task(async function test_focus_restored_after_activating() {
+  let content = await openPanel({
+    isEnrolledAndEntitled: true,
+    isProtectionEnabled: false,
+  });
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(content),
+    "ipprotection-content component should be present"
+  );
+
+  await BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.statusCardEl
+  );
+
+  let statusCard = content.statusCardEl;
+  let actionButton = statusCard.actionButtonEl;
+
+  actionButton.focus();
+  actionButton.click();
+
+  statusCard.isActivating = true;
+  await statusCard.updateComplete;
+
+  statusCard.isActivating = false;
+  statusCard.protectionEnabled = true;
+  await statusCard.updateComplete;
+  await statusCard.actionButtonEl.updateComplete;
+
+  Assert.ok(
+    statusCard.statusBoxEl.titleEl.matches(":focus-within"),
+    "Focus should move to the title after activating completes"
+  );
+
+  await closePanel();
+  cleanupService();
+});
+
+/**
  * Tests that the panel can be navigated with Tab and Arrow keys
  * and that the help button responds to the Enter key
  */

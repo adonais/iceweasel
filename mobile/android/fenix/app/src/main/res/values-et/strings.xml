@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Privaatne %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -207,8 +207,6 @@
   <string name="browser_menu_new_private_tab">Uus privaatne kaart</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Paroolid</string>
-  <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Teata katkisest saidist…</string>
   <!--
     Browser Toolbar
 
@@ -237,8 +235,6 @@
     Button in the search view that lets a user search by scanning a QR code
   -->
   <string name="search_scan_button_2">Skanni QR-kood</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">Otsingumootori sätted</string>
   <!--
     Search Fragment
 
@@ -323,8 +319,6 @@
   <string name="preferences_category_general">Üldine</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Teave</string>
-  <!-- Preference category for settings related to changing the default search engine -->
-  <string name="preferences_category_select_default_search_engine">Vali üks</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Alternatiivsete otsingumootorite haldamine</string>
   <!-- Preference category for settings related to managing search shortcuts for the quick search menu -->
@@ -601,8 +595,6 @@
   <string name="preference_gestures_website_pull_to_refresh">Allatõmbamisel leht värskendatakse</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Kerimisel tööriistariba peidetakse</string>
-  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
-  <string name="preference_gestures_swipe_toolbar_show_tabs">Üles libistamisel avatakse kaarte</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Aadressiriba küljele libistamisel vahetatakse kaarte</string>
   <!--
@@ -723,8 +715,6 @@
   <string name="tab_tray_menu_tab_settings">Kaartide seaded</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Sulge kõik kaardid</string>
-  <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Jaga valitud kaarte</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Valitud kaartide menüü</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -885,8 +875,6 @@
   <string name="edit_bookmark_snackbar_action">MUUDA</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Muuda</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Kopeeri</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Jaga</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -925,10 +913,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Kustutati järjehoidja %1$s</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">VÕTA TAGASI</string>
-  <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s kustutati</string>
   <!-- Content description for the bookmark screen delete bookmark navigation bar button -->
   <string name="bookmark_delete_bookmark_content_description">Kustuta järjehoidja</string>
   <!-- Content description for the bookmark screen delete bookmark folder navigation bar button -->
@@ -1141,8 +1125,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">Kaart suleti</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">Kaardid suleti</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Lisatud otseteedesse!</string>
   <!-- Text shown in snackbar when user closes a private tab -->

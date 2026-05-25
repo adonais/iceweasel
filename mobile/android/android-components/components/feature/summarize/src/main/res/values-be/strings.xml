@@ -29,10 +29,14 @@
   <string name="mozac_summarize_download_error_positive_button">Паспрабаваць зноў</string>
   <!-- Button for the download error screen to cancel -->
   <string name="mozac_summarize_download_error_negative_button">Скасаваць</string>
+  <!-- Generic fallback message for the info error screen -->
+  <string name="mozac_summarize_info_error_message">Паўтарыце спробу пазней.</string>
   <!-- Link text to learn more about page summaries in settings -->
   <string name="mozac_summarize_settings_learn_more">Падрабязней</string>
   <!-- Section header for gesture settings -->
   <string name="mozac_summarize_settings_gestures">Жэсты</string>
   <!-- Disclaimer message -->
   <string name="mozac_feature_summarize_disclaimer_message">Штучны інтэлект можа рабіць памылкі</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">Адхіліць</string>
 </resources>

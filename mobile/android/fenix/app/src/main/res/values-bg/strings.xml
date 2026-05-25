@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Поверителен %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -292,8 +292,6 @@
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Нов</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Доклад за повредена страница…</string>
-  <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Доклад за повредена страница</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Преведено</string>
@@ -429,8 +427,6 @@
     Button in the search view that lets a user search by scanning a QR code
   -->
   <string name="search_scan_button_2">Сканиране на QR</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">Настройки на търсачките</string>
   <!--
     Search Fragment
 
@@ -468,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">Изтрити %1$s от историята</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Изтриване на този запис от историята</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">Останете след %1$s</string>
   <!--
     Home onboarding
 
@@ -727,6 +725,12 @@
     “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
   -->
   <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Помогнете ни да достигнем до повече хора, като позволите на Mozilla да информира платформата, от която сте дошли, че използвате Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">Помогнете ни да достигнем до повече хора, като позволите на Mozilla да информира платформата, от която сте дошли, че използвате Firefox. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Как използваме данните</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
@@ -829,8 +833,6 @@
   <string name="preferences_category_general">Общи</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Относно</string>
-  <!-- Preference category for settings related to changing the default search engine -->
-  <string name="preferences_category_select_default_search_engine">Изберете</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine_2">Търсеща машина по подразбиране за нормално четене</string>
   <!-- Preference category for settings related to changing the private browsing search engine -->
@@ -1062,12 +1064,6 @@
   <string name="preferences_downloads_ask_when_to_delete_files">Питай при изтриване на файлове</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads_2">Настройки за изтегляне</string>
-  <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_downloads_settings_clean_up_files_title">Изтриване от %s и устройството</string>
-  <!-- Summary for the setting to automatically clean up downloaded files -->
-  <string name="preferences_downloads_settings_clean_up_files_summary">Премахването на файлове от мениджъра на изтегляния ги премахва и от устройството</string>
-  <!-- Preference for downloads -->
-  <string name="preferences_downloads">Изтегляния</string>
   <!-- Preference for enabling gecko engine logs -->
   <string name="preferences_enable_gecko_logs">Активиране на журналите на Gecko</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
@@ -1462,8 +1458,6 @@
   <string name="preference_gestures_dynamic_toolbar">Плъзване скрива лентата с инструменти</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs_2">Плъзнете вертикално лентата с инструменти, за да видите отворените раздели</string>
-  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
-  <string name="preference_gestures_swipe_toolbar_show_tabs">Плъзване нагоре на лентата с инструменти отваря раздели</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Плъзване на адресната лента настрани превключва разделите</string>
   <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
@@ -1643,18 +1637,6 @@
     The %1$s will be replaced by the number of opened synced tabs
   -->
   <string name="tabs_header_synced_tabs_counter_title">Отворени синхронизирани раздели: %1$s. Докоснете за превключване на разделите.</string>
-  <!-- Text for the tabs header private tabs -->
-  <string name="tabs_header_private_tabs_title">Лични</string>
-  <!-- Text for the tabs header normal tabs -->
-  <string name="tabs_header_normal_tabs_title">Раздели</string>
-  <!-- Text for the tabs header synced tabs -->
-  <string name="tabs_header_synced_tabs_title">Синхронизиране</string>
-  <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
-  <string name="tab_manager_floating_action_button_new_normal_tab">Нов раздел</string>
-  <!-- Text for the new tab button in the Tab Manager to indicate opening a new private tab -->
-  <string name="tab_manager_floating_action_button_new_private_tab">Нов поверителен раздел</string>
-  <!-- Text for floating action button in the Tab Manager used to initiate a re-sync of synced tabs -->
-  <string name="tab_manager_floating_action_button_sync_tabs">Синхронизиране на раздели</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Добавяне на раздел</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1687,8 +1669,6 @@
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Добавяне към списък</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
   <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Добавяне към група</string>
-  <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Споделяне на избраните раздели</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Меню избрани раздели</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1727,6 +1707,14 @@
   <string name="pwa_site_controls_title_private">%1$s (поверителен режим)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Отваряне на раздел за търсене</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Създаване на група от раздели</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Плъзнете един раздел в друг, за да ги групирате.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Изберете няколко раздела, за да създадете група.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Отхвърляне на включването в група раздели</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Опитайте групите от раздели за по-малко превъртане и повече работа</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -1742,9 +1730,6 @@
   <string name="create_tab_group_save_button">Запазване</string>
   <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
   <string name="edit_tab_group_bottom_sheet_grabber_content_description">Нова група, манипулатор за плъзгане при свиване</string>
-  <string name="edit_tab_group_bottom_sheet_close_content_description">Затваряне на група за редактиране</string>
-  <!-- Default tab group name when creating a tab group -->
-  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Група</string>
   <!--
     Default tab group name when creating a tab group
     %d is the number of existing tab groups + 1.
@@ -1752,16 +1737,12 @@
   <string name="create_tab_group_form_default_name">Група %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
   <string name="create_tab_group_name_label">Име</string>
-  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
-  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Име</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Добавяне към</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Добавяне към група раздели, свиване на манипулатора за влачене</string>
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">Добавяне към нова група раздели</string>
-  <!-- Content Description for closing the "Add to Tab Group" panel. -->
-  <string name="add_to_tab_group_bottom_sheet_close_content_description">Затваряне на добавянето към групата раздели</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Нова група раздели</string>
   <plurals name="tab_group_tabs_count_subtitle">
@@ -2197,8 +2178,6 @@
   <string name="bookmark_menu_move_button">Преместване</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Редактиране</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Копиране</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Споделяне</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2259,12 +2238,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Изтрита %1$s</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">ОТМЕНЯНЕ</string>
-  <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">Отметката %s е премахната</string>
-  <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Изтрити елементи: %s</string>
   <!--
     Bookmark undo button for deletion snackbar action
 
@@ -2557,24 +2530,6 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Направете Firefox вашия четец по подразбиране</string>
-  <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Пробвайте поверително разглеждане</string>
-  <!--
-    Text shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Разглеждайте без запазени бисквитки или история в %1$s</string>
-  <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Преглеждайте без следа</string>
-  <!--
-    Text A shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Поверителното разглеждане в %1$s не пази информация.</string>
-  <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Направете първото си търсене</string>
-  <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Намерете нещо наоколо. Или отрийте нещо забавно.</string>
   <!--
     Survey
 
@@ -2592,8 +2547,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">Разделът е затворен</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">Разделите са затворени</string>
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Затворени раздели: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
@@ -2602,8 +2555,6 @@
   <string name="snackbar_added_to_shortcuts">Добавено към преки пътища!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Поверителният раздел е затворен</string>
-  <!-- Text shown in snackbar when user erases their private browsing data -->
-  <string name="snackbar_private_data_deleted">Поверителните данни за сърфиране са изтрити</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">ОТМЕНЯНЕ</string>
   <!--
@@ -2746,6 +2697,15 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s ви предпазва от много от най-разпространените проследявания, които следят какво правите онлайн.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Научете повече</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d тракер е спрян</item>
+    <item quantity="other">%d тракера са блокирани</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -3137,6 +3097,8 @@
   <string name="saved_logins_sort_strategy_last_used">Последно използване</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Меню за сортиране на пароли</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Внасяне от файл</string>
   <!--
     Email Masks
 
@@ -3169,6 +3131,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">вградена VPN на %s</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">Сърфирайте с допълнителна защита, като скривате местоположението си дори при обществени Wi-Fi мрежи. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">Сърфирайте с допълнителна защита, като скривате местоположението си дори при обществени Wi-Fi мрежи.</string>
   <!-- Link text that opens additional information about the browser VPN -->
@@ -3724,8 +3688,6 @@
   <string name="translation_error_could_not_translate_warning_text">Възникна проблем при превода. Моля, опитайте отново.</string>
   <!-- The title of the warning card informs the user that the list of languages cannot be loaded. -->
   <string name="translation_error_could_not_load_languages_warning_text">Езиците не можаха да бъдат заредени. Проверете връзката си с интернет и опитайте отново.</string>
-  <!-- The title of the warning card informs the user that a language is not supported. %1$s is the name of the language that is not supported. -->
-  <string name="translation_error_language_not_supported_warning_text" tools:ignore="UnusedResources" moz:removedIn="150">За съжаление, все още не поддържаме %1$s.</string>
   <!-- The title of the warning card informs the user that translations from a language are not supported yet. %1$s is the name of the source language. -->
   <string name="translation_error_language_not_supported_warning_text_2">За съжаление, все още не се поддържат преводи от %1$s.</string>
   <!-- Snackbar title shown if the user closes the Translation Request dialogue and a translation is in progress. -->
@@ -4480,31 +4442,31 @@
   -->
   <string name="sports_widget_country_selector_title">Следвайте екипа си</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Северна Америка</string>
+  <string name="sports_widget_confederation_north_america">Северна Америка</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Африка</string>
+  <string name="sports_widget_confederation_africa">Африка</string>
   <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Азия</string>
+  <string name="sports_widget_confederation_asia">Азия</string>
   <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">КОНКАКАФ</string>
+  <string name="sports_widget_confederation_concacaf">КОНКАКАФ</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Европа</string>
+  <string name="sports_widget_confederation_europe">Европа</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Океания</string>
+  <string name="sports_widget_confederation_oceania">Океания</string>
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Южна Америка</string>
+  <string name="sports_widget_confederation_south_america">Южна Америка</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Англия</string>
+  <string name="sports_widget_country_england">Англия</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Шотландия</string>
+  <string name="sports_widget_country_scotland">Шотландия</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">НА ЖИВО</string>
+  <string name="sports_widget_match_live">НА ЖИВО</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Световно първенство 2026</string>
+  <string name="sports_widget_champions_title">Световно първенство 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
   <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Подгласници</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Трето място</string>
+  <string name="sports_widget_third_place_title">Трето място</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">Осминафиналите са 32-те</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4518,47 +4480,47 @@
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">Бронзов финал</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed">В момента няма информация за мача. Опитайте да обновите след няколко минути.</string>
+  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">В момента няма информация за мача. Опитайте да обновите след няколко минути.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted">Връзката е прекъсната — актуализациите на живо са на пауза.</string>
+  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">Връзката е прекъсната — актуализациите на живо са на пауза.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Опресняване</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Група А</string>
+  <string name="sports_widget_group_a">Група А</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Група В</string>
+  <string name="sports_widget_group_b">Група В</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Група C</string>
+  <string name="sports_widget_group_c">Група C</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Група D</string>
+  <string name="sports_widget_group_d">Група D</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Група Е</string>
+  <string name="sports_widget_group_e">Група Е</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Група F</string>
+  <string name="sports_widget_group_f">Група F</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Група G</string>
+  <string name="sports_widget_group_g">Група G</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Група H</string>
+  <string name="sports_widget_group_h">Група H</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Група I</string>
+  <string name="sports_widget_group_i">Група I</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Група J</string>
+  <string name="sports_widget_group_j">Група J</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Група K</string>
+  <string name="sports_widget_group_k">Група K</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Група L</string>
+  <string name="sports_widget_group_l">Група L</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Вижте резултатите</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Преглед на подробностите за мача</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">Свързани съвпадения</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Свързани съвпадения</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Предстоящи</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(Пълно работно време)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Пълно работно време</string>
+  <string name="sports_widget_match_full_time_2">Пълно работно време</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4566,15 +4528,15 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Следете Световното първенство по футбол</string>
+  <string name="sports_widget_card_title">Следете Световното първенство по футбол</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Получавайте актуализации на мачовете на живо и още.</string>
+  <string name="sports_widget_card_description">Получавайте актуализации на мачовете на живо и още.</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Смяна на отбора</string>
+  <string name="sports_widget_change_team">Смяна на отбора</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Вземете персонализиран тапет</string>
+  <string name="sports_widget_get_custom_wallpaper">Вземете персонализиран тапет</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">Премахване</string>
+  <string name="sports_widget_remove">Премахване</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">Искате ли да го последвате?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4582,7 +4544,7 @@
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Следвайте друг отбор</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Обратно връщане до Световното първенство по футбол</string>
+  <string name="sports_widget_countdown_to_world_cup">Обратно връщане до Световното първенство по футбол</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
   <string name="sports_widget_view_schedule">Преглед на графика</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
@@ -4592,7 +4554,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Продължаване на времето</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Дузпи</string>
+  <string name="sports_widget_penalties">Дузпи</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
@@ -4612,11 +4574,11 @@
   -->
   <string name="sports_widget_countdown_minutes">М</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Затваряне на листа за избор на екип</string>
+  <string name="sports_widget_close_team_selection_sheet_content_description">Затваряне на листа за избор на екип</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">Затваряне</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Повече настройки</string>
+  <string name="sports_widget_more_options_content_description">Повече настройки</string>
   <!--
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
@@ -4628,46 +4590,66 @@
     Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
   -->
-  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Предстоящи: %1$s срещу %2$s, %3$s за %4$s</string>
+  <string name="sports_widget_upcoming_match_content_description">Предстоящи: %1$s срещу %2$s, %3$s за %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
+    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
+    or a match status like "Full time").
+  -->
+  <string name="sports_widget_match_content_description">%1$s срещу %2$s, %3$s</string>
   <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
     or Final represented by sports_widget_final).
   -->
-  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, игра на живо</string>
+  <string name="sports_widget_live_game_content_description">%s, игра на живо</string>
   <!--
     Content description (for accessibility, not displayed) announcing a live score.
     %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
     and %5$s is the match elapsed time (e.g. 72 minutes).
   -->
-  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, на живо</string>
+  <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, на живо</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
+  -->
+  <string name="sports_widget_match_elapsed_minutes">Изминало време в минути: %1$s</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
   -->
-  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, страница %2$d от %3$d</string>
+  <string name="sports_widget_page_position_content_description">%1$s, страница %2$d от %3$d</string>
   <!--
     Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Крайни резултати от Световното първенство, страница %1$d от %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">Крайни резултати от Световното първенство</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Премахване на Световното първенство от дома</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Следни: %s</string>
+  <string name="sports_widget_team_followed_title">Следни: %s</string>
   <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Проверявайте отново за информация за мача, когато турнирът наближи.</string>
+  <string name="sports_widget_team_followed_description">Проверявайте отново за информация за мача, когато турнирът наближи.</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">Първо полувреме</string>
   <!-- Sports widget match status label shown during second half of a match. -->
   <string name="sports_widget_second_half" tools:ignore="UnusedResources">Второ полувреме</string>
   <!-- Sports widget error card title shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Изглежда, че сте офлайн.</string>
+  <string name="sports_widget_error_connection_offline_title">Изглежда, че сте офлайн.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Проверете връзката си с интернет и опитайте отново.</string>
+  <string name="sports_widget_error_connection_offline_description">Проверете връзката си с интернет и опитайте отново.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
-  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Групова фаза</string>
+  <string name="sports_widget_group_stage">Групова фаза</string>
+  <!-- Sports widget error card title shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_title">В момента няма информация за мача.</string>
+  <!-- Sports widget error card description shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_description">Опитайте да обновите след няколко минути.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">Отборът предстои да бъде определен</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

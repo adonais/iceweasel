@@ -33,4 +33,8 @@ TESTING_JS_MODULES += [
     "test/AIWindowTestUtils.sys.mjs",
 ]
 
+EXTRA_COMPONENTS += [
+    "aiwindow.manifest",
+]
+
 JAR_MANIFESTS += ["jar.mn"]

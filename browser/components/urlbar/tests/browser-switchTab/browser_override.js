@@ -191,7 +191,8 @@ add_task(async function test_switchtab_override_scotch_bonnet_for_split_view() {
 add_task(async function test_tab_in_same_split_view_shows_switch_tab() {
   info(
     "Test that a tab already in the same split view shows 'Switch to Tab' " +
-      "instead of 'Move tab to Split View'"
+      "instead of 'Move tab to Split View', and that clicking it selects " +
+      "the tab inside the split view without replacing or closing any tab."
   );
 
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
@@ -206,10 +207,10 @@ add_task(async function test_tab_in_same_split_view_shows_switch_tab() {
   await splitViewCreated;
 
   gBrowser.selectedTab = tab2;
-  Assert.ok(
-    gBrowser.selectedTab.splitview,
-    "Selected tab should be in a split view"
-  );
+  let splitView = gBrowser.selectedTab.splitview;
+  Assert.ok(splitView, "Selected tab should be in a split view");
+
+  let tabCountBefore = gBrowser.tabs.length;
 
   info("Wait for autocomplete");
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -233,8 +234,32 @@ add_task(async function test_tab_in_same_split_view_shows_switch_tab() {
     "urlbar-result-action-switch-tab"
   );
 
+  info("Press Enter to switch to tab1");
+  let promiseTabSelect = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "TabSelect"
+  );
+  EventUtils.synthesizeKey("KEY_Enter");
+  await promiseTabSelect;
+
+  Assert.equal(
+    gBrowser.selectedTab,
+    tab1,
+    "tab1 should now be the selected tab"
+  );
+  Assert.equal(
+    gBrowser.tabs.length,
+    tabCountBefore,
+    "No tabs should have been added or removed"
+  );
+  Assert.deepEqual(
+    splitView.tabs,
+    [tab1, tab2],
+    "Split view tabs should be unchanged"
+  );
+
   info("Cleanup");
-  tab1.splitview.close();
+  splitView.close();
   await UrlbarTestUtils.promisePopupClose(window);
 });
 

@@ -159,8 +159,6 @@
   <string name="mozac_feature_addons_supported_checker_notification_content_two">o pana e ilo %1$s e ilo %2$s tawa ilo %3$s</string>
   <!-- The content of the notification, this will be shown to the user when more than two newly supported add-ons are available. %1$s is the app name (in most cases Firefox). -->
   <string name="mozac_feature_addons_supported_checker_notification_content_more_than_two">o pana e ona tawa ilo %1$s</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">pakala la mi ken ala sona e ilo namako.</string>
   <!-- Text shown after failing to install an add-on (when add-on type isn't supported or an unknown has errored). %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_install">pakala la mi ken ala pana e ilo %1$s tawa sina</string>
   <!-- Text shown after failing to install an extension for which we don't have its name (when add-on type isn't supported or an unknown has errored). -->

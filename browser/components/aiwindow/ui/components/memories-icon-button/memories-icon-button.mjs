@@ -14,6 +14,11 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * Logic is handled by the parent component.
  */
 export class MemoriesIconButton extends MozLitElement {
+  static shadowRootOptions = {
+    ...MozLitElement.shadowRootOptions,
+    delegatesFocus: true,
+  };
+
   static properties = {
     pressed: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
@@ -29,6 +34,10 @@ export class MemoriesIconButton extends MozLitElement {
         detail: { pressed: this.pressed },
       })
     );
+  }
+
+  willUpdate() {
+    this.toggleAttribute("hidden", !this.show);
   }
 
   render() {

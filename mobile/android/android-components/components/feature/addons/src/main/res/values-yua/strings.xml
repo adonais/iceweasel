@@ -163,8 +163,6 @@
   <string name="mozac_feature_addons_not_yet_supported_caption2">Bejla\'e\' táan k beetik le k\'oja\'ano\'obo\' uti\'al jump\'éel selección inicial ti\' extensiones recomendadas.</string>
   <!-- This is the caption for the extension installation progress overlay -->
   <string name="mozac_extension_install_progress_caption">Táan u yéemel yéetel u yilik u extensión…</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">Ma\' béeyak u k\'áatik extensiones!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Ma\' tu yilaj le traducción utia\'al u localización %1$s ni utia\'al le idioma predeterminado %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->

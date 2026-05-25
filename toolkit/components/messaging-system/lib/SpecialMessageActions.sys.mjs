@@ -266,6 +266,7 @@ export const SpecialMessageActions = {
       "browser.smartwindow.sidebar.openByDefault",
       "browser.crashReports.unsubmittedCheck.autoSubmit2",
       "browser.dataFeatureRecommendations.enabled",
+      "browser.ipProtection.blockIPProtectionCallouts",
       "browser.ipProtection.enabled",
       "browser.ipProtection.optedOut",
       "browser.migrate.content-modal.about-welcome-behavior",
@@ -681,6 +682,8 @@ export const SpecialMessageActions = {
             private: false,
             triggeringPrincipal:
               Services.scriptSecurityManager.createNullPrincipal({}),
+            width: action.data.width,
+            height: action.data.height,
           }
         );
         break;

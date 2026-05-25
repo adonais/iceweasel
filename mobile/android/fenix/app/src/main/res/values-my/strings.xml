@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">ကိုယ်ပိုင် %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -153,8 +153,6 @@
   <string name="default_locale_text">ဖုန်း၏ ဘာသာကို သုံးပါ</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
   <string name="locale_search_hint">ဘာသာစကားရှာဖွေရန်</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">အင်ဂျင်အပြင်အဆင် ရှာဖွေပါ</string>
   <!--
     Search Fragment
 
@@ -386,8 +384,6 @@
   <string name="preference_gestures_website_pull_to_refresh">ပြန်လည်စတင်ရန်ဆွဲပါ</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">တူးဘားကို ဖျောက်ရန် ရွှေ့ပါ</string>
-  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
-  <string name="preference_gestures_swipe_toolbar_show_tabs">တပ်ဗ် များ ဖွင့်ရန် တူးဘား ကို အပေါ်သို့ ပွတ်ဆွဲပါ</string>
   <!--
     Library
 
@@ -480,8 +476,6 @@
   <string name="tab_tray_menu_tab_settings">တက်ဗ် အပြင်အဆင်များ</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">တက်ဗ်များ အားလုံး ပိတ်ရန်</string>
-  <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ရွေးချယ်ထားသော တပ်ဗ် များကို မျှဝေပါ</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">ရွေးချယ်ထားသော တပ်ဗ် များ မီနူး</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -560,8 +554,6 @@
   <string name="edit_bookmark_snackbar_action">ပြင်ဆင်ပါ</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">ပြင်ဆင်ပါ</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">ကူးပါ</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">မျှဝေ</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -594,8 +586,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s ဖျက်ပြီး</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">မလုပ်တော့ပါ</string>
   <!--
     Site Permissions
 
@@ -763,8 +753,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">Tab ပိတ်လိုက်တယ်</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">Tabs ပိတ်လိုက်တယ်</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">သီးသန့်သုံးတဗ်ကိုပိတ်ခဲ့သည်</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->

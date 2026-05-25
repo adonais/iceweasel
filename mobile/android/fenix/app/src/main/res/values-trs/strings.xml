@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Riña gachē nu huît %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -292,8 +292,6 @@
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Notîsia</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Natà\' sna\'ānj dàj hua \'ngō sitiô gire\'e…</string>
-  <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Natà\' sna\'ānj dàj hua \'ngō sitiô gire\'e</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Ngà nachrunj</string>
@@ -429,8 +427,6 @@
     Button in the search view that lets a user search by scanning a QR code
   -->
   <string name="search_scan_button_2">Nārī ñadu’hua da’nga’ QR</string>
-  <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
-  <string name="search_shortcuts_engine_settings">Sa nagi\'iaj sa nānà\'ui\'i</string>
   <!--
     Search Fragment
 
@@ -713,8 +709,32 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Nātà’ nan’ānj dàj gayī’ìt garâj sunt Firefox nī aràj sunt man ngà nej duguî’ ‘nïnj ra’a si marketin Mozzilla. Nitāj si ane’ nej nuguan’ nan. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Nātà’ nan’ānj dàj gayī’ìt garâj sunt Firefox nī aràj sunt man ngà nej duguî’ ‘nïnj ra’a si marketin Mozzilla. Nitāj si ane’ nej nuguan’ nan.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Gā’hue rūgûñu’ūnjt ñûnj da’ gīni’in doj guìi ñûnj sa gī’hiât huin sisī gānïnt gānatà’ Mozilla sisī arâj sunt Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Gā’hue rūgûñu’ūnjt ñûnj da’ gīni’in doj guìi ñûnj sa gī’hiât huin sisī gānïnt gānatà’ Mozilla riña hìaj gini’hiājt sisī arâj sunt Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Rūgûñu’ūnjt ñûnj da’ gīni’in doj guìi ñûnj sa gī’hiât huin sisī gānïnt gānatà’ Mozilla riña hìaj gini’hiājt sisī arâj sunt Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">Rūgûñu’ūnjt ñûnj da’ gīni’in doj guìi ñûnj sa gī’hiât huin sisī gānïnt gānatà’ Mozilla riña hìaj gini’hiājt sisī arâj sunt Firefox. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Dàj arâj sun ñunj nej nuguan’an</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Rūgûñu’ūnj Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Sī ga’hue, guruhuât</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Rugûñu’ūnj nej nuguan’ atāj a riñat da’ gāchē nu sà’ riña Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -811,8 +831,6 @@
   <string name="preferences_category_general">Da\' huā ngej</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Rayi\'î</string>
-  <!-- Preference category for settings related to changing the default search engine -->
-  <string name="preferences_category_select_default_search_engine">Nāguī ‘ngòj</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine_2">Riña gāchē nut ngà sa nānà’huì’t ngà nīkāj nīñanj ‘naj</string>
   <!-- Preference category for settings related to changing the private browsing search engine -->
@@ -928,24 +946,42 @@
   <string name="errorpage_httpsonly_message_summary">Si gūruhuaj nī, huā ‘ngō sa yī’ìi gatûj riña aga’ nan. Sisī huā nï̀n’ gīnunt riña sitiô nan nī, sī gachrûnt à’ngō nuguan’ gā’hue gārasun nej si da’ gī’hiaj yī’ì nej si sò’. Sisī huā nï̀n’ gīnunt hiūj nan don nī, gī’hiaj desaktivando akuan’ HTTPS.</string>
   <!-- Preference for accessibility -->
   <string name="preferences_accessibility">Dàj gā gātū\'</string>
+  <!-- Preference to override the Mozilla account server -->
+  <string name="preferences_override_account_server">Si sērbidor kuentâ Mozilla ganahuin</string>
   <!-- Preference to override the Sync token server -->
   <string name="preferences_override_sync_tokenserver">Servidor nagi\'iaj man\'ânt riña Sync</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Kuênta</string>
+  <!-- Preference for changing where the AddressBar is positioned -->
+  <string name="preferences_toolbar_2">Riña nū dukuán ‘na’ nej dīreksiûn</string>
+  <!-- Preference for changing toolbar layout -->
+  <string name="preferences_toolbar_layout">Dànanj hua dukuán rasuun</string>
   <!-- Preference for changing default theme to dark or light mode -->
   <string name="preferences_theme">Têma</string>
   <!-- Preference for customizing the home screen -->
   <string name="preferences_home_2">Ñanj ayi\'ì\'</string>
+  <!-- Preference for customizing the app icon -->
+  <string name="preferences_app_icon">Si ikonô app</string>
+  <!-- Preference for showing the tab strip -->
+  <string name="preferences_tab_strip">Dànanj rugui’ dukuán ‘na’ nej rakïj ñanj</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_shortcut">Gātū nikâ riña nùn dukuán rasuun</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_select_shortcut">Nāguī ‘ngō riña gātū nikât</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Da\'nga\'a</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Nādunō\' dàj huin ruhuô\'</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">Nāgi’hiaj nūguan’ànt nej rakïj ñanj, nej markadô, nej da’nga’ huìi nī doj sa huāa.</string>
+  <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
+  <string name="preferences_account_default_name_2">Si kuendâ Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
   <string name="preferences_account_sync_error">Nātū nākà ñû da\' gānahuij nāgi\'iaj nūguàn\'anj</string>
   <!-- Preference for language -->
   <string name="preferences_language">Nânj ga\'minj</string>
+  <!-- Preference for translations -->
+  <string name="preferences_translations">Nej sa nachrûn’</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Nara\'uij nej dâto</string>
   <!-- Preference for developers -->
@@ -956,6 +992,10 @@
   <string name="preferences_show_voice_search">Dīgân riña nānà\'uì\' ngà nanè\'</string>
   <!-- Preference title for switch preference to show search suggestions also in private mode -->
   <string name="preferences_show_search_suggestions_in_private">Dīgân riña nej sesiûn huìi</string>
+  <!-- Preference title for switch preference to show trending search suggestions -->
+  <string name="preferences_show_trending_search_suggestions">Nādigân nej sa nana’hui’ nìko guìi doj</string>
+  <!-- Preference title for switch preference to show recent search suggestions -->
+  <string name="preferences_show_recent_search_suggestions">Nādigân sa hìaj nana’huí akuan’</string>
   <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
   <string name="preferences_show_clipboard_suggestions">Dīgân a\'ngô nuguan\' nù riña portapapel</string>
   <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -968,6 +1008,32 @@
   <string name="preferences_account_settings">Nāgi\'iô\' riña kuênta</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Nāhuin chrē’ mān’an URLs</string>
+  <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
+  <string name="preferences_show_sponsored_suggestions">Riña ‘na’ huìj huà’nïnj sa rugûñu’ūnj un</string>
+  <!--
+    Summary for preference to show sponsored Firefox Suggest search suggestions.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="preferences_show_sponsored_suggestions_summary">Rugûñu’ûn riña %1$s ngà ‘ngō nuguan’ nadiganj dā’āj</string>
+  <!--
+    Preference title for switch preference to show Firefox Suggest search suggestions for web content.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="preferences_show_nonsponsored_suggestions">Nuguan’ narikî %1$s</string>
+  <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
+  <string name="preferences_show_nonsponsored_suggestions_summary">Gānahuin rā’a doj nuguan’ huā rayi’î sa nana’huî’t</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Nāhuin rā’a si nūguàn’ Mozilla hìaj achrûnt nunt</string>
+  <!-- Preference for link sharing -->
+  <string name="preferences_link_sharing">Nej link giyinga’</string>
+  <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="link_sharing_toggle_title">Nīka link nādunïnjt %1$s riña si sun WhatsApp</string>
+  <!-- Body for the link sharing toggle.  %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="link_sharing_toggle_body">Nākïnj nej duguî’t da’ gāchē nu hìo si doj riña %1$s da’ duyinga’t link riña WhatsApp.</string>
+  <!-- Snackbar message shown when user shares a link -->
+  <string name="link_shared_snackbar_message">Link giyinga’</string>
+  <!-- Snackbar action label shown when user shares a link -->
+  <string name="link_shared_snackbar_action">Gānatsij dàj ruhuât nāgi’hiát</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">Nā\'nīn nej lînk riña nej aplikasiûn</string>
   <!-- Preference for open links in third party apps always open in apps option -->
@@ -976,18 +1042,68 @@
   <string name="preferences_open_links_in_apps_ask">Gāchìnj nan’ānjt hìaj nï’ gàchin nā’nïnt</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Nitāj āmān</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Riña nanu sà’ nej archîbo</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Riña nū nej sa nadunïnjt ‘naj</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Nitāj permiso nikājt da’ gārāsunt karpetâ nan. Naguī a’ngoj si gā’hue.</string>
+  <!-- Preference title for choosing an app to handle downloads -->
+  <string name="preferences_choose_app_for_downloads">Nādunïnj ngà a’ngô aplikasiûn</string>
+  <!-- Preference category for deleting or removing downloads -->
+  <string name="preferences_category_delete_or_remove_downloads">Nādure’ asi gūxūn nej sa nadunïnjt</string>
+  <string name="preferences_downloads_delete_from_device">Nādure’ man riña aga’ nan</string>
+  <string name="preferences_downloads_delete_from_device_description">Gānarè’ archibô dan riña si āgâ’t dànj nānj nārè’ej riña ‘na’ nej sa nadunïnjt</string>
+  <string name="preferences_downloads_remove_from_download_history">Nādure’ man riña ‘na’ nej sa nadunïnjt</string>
+  <string name="preferences_downloads_remove_from_download_history_description">Ganare’ archibô dan riña ‘na’ nej sa nadunïnjt, sanī huā nïn’ nū sà’ man riña si āgâ’t</string>
+  <string name="preferences_downloads_ask_when_to_delete_files">Gāchìnj na’ānj ngà ruhuaj nādure’ej nej si archibôt</string>
   <!-- Preference for downloads -->
-  <string name="preferences_downloads">Nej sa nadunïnjt</string>
+  <string name="preferences_downloads_2">Nādunïnj nej sa gā’hue nāgi’hiát</string>
   <!-- Preference for enabling gecko engine logs -->
   <string name="preferences_enable_gecko_logs">Nāchrūn riña nāgimàn nej si dā’nga Gecko</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
   <string name="quit_application">Gāhuī riña aplikasiûn nan da’ gā’hue nātū sa nākàa…</string>
+  <!-- Preference for extensions -->
+  <string name="preferences_extensions">Nej extensiûn</string>
+  <!-- Preference for installing a local extension -->
+  <string name="preferences_install_local_extension">Si ekstensiûn sa ga’nïnt dan asij riña archibô</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">Sa atāj nan\'ānj an</string>
   <!-- Summary for notification preference indicating notifications are allowed -->
   <string name="notifications_allowed_summary">Gā’hue gāchinj</string>
   <!-- Summary for notification preference indicating notifications are not allowed -->
   <string name="notifications_not_allowed_summary">Sī ga’hue gāchinj</string>
+  <!--
+    Add-on Permissions
+
+    The title of the origin permission option allowing a user to enable the extension to run on all sites
+  -->
+  <string name="addons_permissions_allow_for_all_sites">Gā’nïn gātū riña daran’ sîtio</string>
+  <!-- The subtitle for the allow for all sites preference toggle -->
+  <string name="addons_permissions_allow_for_all_sites_subtitle">Sisī nitāj si āhī hua ekstensiûn nan ruhuât, gā’hue gā’nïnt gātu riña daran’ nej pajinâ gueb.</string>
+  <!-- The text shown when an extension does not require permissions -->
+  <string name="addons_does_not_require_permissions">Nitāj si ni\'ñānj ekstensiûn nan gà\' si \'ngō nuguan\' arâjyinaa.</string>
+  <!-- The description of data collection permissions listed in the addon's permissions screen.  %1$s is a formatted list of permissions. -->
+  <string name="addons_permissions_required_data_collection_description_2">Sa nīkāj ñu’ūnj aga’ nan tāj sisī extensión nan nī nakāj man: %1$s</string>
+  <!-- The description of the "none" data collection permission, when the extension doesn't collect anything according to the developer. -->
+  <string name="addons_permissions_none_required_data_collection_description">Sa nīkāj ñu’ūnj aga’ nan tāj sisī extensión nan nī nu naran’anj nuguan’ hūa rayi’ît.</string>
+  <!-- The title of the required permissions section from addon's permissions screen. -->
+  <string name="addons_permissions_heading_required_permissions">Nej sa achin:</string>
+  <!-- The title of the optional permissions section from addon's permissions screen. -->
+  <string name="addons_permissions_heading_optional_permissions">A’ngô nej permiso tàj a:</string>
+  <!-- The title of the required data collection permissions section from addon's permissions screen. -->
+  <string name="addons_permissions_heading_required_data_collection">Nej nuguan’ dāñû da’huît nāgà’huì’t:</string>
+  <!-- The title of the optional data collection permissions section from addon's permissions screen. -->
+  <string name="addons_permissions_heading_optional_data_collection">A’ngô nej nuguan’ tàj ga’hue nāràn’:</string>
+  <!--
+    Add-on Preferences
+
+    Preference to customize the configured AMO (addons.mozilla.org) collection
+  -->
+  <string name="preferences_customize_extension_collection">Nej yi’nïn’ ekstensiûn ngà nagi’hiát</string>
   <!-- Button caption to confirm the add-on collection configuration -->
   <string name="customize_addon_collection_ok">GĀ’HUE</string>
   <!-- Button caption to abort the add-on collection configuration -->
@@ -996,6 +1112,14 @@
   <string name="customize_addon_collection_hint">Si yūgui yi’nïn’ nan</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Sisi’hiaj yi’nïn’ nan (ID si’hija si)</string>
+  <!-- Toast shown after confirming the custom extension collection configuration -->
+  <string name="toast_customize_extension_collection_done">Nahuin nākà nej sa gā’hue nūtà’t doj. Gāhui akuanj riña aplikasiûn nan da’ nāhuin nākà riña man…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Nuguan’ nata’ dàj hua huì</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Gūej ñû</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -1005,6 +1129,8 @@
     a section where users see a list of tabs that they have visited in the past few days
   -->
   <string name="customize_toggle_recently_visited">Hìaj nākà gini’hiājt</string>
+  <!-- Title for the customize home screen section with Pocket. -->
+  <string name="customize_toggle_pocket_3">Nej sa gahuin</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Nuguan’ ru’hue nej si du’hue</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -1057,14 +1183,82 @@
   <string name="alternative_app_icon_option_blue">Sa kuāan</string>
   <!-- Title for the "Purple" alternative app icon variant in the icon picker screen. -->
   <string name="alternative_app_icon_option_purple">Sa ya’nuun</string>
+  <!-- Title for the "Purple Dark" alternative app icon variant in the icon picker screen. -->
+  <string name="alternative_app_icon_option_purple_dark">Sa ya’nun riña rūmin’in</string>
+  <!-- Title for the "Sunrise" gradient alternative app icon variant in the icon picker screen. The app icon features a soft yellow-to-blue gradient background, resembling the colors of early morning light. -->
+  <string name="alternative_app_icon_option_gradient_sunrise">Sîj gui</string>
+  <!-- Title for the "Golden Hour" gradient alternative app icon variant in the icon picker screen. The app icon features a warm golden-to-pink gradient background, resembling the colors of the sunlight shortly before sunset. -->
+  <string name="alternative_app_icon_option_gradient_golden_hour">Orâ ràan</string>
+  <!-- Title for the "Sunset" gradient alternative app icon variant in the icon picker screen. The app icon has a rich red-to-purple gradient background, resembling the tones of a sunset sky. -->
+  <string name="alternative_app_icon_option_gradient_sunset">Atûj gui</string>
+  <!-- Title for the "Blue Hour" gradient alternative app icon variant in the icon picker screen. The app icon has a cool blue gradient background, resembling the sky color around the time just after sunset or before sunrise. -->
+  <string name="alternative_app_icon_option_gradient_blue_hour">Orâ kuāan</string>
+  <!-- Title for the "Twilight" gradient alternative app icon variant in the icon picker screen. The app icon has a purple-toned gradient background, resembling the sky color during twilight. -->
+  <string name="alternative_app_icon_option_gradient_twilight">Huin dāchrèj</string>
+  <!-- Title for the "Midnight" gradient alternative app icon variant in the icon picker screen. The app icon features a dark gradient background, resembling the deep tones of the night sky. -->
+  <string name="alternative_app_icon_option_gradient_midnight">Dā’āj ñàn’an</string>
+  <!-- Title for the "Northern Lights" gradient alternative app icon variant in the icon picker screen. The app icon has a dynamic green, blue, and purple gradient background, resembling the aurora borealis. -->
+  <string name="alternative_app_icon_option_gradient_northern_lights">Ña’an gū’lúj</string>
+  <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
+  <string name="alternative_app_icon_option_retro_2004">Nānikàj 2004</string>
+  <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
+  <string name="alternative_app_icon_option_pixelated">Nare’ riñanj</string>
+  <!-- Title for the "Minimal" themed alternative app icon variant in the icon picker screen. The app icon presents a simplified, flat and monochrome version of the Firefox logo. -->
+  <string name="alternative_app_icon_option_minimal">Dòj sínj</string>
+  <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
+  <string name="alternative_app_icon_option_pride">Si\'ij</string>
+  <!-- Title for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
+  <string name="alternative_app_icon_option_momo">Momo</string>
+  <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
+  <string name="alternative_app_icon_option_momo_subtitle">Sa girirà @heyheymomodraws</string>
+  <!-- Title for the "Cuddling" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
+  <string name="alternative_app_icon_option_cuddling">Gāni’ñān</string>
+  <!-- Title for the "Flaming" themed alternative app icon variant in the icon picker screen. The app icon features a fiery design, with the Firefox logo surrounded by flames for a bold, energetic look. -->
+  <string name="alternative_app_icon_option_flaming">Xàn’ yigìn</string>
+  <!-- Title for the "Cool" themed alternative app icon variant in the icon picker screen. The app icon uses a warm orange-to-yellow gradient background with a sleek, modern twist on the Firefox logo, giving it a fresh and stylish appearance. -->
+  <string name="alternative_app_icon_option_cool">Xàn\' chre</string>
+  <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
+  <string name="alternative_app_icon_group_featured">Nadigân</string>
+  <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="restart_warning_dialog_body_2">Gā’hue nārán riña App. Màn si gānùn ra’ât riña ikonô nākà rugui’ dan nī nayi’nïn ñûn %1$s.</string>
+  <!-- Dialog button text for confirming the possible app restart and new icon selection -->
+  <string name="restart_warning_dialog_button_positive_2">Ikonô guendâ nādunō’</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">Dūyichin\'</string>
+  <!--
+    Add-ons general availability nimbus message
+
+    Title of the Nimbus message for extension general availability
+  -->
+  <string name="addon_ga_message_title_2" tools:ignore="UnusedResources">A’ngô nej ekstensiûn nākà ngà huaa</string>
+  <!-- Body of the Nimbus message for add-ons general availability. 'Firefox' intentionally hardcoded here -->
+  <string name="addon_ga_message_body" tools:ignore="BrandUsage,UnusedResources">Gīni’hiāj dàj hua nej 100+ ekstensiûn nàka ga’hue gārasunt ngà Firefox.</string>
+  <!-- Button text of the Nimbus message for extensions general availability. -->
+  <string name="addon_ga_message_button_2" tools:ignore="UnusedResources">Gānatsij gīni’hiājt dàj hua nej ekstensiûn</string>
+  <!--
+    Extension process crash dialog to user
+
+    Title of the extension crash dialog shown to the user when enough errors have occurred with extensions and they need to be temporarily disabled
+  -->
+  <string name="extension_process_crash_dialog_title">Giyichin’ akuan’ si ‘hiaj sun nej extensiûn</string>
+  <!--
+    This is a message shown to the user when too many errors have occurred with the extensions process and they have been disabled.
+    The user can decide if they would like to continue trying to start extensions or if they'd rather continue without them.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="extension_process_crash_dialog_message">Na’hue gī’hiaj sun hue’ê si āgâ’t, dadin’ giyichin’ si ‘hiaj sun dā’āj nej ekstensiûn. %1$s ginûn huin dūnayi’ìj nej sa nutâ’t sanī nu gā’hue.\n\nSê sī gā’hue nāyi’ì nej ekstensiûn ngà sesiûn nan.\n\nGūxūn asi dūyichin’ akuan’ nej ekstensiûn nī gi’hiaj sun hue’ê man doj.</string>
+  <!-- Button text on the extension crash dialog to prompt the user to try restarting the extensions but the dialog will reappear if it is unsuccessful again -->
+  <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">Ginùn huin dūnayi’ìt nej ekstensiûn</string>
+  <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
+  <string name="extension_process_crash_dialog_disable_extensions_button_text">Gūij ne’ ñāan nùnj si yichin’ riñan nej ekstensiûn</string>
   <!--
     Account Preferences
 
     Preference for managing your account via accounts.firefox.com
   -->
   <string name="preferences_manage_account">Si Kuendâ administrador</string>
+  <!-- Summary of the preference for managing your account via accounts.firefox.com. -->
+  <string name="preferences_manage_account_summary">Nādunā da’nga’ huì nīkājt, gini’hiāj dàj hua nuguan’ huā rayi’ît asi nādure’ si kuendât</string>
   <!-- Preference for triggering sync -->
   <string name="preferences_sync_now">Nāgi\'iaj nūguàn\'àn hìaj</string>
   <!-- Preference category for sync -->
@@ -1099,6 +1293,8 @@
     and %3$s is the device model.
   -->
   <string name="default_device_name_2">%1$s riña %2$s %3$s</string>
+  <!-- Preference for syncing payment methods -->
+  <string name="preferences_sync_credit_cards_2">Dàj gā’hue nāru’huet</string>
   <!-- Preference for syncing addresses -->
   <string name="preferences_sync_address">Nej direksiûn</string>
   <!--
@@ -1114,6 +1310,16 @@
   <!-- %s is the device name -->
   <string name="fxa_tab_received_from_notification_name">Si rakïj ñanj %s</string>
   <!--
+    Close Synced Tabs
+
+    The title for a notification shown when the user closes tabs that are currently
+    open on this device from another device that's signed in to the same Mozilla account.
+    %1$s is a placeholder for the app name; %2$d is the number of tabs closed.
+  -->
+  <string name="fxa_tabs_closed_notification_title">%1$s rakïj ñanj huā ráan: %2$d</string>
+  <!-- The body for a "closed synced tabs" notification. -->
+  <string name="fxa_tabs_closed_text">Gini\'hiaj nej rakïj ñanj hiaj narrán nakà</string>
+  <!--
     Advanced Preferences
 
     Preference for tracking protection exceptions
@@ -1125,6 +1331,8 @@
   <string name="exceptions_empty_message_description">Â\'nïnj nej esepsiûn gūxūnt sa narrán riña sa naga\'nāj riña nej sitiô naguit.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Gāhuin chrūn doj</string>
+  <!-- Title Headers for data collection settings screen -->
+  <string name="crash_reports_data_category">Sa nata\' rayi\'î nej sa gire\'e</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Nej ēstûdio</string>
   <!-- Summary for studies preferences -->
@@ -1153,6 +1361,8 @@
   <string name="preference_top_toolbar">Nda raj</string>
   <!-- Preference for using bottom toolbar -->
   <string name="preference_bottom_toolbar">Yi\'ij</string>
+  <!-- New tab shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_new_tab">Nā\'nïn riña a\'ngô rakïj ñanj nākàa</string>
   <!-- Share shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_share">Dūyingô\'</string>
   <!-- Back shortcut in toolbar customization -->
@@ -1179,8 +1389,6 @@
   <string name="preference_gestures_website_pull_to_refresh">Dūsiki’ da’ nāhuin nàkaj</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Dūsiki’ da’ nāhuin huì dukuán sa màn rasūun</string>
-  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
-  <string name="preference_gestures_swipe_toolbar_show_tabs">Dūguaché nāhuī dukuán màn rasūun da’ gā’hue nā’nï̄nt rakïj ñanj</string>
   <!--
     Library
 
@@ -1317,12 +1525,6 @@
   <string name="studies_learn_more">Gāhuin chrūn doj</string>
   <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
   <string name="remote_improvements_learn_more">Gāhuin chrūn doj</string>
-  <!-- Text for the tabs header private tabs -->
-  <string name="tabs_header_private_tabs_title">Sa huìi</string>
-  <!-- Text for the tabs header normal tabs -->
-  <string name="tabs_header_normal_tabs_title">Nej rakïj ñanj</string>
-  <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
-  <string name="tab_manager_floating_action_button_new_normal_tab">Rakïj ñanj nākàa</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Nūtà\' a\'ngô rakïj ñanj</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1339,8 +1541,6 @@
   <string name="tab_manager_close_all_tabs_dialog_cancel">Dūyichin\'</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_share">Dūyingô\'</string>
-  <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Dūyinga’ nej rakïj ñanj naguit</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Riña ‘na’ nej rakïj ñanj naguit</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
@@ -1372,8 +1572,6 @@
   <string name="create_tab_group_save_button">Nā\'nïnj sà\'</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
   <string name="create_tab_group_name_label">Si yugui</string>
-  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
-  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Si yugui</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Dūyichin\'</string>
   <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
@@ -1517,8 +1715,6 @@
   <string name="edit_bookmark_snackbar_action">NĀGI\'IAJ RIÑAJ</string>
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Nāgi\'iaj riñaj</string>
-  <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Gūxūn nī nāchrūnt a\'ngô hiūj u</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Dūyingô\'</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -1561,8 +1757,6 @@
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Ngà nare\' %1$s</string>
-  <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">NĀNIKÀJ RŪKÙ</string>
   <!--
     Site Permissions
 
@@ -1776,24 +1970,6 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Nā’nïnj Firefox da’ gāhuin man riña aché nana’hui’ yītïnjt</string>
-  <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Ni’hiāj dàj ‘hiaj sun riña sa aché nu yītï̀njt</string>
-  <!--
-    Text shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Si ga’na’ nej kôki nī nej dukuán nej sa gini’hiājt riña %1$s</string>
-  <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Gachē nu nī gà’ si ‘ngō da’nga’a sī dunâjt</string>
-  <!--
-    Text A shown in the notification that pops up to re-engage the user.
-    %1$s is a placeholder that will be replaced by the app name.
-  -->
-  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Riña aché nun huìt riña %1$s nitāj si na’nḯn sà’aj nej nuguan’ huā rayi’ît.</string>
-  <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Gāyi’ì nānà’huì’t</string>
-  <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Narì’ ‘ngō sa huin nīchrù’un. Asi nārì’ ‘ngō sa gī’hiaj nāhuin nīhià’ ruhuât.</string>
   <!--
     Survey
 
@@ -1811,8 +1987,6 @@
     Text shown in snackbar when user closes a tab
   -->
   <string name="snackbar_tab_closed">Ganarán riña rakïj ñanj</string>
-  <!-- Text shown in snackbar when user closes all tabs -->
-  <string name="snackbar_tabs_closed">Ganarán riña nej rakïj ñanj</string>
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Rakïj ñanj huā ráan: %1$s</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
@@ -2561,27 +2735,27 @@
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">hiuj nan</string>
   <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Yi\'nïn\' C</string>
+  <string name="sports_widget_group_c">Yi\'nïn\' C</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Yi\'nïn\' D</string>
+  <string name="sports_widget_group_d">Yi\'nïn\' D</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Yi\'nïn\' E</string>
+  <string name="sports_widget_group_e">Yi\'nïn\' E</string>
   <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Yi\'nïn\' F</string>
+  <string name="sports_widget_group_f">Yi\'nïn\' F</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Yi\'nïn\' G</string>
+  <string name="sports_widget_group_g">Yi\'nïn\' G</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Yi\'nïn\' H</string>
+  <string name="sports_widget_group_h">Yi\'nïn\' H</string>
   <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Yi\'nïn\' I</string>
+  <string name="sports_widget_group_i">Yi\'nïn\' I</string>
   <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Yi\'nïn\' J</string>
+  <string name="sports_widget_group_j">Yi\'nïn\' J</string>
   <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Yi\'nïn\' K</string>
+  <string name="sports_widget_group_k">Yi\'nïn\' K</string>
   <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Yi\'nïn\' L</string>
+  <string name="sports_widget_group_l">Yi\'nïn\' L</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove" tools:ignore="UnusedResources">Nādure\'</string>
+  <string name="sports_widget_remove">Nādure\'</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">Huā nïn’ dugu’nïn’t ruhuâ raj</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -2593,7 +2767,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Diû nata\'a</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Nej penal</string>
+  <string name="sports_widget_penalties">Nej penal</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!-- The second active link used in privacy_notice_updated_homepage_message -->

@@ -72,7 +72,7 @@
   <!-- Section header for gesture settings -->
   <string name="mozac_summarize_settings_gestures">قول ئىشارىتى</string>
   <!-- Label for the shake to summarize toggle in settings -->
-  <string name="mozac_summarize_settings_shake_to_summarize">سىنكىنسە خۇلاسىلەيدۇ</string>
+  <string name="mozac_summarize_settings_shake_to_summarize">سىلكىسە خۇلاسىلەيدۇ</string>
   <!-- Description for the shake to summarize toggle in settings -->
   <string name="mozac_summarize_settings_shake_to_summarize_description">ئۈسكۈنىڭىزنى بىر تەرەپتىن يەنە بىر تەرەپكە سىلكىسىڭىز بەت مەزمۇنىنى خۇلاسەلەيدۇ.</string>
   <!-- Message for summary by model, %1$s is the name of the model that is being displayed -->

@@ -66,7 +66,7 @@
   <!-- Label for the summarize pages toggle in settings -->
   <string name="mozac_summarize_settings_summarize_pages">Oppsummer sider</string>
   <!-- Description for the summarize pages toggle -->
-  <string name="mozac_summarize_settings_summarize_pages_cloud">Lag sidesamandrag med AI. Sider og samandrag held fram med å vere private og blir aldri lagra.</string>
+  <string name="mozac_summarize_settings_summarize_pages_cloud">Lag sidesamandrag med KI. Sider og samandrag held fram med å vere private og blir aldri lagra.</string>
   <!-- Link text to learn more about page summaries in settings -->
   <string name="mozac_summarize_settings_learn_more">Les meir</string>
   <!-- Section header for gesture settings -->

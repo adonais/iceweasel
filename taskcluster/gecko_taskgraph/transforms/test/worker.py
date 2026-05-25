@@ -226,11 +226,6 @@ def set_worker_type(config, tasks):
                     task["worker-type"] = "win11-64-24h2-large"
             else:
                 task["worker-type"] = win_worker_type_platform[task["virtualization"]]
-        elif test_platform.startswith("android-hw-p5"):
-            if task["suite"] != "raptor":
-                task["worker-type"] = "t-bitbar-gw-unit-p5"
-            else:
-                task["worker-type"] = "t-bitbar-gw-perf-p5"
         elif test_platform.startswith("android-hw-p6"):
             if task["suite"] != "raptor":
                 task["worker-type"] = "t-bitbar-gw-unit-p6"

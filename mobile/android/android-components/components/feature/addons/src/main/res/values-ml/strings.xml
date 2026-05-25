@@ -334,8 +334,6 @@
   <string name="mozac_feature_addons_not_yet_supported_caption2">ശുപാർശ ചെയ്യപ്പെട്ട വിപുലീകരണങ്ങളുടെ പ്രാരംഭ തിരഞ്ഞെടുപ്പിനായി ഞങ്ങൾ നിലവിൽ പിന്തുണ സജ്ജീകരിക്കുകയാണ്.</string>
   <!-- This is the caption for the extension installation progress overlay -->
   <string name="mozac_extension_install_progress_caption">വിപുലീകരണം ഇറക്കിവയ്ക്കുകയും പരിശോധിക്കുകയും ചെയ്യുന്നു…</string>
-  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">വിപുലീകരണങ്ങൾ ക്ഷണിക്കാൻ കഴിഞ്ഞില്ല.</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">വിവർത്തനം കണ്ടെത്തിയില്ല,%1$s ഭാഷയ്‌ക്ക് സ്ഥിരസ്ഥിതി ഭാഷ %2$s അല്ല</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->
