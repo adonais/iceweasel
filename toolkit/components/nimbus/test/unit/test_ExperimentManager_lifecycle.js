@@ -522,3 +522,78 @@ add_task(async function testDb() {
 
   await cleanup();
 });
+
+add_task(async function testForceEnrollMultifeature() {
+  const { manager, cleanup } = await NimbusTestUtils.setupTest({
+    features: [
+      new ExperimentFeature("test-feature-1", { variables: {} }),
+      new ExperimentFeature("test-feature-2", { variables: {} }),
+    ],
+  });
+
+  await manager.enroll(
+    NimbusTestUtils.factories.recipe("recipe-1", {
+      branches: [
+        {
+          slug: "control",
+          ratio: 1,
+          features: [
+            {
+              featureId: "test-feature-1",
+              value: {},
+            },
+            {
+              featureId: "test-feature-2",
+              value: {},
+            },
+          ],
+        },
+      ],
+    }),
+    "test"
+  );
+
+  Assert.ok(
+    manager.store.get("recipe-1")?.active,
+    "Enrollment in recipe-1 is active"
+  );
+
+  const recipe = NimbusTestUtils.factories.recipe("recipe-2", {
+    branches: [
+      {
+        slug: "control",
+        ratio: 1,
+        features: [
+          {
+            featureId: "test-feature-1",
+            value: {},
+          },
+          {
+            featureId: "test-feature-2",
+            value: {},
+          },
+        ],
+      },
+    ],
+  });
+
+  const result = manager.canEnroll(recipe);
+  Assert.ok(!result.ok);
+  Assert.equal(result.reason, "enrolled-in-feature");
+  Assert.deepEqual(Array.from(result.conflictingEnrollments), ["recipe-1"]);
+
+  await manager.forceEnroll(recipe, "control");
+
+  Assert.ok(
+    !manager.store.get("recipe-1").active,
+    "Enrollment in recipe-1 is inactive"
+  );
+  Assert.ok(
+    manager.store.get("optin-recipe-2")?.active,
+    "Enrollment in recipe-2 is active"
+  );
+
+  manager.unenroll("optin-recipe-2", "test");
+
+  await cleanup();
+});

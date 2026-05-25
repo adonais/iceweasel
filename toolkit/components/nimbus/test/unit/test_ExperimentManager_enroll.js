@@ -61,7 +61,7 @@ add_task(async function test_add_to_store() {
 });
 
 add_task(async function test_add_rollout_to_store() {
-  const { manager, cleanup } = await NimbusTestUtils.setupTest();
+  const { manager, cleanup } = await setupTest();
 
   const recipe = {
     ...NimbusTestUtils.factories.recipe("rollout-slug"),
@@ -1284,5 +1284,148 @@ add_task(async function testCoenrolling() {
   manager.unenroll("experiment-1");
   manager.unenroll("experiment-2");
 
+  await cleanup();
+});
+
+add_task(async function testEnrollMultifeatureConflict() {
+  const { manager, cleanup } = await setupTest({
+    features: [
+      new ExperimentFeature("test-feature-1", { variables: {} }),
+      new ExperimentFeature("test-feature-2", { variables: {} }),
+      new ExperimentFeature("test-feature-3", { variables: {} }),
+      new ExperimentFeature("test-feature-4", { variables: {} }),
+    ],
+  });
+
+  await manager.enroll(
+    NimbusTestUtils.factories.recipe("recipe-12", {
+      branches: [
+        {
+          slug: "control",
+          ratio: 1,
+          features: [
+            {
+              featureId: "test-feature-1",
+              value: {},
+            },
+            {
+              featureId: "test-feature-2",
+              value: {},
+            },
+          ],
+        },
+      ],
+    }),
+    "test"
+  );
+  Assert.ok(
+    manager.store.get("recipe-12")?.active,
+    "Enrollment in recipe-12 is active"
+  );
+
+  await manager.enroll(
+    NimbusTestUtils.factories.recipe("recipe-34", {
+      branches: [
+        {
+          slug: "control",
+          ratio: 1,
+          features: [
+            {
+              featureId: "test-feature-3",
+              value: {},
+            },
+            {
+              featureId: "test-feature-4",
+              value: {},
+            },
+          ],
+        },
+      ],
+    }),
+    "test"
+  );
+  Assert.ok(
+    manager.store.get("recipe-34")?.active,
+    "Enrollment in recipe-34 is active"
+  );
+
+  Assert.equal(
+    await manager.enroll(
+      NimbusTestUtils.factories.recipe("recipe-1234", {
+        branches: [
+          {
+            slug: "control",
+            ratio: 1,
+            features: [
+              {
+                featureId: "test-feature-1",
+                value: {},
+              },
+              {
+                featureId: "test-feature-2",
+                value: {},
+              },
+              {
+                featureId: "test-feature-3",
+                value: {},
+              },
+              {
+                featureId: "test-feature-4",
+                value: {},
+              },
+            ],
+          },
+        ],
+      }),
+      "test"
+    ),
+    null,
+    "Should not enroll in recipe-1234"
+  );
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.enrollFailed.testGetValue("events")?.map(ev => ev.extra),
+    [
+      {
+        experiment: "recipe-1234",
+        reason: "feature-conflict",
+      },
+    ]
+  );
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.enrollmentStatus
+      .testGetValue("nimbus-targeting-context")
+      ?.map(ev =>
+        Object.assign(
+          { ...ev.extra },
+          ev.extra.conflict_slug
+            ? { conflict_slug: ev.extra.conflict_slug.split(",").sort() }
+            : {}
+        )
+      ),
+    [
+      {
+        slug: "recipe-12",
+        branch: "control",
+        status: "Enrolled",
+        reason: "Qualified",
+      },
+      {
+        slug: "recipe-34",
+        branch: "control",
+        status: "Enrolled",
+        reason: "Qualified",
+      },
+      {
+        slug: "recipe-1234",
+        status: "NotEnrolled",
+        reason: "FeatureConflict",
+        conflict_slug: ["recipe-12", "recipe-34"],
+      },
+    ]
+  );
+
+  await NimbusTestUtils.cleanupManager(["recipe-12", "recipe-34"]);
   await cleanup();
 });

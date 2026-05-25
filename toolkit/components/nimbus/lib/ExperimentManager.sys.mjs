@@ -64,9 +64,9 @@ const CannotEnrollFeatureReason = Object.freeze({
 /**
  * @typedef {object} _CannotEnrollResult
  * @property {false} ok Whether or not enrollment is possible.
- * @property {string| undefined} featureId If reason = DOES_NOT_EXIST, the
+ * @property {string|undefined} featureId If reason = DOES_NOT_EXIST, the
  * feature that does not exist.
- * @property {string[]| undefined} conflictingEnrollments
+ * @property {Set<string>|undefined} conflictingEnrollments
  * If reason = ENROLLED_IN_FEATURE, an array of slugs that conflict based on
  * feature ID.
  * @property {CannotEnrollFeatureReason} reason Why enrollment is not possible.
@@ -602,7 +602,7 @@ export class ExperimentManager {
       };
     }
 
-    const conflictingEnrollments = [];
+    const conflictingEnrollments = new Set();
 
     for (const featureId of recipe.featureIds) {
       const feature = lazy.NimbusFeatures[featureId];
@@ -621,11 +621,11 @@ export class ExperimentManager {
 
       const enrollment = storeLookupByFeature(featureId);
       if (enrollment) {
-        conflictingEnrollments.push(enrollment.slug);
+        conflictingEnrollments.add(enrollment.slug);
       }
     }
 
-    if (conflictingEnrollments.length) {
+    if (conflictingEnrollments.size) {
       return {
         ok: false,
         reason: CannotEnrollFeatureReason.ENROLLED_IN_FEATURE,
@@ -740,7 +740,7 @@ export class ExperimentManager {
             status: lazy.NimbusTelemetry.EnrollmentStatus.NOT_ENROLLED,
             reason:
               lazy.NimbusTelemetry.EnrollmentStatusReason.FEATURE_CONFLICT,
-            conflict_slug: result.conflictingEnrollments.join(","),
+            conflict_slug: Array.from(result.conflictingEnrollments).join(","),
           });
           return null;
       }
