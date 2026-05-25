@@ -1429,3 +1429,18 @@ add_task(async function testEnrollMultifeatureConflict() {
   await NimbusTestUtils.cleanupManager(["recipe-12", "recipe-34"]);
   await cleanup();
 });
+
+add_task(async function testForceEnrollBranchObject() {
+  const { manager, cleanup } = await setupTest();
+
+  const recipe = NimbusTestUtils.factories.recipe.withFeatureConfig("recipe", {
+    featureId: "no-feature-firefox-desktop",
+  });
+
+  await manager.forceEnroll(recipe, recipe.branches[0]);
+
+  Assert.ok(manager.store.get("optin-recipe")?.active, "Enrollment is active");
+
+  manager.unenroll("optin-recipe", "test");
+  await cleanup();
+});

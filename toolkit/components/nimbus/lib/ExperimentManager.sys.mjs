@@ -829,16 +829,26 @@ export class ExperimentManager {
    * distinguish it from regular enrollments in telemetry.
    *
    * @param {object} recipe The recipe to enroll in.
-   * @param {string} branchSlug The slug of the branch to enroll in.
+   * @param {object|string} branchOrBranchSlug Either the slug of the branch to
+   * enroll in or the branch object.
    *
    * @returns {object} The resulting enrollment.
    */
-  async forceEnroll(recipe, branchSlug) {
-    const branch = recipe.branches.find(b => b.slug === branchSlug);
-    if (!branch) {
-      throw new Error(
-        `Could not force enroll into ${recipe.slug}: no such branch ${branchSlug}`
+  async forceEnroll(recipe, branchOrBranchSlug) {
+    let branch;
+    if (typeof branchOrBranchSlug === "string") {
+      branch = recipe.branches.find(b => b.slug === branchOrBranchSlug);
+
+      if (!branch) {
+        throw new Error(
+          `Could not force enroll into ${recipe.slug}: no such branch ${branchOrBranchSlug}`
+        );
+      }
+    } else {
+      lazy.log.warn(
+        "forceEnroll with an object branch is deprecated and will be removed in a future version"
       );
+      branch = branchOrBranchSlug;
     }
 
     const result = this.canEnroll(recipe);
@@ -876,7 +886,7 @@ export class ExperimentManager {
 
     const enrollment = await this._enroll(
       optInRecipe,
-      branchSlug,
+      branch.slug,
       lazy.NimbusTelemetry.EnrollmentSource.FORCE_ENROLLMENT
     );
 
