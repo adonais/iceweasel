@@ -1306,6 +1306,7 @@ class UrlbarInputTestUtils {
     }
 
     if (backspace) {
+      urlbar.focus();
       let urlbarValue = urlbar.value;
       urlbar.selectionStart = urlbar.selectionEnd = 0;
       if (waitForSearch) {
