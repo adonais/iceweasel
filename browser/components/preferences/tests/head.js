@@ -469,6 +469,27 @@ async function waitForPaneChange(
 }
 
 /**
+ * Navigate an already-open preferences window to the named pane via
+ * `location.hash`. No-op if the pane is already the current pane (e.g.
+ * legacy chrome already on paneGeneral).
+ *
+ * @param {string} paneName - Unprefixed pane name (e.g. "tabsBrowsing")
+ * @param {Window} [win] - Window to navigate (defaults to selected tab)
+ */
+async function maybeNavigateToPane(
+  paneName,
+  win = gBrowser.selectedBrowser.contentWindow
+) {
+  const expectId = `pane${paneName[0].toUpperCase()}${paneName.substring(1)}`;
+  if (win.history.state === expectId) {
+    return;
+  }
+  const paneShown = waitForPaneChange(paneName, win);
+  win.location.hash = `#${paneName}`;
+  await paneShown;
+}
+
+/**
  * Get a reference to the setting-control for a specific setting ID.
  *
  * @param {string} settingId The setting ID

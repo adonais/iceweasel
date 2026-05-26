@@ -1,7 +1,8 @@
 [DEFAULT]
 dupe-manifest=true
 prefs = [
-  "browser.settings-redesign.enabled=false",
+  "browser.settings-redesign.enabled=true",
+  "extensions.getAddons.langpacks.url=https://mochi.test:8000/langpacks",
 ]
 support-files = [
   "head.js",

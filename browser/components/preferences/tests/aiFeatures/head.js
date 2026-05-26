@@ -33,3 +33,19 @@ async function openAiFeaturePanel(doc, win) {
   EventUtils.synthesizeMouseAtCenter(categoryButton, {}, win);
   await paneLoaded;
 }
+
+/**
+ * Pane name to open a fresh preferences tab on so that a given legacy
+ * setting is reachable. Some settings that live on the General pane
+ * under legacy chrome move to other panes under the Settings Redesign;
+ * use this helper to open prefs directly on the right pane.
+ *
+ * @param {string} legacyPane - Pane name on legacy chrome (e.g. "general")
+ * @param {string} srdPane - Pane name under SRD (e.g. "tabsBrowsing")
+ * @returns {string} The pane name appropriate for the current pref state
+ */
+function srdAwarePane(legacyPane, srdPane) {
+  return Services.prefs.getBoolPref("browser.settings-redesign.enabled")
+    ? srdPane
+    : legacyPane;
+}
