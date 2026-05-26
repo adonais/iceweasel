@@ -69,13 +69,32 @@ object MatchCardBuilder {
         groupMatches: List<SportsMatch>,
         liveIds: Set<Long>,
     ): MatchCard {
-        val liveUi = groupMatches.filter { it.globalEventId in liveIds }.map { it.toMatch() }
-        val relatedUi = groupMatches.filter { it.globalEventId !in liveIds }.map { it.toMatch() }
+        // Featured (enlarged) matches go in `matches`; the rest go in `relatedMatches`.
+        // Priority: live > next upcoming > most recent past — so the user always sees
+        // the most-actionable game given the selected team's schedule.
+        val featured = pickFeaturedGroupMatches(groupMatches, liveIds)
+        val featuredIds = featured.map { it.globalEventId }.toSet()
+        val featuredUi = featured.map { it.toMatch() }
+        val relatedUi = groupMatches
+            .filter { it.globalEventId !in featuredIds }
+            .map { it.toMatch() }
         return MatchCard(
-            matches = liveUi,
+            matches = featuredUi,
             round = TournamentRound.GROUP_STAGE,
             relatedMatches = relatedUi,
         )
+    }
+
+    private fun pickFeaturedGroupMatches(
+        groupMatches: List<SportsMatch>,
+        liveIds: Set<Long>,
+    ): List<SportsMatch> {
+        val live = groupMatches.filter { it.globalEventId in liveIds }
+        if (live.isNotEmpty()) return live
+        // groupMatches is sorted oldest-first; firstOrNull on Scheduled returns the next upcoming,
+        // lastOrNull on past returns the most recently played.
+        groupMatches.firstOrNull { it.matchStatus is MatchStatus.Scheduled }?.let { return listOf(it) }
+        return groupMatches.lastOrNull { it.matchStatus.isPast() }?.let { listOf(it) } ?: emptyList()
     }
 
     private fun buildSingleMatchCard(match: SportsMatch): MatchCard {

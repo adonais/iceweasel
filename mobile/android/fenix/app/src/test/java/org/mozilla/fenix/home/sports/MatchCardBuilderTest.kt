@@ -112,10 +112,80 @@ class MatchCardBuilderTest {
 
         assertEquals(2, cards.size)
         assertEquals(TournamentRound.GROUP_STAGE, cards[0].round)
-        assertTrue(cards[0].matches.isEmpty())
-        assertEquals(listOf(1L, 2L), cards[0].relatedMatches.map { it.globalEventId })
+        // Group card features the most recent past since there's no live or upcoming group match.
+        assertEquals(listOf(2L), cards[0].matches.map { it.globalEventId })
+        assertEquals(listOf(1L), cards[0].relatedMatches.map { it.globalEventId })
         assertEquals(TournamentRound.ROUND_OF_16, cards[1].round)
         assertEquals(listOf(3L), cards[1].matches.map { it.globalEventId })
+    }
+
+    @Test
+    fun `buildForTeam GIVEN group stage with no live but upcoming matches THEN next upcoming is featured`() {
+        val past = sportsMatch(
+            id = 1L,
+            stage = TournamentRound.GROUP_STAGE,
+            status = MatchStatus.Final,
+            homeScore = 1,
+            awayScore = 0,
+            date = zonedDateTime(2026, 6, 12, 18),
+        )
+        val nextUpcoming = sportsMatch(
+            id = 2L,
+            stage = TournamentRound.GROUP_STAGE,
+            status = MatchStatus.Scheduled,
+            date = zonedDateTime(2026, 6, 17, 18),
+        )
+        val laterUpcoming = sportsMatch(
+            id = 3L,
+            stage = TournamentRound.GROUP_STAGE,
+            status = MatchStatus.Scheduled,
+            date = zonedDateTime(2026, 6, 22, 18),
+        )
+
+        val cards = MatchCardBuilder.buildForTeam(
+            TeamMatchesResult(
+                previous = listOf(past),
+                current = emptyList(),
+                next = listOf(nextUpcoming, laterUpcoming),
+            ),
+        )
+
+        assertEquals(1, cards.size)
+        assertEquals(TournamentRound.GROUP_STAGE, cards[0].round)
+        assertEquals(listOf(2L), cards[0].matches.map { it.globalEventId })
+        assertEquals(listOf(1L, 3L), cards[0].relatedMatches.map { it.globalEventId })
+    }
+
+    @Test
+    fun `buildForTeam GIVEN group stage with only past matches THEN most recent past is featured`() {
+        val earlier = sportsMatch(
+            id = 1L,
+            stage = TournamentRound.GROUP_STAGE,
+            status = MatchStatus.Final,
+            homeScore = 1,
+            awayScore = 0,
+            date = zonedDateTime(2026, 6, 12, 18),
+        )
+        val recent = sportsMatch(
+            id = 2L,
+            stage = TournamentRound.GROUP_STAGE,
+            status = MatchStatus.Final,
+            homeScore = 2,
+            awayScore = 1,
+            date = zonedDateTime(2026, 6, 22, 18),
+        )
+
+        val cards = MatchCardBuilder.buildForTeam(
+            TeamMatchesResult(
+                previous = listOf(earlier, recent),
+                current = emptyList(),
+                next = emptyList(),
+            ),
+        )
+
+        assertEquals(1, cards.size)
+        assertEquals(listOf(2L), cards[0].matches.map { it.globalEventId })
+        assertEquals(listOf(1L), cards[0].relatedMatches.map { it.globalEventId })
     }
 
     @Test
