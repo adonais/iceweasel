@@ -68,7 +68,7 @@ import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
 import org.mozilla.fenix.tabstray.ui.tabitems.tabGridItemContainerColor
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemClickable
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemConditionalBorder
-import org.mozilla.fenix.tabstray.ui.tabitems.tabItemInteractionAnimation
+import org.mozilla.fenix.tabstray.ui.tabitems.tabItemGridInteractionAnimation
 import org.mozilla.fenix.theme.FirefoxTheme
 
 const val TOP_START_THUMBNAIL_INDEX = 0
@@ -103,7 +103,7 @@ fun TabGroupCard(
     Box(
         modifier = modifier
             .wrapContentSize()
-            .tabItemInteractionAnimation(interactionState)
+            .tabItemGridInteractionAnimation(interactionState)
             .testTag(TabsTrayTestTag.TAB_ITEM_ROOT),
     ) {
         Card(
@@ -581,7 +581,8 @@ private value class Height(val height: Dp)
 
 @JvmInline
 private value class ThumbnailDimensions(private val dimensions: Pair<Width, Height>) {
-    constructor(width: Width, height: Height) : this (width to height)
+    constructor(width: Width, height: Height) : this(width to height)
+
     val width: Dp
         get() = this.dimensions.first.width
 

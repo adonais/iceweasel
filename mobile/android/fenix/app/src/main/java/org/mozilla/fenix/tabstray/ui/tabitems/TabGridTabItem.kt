@@ -140,7 +140,7 @@ private fun TabContent(
     Box(
         modifier = modifier
             .wrapContentSize()
-            .tabItemInteractionAnimation(interactionState)
+            .tabItemGridInteractionAnimation(interactionState)
             .testTag(TabsTrayTestTag.TAB_ITEM_ROOT),
     ) {
         Card(

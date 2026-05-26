@@ -1,19 +1,12 @@
 package org.mozilla.fenix.tabstray.ui.tabitems
 
-import androidx.compose.animation.core.DecayAnimationSpec
-import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.data.createTab
@@ -23,7 +16,7 @@ import org.mozilla.fenix.tabstray.data.createTab
  * [org.mozilla.fenix.compose.ThumbnailImage] in Robolectric
  */
 @RunWith(AndroidJUnit4::class)
-class TabGridTabItemTest {
+class TabListTabItemTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -69,23 +62,13 @@ class TabGridTabItemTest {
 
     @Composable
     private fun ComposableUnderTest(interactionState: TabItemInteractionState = TabItemInteractionState()) {
-        val density = LocalDensity.current
-        val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-        val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
-
-        val swipeState = remember {
-            SwipeToDismissState2(
-                density = density,
-                decayAnimationSpec = decayAnimationSpec,
-                isRtl = isRtl,
-            )
-        }
-        TabGridTabItem(
+        TabListTabItem(
             tab = createTab(url = "mozilla.org"),
-            swipeState = swipeState,
             onCloseClick = { _ -> },
             onClick = { _ -> },
+            onLongClick = { _ -> },
             interactionState = interactionState,
+            swipingEnabled = false,
         )
     }
 }

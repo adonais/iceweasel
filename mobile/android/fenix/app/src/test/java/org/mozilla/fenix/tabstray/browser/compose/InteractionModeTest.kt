@@ -11,25 +11,40 @@ import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionState
 
 class InteractionModeTest {
     @Test
-    fun `GIVEN None mode THEN source and target are both InteractionState None`() {
-        assertEquals(InteractionMode.None.target, InteractionState.None)
-        assertEquals(InteractionMode.None.source, InteractionState.None)
+    fun `GIVEN Grid None mode THEN source and target are both InteractionState Grid None`() {
+        assertEquals(InteractionMode.Grid.None.target, InteractionState.Grid.None)
+        assertEquals(InteractionMode.Grid.None.source, InteractionState.Grid.None)
     }
 
     @Test
-    fun `GIVEN Reorder mode THEN placeAfter defaults to true`() {
-        val mode = InteractionMode.Reordering(
-            source = fakeActiveState(),
-            target = fakeActiveState(),
+    fun `GIVEN List None mode THEN source and target are both InteractionState List None`() {
+        assertEquals(InteractionMode.List.None.target, InteractionState.List.None)
+        assertEquals(InteractionMode.List.None.source, InteractionState.List.None)
+    }
+
+    @Test
+    fun `GIVEN grid Reorder mode THEN placeAfter defaults to true`() {
+        val mode = InteractionMode.Grid.Reordering(
+            source = fakeGridActiveState(),
+            target = fakeGridActiveState(),
         )
         assertEquals(mode.placeAfter, true)
     }
 
     @Test
-    fun `GIVEN Reorder mode WHEN source is accessed THEN constructor argument is preserved`() {
-        val source = fakeActiveState(key = "key1")
-        val target = fakeActiveState(key = "key2")
-        val mode = InteractionMode.Reordering(
+    fun `GIVEN list Reorder mode THEN placeAfter defaults to true`() {
+        val mode = InteractionMode.List.Reordering(
+            source = fakeListActiveState(),
+            target = fakeListActiveState(),
+        )
+        assertEquals(mode.placeAfter, true)
+    }
+
+    @Test
+    fun `GIVEN Grid Reorder mode WHEN source is accessed THEN constructor argument is preserved`() {
+        val source = fakeGridActiveState(key = "key1")
+        val target = fakeGridActiveState(key = "key2")
+        val mode = InteractionMode.Grid.Reordering(
             source = source,
             target = target,
         )
@@ -37,10 +52,21 @@ class InteractionModeTest {
     }
 
     @Test
-    fun `GIVEN Reorder mode WHEN target is accessed THEN constructor argument is preserved`() {
-        val source = fakeActiveState(key = "key1")
-        val target = fakeActiveState(key = "key2")
-        val mode = InteractionMode.Reordering(
+    fun `GIVEN List Reorder mode WHEN source is accessed THEN constructor argument is preserved`() {
+        val source = fakeListActiveState(key = "key1")
+        val target = fakeListActiveState(key = "key2")
+        val mode = InteractionMode.List.Reordering(
+            source = source,
+            target = target,
+        )
+        assertEquals(source, mode.source)
+    }
+
+    @Test
+    fun `GIVEN Grid Reorder mode WHEN target is accessed THEN constructor argument is preserved`() {
+        val source = fakeGridActiveState(key = "key1")
+        val target = fakeGridActiveState(key = "key2")
+        val mode = InteractionMode.Grid.Reordering(
             source = source,
             target = target,
         )
@@ -48,8 +74,25 @@ class InteractionModeTest {
     }
 
     @Test
-    fun `Given Scroll mode THEN source and target are None`() {
-        assertEquals(InteractionState.None, InteractionMode.Scroll(0f).source)
-        assertEquals(InteractionState.None, InteractionMode.Scroll(0f).target)
+    fun `GIVEN List Reorder mode WHEN target is accessed THEN constructor argument is preserved`() {
+        val source = fakeListActiveState(key = "key1")
+        val target = fakeListActiveState(key = "key2")
+        val mode = InteractionMode.List.Reordering(
+            source = source,
+            target = target,
+        )
+        assertEquals(target, mode.target)
+    }
+
+    @Test
+    fun `Given Grid Scroll mode THEN source and target are None`() {
+        assertEquals(InteractionState.Grid.None, InteractionMode.Grid.Scroll(0f).source)
+        assertEquals(InteractionState.Grid.None, InteractionMode.Grid.Scroll(0f).target)
+    }
+
+    @Test
+    fun `Given List Scroll mode THEN source and target are None`() {
+        assertEquals(InteractionState.List.None, InteractionMode.List.Scroll(0f).source)
+        assertEquals(InteractionState.List.None, InteractionMode.List.Scroll(0f).target)
     }
 }

@@ -212,7 +212,7 @@ class ListReorderState internal constructor(
  * @param content Content of the item to be displayed.
  */
 @Composable
-fun LazyItemScope.DragItemContainer(
+fun LazyItemScope.ReorderableDragItemContainer(
     state: ListReorderState,
     key: Any,
     position: Int,

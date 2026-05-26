@@ -4,14 +4,11 @@
 
 package org.mozilla.fenix.tabstray.browser.compose
 
-import androidx.compose.foundation.lazy.grid.LazyGridItemInfo
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.lazy.LazyListItemInfo
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.hapticfeedback.HapticFeedback
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.toOffset
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -21,11 +18,11 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.mozilla.fenix.tabstray.browser.compose.interactable.GridInteractionState
-import org.mozilla.fenix.tabstray.browser.compose.interactable.GridItemOffset
 import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionMode
 import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionState
 import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionType
+import org.mozilla.fenix.tabstray.browser.compose.interactable.ListInteractionState
+import org.mozilla.fenix.tabstray.browser.compose.interactable.ListItemOffset
 import org.mozilla.fenix.tabstray.browser.compose.interactable.closestDistanceTo
 import org.mozilla.fenix.tabstray.browser.compose.interactable.closestPointTo
 import org.mozilla.fenix.tabstray.browser.compose.interactable.gatherCandidates
@@ -34,115 +31,65 @@ import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class InteractableGridTest {
+class InteractableListTest {
     private val testDispatcher = StandardTestDispatcher()
     private val scope = TestScope(testDispatcher)
 
     @Test
-    fun `GIVEN a point is inside the Rect THEN closestDistanceTo returns 0`() {
+    fun `GIVEN a y value is inside the Rect THEN closestDistanceTo returns 0`() {
         val rect = Rect(
             left = 0f,
             top = 0f,
             right = 100f,
             bottom = 100f,
         )
-        assertEquals(0f, rect.closestDistanceTo(Offset(50f, 50f)))
+        assertEquals(0f, rect.closestDistanceTo(50f))
     }
 
     @Test
-    fun `GIVEN a point is to the right of a rect THEN closestDistanceTo returns squared distance from right edge`() {
+    fun `GIVEN a y value is to the top of a rect THEN closestDistanceTo returns squared distance from top edge`() {
         val rect = Rect(
             left = 0f,
             top = 0f,
             right = 100f,
             bottom = 100f,
         )
-        // (110 - 100) ^2 = 100
-        assertEquals(100f, rect.closestDistanceTo(Offset(110f, 50f)))
+        assertEquals(100f, rect.closestDistanceTo(-10f))
     }
 
     @Test
-    fun `GIVEN a point is to the left of a rect THEN closestDistanceTo returns squared distance from left edge`() {
+    fun `GIVEN a y value is to the bottom of a rect THEN closestDistanceTo returns squared distance from bottom edge`() {
         val rect = Rect(
             left = 0f,
             top = 0f,
             right = 100f,
             bottom = 100f,
         )
-        // (110 - 100) ^2 = 100
-        assertEquals(100f, rect.closestDistanceTo(Offset(-10f, 50f)))
+        assertEquals(100f, rect.closestDistanceTo(110f))
     }
 
     @Test
-    fun `GIVEN a point is to the top of a rect THEN closestDistanceTo returns squared distance from top edge`() {
+    fun `Given a y value is inside a Rect THEN closestPointTo returns the same value`() {
         val rect = Rect(
             left = 0f,
             top = 0f,
             right = 100f,
             bottom = 100f,
         )
-        // (110 - 100) ^2 = 100
-        assertEquals(100f, rect.closestDistanceTo(Offset(50f, -10f)))
+        val y = 50f
+        assertEquals(y, rect.closestPointTo(y))
     }
 
     @Test
-    fun `GIVEN a point is to the bottom of a rect THEN closestDistanceTo returns squared distance from bottom edge`() {
+    fun `Given a y value is to the top of a rect THEN closestPointTo returns the top edge`() {
         val rect = Rect(
             left = 0f,
             top = 0f,
             right = 100f,
             bottom = 100f,
         )
-        // (110 - 100) ^2 = 100
-        assertEquals(100f, rect.closestDistanceTo(Offset(50f, 110f)))
-    }
-
-    @Test
-    fun `Given a point is inside a Rect THEN closestPointTo returns the same point`() {
-        val rect = Rect(
-            left = 0f,
-            top = 0f,
-            right = 100f,
-            bottom = 100f,
-        )
-        val point = Offset(50f, 50f)
-        assertEquals(point, rect.closestPointTo(point))
-    }
-
-    @Test
-    fun `Given a point is to the right of a rect THEN closestPointTo returns the right edge`() {
-        val rect = Rect(
-            left = 0f,
-            top = 0f,
-            right = 100f,
-            bottom = 100f,
-        )
-        val point = rect.closestPointTo(Offset(110f, 50f))
-        assertEquals(point.x, rect.right)
-    }
-
-    @Test
-    fun `Given a point is to the top of a rect THEN closestPointTo returns the top edge`() {
-        val rect = Rect(
-            left = 0f,
-            top = 0f,
-            right = 100f,
-            bottom = 100f,
-        )
-        val point = rect.closestPointTo(Offset(50f, -10f))
-        assertEquals(point.y, rect.top)
-    }
-
-    @Test
-    fun `Given a point is to the left of a rect THEN closestPointTo returns the left edge`() {
-        val rect = Rect(
-            left = 0f,
-            top = 0f,
-            right = 100f,
-            bottom = 100f,
-        )
-        val point = rect.closestPointTo(Offset(-10f, 50f))
-        assertEquals(point.x, rect.left)
+        val y = rect.closestPointTo(-10f)
+        assertEquals(y, rect.top)
     }
 
     @Test
@@ -153,50 +100,50 @@ class InteractableGridTest {
             right = 100f,
             bottom = 100f,
         )
-        val point = rect.closestPointTo(Offset(50f, 110f))
-        assertEquals(point.y, rect.bottom)
+        val y = rect.closestPointTo(110f)
+        assertEquals(y, rect.bottom)
     }
 
     @Test
-    fun `GIVEN a visible GridItem WHEN gatherCandidates is called THEN Overlap, Left and Right gutter candidates are created`() {
-        val gridState = mockGridState(listOf(mockGridItem("key"), mockGridItem("key2")))
+    fun `GIVEN a visible ListItem WHEN gatherCandidates is called THEN Overlap, Top and Bottom gutter candidates are created`() {
+        val listState = mockListState(listOf(mockListItem("key"), mockListItem("key2")))
 
         val candidates = gatherCandidates(
-            gridState = gridState,
-            draggedItemOffset = fakeDraggedGridItemOffset(),
-            draggedItem = InteractionState.Grid.Active(
+            listState = listState,
+            draggedItemOffset = fakeDraggedListItemOffset(),
+            draggedItem = InteractionState.List.Active(
                 index = 0,
                 key = "key",
-                initialOffset = Offset.Zero,
+                initialOffset = 0f,
             ),
             ignoredItems = emptyList(),
         )
         assertTrue(
             candidates.any { it.type is InteractionType.Overlap } &&
-                candidates.any { it.type is InteractionType.LeftGutter } &&
-                candidates.any { it.type is InteractionType.RightGutter } &&
+                candidates.any { it.type is InteractionType.TopGutter } &&
+                candidates.any { it.type is InteractionType.BottomGutter } &&
                 candidates.size == 3,
         )
     }
 
     @Test
     fun `GIVEN the first visible item is not the first in the list AND dragged item is at top of viewport WHEN gatherCandidates is called THEN top Scroll candidate is created`() {
-        val gridState = mockGridState(
+        val listState = mockListState(
             listOf(
-                mockGridItem("key"),
-                mockGridItem("key2"),
-                mockGridItem("key3"),
+                mockListItem("key"),
+                mockListItem("key2"),
+                mockListItem("key3"),
             ),
             firstVisibleIndex = 1,
         )
 
         val candidates = gatherCandidates(
-            gridState = gridState,
-            draggedItemOffset = fakeDraggedGridItemOffset(),
-            draggedItem = InteractionState.Grid.Active(
+            listState = listState,
+            draggedItemOffset = fakeDraggedListItemOffset(),
+            draggedItem = InteractionState.List.Active(
                 index = 0,
                 key = "key",
-                initialOffset = Offset.Zero,
+                initialOffset = 0f,
             ),
             ignoredItems = emptyList(),
         )
@@ -207,27 +154,27 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN the last visible item is not the last in the list AND dragged item is at bottom of viewport WHEN gatherCandidates is called THEN bottom Scroll candidate is created`() {
-        val gridState = mockGridState(
+        val listState = mockListState(
             listOf(
-                mockGridItem("key"),
-                mockGridItem("key2"),
-                mockGridItem("key3"),
+                mockListItem("key"),
+                mockListItem("key2"),
+                mockListItem("key3"),
             ),
             firstVisibleIndex = 0,
             totalItems = 10,
         )
 
-        val draggedItem = InteractionState.Grid.Active(
+        val draggedItem = InteractionState.List.Active(
             index = 0,
             key = "key",
-            initialOffset = Offset(10f, 10f),
+            initialOffset = 10f,
         )
         val candidates = gatherCandidates(
-            gridState = gridState,
-            draggedItemOffset = GridItemOffset(
+            listState = listState,
+            draggedItemOffset = ListItemOffset(
                 draggedItem = draggedItem,
-                draggingItemOffset = Offset(10f, 10f),
-                itemSize = IntSize(10, 10),
+                draggingItemOffset = 10f,
+                itemSize = 10,
             ),
             draggedItem = draggedItem,
             ignoredItems = emptyList(),
@@ -238,16 +185,16 @@ class InteractableGridTest {
     }
 
     @Test
-    fun `GIVEN an ignored GridItem THEN no candidates are generated`() {
-        val gridState = mockGridState(mockItems = listOf(mockGridItem("ignored")))
+    fun `GIVEN an ignored ListItem THEN no candidates are generated`() {
+        val listState = mockListState(mockItems = listOf(mockListItem("ignored")))
 
         val candidates = gatherCandidates(
-            gridState = gridState,
-            draggedItemOffset = fakeDraggedGridItemOffset(),
-            draggedItem = InteractionState.Grid.Active(
+            listState = listState,
+            draggedItemOffset = fakeDraggedListItemOffset(),
+            draggedItem = InteractionState.List.Active(
                 index = 0,
                 key = "key",
-                initialOffset = Offset.Zero,
+                initialOffset = 0f,
             ),
             ignoredItems = listOf("ignored"),
         )
@@ -257,18 +204,18 @@ class InteractableGridTest {
     }
 
     @Test
-    fun `GIVEN an empty GridItem list THEN no candidates are generated`() {
-        val gridState = mockGridState(mockItems = emptyList())
+    fun `GIVEN an empty list THEN no candidates are generated`() {
+        val listState = mockListState(mockItems = emptyList())
 
         val candidates = gatherCandidates(
-            gridState = gridState,
-            draggedItemOffset = fakeDraggedGridItemOffset(),
-            draggedItem = InteractionState.Grid.Active(
+            listState = listState,
+            draggedItemOffset = fakeDraggedListItemOffset(),
+            draggedItem = InteractionState.List.Active(
                 index = 0,
                 key = "key",
-                initialOffset = Offset.Zero,
+                initialOffset = .0f,
             ),
-            ignoredItems = listOf("ignored"),
+            ignoredItems = emptyList(),
         )
         assertTrue(
             candidates.isEmpty(),
@@ -278,21 +225,21 @@ class InteractableGridTest {
     @Test
     fun `GIVEN an item is dragged onto another WHEN onDragEnd is called THEN onDrop is called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = IntOffset(0, 0)
-        val targetItemOffset = IntOffset(20, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
+        val dragItemOffset = 0
+        val targetItemOffset = 20
+        val reorderState = fakeListInteractionState(
+            mockListState(
                 mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key1"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns dragItemOffset
                     },
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key2"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns targetItemOffset
                     },
                 ),
@@ -300,31 +247,65 @@ class InteractableGridTest {
             handler = handler,
         )
 
-        reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
-        reorderState.onDrag(offset = Offset(20f, 0f), preserveSelectMode = false) // 20 to the right
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.onDrag(offset = 20f, preserveSelectMode = false) // 20 down
         reorderState.onDragEnd()
 
         verify { handler.onDrop("key1", "key2") }
     }
 
     @Test
-    fun `GIVEN an item is dragged to the right of another WHEN onDragEnd is called THEN onMove is called`() {
+    fun `GIVEN drag and drop disabled and an item is dragged onto another WHEN onDragEnd is called THEN onDrop is not called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = IntOffset(10, 0)
-        val targetItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
+        val dragItemOffset = 0
+        val targetItemOffset = 20
+        val reorderState = fakeListInteractionState(
+            listState = mockListState(
                 mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key1"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns dragItemOffset
                     },
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key2"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
+                        every { offset } returns targetItemOffset
+                    },
+                ),
+            ),
+            handler = handler,
+            dragAndDropEnabled = false,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.onDrag(offset = 20f, preserveSelectMode = false) // 20 down
+        reorderState.onDragEnd()
+
+        verify(exactly = 0) { handler.onDrop("key1", "key2") }
+        verify { handler.onMove("key1", "key2", false) }
+    }
+
+    @Test
+    fun `GIVEN an item is dragged to the bottom of another WHEN onDragEnd is called THEN onMove is called`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 10
+        val targetItemOffset = 30
+        val reorderState = fakeListInteractionState(
+            mockListState(
+                mockItems = listOf(
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key1"
+                        every { index } returns 1
+                        every { size } returns 10
+                        every { offset } returns dragItemOffset
+                    },
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key2"
+                        every { index } returns 1
+                        every { size } returns 10
                         every { offset } returns targetItemOffset
                     },
                 ),
@@ -332,40 +313,40 @@ class InteractableGridTest {
             handler = handler,
         )
 
-        reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
-        reorderState.onDrag(offset = Offset(50f, 0f), preserveSelectMode = false) // 50 to the right
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.onDrag(offset = 50f, preserveSelectMode = false) // 50 down
         reorderState.onDragEnd()
 
         verify { handler.onMove("key1", "key2", true) }
     }
 
     @Test
-    fun `GIVEN an item is dragged to the left of another WHEN onDragEnd is called THEN onMove is called`() {
+    fun `GIVEN an item is dragged to the top of another WHEN onDragEnd is called THEN onMove is called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val targetItemOffset = IntOffset(10, 0)
-        val draggedItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
+        val dragItemOffset = 30
+        val targetItemOffset = 10
+        val reorderState = fakeListInteractionState(
+            mockListState(
                 mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key1"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns targetItemOffset
                     },
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns draggedItemOffset
+                        every { index } returns 2
+                        every { size } returns 10
+                        every { offset } returns dragItemOffset
                     },
                 ),
             ),
             handler = handler,
         )
 
-        reorderState.onTouchSlopPassed(draggedItemOffset.toOffset(), false)
-        reorderState.onDrag(offset = Offset(-10f, 0f), preserveSelectMode = false) // 10 to the left
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.onDrag(offset = -30f, preserveSelectMode = false) // 30 up
         reorderState.onDragEnd()
 
         verify { handler.onMove("key2", "key1", false) }
@@ -373,29 +354,28 @@ class InteractableGridTest {
 
     @Test
     fun `GIVEN a drag is in progress and the dragged item is not visible when onDragEnd is called THEN the state is reset`() {
-        val reorderState = fakeGridReorderState(gridState = mockGridState(mockItems = emptyList()))
+        val reorderState = fakeListInteractionState(listState = mockListState(mockItems = emptyList()))
 
-        reorderState.onTouchSlopPassed(Offset.Zero, false)
+        reorderState.onTouchSlopPassed(0f, false)
         reorderState.onDragEnd()
 
-        assertEquals(InteractionState.Grid.None, reorderState.draggedItem)
-        assertEquals(InteractionState.Grid.None, reorderState.hoveredItem)
+        assertEquals(InteractionState.List.None, reorderState.draggedItem)
+        assertEquals(InteractionState.List.None, reorderState.hoveredItem)
         assertNull(reorderState.highlightedRect)
-        assertEquals(InteractionMode.Grid.None, reorderState.interactionMode)
+        assertEquals(InteractionMode.List.None, reorderState.interactionMode)
     }
 
     @Test
     fun `GIVEN a drag is in progress and the dragged item is not visible when onDragEnd is called THEN onDragCancelled is called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        // val targetItemOffset = IntOffset(10, 0)
-        val draggedItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
+        val draggedItemOffset = 30
+        val reorderState = fakeListInteractionState(
+            mockListState(
                 mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key2"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns draggedItemOffset
                     },
                 ),
@@ -403,8 +383,8 @@ class InteractableGridTest {
             handler = handler,
         )
 
-        reorderState.onTouchSlopPassed(draggedItemOffset.toOffset(), false)
-        reorderState.onDrag(offset = Offset(50f, 50f), preserveSelectMode = false)
+        reorderState.onTouchSlopPassed(draggedItemOffset.toFloat(), false)
+        reorderState.onDrag(offset = 50f, preserveSelectMode = false)
         reorderState.onDragEnd()
 
         verify { handler.onDragCancel() }
@@ -413,21 +393,21 @@ class InteractableGridTest {
     @Test
     fun `WHEN an item is dragged GIVEN preserveSelectMode is true THEN onDragStart is called with the same flag`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = IntOffset(10, 0)
-        val targetItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
+        val dragItemOffset = 10
+        val targetItemOffset = 30
+        val reorderState = fakeListInteractionState(
+            mockListState(
                 mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key1"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns dragItemOffset
                     },
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key2"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns targetItemOffset
                     },
                 ),
@@ -435,8 +415,8 @@ class InteractableGridTest {
             handler = handler,
         )
 
-        reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), true)
-        reorderState.onDrag(offset = Offset(50f, 0f), preserveSelectMode = true) // 50 to the right
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), true)
+        reorderState.onDrag(offset = 50f, preserveSelectMode = true) // 50 down
 
         verify { handler.onDragStart(true) }
     }
@@ -444,21 +424,21 @@ class InteractableGridTest {
     @Test
     fun `WHEN an item is dragged GIVEN preserveSelectMode is false THEN onDragStart is called with the same flag`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = IntOffset(10, 0)
-        val targetItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
+        val dragItemOffset = 10
+        val targetItemOffset = 30
+        val reorderState = fakeListInteractionState(
+            mockListState(
                 mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key1"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns dragItemOffset
                     },
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key2"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns targetItemOffset
                     },
                 ),
@@ -466,8 +446,8 @@ class InteractableGridTest {
             handler = handler,
         )
 
-        reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
-        reorderState.onDrag(Offset(50f, 0f), preserveSelectMode = false) // 50 to the right
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), true)
+        reorderState.onDrag(offset = 50f, preserveSelectMode = false) // 50 down
 
         verify { handler.onDragStart(false) }
     }
@@ -475,21 +455,21 @@ class InteractableGridTest {
     @Test
     fun `WHEN a drag is cancelled THEN the handler is invoked with a drag cancel call`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = IntOffset(10, 0)
-        val targetItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
+        val dragItemOffset = 10
+        val targetItemOffset = 30
+        val reorderState = fakeListInteractionState(
+            mockListState(
                 mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key1"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns dragItemOffset
                     },
-                    mockk<LazyGridItemInfo> {
+                    mockk<LazyListItemInfo> {
                         every { key } returns "key2"
                         every { index } returns 1
-                        every { size } returns IntSize(10, 10)
+                        every { size } returns 10
                         every { offset } returns targetItemOffset
                     },
                 ),
@@ -497,28 +477,28 @@ class InteractableGridTest {
             handler = handler,
         )
 
-        reorderState.onTouchSlopPassed(offset = dragItemOffset.toOffset(), shouldLongPress = false)
-        reorderState.onDrag(offset = Offset(50f, 50f), preserveSelectMode = false)
+        reorderState.onTouchSlopPassed(offset = dragItemOffset.toFloat(), shouldLongPress = false)
+        reorderState.onDrag(offset = 50f, preserveSelectMode = false)
         reorderState.onDragCancelled()
 
         verify { handler.onDragCancel() }
     }
 
-    private fun mockGridItem(mockItemKey: String = "key"): LazyGridItemInfo {
-        return mockk<LazyGridItemInfo> {
+    private fun mockListItem(mockItemKey: String = "key"): LazyListItemInfo {
+        return mockk<LazyListItemInfo> {
             every { key } returns mockItemKey
             every { index } returns 1
-            every { size } returns IntSize(10, 10)
-            every { offset } returns IntOffset(0, 0)
+            every { size } returns 10
+            every { offset } returns 0
         }
     }
 
-    private fun mockGridState(
-        mockItems: List<LazyGridItemInfo> = emptyList(),
+    private fun mockListState(
+        mockItems: List<LazyListItemInfo> = emptyList(),
         firstVisibleIndex: Int = 0,
         totalItems: Int = mockItems.size,
-    ): LazyGridState {
-        return mockk<LazyGridState> {
+    ): LazyListState {
+        return mockk<LazyListState> {
             every { firstVisibleItemIndex } returns firstVisibleIndex
             every { layoutInfo } returns
                 mockk {
@@ -535,12 +515,13 @@ class InteractableGridTest {
         }
     }
 
-    private fun fakeGridReorderState(
-        gridState: LazyGridState,
+    private fun fakeListInteractionState(
+        listState: LazyListState,
         handler: TabInteractionHandler = NoOpTabInteractionHandler,
-    ): GridInteractionState {
-        return GridInteractionState(
-            gridState = gridState,
+        dragAndDropEnabled: Boolean = true,
+    ): ListInteractionState {
+        return ListInteractionState(
+            listState = listState,
             tabInteractionHandler = handler,
             scope = scope,
             touchSlop = 0f,
@@ -549,7 +530,7 @@ class InteractableGridTest {
             hapticFeedback = mockk<HapticFeedback> {
                 every { performHapticFeedback(any()) } just Runs
             },
-            dragAndDropEnabled = true,
+            dragAndDropEnabled = dragAndDropEnabled,
         )
     }
 }

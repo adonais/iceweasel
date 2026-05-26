@@ -46,6 +46,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.compose.base.RadioCheckmarkColors
@@ -300,7 +301,6 @@ fun tabItemBorderFocused(): BorderStroke {
  * @param tabShapeInfo The list item shape and clipping behavior.
  * @param selectionState the selection state of the item in the tabstray.
  */
-// todo (Bug 2032255): add a border on hovered when drag and drop for tab groups is added
 @Composable
 fun Modifier.tabListItemShapeStyling(
     tabShapeInfo: TabListShapeInfo,
@@ -316,7 +316,7 @@ fun Modifier.tabListItemShapeStyling(
                 border = tabItemBorderFocused(),
                 shape = tabShapeInfo.borderShape,
             ),
-            { selectionState.isFocused && selectionState.focusEnabled },
+            { (selectionState.isFocused && selectionState.focusEnabled) },
         )
 }
 
@@ -336,7 +336,7 @@ fun tabGridItemContainerColor(selectionState: TabsTrayItemSelectionState): Color
  * Object holding alpha values for tab items
  */
 object Alpha {
-    const val TAB_ITEM_GRID_DRAGGED = 0.7f
+    const val TAB_ITEM_DRAGGED = 0.7f
     const val TAB_ITEM_NO_INTERACTION = 1f
 }
 
@@ -347,7 +347,7 @@ object Alpha {
 private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
     return animateFloatAsState(
         targetValue = if (interactionState.isDragged) {
-            Alpha.TAB_ITEM_GRID_DRAGGED
+            Alpha.TAB_ITEM_DRAGGED
         } else {
             Alpha.TAB_ITEM_NO_INTERACTION
         },
@@ -358,9 +358,63 @@ private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): Sta
  * Animates the tab item's size to be slightly reduced when it is dragged.
  */
 @Composable
-private fun tabItemAnimatedScale(interactionState: TabItemInteractionState): State<Float> {
+private fun tabGridItemAnimatedScale(interactionState: TabItemInteractionState): State<Float> {
+    val targetValue = when {
+        interactionState.isDragged -> Scale.DRAG_ACTIVE
+        interactionState.isHoveredByItem -> Scale.HOVER_ACTIVE_GRID
+        else -> Scale.NO_INTERACTION
+    }
     return animateFloatAsState(
-        targetValue = if (interactionState.isDragged || interactionState.isHoveredByItem) 0.75f else 1f,
+        targetValue = targetValue,
+    )
+}
+
+/**
+ * Animates the tab item's size to be slightly reduced when it is dragged.
+ */
+@Composable
+private fun tabListItemAnimatedScale(interactionState: TabItemInteractionState): State<Float> {
+    val targetValue = when {
+        interactionState.isDragged -> Scale.DRAG_ACTIVE
+        interactionState.isHoveredByItem -> Scale.HOVER_ACTIVE_LIST
+        else -> Scale.NO_INTERACTION
+    }
+    return animateFloatAsState(
+        targetValue = targetValue,
+    )
+}
+
+/**
+ * Renders an animated scale and alpha transition for the tab item based on its interaction state.
+ * This happens at the graphics layer to avoid recomposition of the item.
+ * The semantics properties are provided so that the state can be evaluated, as evaluating the composable will not
+ * return the correct result, since these graphical animations occur at draw time.
+ * The list and grid animations differ slightly in terms of scale and corner radius.
+ * @param interactionState: State holding the hovered and dragged statuses.
+ */
+@Composable
+fun Modifier.tabItemGridInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
+    return this.tabItemInteractionAnimation(
+        tabItemScaleState = tabGridItemAnimatedScale(interactionState),
+        cornerSize = AcornCorners.large,
+        interactionState = interactionState,
+    )
+}
+
+/**
+ * Renders an animated scale and alpha transition for the tab item based on its interaction state.
+ * This happens at the graphics layer to avoid recomposition of the item.
+ * The semantics properties are provided so that the state can be evaluated, as evaluating the composable will not
+ * return the correct result, since these graphical animations occur at draw time.
+ * The list and grid animations differ slightly in terms of scale and corner radius.
+ * @param interactionState: State holding the hovered and dragged statuses.
+ */
+@Composable
+fun Modifier.tabItemListInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
+    return this.tabItemInteractionAnimation(
+        tabItemScaleState = tabListItemAnimatedScale(interactionState),
+        cornerSize = AcornCorners.medium,
+        interactionState = interactionState,
     )
 }
 
@@ -371,9 +425,12 @@ private fun tabItemAnimatedScale(interactionState: TabItemInteractionState): Sta
  * return the correct result, since these graphical animations occur at draw time.
  */
 @Composable
-fun Modifier.tabItemInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
-    val tabItemAlpha: Float by tabItemAnimatedAlpha(interactionState)
-    val tabItemScale: Float by tabItemAnimatedScale(interactionState)
+private fun Modifier.tabItemInteractionAnimation(
+    tabItemScaleState: State<Float>,
+    cornerSize: Dp,
+    interactionState: TabItemInteractionState,
+): Modifier {
+    val tabItemAlphaState = tabItemAnimatedAlpha(interactionState)
     val backdropColor = MaterialTheme.colorScheme.secondaryContainer
     val backdropBorder = MaterialTheme.colorScheme.tertiary
     val borderSize = FirefoxTheme.layout.border.thick
@@ -405,10 +462,14 @@ fun Modifier.tabItemInteractionAnimation(interactionState: TabItemInteractionSta
             ),
             { interactionState.isHoveredByItem },
         )
-        .graphicsLayer(alpha = tabItemAlpha, scaleX = tabItemScale, scaleY = tabItemScale)
+        .graphicsLayer {
+            alpha = tabItemAlphaState.value
+            scaleX = tabItemScaleState.value
+            scaleY = tabItemScaleState.value
+        }
         .semantics {
-            scale = tabItemScale
-            alpha = tabItemAlpha
+            scale = tabItemScaleState.value
+            alpha = tabItemAlphaState.value
         }
 }
 
@@ -425,3 +486,22 @@ internal var SemanticsPropertyReceiver.scale by ScaleKey
  */
 internal val AlphaKey = SemanticsPropertyKey<Float>("Alpha")
 internal var SemanticsPropertyReceiver.alpha by AlphaKey
+
+/**
+ * Elevation parameters for interactable tab items.
+ */
+object Elevation {
+    const val SWIPE_ACTIVE = 10f
+    const val DRAGGED_ITEM = 1f
+    const val NO_INTERACTION = 0f
+}
+
+/**
+ * Scale parameters for interactable tab items.
+ */
+object Scale {
+    const val DRAG_ACTIVE = 0.75f
+    const val HOVER_ACTIVE_GRID = 0.75f
+    const val HOVER_ACTIVE_LIST = 0.90f
+    const val NO_INTERACTION = 1f
+}
