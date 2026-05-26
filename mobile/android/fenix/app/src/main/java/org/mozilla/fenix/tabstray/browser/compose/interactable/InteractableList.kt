@@ -87,9 +87,9 @@ fun createListInteractionState(
  * @param hapticFeedback [HapticFeedback] used for performing haptic feedback on item long press.
  * @param touchSlop Distance in pixels the user can wander until we consider they started dragging.
  * @param ignoredItems List of keys for non-draggable items.
- * @param onLongPress Optional callback to be invoked when long pressing an item.
  * @param tabInteractionHandler Handler for tab interactions.
  * @param dragAndDropEnabled Whether the drag and drop feature is enabled for tab groups.
+ * @param onLongPress Optional callback to be invoked when long pressing an item.
  */
 @Suppress("LongParameterList")
 class ListInteractionState internal constructor(
@@ -98,9 +98,9 @@ class ListInteractionState internal constructor(
     private val hapticFeedback: HapticFeedback,
     private val touchSlop: Float,
     private val ignoredItems: List<Any>,
-    private val onLongPress: (LazyListItemInfo) -> Unit,
     private val tabInteractionHandler: TabInteractionHandler,
     private val dragAndDropEnabled: Boolean,
+    private val onLongPress: (LazyListItemInfo) -> Unit = {},
 ) {
     internal var draggedItem by mutableStateOf<InteractionState.List>(InteractionState.List.None)
         private set
@@ -138,16 +138,16 @@ class ListInteractionState internal constructor(
     internal fun onTouchSlopPassed(offset: Float, shouldLongPress: Boolean) {
         listState.findItem(offset)?.also { item ->
             val key = item.key as? String
+            if (shouldLongPress) {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                onLongPress(item)
+            }
             key?.let {
                 draggedItem = InteractionState.List.Active(
                     index = item.index,
                     key = it,
                     initialOffset = item.offset.toFloat(),
                 )
-            }
-            if (shouldLongPress) {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                onLongPress(item)
             }
         }
     }
@@ -265,6 +265,7 @@ class ListInteractionState internal constructor(
     internal fun onDrag(offset: Float, preserveSelectMode: Boolean) {
         draggedItem = draggedItem.incrementCumulatedOffset(offset)
         if (!moved && abs(draggedItem.cumulatedOffset) > touchSlop) {
+            draggedItem = draggedItem.markAsMoved()
             tabInteractionHandler.onDragStart(preserveSelectMode)
             moved = true
         }

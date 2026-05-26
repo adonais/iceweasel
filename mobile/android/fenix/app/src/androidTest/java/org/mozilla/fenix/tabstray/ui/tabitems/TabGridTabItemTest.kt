@@ -67,6 +67,46 @@ class TabGridTabItemTest {
         }
     }
 
+    @Test
+    fun verifyHeldUndraggedItemAlpha() {
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false, isHeld = true))
+        }
+        composeTestRule.waitUntil("Held item opacity is 100%") {
+            composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[AlphaKey] == 1f
+        }
+    }
+
+    @Test
+    fun verifyHeldUndraggedItemScale() {
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false, isHeld = true))
+        }
+        composeTestRule.waitUntil("Held item scale is 100%") {
+            composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey] == 1f
+        }
+    }
+
+    @Test
+    fun verifyHeldItemAlpha() {
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true, isHeld = true))
+        }
+        composeTestRule.waitUntil("Held item opacity is 70%") {
+            composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[AlphaKey] == 0.7f
+        }
+    }
+
+    @Test
+    fun verifyHeldItemScale() {
+        composeTestRule.setContent {
+            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true, isHeld = true))
+        }
+        composeTestRule.waitUntil("Held item scale is 75%") {
+            composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey] == 0.75f
+        }
+    }
+
     @Composable
     private fun ComposableUnderTest(interactionState: TabItemInteractionState = TabItemInteractionState()) {
         val density = LocalDensity.current

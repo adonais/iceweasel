@@ -29,6 +29,8 @@ import org.mozilla.fenix.tabstray.browser.compose.interactable.gatherCandidates
 import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
 import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 
 class InteractableListTest {
@@ -482,6 +484,100 @@ class InteractableListTest {
         reorderState.onDragCancelled()
 
         verify { handler.onDragCancel() }
+    }
+
+    @Test
+    fun `WHEN a drag starts and the pointer does not move THEN the moved parameter is false`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 10
+        val targetItemOffset = 30
+        val reorderState = fakeListInteractionState(
+            mockListState(
+                mockItems = listOf(
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key1"
+                        every { index } returns 1
+                        every { size } returns 10
+                        every { offset } returns dragItemOffset
+                    },
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key2"
+                        every { index } returns 1
+                        every { size } returns 10
+                        every { offset } returns targetItemOffset
+                    },
+                ),
+            ),
+            handler = handler,
+        )
+
+        reorderState.onTouchSlopPassed(offset = dragItemOffset.toFloat(), shouldLongPress = false)
+
+        assertIs<InteractionState.List.Active>(reorderState.draggedItem)
+        assertFalse(reorderState.draggedItem.moved)
+    }
+
+    @Test
+    fun `WHEN a drag starts and the pointer moves THEN the moved parameter is true`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 10
+        val targetItemOffset = 30
+        val reorderState = fakeListInteractionState(
+            mockListState(
+                mockItems = listOf(
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key1"
+                        every { index } returns 1
+                        every { size } returns 10
+                        every { offset } returns dragItemOffset
+                    },
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key2"
+                        every { index } returns 1
+                        every { size } returns 10
+                        every { offset } returns targetItemOffset
+                    },
+                ),
+            ),
+            handler = handler,
+        )
+
+        reorderState.onTouchSlopPassed(offset = dragItemOffset.toFloat(), shouldLongPress = false)
+        reorderState.onDrag(40f, true)
+        assertIs<InteractionState.List.Active>(reorderState.draggedItem)
+        assertTrue(reorderState.draggedItem.moved)
+    }
+
+    @Test
+    fun `GIVEN an in progress drag WHEN onCancelled is called THEN the dragged item is reset to None and moved is false`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 10
+        val targetItemOffset = 30
+        val reorderState = fakeListInteractionState(
+            mockListState(
+                mockItems = listOf(
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key1"
+                        every { index } returns 1
+                        every { size } returns 10
+                        every { offset } returns dragItemOffset
+                    },
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key2"
+                        every { index } returns 1
+                        every { size } returns 10
+                        every { offset } returns targetItemOffset
+                    },
+                ),
+            ),
+            handler = handler,
+        )
+
+        reorderState.onTouchSlopPassed(offset = dragItemOffset.toFloat(), shouldLongPress = false)
+        reorderState.onDrag(40f, true)
+        reorderState.onDragCancelled()
+        assertIs<InteractionState.List.None>(reorderState.draggedItem)
+        assertFalse(reorderState.draggedItem.moved)
     }
 
     private fun mockListItem(mockItemKey: String = "key"): LazyListItemInfo {

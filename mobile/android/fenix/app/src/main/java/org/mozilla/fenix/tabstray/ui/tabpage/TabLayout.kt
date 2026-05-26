@@ -1008,6 +1008,11 @@ private fun LazyListScope.interactableTabListContent(
                 listInteractionState.draggedItem.key == tab.id
             }
         }
+        val isHeld by remember(tab.id) {
+            derivedStateOf {
+                isDragged && !listInteractionState.draggedItem.moved
+            }
+        }
         DisposableEffect(isDragged) {
             val handle = if (isDragged) pinnableContainer?.pin() else null
             onDispose { handle?.release() }
@@ -1027,11 +1032,11 @@ private fun LazyListScope.interactableTabListContent(
                 ),
                 selectionState = TabsTrayItemSelectionState(
                     isFocused = tab.isFocused,
-                    multiSelectEnabled = isInMultiSelectMode,
-                    isSelected = selectionMode.contains(tab),
+                    multiSelectEnabled = isInMultiSelectMode || isHeld,
+                    isSelected = selectionMode.contains(tab) || isHeld,
                     focusEnabled = focusEnabled,
                 ),
-                tabInteractionState = tabInteractionState,
+                tabInteractionState = tabInteractionState.copy(isHeld = isHeld),
                 listInteractionState = listInteractionState,
                 lazyListState = lazyListState,
                 onTabClose = onTabClose,
@@ -1045,6 +1050,10 @@ private fun LazyListScope.interactableTabListContent(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
     }
+    trackersBlockedContent(trackersBlockedCount)
+}
+
+private fun LazyListScope.trackersBlockedContent(trackersBlockedCount: Int?) {
     if (trackersBlockedCount != null) {
         item(key = SPAN_ITEM_KEY) {
             TrackersBlockedCard(
@@ -1228,17 +1237,7 @@ private fun ReorderableTabList(
                 }
             }
 
-            if (trackersBlockedCount != null) {
-                item(key = SPAN_ITEM_KEY) {
-                    TrackersBlockedCard(
-                        trackersBlockedCount = trackersBlockedCount,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentWidth(Alignment.CenterHorizontally)
-                            .padding(top = FirefoxTheme.layout.space.static200),
-                    )
-                }
-            }
+            trackersBlockedContent(trackersBlockedCount)
         }
     }
 }

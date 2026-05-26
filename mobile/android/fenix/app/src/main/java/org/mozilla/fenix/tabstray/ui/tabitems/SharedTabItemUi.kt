@@ -344,13 +344,29 @@ object Alpha {
  * Animates the tab item's alpha value to be slightly transparent when it is dragged.
  */
 @Composable
-private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
+private fun tabGridItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
     return animateFloatAsState(
         targetValue = if (interactionState.isDragged) {
             Alpha.TAB_ITEM_DRAGGED
         } else {
             Alpha.TAB_ITEM_NO_INTERACTION
         },
+        label = "TabGridItemAlpha",
+    )
+}
+
+/**
+ * Animates the tab item's alpha value to be slightly transparent when it is dragged, after being moved.
+ */
+@Composable
+private fun tabListItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
+    return animateFloatAsState(
+        targetValue = if (interactionState.isDragged && !interactionState.isHeld) {
+            Alpha.TAB_ITEM_DRAGGED
+        } else {
+            Alpha.TAB_ITEM_NO_INTERACTION
+        },
+        label = "TabListItemAlpha",
     )
 }
 
@@ -361,26 +377,29 @@ private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): Sta
 private fun tabGridItemAnimatedScale(interactionState: TabItemInteractionState): State<Float> {
     val targetValue = when {
         interactionState.isDragged -> Scale.DRAG_ACTIVE
-        interactionState.isHoveredByItem -> Scale.HOVER_ACTIVE_GRID
+        interactionState.isHoveredByItem -> Scale.HOVER_ACTIVE
         else -> Scale.NO_INTERACTION
     }
     return animateFloatAsState(
         targetValue = targetValue,
+        label = "TabGridItemScale",
     )
 }
 
 /**
- * Animates the tab item's size to be slightly reduced when it is dragged.
+ * Animates the tab item's size to be slightly reduced when it is dragged, after being moved.
  */
 @Composable
 private fun tabListItemAnimatedScale(interactionState: TabItemInteractionState): State<Float> {
     val targetValue = when {
+        interactionState.isHeld -> Scale.NO_INTERACTION
         interactionState.isDragged -> Scale.DRAG_ACTIVE
         interactionState.isHoveredByItem -> Scale.HOVER_ACTIVE_LIST
         else -> Scale.NO_INTERACTION
     }
     return animateFloatAsState(
         targetValue = targetValue,
+        label = "TabListItemScale",
     )
 }
 
@@ -396,6 +415,7 @@ private fun tabListItemAnimatedScale(interactionState: TabItemInteractionState):
 fun Modifier.tabItemGridInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
     return this.tabItemInteractionAnimation(
         tabItemScaleState = tabGridItemAnimatedScale(interactionState),
+        tabItemAlphaState = tabGridItemAnimatedAlpha(interactionState),
         cornerSize = AcornCorners.large,
         interactionState = interactionState,
     )
@@ -413,6 +433,7 @@ fun Modifier.tabItemGridInteractionAnimation(interactionState: TabItemInteractio
 fun Modifier.tabItemListInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
     return this.tabItemInteractionAnimation(
         tabItemScaleState = tabListItemAnimatedScale(interactionState),
+        tabItemAlphaState = tabListItemAnimatedAlpha(interactionState),
         cornerSize = AcornCorners.medium,
         interactionState = interactionState,
     )
@@ -426,11 +447,11 @@ fun Modifier.tabItemListInteractionAnimation(interactionState: TabItemInteractio
  */
 @Composable
 private fun Modifier.tabItemInteractionAnimation(
+    tabItemAlphaState: State<Float>,
     tabItemScaleState: State<Float>,
     cornerSize: Dp,
     interactionState: TabItemInteractionState,
 ): Modifier {
-    val tabItemAlphaState = tabItemAnimatedAlpha(interactionState)
     val backdropColor = MaterialTheme.colorScheme.secondaryContainer
     val backdropBorder = MaterialTheme.colorScheme.tertiary
     val borderSize = FirefoxTheme.layout.border.thick
@@ -501,7 +522,7 @@ object Elevation {
  */
 object Scale {
     const val DRAG_ACTIVE = 0.75f
-    const val HOVER_ACTIVE_GRID = 0.75f
+    const val HOVER_ACTIVE = 0.75f
     const val HOVER_ACTIVE_LIST = 0.90f
     const val NO_INTERACTION = 1f
 }
