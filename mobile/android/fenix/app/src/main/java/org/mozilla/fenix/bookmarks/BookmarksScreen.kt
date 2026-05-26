@@ -165,7 +165,7 @@ internal fun BookmarksScreen(
     startDestination: String = BookmarksDestinations.LIST,
 ) {
     val navController = rememberNavController()
-    val store = buildStore(navController)
+    val store = remember { buildStore(navController) }
 
     val isPrivateModeLocked by remember {
         appStore.stateFlow.map { appState -> appState.isPrivateScreenLocked }
