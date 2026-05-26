@@ -515,9 +515,10 @@ function getSettingControl(
  * @returns {Promise<Element>} The rendered setting control element.
  */
 async function settingControlRenders(settingId, win) {
-  await BrowserTestUtils.waitForCondition(
-    () => getSettingControl(settingId, win),
-    `Wait for ${settingId} control to render`
+  await BrowserTestUtils.waitForMutationCondition(
+    win.document.documentElement,
+    { childList: true, subtree: true },
+    () => !!getSettingControl(settingId, win)
   );
   let control = getSettingControl(settingId, win);
   if (control?.updateComplete) {
