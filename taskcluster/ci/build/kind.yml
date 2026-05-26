@@ -19,15 +19,9 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 jobs-from:
-    - android.yml
-    - android-asan.yml
-    - android-stuff.yml
     - linux.yml
-    - linux-base-toolchains.yml
     - macosx.yml
-    - macosx-native.yml
     - windows.yml
-    - windows-mingw.yml
 
 job-defaults:
     worker:

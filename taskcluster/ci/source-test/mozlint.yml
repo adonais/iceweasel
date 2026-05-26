@@ -225,20 +225,6 @@ lintpref:
             - 'mobile/android/locales/en-US/mobile-l10n.js'
             - 'tools/lint/lintpref.yml'
 
-mingw-cap:
-    description: lint for MinGW Capitalization issues
-    treeherder:
-        symbol: misc(mingw)
-    run:
-        mach: lint -v -l mingw-capitalization -f treeherder -f json:/builds/worker/mozlint.json .
-    when:
-        files-changed:
-            - '**/*.cpp'
-            - '**/*.cc'
-            - '**/*.c'
-            - '**/*.h'
-            - 'tools/lint/mingw-capitalization.yml'
-
 updatebot:
     description: Ensure moz.yaml files are valid per schema
     treeherder:

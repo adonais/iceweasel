@@ -172,30 +172,6 @@ jobs:
           - {hour: 12, minute: 0}
           - {hour: 18, minute: 0}
 
-    - name: customv8-update
-      job:
-          type: decision-task
-          treeherder-symbol: customv8
-          target-tasks-method: customv8_update
-          optimize-target-tasks: false
-      run-on-projects:
-          - mozilla-central
-      when:
-          by-project:
-              mozilla-central: [{hour: 10, minute: 30}]
-
-    - name: chromium-update
-      job:
-          type: decision-task
-          treeherder-symbol: Chromium
-          target-tasks-method: chromium_update
-          optimize-target-tasks: false
-      run-on-projects:
-          - mozilla-central
-      when:
-          by-project:
-              mozilla-central: [{hour: 10, minute: 30}]
-
     - name: bouncer-check
       job:
           type: decision-task

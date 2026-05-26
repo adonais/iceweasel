@@ -79,50 +79,12 @@ talos-profiling:
 talos-ref-hw:
     - talos-webgl
 
-browsertime:
-    - browsertime-tp6
-    - browsertime-tp6-essential
-    - browsertime-tp6-bytecode
-    - browsertime-tp6-live
-    - browsertime-tp6-live-sheriffed
-    - browsertime-benchmark
-    - browsertime-benchmark-wasm
-    - browsertime-youtube-playback
-    - browsertime-youtube-playback-power
-    - browsertime-custom
-    - browsertime-first-install
-    - browsertime-responsiveness
-    - browsertime-regression-tests
-    - browsertime-upload
-
-browsertime-clang:
-    - browsertime-tp6
-    - browsertime-tp6-essential
-    - browsertime-tp6-bytecode
-    - browsertime-tp6-live
-    - browsertime-tp6-live-sheriffed
-    - browsertime-benchmark
-    - browsertime-benchmark-wasm
-    - browsertime-youtube-playback
-    - browsertime-responsiveness
-
-browsertime-profiling:
-    - browsertime-tp6-profiling
-
-browsertime-high-priority:
-    - browsertime-benchmark
-    - browsertime-tp6
-
 awsy:
     - awsy
     - awsy-base
     - awsy-dmd
     - awsy-base-dmd
     - awsy-tp6
-
-ccov-code-coverage-tests:
-    - test-coverage
-    - test-coverage-wpt
 
 mochitest-valgrind:
     - mochitest-valgrind
@@ -133,18 +95,11 @@ desktop-screenshot-capture:
 ### Specific platform test sets
 
 # Linux
-linux32-gtest:
-    - gtest
-
-linux32-tests:
-    - web-platform-tests
-
 linux1804-tests:
     - cppunit
     - crashtest
     - firefox-ui-functional
     - gtest
-    # - jittest  # See comment in linux1804-ccov-tests set.
     - jsreftest
     - marionette
     - mochitest-a11y
@@ -169,13 +124,6 @@ linux1804-tests:
     - test-verify-gpu
     - test-verify-wpt
     - xpcshell
-
-linux1804-ccov-tests:
-    # jittest run on regular linux builds is redundant with SM(p), so we omit it
-    # from the linux1804-tests and linux1804-qr-tests sets. But, we still want
-    # to run it on ccov builds, so we have this set that has it and which runs
-    # on ccov builds.
-    - jittest
 
 linux2204-wayland-tests:
     - mochitest-plain
@@ -250,15 +198,6 @@ windows10-2009-tests:
     - mochitest-plain-gpu
     - xpcshell
 
-windows11-64-2009-ccov-tests:
-    - jittest
-    - test-coverage
-    - web-platform-tests
-    - web-platform-tests-crashtest
-    - web-platform-tests-print-reftest
-    - web-platform-tests-reftest
-    - web-platform-tests-wdspec
-
 windows11-2009-tests:
     - cppunit
     - crashtest
@@ -288,42 +227,6 @@ windows11-2009-tests:
     - test-verify-gpu
     - test-verify-wpt
     - xpcshell
-
-mingwclang-tests-debug:
-    - cppunit
-    - firefox-ui-functional
-    - mochitest-a11y
-    - mochitest-chrome-gpu
-    - mochitest-plain-gpu
-    - mochitest-webgl1-core
-    - mochitest-webgl1-ext
-    - mochitest-webgl2-core
-    - mochitest-webgl2-ext
-    - mochitest-webgpu
-    - reftest
-    - telemetry-tests-client
-
-# The following is the same as the above block, minus reftests.
-# Reftests were disabled due to frequent hangs; see bug 1642719
-# for re-enabling.
-mingwclang-win32-tests-debug:
-    - cppunit
-    - firefox-ui-functional
-    - mochitest-a11y
-    - mochitest-chrome-gpu
-    - mochitest-plain-gpu
-    - mochitest-webgl1-core
-    - mochitest-webgl1-ext
-    - mochitest-webgl2-core
-    - mochitest-webgl2-ext
-    - mochitest-webgpu
-    # - reftest - disabled, see bug 1642719
-    - telemetry-tests-client
-
-mingwclang-tests-opt:
-    - cppunit
-    - mochitest-chrome-gpu
-    - mochitest-plain-gpu
 
 windows-talos:
     - talos-bcv
@@ -420,60 +323,3 @@ macosx64-talos:
     - talos-webgl
     # - talos-tabswitch # Bug 1453007 times out
     # - talos-h1 # too long to unpack profile- Bug 1442893
-
-# Android
-
-android-x86_64-tests:
-    - cppunit
-    - crashtest
-    - geckoview-junit
-    - gtest
-    - mochitest-media
-    - mochitest-plain
-    - mochitest-plain-gpu
-    # - mochitest-webgl1-core # Harness issues?
-    # - mochitest-webgl1-ext
-    # - mochitest-webgl2-core # Emulator not creating ES3?
-    # - mochitest-webgl2-ext
-    - reftest
-    - test-verify
-    - web-platform-tests
-    - web-platform-tests-crashtest
-    - web-platform-tests-reftest
-    - web-platform-tests-wdspec
-    - xpcshell
-
-android-hw-aarch64-opt-unittests:
-    - jittest
-
-android-hw-arm7-pgo-unittests:
-    - jittest-all
-
-android-hw-aarch64-pgo-unittests:
-    - jittest
-
-android-hw-arm7-debug-unittests:
-    - jittest
-
-android-hw-aarch64-debug-unittests:
-    - jittest
-
-android-hw-aarch64:
-    - crashtest-qr
-    - reftest-qr
-    - mochitest-media
-    - mochitest-webgl1-core
-    - mochitest-webgl1-ext
-    - mochitest-webgl2-core
-
-android-hw-browsertime:
-    - browsertime-tp6m
-    - browsertime-tp6m-essential
-    - browsertime-tp6m-live
-    - browsertime-speedometer-mobile
-    - browsertime-speedometer3-mobile
-    - browsertime-youtube-playback-mobile
-    - browsertime-unity-webgl-mobile
-
-android-hw-browsertime-profiling:
-    - browsertime-tp6m-profiling

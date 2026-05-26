@@ -871,6 +871,10 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvBindChildDoc(
   if (childDoc->IsShutdown()) {
     return IPC_FAIL(this, "Attempt to bind a shutdown child doc");
   }
+  if (childDoc->Manager() != Manager()) {
+    return IPC_FAIL(this,
+                    "Attempt to bind child doc from a different PBrowser");
+  }
 
   ipc::IPCResult result = AddChildDoc(childDoc, aID, false);
   MOZ_ASSERT(result);
@@ -889,6 +893,9 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvBindChildDoc(
 ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
                                                 uint64_t aParentID,
                                                 bool aCreating) {
+  if (aChildDoc->IsTopLevel()) {
+    return IPC_FAIL(this, "Attempt to add a top level doc as a child");
+  }
   if (aChildDoc->IsShutdown()) {
     return IPC_FAIL(this, "Attempt to add a shutdown child doc");
   }

@@ -21,9 +21,7 @@ jobs-from:
     - cram.yml
     - doc.yml
     - file-metadata.yml
-    - jsshell.yml
     - mozlint.yml
-    - mozlint-android.yml
     - node.yml
     - puppeteer.yml
     - python.yml

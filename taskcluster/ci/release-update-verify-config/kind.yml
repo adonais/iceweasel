@@ -57,30 +57,6 @@ job-defaults:
                 default: "default"
 
 jobs:
-    firefox-linux:
-        shipping-product: firefox
-        treeherder:
-            symbol: UVC
-            platform: linux32-shippable/opt
-            kind: test
-            tier: 1
-        attributes:
-            build_platform: linux-shippable
-        extra:
-            product: firefox
-            platform: linux-i686
-            updater-platform: linux-x86_64
-            channel:
-                by-release-type:
-                    beta: "beta-localtest"
-                    release(-rc)?: "release-localtest"
-                    esr.*: "esr-localtest"
-                    default: "default"
-            mar-channel-id-override:
-                by-release-type:
-                    beta: beta
-                    default: null
-
     firefox-linux64:
         shipping-product: firefox
         treeherder:
@@ -177,45 +153,6 @@ jobs:
                     beta: beta
                     default: null
 
-    firefox-win64-aarch64:
-        shipping-product: firefox
-        treeherder:
-            symbol: UVC
-            platform: windows2012-aarch64-shippable/opt
-            kind: test
-            tier: 1
-        attributes:
-            build_platform: win64-aarch64-shippable
-        extra:
-            product: firefox
-            platform: win64-aarch64
-            updater-platform: linux-x86_64
-            channel:
-                by-release-type:
-                    beta: "beta-localtest"
-                    release(-rc)?: "release-localtest"
-                    esr.*: "esr-localtest"
-                    default: "default"
-            mar-channel-id-override:
-                by-release-type:
-                    beta: beta
-                    default: null
-
-    devedition-linux:
-        shipping-product: devedition
-        treeherder:
-            symbol: UVC
-            platform: linux32-devedition/opt
-            kind: test
-            tier: 1
-        attributes:
-            build_platform: linux-devedition
-        extra:
-            product: firefox
-            platform: linux-i686
-            updater-platform: linux-x86_64
-            channel: "aurora-localtest"
-
     devedition-linux64:
         shipping-product: devedition
         treeherder:
@@ -273,20 +210,5 @@ jobs:
         extra:
             product: firefox
             platform: win64
-            updater-platform: linux-x86_64
-            channel: "aurora-localtest"
-
-    devedition-win64-aarch64:
-        shipping-product: devedition
-        treeherder:
-            symbol: UVC
-            platform: windows2012-aarch64-devedition/opt
-            kind: test
-            tier: 1
-        attributes:
-            build_platform: win64-aarch64-devedition
-        extra:
-            product: firefox
-            platform: win64-aarch64
             updater-platform: linux-x86_64
             channel: "aurora-localtest"

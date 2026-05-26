@@ -16,9 +16,7 @@ primary-dependency:
     - beetmover-repackage
 
 only-for-build-platforms:
-    - linux-shippable/opt
     - linux64-shippable/opt
-    - linux-devedition/opt
     - linux64-devedition/opt
 
 job-template:

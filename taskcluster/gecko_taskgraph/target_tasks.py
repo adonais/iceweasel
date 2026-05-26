@@ -557,21 +557,15 @@ def target_tasks_mozilla_esr102(full_task_graph, parameters, graph_config):
 
 @_target_task("mozilla_esr115_tasks")
 def target_tasks_mozilla_esr115(full_task_graph, parameters, graph_config):
-    """Select the set of tasks required for a promotable beta or release build
-    of desktop, without android CI. The candidates build process involves a pipeline
-    of builds and signing, but does not include beetmover or balrog jobs."""
+    """Select the set of tasks required for a promotable release build of
+    desktop. The candidates build process involves a pipeline of builds and
+    signing, but does not include beetmover or balrog jobs."""
 
     def filter(task):
         if not filter_release_tasks(task, parameters):
             return False
 
         if not standard_filter(task, parameters):
-            return False
-
-        platform = task.attributes.get("build_platform")
-
-        # Android is not built on esr115.
-        if platform and "android" in platform:
             return False
 
         return True
@@ -1052,25 +1046,6 @@ def target_tasks_build_linux64_clang_trunk_perf(
 def target_tasks_updatebot_cron(full_task_graph, parameters, graph_config):
     """Select tasks required to run Updatebot's cron job"""
     return ["updatebot-cron"]
-
-
-@_target_task("customv8_update")
-def target_tasks_customv8_update(full_task_graph, parameters, graph_config):
-    """Select tasks required for building latest d8/v8 version."""
-    return ["toolchain-linux64-custom-v8"]
-
-
-@_target_task("chromium_update")
-def target_tasks_chromium_update(full_task_graph, parameters, graph_config):
-    """Select tasks required for building latest chromium versions."""
-    return [
-        "fetch-linux64-chromium",
-        "fetch-win32-chromium",
-        "fetch-win64-chromium",
-        "fetch-mac-chromium",
-        "toolchain-linux64-custom-car",
-        "toolchain-win64-custom-car",
-    ]
 
 
 @_target_task("file_update")

@@ -24,7 +24,6 @@ job-defaults:
         using: toolchain-script
 
 jobs-from:
-    - android.yml
     - cargo-vet.yml
     - cbindgen.yml
     - clang-tidy.yml
@@ -35,18 +34,15 @@ jobs-from:
     - gcc.yml
     - geckodriver.yml
     - gn.yml
-    - grcov.yml
     - libunwind.yml
     - llvm-symbolizer.yml
     - macos-sdk.yml
-    - mingw.yml
     - minidump-stackwalk.yml
     - misc.yml
     - nasm.yml
     - node.yml
     - pkgconf.yml
     - python.yml
-    - resourcemonitor.yml
     - rust.yml
     - rust-size.yml
     - sccache.yml

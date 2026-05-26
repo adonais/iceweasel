@@ -7,23 +7,6 @@ job-defaults:
     worker:
         max-run-time: 1800
 
-linux64-binutils-2.31.1:
-    description: "Binutils toolchain build"
-    treeherder:
-        symbol: TL(binutil2.31)
-    run:
-        script: build-binutils-linux.sh
-        resources:
-            - 'build/unix/build-binutils/build-binutils.sh'
-        toolchain-artifact: public/build/binutils.tar.zst
-    fetches:
-        fetch:
-            - binutils-2.31.1
-        toolchain:
-            # C++ code in gold doesn't compile with recent versions of GCC.
-            - linux64-gcc-8
-            - linux64-toolchain-sysroot
-
 linux64-binutils:
     description: "Binutils toolchain build"
     treeherder:
@@ -165,104 +148,6 @@ linux64-msix-packaging:
             - linux64-clang-toolchain
             - linux64-toolchain-sysroot
 
-linux64-custom-v8:
-    description: "Custom v8 build"
-    treeherder:
-        symbol: TL(custom-v8)
-    worker:
-        docker-image: {in-tree: custom-v8}
-        max-run-time: 3600
-    run:
-        script: build-custom-v8.sh
-        arguments: [
-            d8.tar.zst,
-            is_debug=false,
-            target_cpu="x64"
-        ]
-        toolchain-artifact: public/build/d8.tar.zst
-
-linux64-custom-car:
-    description: "Custom chromium-as-release build for Linux"
-    attributes:
-        cached_task: false
-    treeherder:
-        symbol: TL(custom-car)
-    worker:
-        docker-image: {in-tree: custom-car-linux}
-        max-run-time: 16200
-    run-on-projects: []
-    run:
-        script: build-custom-car-linux.sh
-        arguments: [
-            car_linux.tar.zst,
-            blink_symbol_level=0,
-            chrome_pgo_phase=2,
-            dcheck_always_on=false,
-            enable_nacl=false,
-            enable_resource_allowlist_generation=false,
-            is_chrome_branded=false,
-            is_clang=true,
-            is_component_build=false,
-            is_debug=false,
-            is_official_build=true,
-            symbol_level=0,
-            target_cpu="x64",
-            v8_symbol_level=0
-        ]
-        toolchain-artifact: public/build/car_linux.tar.zst
-
-win64-custom-car:
-    description: "Custom chromium-as-release build for Windows"
-    attributes:
-        cached_task: false
-    treeherder:
-        symbol: TW64(custom-car)
-    worker-type: b-win2022
-    worker:
-        max-run-time: 16200
-        env:
-            MSYSTEM: "MINGW64"
-    run-on-projects: []
-    run:
-        script: build-custom-car-win64.sh
-        arguments: [
-            car_win64.tar.zst,
-            blink_symbol_level=0,
-            chrome_pgo_phase=2,
-            dcheck_always_on=false,
-            enable_nacl=false,
-            enable_resource_allowlist_generation=false,
-            is_chrome_branded=false,
-            is_clang=true,
-            is_component_build=false,
-            is_debug=false,
-            is_official_build=true,
-            symbol_level=0,
-            target_cpu=\"x64\",
-            use_v8_context_snapshot=false,
-            v8_symbol_level=0
-        ]
-        toolchain-artifact: public/build/car_win64.tar.zst
-    fetches:
-        toolchain:
-            - win64-vs2022
-
-browsertime:
-    description: "npm install browsertime node_modules"
-    treeherder:
-        symbol: TL(browsertime)
-    run:
-        script: browsertime.sh
-        sparse-profile: null
-        resources:
-            - 'tools/browsertime/package.json'
-            - 'tools/browsertime/package-lock.json'
-            - 'tools/browsertime/mach_commands.py'
-        toolchain-artifact: public/build/browsertime.tar.zst
-    fetches:
-        toolchain:
-            - linux64-node-16
-
 wrench-deps:
     description: "Downloads all the crates needed for building wrench"
     treeherder:
@@ -277,8 +162,6 @@ wrench-deps:
             - 'gfx/wr/ci-scripts/install-meson.sh'
         toolchain-artifact: public/build/wrench-deps.tar.zst
     fetches:
-        fetch:
-            - android-ndk-rs
         toolchain:
             - linux64-rust  # whatever m-c is built with
 
@@ -419,22 +302,3 @@ win64-vs2022:
         resources:
             - build/vs/vs2022.yaml
         toolchain-artifact: project/gecko/vs/vs.tar.zst
-
-linux64-afl-instrumentation-2.5:
-    description: "AFL instrumentation toolchain build"
-    treeherder:
-        symbol: TL(afl)
-    worker:
-        max-run-time: 3600
-    run:
-        script: build-afl.sh
-        resources:
-            - taskcluster/scripts/misc/afl-nyx.patch
-        toolchain-artifact: public/build/afl-instrumentation.tar.zst
-        toolchain-alias: linux64-afl-instrumentation
-    fetches:
-        fetch:
-            - afl-2.5
-        toolchain:
-            - linux64-clang
-            - linux64-toolchain-sysroot

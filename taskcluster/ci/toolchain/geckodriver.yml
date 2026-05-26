@@ -26,18 +26,6 @@ job-defaults:
 
 # For Linux platforms target "*-musl" so that the binary will be statically linked.
 
-linux32-geckodriver:
-    treeherder:
-        symbol: TL32(gd)
-        platform: linux32/opt
-    run:
-        arguments: ['i686-unknown-linux-musl']
-    attributes:
-        build_platform: linux-geckodriver
-    fetches:
-        toolchain:
-            - linux64-rust-static
-
 linux64-geckodriver:
     treeherder:
         symbol: TL(gd)
@@ -48,19 +36,6 @@ linux64-geckodriver:
         build_platform: linux64-geckodriver
     fetches:
         toolchain:
-            - linux64-rust-static
-
-linux64-aarch64-geckodriver:
-    treeherder:
-        symbol: TL(gd)
-        platform: linux64-aarch64/opt
-    run:
-        arguments: ['aarch64-unknown-linux-musl']
-    attributes:
-        build_platform: linux64-aarch64-geckodriver
-    fetches:
-        toolchain:
-            - linux64-clang-toolchain
             - linux64-rust-static
 
 macosx64-geckodriver:
@@ -77,20 +52,6 @@ macosx64-geckodriver:
             - linux64-rust-macos
             - macosx64-sdk-toolchain
 
-macosx64-aarch64-geckodriver:
-    treeherder:
-        symbol: TM(gd)
-        platform: macosx64-aarch64/opt
-    run:
-        arguments: ['aarch64-apple-darwin']
-    attributes:
-        build_platform: macosx64-aarch64-geckodriver
-    fetches:
-        toolchain:
-            - linux64-clang-toolchain
-            - linux64-rust-macos
-            - macosx64-sdk-toolchain
-
 win32-geckodriver:
     treeherder:
         symbol: TW32(gd)
@@ -100,21 +61,6 @@ win32-geckodriver:
         toolchain-artifact: public/build/geckodriver.zip
     attributes:
         build_platform: win32-geckodriver
-    fetches:
-        toolchain:
-            - linux64-clang-toolchain
-            - linux64-rust-windows
-            - vs-toolchain
-
-win64-aarch64-geckodriver:
-    treeherder:
-        symbol: TW64(gd)
-        platform: windows2012-aarch64/opt
-    run:
-        arguments: ['aarch64-pc-windows-msvc']
-        toolchain-artifact: public/build/geckodriver.zip
-    attributes:
-        build_platform: win64-aarch64-geckodriver
     fetches:
         toolchain:
             - linux64-clang-toolchain

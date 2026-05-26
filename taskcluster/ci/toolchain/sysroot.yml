@@ -81,27 +81,6 @@ sysroot-wasm32-wasi-clang-16:
             - linux64-clang-16-stage1
             - wasm32-wasi-compiler-rt-16
 
-sysroot-wasm32-wasi-clang-trunk:
-    description: "Sysroot for wasi"
-    attributes:
-        cached_task: false
-    treeherder:
-        symbol: TL(sysroot-wasi-trunk)
-    run:
-        script: build-sysroot-wasi.sh
-        toolchain-alias:
-            by-project:
-                toolchains: sysroot-wasm32-wasi
-                default: null
-        toolchain-artifact: public/build/sysroot-wasm32-wasi.tar.zst
-    fetches:
-        fetch:
-            - clang-trunk
-            - wasi-sdk
-        toolchain:
-            - linux64-clang-trunk-stage1
-            - wasm32-wasi-compiler-rt-trunk
-
 sysroot-aarch64-linux-gnu:
     description: "Sysroot for linux64 aarch64 builds"
     attributes:
@@ -112,28 +91,6 @@ sysroot-aarch64-linux-gnu:
         toolchain-artifact: public/build/sysroot-aarch64-linux-gnu.tar.zst
         arguments:
             - arm64
-
-linux32-toolchain-sysroot:
-    description: "Sysroot for linux32 toolchain builds"
-    worker:
-        env:
-            PACKAGES_TASKS: {task-reference: '<gcc-8>'}
-    treeherder:
-        symbol: TL(sysroot32-toolchain)
-    dependencies:
-        gcc-8: packages-deb8-32-gcc-8
-    run:
-        arguments:
-            - i386
-            # For clang
-            - binutils-dev
-            - libxml2-dev
-            # For minidump-stackwalk
-            - libcurl4-openssl-dev
-            - libssl-dev
-            - libbz2-dev
-            # For msix-package
-            - libicu-dev
 
 linux64-toolchain-sysroot:
     description: "Sysroot for linux64 toolchain builds"

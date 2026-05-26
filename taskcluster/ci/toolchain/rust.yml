@@ -25,20 +25,6 @@ linux64-rust-1.65:
         toolchain-alias:
             - linux64-rust-toolchain
 
-linux64-rust-1.66:
-    treeherder:
-        symbol: TL(rust-1.66)
-    run:
-        arguments: [
-            '--channel', '1.66.0',
-            '--host', 'x86_64-unknown-linux-gnu',
-            '--target', 'x86_64-unknown-linux-gnu',
-            '--target', 'i686-unknown-linux-gnu',
-            '--target', 'wasm32-wasi',
-        ]
-        toolchain-alias:
-            - linux64-rust-base
-
 linux64-rust-1.69:
     treeherder:
         symbol: TL(rust)
@@ -94,11 +80,6 @@ linux64-rust-cross-1.69:
             '--target', 'x86_64-pc-windows-msvc',
             '--target', 'i686-pc-windows-msvc',
             '--target', 'aarch64-pc-windows-msvc',
-            '--target', 'armv7-linux-androideabi',
-            '--target', 'thumbv7neon-linux-androideabi',
-            '--target', 'aarch64-linux-android',
-            '--target', 'i686-linux-android',
-            '--target', 'x86_64-linux-android',
         ]
         toolchain-alias: linux64-rust-cross
 
@@ -117,11 +98,6 @@ linux64-rust-cross-beta:
             '--target', 'x86_64-pc-windows-msvc',
             '--target', 'i686-pc-windows-msvc',
             '--target', 'aarch64-pc-windows-msvc',
-            '--target', 'armv7-linux-androideabi',
-            '--target', 'thumbv7neon-linux-androideabi',
-            '--target', 'aarch64-linux-android',
-            '--target', 'i686-linux-android',
-            '--target', 'x86_64-linux-android',
         ]
 
 linux64-rust-static-1.69:
@@ -168,23 +144,6 @@ linux64-rust-macos-1.69:
         ]
         toolchain-alias: linux64-rust-macos
 
-linux64-rust-android-1.69:
-    description: "rust repack with android-cross support"
-    treeherder:
-        symbol: TL(rust-android)
-    run:
-        arguments: [
-            '--channel', '1.69.0',
-            '--host', 'x86_64-unknown-linux-gnu',
-            '--target', 'x86_64-unknown-linux-gnu',
-            '--target', 'armv7-linux-androideabi',
-            '--target', 'thumbv7neon-linux-androideabi',
-            '--target', 'aarch64-linux-android',
-            '--target', 'i686-linux-android',
-            '--target', 'x86_64-linux-android',
-        ]
-        toolchain-alias: linux64-rust-android
-
 linux64-rust-windows-1.65:
     description: "rust repack with windows-cross support"
     treeherder:
@@ -226,28 +185,3 @@ win64-rust-1.69:
             '--target', 'aarch64-pc-windows-msvc',
         ]
         toolchain-alias: win64-rust
-
-macosx64-rust-1.69:
-    treeherder:
-        symbol: TM(rust)
-    run:
-        arguments: [
-            '--channel', '1.69.0',
-            '--host', 'x86_64-apple-darwin',
-            '--target', 'x86_64-apple-darwin',
-        ]
-        toolchain-alias: macosx64-rust
-
-mingw32-rust-1.69:
-    treeherder:
-        symbol: TMW(rust)
-    run:
-        arguments: [
-            '--channel', '1.69.0',
-            '--host', 'x86_64-unknown-linux-gnu',
-            '--target', 'i686-unknown-linux-gnu',
-            '--target', 'i686-pc-windows-gnu',
-            '--target', 'x86_64-pc-windows-gnu',
-            '--target', 'x86_64-unknown-linux-gnu',
-        ]
-        toolchain-alias: mingw32-rust

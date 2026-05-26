@@ -107,24 +107,3 @@ jobs:
             platform: win64-shippable/opt
         dependencies:
             repackage-signing-l10n: repackage-signing-l10n-{locale}-win64-shippable/opt
-
-    win64-aarch64-shippable/opt:
-        label: attribution-win64-aarch64-{locale}-shippable/opt
-        shipping-product: firefox
-        locale-file-platform: win64-aarch64
-        attributes:
-            build_platform: win64-aarch64-shippable
-        treeherder:
-            platform: win64-aarch64-shippable/opt
-        dependencies:
-            repackage-signing-l10n: repackage-signing-l10n-{locale}-win64-aarch64-shippable/opt
-
-    win64-aarch64-devedition/opt:
-        label: attribution-win64-aarch64-{locale}-devedition/opt
-        shipping-product: devedition
-        attributes:
-            build_platform: win64-aarch64-devedition
-        treeherder:
-            platform: win64-aarch64-devedition/opt
-        dependencies:
-            repackage-signing-l10n: repackage-signing-l10n-{locale}-win64-aarch64-devedition/opt

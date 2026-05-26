@@ -44,23 +44,11 @@ jobs:
         attributes:
             build_platform: linux64-shippable
 
-    firefox-linux:
-        description: linux update verify
-        shipping-product: firefox
-        attributes:
-            build_platform: linux-shippable
-
     firefox-win64:
         description: win64 update verify
         shipping-product: firefox
         attributes:
             build_platform: win64-shippable
-
-    firefox-win64-aarch64:
-        description: win64-aarch64 update verify
-        shipping-product: firefox
-        attributes:
-            build_platform: win64-aarch64-shippable
 
     firefox-win32:
         description: win32 update verify
@@ -82,23 +70,11 @@ jobs:
         attributes:
             build_platform: linux64-devedition
 
-    devedition-linux:
-        description: linux update verify
-        shipping-product: devedition
-        attributes:
-            build_platform: linux-devedition
-
     devedition-win64:
         description: win64 update verify
         shipping-product: devedition
         attributes:
             build_platform: win64-devedition
-
-    devedition-win64-aarch64:
-        description: win64-aarch64 update verify
-        shipping-product: devedition
-        attributes:
-            build_platform: win64-aarch64-devedition
 
     devedition-win32:
         description: win32 update verify
