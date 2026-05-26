@@ -11,7 +11,6 @@ import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
-import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
 import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
@@ -52,40 +51,6 @@ class CollectionTest {
 
     @get:Rule(order = 2)
     val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/353823
-    @SmokeTest
-    @Test
-    fun createFirstCollectionUsingHomeScreenButtonTest() {
-        val firstWebPage = mockWebServer.getGenericAsset(1)
-        val secondWebPage = mockWebServer.getGenericAsset(2)
-
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(firstWebPage.url) {
-            mDevice.waitForIdle()
-        }.openTabDrawer(composeTestRule) {
-        }.openNewTab {
-        }.submitQuery(secondWebPage.url.toString()) {
-            mDevice.waitForIdle()
-        }.goToHomescreen {
-        }.clickSaveTabsToCollectionButton {
-            longClickTab(firstWebPage.title)
-            selectTab(secondWebPage.title, numberOfSelectedTabs = 2)
-            verifyTabsMultiSelectionCounter(2)
-        }.openThreeDotMenu {
-        }.clickSaveCollection {
-            typeCollectionNameAndSave(collectionName)
-        }
-
-        composeTabDrawer(composeTestRule) {
-            verifySnackBarText("Collection saved")
-        }.closeTabDrawer {
-        }
-
-        homeScreen(composeTestRule) {
-            verifyCollectionIsDisplayed(collectionName)
-        }
-    }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2283299
     @Test
@@ -224,9 +189,6 @@ class CollectionTest {
         }.expandCollection(collectionName) {
             clickCollectionThreeDotButton()
             selectDeleteCollection()
-        }
-        homeScreen(composeTestRule) {
-            verifyNoCollectionsText()
         }
     }
 

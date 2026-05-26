@@ -55,8 +55,6 @@ class HomeScreenTest {
             verifyHomePrivateBrowsingButton()
             verifyExistingTopSitesTabs("Wikipedia")
             verifyExistingTopSitesTabs("Google")
-            verifyCollectionsHeader()
-            verifyNoCollectionsText()
             verifyThoughtProvokingStories(true)
             verifyNavigationToolbar()
             verifyHomeMenuButton()

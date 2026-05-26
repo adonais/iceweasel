@@ -120,7 +120,6 @@ class DefaultSessionControlControllerTest {
             expandedCollections = emptySet(),
             mode = BrowsingMode.Normal,
             topSites = emptyList(),
-            showCollectionPlaceholder = true,
             recentTabs = emptyList(),
             bookmarks = emptyList(),
         )
@@ -483,19 +482,6 @@ class DefaultSessionControlControllerTest {
                 match<NavDirections> { it.actionId == R.id.action_global_tabManagementFragment },
                 null,
             )
-        }
-    }
-
-    @Test
-    fun handleRemoveCollectionsPlaceholder() {
-        createController().handleRemoveCollectionsPlaceholder()
-
-        val recordedEvents = Collections.placeholderCancel.testGetValue()!!
-        assertEquals(1, recordedEvents.size)
-        assertEquals(null, recordedEvents.single().extra)
-        verify {
-            settings.showCollectionsPlaceholderOnHome = false
-            appStore.dispatch(AppAction.RemoveCollectionsPlaceholder)
         }
     }
 

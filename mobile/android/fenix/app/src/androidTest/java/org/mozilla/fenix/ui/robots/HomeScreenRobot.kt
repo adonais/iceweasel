@@ -108,16 +108,6 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
     fun verifyHomePrivateBrowsingButton() = assertUIObjectExists(privateBrowsingButton())
     fun verifyHomeMenuButton() = assertUIObjectExists(menuButton())
-    fun verifyCollectionsHeader() {
-        Log.i(TAG, "verifyCollectionsHeader: Trying to verify collections header is visible")
-        this@HomeScreenRobot.composeTestRule.onNodeWithText(getStringResource(R.string.collections_header)).assertIsDisplayed()
-        Log.i(TAG, "verifyCollectionsHeader: Verified collections header is visible")
-    }
-    fun verifyNoCollectionsText() {
-        Log.i(TAG, "verifyNoCollectionsText: Trying to verify empty collections placeholder text is displayed")
-        this@HomeScreenRobot.composeTestRule.onNodeWithText(getStringResource(R.string.no_collections_description2)).assertIsDisplayed()
-        Log.i(TAG, "verifyNoCollectionsText: Verified empty collections placeholder text is displayed")
-    }
 
     fun verifyHomeWordmark() {
         Log.i(TAG, "verifyHomeWordmark: Scrolled 3x to the beginning of the home screen")

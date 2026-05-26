@@ -89,7 +89,6 @@ class AppStoreTest {
             expandedCollections = emptySet(),
             mode = browsingModeManager.mode,
             topSites = emptyList(),
-            showCollectionPlaceholder = true,
             recentTabs = emptyList(),
             recentSyncedTabState = RecentSyncedTabState.Success(recentSyncedTabsList),
         )
@@ -242,15 +241,6 @@ class AppStoreTest {
     }
 
     @Test
-    fun `Test changing hiding collections placeholder`() = runTest {
-        assertTrue(appStore.state.showCollectionPlaceholder)
-
-        appStore.dispatch(AppAction.RemoveCollectionsPlaceholder)
-
-        assertFalse(appStore.state.showCollectionPlaceholder)
-    }
-
-    @Test
     fun `Test changing the expanded collections in AppStore`() = runTest {
         val collection: TabCollection = mockk<TabCollection>().apply {
             every { id } returns 0
@@ -303,7 +293,6 @@ class AppStoreTest {
                     collections = collections,
                     mode = BrowsingMode.Private,
                     topSites = topSites,
-                    showCollectionPlaceholder = true,
                     recentTabs = recentTabs,
                     bookmarks = bookmarks,
                     recentHistory = recentHistory,

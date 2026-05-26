@@ -181,7 +181,6 @@ internal sealed class HomepageState {
                 buildNormalState(
                     appState = appState,
                     privacyNoticeBannerState = privacyNoticeBannerState,
-                    browsingModeManager = browsingModeManager,
                     settings = settings,
                 )
             }
@@ -210,14 +209,12 @@ internal sealed class HomepageState {
          *
          * @param appState State to build the [HomepageState.Normal] from.
          * @param privacyNoticeBannerState State of the privacy notice banner.
-         * @param browsingModeManager Manager holding current state of whether the browser is in private mode or not.
          * @param settings [Settings] corresponding to how the homepage should be displayed.
          */
         @Composable
         private fun buildNormalState(
             appState: AppState,
             privacyNoticeBannerState: PrivacyNoticeBannerState,
-            browsingModeManager: BrowsingModeManager,
             settings: Settings,
         ) = with(appState) {
             Normal(
@@ -236,7 +233,6 @@ internal sealed class HomepageState {
                 collectionsState = CollectionsState.build(
                     appState = appState,
                     browserState = components.core.store.state,
-                    browsingModeManager = browsingModeManager,
                 ),
                 pocketState = PocketState.build(appState = appState),
                 showTopSites = settings.showTopSitesFeature && topSites.isNotEmpty(),

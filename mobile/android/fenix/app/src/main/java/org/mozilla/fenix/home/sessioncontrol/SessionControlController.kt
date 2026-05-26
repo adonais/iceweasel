@@ -97,11 +97,6 @@ interface SessionControlController {
     fun handleCreateCollection()
 
     /**
-     * @see [CollectionInteractor.onRemoveCollectionsPlaceholder]
-     */
-    fun handleRemoveCollectionsPlaceholder()
-
-    /**
      * @see [MessageCardInteractor.onMessageClicked]
      */
     fun handleMessageClicked(message: Message)
@@ -342,12 +337,6 @@ class DefaultSessionControlController(
 
     override fun handleCreateCollection() {
         showTabTrayCollectionCreation()
-    }
-
-    override fun handleRemoveCollectionsPlaceholder() {
-        settings.showCollectionsPlaceholderOnHome = false
-        Collections.placeholderCancel.record()
-        appStore.dispatch(AppAction.RemoveCollectionsPlaceholder)
     }
 
     private fun showShareFragment(shareSubject: String, data: List<ShareData>) {
