@@ -610,6 +610,8 @@
     <!-- Sports Widget -->
     <string name="pref_key_sports_selected_countries" translatable="false">pref_key_sports_selected_countries</string>
     <string name="pref_key_sports_has_skipped_follow_team" translatable="false">pref_key_sports_has_skipped_follow_team</string>
+    <string name="pref_key_use_mock_world_cup_server" translatable="false">pref_key_use_mock_world_cup_server</string>
+    <string name="pref_key_mock_world_cup_server_session" translatable="false">pref_key_mock_world_cup_server_session</string>
 
     <!-- Google Lens Integration -->
     <string name="pref_key_google_lens_integration" translatable="false">pref_key_google_lens_integration</string>

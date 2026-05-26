@@ -101,10 +101,34 @@ class SportsWidgetMiddleware(
             countryCodes
         }
         return if (effectiveCodes.isEmpty()) {
-            MatchCardBuilder.buildForNoTeam(result.previous + result.current + result.next)
+            // Filter to the active round before handing to the builder. The response —
+            // which spans multiple rounds in the mock and a ±10-day window in prod —
+            // would otherwise mix stages in the pager and surface group-stage matches
+            // even after R32 has begun.
+            val activeRound = result.activeRound() ?: return emptyList()
+            MatchCardBuilder.buildForNoTeam(
+                (result.previous + result.current + result.next)
+                    .filter { it.stage == activeRound },
+            )
         } else {
             MatchCardBuilder.buildForTeam(filterByTeam(result, effectiveCodes))
         }
+    }
+
+    // The "active" round is the most-advanced round that has at least one match
+    // already underway. Priority:
+    //   1. A live match's round wins — even if a later round has played matches,
+    //      the in-progress game is what the user came to see.
+    //   2. Otherwise: the highest-ordinal round with any finished match. This is what
+    //      makes the widget hide group stage as soon as the first R32 game has
+    //      kicked off, even when no R32 game is live at this exact moment and the
+    //      ±10-day window still carries the prior round's matches.
+    //   3. Pre-tournament fallback: the round of the soonest upcoming match.
+    private fun TeamMatchesResult.activeRound(): TournamentRound? {
+        val all = previous + current + next
+        return all.firstOrNull { it.matchStatus.isLive() }?.stage
+            ?: all.filter { it.matchStatus.isPast() }.maxByOrNull { it.stage.ordinal }?.stage
+            ?: all.minByOrNull { it.date }?.stage
     }
 
     // True when every followed team appears in the response with `eliminated = true`. If a

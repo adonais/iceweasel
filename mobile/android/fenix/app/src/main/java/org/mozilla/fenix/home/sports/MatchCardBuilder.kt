@@ -153,10 +153,6 @@ private fun List<MatchCard>.orderedForPager(): List<MatchCard> {
     return live + past + upcoming
 }
 
-private fun MatchStatus.isLive(): Boolean = this is MatchStatus.Live || this is MatchStatus.Penalties
-
-private fun MatchStatus.isPast(): Boolean = this is MatchStatus.Final || this is MatchStatus.FinalAfterPenalties
-
 // A decided final or third-place playoff always carries the celebration outcome,
 // regardless of which team (if any) the viewer follows — the champion card is shown
 // universally. The winning team is computed and embedded in the outcome so callers
