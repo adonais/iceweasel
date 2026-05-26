@@ -598,23 +598,71 @@ interface Action {
   needsAwait?: boolean;
 }
 
-// Either an image or a paragraph that supports inline links. Currently requires
-// Fluent strings. Raw strings are not supported.
+// Either an image or a paragraph that supports inline links. Inline links can
+// be expressed in two ways:
+//   1. A single Fluent-localized string paired with `link_keys`. Each key
+//      corresponds to an `<a data-l10n-name="…">` marker inside the Fluent
+//      string. This is the original mode and requires Fluent.
+//   2. An array of text/link segments assigned to `text`. Segments can be
+//      raw strings, embedded URLs (`href`), or inline `link_key` references
+//      that look up actions on `screen.content`. This mode supports raw
+//      strings (no Fluent required) and is the recommended shape for
+//      paragraphs that mix prose with one or more inline links.
 interface LinkParagraphOrImage extends Logo {
   // Which type of content this is.
   type: "image" | "text";
 
-  // Each of these is only used if `type` is "text".
-  // The `text` object contains the Fluent string id. Doesn't support raw text.
-  text: LocalizableThing;
-  // An array of key names. Each link key must exist in screen.content. For
+  // Each of the following is only used if `type` is "text".
+
+  // The paragraph text. One of:
+  //
+  // - A `LocalizableThing` for mode (1). Combine with `link_keys` to attach
+  //   actions to the `<a data-l10n-name="…">` markers in the Fluent string.
+  //
+  // - An array of segments for mode (2). Each segment is either:
+  //     * a raw string (rendered as plain text), or
+  //     * a `LocalizableThing` with `href` (and optional `where`), rendered
+  //       as a real link that, when clicked, calls `preventDefault()` and
+  //       dispatches the OPEN_URL special message action with
+  //       `{ args: href, where: where ?? "tab" }`. `where` accepts the same
+  //       values as OPEN_URL (e.g. "tab", "tabshifted", "window").
+  //     * a `LocalizableThing` with `link_key`, rendered as an inline link
+  //       whose action is looked up from `screen.content[link_key].action`
+  //       (the same mechanism that mode (1)'s `link_keys` uses, but
+  //       anchored to an explicit segment — so it works with raw text and
+  //       does not need a `<a data-l10n-name>` marker in a Fluent string).
+  //     * a `LocalizableThing` with neither, rendered as a localized span.
+  //   Because each segment can itself be a `LocalizableThing`, segments
+  //   carry their own per-segment CSS overrides and `aria_label`. CSS
+  //   overrides set on `LinkParagraphOrImage` itself (e.g. `textAlign`,
+  //   `fontSize`, `marginBlock`) are applied to the surrounding `<p>`.
+  text: LocalizableThing | Array<
+    | string
+    | (LocalizableThing & {
+        // Embedded URL link. Dispatches OPEN_URL with `args: href`.
+        href?: string;
+        // OPEN_URL `where` argument. Defaults to "tab". Only meaningful
+        // alongside `href`.
+        where?: string;
+        // Inline link key. Resolved against `screen.content[link_key].action`.
+        // Mutually exclusive with `href`; if both are set, `href` wins.
+        link_key?: string;
+      })
+  >;
+  // Only used in mode (1). Each link key must exist in screen.content. For
   // example, if link_keys is ["learn_more"], then there must be a key named
   // "learn_more" in screen.content. The value of that key must be an object
   // with an `action` property (which is an Action). Moreover, the string_id in
   // the `text` object (see the property above) must refer to a Fluent string
   // that contains an anchor element with `data-l10n-name="learn_more"`, e.g.:
   //   my-string = Do the thing! <a data-l10n-name="learn_more">Learn more</a>
-  link_keys: string[];
+  // Ignored when `text` is an array — in that mode, link keys are specified
+  // per-segment via `link_key` on individual segment objects.
+  link_keys?: string[];
+  // Optional paragraph style. If "legal", the paragraph is rendered with a
+  // smaller, secondary-text style (`.legal-paragraph`). Otherwise it uses the
+  // default style (`.link-paragraph`).
+  font_styles?: "legal";
 }
 
 interface MultiSelectItem {

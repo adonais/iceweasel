@@ -2587,16 +2587,68 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+function renderSegment(segment, index, handleAction) {
+  if (typeof segment === "string") {
+    return segment;
+  }
+  if (segment?.href) {
+    const action = {
+      type: "OPEN_URL",
+      data: {
+        args: segment.href,
+        where: segment.where || "tab"
+      }
+    };
+    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("a", {
+      key: index,
+      href: segment.href,
+      className: "text-link",
+      onClick: event => {
+        event.preventDefault();
+        handleAction(event, action);
+      }
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: segment
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null)));
+  }
+  if (segment?.link_key) {
+    return (
+      /*#__PURE__*/
+      // eslint-disable-next-line jsx-a11y/anchor-is-valid
+      react__WEBPACK_IMPORTED_MODULE_0___default().createElement("a", {
+        key: index,
+        value: segment.link_key,
+        role: "link",
+        className: "text-link",
+        tabIndex: "0",
+        onClick: handleAction,
+        onKeyPress: event => {
+          if (event.key === "Enter" && !event.repeat) {
+            handleAction(event);
+          }
+        }
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+        text: segment
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null)))
+    );
+  }
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    key: index,
+    text: segment
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null));
+}
 const LinkParagraph = props => {
   const {
     text_content,
     handleAction
   } = props;
+  const text = text_content?.text;
   const handleParagraphAction = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(event => {
-    if (event.target.closest("a")) {
+    const anchor = event.target.closest("a");
+    if (anchor) {
       handleAction({
         ...event,
-        currentTarget: event.target
+        currentTarget: anchor
       });
     }
   }, [handleAction]);
@@ -2605,10 +2657,23 @@ const LinkParagraph = props => {
       handleParagraphAction(event);
     }
   }, [handleParagraphAction]);
+  const paragraphClassName = text_content?.font_styles === "legal" ? "legal-paragraph" : "link-paragraph";
+  if (Array.isArray(text)) {
+    const style = {};
+    for (const styleProp of _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.CONFIGURABLE_STYLES) {
+      if (text_content[styleProp] !== undefined) {
+        style[styleProp] = text_content[styleProp];
+      }
+    }
+    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
+      className: paragraphClassName,
+      style: style
+    }, text.map((segment, index) => renderSegment(segment, index, handleAction)));
+  }
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: text_content.text
+    text: text
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
-    className: text_content.font_styles === "legal" ? "legal-paragraph" : "link-paragraph",
+    className: paragraphClassName,
     onClick: handleParagraphAction,
     value: "link_paragraph",
     onKeyPress: onKeyPress

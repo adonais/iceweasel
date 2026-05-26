@@ -3,15 +3,70 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React, { useCallback } from "react";
-import { Localized } from "./MSLocalized";
+import { Localized, CONFIGURABLE_STYLES } from "./MSLocalized";
+
+function renderSegment(segment, index, handleAction) {
+  if (typeof segment === "string") {
+    return segment;
+  }
+  if (segment?.href) {
+    const action = {
+      type: "OPEN_URL",
+      data: { args: segment.href, where: segment.where || "tab" },
+    };
+    return (
+      <a
+        key={index}
+        href={segment.href}
+        className="text-link"
+        onClick={event => {
+          event.preventDefault();
+          handleAction(event, action);
+        }}
+      >
+        <Localized text={segment}>
+          <span />
+        </Localized>
+      </a>
+    );
+  }
+  if (segment?.link_key) {
+    return (
+      // eslint-disable-next-line jsx-a11y/anchor-is-valid
+      <a
+        key={index}
+        value={segment.link_key}
+        role="link"
+        className="text-link"
+        tabIndex="0"
+        onClick={handleAction}
+        onKeyPress={event => {
+          if (event.key === "Enter" && !event.repeat) {
+            handleAction(event);
+          }
+        }}
+      >
+        <Localized text={segment}>
+          <span />
+        </Localized>
+      </a>
+    );
+  }
+  return (
+    <Localized key={index} text={segment}>
+      <span />
+    </Localized>
+  );
+}
 
 export const LinkParagraph = props => {
   const { text_content, handleAction } = props;
-
+  const text = text_content?.text;
   const handleParagraphAction = useCallback(
     event => {
-      if (event.target.closest("a")) {
-        handleAction({ ...event, currentTarget: event.target });
+      const anchor = event.target.closest("a");
+      if (anchor) {
+        handleAction({ ...event, currentTarget: anchor });
       }
     },
     [handleAction]
@@ -26,15 +81,33 @@ export const LinkParagraph = props => {
     [handleParagraphAction]
   );
 
+  const paragraphClassName =
+    text_content?.font_styles === "legal"
+      ? "legal-paragraph"
+      : "link-paragraph";
+
+  if (Array.isArray(text)) {
+    const style = {};
+    for (const styleProp of CONFIGURABLE_STYLES) {
+      if (text_content[styleProp] !== undefined) {
+        style[styleProp] = text_content[styleProp];
+      }
+    }
+
+    return (
+      <p className={paragraphClassName} style={style}>
+        {text.map((segment, index) =>
+          renderSegment(segment, index, handleAction)
+        )}
+      </p>
+    );
+  }
+
   return (
-    <Localized text={text_content.text}>
+    <Localized text={text}>
       {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */}
       <p
-        className={
-          text_content.font_styles === "legal"
-            ? "legal-paragraph"
-            : "link-paragraph"
-        }
+        className={paragraphClassName}
         onClick={handleParagraphAction}
         value="link_paragraph"
         onKeyPress={onKeyPress}
