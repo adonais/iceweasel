@@ -7,6 +7,7 @@ package org.mozilla.fenix.home.sports
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.mozilla.fenix.R
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -385,6 +386,35 @@ class MatchCardBuilderTest {
             TeamMatchesResult(previous = listOf(qf), current = emptyList(), next = emptyList()),
         )
         assertEquals(FollowedTeamOutcome.NotInvolved, cards[0].viewerOutcome)
+    }
+
+    // endregion
+
+    // region key normalization
+
+    @Test
+    fun `toTeam GIVEN unknown key THEN preserve key and produce zero flagResId`() {
+        val match = sportsMatch(id = 1L, homeKey = "XYZ", awayKey = "USA")
+        val home = MatchCardBuilder.buildForNoTeam(listOf(match), LocalDate.of(2026, 6, 12))
+            .first()
+            .relatedMatches
+            .first()
+            .home
+        assertEquals("XYZ", home.key)
+        assertEquals(0, home.flagResId)
+    }
+
+    @Test
+    fun `toTeam GIVEN FIFA key already matches Region THEN pass through`() {
+        val match = sportsMatch(id = 1L, homeKey = "ENG", awayKey = "BRA")
+        val ui = MatchCardBuilder.buildForNoTeam(listOf(match), LocalDate.of(2026, 6, 12))
+            .first()
+            .relatedMatches
+            .first()
+        assertEquals("ENG", ui.home.key)
+        assertEquals(R.drawable.flag_eng, ui.home.flagResId)
+        assertEquals("BRA", ui.away.key)
+        assertEquals(R.drawable.flag_br, ui.away.flagResId)
     }
 
     // endregion

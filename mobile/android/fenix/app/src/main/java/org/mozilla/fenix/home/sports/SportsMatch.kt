@@ -9,7 +9,9 @@ import java.time.ZonedDateTime
 /**
  * A participating team as returned by the API, before any client-side enrichment.
  *
- * @property key Abbreviation used as the team identifier (e.g. "ENG").
+ * @property key FIFA team identifier (e.g. "ENG"). Normalized from the feed's ISO 3166-1
+ * alpha-3 codes at the mapper boundary so the rest of the app can key teams by a single
+ * identity. See [org.mozilla.fenix.home.sports.util.apiKeyToFifa].
  * @property globalTeamId Unique numeric identifier for this team.
  * @property name Long display name (e.g. "England"). This is not localized.
  * @property region ISO3 region code.

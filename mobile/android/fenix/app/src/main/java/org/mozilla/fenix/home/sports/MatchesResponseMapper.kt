@@ -8,6 +8,7 @@ import org.mozilla.fenix.home.sports.api.EventInfoDto
 import org.mozilla.fenix.home.sports.api.MatchesResponseDto
 import org.mozilla.fenix.home.sports.api.TeamInfoDto
 import org.mozilla.fenix.home.sports.api.TeamMatchesResponseDto
+import org.mozilla.fenix.home.sports.util.apiKeyToFifa
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -63,8 +64,11 @@ class MatchesResponseMapper(
         stage = mapStage(dto.stage),
     )
 
+    // The feed uses ISO 3166-1 alpha-3; normalize to the
+    // FIFA codes that the rest of the app keys teams by, so downstream filtering
+    // and lookups have a single identity to work against.
     private fun mapTeam(dto: TeamInfoDto) = SportsTeam(
-        key = dto.key,
+        key = apiKeyToFifa[dto.key] ?: dto.key,
         globalTeamId = dto.globalTeamId,
         name = dto.name,
         region = dto.region,

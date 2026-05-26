@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.PromoCard
@@ -32,17 +34,31 @@ import org.mozilla.fenix.theme.FirefoxTheme
  *
  * @param onFollowTeam Callback invoked when the "Follow your team" button is tapped.
  * @param modifier The [Modifier] to be applied to the card.
+ * @param pageNumber 1-based page position when shown inside a pager; appended to the title for
+ * assistive technology.
+ * @param pageCount Total page count when inside a pager. Ignored if `pageNumber` is null.
  */
 @Composable
 fun FollowTeamPromoCard(
     onFollowTeam: (CountrySelectorSource) -> Unit,
     modifier: Modifier = Modifier,
+    pageNumber: Int? = null,
+    pageCount: Int? = null,
 ) {
+    val titleText = stringResource(R.string.sports_widget_card_title)
+    val titleContentDescription = pagerHeadingContentDescription(
+        baseText = titleText,
+        pageNumber = pageNumber,
+        pageCount = pageCount,
+    )
     PromoCard(
         closeButtonContentDescription = null,
         modifier = modifier,
         title = {
-            Text(text = stringResource(R.string.sports_widget_card_title))
+            Text(
+                text = titleText,
+                modifier = Modifier.semantics { contentDescription = titleContentDescription },
+            )
 
             Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static50))
         },

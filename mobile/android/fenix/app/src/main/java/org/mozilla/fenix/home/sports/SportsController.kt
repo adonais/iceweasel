@@ -13,10 +13,8 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.openToBrowser
+import org.mozilla.fenix.home.sports.util.localizedCountryName
 import org.mozilla.fenix.utils.Settings
-import java.util.IllformedLocaleException
-import java.util.Locale
-import java.util.MissingResourceException
 
 /**
  * Controller for handling sports widget interactions on the homepage.
@@ -162,24 +160,6 @@ class DefaultSportsController(
 
     override fun handleCountrySelectorShown(source: CountrySelectorSource) {
         WorldCup.countrySelectorDisplayed.record(extra = WorldCup.CountrySelectorDisplayedExtra(source = source.value))
-    }
-
-    /**
-     * Resolves an ISO 3166-1 alpha-3 region code (as stored on [Team.region]) to a country name
-     * localized to the user's current [Locale]. Falls back to the original code when no match
-     * is found.
-     */
-    private fun localizedCountryName(iso3Code: String): String {
-        return try {
-            val iso2Code = Locale.getISOCountries().firstOrNull {
-                Locale.Builder().setRegion(it).build().isO3Country.equals(iso3Code, ignoreCase = true)
-            } ?: return iso3Code
-            Locale.Builder().setRegion(iso2Code).build().getDisplayCountry(Locale.getDefault())
-        } catch (e: IllformedLocaleException) {
-            iso3Code
-        } catch (e: MissingResourceException) {
-            iso3Code
-        }
     }
 
     companion object {

@@ -17,6 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -37,6 +38,7 @@ internal fun WordmarkLogo(
     isSportsWidgetEnabled: Boolean,
 ) {
     val wordmarkResourceId = if (isSportsWidgetEnabled) R.attr.fenixWordmarkSportLogo else R.attr.fenixWordmarkLogo
+    val sportsLogoContentDescription = stringResource(R.string.sports_widget_country_selector_title)
     Image(
         modifier = Modifier
             .height(40.dp)
@@ -44,6 +46,9 @@ internal fun WordmarkLogo(
                 testTagsAsResourceId = true
                 testTag = HOMEPAGE_WORDMARK_LOGO
                 resourceId = wordmarkResourceId
+                if (isSportsWidgetEnabled) {
+                    contentDescription = sportsLogoContentDescription
+                }
             }
             .clickable(onClick = onLogoClicked)
             .padding(end = 10.dp),
