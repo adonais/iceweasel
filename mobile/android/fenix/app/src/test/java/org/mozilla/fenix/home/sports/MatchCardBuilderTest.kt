@@ -8,7 +8,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.R
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlin.test.assertIs
@@ -211,31 +210,29 @@ class MatchCardBuilderTest {
 
     @Test
     fun `buildForNoTeam GIVEN empty THEN empty pager`() {
-        val cards = MatchCardBuilder.buildForNoTeam(matches = emptyList(), today = LocalDate.of(2026, 6, 12))
+        val cards = MatchCardBuilder.buildForNoTeam(matches = emptyList())
         assertTrue(cards.isEmpty())
     }
 
     @Test
-    fun `buildForNoTeam GIVEN group stage future matches THEN picks next available day`() {
-        val today = LocalDate.of(2026, 6, 12)
-        val tomorrow = sportsMatch(id = 1L, date = zonedDateTime(2026, 6, 13, 14))
-        val tomorrowEvening = sportsMatch(id = 2L, date = zonedDateTime(2026, 6, 13, 18))
-        val later = sportsMatch(id = 3L, date = zonedDateTime(2026, 6, 14, 14))
+    fun `buildForNoTeam GIVEN group stage matches across days THEN one card per date in chronological order`() {
+        val day1Early = sportsMatch(id = 1L, date = zonedDateTime(2026, 6, 13, 14))
+        val day1Late = sportsMatch(id = 2L, date = zonedDateTime(2026, 6, 13, 18))
+        val day2 = sportsMatch(id = 3L, date = zonedDateTime(2026, 6, 14, 14))
 
         val cards = MatchCardBuilder.buildForNoTeam(
-            matches = listOf(tomorrow, tomorrowEvening, later),
-            today = today,
+            matches = listOf(day1Early, day1Late, day2),
         )
 
-        assertEquals(1, cards.size)
-        val card = cards[0]
-        assertTrue(card.matches.isEmpty())
-        assertEquals(listOf(1L, 2L), card.relatedMatches.map { it.globalEventId })
+        assertEquals(2, cards.size)
+        assertEquals(listOf(1L, 2L), cards[0].matches.map { it.globalEventId })
+        assertTrue(cards[0].relatedMatches.isEmpty())
+        assertEquals(listOf(3L), cards[1].matches.map { it.globalEventId })
+        assertTrue(cards[1].relatedMatches.isEmpty())
     }
 
     @Test
-    fun `buildForNoTeam GIVEN group stage live today THEN live in matches, others in relatedMatches`() {
-        val today = LocalDate.of(2026, 6, 12)
+    fun `buildForNoTeam GIVEN multiple matches on one day THEN single card lists them all`() {
         val past = sportsMatch(
             id = 1L,
             date = zonedDateTime(2026, 6, 12, 9),
@@ -256,18 +253,15 @@ class MatchCardBuilderTest {
 
         val cards = MatchCardBuilder.buildForNoTeam(
             matches = listOf(past, live, future),
-            today = today,
         )
 
         assertEquals(1, cards.size)
-        val card = cards[0]
-        assertEquals(listOf(2L), card.matches.map { it.globalEventId })
-        assertEquals(listOf(1L, 3L), card.relatedMatches.map { it.globalEventId })
+        assertEquals(listOf(1L, 2L, 3L), cards[0].matches.map { it.globalEventId })
+        assertTrue(cards[0].relatedMatches.isEmpty())
     }
 
     @Test
-    fun `buildForNoTeam GIVEN group stage all past THEN falls back to most recent day`() {
-        val today = LocalDate.of(2026, 7, 1)
+    fun `buildForNoTeam GIVEN only past matches on different days THEN one card per date in chronological order`() {
         val past1 = sportsMatch(
             id = 1L,
             date = zonedDateTime(2026, 6, 10, 18),
@@ -283,10 +277,11 @@ class MatchCardBuilderTest {
             awayScore = 1,
         )
 
-        val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(past1, past2), today = today)
+        val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(past1, past2))
 
-        assertEquals(1, cards.size)
-        assertEquals(listOf(2L), cards[0].relatedMatches.map { it.globalEventId })
+        assertEquals(2, cards.size)
+        assertEquals(listOf(1L), cards[0].matches.map { it.globalEventId })
+        assertEquals(listOf(2L), cards[1].matches.map { it.globalEventId })
     }
 
     @Test
@@ -492,9 +487,9 @@ class MatchCardBuilderTest {
     @Test
     fun `toTeam GIVEN unknown key THEN preserve key and produce zero flagResId`() {
         val match = sportsMatch(id = 1L, homeKey = "XYZ", awayKey = "USA")
-        val home = MatchCardBuilder.buildForNoTeam(listOf(match), LocalDate.of(2026, 6, 12))
+        val home = MatchCardBuilder.buildForNoTeam(listOf(match))
             .first()
-            .relatedMatches
+            .matches
             .first()
             .home
         assertEquals("XYZ", home?.key)
@@ -504,9 +499,9 @@ class MatchCardBuilderTest {
     @Test
     fun `toTeam GIVEN FIFA key already matches Region THEN pass through`() {
         val match = sportsMatch(id = 1L, homeKey = "ENG", awayKey = "BRA")
-        val ui = MatchCardBuilder.buildForNoTeam(listOf(match), LocalDate.of(2026, 6, 12))
+        val ui = MatchCardBuilder.buildForNoTeam(listOf(match))
             .first()
-            .relatedMatches
+            .matches
             .first()
         assertEquals("ENG", ui.home?.key)
         assertEquals(R.drawable.flag_eng, ui.home?.flagResId)
