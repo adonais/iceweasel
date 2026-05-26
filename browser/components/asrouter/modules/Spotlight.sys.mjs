@@ -37,15 +37,19 @@ export const Spotlight = {
   },
 
   sendUserEventTelemetry(event, message, dispatch) {
-    const ping = {
+    if (message.content?.metrics === "block") {
+      return;
+    }
+    const data = {
+      action: "spotlight_user_event",
       message_id: message.content.id,
       event,
-      event_context: { writeInMicrosurvey: message.content.writeInMicrosurvey },
+      event_context: {},
     };
-    dispatch({
-      type: "SPOTLIGHT_TELEMETRY",
-      data: { action: "spotlight_user_event", ...ping },
-    });
+    if (message.content.write_in_microsurvey) {
+      data.event_context.write_in_microsurvey = true;
+    }
+    dispatch({ type: "SPOTLIGHT_TELEMETRY", data });
   },
 
   defaultDispatch(message) {

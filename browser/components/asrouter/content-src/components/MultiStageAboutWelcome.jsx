@@ -75,9 +75,7 @@ export const MultiStageAboutWelcome = props => {
         .AWGetUnhandledCampaignAction?.()
         .then(action => {
           if (typeof action === "string") {
-            MultiStageUtils.handleCampaignAction(action, props.message_id, {
-              writeInMicrosurvey: props.writeInMicrosurvey,
-            });
+            MultiStageUtils.handleCampaignAction(action, props.message_id);
           }
         })
         .catch(error => {
@@ -98,7 +96,6 @@ export const MultiStageAboutWelcome = props => {
             screen_index: order,
             screen_id: screen.id,
             screen_initials: screenInitials,
-            writeInMicrosurvey: props.writeInMicrosurvey,
           });
 
           window.AWAddScreenImpression?.(screen);
@@ -366,7 +363,6 @@ export const MultiStageAboutWelcome = props => {
               autoAdvance={currentScreen.auto_advance}
               advanceOnExperimentLoad={currentScreen.advance_on_experiment_load}
               messageId={`${props.message_id}_${order}_${currentScreen.id}`}
-              writeInMicrosurvey={props.writeInMicrosurvey}
               UTMTerm={props.utm_term}
               flowParams={flowParams}
               activeTheme={activeTheme}
@@ -655,17 +651,13 @@ export class WelcomeScreen extends React.PureComponent {
   }
 
   logTelemetry({ value, event, source, props }) {
-    MultiStageUtils.sendActionTelemetry(props.messageId, source, event.name, {
-      writeInMicrosurvey: props.writeInMicrosurvey,
-    });
+    MultiStageUtils.sendActionTelemetry(props.messageId, source, event.name);
 
     // Send additional telemetry if a messaging surface like feature callout is
     // dismissed via the dismiss button. Other causes of dismissal will be
     // handled separately by the messaging surface's own code.
     if (value === "dismiss_button" && !event.name) {
-      MultiStageUtils.sendDismissTelemetry(props.messageId, source, {
-        writeInMicrosurvey: props.writeInMicrosurvey,
-      });
+      MultiStageUtils.sendDismissTelemetry(props.messageId, source);
     }
   }
 
@@ -679,8 +671,7 @@ export class WelcomeScreen extends React.PureComponent {
       MultiStageUtils.sendActionTelemetry(
         props.messageId,
         "migrate_close",
-        "CLICK_BUTTON",
-        { writeInMicrosurvey: props.writeInMicrosurvey }
+        "CLICK_BUTTON"
       );
     }
   }
@@ -792,8 +783,7 @@ export class WelcomeScreen extends React.PureComponent {
         MultiStageUtils.sendActionTelemetry(
           props.messageId,
           actionResult ? "sign_in" : "sign_in_cancel",
-          "FXA_SIGNIN_FLOW",
-          { writeInMicrosurvey: props.writeInMicrosurvey }
+          "FXA_SIGNIN_FLOW"
         );
       }
       // Wait until migration closes to complete the action
@@ -921,8 +911,7 @@ export class WelcomeScreen extends React.PureComponent {
       MultiStageUtils.sendActionTelemetry(
         props.messageId,
         value.flat(),
-        "SELECT_CHECKBOX",
-        { writeInMicrosurvey: props.writeInMicrosurvey }
+        "SELECT_CHECKBOX"
       );
     }
   }
@@ -976,10 +965,7 @@ export class WelcomeScreen extends React.PureComponent {
           props.messageId,
           inputId,
           "TEXT_INPUT",
-          {
-            value: truncateToByteSize(inputData.value, 8192),
-            writeInMicrosurvey: props.writeInMicrosurvey,
-          }
+          { value: truncateToByteSize(inputData.value, 8192) }
         );
       }
     };
@@ -1022,7 +1008,6 @@ export class WelcomeScreen extends React.PureComponent {
         langPackInstallPhase={this.props.langPackInstallPhase}
         handleAction={this.handleAction}
         messageId={this.props.messageId}
-        writeInMicrosurvey={this.props.writeInMicrosurvey}
         isFirstScreen={this.props.isFirstScreen}
         isLastScreen={this.props.isLastScreen}
         isSingleScreen={this.props.isSingleScreen}

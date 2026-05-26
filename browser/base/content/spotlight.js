@@ -40,10 +40,20 @@ function renderMultistage(ready) {
   window.AWGetSelectedTheme = receive("GET_SELECTED_THEME");
   window.AWGetInstalledAddons = receive("GET_INSTALLED_ADDONS");
   window.AWSelectTheme = data => receive("SELECT_THEME")(data?.toUpperCase());
-  // Do not send telemetry if message (e.g. spotlight in PBM) config sets metrics as 'block'.
-  if (CONFIG?.metrics !== "block") {
-    window.AWSendEventTelemetry = receive("TELEMETRY_EVENT");
-  }
+  // Allow disabling telemetry with `metrics: 'block'`
+  const telemetryMessageHandler = receive("TELEMETRY_EVENT");
+  window.AWSendEventTelemetry = data => {
+    if (CONFIG?.metrics === "block") {
+      return null;
+    }
+    if (CONFIG?.write_in_microsurvey) {
+      if (!data.event_context) {
+        data.event_context = {};
+      }
+      data.event_context.write_in_microsurvey = true;
+    }
+    return telemetryMessageHandler(data);
+  };
   window.AWSendToDeviceEmailsSupported = receive(
     "SEND_TO_DEVICE_EMAILS_SUPPORTED"
   );
