@@ -113,6 +113,9 @@ body {
   --browser-area-z-index-sidebar-expand-on-hover: 4;
   --browser-area-z-index-sidebar-splitter: 3;
 
+  /* on macOS the animation of the toolbox in fullscreen needs the toolbox to be higher */
+  --browser-area-z-index-toolbox-while-animating: 4;
+
   --lwt-additional-images: none;
   --lwt-background-alignment: right top;
   --lwt-background-tiling: no-repeat;
@@ -120,6 +123,7 @@ body {
   --toolbox-background-image: var(--lwt-additional-images);
   --toolbox-background-repeat: var(--lwt-background-tiling);
   --toolbox-background-position: var(--lwt-background-alignment);
+  --toolbox-background-size: auto;
 
   &[lwtheme-image] {
     /* When a theme defines both theme_frame and additional_backgrounds, show
@@ -194,6 +198,29 @@ body {
 
   &[fullscreenShouldAnimate] {
     transition: 0.8s margin-top ease-out;
+  }
+
+  /* While we are animating / have animated in the titlebar from macOS,
+   * the z-indices are subtly different to accommodate the sidebar better.
+   *
+   * We also give the toolbox a shadow and border in this case.
+   */
+  &.fullscreen-floating-toolbox {
+    /* We want to guarantee an opaque background here */
+    background-color: ActiveCaption;
+    background-image: var(--toolbox-background-image), image(var(--toolbox-background-color));
+    background-repeat: var(--toolbox-background-repeat), no-repeat;
+    background-position:
+      var(--toolbox-background-position),
+      top right;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-size: var(--toolbox-background-size), auto;
+    z-index: var(--browser-area-z-index-toolbox-while-animating);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    box-shadow: var(--content-area-shadow);
+    /* Variables defined in browser-colors.css will be updated to use design tokens, see bug 1952566. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-bottom-color: var(--chrome-content-separator-color);
   }
 }
 
@@ -278,6 +305,7 @@ body {
   background-image: var(--toolbox-background-image);
   background-repeat: var(--toolbox-background-repeat);
   background-position: var(--toolbox-background-position);
+  background-size: var(--toolbox-background-size);
 }
 
 .browser-toolbar {
@@ -684,6 +712,8 @@ menupopup::part(drop-indicator) {
     background-position:
       top left,
       var(--toolbox-background-position);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-size: auto, var(--toolbox-background-size);
     background-position-y: bottom !important;
   }
 

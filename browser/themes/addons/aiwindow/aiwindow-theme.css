@@ -4,9 +4,19 @@
 
 :root {
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media not (-moz-pref("browser.nova.enabled")) {
+  @media not -moz-pref("browser.nova.enabled") {
     /* See bug 2036647 for removing this. */
-    --lwt-additional-images: var(--ai-gradient);
+    --lwt-additional-images: radial-gradient(circle at 50% 90%, rgba(253, 244, 243, 1) 0%, rgba(253, 244, 243, 1) 30%, rgba(216, 202, 247, 1) 100%);
+    /* This makes the gradient work nicely when in the toolbox */
+    --toolbox-background-size: 100vw 100vh;
+    @media (prefers-color-scheme: dark) {
+      --lwt-additional-images:
+        radial-gradient(ellipse 110% 130% at 100% 100%, rgba(255, 124, 31, 0.2), transparent 45%),
+        radial-gradient(ellipse 90% 70% at -10% 10%, rgba(115, 90, 245, 0.32), transparent 60%),
+        radial-gradient(ellipse 100% 100% at 50% 0%, rgba(106, 50, 140, 0.5), rgba(33, 3, 64, 0.25) 50%, transparent 80%),
+        linear-gradient(236deg, #31143c 5.34%, #1f133c 98.24%);
+      --toolbox-background-size: 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh;
+    }
   }
 }
 
