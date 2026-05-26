@@ -8,6 +8,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.getSystemService
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -106,6 +108,7 @@ import org.mozilla.fenix.ext.getBottomToolbarHeight
 import org.mozilla.fenix.ext.getRootView
 import org.mozilla.fenix.ext.getTopToolbarHeight
 import org.mozilla.fenix.ext.hideToolbar
+import org.mozilla.fenix.ext.isOnline
 import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.recordEventInNimbus
@@ -131,6 +134,7 @@ import org.mozilla.fenix.home.sessioncontrol.SessionControlController
 import org.mozilla.fenix.home.sessioncontrol.SessionControlControllerCallback
 import org.mozilla.fenix.home.sessioncontrol.SessionControlInteractor
 import org.mozilla.fenix.home.sports.DefaultSportsController
+import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.store.HomeToolbarStoreBuilder
 import org.mozilla.fenix.home.store.HomepageState
 import org.mozilla.fenix.home.termsofuse.DefaultPrivacyNoticeBannerController
@@ -990,7 +994,14 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         ) {
             // Fetches the full tournament schedule. The middleware caches the response
             // so a later team selection re-derives cards without another network call.
-            components.appStore.dispatch(SportsWidgetAction.FetchMatches)
+            // When offline, skip the fetch and surface ConnectionInterrupted so the widget
+            // shows an error card instead of silently rendering empty matches.
+            val action = if (requireContext().getSystemService<ConnectivityManager>()?.isOnline() == true) {
+                SportsWidgetAction.FetchMatches
+            } else {
+                SportsWidgetAction.FetchFailed(SportCardErrorState.ConnectionInterrupted)
+            }
+            components.appStore.dispatch(action)
         }
 
         BiometricAuthenticationManager.biometricAuthenticationNeededInfo.shouldShowAuthenticationPrompt =
@@ -1315,6 +1326,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
                 navController = findNavController(),
                 fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                 browserStore = requireComponents.core.store,
+                connectivityManager = requireContext().getSystemService<ConnectivityManager>(),
             ),
         )
     }

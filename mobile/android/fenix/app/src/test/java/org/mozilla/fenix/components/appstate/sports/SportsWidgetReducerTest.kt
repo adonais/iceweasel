@@ -6,11 +6,13 @@ package org.mozilla.fenix.components.appstate.sports
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.AppStoreReducer
+import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.sports.TournamentRound
 import org.mozilla.fenix.home.sports.fake.FakeMatchCardScenario
 
@@ -294,6 +296,42 @@ class SportsWidgetReducerTest {
         )
 
         assertEquals(listOf(replacement), finalState.sportsWidgetState.matchCardStates)
+    }
+
+    @Test
+    fun `GIVEN errorState is set WHEN MatchCardStateUpdated is dispatched THEN errorState is cleared`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(
+                matchCardStates = emptyList(),
+                errorState = SportCardErrorState.LoadFailed,
+            ),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(
+                matchCardStates = FakeMatchCardScenario.Live.build(),
+            ),
+        )
+
+        assertNull(finalState.sportsWidgetState.errorState)
+    }
+
+    @Test
+    fun `GIVEN errorState is set WHEN MatchCardStateUpdated is dispatched with an empty list THEN errorState is still cleared`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(
+                matchCardStates = FakeMatchCardScenario.Live.build(),
+                errorState = SportCardErrorState.ConnectionInterrupted,
+            ),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardStates = emptyList()),
+        )
+
+        assertNull(finalState.sportsWidgetState.errorState)
     }
 
     @Test

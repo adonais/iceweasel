@@ -21,6 +21,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.home.sports.CountrySelectorSource
 import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
+import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.WORLD_CUP_KICKOFF_UTC
 import org.mozilla.fenix.home.sports.regionGrouping
@@ -100,6 +101,7 @@ fun SportsWidget(
                 sportsWidgetState.isFollowTeamsCardShown,
                 selectedTeam,
                 sportsWidgetState.matchCardStates,
+                sportsWidgetState.errorState,
                 onFollowTeam,
                 onRefresh,
                 onMatchClicked,
@@ -109,6 +111,7 @@ fun SportsWidget(
                     isFollowTeamsCardShown = sportsWidgetState.isFollowTeamsCardShown,
                     selectedTeam = selectedTeam,
                     matchCardStates = sportsWidgetState.matchCardStates,
+                    errorState = sportsWidgetState.errorState,
                     onFollowTeam = onFollowTeam,
                     onRefresh = onRefresh,
                     onMatchClicked = onMatchClicked,
@@ -126,11 +129,13 @@ fun SportsWidget(
     }
 }
 
+@Suppress("LongParameterList")
 private fun sportsCardPages(
     isOneWeekToWorldCup: Boolean,
     isFollowTeamsCardShown: Boolean,
     selectedTeam: Team?,
     matchCardStates: List<MatchCardState>,
+    errorState: SportCardErrorState?,
     onFollowTeam: (CountrySelectorSource) -> Unit,
     onRefresh: (LiveMatchRefreshSource) -> Unit,
     onMatchClicked: (String, String) -> Unit,
@@ -170,6 +175,7 @@ private fun sportsCardPages(
         add { pageNumber, pageCount ->
             MatchCard(
                 state = matchCardState,
+                errorState = errorState,
                 isTeamSelected = selectedTeam != null,
                 onRefresh = onRefresh,
                 onMatchClicked = onMatchClicked,

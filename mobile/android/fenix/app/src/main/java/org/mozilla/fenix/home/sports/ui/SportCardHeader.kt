@@ -33,6 +33,7 @@ import org.mozilla.fenix.home.sports.Group
 import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
+import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.TournamentRound
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -43,6 +44,7 @@ internal fun SportCardHeader(
     match: Match,
     round: TournamentRound,
     isTeamSelected: Boolean,
+    errorState: SportCardErrorState?,
     onRefresh: (LiveMatchRefreshSource) -> Unit,
     modifier: Modifier = Modifier,
     pageNumber: Int? = null,
@@ -111,7 +113,7 @@ internal fun SportCardHeader(
             }
         }
 
-        if (isLive) {
+        if (isLive && errorState == null) {
             IconButton(
                 onClick = { onRefresh(LiveMatchRefreshSource.LIVE_MATCH_HEADER) },
                 contentDescription = stringResource(R.string.sports_widget_error_refresh),
@@ -238,6 +240,7 @@ private fun SportCardHeaderPreview(
                 ),
                 round = state.round,
                 isTeamSelected = true,
+                errorState = null,
                 onRefresh = {},
             )
         }

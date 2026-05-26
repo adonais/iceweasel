@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.home.sports
 
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.navigation.NavController
 import io.mockk.every
 import io.mockk.mockk
@@ -37,6 +39,7 @@ class SportsControllerTest {
     private val settings: Settings = mockk(relaxed = true)
     private val navController: NavController = mockk(relaxed = true)
     private val fenixBrowserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+    private var connectivityManager: ConnectivityManager = onlineConnectivityManager()
 
     private lateinit var browserStore: BrowserStore
 
@@ -50,13 +53,31 @@ class SportsControllerTest {
         browserStore = BrowserStore()
         every { appStore.state } returns AppState()
 
-        controller = DefaultSportsController(
-            appStore = appStore,
-            browserStore = browserStore,
-            settings = settings,
-            navController = navController,
-            fenixBrowserUseCases = fenixBrowserUseCases,
-        )
+        controller = buildController()
+    }
+
+    private fun buildController(): SportsController = DefaultSportsController(
+        appStore = appStore,
+        browserStore = browserStore,
+        settings = settings,
+        navController = navController,
+        fenixBrowserUseCases = fenixBrowserUseCases,
+        connectivityManager = connectivityManager,
+    )
+
+    private fun onlineConnectivityManager(): ConnectivityManager = connectivityManager(isOnline = true)
+
+    private fun offlineConnectivityManager(): ConnectivityManager = connectivityManager(isOnline = false)
+
+    private fun connectivityManager(isOnline: Boolean): ConnectivityManager {
+        val capabilities = mockk<NetworkCapabilities> {
+            every { hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns isOnline
+            every { hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) } returns isOnline
+        }
+        return mockk(relaxed = true) {
+            every { getNetworkCapabilities(any()) } returns capabilities
+            every { activeNetwork } returns mockk(relaxed = true)
+        }
     }
 
     @Test
@@ -167,6 +188,23 @@ class SportsControllerTest {
             LiveMatchRefreshSource.LIVE_MATCH_HEADER.value,
             snapshot.single().extra!!["source"],
         )
+    }
+
+    @Test
+    fun `GIVEN device is offline WHEN refresh is clicked THEN ConnectionInterrupted is dispatched and telemetry is still recorded`() {
+        connectivityManager = offlineConnectivityManager()
+        controller = buildController()
+        assertNull(WorldCup.refreshClicked.testGetValue())
+
+        controller.handleRefreshClicked(LiveMatchRefreshSource.LIVE_MATCH_HEADER)
+
+        verify {
+            appStore.dispatch(
+                AppAction.SportsWidgetAction.FetchFailed(SportCardErrorState.ConnectionInterrupted),
+            )
+        }
+        val snapshot = WorldCup.refreshClicked.testGetValue()!!
+        assertEquals(1, snapshot.size)
     }
 
     @Test

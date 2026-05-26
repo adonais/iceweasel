@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -31,8 +32,12 @@ import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.home.sports.MatchCard
+import org.mozilla.fenix.home.sports.MatchStatus
+import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.sports.fake.FakeMatchCardScenario
 import org.mozilla.fenix.theme.FirefoxTheme
+
+private const val DISABLED_CHIP_ALPHA = 0.4f
 
 /**
  * Debug tool for the Homepage Sports Widget.
@@ -104,6 +109,10 @@ private fun SportsWidgetDebugToolContent(
         HorizontalDivider()
 
         MatchCardScenariosSection(state = state, appStore = appStore)
+
+        HorizontalDivider()
+
+        ErrorStateScenariosSection(state = state, appStore = appStore)
     }
 }
 
@@ -133,6 +142,40 @@ private fun MatchCardScenariosSection(
                         ),
                     )
                 },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ErrorStateScenariosSection(
+    state: SportsWidgetState,
+    appStore: AppStore,
+) {
+    val hasLiveMatch = state.matchCardStates.any { card ->
+        card.matches.any { match ->
+            match.matchStatus is MatchStatus.Live || match.matchStatus is MatchStatus.Penalties
+        }
+    }
+
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = FirefoxTheme.layout.space.static200),
+        horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static50),
+    ) {
+        SportCardErrorState.entries.forEach { errorState ->
+            val isSelected = state.errorState == errorState
+            val action: SportsWidgetAction? = when {
+                !hasLiveMatch -> null
+                isSelected -> SportsWidgetAction.MatchCardStateUpdated(matchCardStates = state.matchCardStates)
+                else -> SportsWidgetAction.FetchFailed(error = errorState)
+            }
+            SelectableChip(
+                text = errorState.name,
+                selected = isSelected,
+                modifier = Modifier.alpha(if (hasLiveMatch) 1f else DISABLED_CHIP_ALPHA),
+                onClick = { action?.let(appStore::dispatch) },
             )
         }
     }
