@@ -243,7 +243,7 @@ class SportsControllerTest {
     fun `GIVEN valid ISO3 region codes WHEN a match is clicked THEN the browser is opened, a search is performed with the localized country names and telemetry is recorded`() {
         assertNull(WorldCup.matchClicked.testGetValue())
 
-        controller.handleMatchClicked(homeTeam = "USA", awayTeam = "FRA")
+        controller.handleMatchClicked(homeTeam = "USA", awayTeam = "FRA", date = null)
 
         verify {
             navController.navigate(R.id.browserFragment)
@@ -263,7 +263,7 @@ class SportsControllerTest {
     fun `GIVEN an unknown region code WHEN a match is clicked THEN the browser is opened, the original code is used as the fallback in the search term and telemetry is recorded`() {
         assertNull(WorldCup.matchClicked.testGetValue())
 
-        controller.handleMatchClicked(homeTeam = "ZZZ", awayTeam = "FRA")
+        controller.handleMatchClicked(homeTeam = "ZZZ", awayTeam = "FRA", date = null)
 
         verify {
             navController.navigate(R.id.browserFragment)
@@ -283,7 +283,7 @@ class SportsControllerTest {
     fun `GIVEN a malformed region code WHEN a match is clicked THEN the browser is opened, the original code is used as the fallback in the search term and telemetry is recorded`() {
         assertNull(WorldCup.matchClicked.testGetValue())
 
-        controller.handleMatchClicked(homeTeam = "USA", awayTeam = "!!")
+        controller.handleMatchClicked(homeTeam = "USA", awayTeam = "!!", date = null)
 
         verify {
             navController.navigate(R.id.browserFragment)
@@ -304,12 +304,73 @@ class SportsControllerTest {
         Locale.setDefault(Locale.FRENCH)
         assertNull(WorldCup.matchClicked.testGetValue())
 
-        controller.handleMatchClicked(homeTeam = "USA", awayTeam = "FRA")
+        controller.handleMatchClicked(homeTeam = "USA", awayTeam = "FRA", date = null)
 
         verify {
             navController.navigate(R.id.browserFragment)
             fenixBrowserUseCases.loadUrlOrSearch(
                 searchTermOrURL = "États-Unis vs France",
+                newTab = true,
+                private = false,
+                searchEngine = any(),
+            )
+        }
+        val snapshot = WorldCup.matchClicked.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals("match_clicked", snapshot.single().name)
+    }
+
+    @Test
+    fun `GIVEN a null away team WHEN a match is clicked THEN the search term contains the date and the localized home team and telemetry is recorded`() {
+        assertNull(WorldCup.matchClicked.testGetValue())
+
+        controller.handleMatchClicked(homeTeam = "USA", awayTeam = null, date = "2026-06-12")
+
+        verify {
+            navController.navigate(R.id.browserFragment)
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "2026-06-12 United States vs",
+                newTab = true,
+                private = false,
+                searchEngine = any(),
+            )
+        }
+        val snapshot = WorldCup.matchClicked.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals("match_clicked", snapshot.single().name)
+    }
+
+    @Test
+    fun `GIVEN a null home team WHEN a match is clicked THEN the search term contains the date and the localized away team and telemetry is recorded`() {
+        assertNull(WorldCup.matchClicked.testGetValue())
+
+        controller.handleMatchClicked(homeTeam = null, awayTeam = "FRA", date = "2026-06-12")
+
+        verify {
+            navController.navigate(R.id.browserFragment)
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "2026-06-12 France vs",
+                newTab = true,
+                private = false,
+                searchEngine = any(),
+            )
+        }
+        val snapshot = WorldCup.matchClicked.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals("match_clicked", snapshot.single().name)
+    }
+
+    @Test
+    fun `GIVEN a null home team and a non-English default locale WHEN a match is clicked THEN the search term contains the localized away team and telemetry is recorded`() {
+        Locale.setDefault(Locale.FRENCH)
+        assertNull(WorldCup.matchClicked.testGetValue())
+
+        controller.handleMatchClicked(homeTeam = null, awayTeam = "USA", date = "2026-06-12")
+
+        verify {
+            navController.navigate(R.id.browserFragment)
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "2026-06-12 États-Unis vs",
                 newTab = true,
                 private = false,
                 searchEngine = any(),

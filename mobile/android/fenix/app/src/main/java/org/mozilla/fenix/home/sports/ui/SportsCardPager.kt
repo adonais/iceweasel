@@ -13,11 +13,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -47,6 +51,12 @@ import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
 
 private const val PAGER_SIZE_ANIMATION_DURATION_MS = 180
 private val PAGER_SIZE_ANIMATION_EASING = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)
+
+/**
+ * Exposes the active [PagerState] to descendants so that the [ChampionsCard]
+ * can render its own [PagerIndicator] in place of the shared one. `null` when no pager is active.
+ */
+internal val LocalSportsPagerState = compositionLocalOf<PagerState?> { null }
 
 /**
  * Returns [baseText] with a "page X of Y" suffix appended for TalkBack, using
@@ -84,6 +94,9 @@ internal fun pagerHeadingContentDescription(
  * @param onGetCustomWallpaper Invoked when "Get custom wallpaper" is selected from the overflow menu.
  * @param onRemove Invoked when "Remove" is selected from the overflow menu.
  * @param modifier [Modifier] to apply to the outer container.
+ * @param championsPageIndices 0-based indices of pages for the Champion cards.
+ * When the pager settles on one of these pages, the shared background, padding, and overflow menu
+ * are suppressed so the page fills the full container.
  */
 @Composable
 fun SportsCardPager(
@@ -92,23 +105,17 @@ fun SportsCardPager(
     onGetCustomWallpaper: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
+    championsPageIndices: Set<Int> = emptySet(),
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-    val contentDescription = stringResource(R.string.sports_widget_more_options_content_description)
     val pagerState = rememberPagerState { pages.size }
-    val bottomPadding = if (pages.size > 1) FirefoxTheme.layout.space.static200 else 0.dp
+    val isChampionsPage = pagerState.currentPage in championsPageIndices
+    val showIndicator = pages.size > 1 && !isChampionsPage
 
     Column(
-        modifier = modifier
-            .semantics { isTraversalGroup = true }
-            .background(
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                shape = MaterialTheme.shapes.large,
-            )
-            .padding(
-                top = FirefoxTheme.layout.space.static150,
-                bottom = bottomPadding,
-            ),
+        modifier = modifier.sportsCardPagerContainer(
+            isChampionsPage = isChampionsPage,
+            showIndicator = showIndicator,
+        ),
     ) {
         Box(
             modifier = Modifier
@@ -120,39 +127,22 @@ fun SportsCardPager(
                     ),
                 ),
         ) {
-            HorizontalPager(
-                state = pagerState,
-                verticalAlignment = Alignment.Top,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = FirefoxTheme.layout.space.static150)
-                    .clipToBounds(),
-            ) { page ->
-                pages[page](page + 1, pages.size)
-            }
-
-            Box(modifier = Modifier.align(Alignment.TopEnd)) {
-                IconButton(
-                    onClick = { showMenu = true },
-                    contentDescription = contentDescription,
-                ) {
-                    Icon(
-                        painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                SportsWidgetMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
+            SportsCardPagerContent(
+                pagerState = pagerState,
+                pages = pages,
+                isChampionsPage = isChampionsPage,
+            )
+            if (!isChampionsPage) {
+                SportsCardPagerOverflowMenu(
                     onChangeTeam = onChangeTeam,
                     onGetCustomWallpaper = onGetCustomWallpaper,
                     onRemove = onRemove,
+                    modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
         }
 
-        if (pages.size > 1) {
+        if (showIndicator) {
             PagerIndicator(
                 pagerState = pagerState,
                 modifier = Modifier
@@ -161,6 +151,75 @@ fun SportsCardPager(
                 inactiveColor = MaterialTheme.colorScheme.surfaceTint,
             )
         }
+    }
+}
+
+@Composable
+private fun Modifier.sportsCardPagerContainer(
+    isChampionsPage: Boolean,
+    showIndicator: Boolean,
+): Modifier {
+    val topPadding = if (isChampionsPage) 0.dp else FirefoxTheme.layout.space.static150
+    val bottomPadding = if (showIndicator) FirefoxTheme.layout.space.static200 else 0.dp
+    val backgroundColor = if (isChampionsPage) {
+        Color.Transparent
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLowest
+    }
+    return this
+        .semantics { isTraversalGroup = true }
+        .background(color = backgroundColor, shape = MaterialTheme.shapes.large)
+        .padding(top = topPadding, bottom = bottomPadding)
+}
+
+@Composable
+private fun SportsCardPagerContent(
+    pagerState: PagerState,
+    pages: List<@Composable (pageNumber: Int, pageCount: Int) -> Unit>,
+    isChampionsPage: Boolean,
+) {
+    val pagerBottomPadding = if (isChampionsPage) 0.dp else FirefoxTheme.layout.space.static150
+    CompositionLocalProvider(LocalSportsPagerState provides pagerState) {
+        HorizontalPager(
+            state = pagerState,
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = pagerBottomPadding)
+                .clipToBounds(),
+        ) { page ->
+            pages[page](page + 1, pages.size)
+        }
+    }
+}
+
+@Composable
+private fun SportsCardPagerOverflowMenu(
+    onChangeTeam: (CountrySelectorSource) -> Unit,
+    onGetCustomWallpaper: () -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    val contentDescription = stringResource(R.string.sports_widget_more_options_content_description)
+    Box(modifier = modifier) {
+        IconButton(
+            onClick = { showMenu = true },
+            contentDescription = contentDescription,
+        ) {
+            Icon(
+                painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        SportsWidgetMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false },
+            onChangeTeam = onChangeTeam,
+            onGetCustomWallpaper = onGetCustomWallpaper,
+            onRemove = onRemove,
+        )
     }
 }
 
@@ -205,7 +264,7 @@ private fun SportsCardPagerPreview() {
                             isTeamSelected = true,
                             modifier = Modifier.fillMaxWidth(),
                             onRefresh = {},
-                            onMatchClicked = { _, _ -> },
+                            onMatchClicked = { _, _, _ -> },
                             pageNumber = pageNumber,
                             pageCount = pageCount,
                         )

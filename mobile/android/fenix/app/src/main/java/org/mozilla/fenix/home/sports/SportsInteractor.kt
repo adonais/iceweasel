@@ -49,7 +49,7 @@ interface SportsInteractor {
     /**
      * Called when the user clicks a Match.
      */
-    fun onMatchClicked(homeTeam: String, awayTeam: String)
+    fun onMatchClicked(homeTeam: String?, awayTeam: String?, date: String?)
 
     /**
      * Called when the sports widget is displayed.
@@ -99,8 +99,8 @@ class DefaultSportsInteractor(
         controller.handleOnGetCustomWallpaperClicked()
     }
 
-    override fun onMatchClicked(homeTeam: String, awayTeam: String) {
-        controller.handleMatchClicked(homeTeam = homeTeam, awayTeam = awayTeam)
+    override fun onMatchClicked(homeTeam: String?, awayTeam: String?, date: String?) {
+        controller.handleMatchClicked(homeTeam = homeTeam, awayTeam = awayTeam, date = date)
     }
 
     override fun onSportsWidgetShown() {

@@ -97,8 +97,8 @@ sealed class MatchStatus {
  * @property globalEventId Stable upstream identifier; the natural cache key.
  * @property date Date string for start of match e.g. Jun 13.
  * @property time Time string for start of match e.g. 5:00 PM.
- * @property home Home [Team].
- * @property away Away [Team].
+ * @property home Home [Team]. Null if the match has not been scheduled.
+ * @property away Away [Team]. Null if the match has not been scheduled.
  * @property matchStatus Current [MatchStatus].
  * @property homeScore Home team score. Null if the match has not started.
  * @property awayScore Away team score. Null if the match has not started.
@@ -113,8 +113,8 @@ data class Match(
     val globalEventId: Long = 0L,
     val date: String,
     val time: String,
-    val home: Team,
-    val away: Team,
+    val home: Team?,
+    val away: Team?,
     val matchStatus: MatchStatus = MatchStatus.Scheduled,
     val homeScore: Int? = null,
     val awayScore: Int? = null,

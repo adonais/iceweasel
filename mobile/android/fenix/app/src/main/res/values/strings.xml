@@ -4034,11 +4034,11 @@
     <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
     <string name="sports_widget_match_live">LIVE</string>
     <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-    <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 World Cup Champions</string>
+    <string name="sports_widget_champions_title">2026 World Cup Champions</string>
     <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
     <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Runners-up</string>
     <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-    <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Third place</string>
+    <string name="sports_widget_third_place_title">Third place</string>
     <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
     <string name="sports_widget_round_of_32">Round of 32</string>
     <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4174,6 +4174,8 @@
     <!-- Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
       %1$d is the current page number, and %2$d is the total number of pages. -->
     <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">World Cup final results, page %1$d of %2$d</string>
+    <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+    <string name="sports_widget_final_results_content_description">World Cup final results</string>
     <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
     <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Remove World Cup from home</string>
     <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4194,6 +4196,8 @@
     <string name="sports_widget_error_load_failed_title">Match info is not available right now.</string>
     <!-- Sports widget error card description shown when match data fails to load. -->
     <string name="sports_widget_error_load_failed_description">Try refreshing in a few minutes.</string>
+    <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+    <string name="sports_widget_team_to_be_determined">Team to be determined</string>
 
     <!-- Privacy notice homepage banner -->
     <!-- A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
