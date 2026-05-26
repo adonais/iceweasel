@@ -16,6 +16,8 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
+  FEATURE_MAJOR_VERSIONS:
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   MODEL_FEATURES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   generateChatTitle:
@@ -2193,7 +2195,14 @@ export class AIWindow extends MozLitElement {
     if (!browser) {
       return;
     }
-    lazy.FeedbackModal.open(browser, type);
+    const metadata = {
+      metadata: {
+        model: this.modelName,
+        turn_count: this.#conversation?.messageCount ?? 0,
+        prompt_version: lazy.FEATURE_MAJOR_VERSIONS[lazy.MODEL_FEATURES.CHAT],
+      },
+    };
+    lazy.FeedbackModal.open(browser, type, metadata);
   }
 
   #openMemoriesSettings() {

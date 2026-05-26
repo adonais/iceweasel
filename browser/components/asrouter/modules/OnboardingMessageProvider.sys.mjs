@@ -3210,6 +3210,200 @@ const BASE_MESSAGES = () => [
     },
     groups: [],
   },
+  {
+    id: "SMARTWINDOW_FEEDBACK_MODAL_POSITIVE",
+    template: "spotlight",
+    groups: [],
+    targeting: "true",
+    trigger: {
+      id: "feedbackThumbClick",
+      params: ["thumbs-up"],
+    },
+    content: {
+      id: "SMARTWINDOW_FEEDBACK_MODAL_POSITIVE",
+      template: "multistage",
+      modal: "window",
+      write_in_microsurvey: true,
+      screens: [
+        {
+          id: "SMARTWINDOW_FEEDBACK_SCREEN",
+          content: {
+            position: "center",
+            screen_style: {
+              width: "560px",
+              maxHeight: "495px",
+              overflow: "auto",
+            },
+            dismiss_button: { size: "small", action: { dismiss: true } },
+            title: { string_id: "aiwindow-feedback-modal-title" },
+            tiles: [
+              {
+                type: "textarea",
+                subtitle: { string_id: "aiwindow-feedback-what-worked-well" },
+                style: { marginBlock: "0" },
+                data: { id: "feedback-text", rows: 4, character_limit: 1000 },
+              },
+            ],
+            above_button_content: [
+              {
+                type: "text",
+                text: {
+                  string_id: "aiwindow-feedback-disclaimer",
+                  fontSize: "13px",
+                },
+                link_keys: ["learn-more"],
+              },
+            ],
+            "learn-more": {
+              action: {
+                type: "OPEN_URL",
+                data: {
+                  where: "chromeless",
+                  args: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/smart-window-user-feedback",
+                  width: 960,
+                  height: 720,
+                },
+              },
+            },
+            primary_button: {
+              label: { string_id: "aiwindow-feedback-submit" },
+              disabled: "hasTextInput",
+              action: {
+                type: "MULTI_ACTION",
+                collectTextInput: true,
+                navigate: true,
+                data: { actions: [] },
+              },
+            },
+            secondary_button: {
+              label: { string_id: "aiwindow-feedback-cancel" },
+              action: { navigate: true },
+            },
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "SMARTWINDOW_FEEDBACK_MODAL_NEGATIVE",
+    template: "spotlight",
+    groups: [],
+    targeting: "true",
+    trigger: {
+      id: "feedbackThumbClick",
+      params: ["thumbs-down"],
+    },
+    content: {
+      id: "SMARTWINDOW_FEEDBACK_MODAL_NEGATIVE",
+      template: "multistage",
+      modal: "window",
+      write_in_microsurvey: true,
+      screens: [
+        {
+          id: "SMARTWINDOW_FEEDBACK_SCREEN",
+          content: {
+            position: "center",
+            screen_style: {
+              width: "560px",
+              maxHeight: "495px",
+              overflow: "auto",
+            },
+            dismiss_button: { size: "small", action: { dismiss: true } },
+            title: { string_id: "aiwindow-feedback-modal-title" },
+            tiles: [
+              {
+                type: "multiselect",
+                subtitle: { string_id: "aiwindow-feedback-choose-any" },
+                data: [
+                  {
+                    id: "incorrect-or-misleading",
+                    label: {
+                      string_id:
+                        "aiwindow-feedback-reason-incorrect-or-misleading",
+                    },
+                  },
+                  {
+                    id: "performance-or-usability",
+                    label: {
+                      string_id:
+                        "aiwindow-feedback-reason-performance-or-usability",
+                    },
+                  },
+                  {
+                    id: "doesnt-address-my-request",
+                    label: {
+                      string_id:
+                        "aiwindow-feedback-reason-doesnt-address-my-request",
+                    },
+                  },
+                  {
+                    id: "harmful-or-offensive",
+                    label: {
+                      string_id:
+                        "aiwindow-feedback-reason-harmful-or-offensive",
+                    },
+                  },
+                  {
+                    id: "lacks-personalization",
+                    label: {
+                      string_id:
+                        "aiwindow-feedback-reason-lacks-personalization",
+                    },
+                  },
+                  {
+                    id: "other",
+                    label: { string_id: "aiwindow-feedback-reason-other" },
+                  },
+                ],
+                style: { marginBlock: "0 16px" },
+              },
+              {
+                type: "textarea",
+                subtitle: { string_id: "aiwindow-feedback-add-details" },
+                style: { marginBlock: "0" },
+                data: { id: "feedback-text", rows: 4, character_limit: 1000 },
+              },
+            ],
+            above_button_content: [
+              {
+                type: "text",
+                text: {
+                  string_id: "aiwindow-feedback-disclaimer",
+                  fontSize: "13px",
+                },
+                link_keys: ["learn-more"],
+              },
+            ],
+            "learn-more": {
+              action: {
+                type: "OPEN_URL",
+                data: {
+                  where: "chromeless",
+                  args: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/smart-window-user-feedback",
+                  width: 960,
+                  height: 720,
+                },
+              },
+            },
+            primary_button: {
+              label: { string_id: "aiwindow-feedback-submit" },
+              action: {
+                type: "MULTI_ACTION",
+                collectSelect: true,
+                collectTextInput: true,
+                navigate: true,
+                data: { actions: [] },
+              },
+            },
+            secondary_button: {
+              label: { string_id: "aiwindow-feedback-cancel" },
+              action: { navigate: true },
+            },
+          },
+        },
+      ],
+    },
+  },
 ];
 
 const PREONBOARDING_MESSAGES = () => [
