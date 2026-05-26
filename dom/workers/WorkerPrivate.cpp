@@ -3886,6 +3886,37 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
 
       // If we're supposed to die then we should exit the loop.
       if (currentStatus == Killing) {
+        // Unfortunately WorkerRunnable/WorkerControlRunnable could be
+        // dispatched between the duration after processing ControlRunnables and
+        // before transistioning the Worker to "Killing." Generally, these
+        // runnables should be dispatched and executed with a StrongWorkerRef,
+        // such that the runnable's execution can be protected, and the
+        // corresponding resource of Worker are ensured to be alived in
+        // "Canceling" state. However, the existence of the StrongWorkerRef is
+        // not guaranteed, it could be released unexpectedly or even not held by
+        // the dispatcher. So once the Worker is in "Killing" state with pending
+        // runnables, these runnables should be cleaned first, then continuing
+        // the killing steps. The Worker has been in "Killing" already,
+        // runnables dispatching, syncLoop and WorkerRefs creating are
+        // forbidden, so the "continue" would only focus on the dispatched
+        // runnables.
+        {
+          MutexAutoLock lock(mMutex);
+          if (NS_HasPendingEvents(thread) || !mDebuggerQueue.IsEmpty()) {
+            continue;
+          }
+        }
+
+        // Status transition to "Killing" and no pending runnables, shutdown
+        // the StorageManager.
+        if (data->mScope) {
+          data->mScope->NoteShuttingDown();
+        }
+        if (mRemoteWorkerNonLifeCycleOpController) {
+          mRemoteWorkerNonLifeCycleOpController->TransistionStateToKilled();
+          mRemoteWorkerNonLifeCycleOpController = nullptr;
+        }
+
         // We are about to destroy worker, report all use counters.
         ReportUseCounters();
 
@@ -5782,16 +5813,9 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
     }
   }
 
-  // Status transistion to "Canceling"/"Killing", mark the scope as dying when
-  // "Canceling," or shutdown the StorageManager when "Killing."
-  if (aStatus >= Canceling) {
-    if (data->mScope) {
-      if (aStatus == Canceling) {
-        data->mScope->NoteTerminating();
-      } else {
-        data->mScope->NoteShuttingDown();
-      }
-    }
+  // Status transistion to "Canceling", mark the scope as dying.
+  if (aStatus == Canceling && data->mScope) {
+    data->mScope->NoteTerminating();
   }
 
   if (aStatus >= Closing) {
@@ -5811,8 +5835,8 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
     }
   }
 
-  if (aStatus == Closing && GlobalScope()) {
-    GlobalScope()->SetIsNotEligibleForMessaging();
+  if (aStatus == Closing && data->mScope) {
+    data->mScope->SetIsNotEligibleForMessaging();
   }
 
   // Let all our holders know the new status.
@@ -5824,15 +5848,9 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
     mRemoteWorkerNonLifeCycleOpController->TransistionStateToCanceled();
   }
 
-  if (aStatus == Killing && mRemoteWorkerNonLifeCycleOpController) {
-    mRemoteWorkerNonLifeCycleOpController->TransistionStateToKilled();
-    mRemoteWorkerNonLifeCycleOpController = nullptr;
-  }
-
   // If the worker script never ran, or failed to compile, we don't need to do
   // anything else.
-  WorkerGlobalScope* global = GlobalScope();
-  if (!global) {
+  if (!data->mScope) {
     if (aStatus == Canceling) {
       MOZ_ASSERT(!data->mCancelBeforeWorkerScopeConstructed);
       data->mCancelBeforeWorkerScopeConstructed.Flip();
