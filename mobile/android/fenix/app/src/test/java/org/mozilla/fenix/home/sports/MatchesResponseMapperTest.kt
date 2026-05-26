@@ -429,6 +429,18 @@ class MatchesResponseMapperTest {
         assertEquals(TournamentRound.GROUP_STAGE, mapSingle(minimalEvent()).stage)
     }
 
+    @Test
+    fun `GIVEN canonical API stage strings WHEN mapped THEN parsed to the correct TournamentRound`() {
+        // Exact values the server emits per the spec.
+        assertStage("Group Stage", TournamentRound.GROUP_STAGE)
+        assertStage("Round of 32", TournamentRound.ROUND_OF_32)
+        assertStage("Round of 16", TournamentRound.ROUND_OF_16)
+        assertStage("Quarter-Finals", TournamentRound.QUARTER_FINAL)
+        assertStage("Semi-Finals", TournamentRound.SEMI_FINAL)
+        assertStage("3rd Place", TournamentRound.THIRD_PLACE_PLAYOFF)
+        assertStage("Final", TournamentRound.FINAL)
+    }
+
     // endregion
 
     // region helpers
