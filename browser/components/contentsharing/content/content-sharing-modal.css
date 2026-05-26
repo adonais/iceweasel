@@ -120,6 +120,12 @@
       }
 
       .too-many-links {
+        display: flex;
+        align-items: center;
+        gap: var(--space-small);
+        -moz-context-properties: fill, stroke;
+        fill: currentColor;
+        stroke: currentColor;
         color: var(--text-color-error);
       }
     }

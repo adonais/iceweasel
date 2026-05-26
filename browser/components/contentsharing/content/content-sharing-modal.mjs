@@ -110,13 +110,15 @@ export class ContentSharingModal extends MozLitElement {
 
   linksInfoTemplate() {
     if (this.shareResult.warning === WARNINGS.TOO_MANY_LINKS) {
-      return html`<div
-        class="too-many-links"
-        data-l10n-id="content-sharing-modal-too-many-links"
-        data-l10n-args=${JSON.stringify({
-          count: MAX_ITEM_COUNT,
-        })}
-      ></div>`;
+      return html`<div class="too-many-links">
+        <img class="icon" src="chrome://global/skin/icons/error.svg" />
+        <span
+          data-l10n-id="content-sharing-modal-too-many-links"
+          data-l10n-args=${JSON.stringify({
+            count: MAX_ITEM_COUNT,
+          })}
+        ></span>
+      </div> `;
     }
 
     return html`<div
