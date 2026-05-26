@@ -511,6 +511,7 @@
 
       this.#commandButtons.shareTabGroup.addEventListener("command", () => {
         ContentSharingUtils.handleShareTabGroup(this.activeGroup);
+        this.close();
       });
 
       this.panel.addEventListener("popupshown", this);

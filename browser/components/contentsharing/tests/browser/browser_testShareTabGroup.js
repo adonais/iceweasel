@@ -29,10 +29,33 @@ add_task(async function test_handleShareTabGroup() {
       label: "My tab group",
     });
 
-    await ContentSharingUtils.handleShareTabGroup(tabGroup);
+    const tabgroupEditor = document.getElementById("tab-group-editor");
+    const tabgroupPanel = tabgroupEditor.panel;
+    const panelShown = BrowserTestUtils.waitForPopupEvent(
+      tabgroupPanel,
+      "shown"
+    );
+    EventUtils.synthesizeMouseAtCenter(
+      tabGroup.querySelector(".tab-group-label"),
+      { type: "contextmenu", button: 2 },
+      window
+    );
+    await panelShown;
+
+    const panelHidden = BrowserTestUtils.waitForPopupEvent(
+      tabgroupPanel,
+      "hidden"
+    );
+    tabgroupPanel.querySelector("#tabGroupEditor_shareTabGroup").click();
+    await panelHidden;
     Assert.equal(
-      server.requests.length,
-      1,
+      tabgroupPanel.state,
+      "closed",
+      "Tab group editor panel closes after clicking Share tab group"
+    );
+
+    await TestUtils.waitForCondition(
+      () => server.requests.length === 1,
       "Server received exactly one request"
     );
     const body = server.requests[0].body;
