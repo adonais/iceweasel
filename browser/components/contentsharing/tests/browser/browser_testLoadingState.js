@@ -16,7 +16,7 @@ add_task(async function test_loadingStateWhileCreatingLink() {
       })
     );
 
-    server.responseDelay = 500;
+    const releaseResponsePromise = server.blockNextResponse();
 
     const sharePromise = ContentSharingUtils.handleShareTabs(tabs);
 
@@ -46,6 +46,9 @@ add_task(async function test_loadingStateWhileCreatingLink() {
       !modalEl.errorMessageBar,
       "Error message bar is not rendered during loading"
     );
+
+    const releaseResponse = await releaseResponsePromise;
+    releaseResponse();
 
     await sharePromise;
     await TestUtils.waitForCondition(

@@ -4,11 +4,6 @@
 import { HttpServer } from "resource://testing-common/httpd.sys.mjs";
 import { NetUtil } from "resource://gre/modules/NetUtil.sys.mjs";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  setTimeout: "resource://gre/modules/Timer.sys.mjs",
-});
-
 const SERVER_PATH = "/api/v1/create";
 const SHARE_PATH = "/share/mockShare001";
 
@@ -26,7 +21,7 @@ class ContentSharingMockServerClass {
   #originalServerUrl = null;
   #mockResponse = null;
   #mockResponseStatus = 201;
-  #responseDelay = 0;
+  #blockedRespondFns = [];
   get url() {
     return this.#url;
   }
@@ -53,11 +48,10 @@ class ContentSharingMockServerClass {
     this.#mockResponseStatus = value;
   }
 
-  get responseDelay() {
-    return this.#responseDelay;
-  }
-  set responseDelay(value) {
-    this.#responseDelay = value;
+  blockNextResponse() {
+    return new Promise(resolve => {
+      this.#blockedRespondFns.push(resolve);
+    });
   }
 
   constructor() {
@@ -112,7 +106,7 @@ class ContentSharingMockServerClass {
     this.#requests = [];
     this.#mockResponse = { url: this.#mockShareURL };
     this.#mockResponseStatus = 201;
-    this.#responseDelay = 0;
+    this.#blockedRespondFns = [];
   }
 
   #handleRequest(httpRequest, httpResponse) {
@@ -144,8 +138,9 @@ class ContentSharingMockServerClass {
       httpResponse.finish();
     };
 
-    if (this.#responseDelay > 0) {
-      lazy.setTimeout(respond, this.#responseDelay);
+    if (this.#blockedRespondFns.length) {
+      const resolveBlocked = this.#blockedRespondFns.shift();
+      resolveBlocked(respond);
     } else {
       respond();
     }
