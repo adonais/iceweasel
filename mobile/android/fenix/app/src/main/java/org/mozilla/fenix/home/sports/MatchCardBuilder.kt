@@ -177,18 +177,34 @@ private fun MatchStatus.isPast(): Boolean = this is MatchStatus.Final || this is
 
 // A decided final or third-place playoff always carries the celebration outcome,
 // regardless of which team (if any) the viewer follows — the champion card is shown
-// universally. Returns null when this card shouldn't be a celebration.
+// universally. The winning team is computed and embedded in the outcome so callers
+// don't have to re-derive it from scores. Returns null when this card shouldn't be a
+// celebration (wrong stage, no decided match, or no clear winner).
 private fun celebrationOutcomeFor(
     stage: TournamentRound,
     matches: List<Match>,
 ): FollowedTeamOutcome? {
-    val hasDecidedMatch = matches.any {
+    val decided = matches.firstOrNull {
         it.matchStatus is MatchStatus.Final || it.matchStatus is MatchStatus.FinalAfterPenalties
-    }
-    if (!hasDecidedMatch) return null
+    } ?: return null
+    val winner = winnerOf(decided) ?: return null
     return when (stage) {
-        TournamentRound.FINAL -> FollowedTeamOutcome.TournamentWinner
-        TournamentRound.THIRD_PLACE_PLAYOFF -> FollowedTeamOutcome.ThirdPlace
+        TournamentRound.FINAL -> FollowedTeamOutcome.TournamentWinner(winner)
+        TournamentRound.THIRD_PLACE_PLAYOFF -> FollowedTeamOutcome.ThirdPlace(winner)
+        else -> null
+    }
+}
+
+// Total = regulation score + penalty score. For a plain Final the penalties are null/0 and
+// the regulation score decides; for a FinalAfterPenalties the regulation is tied (knockout
+// matches can't draw) so the penalty diff decides. Returns null on a tie (which shouldn't
+// happen in a real knockout match — defensive guard).
+private fun winnerOf(match: Match): Team? {
+    val homeTotal = (match.homeScore ?: 0) + (match.homePenalty ?: 0)
+    val awayTotal = (match.awayScore ?: 0) + (match.awayPenalty ?: 0)
+    return when {
+        homeTotal > awayTotal -> match.home
+        awayTotal > homeTotal -> match.away
         else -> null
     }
 }

@@ -155,14 +155,16 @@ sealed class FollowedTeamOutcome {
     data object Eliminated : FollowedTeamOutcome()
 
     /**
-     * Followed team won the tournament with this match.
+     * Tournament has been decided. [winner] is the team that won the final, regardless of
+     * whether any team is followed. The celebration card uses this directly.
      */
-    data object TournamentWinner : FollowedTeamOutcome()
+    data class TournamentWinner(val winner: Team) : FollowedTeamOutcome()
 
     /**
-     * Followed team won the third-place playoff with this match.
+     * Third-place playoff has been decided. [winner] is the team that won the playoff,
+     * regardless of whether any team is followed. The celebration card uses this directly.
      */
-    data object ThirdPlace : FollowedTeamOutcome()
+    data class ThirdPlace(val winner: Team) : FollowedTeamOutcome()
 }
 
 /**

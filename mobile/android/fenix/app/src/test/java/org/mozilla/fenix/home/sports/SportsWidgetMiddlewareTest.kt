@@ -18,6 +18,7 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import kotlin.test.assertIs
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SportsWidgetMiddlewareTest {
@@ -106,6 +107,52 @@ class SportsWidgetMiddlewareTest {
 
         assertEquals(1, repo.fetchCount)
     }
+
+    @Test
+    fun `GIVEN a decided final not involving the followed team THEN the celebration card survives the team filter`() =
+        runTest {
+            // CAN beats AUS in the final; user follows JPN (not in the final).
+            val can = SportsTeam("CAN", 10L, "Canada", "CAN", null, null, false)
+            val aus = SportsTeam("AUS", 11L, "Australia", "AUS", null, null, true)
+            val finalMatch = SportsMatch(
+                globalEventId = 99L,
+                date = ZonedDateTime.of(2026, 7, 19, 14, 0, 0, 0, zone),
+                homeTeam = can,
+                awayTeam = aus,
+                matchStatus = MatchStatus.FinalAfterPenalties(homePenalty = 4, awayPenalty = 3),
+                homeScore = 1,
+                awayScore = 1,
+                homeExtra = null,
+                awayExtra = null,
+                homePenalty = 4,
+                awayPenalty = 3,
+                clock = null,
+                period = null,
+                updated = null,
+                venue = null,
+                stage = TournamentRound.FINAL,
+            )
+            val repo = StubRepository(
+                Result.success(
+                    TeamMatchesResult(
+                        previous = listOf(finalMatch),
+                        current = emptyList(),
+                        next = emptyList(),
+                    ),
+                ),
+            )
+            val store = appStore(repo)
+
+            dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+            dispatchAndAwait(store, SportsWidgetAction.CountriesSelected(setOf("JPN")))
+
+            val cards = store.state.sportsWidgetState.matchCardStates
+            assertEquals(1, cards.size)
+            assertEquals(TournamentRound.FINAL, cards[0].round)
+            val outcome = cards[0].viewerOutcome
+            assertIs<FollowedTeamOutcome.TournamentWinner>(outcome)
+            assertEquals("CAN", outcome.winner.key)
+        }
 
     // region helpers
 
