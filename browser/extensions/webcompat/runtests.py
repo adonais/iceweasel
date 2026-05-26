@@ -59,8 +59,8 @@ class TestHarness:
         try:
             code()
         except Exception as e:
-            threw = f"{type(e).__name__}: {e}"
-        if threw == exception:
+            threw = f"{type(e).__name__}: {e} {traceback.format_exc()}"
+        if threw.startswith(exception):
             self.test_pass(f"{description} - should throw `{exception}`")
         else:
             self.test_fail(

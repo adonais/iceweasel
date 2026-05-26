@@ -17,7 +17,9 @@ def intervention(filename, contents):
         [bug, origin] = filename.split("-")
         contents = {
             "label": "example.com",
-            "bugs": {f"{bug}": {"matches": [f"*://{origin}/*"]}},
+            "bugs": {
+                f"{bug}": {"matches": [f"*://{origin}/*"], "issue": "blocked-content"}
+            },
             "interventions": [],
         } | contents
         for i in contents["interventions"]:
@@ -37,6 +39,13 @@ def injection(filename, contents):
     }
 
 
+def template(filename, contents):
+    return {
+        "path": f"templates/{filename}",
+        "contents": contents,
+    }
+
+
 def test(
     description,
     harness,
@@ -45,21 +54,34 @@ def test(
     expected_generated_files={},
     extra_generated_filenames=[],
     non_generated_files={},
+    skip_run_js=False,
 ):
     with TemporaryDirectory(ignore_cleanup_errors=True) as base_addon_dir:
         interventions_dir = mozpath.join(base_addon_dir, "data", "interventions")
-        generated_css_dir = mozpath.join(
+
+        generated_files_dir = mozpath.join(
             base_addon_dir,
             "injections",
             "generated",
         )
-        non_generated_css_dir = mozpath.join(base_addon_dir, "injections", "css")
+        templates_dir = mozpath.join(
+            base_addon_dir,
+            "templates",
+        )
         os.makedirs(interventions_dir)
-        os.makedirs(generated_css_dir)
-        os.makedirs(non_generated_css_dir)
+        os.makedirs(generated_files_dir)
+        os.makedirs(templates_dir)
+        injections_dir = mozpath.join(base_addon_dir, "injections")
+
+        for ext in ["js", "css"]:
+            non_generated_type_dir = mozpath.join(injections_dir, ext)
+            os.makedirs(non_generated_type_dir)
 
         for filename, contents in non_generated_files.items():
-            full_path = mozpath.join(non_generated_css_dir, filename)
+            ext = mozpath.splitext(filename)[1].lstrip(".")
+            if ext not in ["css", "js"]:
+                raise ValueError("Expect only .css or .js files")
+            full_path = mozpath.join(injections_dir, ext, filename)
             with open(full_path, "w") as fd:
                 fd.write(contents)
 
@@ -80,32 +102,33 @@ def test(
             expected_generated_files.keys()
         )
 
-        with tempfile.NamedTemporaryFile(suffix="js") as final_runjs_fd:
-            with FileAvoidWrite(final_runjs_fd.name) as output_run_js:
-                codegen.generate_run_js(
-                    output_run_js,
-                    run_js_template_path,
-                    interventions_dir,
-                    *preprocessed_filenames,
-                )
-
-            if expected_run_js is not None:
-                run_js_contents = final_runjs_fd.read().decode("utf-8")
-                try:
-                    run_js = run_js_contents.lstrip(
-                        "AVAILABLE_INTERVENTIONS = "
-                    ).strip()
-                    run_js = json.loads(run_js)
-                    harness.equals(
-                        expected_run_js,
-                        run_js,
-                        f"run.js was generated correctly for {description}",
+        if not skip_run_js:
+            with tempfile.NamedTemporaryFile(suffix="js") as final_runjs_fd:
+                with FileAvoidWrite(final_runjs_fd.name) as output_run_js:
+                    codegen.generate_run_js(
+                        output_run_js,
+                        run_js_template_path,
+                        interventions_dir,
+                        *preprocessed_filenames,
                     )
-                except json.decoder.JSONDecodeError:
-                    raise ValueError(f"Could not parse JSON from run.js:\n{run_js}")
+
+                if expected_run_js is not None:
+                    run_js_contents = final_runjs_fd.read().decode("utf-8")
+                    try:
+                        run_js = run_js_contents.lstrip(
+                            "AVAILABLE_INTERVENTIONS = "
+                        ).strip()
+                        run_js = json.loads(run_js)
+                        harness.equals(
+                            run_js,
+                            expected_run_js,
+                            f"test run.js was generated correctly | {description}",
+                        )
+                    except json.decoder.JSONDecodeError:
+                        raise ValueError(f"Could not parse JSON from run.js:\n{run_js}")
 
         for filename, expected_contents in expected_generated_files.items():
-            generated_path = mozpath.join(generated_css_dir, filename)
+            generated_path = mozpath.join(generated_files_dir, filename)
             with FileAvoidWrite(generated_path) as generated_fd:
                 codegen.generate_file(generated_fd, interventions_dir)
             with open(generated_path) as generated_fd:
@@ -124,7 +147,10 @@ def WebCompatBuildTest(harness):
         {
             "interventions": [
                 {
-                    "content_scripts": {"css": ["bug100-test.css"]},
+                    "content_scripts": {
+                        "css": ["bug100-test.css"],
+                        "js": ["bug100-test.js"],
+                    },
                 },
             ]
         },
@@ -135,6 +161,7 @@ def WebCompatBuildTest(harness):
         inputs=[
             intervention_without_generated_files,
             injection("bug100-test.css", "body {}"),
+            injection("bug100-test.js", "console.log('ok')"),
         ],
         expected_run_js={
             "100": intervention_without_generated_files["contents"],
@@ -142,9 +169,19 @@ def WebCompatBuildTest(harness):
     )
 
     test(
-        "expected css files are generated from css in json",
+        "expected css and js files are generated, and json is transformed properly",
         harness,
+        non_generated_files={
+            "generic_needing_logging.js": "{window.__webcompat}",
+            "generic_not_needing_logging.js": "test;window.__webcompat_spoof_platform",
+        },
         inputs=[
+            template("hide_alerts.js", '{"param:alertsToHide"}'),
+            template("hide_messages.js", 'if(1){"param:messagesToHide"}'),
+            template(
+                "modify_meta_viewport.js", 'try{"param:metaViewportChanges"}catch(_){}'
+            ),
+            template("log_console_message.js", '{console.info("param:bugInfo"})}'),
             intervention(
                 "100-example.com",
                 {
@@ -161,40 +198,260 @@ def WebCompatBuildTest(harness):
                                 "which": ["test1", "test2"],
                             }
                         },
+                        {
+                            "content_scripts": {
+                                "js": [
+                                    "generic_needing_logging.js",
+                                    "generic_not_needing_logging.js",
+                                ]
+                            },
+                        },
+                        {
+                            "content_scripts": {
+                                "all_frames": True,
+                                "match_origin_as_fallback": True,
+                                "js": ["generic_not_needing_logging.js"],
+                            },
+                        },
+                        {"hide_alerts": ["alert1"]},
+                        {
+                            "hide_alerts": {
+                                "all_frames": True,
+                                "match_origin_as_fallback": True,
+                                "alerts": ["alert2"],
+                            }
+                        },
+                        {
+                            "hide_messages": {
+                                "container": "container1",
+                                "message": "message1",
+                            }
+                        },
+                        {
+                            "hide_messages": [
+                                {
+                                    "container": "container2",
+                                    "message": "message2",
+                                }
+                            ]
+                        },
+                        {
+                            "hide_messages": {
+                                "all_frames": True,
+                                "match_origin_as_fallback": True,
+                                "messages": [
+                                    {
+                                        "click_adjacent": "to_click",
+                                        "container": "container3",
+                                        "message": "message3",
+                                    }
+                                ],
+                            }
+                        },
+                        {
+                            "modify_meta_viewport": {
+                                "height": None,
+                                "initial-scale": "new-initial-scale",
+                                "interactive-widget": {
+                                    "only_if_equals": "==1",
+                                    "only_if_not_equals": "!=1",
+                                    "value": None,
+                                },
+                                "maximum-scale": {
+                                    "only_if_equals": ["==2"],
+                                    "only_if_not_equals": ["!=2"],
+                                    "value": "new-maximum-scale",
+                                },
+                                "minimum-scale": {
+                                    "only_if_equals": "==3",
+                                    "value": "new-minimum-scale",
+                                },
+                                "user-scalable": {
+                                    "only_if_not_equals": "!=4",
+                                    "value": "new-user-scalable",
+                                },
+                                "viewport-fit": {
+                                    "only_if_equals": ["==5"],
+                                    "value": "new-viewport-fit",
+                                },
+                                "width": {
+                                    "only_if_not_equals": ["!=6"],
+                                    "value": "new-width",
+                                },
+                            }
+                        },
+                        {
+                            "modify_meta_viewport": {
+                                "all_frames": True,
+                                "match_origin_as_fallback": True,
+                                "modify": {
+                                    "height": None,
+                                    "width": {
+                                        "only_if_not_equals": ["!=7"],
+                                        "value": "new-width2",
+                                    },
+                                },
+                            }
+                        },
+                    ],
+                },
+            ),
+            # further test that the console logging script gets advanced bugInfo correctly
+            intervention(
+                "101-example.com",
+                {
+                    "bugs": {
+                        "101": {
+                            "matches": ["*://example.com/*", "*://example2.com/*"],
+                            "issue": "blocked-content",
+                        },
+                        "102": {
+                            "matches": ["*://example3.com/*"],
+                            "issue": "blocked-content",
+                        },
+                        "103": {
+                            "matches": ["*://example2.com/*"],
+                            "issue": "blocked-content",
+                        },
+                    },
+                    "interventions": [
+                        {
+                            "content_scripts": {"js": ["generic_needing_logging.js"]},
+                        },
                     ],
                 },
             ),
         ],
         expected_run_js={
             "100": {
-                "label": "example.com",
                 "bugs": {
-                    "100": {"matches": ["*://example.com/*"]},
+                    "100": {
+                        "issue": "blocked-content",
+                        "matches": ["*://example.com/*"],
+                    }
                 },
                 "interventions": [
                     {
-                        "platforms": ["all"],
                         "content_scripts": {
                             "css": ["injections/generated/bug100-example.com-test1.css"]
                         },
+                        "platforms": ["all"],
                     },
                     {
-                        "platforms": ["all"],
                         "content_scripts": {
                             "all_frames": True,
-                            "match_origin_as_fallback": True,
                             "css": [
                                 "injections/generated/bug100-example.com-test1.css",
                                 "injections/generated/bug100-example.com-test2.css",
                             ],
+                            "match_origin_as_fallback": True,
                         },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "js": ["injections/generated/bug100-example.com.js"]
+                        },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "all_frames": True,
+                            "js": ["injections/generated/bug100-example.com-1.js"],
+                            "match_origin_as_fallback": True,
+                        },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "js": ["injections/generated/bug100-example.com-2.js"]
+                        },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "all_frames": True,
+                            "js": ["injections/generated/bug100-example.com-3.js"],
+                            "match_origin_as_fallback": True,
+                        },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "js": ["injections/generated/bug100-example.com-4.js"]
+                        },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "js": ["injections/generated/bug100-example.com-5.js"]
+                        },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "all_frames": True,
+                            "js": ["injections/generated/bug100-example.com-6.js"],
+                            "match_origin_as_fallback": True,
+                        },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "js": ["injections/generated/bug100-example.com-7.js"]
+                        },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "all_frames": True,
+                            "js": ["injections/generated/bug100-example.com-8.js"],
+                            "match_origin_as_fallback": True,
+                        },
+                        "platforms": ["all"],
                     },
                 ],
-            }
+                "label": "example.com",
+            },
+            "101": {
+                "bugs": {
+                    "101": {
+                        "issue": "blocked-content",
+                        "matches": ["*://example.com/*", "*://example2.com/*"],
+                    },
+                    "102": {
+                        "issue": "blocked-content",
+                        "matches": ["*://example3.com/*"],
+                    },
+                    "103": {
+                        "issue": "blocked-content",
+                        "matches": ["*://example2.com/*"],
+                    },
+                },
+                "interventions": [
+                    {
+                        "content_scripts": {
+                            "js": ["injections/generated/bug101-example.com.js"]
+                        },
+                        "platforms": ["all"],
+                    }
+                ],
+                "label": "example.com",
+            },
         },
         expected_generated_files={
             "bug100-example.com-test1.css": "c1 {}",
             "bug100-example.com-test2.css": "c2 {}",
+            "bug100-example.com.js": """{window.__webcompat}\n\n{\n  test;window.__webcompat_spoof_platform\n}\n\ndelete window.__webcompat_spoof_platform;\n\n{console.info([["example.com", ["100"]]]})}""",
+            "bug100-example.com-1.js": "{\n  test;window.__webcompat_spoof_platform\n}\n\ndelete window.__webcompat_spoof_platform;",
+            "bug100-example.com-2.js": '{["alert1"]}',
+            "bug100-example.com-3.js": '{["alert2"]}',
+            "bug100-example.com-4.js": 'if(1){[{"container": "container1", "message": "message1"}]}',
+            "bug100-example.com-5.js": 'if(1){[{"container": "container2", "message": "message2"}]}',
+            "bug100-example.com-6.js": 'if(1){[{"click_adjacent": "to_click", "container": "container3", "message": "message3"}]}',
+            "bug100-example.com-7.js": 'try{{"height": null, "initial-scale": "new-initial-scale", "interactive-widget": {"only_if_equals": "==1", "only_if_not_equals": "!=1", "value": null}, "maximum-scale": {"only_if_equals": ["==2"], "only_if_not_equals": ["!=2"], "value": "new-maximum-scale"}, "minimum-scale": {"only_if_equals": "==3", "value": "new-minimum-scale"}, "user-scalable": {"only_if_not_equals": "!=4", "value": "new-user-scalable"}, "viewport-fit": {"only_if_equals": ["==5"], "value": "new-viewport-fit"}, "width": {"only_if_not_equals": ["!=6"], "value": "new-width"}}}catch(_){}',
+            "bug100-example.com-8.js": 'try{{"height": null, "width": {"only_if_not_equals": ["!=7"], "value": "new-width2"}}}catch(_){}',
+            "bug101-example.com.js": """{window.__webcompat}\n\n{console.info([["example.com", ["101"]], ["example2.com", ["101", "103"]], ["example3.com", ["102"]]]})}""",
         },
     )
 
@@ -218,7 +475,10 @@ def WebCompatBuildTest(harness):
             "100": {
                 "label": "example.com",
                 "bugs": {
-                    "100": {"matches": ["*://example.com/*"]},
+                    "100": {
+                        "matches": ["*://example.com/*"],
+                        "issue": "blocked-content",
+                    }
                 },
                 "interventions": [
                     {
@@ -259,11 +519,11 @@ def WebCompatBuildTest(harness):
 
     harness.should_throw(
         "build aborts if unreferenced non-generated files are in-tree",
-        "ValueError: Please remove these files which are not referenced in any intervention JSON file: bug100-test.json",
+        "ValueError: Please remove these files which are not referenced in any intervention JSON file: bug100-test.js",
         lambda: test(
             "",
             harness,
-            non_generated_files={"bug100-test.json": ""},
+            non_generated_files={"bug100-test.js": ""},
         ),
     )
 
@@ -299,10 +559,15 @@ def WebCompatBuildTest(harness):
         ),
     )
 
-    for invalid_css_section in [[], {}, 3, ""]:
+    for [invalid_css_section, exc] in [
+        [[], "[] is not of type 'object'"],
+        [{}, "{} does not have enough properties"],
+        [3, "3 is not of type 'object'"],
+        ["", "'' is not of type 'object'"],
+    ]:
         harness.should_throw(
             f"build aborts if an invalid value is given for a css section ({invalid_css_section})",
-            "ValueError: css section should be a non-empty object or be removed from 100-example.com.json",
+            f"ValueError: 100-example.com.json is invalid intervention JSON: {exc}",
             lambda: test(
                 "",
                 harness,
@@ -338,10 +603,13 @@ def WebCompatBuildTest(harness):
         ),
     )
 
-    for css_section in [{"css": None}, {"css": {}}]:
+    for [invalid_css_section, exc] in [
+        [{"css": None}, "None is not of type 'object'"],
+        [{"css": {}}, "{} does not have enough properties"],
+    ]:
         harness.should_throw(
-            f"build aborts if bad CSS fragments are listed in intervention sections ({css_section})",
-            "ValueError: css section should be a non-empty object or be removed from 100-example.com.json",
+            f"build aborts if bad CSS fragments are listed in intervention sections ({invalid_css_section})",
+            f"ValueError: 100-example.com.json is invalid intervention JSON: {exc}",
             lambda: test(
                 "",
                 harness,
@@ -355,16 +623,20 @@ def WebCompatBuildTest(harness):
                                 },
                             ],
                         }
-                        | css_section,
+                        | invalid_css_section,
                     ),
                 ],
             ),
         )
 
-    for invalid_css_section in [[], {}, {"all_frames": True}]:
+    for [invalid_css_section, exc] in [
+        [[], "[] is too short"],
+        [{}, "'which' is a required property"],
+        [{"all_frames": True}, "'which' is a required property"],
+    ]:
         harness.should_throw(
-            "build aborts if intervention specifies invalid value for css section ({invalid_css_section})",
-            "ValueError: intervention with missing `which` key or invalid array of desired css files in 100-example.com.json",
+            f"build aborts if intervention specifies invalid value for css section ({invalid_css_section})",
+            f"ValueError: 100-example.com.json is invalid intervention JSON: {exc}",
             lambda: test(
                 "",
                 harness,
@@ -386,7 +658,7 @@ def WebCompatBuildTest(harness):
     for invalid_css_section in [[3], [True]]:
         harness.should_throw(
             f"build aborts if intervention specifies invalid value for css section ({invalid_css_section})",
-            "ValueError: Empty or non-string filename not listed in intervention css section of 100-example.com.json",
+            f"ValueError: 100-example.com.json is invalid intervention JSON: {invalid_css_section[0]} is not of type 'string'",
             lambda: test(
                 "",
                 harness,
@@ -407,7 +679,7 @@ def WebCompatBuildTest(harness):
 
     harness.should_throw(
         "build aborts if intervention specifies extra unknown keys in css section",
-        "ValueError: unknown key(s) 'junk' in css section of 100-example.com.json",
+        "ValueError: 100-example.com.json is invalid intervention JSON: Additional properties are not allowed ('junk' was unexpected)",
         lambda: test(
             "",
             harness,
@@ -425,28 +697,6 @@ def WebCompatBuildTest(harness):
             ],
         ),
     )
-
-    for invalid_css_section in []:
-        harness.should_throw(
-            "build aborts if intervention specifies invalid value for css section ({invalid_css_section})",
-            "ValueError: ",
-            lambda: test(
-                "",
-                harness,
-                inputs=[
-                    intervention(
-                        "100-example.com",
-                        {
-                            "css": {"test": "c {}"},
-                            "interventions": [
-                                {"css": ["test"]},
-                                {"css": invalid_css_section},
-                            ],
-                        },
-                    ),
-                ],
-            ),
-        )
 
     harness.should_throw(
         "build aborts if detects mixing of values for all_frames/match_origin_as_fallback",
@@ -466,6 +716,7 @@ def WebCompatBuildTest(harness):
                                 "content_scripts": {
                                     "all_frames": False,
                                     "match_origin_as_fallback": False,
+                                    "js": ["bug100-example.com-whatever.js"],
                                 },
                                 "css": {
                                     "all_frames": True,
@@ -473,6 +724,174 @@ def WebCompatBuildTest(harness):
                                     "which": ["test"],
                                 },
                             },
+                        ],
+                    },
+                ),
+                injection("bug100-example.com-whatever.js", "body {}"),
+            ],
+            expected_generated_files={
+                "bug100-example.com.js": "",
+            },
+        ),
+    )
+
+    for [invalid, exc] in [
+        [
+            ["VALUE"],
+            "Please use lowercase values for hide_alerts values (not `VALUE`)",
+        ],
+        [
+            {"alerts": ["VALUE"]},
+            "Please use lowercase values for hide_alerts values (not `VALUE`)",
+        ],
+    ]:
+        harness.should_throw(
+            "build aborts if hide_alerts is invalid",
+            f"ValueError: {exc}",
+            lambda: test(
+                "",
+                harness,
+                inputs=[
+                    intervention(
+                        "100-example.com",
+                        {
+                            "interventions": [
+                                {"hide_alerts": invalid},
+                            ],
+                        },
+                    ),
+                ],
+            ),
+        )
+
+    for [section, expected, unexpected] in [
+        ["hide_alerts", "alerts", "alertss"],
+        ["hide_messages", "messages", "messagess"],
+        ["modify_meta_viewport", "modify", "mofidy"],
+    ]:
+        for [invalid, exc] in [
+            [{"all_frames": "true"}, "'true' is not of type 'boolean'"],
+            [{"match_origin_as_fallback": []}, "[] is not of type 'boolean'"],
+            [{expected: True}, "True"],
+            [{unexpected: ["value"]}, f"{{'{unexpected}': ['value']}} is not valid"],
+            [{"all_frames": True}, "{'all_frames': True} is not valid"],
+            [
+                {"match_origin_as_fallback": True},
+                "{'match_origin_as_fallback': True} is not valid",
+            ],
+            [
+                {"all_frames": True, "match_origin_as_fallback": True},
+                "{'all_frames': True, 'match_origin_as_fallback': True} is not valid",
+            ],
+        ]:
+            harness.should_throw(
+                "build aborts if all_frames or match_origin_as_fallback is invalid",
+                f"ValueError: 100-example.com.json is invalid intervention JSON: {exc}",
+                lambda: test(
+                    "",
+                    harness,
+                    inputs=[
+                        intervention(
+                            "100-example.com",
+                            {
+                                "interventions": [
+                                    {section: invalid},
+                                ],
+                            },
+                        ),
+                    ],
+                ),
+            )
+
+    harness.should_throw(
+        "build aborts if no CSS fragments are given",
+        "ValueError: hide_alerts.js template does not seem to be a proper template",
+        lambda: test(
+            "",
+            harness,
+            inputs=[
+                intervention(
+                    "100-example.com",
+                    {
+                        "interventions": [
+                            {
+                                "hide_alerts": ["test"],
+                            },
+                        ],
+                    },
+                ),
+                template("hide_alerts.js", ""),
+            ],
+            expected_generated_files={
+                "bug100-example.com.js": "",
+            },
+        ),
+    )
+
+    harness.should_throw(
+        "build aborts if can't find related json for a generated file",
+        "ValueError: no json intervention file starting with 101-example.com",
+        lambda: test(
+            "",
+            harness,
+            expected_generated_files={
+                "bug101-example.com.js": "",
+            },
+            skip_run_js=True,
+        ),
+    )
+
+    harness.should_throw(
+        "build aborts if asked to generated non-css, non-js file",
+        "ValueError: Do not know how to generate",
+        lambda: test(
+            "",
+            harness,
+            inputs=[
+                intervention(
+                    "100-example.com",
+                    {
+                        "interventions": [
+                            {
+                                "content_scripts": {"css": ["bug100-test.css"]},
+                            }
+                        ],
+                    },
+                ),
+            ],
+            expected_generated_files={
+                "bug100-example.com.json": "",
+            },
+            skip_run_js=True,
+        ),
+    )
+
+    harness.should_throw(
+        "build aborts if cannot tell which JSON file to use",
+        "ValueError: multiple json intervention files starting with 100-example.com.. not sure which to use to generate bug100-example.com-test.css from 100-example.com_1.json or 100-example.com_2.json",
+        lambda: test(
+            "",
+            harness,
+            inputs=[
+                intervention(
+                    "100-example.com_1",
+                    {
+                        "css": {
+                            "test": "c {}",
+                        },
+                        "interventions": [
+                            {"css": ["test"]},
+                        ],
+                    },
+                ),
+                intervention(
+                    "100-example.com_2",
+                    {
+                        "css": {
+                            "test": "c {}",
+                        },
+                        "interventions": [
+                            {"css": ["test"]},
                         ],
                     },
                 ),
@@ -484,8 +903,8 @@ def WebCompatBuildTest(harness):
     )
 
     harness.should_throw(
-        "build aborts if cannot tell which JSON file to use",
-        "ValueError: multiple json intervention files starting with 100.. not sure which to use from 100-example.com.json, 100-example2.com.json",
+        "build aborts if has no sources to generate a CSS file",
+        "ValueError: No needed parts found to generate bug100-example.com.css for 100-example.com.json",
         lambda: test(
             "",
             harness,
@@ -493,28 +912,150 @@ def WebCompatBuildTest(harness):
                 intervention(
                     "100-example.com",
                     {
-                        "css": {
-                            "test": "c {}",
-                        },
                         "interventions": [
-                            {"css": ["test"]},
-                        ],
-                    },
-                ),
-                intervention(
-                    "100-example2.com",
-                    {
-                        "css": {
-                            "test": "c {}",
-                        },
-                        "interventions": [
-                            {"css": ["test"]},
+                            {"hide_alerts": ["test"]},
                         ],
                     },
                 ),
             ],
             expected_generated_files={
-                "bug100-example.com-test.css": "c {}",
+                "bug100-example.com.css": "",
             },
+            skip_run_js=True,
+        ),
+    )
+
+    harness.should_throw(
+        "build aborts if has no sources to generate a JS file",
+        "ValueError: No needed parts found to generate bug100-example.com.js for 100-example.com.json",
+        lambda: test(
+            "",
+            harness,
+            inputs=[
+                intervention(
+                    "100-example.com",
+                    {
+                        "interventions": [
+                            {
+                                "content_scripts": {"css": ["bug100-test.css"]},
+                            }
+                        ],
+                    },
+                ),
+            ],
+            expected_generated_files={
+                "bug100-example.com.js": "",
+            },
+            skip_run_js=True,
+        ),
+    )
+
+    harness.should_throw(
+        "build aborts if JS template is missing",
+        "ValueError: Could not access expected template hide_alerts.js",
+        lambda: test(
+            "",
+            harness,
+            inputs=[
+                intervention(
+                    "100-example.com",
+                    {
+                        "interventions": [
+                            {"hide_alerts": ["test"]},
+                        ],
+                    },
+                ),
+            ],
+            expected_generated_files={
+                "bug100-example.com.js": "",
+            },
+            skip_run_js=True,
+        ),
+    )
+
+    harness.should_throw(
+        "build aborts if non-generated content script is missing",
+        "ValueError: bug100-test.css is not an accessible file in 100-example.com.json",
+        lambda: test(
+            "",
+            harness,
+            inputs=[
+                intervention(
+                    "100-example.com",
+                    {
+                        "interventions": [
+                            {"content_scripts": {"css": ["bug100-test.css"]}},
+                        ],
+                    },
+                ),
+            ],
+        ),
+    )
+
+    harness.should_throw(
+        "build aborts if non-generated content script is missing",
+        "ValueError: Please remove the unneeded 'injections/css/' from '/injections/css/bug100-test.css' intervention in 100-example.com.json",
+        lambda: test(
+            "",
+            harness,
+            inputs=[
+                intervention(
+                    "100-example.com",
+                    {
+                        "interventions": [
+                            {
+                                "content_scripts": {
+                                    "css": ["/injections/css/bug100-test.css"]
+                                }
+                            },
+                        ],
+                    },
+                ),
+            ],
+            non_generated_files={"bug100-test.css": ""},
+        ),
+    )
+
+    harness.should_throw(
+        "build aborts if non-generated content script is missing",
+        "ValueError: bug100-test.js does not end in .css in 100-example.com.json",
+        lambda: test(
+            "",
+            harness,
+            inputs=[
+                intervention(
+                    "100-example.com",
+                    {
+                        "interventions": [
+                            {"content_scripts": {"css": ["bug100-test.js"]}},
+                        ],
+                    },
+                ),
+            ],
+            non_generated_files={"bug100-test.css": ""},
+        ),
+    )
+
+    harness.should_throw(
+        "build aborts if non-generated content script is missing",
+        "ValueError: bug100-test.css is listed twice in same intervention in 100-example.com.json",
+        lambda: test(
+            "",
+            harness,
+            inputs=[
+                intervention(
+                    "100-example.com",
+                    {
+                        "interventions": [
+                            {
+                                "content_scripts": {
+                                    "css": ["bug100-test.css", "bug100-test.css"]
+                                }
+                            },
+                        ],
+                    },
+                ),
+            ],
+            non_generated_files={"bug100-test.css": ""},
         ),
     )

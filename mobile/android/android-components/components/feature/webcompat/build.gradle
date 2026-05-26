@@ -37,7 +37,7 @@ tasks.register("syncWebcompatExtension", Sync) {
     def topobjdir = gradle.mozconfig.topobjdir
     from ("$topobjdir/mobile/android/webcompat_addon_generated_files")
     into layout.buildDirectory.dir("generated/assets/extensions/webcompat/")
-    exclude "**/tests/**", "**/components.conf", "**/moz.build", "**/codegen.py", "**/data/interventions"
+    exclude "**/tests/**", "**/components.conf", "**/moz.build", "**/codegen.py", "**/data/interventions", "**/templates"
 }
 
 // Make sure DAGP asset-source exploding happens after syncWebcompatExtension
