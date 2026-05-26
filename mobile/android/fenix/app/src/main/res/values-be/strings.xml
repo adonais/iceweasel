@@ -957,6 +957,8 @@
   <string name="customize_wallpapers">Шпалеры</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Спонсарскія цэтлікі</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Кубак свету</string>
   <!--
     Wallpapers
 
@@ -1396,6 +1398,8 @@
   <string name="tab_tray_menu_tab_settings">Налады картак</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Закрыць усе карткі</string>
+  <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_title">Закрыць усе карткі?</string>
   <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_confirm">Закрыць карткі</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
