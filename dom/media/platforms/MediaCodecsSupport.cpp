@@ -100,6 +100,9 @@ MediaCodecsSupported MCSInfo::GetDecodeMediaCodecsSupported(
     support += supportInfo.hwDecodeSupport;
   }
   if (aSupportSet.contains(DecodeSupport::UnsureDueToLackOfExtension)) {
+    // Every codec reaching this arm must declare a real lack-of-extension
+    // entry in GetAllCodecDefinitions.
+    MOZ_ASSERT(supportInfo.lackOfHWExtenstion != MediaCodecsSupport::SENTINEL);
     support += supportInfo.lackOfHWExtenstion;
   }
   return support;
@@ -116,6 +119,9 @@ MediaCodecsSupported MCSInfo::GetEncodeMediaCodecsSupported(
     support += supportInfo.hwEncodeSupport;
   }
   if (aSupportSet.contains(EncodeSupport::UnsureDueToLackOfExtension)) {
+    // Every codec reaching this arm must declare a real lack-of-extension
+    // entry in GetAllCodecDefinitions.
+    MOZ_ASSERT(supportInfo.lackOfHWExtenstion != MediaCodecsSupport::SENTINEL);
     support += supportInfo.lackOfHWExtenstion;
   }
   return support;
@@ -359,7 +365,7 @@ std::array<CodecDefinition, 13> MCSInfo::GetAllCodecDefinitions() {
        MEDIA_CODEC_DEF_ENTRY(VP9, "video/vp9"),
        MEDIA_CODEC_DEF_ENTRY(VP8, "video/vp8"),
        MEDIA_CODEC_DEF_ENTRY_LACKOFEXT(AV1, "video/av1"),
-       MEDIA_CODEC_DEF_ENTRY(HEVC, "video/hevc"),
+       MEDIA_CODEC_DEF_ENTRY_LACKOFEXT(HEVC, "video/hevc"),
        MEDIA_CODEC_DEF_ENTRY(AAC, "audio/mp4a-latm"),
        MEDIA_CODEC_DEF_ENTRY(MP3, "audio/mpeg"),
        MEDIA_CODEC_DEF_ENTRY(Opus, "audio/opus"),
