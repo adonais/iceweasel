@@ -126,21 +126,30 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
  * @returns {PictureInPictureChildVideoWrapper} instance of PictureInPictureChildVideoWrapper
  */
 function applyWrapper(pipChild, originatingVideo) {
-  let originatingDoc = originatingVideo.ownerDocument;
-  let originatingDocumentURI = originatingDoc.documentURI;
-
-  let overrides = lazy.gSiteOverrides.find(([matcher]) => {
-    return matcher.matches(originatingDocumentURI);
-  });
-
-  // gSiteOverrides is a list of tuples where the first element is the MatchPattern
-  // for a supported site and the second is the actual overrides object for it.
-  let wrapperPath = overrides ? overrides[1].videoWrapperScriptPath : null;
+  let wrapperPath = getVideoWrapperScriptPathForDocument(
+    originatingVideo.ownerDocument.documentURI
+  );
   return new PictureInPictureChildVideoWrapper(
     wrapperPath,
     originatingVideo,
     pipChild
   );
+}
+
+/**
+ * Returns the video wrapper script path for the given document URI, or null
+ * if no site override applies.
+ *
+ * @param {string} documentURI
+ * @returns {string | null}
+ */
+function getVideoWrapperScriptPathForDocument(documentURI) {
+  // gSiteOverrides is a list of tuples where the first element is the MatchPattern
+  // for a supported site and the second is the actual overrides object for it.
+  let overrides = lazy.gSiteOverrides.find(([matcher]) =>
+    matcher.matches(documentURI)
+  );
+  return overrides?.[1].videoWrapperScriptPath ?? null;
 }
 
 export class PictureInPictureLauncherChild extends JSWindowActorChild {
@@ -346,7 +355,7 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
     Services.prefs.addObserver(TOGGLE_FIRST_SEEN_PREF, this.observerFunction);
     Services.cpmm.sharedData.addEventListener("change", this);
 
-    this.eligiblePipVideos = new WeakSet();
+    this.urlbarToggleEligiblePipVideos = new WeakSet();
     this.trackingVideos = new WeakSet();
   }
 
@@ -381,7 +390,7 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
     this.videoWrapper = null;
 
     for (let video of ChromeUtils.nondeterministicGetWeakSetKeys(
-      this.eligiblePipVideos
+      this.urlbarToggleEligiblePipVideos
     )) {
       video.removeEventListener("emptied", this);
       video.removeEventListener("loadedmetadata", this);
@@ -602,7 +611,7 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
       case "emptied":
       // Intentional fall-through
       case "loadedmetadata": {
-        this.updatePipVideoEligibility(event.target);
+        this.updateUrlbarPipVideoEligibility(event.target);
         break;
       }
     }
@@ -638,14 +647,25 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
 
     this.trackingVideos.add(video);
 
-    this.updatePipVideoEligibility(video);
+    this.updateUrlbarPipVideoEligibility(video);
   }
 
-  updatePipVideoEligibility(video) {
-    let isEligible = PictureInPictureChild.videoIsPiPEligible(video);
+  updateUrlbarPipVideoEligibility(video) {
+    // Bug 2041113: use a video wrapper to exclude YouTube preview videos
+    // from being marked as urlbar PiP eligible videos.
+    if (
+      !this.videoWrapper &&
+      getVideoWrapperScriptPathForDocument(this.document.documentURI)
+    ) {
+      this.videoWrapper = applyWrapper(this, video);
+    }
+    let isWrapperEligible =
+      this.videoWrapper?.isUrlbarToggleEligible(video) ?? true;
+    let isEligible =
+      isWrapperEligible && PictureInPictureChild.videoIsPiPEligible(video);
     if (isEligible) {
-      if (!this.eligiblePipVideos.has(video)) {
-        this.eligiblePipVideos.add(video);
+      if (!this.urlbarToggleEligiblePipVideos.has(video)) {
+        this.urlbarToggleEligiblePipVideos.add(video);
 
         let mutationObserver = new this.contentWindow.MutationObserver(
           mutationList => {
@@ -654,12 +674,12 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
         );
         mutationObserver.observe(video.parentElement, { childList: true });
       }
-    } else if (this.eligiblePipVideos.has(video)) {
-      this.eligiblePipVideos.delete(video);
+    } else if (this.urlbarToggleEligiblePipVideos.has(video)) {
+      this.urlbarToggleEligiblePipVideos.delete(video);
     }
 
     let videos = ChromeUtils.nondeterministicGetWeakSetKeys(
-      this.eligiblePipVideos
+      this.urlbarToggleEligiblePipVideos
     );
 
     this.sendAsyncMessage("PictureInPicture:UpdateEligiblePipVideoCount", {
@@ -675,11 +695,11 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
   handleEligiblePipVideoMutation(mutationList) {
     for (let mutationRecord of mutationList) {
       let video = mutationRecord.removedNodes[0];
-      this.eligiblePipVideos.delete(video);
+      this.urlbarToggleEligiblePipVideos.delete(video);
     }
 
     let videos = ChromeUtils.nondeterministicGetWeakSetKeys(
-      this.eligiblePipVideos
+      this.urlbarToggleEligiblePipVideos
     );
 
     this.sendAsyncMessage("PictureInPicture:UpdateEligiblePipVideoCount", {
@@ -694,7 +714,7 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
 
   urlbarToggle(eventExtraKeys) {
     let video = ChromeUtils.nondeterministicGetWeakSetKeys(
-      this.eligiblePipVideos
+      this.urlbarToggleEligiblePipVideos
     )[0];
     if (video) {
       let pipEvent = new this.contentWindow.CustomEvent(
@@ -1954,6 +1974,10 @@ export class PictureInPictureChild extends JSWindowActorChild {
     }
 
     if (!video.mozHasAudio) {
+      return false;
+    }
+
+    if (!video.checkVisibility()) {
       return false;
     }
 
@@ -3318,6 +3342,25 @@ class PictureInPictureChildVideoWrapper {
       name: "shouldHideToggle",
       args: [video],
       fallback: () => false,
+      validateRetVal: retVal => this.#isBoolean(retVal),
+    });
+  }
+
+  /**
+   * OVERRIDABLE - calls the isUrlbarToggleEligible() method defined in the site wrapper script.
+   * Runs a fallback that returns true if the method is not overridden. This method
+   * is meant to let sites with multiple seemingly eligible videos (e.g. YouTube's preview players)
+   * identify whether a video should be counted toward the urlbar PiP toggle criteria.
+   *
+   * @param {HTMLVideoElement} video
+   *  The originating video source element
+   * @returns {boolean} True if the video should be counted toward the urlbar PiP toggle criteria.
+   */
+  isUrlbarToggleEligible(video) {
+    return this.#callWrapperMethod({
+      name: "isUrlbarToggleEligible",
+      args: [video],
+      fallback: () => true,
       validateRetVal: retVal => this.#isBoolean(retVal),
     });
   }
