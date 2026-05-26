@@ -1768,6 +1768,15 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         DRIVER_LESS_THAN, GfxDriverInfo::allDriverVersions,
         "INTEL_DEVICE_GEN5_OR_OLDER");
 
+    // Bug 1970532 - Intel D3D11 driver crash.
+    // Known-bad versions: 31.0.101.4032, .4091, .4146, .4255, .4314.
+    APPEND_TO_DRIVER_BLOCKLIST_RANGE(
+        OperatingSystem::Windows10or11, DeviceFamily::IntelAll,
+        nsIGfxInfo::FEATURE_WEBRENDER,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_BETWEEN_INCLUSIVE,
+        V(31, 0, 101, 4032), V(31, 0, 101, 4314), "FEATURE_FAILURE_BUG_1970532",
+        "31.0.101.4032 - 31.0.101.4314");
+
     APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::Windows, DeviceFamily::NvidiaWebRenderBlocked,
         nsIGfxInfo::FEATURE_WEBRENDER, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
