@@ -11,7 +11,7 @@ const ADAPTIVE_URL = "https://example.com/adaptive-page";
 const ORIGIN_URL = "https://example.com/";
 const SEARCH_STRING = "exa";
 const ADAPTIVE_INPUT = "exa";
-const BACKSPACE_THRESHOLD = 3;
+const BACKSPACE_THRESHOLD = UrlbarPrefs.get("autoFill.backspaceThreshold");
 
 add_setup(async function () {
   await PlacesUtils.history.clear();
@@ -46,17 +46,14 @@ async function addAdaptiveHistoryEntry(url, input, useCount = 3) {
 }
 
 async function backspaces(n, input) {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: input,
-  });
-
   for (let i = 0; i < n; i++) {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: input,
+    });
     EventUtils.synthesizeKey("KEY_Backspace");
-    await UrlbarTestUtils.promiseSearchComplete(window);
   }
-
-  await UrlbarTestUtils.promisePopupClose(window);
+  await UrlbarUtils._lastRecordAutofillBackspacePromise;
 }
 
 async function pickHistoryResult(url) {

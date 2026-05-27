@@ -11,15 +11,14 @@ const ORIGIN_URL = "https://example.com/";
 const PAGE_URL = "https://example.com/some/page";
 
 const LEVELS = [
-  { url: ORIGIN_URL, level: "origin" },
-  { url: PAGE_URL, level: "url" },
+  { url: ORIGIN_URL, level: "origin", key: "origin:example.com" },
+  { url: PAGE_URL, level: "url", key: "page:example.com" },
 ];
 
-function setStoredTimestamp(url, level, timestamp) {
-  let host = new URL(url).host.replace(/^www\./, "");
-  let entry = UrlbarUtils._backspaceBlocks.get(host);
-  Assert.ok(entry, `Entry should exist for ${host}`);
-  entry[level] = timestamp;
+function setStoredTimestamp(key, timestamp) {
+  let entry = UrlbarUtils._backspaceBlocks.get(key);
+  Assert.ok(entry, `Entry should exist for ${key}`);
+  entry.blockedAt = timestamp;
 }
 
 function clearAllBlocks() {
@@ -28,10 +27,17 @@ function clearAllBlocks() {
 
 registerCleanupFunction(clearAllBlocks);
 
+async function triggerBlock(url) {
+  await PlacesTestUtils.addVisits(url);
+  for (let i = 0; i < UrlbarPrefs.get("autoFill.backspaceThreshold"); i++) {
+    await UrlbarUtils.recordAutofillBackspace(url);
+  }
+}
+
 add_task(async function block_is_returned_and_consumed() {
-  for (let { url, level } of LEVELS) {
+  for (let { url, level, key } of LEVELS) {
     clearAllBlocks();
-    UrlbarUtils.trackBackspaceBlock(url);
+    await triggerBlock(url);
 
     let result = UrlbarUtils.getBackspaceBlock(url);
     Assert.equal(result.level, level, `${url} should produce ${level} level`);
@@ -43,17 +49,23 @@ add_task(async function block_is_returned_and_consumed() {
       null,
       "Result was consumed"
     );
+    Assert.ok(
+      !UrlbarUtils._backspaceBlocks.has(key),
+      "Entry is dropped once blockedAt is consumed"
+    );
   }
+
+  await PlacesUtils.history.clear();
 });
 
 add_task(async function expired_block_returns_null_and_is_consumed() {
-  for (let { url, level } of LEVELS) {
+  for (let { url, level, key } of LEVELS) {
     clearAllBlocks();
-    UrlbarUtils.trackBackspaceBlock(url);
+    await triggerBlock(url);
 
     // Backdate the stored timestamp past the max age threshold.
     let maxAgeMs = UrlbarUtils._BACKSPACE_BLOCK_MAX_AGE_HOURS * 60 * 60 * 1000;
-    setStoredTimestamp(url, level, Date.now() - maxAgeMs - 1000);
+    setStoredTimestamp(key, Date.now() - maxAgeMs - 1000);
 
     Assert.equal(
       UrlbarUtils.getBackspaceBlock(url),
@@ -61,19 +73,21 @@ add_task(async function expired_block_returns_null_and_is_consumed() {
       `Stale ${level} block beyond _BACKSPACE_BLOCK_MAX_AGE_HOURS should return null`
     );
   }
+
+  await PlacesUtils.history.clear();
 });
 
 add_task(async function retracking_refreshes_expiration() {
-  for (let { url, level } of LEVELS) {
+  for (let { url, level, key } of LEVELS) {
     clearAllBlocks();
-    UrlbarUtils.trackBackspaceBlock(url);
+    await triggerBlock(url);
 
     // Backdate so a getBackspaceBlock call right now would return null.
     let maxAgeMs = UrlbarUtils._BACKSPACE_BLOCK_MAX_AGE_HOURS * 60 * 60 * 1000;
-    setStoredTimestamp(url, level, Date.now() - maxAgeMs - 1000);
+    setStoredTimestamp(key, Date.now() - maxAgeMs - 1000);
 
     // Re-track. This should overwrite the stale timestamp with a fresh one.
-    UrlbarUtils.trackBackspaceBlock(url);
+    await triggerBlock(url);
 
     let result = UrlbarUtils.getBackspaceBlock(url);
     Assert.ok(
@@ -82,12 +96,14 @@ add_task(async function retracking_refreshes_expiration() {
     );
     Assert.equal(result.level, level);
   }
+
+  await PlacesUtils.history.clear();
 });
 
 add_task(async function origin_and_url_blocks_coexist() {
   clearAllBlocks();
-  UrlbarUtils.trackBackspaceBlock(ORIGIN_URL);
-  UrlbarUtils.trackBackspaceBlock(PAGE_URL);
+  await triggerBlock(ORIGIN_URL);
+  await triggerBlock(PAGE_URL);
 
   // Querying the page URL should return the url-level block, and consuming
   // it should leave the origin-level block intact.
@@ -116,4 +132,6 @@ add_task(async function origin_and_url_blocks_coexist() {
     null,
     "Origin-level block was consumed"
   );
+
+  await PlacesUtils.history.clear();
 });

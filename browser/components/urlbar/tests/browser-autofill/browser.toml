@@ -8,6 +8,10 @@ support-files = [
 
 ["browser_backspace_dismissal.js"]
 
+["browser_backspace_dismissal_guards.js"]
+
+["browser_backspace_dismissal_reintegration.js"]
+
 ["browser_backspaced.js"]
 
 ["browser_canonize.js"]

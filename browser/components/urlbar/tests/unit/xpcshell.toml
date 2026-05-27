@@ -34,13 +34,15 @@ support-files = ["data/engine.xml"]
 
 ["test_UrlbarUtils_addToUrlbarHistory.js"]
 
-["test_UrlbarUtils_autofillBlock.js"]
+["test_UrlbarUtils_autofillBackspaceCount.js"]
 
-["test_UrlbarUtils_backspaceBlocks.js"]
+["test_UrlbarUtils_autofillBlock.js"]
 
 ["test_UrlbarUtils_copySnakeKeysToCamel.js"]
 
 ["test_UrlbarUtils_formatDate.js"]
+
+["test_UrlbarUtils_getBackspaceBlock.js"]
 
 ["test_UrlbarUtils_getShortcutOrURIAndPostData.js"]
 

@@ -533,6 +533,8 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     }
 
     if (didRemove) {
+      UrlbarUtils.clearAutofillBackspaceEntryForUrl(result.payload.url);
+
       // Upon removing the autofill, we should do another search.
       controller.input._setValue(queryContext.searchString);
       controller.input.startQuery({
