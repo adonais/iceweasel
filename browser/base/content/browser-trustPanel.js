@@ -137,6 +137,8 @@ class TrustPanel {
    */
   #qwac = null;
 
+  #breachedStatus = null;
+
   /**
    * Promise that will resolve when determining if the document is using a QWAC
    * has resolved.
@@ -152,9 +154,6 @@ class TrustPanel {
   #popupToggleDelayTimer = null;
   #openingReason = null;
 
-  #breaches = [];
-  #breachesPromise = null;
-
   #blockers = {
     SocialTracking,
     ThirdPartyCookies,
@@ -169,8 +168,6 @@ class TrustPanel {
         blocker.init();
       }
     }
-
-    void this.#ensureBreachesLoaded();
 
     // Add an observer to listen to requests to open the protections panel
     Services.obs.addObserver(this, "smartblock:open-protections-panel");
@@ -200,30 +197,6 @@ class TrustPanel {
 
     Services.obs.removeObserver(this, "smartblock:open-protections-panel");
     Services.obs.removeObserver(this, "fxaccounts:onlogout");
-  }
-
-  // Ensures breach data is loaded into the local cache (`#breaches`).
-  // Multiple callers will share the same in-flight request via
-  // `#breachesPromise` to avoid duplicate fetches.
-  #ensureBreachesLoaded() {
-    if (this.#breaches.length) {
-      return Promise.resolve();
-    }
-    if (this.#breachesPromise) {
-      return this.#breachesPromise;
-    }
-    this.#breachesPromise = RemoteSettings("fxmonitor-breaches")
-      .get()
-      .then(breaches => {
-        this.#breaches = breaches ?? [];
-        if (this.#uri) {
-          this.#updateUrlbarIcon();
-        }
-      })
-      .finally(() => {
-        this.#breachesPromise = null;
-      });
-    return this.#breachesPromise;
   }
 
   get #popup() {
@@ -362,8 +335,13 @@ class TrustPanel {
     });
 
     const applicableBreaches = await this.#getApplicableBreaches(this.#host);
+    const hasMonitorAccountOrStoredPasswords =
+      await this.#hasMonitorAccountOrStoredPasswords();
     Glean.trustpanel.opened.record({
-      breach_status: await this.#breachedStatus(applicableBreaches),
+      breach_status: getBreachedStatus({
+        breaches: applicableBreaches,
+        hasMonitorAccountOrStoredPasswords,
+      }),
     });
   }
 
@@ -393,8 +371,41 @@ class TrustPanel {
     this.#qwac = null;
     this.#qwacStatusPromise = null;
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
-    void this.#ensureBreachesLoaded();
+    this.#breachedStatus = null;
+    // The breached status is checked asynchronously below:
     this.#updateUrlbarIcon();
+
+    // We want to make sure the URL bar icon updates immediately to a neutral state
+    // after navigation, which is why `this.#updateUrlbarIcon` is synchronous.
+    // However, to determine whether we need to show an animation to highlight a breach alert,
+    // we need to make a couple of async calls. Thus, we accept that we might be showing the
+    // "wrong" icon initially, and then redraw the icon again when the async calls complete
+    // and we need to display the breach animation.
+    // (This function will update the icon by itself when it resolves, so we don't have to await it here.)
+    void this.#checkForBreaches(uri);
+  }
+
+  /** Asynchronous check for the current page's breached status, updating the address bar icon if the page was breached */
+  async #checkForBreaches(uri) {
+    const capturedUri = uri;
+    const [applicableBreaches, hasMonitorAccountOrStoredPasswords] =
+      await Promise.all([
+        this.#getApplicableBreaches(this.#host),
+        this.#hasMonitorAccountOrStoredPasswords(),
+      ]);
+
+    // Ensure we're still looking at the page we checked the breach status for:
+    if (this.#uri !== capturedUri) {
+      return;
+    }
+    const breachedStatus = getBreachedStatus({
+      breaches: applicableBreaches,
+      hasMonitorAccountOrStoredPasswords,
+    });
+    this.#breachedStatus = breachedStatus;
+    if (breachedStatus !== "disabled" && breachedStatus !== "not-breached") {
+      this.#updateUrlbarIcon();
+    }
   }
 
   /**
@@ -416,7 +427,7 @@ class TrustPanel {
     let targetClasses = new Set();
     targetClasses.add(this.#isSecurePage() ? "secure" : "insecure");
 
-    if (this.#isSecurePage() && this.#breachedStatusSync() === "breached") {
+    if (this.#isSecurePage() && this.#breachedStatus === "breached") {
       targetClasses.add("breached");
     }
     if (!this.#trackingProtectionEnabled) {
@@ -469,11 +480,16 @@ class TrustPanel {
     );
 
     const applicableBreaches = await this.#getApplicableBreaches(this.#host);
-    const breachStatus = await this.#breachedStatus(applicableBreaches);
-    if (breachStatus !== "disabled" && breachStatus !== "not-breached") {
+    const hasMonitorAccountOrStoredPasswords =
+      await this.#hasMonitorAccountOrStoredPasswords();
+    const breachedStatus = getBreachedStatus({
+      breaches: applicableBreaches,
+      hasMonitorAccountOrStoredPasswords,
+    });
+    if (breachedStatus !== "disabled" && breachedStatus !== "not-breached") {
       graphicSection.hidden = true;
       breachAlertGraphicSection.hidden = false;
-      breachAlertGraphicSection.breachStatus = breachStatus;
+      breachAlertGraphicSection.breachStatus = breachedStatus;
       breachAlertGraphicSection.breachNames = applicableBreaches.map(
         breach => breach.Name
       );
@@ -607,29 +623,6 @@ class TrustPanel {
       return "warning";
     }
     return this.#trackingProtectionEnabled ? "enabled" : "disabled";
-  }
-
-  async #breachedStatus(breaches) {
-    if (!UrlbarPrefs.get("trustPanel.breachAlerts")) {
-      return "disabled";
-    }
-
-    if (await this.#hasMonitorAccountOrPasswords()) {
-      // Currently, we only show a Call To Action to get a Monitor account,
-      // which is not very useful to users who already have one.
-      // Later, we'll provide functionality for Monitor users too.
-      return "disabled";
-    }
-
-    // The plan is to eventually add other conditions in which to show the
-    // breach alert with different content. Currently, we just show an alert
-    // when the site is breached, but we could e.g. add a more pressing warning
-    // if we know the user's credentials specifically have been included.
-    if (breaches.length) {
-      return "breached";
-    }
-
-    return "not-breached";
   }
 
   #updateSecurityInformationSubview() {
@@ -806,7 +799,7 @@ class TrustPanel {
     }
   }
 
-  async #hasMonitorAccountOrPasswords() {
+  async #hasMonitorAccountOrStoredPasswords() {
     return (
       (await this.#hasMonitorAccount()) || (await this.#hasStoredPasswords())
     );
@@ -1697,39 +1690,6 @@ class TrustPanel {
     }
   }
 
-  // The urlbar icon is part of core browser chrome state, not a data-driven UI.
-  // It is updated synchronously in updateIdentity(), so we need a synchronous version
-  // of getBreachForSite.
-  // TODO: Consolidate this with the async getBreachForSite() used in updatePopup()
-  // into a single #getBreachForSite(host) that operates purely on the in-memory
-  // this.#breaches cache, so all filtering logic (e.g. age, dismissed status) lives
-  // in one place and the two implementations cannot drift apart.
-  #getBreachForSiteSync(site) {
-    if (!site || !this.#breaches.length) {
-      return null;
-    }
-
-    return this.#breaches.find(breach => {
-      return breach.Domain && Services.eTLD.hasRootDomain(site, breach.Domain);
-    });
-  }
-
-  #breachedStatusSync() {
-    if (!UrlbarPrefs.get("trustPanel.breachAlerts")) {
-      return "disabled";
-    }
-
-    return this.#getBreachForSiteSync(this.#host) ? "breached" : "not-breached";
-  }
-
-  /**
-   * Internal test helper to reset the breach cache.
-   */
-  resetBreachCacheForTest() {
-    this.#breachesPromise = null;
-    this.#breaches = [];
-  }
-
   async #getApplicableBreaches(site) {
     const breaches = await this.#getBreachedWebsites();
 
@@ -1774,10 +1734,12 @@ class TrustPanel {
       }));
       const breachAlertStorage = await this.#getBreachAlertStorage();
       await breachAlertStorage.setBreachAlertDismissals(dismissals);
+      this.#breachedStatus = "disabled";
     } catch (ex) {
       console.error("Failed to store breach dismissal:", ex);
     }
     this.#updateMainView();
+    this.#updateUrlbarIcon();
   }
 }
 
@@ -1794,6 +1756,30 @@ function isRecentBreach(breach) {
   const oneYearAgo = currentDate.subtract({ years: 1 });
   // Return `true` if the breach happened at most a year ago
   return Temporal.PlainDate.compare(breachedDate, oneYearAgo) !== -1;
+}
+
+function getBreachedStatus(inputData) {
+  const { breaches, hasMonitorAccountOrStoredPasswords } = inputData;
+  if (!UrlbarPrefs.get("trustPanel.breachAlerts")) {
+    return "disabled";
+  }
+
+  if (hasMonitorAccountOrStoredPasswords) {
+    // Currently, we only show a Call To Action to get a Monitor account,
+    // which is not very useful to users who already have one.
+    // Later, we'll provide functionality for Monitor users too.
+    return "disabled";
+  }
+
+  // The plan is to eventually add other conditions in which to show the
+  // breach alert with different content. Currently, we just show an alert
+  // when the site is breached, but we could e.g. add a more pressing warning
+  // if we know the user's credentials specifically have been included.
+  if (breaches.length) {
+    return "breached";
+  }
+
+  return "not-breached";
 }
 
 var gTrustPanelHandler = new TrustPanel();
