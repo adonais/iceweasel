@@ -4430,6 +4430,7 @@ bool ObjectKeysReplacer::run(MInstructionIterator& outerIterator) {
 
   objToIter_ = MObjectToIterator::New(alloc_, objectKeys()->object(), nullptr);
   objToIter_->setSkipRegistration(true);
+  objToIter_->stealResumePoint(arr_);
   arr_->block()->insertBefore(arr_, objToIter_);
 
   // Iterate over each basic block.
@@ -4464,7 +4465,6 @@ bool ObjectKeysReplacer::run(MInstructionIterator& outerIterator) {
 
   auto* forRecovery = MObjectKeysFromIterator::New(alloc_, objToIter_);
   arr_->block()->insertBefore(arr_, forRecovery);
-  forRecovery->stealResumePoint(arr_);
   arr_->replaceAllUsesWith(forRecovery);
 
   // We need to explicitly discard the instruction since it's marked as
