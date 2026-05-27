@@ -1002,7 +1002,6 @@ function appendSearchKeywords(aId, keywords) {
 
 function maybeDisplayPoliciesNotice() {
   if (Services.policies.status == Services.policies.ACTIVE) {
-    document.getElementById("policies-container").removeAttribute("hidden");
     document
       .getElementById("policies-container-content")
       .removeAttribute("hidden");
