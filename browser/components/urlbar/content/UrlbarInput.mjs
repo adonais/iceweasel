@@ -1518,7 +1518,7 @@ ${
     }
 
     if (
-      lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled") &&
+      lazy.UrlbarPrefs.get("autoFill.adaptiveHistory.enabled") &&
       result.autofill &&
       result.payload?.url &&
       !this.isPrivate
@@ -1988,7 +1988,7 @@ ${
       ) {
         input = result.autofill.adaptiveHistoryInput;
       } else if (
-        lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled") &&
+        lazy.UrlbarPrefs.get("autoFill.adaptiveHistory.enabled") &&
         result.autofill?.type == "origin" &&
         // Bug: 2026227: Investigate if we want to use a higher threshold
         this._lastSearchString?.length > 0
@@ -2012,7 +2012,7 @@ ${
       // Re-integration: If the user picks a non-autofill result for a URL
       // that has a blocked origin, clear the block.
       if (
-        lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled") &&
+        lazy.UrlbarPrefs.get("autoFill.adaptiveHistory.enabled") &&
         !result.autofill &&
         result.type == lazy.UrlbarUtils.RESULT_TYPE.URL
       ) {
@@ -5469,7 +5469,7 @@ ${
     }
 
     if (
-      lazy.UrlbarPrefs.get("autoFillAdaptiveHistoryEnabled") &&
+      lazy.UrlbarPrefs.get("autoFill.adaptiveHistory.enabled") &&
       event.inputType?.startsWith("deleteContent") &&
       !this.isPrivate &&
       this._autofillPlaceholder &&
