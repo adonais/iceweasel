@@ -13,6 +13,8 @@ ChromeUtils.defineESModuleGetters(this, {
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
+  getModelForChoice:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
   IntentClassifier:
     "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
@@ -24,6 +26,10 @@ ChromeUtils.defineESModuleGetters(this, {
 /**
  * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
  */
+
+async function modelFor(choiceId) {
+  return (await getModelForChoice(choiceId)).model;
+}
 
 const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 
