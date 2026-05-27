@@ -553,6 +553,7 @@ class PlacesViewBase {
       // TODO Bug 517701: This doesn't seem to handle the case of an empty
       // root.
       if (parentElt._startMarker.nextElementSibling == parentElt._endMarker) {
+        this._mayAddCommandsItems(parentElt);
         this._setEmptyPopupStatus(parentElt, true);
       }
     }
@@ -584,6 +585,7 @@ class PlacesViewBase {
       parentElt,
       parentElt.children[index] || parentElt._endMarker
     );
+    this._mayAddCommandsItems(parentElt);
     this._setEmptyPopupStatus(parentElt, false);
   }
 
