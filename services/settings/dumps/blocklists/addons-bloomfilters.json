@@ -2,6 +2,97 @@
   "data": [
     {
       "stash": {
+        "blocked": [
+          "tabs-task@extdev515.com:1.8"
+        ],
+        "unblocked": [
+          "learn-languages-with-series-movies@subtiltee.com:1.7.0",
+          "learn-languages-with-series-movies@subtiltee.com:1.7.1",
+          "learn-languages-with-series-movies@subtiltee.com:1.7.2",
+          "learn-languages-with-series-movies@subtiltee.com:1.7.3"
+        ],
+        "softblocked": [
+          "nebula-speeddial@extension.local:1.2.0",
+          "nebula-speeddial@extension.local:1.3.0",
+          "nebula-speeddial@extension.local:1.4.0",
+          "nebula-speeddial@extension.local:1.5.0",
+          "nebula-speeddial@extension.local:1.5.1",
+          "nebula-speeddial@addons.mozilla.org:1.7.0",
+          "dashboard-clipper@friendlynerd.at:1.0",
+          "download-video-without-sound-addon@example.com:2026.5.23.1",
+          "{70f6bd9e-6d80-4e6d-bba3-beab1ef16abb}:1.0",
+          "ez-translate@mitcehub.github.io:1.0.0",
+          "{b611639e-2def-4bd8-b658-1bdf22c88c6e}:0.2.2",
+          "fpspoof@local:1.78541",
+          "fpspoof@local:1.78590",
+          "fpspoof@local:3.1",
+          "mandarin-page-flashcards@example.local:0.1.199"
+        ]
+      },
+      "schema": 1779863797971,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1779885306841,
+      "id": "f7b1c2b8-c99e-45cd-ab82-a244c19ef38b",
+      "last_modified": 1779885400250
+    },
+    {
+      "stash": {
+        "blocked": [],
+        "unblocked": [],
+        "softblocked": [
+          "instant-nzd-gel-468@converter.com:1.0",
+          "tabsplit@xunzhou.github.io:1.0",
+          "mmimngoggfoobjdlefbcabngfnmieonb@chromeStoreFoxified-69482555:1.1.14",
+          "mgijmajocgfcbeboacabfgobmjgjcoja@chromeStoreFoxified-69482555:4.0.5",
+          "remove-judol-ads@herdy.dev:2.2.0",
+          "sixthsense-monitor@deepakhc.com:1.1",
+          "ez-page@mitcehub.github.com:1.0.0",
+          "ez-page@mitcehub.github.com:1.0.1",
+          "polblock-fb-9f3a@akos.local:1.2.0",
+          "polblock-fb-9f3a@akos.local:1.3.0",
+          "polblock-fb-9f3a@akos.local:1.3.1",
+          "clean-links@off-whikoma.com:1.0.2"
+        ]
+      },
+      "schema": 1779842189021,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1779863707016,
+      "id": "08fbc02e-1917-4e2b-91a9-40b84afe04e6",
+      "last_modified": 1779863797674
+    },
+    {
+      "stash": {
+        "blocked": [],
+        "unblocked": [],
+        "softblocked": [
+          "{9f73c3e7-6c1b-4e3c-bae8-39c6926268f9}:1.1.4",
+          "container-mask@custom-dev-18.4.0:18.4.0",
+          "{afe3a58f-a598-4f4a-9791-fe293a3e5bd3}:0.1",
+          "duck-ai-button@jagritsharma:1.0.2",
+          "duck-ai-button@jagritsharma:1.0.1",
+          "personal-dashboard@wolfpaw:2.0",
+          "sentinelx-extension@mca-info.fr:4.0.9",
+          "sentinelx-extension@mca-info.fr:4.0.11",
+          "sentinelx-extension@mca-info.fr:4.0.12",
+          "sentinelx-extension@mca-info.fr:4.0.15",
+          "sentinelx-extension@mca-info.fr:4.0.16",
+          "{ce391dde-c335-49bd-9916-3d349c6c33d4}:1.0",
+          "rotinas.processuais.upj.catalao@paulocesar.com:2.1.0",
+          "enhancer@goldenfox.com:25.2.0",
+          "mado@song54.local:0.0.1",
+          "{df2bdfa7-1928-4b36-abb6-598a6210dadf}:0.2",
+          "instant-uah-lbp-293@converter.com:1.0",
+          "instant-pab-pyg-61@converter.com:1.0"
+        ]
+      },
+      "schema": 1779820604610,
+      "key_format": "{guid}:{version}",
+      "stash_time": 1779842105995,
+      "id": "4bb0ffe6-ccdc-42a1-aca0-1b6e68baafa4",
+      "last_modified": 1779842188724
+    },
+    {
+      "stash": {
         "blocked": [],
         "unblocked": [],
         "softblocked": [
@@ -11008,5 +11099,5 @@
       "last_modified": 1776343119261
     }
   ],
-  "timestamp": 1779820604308
+  "timestamp": 1779885400250
 }
