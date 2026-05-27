@@ -19,6 +19,20 @@ const { SearchUtils } = ChromeUtils.importESModule(
 AddonTestUtils.initMochitest(this);
 SearchTestUtils.init(this);
 
+function findRow(tree, expectedName) {
+  for (let i = 0; i < tree.view.rowCount; i++) {
+    let name = tree.view.getCellText(
+      i,
+      tree.columns.getNamedColumn("engineName")
+    );
+
+    if (name == expectedName) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 add_task(async function test_change_engine() {
   await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
 
@@ -34,17 +48,26 @@ add_task(async function test_change_engine() {
     },
   });
 
-  let engineList = doc.querySelector("moz-box-group#engineList");
-  let row = [...engineList.children].find(r =>
-    r.id.includes("example@tests.mozilla.org")
-  ).children[0];
+  let tree = doc.querySelector("#engineList");
 
-  Assert.notEqual(row, undefined, "Should have found the entry");
+  let row = findRow(tree, "Example");
+
+  Assert.notEqual(row, -1, "Should have found the entry");
+  await TestUtils.waitForCondition(
+    () => tree.view.getImageSrc(row, tree.columns.getNamedColumn("engineName")),
+    "Should have go an image URL"
+  );
   Assert.ok(
-    row.__iconSrc.includes("img123.png"),
+    tree.view
+      .getImageSrc(row, tree.columns.getNamedColumn("engineName"))
+      .includes("img123.png"),
     "Should have the correct image URL"
   );
-  Assert.equal(row.description, "foo", "Should show the correct keyword");
+  Assert.equal(
+    tree.view.getCellText(row, tree.columns.getNamedColumn("engineKeyword")),
+    "foo",
+    "Should show the correct keyword"
+  );
 
   let updatedPromise = SearchTestUtils.promiseSearchNotification(
     SearchUtils.MODIFIED_TYPE.CHANGED,
@@ -61,18 +84,26 @@ add_task(async function test_change_engine() {
   });
   await updatedPromise;
 
-  let updatedRow = [...engineList.children].find(r =>
-    r.id.includes("example@tests.mozilla.org")
-  ).children[0];
-  Assert.notEqual(updatedRow, undefined, "Should have found the updated entry");
+  row = findRow(tree, "Example 2");
+
+  Assert.notEqual(row, -1, "Should have found the updated entry");
+  await TestUtils.waitForCondition(
+    () =>
+      tree.view
+        .getImageSrc(row, tree.columns.getNamedColumn("engineName"))
+        ?.includes("img456.png"),
+    "Should have updated the image URL"
+  );
   Assert.ok(
-    updatedRow.__iconSrc.includes("img456.png"),
-    "Should have the correct updated image URL"
+    tree.view
+      .getImageSrc(row, tree.columns.getNamedColumn("engineName"))
+      .includes("img456.png"),
+    "Should have the correct image URL"
   );
   Assert.equal(
-    updatedRow.description,
+    tree.view.getCellText(row, tree.columns.getNamedColumn("engineKeyword")),
     "bar",
-    "Should show the correct updated keyword"
+    "Should show the correct keyword"
   );
 
   gBrowser.removeCurrentTab();

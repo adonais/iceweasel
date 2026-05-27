@@ -10,12 +10,6 @@ add_setup(async () => {
 });
 
 add_task(async function test_click_find_more_link() {
-  if (SRD_PREF_VALUE) {
-    Assert.ok(true, "New settings redesign UI is enabled.");
-    // Bail early, as this test doesn't apply to the redesigned settings.
-    return;
-  }
-
   await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
 
   let promiseNewTab = BrowserTestUtils.waitForNewTab(gBrowser);

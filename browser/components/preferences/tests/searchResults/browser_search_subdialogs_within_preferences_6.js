@@ -6,7 +6,7 @@
  * Test for searching for the "Allowed Sites - Pop-ups" subdialog.
  */
 add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   await evaluateSearchResults("open pop-up windows", "permissions");

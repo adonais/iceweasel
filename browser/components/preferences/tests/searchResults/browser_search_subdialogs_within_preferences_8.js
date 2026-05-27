@@ -8,7 +8,7 @@ requestLongerTimeout(2);
  * Test for searching for the "Camera Permissions" subdialog.
  */
 add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   await evaluateSearchResults("camera permissions", "permissions");
@@ -19,7 +19,7 @@ add_task(async function () {
  * Test for searching for the "Microphone Permissions" subdialog.
  */
 add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   await evaluateSearchResults("microphone permissions", "permissions");
@@ -30,7 +30,7 @@ add_task(async function () {
  * Test for searching for the "Notification Permissions" subdialog.
  */
 add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   await evaluateSearchResults("notification permissions", "permissions");

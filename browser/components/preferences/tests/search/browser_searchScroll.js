@@ -26,12 +26,6 @@ add_setup(async function () {
 });
 
 add_task(async function test_scroll() {
-  if (SRD_PREF_VALUE) {
-    Assert.ok(true, "New settings redesign UI is enabled.");
-    // Bail early, as this test doesn't apply to the redesigned settings.
-    return;
-  }
-
   info("Open preferences page for search");
   await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
 

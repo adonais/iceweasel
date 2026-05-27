@@ -120,6 +120,13 @@ add_setup(async function () {
     await SearchService.findContextualSearchEngineByHost("moz.test");
 
   await SearchService.addSearchEngine(userInstalledAppEngine);
+
+  registerCleanupFunction(async () => {
+    let leftover = SearchService.getEngineByName("User Engine");
+    if (leftover) {
+      await SearchService.removeEngine(leftover);
+    }
+  });
 });
 
 async function test_engine_list(engineList) {

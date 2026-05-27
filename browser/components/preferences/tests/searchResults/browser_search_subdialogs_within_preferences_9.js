@@ -13,7 +13,7 @@
 add_task(
   { skip_if: () => SRD_PREF_VALUE },
   async function searchAddEngineLegacy() {
-    await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+    await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
       leaveOpen: true,
     });
     await evaluateSearchResults("Add Engine", "oneClickSearchProvidersGroup");
@@ -22,7 +22,7 @@ add_task(
 );
 
 add_task({ skip_if: () => !SRD_PREF_VALUE }, async function searchAddEngine() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   await evaluateSearchResults("Add Engine", "searchShortcuts");

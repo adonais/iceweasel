@@ -8,7 +8,7 @@
  */
 
 async function openSearchWithQuery(query) {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -44,10 +44,6 @@ async function clearSearch(doc) {
  * and the "Search results" header is shown.
  */
 add_task(async function search_header_and_hash() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   let query = "font";
   let doc = await openSearchWithQuery(query);
 
@@ -66,7 +62,6 @@ add_task(async function search_header_and_hash() {
   );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -76,10 +71,6 @@ add_task(async function search_header_and_hash() {
  * <h3>; the matching group's fieldset legend stays at <h3>.
  */
 add_task(async function per_group_filtering_and_heading_levels() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   // "sync" should match within the sync setting-pane.
   let query = "sync";
   let doc = await openSearchWithQuery(query);
@@ -132,7 +123,6 @@ add_task(async function per_group_filtering_and_heading_levels() {
   }
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await SpecialPowers.popPrefEnv();
 });
 
 /**
@@ -140,10 +130,6 @@ add_task(async function per_group_filtering_and_heading_levels() {
  * setting-pane and setting-group so that normal navigation is restored.
  */
 add_task(async function clearing_search_restores_defaults() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   let query = "sync";
   let doc = await openSearchWithQuery(query);
 
@@ -159,5 +145,4 @@ add_task(async function clearing_search_restores_defaults() {
   is(leftover.length, 0, "No elements have visually-hidden after clear");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  await SpecialPowers.popPrefEnv();
 });

@@ -13,7 +13,7 @@ add_task(async function () {
   ) {
     return;
   }
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   await evaluateSearchResults("updates have been installed", "updates");
@@ -24,7 +24,7 @@ add_task(async function () {
  * Test for searching for the "Location Permissions" subdialog.
  */
 add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   await evaluateSearchResults("location permissions", "permissions");

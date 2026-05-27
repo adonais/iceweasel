@@ -8,7 +8,7 @@ requestLongerTimeout(2);
  * Test for searching for the "Fonts" subdialog.
  */
 add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   // Oh, Canada:
@@ -20,7 +20,7 @@ add_task(async function () {
  * Test for searching for the "Colors" subdialog.
  */
 add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   await evaluateSearchResults("Link Colors", "contrast");
@@ -31,12 +31,12 @@ add_task(async function () {
  * Test for searching for the "Exceptions - Saved Logins" subdialog.
  */
 add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });
   await evaluateSearchResults(
     "won’t save passwords for sites listed here",
-    "passwordsGroup"
+    SRD_PREF_VALUE ? "passwords" : "passwordsGroup"
   );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

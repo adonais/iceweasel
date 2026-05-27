@@ -22,7 +22,7 @@ add_task(async function test_addEngineGet() {
 
   // Add new engine via add engine dialog.
   let doc = gBrowser.contentDocument;
-  let addButton = doc.querySelector("moz-button#addEngineButton");
+  let addButton = doc.querySelector("#addEngineButton");
   let dialogWin = await openDialogWith(doc, () => addButton.click());
   Assert.equal(
     dialogWin.document.getElementById("titleContainer").style.display,
@@ -80,7 +80,7 @@ add_task(async function test_addEnginePost() {
 
   // Add new engine via add engine dialog.
   let doc = gBrowser.contentDocument;
-  let addButton = doc.querySelector("moz-button#addEngineButton");
+  let addButton = doc.querySelector("#addEngineButton");
   let dialogWin = await openDialogWith(doc, () => addButton.click());
   dialogWin.document.querySelector("dialog").getButton("extra1").click();
 
@@ -135,7 +135,7 @@ add_task(async function test_validation() {
   });
 
   let doc = gBrowser.contentDocument;
-  let addButton = doc.querySelector("moz-button#addEngineButton");
+  let addButton = doc.querySelector("#addEngineButton");
   let dialogWin = await openDialogWith(doc, () => addButton.click());
 
   let accept = dialogWin.document.querySelector("dialog").getButton("accept");
@@ -257,7 +257,8 @@ add_task(async function test_editGetEngine() {
   });
 
   let doc = gBrowser.contentDocument;
-  let engineList = doc.querySelector("moz-box-group#engineList");
+  let tree = doc.querySelector("#engineList");
+  let view = tree.view.wrappedJSObject;
   let engine = await SearchService.addUserEngine({
     name: "user",
     url: "https://example.com/user?q={searchTerms}&b=ff",
@@ -268,20 +269,30 @@ add_task(async function test_editGetEngine() {
     "https://example.com/suggest?query={searchTerms}",
     null
   );
-  await TestUtils.waitForTick();
 
-  // Check if engine list contains new engine without reloading.
-  let userEngineRow = [...engineList.children].find(
-    r => r.children[0].description == "u"
-  );
-  Assert.notEqual(
-    userEngineRow,
-    undefined,
-    "User engine is present in the engine list."
-  );
+  // Check buttons of all search engines + local shortcuts.
+  let removeButton = doc.querySelector("#removeEngineButton");
+  let editButton = doc.querySelector("#editEngineButton");
+
+  let userEngineIndex = null;
+  for (let i = 0; i < tree.view.rowCount; i++) {
+    view.selection.select(i);
+    let selectedEngine = view.selectedEngine;
+    if (selectedEngine?.isUserEngine) {
+      Assert.equal(selectedEngine.name, "user", "Is the new engine.");
+      Assert.ok(!removeButton.disabled, "Remove button is enabled.");
+      Assert.ok(!editButton.disabled, "Edit button is enabled.");
+      userEngineIndex = i;
+    } else {
+      Assert.ok(editButton.disabled, "Edit button is disabled.");
+    }
+  }
+
+  // Check if table contains new engine without reloading.
+  Assert.ok(!!userEngineIndex, "User engine is in the table.");
+  view.selection.select(userEngineIndex);
 
   // Open the dialog and check values.
-  let editButton = [...userEngineRow.children][0].children[0].children[0];
   let dialogWin = await openDialogWith(doc, () => editButton.click());
   let acceptButton = dialogWin.document
     .querySelector("dialog")
@@ -399,7 +410,8 @@ add_task(async function test_editPostEngine() {
   });
 
   let doc = gBrowser.contentDocument;
-  let engineList = doc.querySelector("moz-box-group#engineList");
+  let tree = doc.querySelector("#engineList");
+  let view = tree.view.wrappedJSObject;
 
   let params = new URLSearchParams();
   params.append("q", "{searchTerms}");
@@ -410,17 +422,17 @@ add_task(async function test_editPostEngine() {
     method: "POST",
     alias: "u",
   });
-  await TestUtils.waitForTick();
 
-  let userEngineRow = [...engineList.children].find(
-    r => r.children[0].description == "u"
-  );
-  Assert.notEqual(
-    userEngineRow,
-    undefined,
-    "User engine is present in the engine list."
-  );
-  let editButton = [...userEngineRow.children][0].children[0].children[0];
+  let editButton = doc.querySelector("#editEngineButton");
+
+  for (let i = 0; i < tree.view.rowCount; i++) {
+    view.selection.select(i);
+    let selectedEngine = view.selectedEngine;
+    if (selectedEngine?.isUserEngine) {
+      view.selection.select(i);
+      break;
+    }
+  }
 
   // Open the dialog.
   let dialogWin = await openDialogWith(doc, () => editButton.click());
@@ -549,10 +561,13 @@ add_task(async function test_icon() {
   });
 
   let doc = gBrowser.contentDocument;
-  let engineList = doc.querySelector("moz-box-group#engineList");
+  let tree = doc.querySelector("#engineList");
+  let view = tree.view.wrappedJSObject;
+
+  let addButton = doc.querySelector("#addEngineButton");
+  let editButton = doc.querySelector("#editEngineButton");
 
   // Add engine and check favicon.
-  let addButton = doc.querySelector("moz-button#addEngineButton");
   let dialogWin = await openDialogWith(doc, () => addButton.click());
   setName("Bugzilla", dialogWin);
   setUrl("https://search.test/search?q=%s", dialogWin);
@@ -572,12 +587,9 @@ add_task(async function test_icon() {
   await PlacesTestUtils.setFaviconForPage(pageUrl, iconUrl, dataURL);
 
   // Edit engine and check favicon.
-  let engineRow = [...engineList.children].find(
-    row => row.__config.controlAttrs.label == "Bugzilla"
-  );
-  let editButton = [
-    ...engineRow.children[0].getElementsByTagName("moz-button"),
-  ].find(elem => elem.id.startsWith("editEngine"));
+  let engines = await SearchService.getEngines();
+  let i = engines.findIndex(e => e.id == engine.id);
+  view.selection.select(i);
   dialogWin = await openDialogWith(doc, () => editButton.click());
 
   promiseIcon = SearchTestUtils.promiseSearchNotification(

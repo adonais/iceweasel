@@ -1,4 +1,5 @@
 [DEFAULT]
+dupe-manifest=true
 prefs = [
   "browser.settings-redesign.enabled=false",
 ]
@@ -7,12 +8,12 @@ support-files = [
 ]
 tags = "os_integration"
 
-["browser_localSearchShortcuts.js"]
+["browser_localSearchShortcuts_xul.js"]
 fail-if = [
   "a11y_checks", # Bug 1854636 clicked treechildren#engineChildren may not be focusable
 ]
 
-["browser_searchChangedEngine.js"]
+["browser_searchChangedEngine_xul.js"]
 
 ["browser_searchDefaultEngine.js"]
 
@@ -29,8 +30,6 @@ support-files = [
 
 ["browser_searchShowSuggestionsFirst.js"]
 
-["browser_search_category_filter.js"]
-
 ["browser_search_engineList.js"]
 fail-if = [
   "a11y_checks", # Bug 1854636 clicked treechildren#engineChildren may not be focusable
@@ -38,49 +37,11 @@ fail-if = [
 
 ["browser_search_firefoxSuggest.js"]
 
-["browser_search_no_results_change_category.js"]
-
 ["browser_search_quickactions.js"]
-
-["browser_search_results.js"]
 
 ["browser_search_searchTerms.js"]
 
-["browser_search_subdialog_tooltip_saved_addresses.js"]
-
-["browser_search_subdialogs_within_preferences_1.js"]
-skip-if = [
-  "tsan", # Bug 1678829
-]
-
-["browser_search_subdialogs_within_preferences_2.js"]
-
-["browser_search_subdialogs_within_preferences_3.js"]
-
-["browser_search_subdialogs_within_preferences_4.js"]
-
-["browser_search_subdialogs_within_preferences_5.js"]
-
-["browser_search_subdialogs_within_preferences_6.js"]
-
-["browser_search_subdialogs_within_preferences_7.js"]
-
-["browser_search_subdialogs_within_preferences_8.js"]
-
-["browser_search_subdialogs_within_preferences_9.js"]
-
-["browser_search_subdialogs_within_preferences_site_data.js"]
-
-["browser_search_userEngineDialog.js"]
-
-["browser_search_within_preferences_1.js"]
-skip-if = [
-  "os == 'win'", # Bug 1787026
-]
-
-["browser_search_within_preferences_2.js"]
-
-["browser_search_within_preferences_command.js"]
+["browser_search_userEngineDialog_xul.js"]
 
 ["browser_searchsuggestions.js"]
 
