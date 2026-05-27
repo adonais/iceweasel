@@ -265,7 +265,7 @@ tasks:
             job-name: win64-aarch64-profile
         treeherder:
             platform: windows2012-aarch64-shippable/opt
-        worker-type: b-win-aarch64
+        worker-type: b-win-aarch64-25h2
         worker:
             chain-of-trust: true
             max-run-time: 3600
