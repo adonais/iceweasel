@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">%1$s historiatik kenduta</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Ezabatu historiako sarrera hau</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">Mantendu %1$s(e)n</string>
   <!--
     Home onboarding
 
@@ -2695,6 +2697,15 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">Lineako zure jardueraren jarraipena egiten duten elementu ohikoenetatik babesten zaitu %s(e)k.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Argibide gehiago</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">Jarraipen-elementu %d blokeatuta</item>
+    <item quantity="other">%d jarraipen-elementu blokeatuta</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -3086,6 +3097,8 @@
   <string name="saved_logins_sort_strategy_last_used">Azkenekoz erabilia</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Ordenatu pasahitzen menua</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Inportatu fitxategitik</string>
   <!--
     Email Masks
 
@@ -4613,6 +4626,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Munduko Kopako finalaren emaitzak, %1$d / %2$d orria</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">Munduko Kopako finalaren emaitzak</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Kendu Munduko Kopa hasierako orritik</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4633,6 +4648,8 @@
   <string name="sports_widget_error_load_failed_title">Partidaren informazioa ez dago erabilgarri orain.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">Saiatu berritzen minutu batzuk barru.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">Taldea zehazteke</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
