@@ -385,6 +385,7 @@ setting-group:has(> moz-card).spotlight {
 /** SRD applications section START **/
 #applicationsHandlersView {
   --box-group-max-height: 500px;
+  container-type: inline-size;
 
   moz-box-item.first label {
     font-weight: var(--font-weight-semibold);
@@ -392,7 +393,7 @@ setting-group:has(> moz-card).spotlight {
 
   moz-box-item label[slot="actions"],
   .actionsMenu {
-    width: 270px;
+    width: clamp(140px, 50cqi, 270px);
   }
 
   moz-box-item[hidden] {
