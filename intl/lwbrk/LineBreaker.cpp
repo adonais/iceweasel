@@ -1083,6 +1083,9 @@ void LineBreaker::ComputeBreakPositions(
         GraphemeClusterBreakIteratorUtf16 ci(
             Span<const char16_t>(aChars + cur, end - cur));
         while (Maybe<uint32_t> pos = ci.Next()) {
+          if (cur + *pos >= aLength) {
+            break;
+          }
           aBreakBefore[cur + *pos] = true;
         }
       } else {
