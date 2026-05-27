@@ -1326,6 +1326,123 @@ export var UrlbarUtils = {
     return !!rows.length;
   },
 
+  // Tracks backspace-induced autofill blocks so re-integration telemetry can
+  // measure how long after a backspace the user returned to the same
+  // destination. Keyed by the host matching how blockOriginAutofill applies
+  // the block in SQL. Each value is an object of the form
+  // { origin?: timestampMs, url?: timestampMs } recording the
+  // Date.now() at which a block was applied at that autofill level. A host
+  // may have one or both slots populated. Insertion order is maintained as
+  // an LRU: on each update the key is re-inserted so the least recently
+  // blocked host sits at the front, and entries past BACKSPACE_BLOCKS_MAX
+  // are evicted. State is per-session and does not survive restart. A
+  // re-integration after restart, or more than _BACKSPACE_BLOCK_MAX_AGE_HOURS
+  // after the block, does not record a sample.
+  _backspaceBlocks: new Map(),
+
+  // Maximum age of a tracked block, in hours.
+  _BACKSPACE_BLOCK_MAX_AGE_HOURS: 24,
+
+  // Maximum number of blocked origins that can be stored at one time.
+  _BACKSPACE_BLOCKS_MAX: 512,
+
+  /**
+   * Computes the map key used to record a backspace block for the given URL.
+   * The key is the URL's host with a leading "www." stripped, mirroring how
+   * blockOriginAutofill applies the underlying block in SQL.
+   *
+   * @param {string} url
+   *   The URL whose key is being computed.
+   * @returns {?string}
+   *   The normalized host key, or null if the URL is unparseable.
+   */
+  _backspaceBlockKey(url) {
+    let origin = parseOriginParts(url);
+    if (!origin) {
+      return null;
+    }
+    return origin.host.replace(/^www\./, "");
+  },
+
+  /**
+   * Records that a backspace-induced autofill block was just set for the
+   * given URL. Subsequent re-integration of the same origin/page within
+   * the session will record a timing sample.
+   *
+   * @param {string} url
+   *   The URL that was just blocked.
+   */
+  trackBackspaceBlock(url) {
+    let key = this._backspaceBlockKey(url);
+    if (!key) {
+      return;
+    }
+
+    let level = this.isOriginUrl(url) ? "origin" : "url";
+    let entry = this._backspaceBlocks.get(key) ?? {};
+    entry[level] = Date.now();
+
+    // Overwrites the slot's timestamp if this host and level was already
+    // tracked, refreshing its BACKSPACE_BLOCK_MAX_AGE_HOURS expiration.
+    // Map.set preserves insertion order on existing keys. Delete first so this
+    // host is treated as most-recent for LRU expiration.
+    this._backspaceBlocks.delete(key);
+    this._backspaceBlocks.set(key, entry);
+
+    // Least recently used are expired.
+    if (this._backspaceBlocks.size > this._BACKSPACE_BLOCKS_MAX) {
+      let oldestKey = this._backspaceBlocks.keys().next().value;
+      this._backspaceBlocks.delete(oldestKey);
+    }
+  },
+
+  /**
+   * Retrieves and deletes the recorded backspace block for the given URL, if
+   * any. Only the timestamp matching the URL's level (origin vs. url) is
+   * returned and removed; any other-level timestamp for the same host is
+   * preserved. If the matching timestamp is older than
+   * BACKSPACE_BLOCK_MAX_AGE_HOURS, this returns null. (The timestamp is
+   * removed either way.)
+   *
+   * @param {string} url
+   *   The URL whose block is being cleared.
+   * @returns {?{blockedAt: number, level: "origin" | "url"}}
+   *   The matching timestamp and level if a fresh block existed,
+   *   null otherwise.
+   */
+  getBackspaceBlock(url) {
+    let key = this._backspaceBlockKey(url);
+    if (!key) {
+      return null;
+    }
+
+    let entry = this._backspaceBlocks.get(key);
+    if (!entry) {
+      return null;
+    }
+
+    /** @type {"origin" | "url"} */
+    let level = this.isOriginUrl(url) ? "origin" : "url";
+    let blockedAt = entry[level];
+    if (!blockedAt) {
+      return null;
+    }
+
+    // Consume the timestamp so a later call returns null for this URL.
+    delete entry[level];
+
+    // Drop the host entry when no timestamps remain.
+    if (!entry.origin && !entry.url) {
+      this._backspaceBlocks.delete(key);
+    }
+
+    // If the timestamp is too old, don't report it.
+    let ageHours = (Date.now() - blockedAt) / (60 * 60 * 1000);
+    return ageHours > this._BACKSPACE_BLOCK_MAX_AGE_HOURS
+      ? null
+      : { blockedAt, level };
+  },
+
   /**
    * Returns whether a URL is an origin URL, i.e. it has no path beyond "/",
    * no query string, and no hash.

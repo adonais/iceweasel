@@ -1634,6 +1634,30 @@ urlbar.autofill:
     data_sensitivity:
       - interaction
 
+  reintegration_after_backspace:
+    type: labeled_timing_distribution
+    description: >
+      Time elapsed between a backspace-induced autofill block and the user
+      re-integrating the same destination by picking it as a non-autofill
+      history result in the same session. Only samples re-integrations of
+      blocks that were set via consecutive backspaces on an autofilled
+      value, blocks set via the result menu Dismiss action do not
+      contribute samples. Labeled by whether the cleared block was at the
+      origin or page-URL level.
+    time_unit: millisecond
+    labels:
+      - origin
+      - url
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037177
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037177
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: never
+    data_sensitivity:
+      - interaction
+
 urlbar.merino:
   latency_by_response_status:
     type: labeled_timing_distribution

@@ -2009,23 +2009,27 @@ ${
         result.type == lazy.UrlbarUtils.RESULT_TYPE.URL
       ) {
         let isOrigin = lazy.UrlbarUtils.isOriginUrl(url);
-        if (isOrigin) {
-          lazy.UrlbarUtils.clearOriginAutofillBlock(url)
-            .then(wasBlocked => {
-              if (wasBlocked) {
-                Glean.urlbarAutofill.reintegration.origin.add(1);
-              }
-            })
-            .catch(console.error);
-        } else {
-          lazy.UrlbarUtils.clearOriginPageAutofillBlock(url)
-            .then(wasBlocked => {
-              if (wasBlocked) {
-                Glean.urlbarAutofill.reintegration.url.add(1);
-              }
-            })
-            .catch(console.error);
-        }
+        let clear = isOrigin
+          ? lazy.UrlbarUtils.clearOriginAutofillBlock(url)
+          : lazy.UrlbarUtils.clearOriginPageAutofillBlock(url);
+        clear
+          .then(wasBlocked => {
+            if (!wasBlocked) {
+              return;
+            }
+            let level = isOrigin ? "origin" : "url";
+            Glean.urlbarAutofill.reintegration[level].add(1);
+
+            // For backspace-induced blocks, record the unblock delay: fast
+            // unblocks suggest the original block was accidental.
+            let entry = lazy.UrlbarUtils.getBackspaceBlock(url);
+            if (entry?.level === level) {
+              Glean.urlbarAutofill.reintegrationAfterBackspace[
+                level
+              ].accumulateSingleSample(Date.now() - entry.blockedAt);
+            }
+          })
+          .catch(console.error);
       }
     }
 
@@ -5495,6 +5499,7 @@ ${
               lazy.UrlbarUtils.blockAutofill(url, blockUntil).catch(
                 console.error
               );
+              lazy.UrlbarUtils.trackBackspaceBlock(url);
             }
           }
           this._autofillBackspaceState = null;

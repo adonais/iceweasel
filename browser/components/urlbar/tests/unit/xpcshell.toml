@@ -36,6 +36,8 @@ support-files = ["data/engine.xml"]
 
 ["test_UrlbarUtils_autofillBlock.js"]
 
+["test_UrlbarUtils_backspaceBlocks.js"]
+
 ["test_UrlbarUtils_copySnakeKeysToCamel.js"]
 
 ["test_UrlbarUtils_formatDate.js"]
