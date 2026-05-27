@@ -13,6 +13,7 @@ const lazy = XPCOMUtils.declareLazy({
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   FeatureCalloutBroker:
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -557,6 +558,92 @@ export const ASRouterTriggerListeners = new Map([
               param: match,
               context: { visitsCount },
             });
+          }
+        }
+      },
+    },
+  ],
+
+  /**
+   * Add a Places listener to notify the trigger handler whenever the user
+   * either creates a bookmark folder or saves a bookmark in a user-created
+   * folder. We don't need to differentiate between the two for targeting
+   * purposes.
+   *
+   * Only fires once per Places notification. Does not fire if the active
+   * browser window is a a private window (relevant if the user is managing
+   * bookmarks in the Library window).
+   */
+  [
+    "userBookmarkFolderActivity",
+    {
+      _initialized: false,
+      _triggerHandler: null,
+
+      init(triggerHandler) {
+        if (!this._initialized) {
+          this.handlePlacesEvents = this.handlePlacesEvents.bind(this);
+          lazy.PlacesUtils.observers.addListener(
+            ["bookmark-added"],
+            this.handlePlacesEvents
+          );
+          this._initialized = true;
+        }
+        this._triggerHandler = triggerHandler;
+      },
+
+      uninit() {
+        if (this._initialized) {
+          lazy.PlacesUtils.observers.removeListener(
+            ["bookmark-added"],
+            this.handlePlacesEvents
+          );
+          this._initialized = false;
+          this._triggerHandler = null;
+        }
+      },
+
+      handlePlacesEvents(aEvents) {
+        const builtInFolders = [
+          lazy.PlacesUtils.bookmarks.rootGuid,
+          lazy.PlacesUtils.bookmarks.menuGuid,
+          lazy.PlacesUtils.bookmarks.toolbarGuid,
+          lazy.PlacesUtils.bookmarks.unfiledGuid,
+          lazy.PlacesUtils.bookmarks.mobileGuid,
+        ];
+
+        // We only care about manually created bookmarks.
+        const sourcesToIgnore = [
+          lazy.PlacesUtils.bookmarks.SOURCES.IMPORT,
+          lazy.PlacesUtils.bookmarks.SOURCES.RESTORE,
+          lazy.PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
+          lazy.PlacesUtils.bookmarks.SOURCES.SYNC,
+          lazy.PlacesUtils.bookmarks.SOURCES
+            .SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
+        ];
+
+        const window = Services.wm.getMostRecentBrowserWindow();
+        if (!window || isPrivateWindow(window)) {
+          return;
+        }
+        const browser = window.gBrowser.selectedBrowser;
+
+        for (let ev of aEvents) {
+          if (ev.isTagging || sourcesToIgnore.includes(ev.source)) {
+            continue;
+          }
+
+          if (
+            ev.itemType === lazy.PlacesUtils.bookmarks.TYPE_FOLDER ||
+            (ev.itemType === lazy.PlacesUtils.bookmarks.TYPE_BOOKMARK &&
+              !builtInFolders.includes(ev.parentGuid))
+          ) {
+            this._triggerHandler(browser, {
+              id: "userBookmarkFolderActivity",
+            });
+
+            // NB: Don't fire more than once per Places notification.
+            break;
           }
         }
       },

@@ -38,6 +38,7 @@ let patterns: string[];
 
 - [`openArticleURL`](#openarticleurl)
 - [`openBookmarkedURL`](#openbookmarkedurl)
+- [`userBookmarkFolderActivity`](#userbookmarkfolderactivity)
 - [`frequentVisits`](#frequentvisits)
 - [`openURL`](#openurl)
 - [`newSavedLogin`](#newsavedlogin)
@@ -78,6 +79,12 @@ Happens when the user loads a Reader Mode compatible webpage.
 Happens when the user bookmarks or navigates to a bookmarked URL.
 
 Does not filter by host or patterns.
+
+### `userBookmarkFolderActivity`
+
+Happens when the user either creates a new bookmark folder or saves a bookmark
+into a user-created folder. Does not fire if the active window is a private
+window.
 
 ### `frequentVisits`
 
