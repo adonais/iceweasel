@@ -706,6 +706,7 @@ class nsCocoaWindow final : public nsIWidget {
   // This is class state for tracking native pointer lock state.
   static mozilla::Maybe<NativePointerLockMode> sNativePointerLockMode;
   static LayoutDeviceIntPoint sNativeLockedPoint;
+  static nsCocoaWindow* sNativeLockedWindow;
 };
 
 #endif  // nsCocoaWindow_h_

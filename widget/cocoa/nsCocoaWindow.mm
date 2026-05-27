@@ -4838,6 +4838,8 @@ void nsCocoaWindow::DestroyNativeWindow() {
   MOZ_ASSERT(mWindowMadeHere,
              "We shouldn't be trying to destroy a window we didn't create.");
 
+  UnlockNativePointer();
+
   // Clear our class state that is keyed off of mWindow. It's our last
   // chance! This ensures that other nsCocoaWindow instances are not waiting
   // for us to finish a native transition that will have no listener once
@@ -7477,21 +7479,31 @@ void nsCocoaWindow::LockNativePointer(
     MOZ_ASSERT(*GetNativePointerLockedMode() == aNativePointerLockMode,
                "Should not call LockNativePointer() with a different mode "
                "whenthe pointer is already locked");
+    MOZ_ASSERT(sNativeLockedWindow);
     // XXX Maybe we should avoid calling LockNativePointer() again when the
     // content changes the pointer lock element while the pointer is already
     // locked.
     return;
   }
 
+  MOZ_ASSERT(!sNativeLockedWindow);
+
+  sNativeLockedWindow = this;
   sNativePointerLockMode.emplace(aNativePointerLockMode);
   CGAssociateMouseAndMouseCursorPosition(false);
 }
 
 void nsCocoaWindow::UnlockNativePointer() {
   if (NS_WARN_IF(!GetNativePointerLockedMode())) {
+    MOZ_ASSERT(!sNativeLockedWindow);
+    MOZ_ASSERT(sNativeLockedPoint == LayoutDeviceIntPoint(0, 0));
+    return;
+  }
+  if (sNativeLockedWindow != this) {
     return;
   }
 
+  sNativeLockedWindow = nullptr;
   sNativePointerLockMode.reset();
   CGAssociateMouseAndMouseCursorPosition(true);
   sNativeLockedPoint = LayoutDeviceIntPoint(0, 0);
@@ -7500,6 +7512,11 @@ void nsCocoaWindow::UnlockNativePointer() {
 void nsCocoaWindow::SetNativePointerLockMode(
     NativePointerLockMode aNativePointerLockMode) {
   if (NS_WARN_IF(!GetNativePointerLockedMode())) {
+    MOZ_ASSERT(!sNativeLockedWindow);
+    MOZ_ASSERT(sNativeLockedPoint == LayoutDeviceIntPoint(0, 0));
+    return;
+  }
+  if (NS_WARN_IF(sNativeLockedWindow != this)) {
     return;
   }
   sNativePointerLockMode.ref() = aNativePointerLockMode;
@@ -7512,6 +7529,7 @@ bool nsCocoaWindow::SupportsUnadjustedMovement() {
 /* static */ Maybe<nsIWidget::NativePointerLockMode>
     nsCocoaWindow::sNativePointerLockMode;
 /* static */ LayoutDeviceIntPoint nsCocoaWindow::sNativeLockedPoint;
+/* static */ nsCocoaWindow* nsCocoaWindow::sNativeLockedWindow = nullptr;
 
 /* static */
 const Maybe<nsIWidget::NativePointerLockMode>&
