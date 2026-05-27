@@ -144,22 +144,23 @@ const ENTRYPOINT_TRACKED_CONTEXT_MENU_IDS = {
 
 // A list of the expected panes in about:preferences
 const PREFERENCES_PANES = [
+  "paneAbout",
+  "paneAccessibility",
+  "paneAi",
+  "paneAppearance",
+  "paneContainers",
   "paneDownloads",
-  "paneHome",
+  "paneExperimental",
   "paneGeneral",
+  "paneHome",
+  "paneLanguages",
+  "paneMoreFromMozilla",
+  "panePasswordsAutofill",
+  "panePermissionsData",
   "panePrivacy",
   "paneSearch",
   "paneSearchResults",
   "paneSync",
-  "paneContainers",
-  "paneExperimental",
-  "paneMoreFromMozilla",
-  "paneAi",
-  "paneAbout",
-  "paneAccessibility",
-  "paneAppearance",
-  "paneLanguages",
-  "panePermissionsData",
   "paneTabsBrowsing",
 ];
 

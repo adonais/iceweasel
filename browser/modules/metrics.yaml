@@ -1461,6 +1461,20 @@ browser.ui.interaction:
       - hjones@mozilla.com
     expires: never
 
+  preferences_pane_passwords_autofill:
+    type: labeled_counter
+    description: >
+      Records the items interacted with in the Passwords and autofill section
+      of preferences. See
+      https://firefox-source-docs.mozilla.org/browser/BrowserUsageTelemetry.html
+    bugs:
+      - https://bugzil.la/2041430
+    data_reviews:
+      - https://bugzil.la/2041430
+    notification_emails:
+      - hjones@mozilla.com
+    expires: never
+
   preferences_pane_experimental:
     type: labeled_counter
     description: >
