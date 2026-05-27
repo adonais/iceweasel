@@ -725,12 +725,12 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 #ipprotection-button {
   --panel-and-palette-icon-size: var(--size-image-small);
 
-  &:not(:is([overflowedItem="true"], [cui-areatype="panel"])) {
-    > .toolbarbutton-icon {
-      width: calc(2 * var(--toolbarbutton-padding-inner) + var(--size-image-small));
-      padding-block: 0;
-    }
+  > .toolbarbutton-icon {
+    width: calc(2 * var(--toolbarbutton-padding-inner) + var(--size-image-small));
+    padding-block: 0;
+  }
 
+  &:not(:is([overflowedItem="true"], [cui-areatype="panel"])) {
     > .toolbarbutton-badge-stack > .toolbarbutton-icon {
       width: var(--size-image-small);
     }
