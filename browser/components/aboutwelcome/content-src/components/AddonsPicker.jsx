@@ -15,7 +15,7 @@ export const AddonsPicker = props => {
   }
 
   function handleInstallClick(event) {
-    const { message_id, writeInMicrosurvey } = props;
+    const { message_id } = props;
     let { action, source_id } = content.tiles.data[event.currentTarget.value];
 
     if (action.type === "INSTALL_ADDON_FROM_URL") {
@@ -28,8 +28,7 @@ export const AddonsPicker = props => {
     AboutWelcomeUtils.sendActionTelemetry(
       message_id,
       source_id,
-      "CLICK_BUTTON",
-      { writeInMicrosurvey }
+      "CLICK_BUTTON"
     );
   }
 

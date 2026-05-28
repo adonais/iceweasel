@@ -1601,10 +1601,16 @@ export class FeatureCallout {
       handleActorMessage(`AWPage:${name}`, data, this.browser);
     const telemetryMessageHandler = getActionHandler("TELEMETRY_EVENT");
     const AWSendEventTelemetry = data => {
-      if (this.config?.metrics !== "block") {
-        return telemetryMessageHandler(data);
+      if (this.config?.metrics === "block") {
+        return null;
       }
-      return null;
+      if (this.config?.write_in_microsurvey) {
+        if (!data.event_context) {
+          data.event_context = {};
+        }
+        data.event_context.write_in_microsurvey = true;
+      }
+      return telemetryMessageHandler(data);
     };
     this._windowFuncs = {
       AWGetFeatureConfig: () => this.config,
