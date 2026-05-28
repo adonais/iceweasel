@@ -25,16 +25,3 @@ moz-button.footer-icon-button {
   --button-background-color-ghost-active: var(--chat-assistant-footer-button-bg-active);
   --button-border-color-ghost-active: var(--chat-assistant-footer-button-border-active);
 }
-
-.thumbs-up-button,
-.thumbs-down-button {
-  display: none;
-}
-
-/* stylelint-disable-next-line media-query-no-invalid */
-@media -moz-pref("browser.smartwindow.userFeedbackCollection") {
-  .thumbs-up-button,
-  .thumbs-down-button {
-    display: revert;
-  }
-}
