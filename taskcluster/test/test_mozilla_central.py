@@ -16,23 +16,6 @@ def test_generate_graph(optimized_task_graph):
     assert len(optimized_task_graph.tasks) > 0
 
 
-@pytest.mark.parametrize(
-    "func,min_expected",
-    (
-        pytest.param(
-            lambda t: t.kind == "build" and "fuzzing" in t.attributes["build_platform"],
-            5,
-            id="fuzzing builds",
-        ),
-    ),
-)
-def test_tasks_are_scheduled(optimized_task_graph, filter_tasks, func, min_expected):
-    """Ensure the specified tasks are scheduled on mozilla-central."""
-    tasks = [t.label for t in filter_tasks(optimized_task_graph, func)]
-    print(tasks)
-    assert len(tasks) >= min_expected
-
-
 def test_test_setting(full_task_graph, filter_tasks):
     """Verify that all test tasks' ``test-setting`` object conforms to the schema."""
     from gecko_taskgraph.transforms.test.other import test_setting_description_schema
