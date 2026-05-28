@@ -267,6 +267,7 @@
     <string name="debug_drawer_sports_widget_tool_skipped_follow_team">Skip follow your team</string>
     <string name="debug_drawer_sports_widget_tool_use_mock_server">Use mock World Cup server</string>
     <string name="debug_drawer_sports_widget_tool_mock_server_session">Mock server session</string>
+    <string name="debug_drawer_sports_widget_tool_apply_session">Apply</string>
 
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The description of the reset CFR section in CFR Tools -->
