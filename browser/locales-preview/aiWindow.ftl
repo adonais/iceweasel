@@ -225,19 +225,3 @@ item-history-downloads-and-chat =
     .accesskey = B
 
 item-history-downloads-and-chat-description = Clears site, download, and chat history
-
-## Feedback modal
-
-aiwindow-feedback-modal-title = Share feedback
-aiwindow-feedback-what-worked-well = What worked well? No personal info, please.
-aiwindow-feedback-choose-any = Choose any that apply
-aiwindow-feedback-add-details = Add details if you’d like. No personal info, please.
-aiwindow-feedback-disclaimer = Submitting shares your feedback and a few details, like { -brand-shorter-name } version and model used, to help improve Smart Window. <a data-l10n-name="learn-more">Learn more</a>
-aiwindow-feedback-submit = Submit
-aiwindow-feedback-cancel = Cancel
-aiwindow-feedback-reason-incorrect-or-misleading = Incorrect or misleading
-aiwindow-feedback-reason-doesnt-address-my-request = Doesn’t address my request
-aiwindow-feedback-reason-lacks-personalization = Lacks personalization or context
-aiwindow-feedback-reason-performance-or-usability = Performance or usability issue
-aiwindow-feedback-reason-harmful-or-offensive = Harmful or offensive
-aiwindow-feedback-reason-other = Other
