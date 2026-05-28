@@ -135,12 +135,10 @@ export class AboutWelcomeTelemetry {
         }
       }
       if (typeof ping.event_context === "object") {
+        pingKey = "microsurvey";
         ping.write_in_microsurvey =
-          ping.event_context.write_in_microsurvey ?? false;
-        if (ping.write_in_microsurvey) {
-          pingKey = "microsurvey";
-        }
-        delete ping.event_context.write_in_microsurvey;
+          ping.event_context.writeInMicrosurvey ?? false;
+        delete ping.event_context.writeInMicrosurvey;
       }
     }
     if (ping.write_in_microsurvey) {

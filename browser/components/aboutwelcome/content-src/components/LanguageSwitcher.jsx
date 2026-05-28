@@ -168,6 +168,7 @@ export function LanguageSwitcher(props) {
     negotiatedLanguage,
     langPackInstallPhase,
     messageId,
+    writeInMicrosurvey,
   } = props;
 
   const [isAwaitingLangpack, setIsAwaitingLangpack] = useState(false);
@@ -272,7 +273,8 @@ export function LanguageSwitcher(props) {
               AboutWelcomeUtils.sendActionTelemetry(
                 messageId,
                 "download_langpack",
-                "CLICK_BUTTON"
+                "CLICK_BUTTON",
+                { writeInMicrosurvey }
               );
               setIsAwaitingLangpack(true);
             }}

@@ -59,7 +59,7 @@ add_task(async function test_pingPayload() {
   ok(pingSubmitted, "Glean ping was submitted");
 });
 
-add_task(async function test_pingPayload_write_in_microsurvey() {
+add_task(async function test_pingPayload_writeInMicrosurvey() {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(TELEMETRY_PREF);
   });
@@ -77,13 +77,13 @@ add_task(async function test_pingPayload_write_in_microsurvey() {
   });
   await AWTelemetry.sendTelemetry({
     event: "MOCHITEST",
-    event_context: { write_in_microsurvey: true },
+    event_context: { writeInMicrosurvey: true },
   });
 
   ok(pingSubmitted, "Glean ping was submitted");
 });
 
-add_task(async function test_pingPayload_nowrite_in_microsurvey() {
+add_task(async function test_pingPayload_nowriteInMicrosurvey() {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(TELEMETRY_PREF);
   });
@@ -369,7 +369,7 @@ add_task(async function test_event_context() {
   });
   Assert.ok(pingSubmitted, "Ping with string event_context submitted");
 
-  eventContext.write_in_microsurvey = true;
+  eventContext.writeInMicrosurvey = true;
   pingSubmitted = false;
   GleanPings.microsurvey.testBeforeNextSubmit(() => {
     pingSubmitted = true;
@@ -385,7 +385,7 @@ add_task(async function test_event_context() {
     );
   });
   await AWTelemetry.sendTelemetry({ event_context: eventContext });
-  Assert.ok(pingSubmitted, "Ping with write_in_microsurvey submitted");
+  Assert.ok(pingSubmitted, "Ping with writeInMicrosurvey submitted");
 });
 
 // For event_context to be more useful, we want to make sure we don't error

@@ -189,7 +189,8 @@ export const ContentTiles = props => {
     AboutWelcomeUtils.sendActionTelemetry(
       props.messageId,
       tileId,
-      "CLICK_BUTTON"
+      "CLICK_BUTTON",
+      { writeInMicrosurvey: props.writeInMicrosurvey }
     );
     if (tile.type === "link" && tile.action) {
       props.handleAction(
@@ -210,7 +211,8 @@ export const ContentTiles = props => {
     AboutWelcomeUtils.sendActionTelemetry(
       props.messageId,
       "content_tiles_header",
-      "CLICK_BUTTON"
+      "CLICK_BUTTON",
+      { writeInMicrosurvey: props.writeInMicrosurvey }
     );
   };
 
@@ -293,6 +295,7 @@ export const ContentTiles = props => {
                 message_id={props.messageId}
                 handleAction={props.handleAction}
                 layout={content.position}
+                writeInMicrosurvey={props.writeInMicrosurvey}
               />
             )}
             {["theme", "single-select"].includes(tile.type) && tile.data && (
@@ -346,7 +349,11 @@ export const ContentTiles = props => {
               />
             )}
             {tile.type === "action_checklist" && tile.data && (
-              <ActionChecklist content={content} message_id={props.messageId} />
+              <ActionChecklist
+                content={content}
+                message_id={props.messageId}
+                writeInMicrosurvey={props.writeInMicrosurvey}
+              />
             )}
             {tile.type === "embedded_browser" && tile.data?.url && (
               <EmbeddedBrowser url={tile.data.url} style={tile.data.style} />
