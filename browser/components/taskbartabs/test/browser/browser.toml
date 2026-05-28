@@ -16,8 +16,8 @@ prefs = [
 
 ["browser_taskbarTabs_icons.js"]
 support-files = [
-  "../../../../../toolkit/components/places/tests/favicons/favicon-normal32.png",
-  "../../../../../toolkit/components/places/tests/favicons/favicon-big64.png",
+  "../../../../../dom/manifest/test/red-50.png",
+  "../../../../../dom/manifest/test/blue-150.png",
 ]
 
 ["browser_taskbarTabs_manifest.js"]

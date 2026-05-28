@@ -16,11 +16,25 @@ ChromeUtils.defineESModuleGetters(this, {
 const kBaseUri = Services.io.newURI("https://example.com");
 const kInnerUri = Services.io.newURI("https://example.com/somewhere/else");
 
-let gFaviconUri;
-let gBigFaviconUri;
-let gFaviconHttpUri;
-let gBigFaviconHttpUri;
-let gFaviconImg;
+// We have two images, each of which are a solid colour. This tries to ensure
+// that they always encode to the same values when scaled.
+//
+// Often, we'll want to access these through a local URI:
+const kGoodFaviconLocalUri = Services.io.newURI(
+  "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/blue-150.png"
+);
+const kBadFaviconLocalUri = Services.io.newURI(
+  "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/red-50.png"
+);
+// However, for manifest icons especially, they sometimes need to use HTTP:
+const kGoodFaviconHttpUri = Services.io.newURI(
+  "https://example.com/browser/browser/components/taskbartabs/test/browser/blue-150.png"
+);
+const kBadFaviconHttpUri = Services.io.newURI(
+  "https://example.com/browser/browser/components/taskbartabs/test/browser/red-50.png"
+);
+
+let gGoodFaviconImg;
 
 add_setup(async function setup() {
   // Note: we don't want to stub out creating the icon file, so we need to stub
@@ -37,26 +51,70 @@ add_setup(async function setup() {
   sandbox.stub(ShellService, "requestDeleteSecondaryTile").resolves();
   registerCleanupFunction(() => sandbox.restore());
 
-  gFaviconUri = Services.io.newURI(
-    "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/favicon-normal32.png"
+  gGoodFaviconImg = encodeImagePNG(
+    await TaskbarTabsUtils._imageFromLocalURI(kGoodFaviconLocalUri)
   );
-  gBigFaviconUri = Services.io.newURI(
-    "chrome://mochitests/content/browser/browser/components/taskbartabs/test/browser/favicon-big64.png"
-  );
-  gFaviconHttpUri = Services.io.newURI(
-    "https://example.com/browser/browser/components/taskbartabs/test/browser/favicon-normal32.png"
-  );
-  gBigFaviconHttpUri = Services.io.newURI(
-    "https://example.com/browser/browser/components/taskbartabs/test/browser/favicon-big64.png"
-  );
-  gFaviconImg = await TaskbarTabsUtils._imageFromLocalURI(gFaviconUri);
 });
+
+/**
+ * Encodes the provided image into a Uint8Array. This is meant for comparisons
+ * with compareImageBytes.
+ *
+ * @param {imgIContainer} aImage - The image to encode.
+ * @param {number} [aFinalSize] - The size to scale the image to.
+ * @returns {Uint8Array} The bytes of the 'image/png' encoded image.
+ */
+function encodeImagePNG(aImage, aFinalSize = 0) {
+  let stream = Cc["@mozilla.org/image/tools;1"]
+    .getService(Ci.imgITools)
+    .encodeScaledImage(aImage, "image/png", aFinalSize, aFinalSize);
+
+  let size = stream.available();
+  let bis = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+    Ci.nsIBinaryInputStream
+  );
+  bis.setInputStream(stream);
+
+  let arrayBuffer = new ArrayBuffer(size);
+  bis.readArrayBuffer(size, arrayBuffer);
+
+  return new Uint8Array(arrayBuffer);
+}
+
+/**
+ * Asserts that the two byte arrays have the same content at all positions.
+ *
+ * @param {Uint8Array} aActual - The first image to compare.
+ * @param {Uint8Array} aExpected - The second image to compare.
+ */
+function assertBytesEqual(aActual, aExpected) {
+  Assert.equal(
+    aActual.length,
+    aExpected.length,
+    "Byte arrays have the same length"
+  );
+  if (aActual.length !== aExpected.length) {
+    return;
+  }
+
+  for (let i = 0; i < aActual.length; i++) {
+    if (aActual[i] !== aExpected[i]) {
+      Assert.ok(
+        false,
+        `Position ${i}: got ${aActual[i]}, wanted ${aExpected[i]}`
+      );
+      return;
+    }
+  }
+
+  Assert.ok(true, "Byte arrays were equal");
+}
 
 add_task(async function test_noFavicon() {
   const sandbox = sinon.createSandbox();
 
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
-  await checkTaskbarTabIcon(await TaskbarTabsUtils.getDefaultIcon());
+  await checkTaskbarTabIcon(null);
 
   sandbox.restore();
 });
@@ -65,14 +123,10 @@ add_task(async function test_typicalFavicon() {
   const sandbox = sinon.createSandbox();
 
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").callsFake(async aUri => {
-    if (aUri.equals(kBaseUri)) {
-      return gFaviconUri;
-    }
-
-    return null;
+    return aUri.equals(kBaseUri) ? kGoodFaviconLocalUri : null;
   });
 
-  await checkTaskbarTabIcon(gFaviconImg);
+  await checkTaskbarTabIcon(gGoodFaviconImg);
 
   sandbox.restore();
 });
@@ -92,13 +146,13 @@ add_task(async function test_faviconOnOtherPage() {
 
     if (aUri.equals(kInnerUri)) {
       checkedInnerLast = true;
-      return gFaviconUri;
+      return kGoodFaviconLocalUri;
     }
 
     return null;
   });
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kInnerUri,
     manifest: {
       start_url: "/",
@@ -113,7 +167,7 @@ add_task(async function test_manifestIcon_lone() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kBaseUri,
     manifest: {
       icons: [
@@ -121,7 +175,7 @@ add_task(async function test_manifestIcon_lone() {
           // This needs to be HTTP since it's from the manifest, so in theory
           // it could be given from random Web content and thus it can't access
           // chrome: URIs.
-          src: gFaviconHttpUri.spec,
+          src: kGoodFaviconHttpUri.spec,
         },
       ],
     },
@@ -134,7 +188,7 @@ add_task(async function test_manifestIcon_sized() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kBaseUri,
     manifest: {
       icons: [
@@ -142,7 +196,7 @@ add_task(async function test_manifestIcon_sized() {
           // This needs to be HTTP since it's from the manifest, so in theory
           // it could be given from random Web content and thus it can't access
           // chrome: URIs.
-          src: gFaviconHttpUri.spec,
+          src: kGoodFaviconHttpUri.spec,
           sizes: "1x1 2x2 3x3 250x250",
         },
       ],
@@ -156,16 +210,16 @@ add_task(async function test_manifestIcon_selectsBestSize() {
   let sandbox = sinon.createSandbox();
   sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kBaseUri,
     manifest: {
       icons: [
         {
-          src: gBigFaviconHttpUri.spec,
+          src: kBadFaviconHttpUri.spec,
           sizes: "255x255 257x257",
         },
         {
-          src: gFaviconHttpUri.spec,
+          src: kGoodFaviconHttpUri.spec,
           sizes: "256x256",
         },
       ],
@@ -177,18 +231,18 @@ add_task(async function test_manifestIcon_selectsBestSize() {
 
 add_task(async function test_manifestIcon_overridesFavicon() {
   let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(gBigFaviconUri);
+  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(kBadFaviconLocalUri);
 
-  await checkTaskbarTabIcon(gFaviconImg, {
+  await checkTaskbarTabIcon(gGoodFaviconImg, {
     uri: kBaseUri,
     manifest: {
       icons: [
         {
-          src: gBigFaviconHttpUri.spec,
+          src: kBadFaviconHttpUri.spec,
           sizes: "255x255 257x257",
         },
         {
-          src: gFaviconHttpUri.spec,
+          src: kGoodFaviconHttpUri.spec,
           sizes: "256x256",
         },
       ],
@@ -248,7 +302,8 @@ add_task(async function test_replaceTabWithWindowLoadsSavedIcon() {
  *
  * You will likely want to mock out TaskbarTabsUtils.getFaviconUri.
  *
- * @param {imgIContainer} aImage - The expected image for this Taskbar Tab.
+ * @param {imgIContainer?} aImage - The expected image for this Taskbar Tab, or
+ * null if the default icon should be used.
  * @param {object} [aDetails] - Additional options for the test.
  * @param {nsIURI} [aDetails.uri] - The URI to load.
  * @param {string} [aDetails.manifest] - The Web App Manifest to associate with
@@ -284,32 +339,28 @@ async function checkTaskbarTabIcon(
   let priorId = tt.id;
 
   Assert.equal(pinStub.callCount, 1, "Tried to pin taskbar tab");
-  Assert.strictEqual(
-    pinStub.firstCall.args[2]?.width,
-    aImage.width,
-    "Correct image width was used when pinning"
-  );
-  Assert.strictEqual(
-    pinStub.firstCall.args[2]?.height,
-    aImage.height,
-    "Correct image height was used when pinning"
-  );
+  if (aImage) {
+    assertBytesEqual(encodeImagePNG(pinStub.firstCall.args[2]), aImage);
+  } else {
+    assertBytesEqual(
+      encodeImagePNG(pinStub.firstCall.args[2]),
+      encodeImagePNG(await TaskbarTabsUtils.getDefaultIcon())
+    );
+  }
 
   Assert.equal(
     replaceStub.callCount,
     1,
     "Tried to replace the tab with a window"
   );
-  Assert.strictEqual(
-    replaceStub.getCall(0).args[2]?.width,
-    aImage.width,
-    "Correct image width was used for the window"
-  );
-  Assert.strictEqual(
-    replaceStub.getCall(0).args[2]?.height,
-    aImage.height,
-    "Correct image height was used for the window"
-  );
+  if (aImage) {
+    assertBytesEqual(encodeImagePNG(replaceStub.firstCall.args[2]), aImage);
+  } else {
+    assertBytesEqual(
+      encodeImagePNG(replaceStub.firstCall.args[2]),
+      encodeImagePNG(await TaskbarTabsUtils.getDefaultIcon())
+    );
+  }
 
   // This time, we expect to reuse the same one, read from the disk (and thus
   // scaled to 256x256).
@@ -325,16 +376,22 @@ async function checkTaskbarTabIcon(
     2,
     "Tried to replace the tab with a window"
   );
-  Assert.strictEqual(
-    replaceStub.getCall(1).args[2]?.width,
-    256,
-    "Correct image width was used for the window"
-  );
-  Assert.strictEqual(
-    replaceStub.getCall(1).args[2]?.height,
-    256,
-    "Correct image height was used for the window"
-  );
+  if (aImage) {
+    // XXX - aImage isn't necessarily 256x256, so scale it up. (This won't
+    // matter after bug 2004308.)
+    let dataUri = `data:image/png;base64,${aImage.toBase64()}`;
+    let parsed = Services.io.newURI(dataUri);
+    assertBytesEqual(
+      encodeImagePNG(replaceStub.secondCall.args[2]),
+      encodeImagePNG(await TaskbarTabsUtils._imageFromLocalURI(parsed), 256)
+    );
+  } else {
+    // This time, the default icon needs to be scaled up.
+    assertBytesEqual(
+      encodeImagePNG(replaceStub.secondCall.args[2]),
+      encodeImagePNG(await TaskbarTabsUtils.getDefaultIcon(), 256)
+    );
+  }
 
   await TaskbarTabs.removeTaskbarTab(priorId);
   sandbox.restore();
