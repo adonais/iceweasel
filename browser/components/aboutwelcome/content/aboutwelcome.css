@@ -3963,3 +3963,53 @@ html {
   padding: 24px 30px;
   margin-block: 0 24px;
 }
+
+.SMARTWINDOW_FEEDBACK_SCREEN .welcome-text {
+  align-items: start;
+  margin: 0 0 8px;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN .main-content-inner {
+  justify-content: flex-start;
+  padding: 32px;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN .main-content.no-steps {
+  padding-bottom: 0;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN #content-tiles-container {
+  margin: 0 8px;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN #content-tiles-container .content-tile,
+.SMARTWINDOW_FEEDBACK_SCREEN #content-tiles-container .textarea-container {
+  margin-inline: 0;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN #content-tiles-container .tile-title-container {
+  margin-block: 0 8px;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN #content-tiles-container .content-tile .multi-select-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  justify-items: start;
+  align-items: start;
+  gap: 8px;
+  margin-inline: 0;
+  padding: 12px;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN #content-tiles-container .content-tile .multi-select-container .checkbox-container {
+  align-items: flex-start;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN .tile-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN .link-paragraph {
+  text-align: start;
+  padding: 0 8px;
+  margin-block: 12px 20px;
+}
+.SMARTWINDOW_FEEDBACK_SCREEN .action-buttons {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: center;
+  padding: 0 4px;
+  gap: 8px;
+}
