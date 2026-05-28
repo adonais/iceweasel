@@ -163,6 +163,13 @@ async function test_dependent_elements_redesigned(win) {
   let customButton = win.document.getElementById("customHistoryButton");
   ok(customButton, "advanced settings button should exist");
 
+  // Wait for the button to be properly initialized with parentDisabled state
+  await BrowserTestUtils.waitForMutationCondition(
+    customButton,
+    { attributes: true, subtree: true },
+    () => customButton.parentDisabled
+  );
+
   // button should only change in custom mode
   ok(customButton.parentDisabled, "button is disabled in remember mode");
 

@@ -266,7 +266,11 @@ export class PrivacySettingHelpers {
 
   static shouldDisableETPCategoryControls() {
     let policy = Services.policies.getActivePolicies();
-    return policy?.EnableTrackingProtection?.Locked || policy?.Cookies?.Locked;
+    return (
+      policy?.EnableTrackingProtection?.Locked ||
+      policy?.EnableTrackingProtection?.Category ||
+      policy?.Cookies?.Locked
+    );
   }
 }
 

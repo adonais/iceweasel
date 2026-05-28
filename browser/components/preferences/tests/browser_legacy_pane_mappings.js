@@ -201,6 +201,7 @@ add_task(async function test_legacy_name_routing_and_subcategory_attr() {
       "panePasswordsAutofill",
       "address-autofill",
     ],
+    ["privacy-logins", "#passwordsAutofill", "panePasswordsAutofill", "logins"],
   ]) {
     let prefs = await openPreferencesViaOpenPreferencesAPI(arg, {
       leaveOpen: true,
@@ -224,43 +225,6 @@ add_task(async function test_legacy_name_routing_and_subcategory_attr() {
     }
 
     doc.defaultView.spotlight(null);
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  }
-});
-
-/**
- * Names with no mapping entry pass through unchanged and still
- * spotlight the expected subcategory element (regression guard).
- */
-add_task(async function test_unmapped_name_passthrough() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
-  for (let [arg, expectedHash, expectedPane, expectedSubcategory] of [
-    ["privacy-logins", "#privacy", "panePrivacy", "logins"],
-  ]) {
-    let prefs = await openPreferencesViaOpenPreferencesAPI(arg, {
-      leaveOpen: true,
-    });
-    let doc = gBrowser.contentDocument;
-
-    is(doc.location.hash, expectedHash, `${arg}: hash is ${expectedHash}`);
-    is(prefs.selectedPane, expectedPane, `${arg}: correct pane selected`);
-
-    await TestUtils.waitForCondition(
-      () => doc.querySelector(".spotlight"),
-      `${arg}: spotlight is visible`
-    );
-    is(
-      doc.querySelector(".spotlight").getAttribute("data-subcategory"),
-      expectedSubcategory,
-      `${arg}: spotlight target has data-subcategory="${expectedSubcategory}"`
-    );
-
-    doc.defaultView.spotlight(null);
-    is(doc.querySelector(".spotlight"), null, `${arg}: spotlight cleared`);
-
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 });
