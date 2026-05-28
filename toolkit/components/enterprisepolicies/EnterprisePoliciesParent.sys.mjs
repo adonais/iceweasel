@@ -149,7 +149,6 @@ EnterprisePoliciesManager.prototype = {
     Services.prefs
       .getDefaultBranch("")
       .setBoolPref("dom.webserial.enabled", false);
-    Services.prefs.lockPref("dom.webserial.enabled");
 
     this._parsedPolicies = {};
     this._activatePolicies(provider.policies);

@@ -95,7 +95,7 @@ add_task(async function test_unrelated_policy_disables_webserial() {
     Ci.nsIEnterprisePolicies.ACTIVE,
     "Engine is active"
   );
-  checkLockedPref(PREF, false);
+  checkUnlockedPref(PREF, false);
 });
 
 add_task(async function test_serial_guard_block() {
