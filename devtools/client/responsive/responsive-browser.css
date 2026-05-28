@@ -10,7 +10,12 @@
   --rdm-toolbar-height: 30px;
   --rdm-toolbar-accomodate-ua-height: 60px;
 
-  background-color: var(--rdm-background-color);
+  /**
+   * Set background - not only background-color - to properly override the
+   * content-area.css property set at
+   * https://searchfox.org/firefox-main/rev/e28b34ab33dbf49364999070168cbb7e11e8e5bd/browser/themes/shared/tabbrowser/content-area.css#168
+   */
+  background: var(--rdm-background-color);
 
   color-scheme: light;
 
