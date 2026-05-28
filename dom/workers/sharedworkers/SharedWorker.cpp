@@ -250,13 +250,6 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
   MOZ_ASSERT(loadInfo.mCookieJarSettings);
   net::CookieJarSettings::Cast(loadInfo.mCookieJarSettings)->Serialize(cjsData);
 
-  auto remoteType = RemoteWorkerManager::GetRemoteType(
-      loadInfo.mPrincipal, WorkerKind::WorkerKindShared);
-  if (NS_WARN_IF(remoteType.isErr())) {
-    aRv.Throw(remoteType.unwrapErr());
-    return nullptr;
-  }
-
   Maybe<RFPTargetSet> overriddenFingerprintingSettingsArg;
   if (loadInfo.mOverriddenFingerprintingSettings.isSome()) {
     overriddenFingerprintingSettingsArg.emplace(
@@ -273,7 +266,7 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
       loadInfo.mIsOn3PCBExceptionList,
       OriginTrials::FromWindow(nsGlobalWindowInner::Cast(window)),
       void_t() /* OptionalServiceWorkerData */, agentClusterId,
-      remoteType.unwrap());
+      DEFAULT_REMOTE_TYPE /* ignored */);
 
   PSharedWorkerChild* pActor = actorChild->SendPSharedWorkerConstructor(
       remoteWorkerData, loadInfo.mWindowID, portIdentifier.release());

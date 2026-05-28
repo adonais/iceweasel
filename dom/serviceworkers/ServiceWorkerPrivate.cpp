@@ -713,7 +713,8 @@ nsresult ServiceWorkerPrivate::Initialize() {
   }
 
   auto remoteType = RemoteWorkerManager::GetRemoteType(
-      principal, WorkerKind::WorkerKindService);
+      principal, WorkerKind::WorkerKindService,
+      DEFAULT_REMOTE_TYPE);
   if (NS_WARN_IF(remoteType.isErr())) {
     return remoteType.unwrapErr();
   }
