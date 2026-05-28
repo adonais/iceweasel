@@ -159,6 +159,7 @@ export class SettingPane extends MozLitElement {
     );
 
     SettingPaneManager.importPane(this.paneId);
+
     for (let groupId of this.config.groupIds) {
       window.initSettingGroup(groupId);
     }
