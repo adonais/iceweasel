@@ -42,6 +42,10 @@ nsresult BrowserBridgeParent::InitWithProcess(
   if (!browsingContext || browsingContext->IsDiscarded()) {
     return NS_ERROR_UNEXPECTED;
   }
+  if (!browsingContext->Group()->IsKnownForChildID(
+          aParentBrowser->OtherChildID())) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   MOZ_DIAGNOSTIC_ASSERT(
       !browsingContext->GetBrowserParent(),

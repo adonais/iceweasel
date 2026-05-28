@@ -4214,6 +4214,9 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
   if (!browsingContext || browsingContext->IsDiscarded()) {
     return IPC_FAIL(this, "Null or discarded initial BrowsingContext");
   }
+  if (!browsingContext->Group()->IsKnownForChildID(OtherChildID())) {
+    return IPC_FAIL(this, "Unknown BrowsingContextGroup for this process");
+  }
   if (!aInitialWindowInit.principal()) {
     return IPC_FAIL(this, "Cannot create without valid initial principal");
   }

@@ -1364,6 +1364,9 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   if (!browsingContext) {
     return IPC_FAIL(this, "Cannot create for missing BrowsingContext");
   }
+  if (!browsingContext->Group()->IsKnownForChildID(OtherChildID())) {
+    return IPC_FAIL(this, "Invalid BrowsingContextGroup for process");
+  }
   if (!aInit.principal()) {
     return IPC_FAIL(this, "Cannot create without valid principal");
   }
