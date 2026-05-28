@@ -15,7 +15,6 @@ import androidx.room.RoomDatabase
     version = 1,
 )
 internal abstract class TabGroupDatabase : RoomDatabase() {
-    abstract val tabGroupDao: StoredTabGroupDao
 
-    abstract val tabGroupAssignmentDao: TabGroupAssignmentDao
+    abstract val tabGroupOperationsDao: TabGroupOperationsDao
 }

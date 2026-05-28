@@ -6,9 +6,13 @@ package org.mozilla.fenix.tabgroups.storage.repository
 
 import android.content.Context
 import androidx.room.Room
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import mozilla.components.support.utils.DateTimeProvider
+import mozilla.components.support.utils.DefaultDateTimeProvider
 import org.mozilla.fenix.tabgroups.storage.database.StoredTabGroup
 import org.mozilla.fenix.tabgroups.storage.database.TabGroupDatabase
 import org.mozilla.fenix.tabgroups.storage.database.TapGroupAssignment
@@ -152,80 +156,111 @@ class DefaultTabGroupRepository : TabGroupRepository {
      * The default implementation of [TabGroupRepository] built off of Room.
      *
      * @param applicationContext [Context] used to instantiate the database.
-     **/
-    constructor(applicationContext: Context) {
+     * @param dateTimeProvider The [DateTimeProvider] used to update time-based metadata.
+     */
+    constructor(
+        applicationContext: Context,
+        dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
+    ) {
         this.database = Room.databaseBuilder(
             context = applicationContext,
             klass = TabGroupDatabase::class.java,
             name = "tab_groups",
         ).build()
+        this.dateTimeProvider = dateTimeProvider
     }
 
-    internal constructor(database: TabGroupDatabase) {
+    /**
+     * The test implementation of [TabGroupRepository].
+     *
+     * @param database The test instance of [TabGroupDatabase].
+     * @param dateTimeProvider The [DateTimeProvider] used to update time-based metadata.
+     *
+     */
+    internal constructor(
+        database: TabGroupDatabase,
+        dateTimeProvider: DateTimeProvider,
+    ) {
         this.database = database
+        this.dateTimeProvider = dateTimeProvider
     }
 
     private val database: TabGroupDatabase
 
+    private val dateTimeProvider: DateTimeProvider
+
     override suspend fun createTabGroupWithTabs(
         tabGroup: StoredTabGroup,
         tabIds: List<String>,
-    ) {
-        database.tabGroupDao.upsertTabGroup(tabGroup)
-        database.tabGroupAssignmentDao.upsertTabGroupAssignments(
-            tabIds.map { TapGroupAssignment(id = it, tabGroupId = tabGroup.id) },
+    ) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.createTabGroup(
+            tabGroup = tabGroup,
+            assignments = tabIds.map { TapGroupAssignment(id = it, tabGroupId = tabGroup.id) },
         )
     }
 
-    override suspend fun deleteAllTabGroupData() {
+    override suspend fun deleteAllTabGroupData() = withContext(Dispatchers.IO) {
         database.clearAllTables()
     }
 
     // Tab Group Metadata operations
 
     override fun observeTabGroups(): Flow<List<StoredTabGroup>> =
-        database.tabGroupDao.getAllTabGroups()
+        database.tabGroupOperationsDao.getAllTabGroups()
 
     override suspend fun fetchTabGroups(): List<StoredTabGroup> =
-        database.tabGroupDao.getAllTabGroups().first()
+        database.tabGroupOperationsDao.getAllTabGroups().first()
 
     override suspend fun fetchTabGroupById(id: String): StoredTabGroup? =
-        database.tabGroupDao.getTabGroupById(id = id)
+        database.tabGroupOperationsDao.getTabGroupById(id = id)
 
-    override suspend fun addNewTabGroup(tabGroup: StoredTabGroup) {
-        database.tabGroupDao.upsertTabGroup(tabGroup = tabGroup)
+    override suspend fun addNewTabGroup(tabGroup: StoredTabGroup) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.upsertTabGroup(tabGroup = tabGroup)
     }
 
-    override suspend fun updateTabGroup(tabGroup: StoredTabGroup) {
-        database.tabGroupDao.upsertTabGroup(tabGroup = tabGroup)
+    override suspend fun updateTabGroup(tabGroup: StoredTabGroup) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.upsertTabGroup(tabGroup = tabGroup)
     }
 
-    override suspend fun closeTabGroup(tabGroupId: String) {
-        database.tabGroupDao.updateTabGroupCloseState(id = tabGroupId, closed = true)
+    override suspend fun closeTabGroup(tabGroupId: String) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.updateTabGroupCloseState(
+            id = tabGroupId,
+            closed = true,
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
     }
 
-    override suspend fun openTabGroup(tabGroupId: String) {
-        database.tabGroupDao.updateTabGroupCloseState(id = tabGroupId, closed = false)
+    override suspend fun openTabGroup(tabGroupId: String) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.updateTabGroupCloseState(
+            id = tabGroupId,
+            closed = false,
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
     }
 
-    override suspend fun closeAllTabGroups() {
-        database.tabGroupDao.closeAllTabGroups()
+    override suspend fun closeAllTabGroups() = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.closeAllTabGroups(
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
     }
 
-    override suspend fun deleteTabGroup(tabGroup: StoredTabGroup) =
-        database.tabGroupDao.deleteTabGroup(tabGroup = tabGroup)
+    override suspend fun deleteTabGroup(tabGroup: StoredTabGroup) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.deleteTabGroup(tabGroup = tabGroup)
+    }
 
-    override suspend fun deleteTabGroupById(tabGroupId: String) =
-        database.tabGroupDao.deleteTabGroupById(id = tabGroupId)
+    override suspend fun deleteTabGroupById(tabGroupId: String) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.deleteTabGroupById(id = tabGroupId)
+    }
 
-    override suspend fun deleteTabGroupsById(ids: List<String>) =
-        database.tabGroupDao.deleteTabGroupsById(ids = ids)
+    override suspend fun deleteTabGroupsById(ids: List<String>) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.deleteTabGroupsById(ids = ids)
+    }
 
     // Tab Group Assignment operations
 
     override fun observeTabGroupAssignments(): Flow<Map<String, String>> =
-        database.tabGroupAssignmentDao
-            .getAllTabGroups()
+        database.tabGroupOperationsDao
+            .getAllTabGroupAssignments()
             .map {
                 it.associate { assignment ->
                     assignment.id to assignment.tabGroupId
@@ -233,49 +268,78 @@ class DefaultTabGroupRepository : TabGroupRepository {
             }
 
     override suspend fun fetchTabGroupAssignments(): Map<String, String> =
-        database.tabGroupAssignmentDao
-            .getAllTabGroups()
+        database.tabGroupOperationsDao
+            .getAllTabGroupAssignments()
             .first()
             .associate { it.id to it.tabGroupId }
 
-    override suspend fun addTabGroupAssignment(assignment: TapGroupAssignment) {
-        database.tabGroupAssignmentDao.upsertTabGroupAssignment(assignment = assignment)
+    override suspend fun addTabGroupAssignment(assignment: TapGroupAssignment) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.upsertTabGroupAssignment(
+            assignment = assignment,
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
     }
 
-    override suspend fun addTabGroupAssignments(assignments: List<TapGroupAssignment>) {
-        database.tabGroupAssignmentDao.upsertTabGroupAssignments(assignments = assignments)
+    override suspend fun addTabGroupAssignments(assignments: List<TapGroupAssignment>) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.upsertTabGroupAssignments(
+            assignments = assignments,
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
     }
 
-    override suspend fun addTabGroupAssignment(tabId: String, tabGroupId: String) =
-        database.tabGroupAssignmentDao.upsertTabGroupAssignment(
+    override suspend fun addTabGroupAssignment(tabId: String, tabGroupId: String) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.upsertTabGroupAssignment(
             assignment = TapGroupAssignment(
                 id = tabId,
                 tabGroupId = tabGroupId,
             ),
+            currentTime = dateTimeProvider.currentTimeMillis(),
         )
+    }
 
-    override suspend fun updateTabGroupAssignment(tabId: String, tabGroupId: String) =
-        database.tabGroupAssignmentDao.upsertTabGroupAssignment(
+    override suspend fun updateTabGroupAssignment(tabId: String, tabGroupId: String) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.upsertTabGroupAssignment(
             assignment = TapGroupAssignment(
                 id = tabId,
                 tabGroupId = tabGroupId,
             ),
+            currentTime = dateTimeProvider.currentTimeMillis(),
         )
+    }
 
-    override suspend fun addTabsToTabGroup(tabGroupId: String, tabIds: List<String>) {
+    override suspend fun addTabsToTabGroup(tabGroupId: String, tabIds: List<String>) = withContext(Dispatchers.IO) {
         val assignments = tabIds.map { TapGroupAssignment(id = it, tabGroupId = tabGroupId) }
-        database.tabGroupAssignmentDao.upsertTabGroupAssignments(assignments)
+        database.tabGroupOperationsDao.upsertTabGroupAssignments(
+            assignments = assignments,
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
     }
 
-    override suspend fun deleteTabGroupAssignment(assignment: TapGroupAssignment) =
-        database.tabGroupAssignmentDao.deleteTabGroupAssignment(tabGroupAssignment = assignment)
+    override suspend fun deleteTabGroupAssignment(assignment: TapGroupAssignment) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.deleteTabGroupAssignment(
+            assignment = assignment,
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
+    }
 
-    override suspend fun deleteTabGroupAssignmentById(tabId: String) =
-        database.tabGroupAssignmentDao.deleteTabGroupAssignmentById(tabId = tabId)
+    override suspend fun deleteTabGroupAssignmentById(tabId: String) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.deleteTabGroupAssignmentById(
+            tabId = tabId,
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
+    }
 
-    override suspend fun deleteAllTabGroupAssignmentsForGroup(tabGroupId: String) =
-        database.tabGroupAssignmentDao.deleteTabGroupAssignmentsByTabGroupId(tabGroupId = tabGroupId)
+    override suspend fun deleteAllTabGroupAssignmentsForGroup(tabGroupId: String) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.deleteTabGroupAssignmentsByTabGroupId(
+            tabGroupId = tabGroupId,
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
+    }
 
-    override suspend fun deleteTabGroupAssignmentsById(tabIds: List<String>) =
-        database.tabGroupAssignmentDao.deleteAllAssignmentsById(ids = tabIds)
+    override suspend fun deleteTabGroupAssignmentsById(tabIds: List<String>) = withContext(Dispatchers.IO) {
+        database.tabGroupOperationsDao.deleteAllAssignmentsById(
+            tabIds = tabIds,
+            currentTime = dateTimeProvider.currentTimeMillis(),
+        )
+    }
 }
