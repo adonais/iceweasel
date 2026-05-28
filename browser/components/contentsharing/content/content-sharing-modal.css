@@ -62,6 +62,8 @@
       /* To center the card, the right margin needs to include the .container padding */
       margin: calc(2 * var(--space-xxlarge));
       margin-inline-end: calc(2 * var(--space-xxlarge) + var(--space-large));
+      background-color: color-mix(in srgb, var(--card-background-color), transparent 30%);
+      backdrop-filter: blur(15px);
     }
 
     .share-header {
@@ -114,7 +116,7 @@
         .link-title {
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 40ch;
+          max-width: calc(8 * var(--size-item-large));
           text-wrap: nowrap;
         }
       }
