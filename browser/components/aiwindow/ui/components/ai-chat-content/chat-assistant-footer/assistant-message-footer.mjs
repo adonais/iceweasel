@@ -18,7 +18,7 @@ import "chrome://browser/content/aiwindow/components/applied-memories-button.mjs
  *   - A copy button for copying the assistant response.
  *   - A retry button for regenerating the response.
  *   - An applied memories button for viewing and/or deleting applied memories.
- *   - Thumbs up/down feedback buttons (gated on browser.smartwindow.userFeedbackCollection).
+ *   - Thumbs up/down feedback buttons.
  *
  * Data updates and network behavior are controlled by its parent.
  *

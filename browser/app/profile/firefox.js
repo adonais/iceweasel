@@ -2277,9 +2277,6 @@ pref("browser.smartwindow.chatStore.loglevel", "Error");
 pref("browser.smartwindow.conversation.logLevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
 
-// Smart Window user feedback collection
-pref("browser.smartwindow.userFeedbackCollection", false);
-
 // Block insecure active content on https pages
 pref("security.mixed_content.block_active_content", true);
 

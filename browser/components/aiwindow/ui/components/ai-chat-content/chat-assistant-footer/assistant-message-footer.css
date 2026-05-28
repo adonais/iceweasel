@@ -32,16 +32,3 @@ moz-button.footer-icon-button {
     }
   }
 }
-
-.thumbs-up-button,
-.thumbs-down-button {
-  display: none;
-}
-
-/* stylelint-disable-next-line media-query-no-invalid */
-@media -moz-pref("browser.smartwindow.userFeedbackCollection") {
-  .thumbs-up-button,
-  .thumbs-down-button {
-    display: revert;
-  }
-}
