@@ -134,6 +134,10 @@ hr {
   background-image: url("chrome://global/skin/icons/defaultFavicon.svg");
 }
 
+#unauthenticated-bandwidth-limit::before {
+  background-image: url("chrome://browser/skin/gift.svg");
+}
+
 #unauthenticated-get-started {
   --button-padding: var(--space-medium);
   width: 100%;
