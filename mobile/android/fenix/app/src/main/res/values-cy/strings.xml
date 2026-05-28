@@ -2162,7 +2162,7 @@
   <!-- Multiple unsubmitted crashes matching remote settings. %1$d is the number of unsent crash reports, %2$s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crashes_requested_by_devs_dialog_title">Mae gennych adroddiadau chwalu heb eu hanfon (%1$d) yn ymwneud â chwaliadau sy\'n cael eu hymchwilio. Bydd eu hanfon yn ein helpu i wella %2$s. Bydd cau\'r hysbysiad hwn yn anwybyddu\'r adroddiadau hyn.</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
-  <string name="unsubmitted_crash_dialog_checkbox_label">Anfonwch adroddiadau damwain yn awtomatig</string>
+  <string name="unsubmitted_crash_dialog_checkbox_label">Anfon adroddiadau chwalu\'n awtomatig</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
   <string name="unsubmitted_crash_dialog_negative_button">Cau</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
