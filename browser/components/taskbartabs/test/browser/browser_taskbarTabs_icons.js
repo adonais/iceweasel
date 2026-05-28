@@ -58,10 +58,12 @@ add_setup(async function setup() {
   registerCleanupFunction(() => sandbox.restore());
 
   gGoodFaviconImg = encodeImagePNG(
-    await TaskbarTabsUtils._imageFromLocalURI(kGoodFaviconLocalUri)
+    await TaskbarTabsUtils._imageFromLocalURI(kGoodFaviconLocalUri),
+    256
   );
   gBadFaviconImg = encodeImagePNG(
-    await TaskbarTabsUtils._imageFromLocalURI(kBadFaviconLocalUri)
+    await TaskbarTabsUtils._imageFromLocalURI(kBadFaviconLocalUri),
+    256
   );
 });
 
@@ -393,14 +395,7 @@ async function checkTaskbarTabIcon(
     "Tried to replace the tab with a window"
   );
   if (aImage) {
-    // XXX - aImage isn't necessarily 256x256, so scale it up. (This won't
-    // matter after bug 2004308.)
-    let dataUri = `data:image/png;base64,${aImage.toBase64()}`;
-    let parsed = Services.io.newURI(dataUri);
-    assertBytesEqual(
-      encodeImagePNG(replaceStub.secondCall.args[2]),
-      encodeImagePNG(await TaskbarTabsUtils._imageFromLocalURI(parsed), 256)
-    );
+    assertBytesEqual(encodeImagePNG(replaceStub.secondCall.args[2]), aImage);
   } else {
     // This time, the default icon needs to be scaled up.
     assertBytesEqual(
@@ -455,25 +450,27 @@ async function checkLoadsCorrectIcon(methodName, index, callback) {
 
   let openStub = sandbox.stub(TaskbarTabsWindowManager.prototype, methodName);
   let loadStub = sandbox
-    .stub(TaskbarTabsUtils, "_imageFromLocalURI")
+    .stub(TaskbarTabsUtils, "_remoteDecodeImageFromFile")
     .resolves(fakeImg);
   sandbox.stub(TaskbarTabsUtils, "getDefaultIcon").resolves(defaultImg);
 
   await callback(taskbarTab);
 
   Assert.ok(
-    loadStub.firstCall?.args[0]?.spec?.includes(taskbarTab.id),
+    loadStub.firstCall?.args[0]?.path?.includes(taskbarTab.id),
     "Attempted to load image (probably) corresponding to a Taskbar Tab"
   );
   Assert.equal(openStub.callCount, 1, `${methodName} was called once`);
   Assert.equal(
     openStub.firstCall?.args[index],
     fakeImg,
-    `The result from _imageFromLocalURI was passed to ${methodName}`
+    `The result from _remoteDecodeImageFromFile was passed to ${methodName}`
   );
 
   loadStub.restore();
-  loadStub = sandbox.stub(TaskbarTabsUtils, "_imageFromLocalURI").rejects();
+  loadStub = sandbox
+    .stub(TaskbarTabsUtils, "_remoteDecodeImageFromFile")
+    .rejects();
 
   await callback(taskbarTab);
 

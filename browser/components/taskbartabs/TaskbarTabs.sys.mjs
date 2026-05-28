@@ -297,11 +297,15 @@ async function fetchIconForTaskbarTab(aTaskbarTab, aDetails) {
 
   for (const choice of choices) {
     try {
-      let dataURI = await choice();
-      if (!dataURI) {
+      let uri = await choice();
+      if (!uri) {
         continue;
       }
-      let candidate = await TaskbarTabsUtils._imageFromLocalURI(dataURI);
+      let candidate = await TaskbarTabsUtils._remoteDecodeImageFromURI(
+        uri,
+        256,
+        aDetails.browser
+      );
       if (candidate) {
         return candidate;
       }
@@ -326,11 +330,16 @@ async function loadSavedTaskbarTabIcon(aTaskbarTabId) {
   iconPath.append(
     aTaskbarTabId + "." + lazy.ShellService.shortcutIconType.extension
   );
+
   try {
-    return await TaskbarTabsUtils._imageFromLocalURI(
-      Services.io.newFileURI(iconPath)
+    return await TaskbarTabsUtils._remoteDecodeImageFromFile(
+      iconPath,
+      256,
+      null,
+      lazy.ShellService.shortcutIconType.mimeType
     );
   } catch (e) {
+    lazy.logConsole.warn("Couldn't load saved Taskbar Tab icon: ", e);
     return await TaskbarTabsUtils.getDefaultIcon();
   }
 }
