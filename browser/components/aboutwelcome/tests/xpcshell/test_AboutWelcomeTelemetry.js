@@ -388,6 +388,53 @@ add_task(async function test_event_context() {
   Assert.ok(pingSubmitted, "Ping with write_in_microsurvey submitted");
 });
 
+add_task(async function test_smart_window_user_feedback_data() {
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(TELEMETRY_PREF);
+  });
+  Services.prefs.setBoolPref(TELEMETRY_PREF, true);
+
+  const AWTelemetry = new AboutWelcomeTelemetry();
+  const feedbackData = {
+    metadata: { model: "test-model", turn_count: 2, prompt_version: 4 },
+  };
+
+  let pingSubmitted = false;
+  GleanPings.microsurvey.testBeforeNextSubmit(() => {
+    pingSubmitted = true;
+    Assert.deepEqual(
+      Glean.microsurvey.smartWindowUserFeedbackData.testGetValue(),
+      feedbackData,
+      "smart_window_user_feedback_data is set on microsurvey ping."
+    );
+  });
+  await AWTelemetry.sendTelemetry({
+    event_context: {
+      smart_window_user_feedback_data: feedbackData,
+      write_in_microsurvey: true,
+    },
+  });
+  Assert.ok(pingSubmitted, "microsurvey ping was submitted");
+
+  pingSubmitted = false;
+  GleanPings.messagingSystem.testBeforeNextSubmit(() => {
+    pingSubmitted = true;
+    Assert.ok(
+      !Glean.microsurvey.smartWindowUserFeedbackData.testGetValue(),
+      "smart_window_user_feedback_data is not set without write_in_microsurvey."
+    );
+  });
+  await AWTelemetry.sendTelemetry({
+    event_context: {
+      smart_window_user_feedback_data: feedbackData,
+    },
+  });
+  Assert.ok(
+    pingSubmitted,
+    "messagingSystem ping was submitted without write_in_microsurvey"
+  );
+});
+
 // For event_context to be more useful, we want to make sure we don't error
 // in cases where it doesn't make much sense, such as a plain string that
 // doesnt attempt to represent a valid object.
