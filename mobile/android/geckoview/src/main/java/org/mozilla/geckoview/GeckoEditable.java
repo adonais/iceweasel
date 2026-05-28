@@ -1367,6 +1367,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       return;
     }
 
+    boolean syncShadowText = !inBatchMode && mNeedSync;
+
     if (mInBatchMode != inBatchMode) {
       mInBatchMode = inBatchMode;
 
@@ -1384,15 +1386,17 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                   mText.getShadowText(),
                   SEND_COMPOSITION_NOTIFY_GECKO | SEND_COMPOSITION_KEEP_CURRENT);
             }
-            mFocusedChild.onImeSynchronize();
+            // Gecko won't notify us of text changes if composing state is changed only. So we
+            // shouldn't call onImeSynchronize in this case.
+            // Also, during batch mode, if text is changed, we already send it to Gecko, so we
+            // cannot sync shadow text yet until Gecko notifies us of the text/selection changes.
+            syncShadowText = false;
           } catch (final RemoteException e) {
             Log.e(LOGTAG, "Remote call failed", e);
           }
         }
       }
     }
-
-    mInBatchMode = inBatchMode;
 
     if (!inBatchMode && mFocusedChild != null) {
       // We may not commit composition on Gecko even if Java side has
@@ -1412,7 +1416,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       // Committing composition doesn't change text, so we can sync shadow text.
     }
 
-    if (!inBatchMode && mNeedSync) {
+    if (syncShadowText) {
       icSyncShadowText();
     }
   }
