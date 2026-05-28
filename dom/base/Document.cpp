@@ -16787,10 +16787,14 @@ static void SetKeyboardLockStatusAndMaybeDispatchEvent(
 void Document::RequestFullscreenInContentProcess(
     UniquePtr<FullscreenRequest> aRequest, bool aApplyFullscreenDirectly) {
   MOZ_ASSERT(XRE_IsContentProcess());
+  if (!CheckFullscreenAllowedElementType(aRequest->Element())) {
+    aRequest->Reject("FullscreenDeniedNotHTMLSVGOrMathML");
+    return;
+  }
+
   // If we are in the content process, we can apply the fullscreen
   // state directly only if we have been in DOM fullscreen, because
   // otherwise we always need to notify the chrome.
-
   if (aApplyFullscreenDirectly ||
       nsContentUtils::GetInProcessSubtreeRootDocument(this)->Fullscreen()) {
     // This optimization causes edge case behaviors, due to not going via the
@@ -16799,11 +16803,6 @@ void Document::RequestFullscreenInContentProcess(
     aRequest->SetShouldDispatchKeyboardLockEvent(aRequest->GetPromise() &&
                                                  aRequest->Document() == this);
     ApplyFullscreen(std::move(aRequest));
-    return;
-  }
-
-  if (!CheckFullscreenAllowedElementType(aRequest->Element())) {
-    aRequest->Reject("FullscreenDeniedNotHTMLSVGOrMathML");
     return;
   }
 
