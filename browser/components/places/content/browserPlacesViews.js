@@ -771,7 +771,7 @@ class PlacesViewBase {
       aPopup._endOptShareFolder.className = "openintabs-menuitem";
       aPopup._endOptShareFolder.setAttribute(
         "data-l10n-id",
-        "places-share-folder"
+        "places-share-folder2"
       );
 
       aPopup._endOptShareFolder.addEventListener("command", event => {
