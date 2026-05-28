@@ -1594,11 +1594,7 @@ class PresShell final : public nsStubDocumentObserver,
   void ResetVisualViewportSize();
   bool IsVisualViewportSizeSet() { return mVisualViewportSizeSet; }
   void SetNeedsWindowPropertiesSync();
-  nsSize GetVisualViewportSize() {
-    NS_ASSERTION(mVisualViewportSizeSet,
-                 "asking for visual viewport size when its not set?");
-    return mVisualViewportSize;
-  }
+  nsSize GetVisualViewportSize() const;
 
   nsPoint GetVisualViewportOffsetRelativeToLayoutViewport() const;
 
