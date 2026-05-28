@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* stylelint-disable max-nesting-depth */
 
-#backgroud-image {
+#background-image {
   position: absolute;
   inset: 0;
   z-index: -2;
@@ -17,7 +17,7 @@
   background-size: initial;
 }
 
-#plain-backgroud {
+#plain-background {
   position: absolute;
   z-index: -2;
   left: 50%;
@@ -157,6 +157,29 @@
     /* Match the #close-button height so the .description-content is centered */
     .empty {
       height: var(--button-min-height);
+    }
+  }
+}
+
+:host([size="small"]) {
+  #background-image,
+  #plain-background {
+    display: none;
+  }
+
+  .policy {
+    width: 100%;
+  }
+
+  .container {
+    width: var(--modal-size);
+
+    .preview {
+      display: none;
+    }
+
+    .description {
+      width: 100%;
     }
   }
 }

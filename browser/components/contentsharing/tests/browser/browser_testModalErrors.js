@@ -32,7 +32,6 @@ add_task(async function test_tooManyLinks() {
       url: server.mockResponse.url,
       isSchemaValid: true,
       isSignedIn: true,
-      loadingPromise: null,
     });
 
     Assert.equal(body.type, "tabs", "Share type is 'tabs'");
@@ -92,7 +91,6 @@ add_task(async function test_genericError() {
       url: null,
       isSchemaValid: true,
       isSignedIn: true,
-      loadingPromise: null,
     });
 
     Assert.equal(body.type, "tabs", "Share type is 'tabs'");

@@ -94,7 +94,6 @@ export function makeShareResult({ share = null } = {}) {
     url: null,
     isSchemaValid: null,
     isSignedIn: null,
-    loadingPromise: null,
   };
 }
 
@@ -361,8 +360,9 @@ class ContentSharingUtilsClass {
     let window = Services.wm.getMostRecentBrowserWindow();
 
     window.gDialogBox.open(CONTENT_SHARING_MODAL_URL, {
-      ...shareResult,
+      shareResult,
       loadingPromise,
+      size: window.innerWidth,
     });
 
     // Note: the result object contains either the URL or an error. It's safe
@@ -373,7 +373,11 @@ class ContentSharingUtilsClass {
         this.isSignedIn() && shareResult.error !== ERRORS.UNAUTHORIZED;
     } finally {
       // Resolve with a new object so Lit detects the shareResult change
-      resolveLoading({ ...shareResult, loadingPromise: null });
+      resolveLoading({
+        shareResult,
+        loadingPromise: null,
+        size: window.innerWidth,
+      });
     }
 
     if (shareResult.error && !shareResult.isSignedIn) {

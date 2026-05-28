@@ -57,7 +57,6 @@ add_task(async function test_shareBookmarkFolderFromSidebar() {
         url: server.mockResponse.url,
         isSchemaValid: true,
         isSignedIn: true,
-        loadingPromise: null,
       });
       Assert.equal(body.type, "bookmarks", "Share type is 'bookmarks'");
       Assert.equal(body.links.length, 5, "Share contains 5 links");
