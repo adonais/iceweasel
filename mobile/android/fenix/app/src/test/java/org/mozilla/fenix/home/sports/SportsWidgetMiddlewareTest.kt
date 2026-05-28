@@ -4,6 +4,10 @@
 
 package org.mozilla.fenix.home.sports
 
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -43,6 +47,44 @@ class SportsWidgetMiddlewareTest {
 
         dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
 
+        assertEquals(SportCardErrorState.LoadFailed, store.state.sportsWidgetState.errorState)
+    }
+
+    @Test
+    fun `GIVEN device is offline WHEN FetchMatches THEN repo is not called and ConnectionInterrupted is dispatched`() = runTest {
+        val repo = StubRepository(Result.success(resultWithMatches()))
+        val store = appStore(repo, connectivityManager = offlineConnectivityManager())
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        assertEquals(0, repo.fetchCount)
+        assertEquals(SportCardErrorState.ConnectionInterrupted, store.state.sportsWidgetState.errorState)
+    }
+
+    @Test
+    fun `GIVEN prior errorState WHEN FetchMatches succeeds THEN errorState is cleared`() = runTest {
+        val repo = StubRepository(Result.success(resultWithMatches()))
+        val store = appStore(
+            repo,
+            SportsWidgetState(errorState = SportCardErrorState.ConnectionInterrupted),
+        )
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        assertEquals(null, store.state.sportsWidgetState.errorState)
+    }
+
+    @Test
+    fun `GIVEN prior errorState and cached matches WHEN CountriesSelected uses cache THEN errorState is preserved`() = runTest {
+        val repo = StubRepository(Result.success(resultWithMatches()))
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        // Seed an error after the cache is warm, then re-derive via CountriesSelected.
+        store.dispatch(SportsWidgetAction.FetchFailed(SportCardErrorState.LoadFailed))
+        dispatchAndAwait(store, SportsWidgetAction.CountriesSelected(setOf("USA")))
+
+        assertEquals(1, repo.fetchCount)
         assertEquals(SportCardErrorState.LoadFailed, store.state.sportsWidgetState.errorState)
     }
 
@@ -445,15 +487,35 @@ class SportsWidgetMiddlewareTest {
         return TeamMatchesResult(previous = emptyList(), current = emptyList(), next = listOf(match))
     }
 
-    private fun TestScope.appStore(repo: StubRepository): AppStore {
+    private fun TestScope.appStore(
+        repo: StubRepository,
+        sportsWidgetState: SportsWidgetState = SportsWidgetState(),
+        connectivityManager: ConnectivityManager = onlineConnectivityManager(),
+    ): AppStore {
         val middleware = SportsWidgetMiddleware(
             sportsRepository = repo,
+            connectivityManager = connectivityManager,
             coroutineScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler)),
         )
         return AppStore(
-            initialState = AppState(sportsWidgetState = SportsWidgetState()),
+            initialState = AppState(sportsWidgetState = sportsWidgetState),
             middlewares = listOf(middleware),
         )
+    }
+
+    private fun onlineConnectivityManager(): ConnectivityManager = connectivityManager(isOnline = true)
+
+    private fun offlineConnectivityManager(): ConnectivityManager = connectivityManager(isOnline = false)
+
+    private fun connectivityManager(isOnline: Boolean): ConnectivityManager {
+        val capabilities = mockk<NetworkCapabilities> {
+            every { hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns isOnline
+            every { hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) } returns isOnline
+        }
+        return mockk(relaxed = true) {
+            every { getNetworkCapabilities(any()) } returns capabilities
+            every { activeNetwork } returns mockk(relaxed = true)
+        }
     }
 
     private fun TestScope.dispatchAndAwait(store: AppStore, action: SportsWidgetAction) {

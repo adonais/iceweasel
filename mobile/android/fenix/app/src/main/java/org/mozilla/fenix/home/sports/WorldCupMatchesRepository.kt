@@ -19,10 +19,10 @@ import org.mozilla.fenix.home.sports.client.WorldCupMatchesClient
  * server side. The middleware is expected to cache this result and re-derive
  * [MatchCard]s locally when the selected team changes.
  *
- * Any exception during fetch, deserialization, or mapping is captured into a failed
- * [Result] for the middleware to translate into an error state. When the network
- * call returns no body (e.g. transient network failure), an empty
- * [TeamMatchesResult] is surfaced as success.
+ * Any exception during fetch, deserialization, or mapping — as well as a null body
+ * from the client (which the client returns for caught network / API exceptions,
+ * including 5xx responses) — is captured into a failed [Result] so the middleware
+ * surfaces the error to the UI instead of silently rendering as an empty schedule.
  *
  * @param client Fetches raw JSON from the Merino WCS endpoint.
  * @param mapper Converts response DTOs into the [SportsMatch] domain model.
@@ -40,12 +40,9 @@ class WorldCupMatchesRepository(
         withContext(Dispatchers.IO) {
             runCatching {
                 val body = client.fetchMatches(teams = emptySet())
-                    ?: return@runCatching emptyResult()
+                    ?: error("World Cup matches request returned no body")
                 val response = json.decodeFromString<TeamMatchesResponseDto>(body)
                 mapper.mapTeamMatches(response)
             }.onFailure { logger.error("Failed to fetch World Cup matches", it) }
         }
-
-    private fun emptyResult(): TeamMatchesResult =
-        TeamMatchesResult(previous = emptyList(), current = emptyList(), next = emptyList())
 }

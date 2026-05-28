@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.home.sports
 
+import android.net.ConnectivityManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -12,6 +13,7 @@ import mozilla.components.lib.state.Store
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.ext.isOnline
 
 /**
  * [Middleware] that handles side effects for [SportsWidgetAction].
@@ -28,10 +30,14 @@ import org.mozilla.fenix.components.appstate.AppState
  * is dispatched instead when the device is offline, and [fetchAndBuild] is not invoked.
  *
  * @param sportsRepository [SportsRepository] used to fetch match data.
+ * @param connectivityManager Used to short-circuit fetches with
+ * [SportCardErrorState.ConnectionInterrupted] when the device is offline instead of
+ * letting the underlying client time out into [SportCardErrorState.LoadFailed].
  * @param coroutineScope [CoroutineScope] used for async fetch operations.
  */
 class SportsWidgetMiddleware(
     private val sportsRepository: SportsRepository,
+    private val connectivityManager: ConnectivityManager,
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ) : Middleware<AppState, AppAction> {
 
@@ -67,11 +73,23 @@ class SportsWidgetMiddleware(
     }
 
     private fun fetchAndBuild(store: Store<AppState, AppAction>) {
+        // Skip the round-trip when the device is offline; surface the connectivity
+        // error directly so the widget renders the "you're offline" message instead
+        // of a generic load-failure once the network call times out.
+        if (!connectivityManager.isOnline()) {
+            store.dispatch(SportsWidgetAction.FetchFailed(SportCardErrorState.ConnectionInterrupted))
+            return
+        }
         coroutineScope.launch {
             sportsRepository.fetchMatches()
                 .onSuccess { result ->
                     cachedMatches = result
                     val countryCodes = store.state.sportsWidgetState.countriesSelected
+                    // A fresh successful fetch retires any prior banner. Done explicitly here
+                    // — and NOT as a side effect of MatchCardStateUpdated — so cache-hit
+                    // re-derives (e.g. CountriesSelected with a cached response) don't
+                    // silently dismiss a still-valid error.
+                    store.dispatch(SportsWidgetAction.ErrorStateCleared)
                     store.dispatch(SportsWidgetAction.MatchCardStateUpdated(buildCards(result, countryCodes)))
                     store.dispatch(SportsWidgetAction.EliminatedCountriesUpdated(eliminatedCodes(result)))
                 }
