@@ -2269,6 +2269,9 @@ pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
 //Smart Window Nova
 pref("browser.smartwindow.nova.enabled", false);
 
+// Smart Window user feedback collection
+pref("browser.smartwindow.userFeedbackCollection", false);
+
 // Block insecure active content on https pages
 pref("security.mixed_content.block_active_content", true);
 

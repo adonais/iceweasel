@@ -18,6 +18,7 @@ import "chrome://browser/content/aiwindow/components/applied-memories-button.mjs
  *   - A copy button for copying the assistant response.
  *   - A retry button for regenerating the response.
  *   - An applied memories button for viewing and/or deleting applied memories.
+ *   - Thumbs up/down feedback buttons (gated on browser.smartwindow.userFeedbackCollection).
  *
  * Data updates and network behavior are controlled by its parent.
  *
@@ -32,6 +33,10 @@ import "chrome://browser/content/aiwindow/components/applied-memories-button.mjs
  *   - "copy-message"
  *       detail: { messageId }
  *   - "retry-message"
+ *       detail: { messageId }
+ *   - "thumbs-up"
+ *       detail: { messageId }
+ *   - "thumbs-down"
  *       detail: { messageId }
  */
 export class AssistantMessageFooter extends MozLitElement {
@@ -57,6 +62,8 @@ export class AssistantMessageFooter extends MozLitElement {
     return {
       copy: "copy-message",
       retry: "retry-message",
+      thumbsUp: "thumbs-up",
+      thumbsDown: "thumbs-down",
     };
   }
 
@@ -77,6 +84,16 @@ export class AssistantMessageFooter extends MozLitElement {
     this.#emit(this.constructor.events.retry, { messageId: this.messageId });
   }
 
+  #emitThumbsUp() {
+    this.#emit(this.constructor.events.thumbsUp, { messageId: this.messageId });
+  }
+
+  #emitThumbsDown() {
+    this.#emit(this.constructor.events.thumbsDown, {
+      messageId: this.messageId,
+    });
+  }
+
   render() {
     return html`
       <link
@@ -84,6 +101,30 @@ export class AssistantMessageFooter extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/assistant-message-footer.css"
       />
       <div class="footer">
+        <moz-button
+          data-l10n-id="aiwindow-thumbs-up"
+          data-l10n-attrs="tooltiptext,aria-label"
+          class="footer-icon-button thumbs-up-button"
+          type="ghost"
+          size="small"
+          iconsrc="chrome://global/skin/icons/thumbs-up-20.svg"
+          @click=${() => {
+            this.#emitThumbsUp();
+          }}
+        >
+        </moz-button>
+        <moz-button
+          data-l10n-id="aiwindow-thumbs-down"
+          data-l10n-attrs="tooltiptext,aria-label"
+          class="footer-icon-button thumbs-down-button"
+          type="ghost"
+          size="small"
+          iconsrc="chrome://global/skin/icons/thumbs-down-20.svg"
+          @click=${() => {
+            this.#emitThumbsDown();
+          }}
+        >
+        </moz-button>
         <moz-button
           data-l10n-id="aiwindow-copy-message"
           data-l10n-attrs="tooltiptext,aria-label"

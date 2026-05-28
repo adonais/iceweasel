@@ -14,7 +14,7 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-xsmall);
+  gap: var(--space-xxsmall);
 }
 
 moz-button.footer-icon-button {
@@ -24,4 +24,17 @@ moz-button.footer-icon-button {
   --button-border-color-ghost-hover: var(--chat-assistant-footer-button-border-hover);
   --button-background-color-ghost-active: var(--chat-assistant-footer-button-bg-active);
   --button-border-color-ghost-active: var(--chat-assistant-footer-button-border-active);
+}
+
+.thumbs-up-button,
+.thumbs-down-button {
+  display: none;
+}
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("browser.smartwindow.userFeedbackCollection") {
+  .thumbs-up-button,
+  .thumbs-down-button {
+    display: revert;
+  }
 }

@@ -186,6 +186,14 @@ export class AIChatContent extends MozLitElement {
     this.addEventListener("open-memories-learn-more", event => {
       this.#dispatchAction("open-memories-learn-more", event.detail);
     });
+
+    this.addEventListener("thumbs-up", event => {
+      this.#dispatchAction("thumbs-up", event.detail);
+    });
+
+    this.addEventListener("thumbs-down", event => {
+      this.#dispatchAction("thumbs-down", event.detail);
+    });
   }
 
   #initOverflowObserver() {
