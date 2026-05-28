@@ -52,12 +52,6 @@ function renderMultistage(ready) {
       }
       data.event_context.write_in_microsurvey = true;
     }
-    if (CONFIG?.feedbackData) {
-      if (!data.event_context) {
-        data.event_context = {};
-      }
-      data.event_context.smart_window_user_feedback_data = CONFIG.feedbackData;
-    }
     return telemetryMessageHandler(data);
   };
   window.AWSendToDeviceEmailsSupported = receive(
