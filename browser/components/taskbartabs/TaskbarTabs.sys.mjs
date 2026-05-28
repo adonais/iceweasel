@@ -22,6 +22,7 @@ let lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ManifestIcons: "resource://gre/modules/ManifestIcons.sys.mjs",
   ManifestObtainer: "resource://gre/modules/ManifestObtainer.sys.mjs",
+  ManifestProcessor: "resource://gre/modules/ManifestProcessor.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
 });
 
@@ -81,6 +82,18 @@ export const TaskbarTabs = new (class {
    * isn't a better option.
    */
   async findOrCreateTaskbarTab(aUrl, aUserContextId, aDetails = {}) {
+    if (aDetails.manifest) {
+      // The manifest internally needs to be processed, so do that now.
+      aDetails = {
+        ...aDetails,
+        manifest: lazy.ManifestProcessor.process({
+          jsonText: JSON.stringify(aDetails.manifest),
+          manifestURL: aUrl.prePath,
+          docURL: aUrl.prePath,
+        }),
+      };
+    }
+
     // The result of #findOrCreateTaskbarTab sometimes contains additional
     // properties for internal use, often for moveTabIntoTaskbarTab. Only a few
     // values should actually be given to outside callers.
@@ -263,7 +276,11 @@ async function fetchIconForTaskbarTab(aTaskbarTab, aDetails) {
   let startUri = Services.io.newURI(aTaskbarTab.startUrl);
   const choices = [
     async () => {
-      if (aDetails.browser && aDetails.manifest) {
+      if (!aDetails.manifest) {
+        return null;
+      }
+
+      if (aDetails.browser) {
         let uri = await lazy.ManifestIcons.browserFetchIcon(
           aDetails.browser,
           aDetails.manifest,
@@ -271,7 +288,8 @@ async function fetchIconForTaskbarTab(aTaskbarTab, aDetails) {
         );
         return Services.io.newURI(uri);
       }
-      return null;
+
+      return Services.io.newURI(findBestManifestIcon(aDetails.manifest));
     },
     async () => await TaskbarTabsUtils.getFaviconUri(startUri),
     async () => await TaskbarTabsUtils.getFaviconUri(aDetails.createdForUrl),
@@ -315,4 +333,47 @@ async function loadSavedTaskbarTabIcon(aTaskbarTabId) {
   } catch (e) {
     return await TaskbarTabsUtils.getDefaultIcon();
   }
+}
+
+/**
+ * This is a lightweight version of ManifestIcons.sys.mjs that runs in the
+ * parent process. Selects the icon that is closest to 256x256 from the
+ * processed manifest, and returns its URL.
+ *
+ * Note that this currently doesn't try to fall back if it fails---it'll use
+ * the site's favicon, if any, or the default icon.
+ *
+ * @param {object} aManifest - The manifest, as returned by ManifestObtainer or
+ * ManifestProcessor.
+ * @returns {string?} The URL of the best icon, or null if no icons were found.
+ */
+function findBestManifestIcon(aManifest) {
+  // Transform the icons from
+  //   [{sizes: ["WIDTH1xHEIGHT1", "WIDTH2xHEIGHT2"], src: "...", ...}, ...]
+  // to
+  //   [{size: WIDTH1, src: "..."}, {size: WIDTH2, src: "..."}]
+  let collectedIcons =
+    aManifest.icons?.flatMap(icon => {
+      let sizes = icon.sizes ?? [""];
+      return sizes.map(size => ({
+        src: icon.src,
+        // Use 'Infinity' so it always compares as larger to any other size.
+        // Also note that parseInt("500x500") === 500, which is why parseInt is
+        // used here.
+        size: ["", "any"].includes(size) ? Infinity : parseInt(size),
+      }));
+    }) ?? [];
+
+  collectedIcons.sort((a, b) => a.size - b.size);
+  if (!collectedIcons.length) {
+    return null;
+  }
+
+  let index = collectedIcons.findIndex(icon => icon.size >= 256);
+  if (index >= 0) {
+    return collectedIcons[index].src;
+  }
+
+  // Get the largest we can if that didn't work.
+  return collectedIcons[collectedIcons.length - 1].src;
 }

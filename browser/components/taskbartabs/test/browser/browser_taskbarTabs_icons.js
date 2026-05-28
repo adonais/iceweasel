@@ -33,8 +33,14 @@ const kGoodFaviconHttpUri = Services.io.newURI(
 const kBadFaviconHttpUri = Services.io.newURI(
   "https://example.com/browser/browser/components/taskbartabs/test/browser/red-50.png"
 );
+// And for the cross-origin test, we need one on a different origin (note .org
+// instead of .com):
+const kGoodFaviconCrossOriginUri = Services.io.newURI(
+  "https://example.org/browser/browser/components/taskbartabs/test/browser/blue-150.png"
+);
 
 let gGoodFaviconImg;
+let gBadFaviconImg;
 
 add_setup(async function setup() {
   // Note: we don't want to stub out creating the icon file, so we need to stub
@@ -53,6 +59,9 @@ add_setup(async function setup() {
 
   gGoodFaviconImg = encodeImagePNG(
     await TaskbarTabsUtils._imageFromLocalURI(kGoodFaviconLocalUri)
+  );
+  gBadFaviconImg = encodeImagePNG(
+    await TaskbarTabsUtils._imageFromLocalURI(kBadFaviconLocalUri)
   );
 });
 
@@ -163,93 +172,64 @@ add_task(async function test_faviconOnOtherPage() {
   sandbox.restore();
 });
 
-add_task(async function test_manifestIcon_lone() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
-
-  await checkTaskbarTabIcon(gGoodFaviconImg, {
-    uri: kBaseUri,
-    manifest: {
-      icons: [
-        {
-          // This needs to be HTTP since it's from the manifest, so in theory
-          // it could be given from random Web content and thus it can't access
-          // chrome: URIs.
-          src: kGoodFaviconHttpUri.spec,
-        },
-      ],
-    },
+add_task(async function test_manifestIcon_none() {
+  // It should fall back to the 'bad' icon due to the favicon mock.
+  await checkManifestIcon(gBadFaviconImg, gBadFaviconImg, {
+    icons: [],
   });
+});
 
-  sandbox.restore();
+add_task(async function test_manifestIcon_lone() {
+  await checkManifestIcon(gGoodFaviconImg, gGoodFaviconImg, {
+    icons: [
+      {
+        // This needs to be HTTP since it's from the manifest, so in theory
+        // it could be given from random Web content and thus it can't access
+        // chrome: URIs.
+        src: kGoodFaviconHttpUri.spec,
+      },
+    ],
+  });
 });
 
 add_task(async function test_manifestIcon_sized() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
-
-  await checkTaskbarTabIcon(gGoodFaviconImg, {
-    uri: kBaseUri,
-    manifest: {
-      icons: [
-        {
-          // This needs to be HTTP since it's from the manifest, so in theory
-          // it could be given from random Web content and thus it can't access
-          // chrome: URIs.
-          src: kGoodFaviconHttpUri.spec,
-          sizes: "1x1 2x2 3x3 250x250",
-        },
-      ],
-    },
+  await checkManifestIcon(gGoodFaviconImg, gGoodFaviconImg, {
+    icons: [
+      {
+        src: kGoodFaviconHttpUri.spec,
+        sizes: "1x1 2x2 3x3 250x250",
+      },
+    ],
   });
-
-  sandbox.restore();
 });
 
 add_task(async function test_manifestIcon_selectsBestSize() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(null);
-
-  await checkTaskbarTabIcon(gGoodFaviconImg, {
-    uri: kBaseUri,
-    manifest: {
-      icons: [
-        {
-          src: kBadFaviconHttpUri.spec,
-          sizes: "255x255 257x257",
-        },
-        {
-          src: kGoodFaviconHttpUri.spec,
-          sizes: "256x256",
-        },
-      ],
-    },
+  await checkManifestIcon(gGoodFaviconImg, gGoodFaviconImg, {
+    icons: [
+      {
+        src: kBadFaviconHttpUri.spec,
+        sizes: "255x255 257x257",
+      },
+      {
+        src: kGoodFaviconHttpUri.spec,
+        sizes: "256x256",
+      },
+    ],
   });
-
-  sandbox.restore();
 });
 
-add_task(async function test_manifestIcon_overridesFavicon() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(kBadFaviconLocalUri);
-
-  await checkTaskbarTabIcon(gGoodFaviconImg, {
-    uri: kBaseUri,
-    manifest: {
-      icons: [
-        {
-          src: kBadFaviconHttpUri.spec,
-          sizes: "255x255 257x257",
-        },
-        {
-          src: kGoodFaviconHttpUri.spec,
-          sizes: "256x256",
-        },
-      ],
-    },
+add_task(async function test_manifestIcon_differentOrigin() {
+  await checkManifestIcon(gBadFaviconImg, gGoodFaviconImg, {
+    icons: [
+      {
+        // The test is done from kBaseUri (example.com), but this icon is on
+        // example.org, so it should fail (falling back to gBadFaviconImg) if
+        // we have a tab since it's cross-origin. If we don't have a tab, we
+        // should permit it, since it's probably from our servers.
+        src: kGoodFaviconCrossOriginUri.spec,
+      },
+    ],
   });
-
-  sandbox.restore();
 });
 
 add_task(async function test_findOrCreateTaskbarTab_noIcon() {
@@ -295,6 +275,42 @@ add_task(async function test_replaceTabWithWindowLoadsSavedIcon() {
     });
   });
 });
+
+/**
+ * Checks that the manifest provided results in the dimensions matching the
+ * given image if (a) a browser is given, and (b) if it is not.
+ *
+ * The favicon will be hardcoded to gBigFaviconImg, so that should be the
+ * 'something went wrong' icon.
+ *
+ * @param {imgIContainer} aImageWithTab - The image to use with
+ * moveTabIntoTaskbarTab.
+ * @param {imgIContainer} aImageWithoutTab - The image to use with
+ * findOrCreateTaskbarTab.
+ * @param {object} aManifest - The Web App Manifest to use.
+ */
+async function checkManifestIcon(aImageWithTab, aImageWithoutTab, aManifest) {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(TaskbarTabsUtils, "getFaviconUri").resolves(kBadFaviconLocalUri);
+
+  // This case checks moveTabIntoTaskbarTab.
+  await checkTaskbarTabIcon(aImageWithTab, { manifest: aManifest });
+
+  let pinStub = sandbox.stub(TaskbarTabsPin, "pinTaskbarTab").resolves();
+
+  let { taskbarTab } = await TaskbarTabs.findOrCreateTaskbarTab(kBaseUri, 0, {
+    manifest: aManifest,
+  });
+
+  await TaskbarTabs.removeTaskbarTab(taskbarTab.id);
+  Assert.equal(pinStub.callCount, 1, "The taskbar tab was pinned once");
+  assertBytesEqual(
+    encodeImagePNG(pinStub.firstCall?.args[2]),
+    aImageWithoutTab
+  );
+
+  sandbox.restore();
+}
 
 /**
  * Checks that loading the given URI and start path and creating a Taskbar Tab
