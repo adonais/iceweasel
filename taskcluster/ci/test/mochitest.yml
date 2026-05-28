@@ -9,10 +9,6 @@ job-defaults:
         by-test-platform:
             android-em-7.*: geckoview-test_runner.apk
             android-hw.*: geckoview-test_runner.apk
-            windows11-64-2009.*:
-                by-variant:
-                    msix: target.installer.msix
-                    default: null
             default: null
     tier:
         by-variant:
@@ -216,7 +212,6 @@ mochitest-browser-chrome:
         - webrender-sw
         - webrender-sw+a11y-checks
         - socketprocess_networking
-        - msix
         - editor-legacy-direction
     run-on-projects:
         by-variant:
@@ -237,11 +232,6 @@ mochitest-browser-chrome:
                     .*asan.*: []
                     .*ccov.*: []
                     (linux.*64|macosx.*64|windows1.*-64.*)(-shippable)?-qr/(opt|debug): ['autoland', 'mozilla-central']
-                    default: []
-            msix:
-                by-test-platform:
-                    windows11-64-2009-qr/debug: built-projects
-                    windows11-64-2009(-shippable)?-qr/opt: built-projects
                     default: []
             editor-legacy-direction:
                 by-test-platform:
@@ -272,7 +262,6 @@ mochitest-browser-chrome:
             default: 7
     max-run-time:
         by-variant:
-            msix: 5400
             socketprocess_networking:
                 by-test-platform:
                     linux.*-qr/debug: 7200
@@ -628,7 +617,6 @@ mochitest-media:
         - webrender-sw+no-fission
         - webrender-sw
         - wmf-media-engine
-        - msix
     run-on-projects:
         by-variant:
             webgl-ipc:
@@ -680,12 +668,6 @@ mochitest-media:
             wmf-media-engine:
                 by-test-platform:
                     windows1.*-64.*: ['autoland', 'mozilla-central']
-                    default: []
-            msix:
-                by-test-platform:
-                    windows11-64-2009-shippable-qr/opt: built-projects
-                    windows11-64-2009-qr/opt: ['autoland']
-                    windows11-64-2009-qr/debug: ['autoland']
                     default: []
             default:
                 by-test-platform:

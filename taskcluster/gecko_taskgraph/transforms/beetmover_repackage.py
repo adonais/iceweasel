@@ -106,7 +106,6 @@ def make_task_description(config, jobs):
         repackage_name = "repackage"
         repackage_signing_name = "repackage-signing"
         msi_signing_name = "repackage-signing-msi"
-        msix_signing_name = "repackage-signing-shippable-l10n-msix"
         mar_signing_name = "mar-signing"
         attribution_name = "attribution"
         repackage_deb_name = "repackage-deb"
@@ -139,8 +138,6 @@ def make_task_description(config, jobs):
             dependencies["partials-signing"] = upstream_deps["partials-signing"]
         if msi_signing_name in upstream_deps:
             dependencies[msi_signing_name] = upstream_deps[msi_signing_name]
-        if msix_signing_name in upstream_deps:
-            dependencies[msix_signing_name] = upstream_deps[msix_signing_name]
         if repackage_signing_name in upstream_deps:
             dependencies["repackage-signing"] = upstream_deps[repackage_signing_name]
         if attribution_name in upstream_deps:

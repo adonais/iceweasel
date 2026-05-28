@@ -133,21 +133,6 @@ linux64-upx:
         script: build-upx.sh
         toolchain-artifact: public/build/upx.tar.zst
 
-linux64-msix-packaging:
-    description: "msix-packaging build"
-    treeherder:
-        symbol: TL(msix-packaging)
-        tier: 1
-    run:
-        script: build-msix-packaging.sh
-        toolchain-artifact: public/build/msix-packaging.tar.zst
-    fetches:
-        fetch:
-            - msix-packaging
-        toolchain:
-            - linux64-clang-toolchain
-            - linux64-toolchain-sysroot
-
 wrench-deps:
     description: "Downloads all the crates needed for building wrench"
     treeherder:

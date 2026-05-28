@@ -267,18 +267,6 @@ wmf-media-engine:
                 - "--setpref=media.wmf.media-engine.enabled=true"
                 - "--setpref=media.wmf.media-engine.channel-decoder.enabled=true"
 
-msix:
-    description: "{description} from msix packages"
-    component: "Firefox:Installer"
-    expiration: "never"
-    suffix: "msix"
-    when:
-        $eval: '"windows1" in task["test-platform"] && "-64" in task["test-platform"] && ("opt" in task["test-platform"] || "debug" in task["test-platform"]) && !("asan" in task["test-platform"]) && !("ccov" in task["test-platform"])'
-    merge:
-        mozharness:
-            extra-options:
-                - "--installer-path installer.msix"
-
 http3:
     description: "{description} with http3 server"
     component: "Testing::General"

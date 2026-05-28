@@ -153,48 +153,33 @@ windows10-64-shippable-qr/opt:
 # win10-64 2004
 windows10-64-2009-qr/debug:
     build-platform: win64/debug
-    build-signing-label:
-        by-variant:
-            msix: repackage-signing-msix-win64/debug
-            default: build-signing-win64/debug
+    build-signing-label: build-signing-win64/debug
     test-sets:
         - windows10-2009-tests
 
 windows10-64-2009-qr/opt:
     build-platform: win64/opt
-    build-signing-label:
-        by-variant:
-            msix: repackage-signing-msix-win64/opt
-            default: build-signing-win64/opt
+    build-signing-label: build-signing-win64/opt
     test-sets:
         - windows10-2009-tests
 
 windows10-64-2009-shippable-qr/opt:
     build-platform: win64-shippable/opt
-    build-signing-label:
-        by-variant:
-            msix: repackage-signing-shippable-l10n-msix-win64-shippable/opt
-            default: build-signing-win64-shippable/opt
+    build-signing-label: build-signing-win64-shippable/opt
     test-sets:
         - windows10-2009-tests
 
 # win11-64 2009
 windows11-64-2009-qr/debug:
     build-platform: win64/debug
-    build-signing-label:
-        by-variant:
-            msix: repackage-signing-msix-win64/debug
-            default: build-signing-win64/debug
+    build-signing-label: build-signing-win64/debug
     test-sets:
         - web-platform-tests
         - windows11-2009-tests
 
 windows11-64-2009-qr/opt:
     build-platform: win64/opt
-    build-signing-label:
-        by-variant:
-            msix: repackage-signing-msix-win64/opt
-            default: build-signing-win64/opt
+    build-signing-label: build-signing-win64/opt
     test-sets:
         - awsy
         - desktop-screenshot-capture
@@ -205,10 +190,7 @@ windows11-64-2009-qr/opt:
 
 windows11-64-2009-shippable-qr/opt:
     build-platform: win64-shippable/opt
-    build-signing-label:
-        by-variant:
-            msix: repackage-signing-shippable-l10n-msix-win64-shippable/opt
-            default: build-signing-win64-shippable/opt
+    build-signing-label: build-signing-win64-shippable/opt
     test-sets:
         - awsy
         - desktop-screenshot-capture

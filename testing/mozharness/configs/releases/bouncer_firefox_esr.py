@@ -124,34 +124,6 @@ config = {
                 "win64",
             ],
         },
-        "msix": {
-            "product-name": "Firefox-%(version)s-msix-SSL",
-            "platforms": [
-                "win",
-                "win64",
-            ],
-        },
-        "msix-latest": {
-            "product-name": "Firefox-esr-msix-latest-SSL",
-            "platforms": [
-                "win",
-                "win64",
-            ],
-        },
-        "msix-115-latest": {
-            "product-name": "Firefox-esr115-msix-latest-SSL",
-            "platforms": [
-                "win",
-                "win64",
-            ],
-        },
-        "msix-next-latest": {
-            "product-name": "Firefox-esr-next-msix-latest-SSL",
-            "platforms": [
-                "win",
-                "win64",
-            ],
-        },
         "pkg": {
             "product-name": "Firefox-%(version)s-pkg-SSL",
             "platforms": ["osx"],

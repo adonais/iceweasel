@@ -5,17 +5,10 @@
 job-defaults:
     suite:
         category: xpcshell
-        name:
-            by-variant:
-                msix: xpcshell-msix
-                default: xpcshell
+        name: xpcshell
     target:
         by-test-platform:
             android-em-7.*: geckoview-test_runner.apk
-            windows11-64-2009.*:
-                by-variant:
-                    msix: target.installer.msix
-                    default: null
             default: null
     mozharness:
         script:
@@ -50,7 +43,6 @@ xpcshell:
         - socketprocess_networking+no-fission
         - socketprocess_networking
         - no-fission
-        - msix
     instance-size:
         by-variant:
             conditioned_profile: large
@@ -79,11 +71,6 @@ xpcshell:
                     android.*: built-projects
                     linux1804-64.*: ['trunk']
                     default: []
-            msix:
-                by-test-platform:
-                    windows11-64-2009(-shippable)?-qr/opt: built-projects
-                    windows11-64-2009-qr/debug: built-projects
-                    default: []
             default:
                 by-test-platform:
                     android.*: []
@@ -99,7 +86,6 @@ xpcshell:
             default: 4
     max-run-time:
         by-variant:
-            msix: 7200
             conditioned_profile: 7200
             default:
                 by-test-platform:

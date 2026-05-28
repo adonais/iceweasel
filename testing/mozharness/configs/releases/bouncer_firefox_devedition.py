@@ -66,20 +66,6 @@ config = {
                 "win64",
             ],
         },
-        "msix": {
-            "product-name": "Devedition-%(version)s-msix-SSL",
-            "platforms": [
-                "win",
-                "win64",
-            ],
-        },
-        "msix-latest": {
-            "product-name": "Firefox-devedition-msix-latest-SSL",
-            "platforms": [
-                "win",
-                "win64",
-            ],
-        },
         "stub-installer": {
             "product-name": "Devedition-%(version)s-stub",
             "platforms": [

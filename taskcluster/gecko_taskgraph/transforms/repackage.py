@@ -42,41 +42,6 @@ packaging_description_schema = schema.extend(
         Required("package-formats"): optionally_keyed_by(
             "build-platform", "release-type", [str]
         ),
-        Optional("msix"): {
-            Optional("channel"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("identity-name"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("publisher"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("publisher-display-name"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("vendor"): str,
-        },
         # All l10n jobs use mozharness
         Required("mozharness"): {
             Extra: object,
@@ -139,60 +104,6 @@ PACKAGE_FORMATS = {
             "setupexe": "target.installer.exe",
         },
         "output": "target.installer.msi",
-    },
-    "msix": {
-        "args": [
-            "msix",
-            "--channel",
-            "{msix-channel}",
-            "--publisher",
-            "{msix-publisher}",
-            "--publisher-display-name",
-            "{msix-publisher-display-name}",
-            "--identity-name",
-            "{msix-identity-name}",
-            "--vendor",
-            "{msix-vendor}",
-            "--arch",
-            "{architecture}",
-            # For langpacks.  Ignored if directory does not exist.
-            "--distribution-dir",
-            "{fetch-dir}/distribution",
-            "--verbose",
-            "--makeappx",
-            "{fetch-dir}/msix-packaging/makemsix",
-        ],
-        "inputs": {
-            "input": "target{archive_format}",
-        },
-        "output": "target.installer.msix",
-    },
-    "msix-store": {
-        "args": [
-            "msix",
-            "--channel",
-            "{msix-channel}",
-            "--publisher",
-            "{msix-publisher}",
-            "--publisher-display-name",
-            "{msix-publisher-display-name}",
-            "--identity-name",
-            "{msix-identity-name}",
-            "--vendor",
-            "{msix-vendor}",
-            "--arch",
-            "{architecture}",
-            # For langpacks.  Ignored if directory does not exist.
-            "--distribution-dir",
-            "{fetch-dir}/distribution",
-            "--verbose",
-            "--makeappx",
-            "{fetch-dir}/msix-packaging/makemsix",
-        ],
-        "inputs": {
-            "input": "target{archive_format}",
-        },
-        "output": "target.store.msix",
     },
     "dmg": {
         "args": ["dmg"],
@@ -300,9 +211,7 @@ def copy_in_useful_magic(config, jobs):
 
 @transforms.add
 def handle_keyed_by(config, jobs):
-    """Resolve fields that can be keyed by platform, etc, but not `msix.*` fields
-    that can be keyed by `package-format`.  Such fields are handled specially below.
-    """
+    """Resolve fields that can be keyed by platform, etc."""
     fields = [
         "mozharness.config",
         "package-formats",
@@ -375,62 +284,6 @@ def make_job_description(config, jobs):
         if config.kind == "repackage-msi":
             treeherder["symbol"] = "MSI({})".format(locale or "N")
 
-        elif config.kind == "repackage-msix":
-            assert not locale
-
-            # Like "MSIXs(Bs)".
-            treeherder["symbol"] = "MSIX({})".format(
-                dep_job.task.get("extra", {}).get("treeherder", {}).get("symbol", "B")
-            )
-
-        elif config.kind == "repackage-shippable-l10n-msix":
-            assert not locale
-
-            if attributes.get("l10n_chunk") or attributes.get("chunk_locales"):
-                # We don't want to produce MSIXes for single-locale repack builds.
-                continue
-
-            description = (
-                "Repackaging with multiple locales for build '"
-                "{build_platform}/{build_type}'".format(
-                    build_platform=attributes.get("build_platform"),
-                    build_type=attributes.get("build_type"),
-                )
-            )
-
-            # Like "MSIXs(Bs-multi)".
-            treeherder["symbol"] = "MSIX({}-multi)".format(
-                dep_job.task.get("extra", {}).get("treeherder", {}).get("symbol", "B")
-            )
-
-            fetches = job.setdefault("fetches", {})
-
-            # The keys are unique, like `shippable-l10n-signing-linux64-shippable-1/opt`, so we
-            # can't ask for the tasks directly, we must filter for them.
-            for t in config.kind_dependencies_tasks.values():
-                if t.kind != "shippable-l10n-signing":
-                    continue
-                if t.attributes["build_platform"] != "linux64-shippable":
-                    continue
-                if t.attributes["build_type"] != "opt":
-                    continue
-
-                dependencies.update({t.label: t.label})
-
-                fetches.update(
-                    {
-                        t.label: [
-                            {
-                                "artifact": f"{loc}/target.langpack.xpi",
-                                "extract": False,
-                                # Otherwise we can't disambiguate locales!
-                                "dest": f"distribution/extensions/{loc}",
-                            }
-                            for loc in t.attributes["chunk_locales"]
-                        ]
-                    }
-                )
-
         elif config.kind == "repackage-deb":
             attributes["repackage_type"] = "repackage-deb"
             description = (
@@ -453,7 +306,7 @@ def make_job_description(config, jobs):
 
         repackage_config = []
         package_formats = job.get("package-formats")
-        if use_stub and not repackage_signing_task and "msix" not in package_formats:
+        if use_stub and not repackage_signing_task:
             # if repackage_signing_task doesn't exists, generate the stub installer
             package_formats += ["installer-stub"]
         for format in package_formats:
@@ -471,34 +324,6 @@ def make_job_description(config, jobs):
             # Allow us to replace `args` as well, but specifying things expanded in mozharness
             # without breaking .format and without allowing unknown through.
             substs.update({name: f"{{{name}}}" for name in MOZHARNESS_EXPANSIONS})
-
-            # We need to resolve `msix.*` values keyed by `package-format` for each format, not
-            # just once, so we update a temporary copy just for extracting these values.
-            temp_job = copy_task(job)
-            for msix_key in (
-                "channel",
-                "identity-name",
-                "publisher",
-                "publisher-display-name",
-                "vendor",
-            ):
-                resolve_keyed_by(
-                    item=temp_job,
-                    field=f"msix.{msix_key}",
-                    item_name="?",
-                    **{
-                        "package-format": format,
-                        "release-type": config.params["release_type"],
-                        "level": config.params["level"],
-                    },
-                )
-
-                # Turn `msix.channel` into `msix-channel`, etc.
-                value = temp_job.get("msix", {}).get(msix_key)
-                if value:
-                    substs.update(
-                        {f"msix-{msix_key}": value},
-                    )
 
             command["inputs"] = {
                 name: filename.format(**substs)
