@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, staticHtml, literal } from "../vendor/lit.all.mjs";
+import { html, ifDefined, staticHtml, literal } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 
 export const GROUP_TYPES = {
@@ -97,6 +97,7 @@ export default class MozBoxGroup extends MozLitElement {
       let listTag = isReorderable ? literal`ol` : literal`ul`;
       return staticHtml`<${listTag}
           tabindex="-1"
+          role=${ifDefined(isReorderable ? "listbox" : undefined)}
           class="list scroll-container"
           aria-orientation="vertical"
           @keydown=${this.handleKeydown}
@@ -104,12 +105,16 @@ export default class MozBoxGroup extends MozLitElement {
           @focusout=${this.handleBlur}
         >
           ${this.listItems.map((_, i) => {
-            return html`<li>
+            return html`<li
+              role=${ifDefined(isReorderable ? "presentation" : undefined)}
+            >
               <slot name=${i}></slot>
             </li> `;
           })}
           ${this.staticItems?.map((_, i) => {
-            return html`<li>
+            return html`<li
+              role=${ifDefined(isReorderable ? "presentation" : undefined)}
+            >
               <slot name=${`static-${i}`}></slot>
             </li> `;
           })}
@@ -155,6 +160,21 @@ export default class MozBoxGroup extends MozLitElement {
       }
     } else {
       item.removeAttribute("tabindex");
+    }
+  }
+
+  /**
+   * Sets role option on the item's underlying moz-box element when
+   * the group renders as a reorderable list, and removes it otherwise.
+   *
+   * @param {Element} item
+   */
+  updateOptionRole(item) {
+    let option = this.getMozBoxElement(item);
+    if (option && this.type == GROUP_TYPES.reorderable) {
+      option.setAttribute("role", "option");
+    } else {
+      option?.removeAttribute("role");
     }
   }
 
@@ -326,6 +346,7 @@ export default class MozBoxGroup extends MozLitElement {
             !footerNode
         );
         this.restoreTabindex(item);
+        this.updateOptionRole(item);
       });
       if (!this.#tabbable) {
         this.#tabbable = true;
@@ -347,6 +368,7 @@ export default class MozBoxGroup extends MozLitElement {
           i == this.staticItems.length - 1 && !footerNode
         );
         this.restoreTabindex(item);
+        this.updateOptionRole(item);
       });
     }
 

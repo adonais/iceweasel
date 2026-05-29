@@ -154,6 +154,10 @@
           "vertical",
           "aria-orientation is set on the list element."
         );
+        ok(
+          !list.hasAttribute("role"),
+          "List has no role override (uses implicit list semantics)."
+        );
 
         let listItems = getListItems();
         is(
@@ -161,6 +165,12 @@
           4,
           "Box group renders an li for each slotted moz-box-* element."
         );
+        listItems.forEach(li => {
+          ok(!li.hasAttribute("role"), "li keeps implicit listitem semantics.");
+        });
+        boxGroup.listItems.forEach(item => {
+          ok(!item.hasAttribute("role"), "moz-box-item has no role override.");
+        });
 
         let [listHeader] = boxGroup.shadowRoot
           .querySelector('slot[name="header"]')
@@ -744,6 +754,32 @@
           "Box group renders a moz-reorderable-list."
         );
 
+        let list = boxGroup.shadowRoot.querySelector("ol");
+        is(
+          list.getAttribute("role"),
+          "listbox",
+          "Reorderable list has role=listbox."
+        );
+        boxGroup.shadowRoot.querySelectorAll("li").forEach(li => {
+          is(
+            li.getAttribute("role"),
+            "presentation",
+            "Reorderable list li has role=presentation."
+          );
+        });
+        [item1, item2, item3].forEach(item => {
+          is(
+            item.getAttribute("role"),
+            "option",
+            `${item.label} has role=option.`
+          );
+        });
+        is(
+          footer.getAttribute("role"),
+          null,
+          "Footer item has no role=option."
+        );
+
         is(
           item1.handleEl.getAttribute("data-l10n-id"),
           "moz-box-item-reorder-handle-named",
@@ -958,6 +994,11 @@
             `Static item ${i} positioned after regular items.`
           );
           ok(!item.handleEl, `Static item ${i} has no handle element.`);
+          is(
+            item.getAttribute("role"),
+            "option",
+            `Static item ${i} has role=option.`
+          );
         });
       });
 
