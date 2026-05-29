@@ -231,13 +231,6 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
   MOZ_ASSERT(loadInfo.mCookieJarSettings);
   net::CookieJarSettings::Cast(loadInfo.mCookieJarSettings)->Serialize(cjsData);
 
-  auto remoteType = RemoteWorkerManager::GetRemoteType(
-      loadInfo.mPrincipal, WorkerKind::WorkerKindShared);
-  if (NS_WARN_IF(remoteType.isErr())) {
-    aRv.Throw(remoteType.unwrapErr());
-    return nullptr;
-  }
-
   RemoteWorkerData remoteWorkerData(
       nsString(aScriptURL), baseURL, resolvedScriptURL, name, workerType,
       credentials, loadingPrincipalInfo, principalInfo,
@@ -248,7 +241,7 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
       loadInfo.mShouldResistFingerprinting,
       OriginTrials::FromWindow(nsGlobalWindowInner::Cast(window)),
       void_t() /* OptionalServiceWorkerData */, agentClusterId,
-      remoteType.unwrap());
+      DEFAULT_REMOTE_TYPE /* ignored */);
 
   PSharedWorkerChild* pActor = actorChild->SendPSharedWorkerConstructor(
       remoteWorkerData, loadInfo.mWindowID, portIdentifier.release());
