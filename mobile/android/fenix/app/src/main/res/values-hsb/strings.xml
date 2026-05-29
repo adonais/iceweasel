@@ -1649,6 +1649,8 @@
   <string name="tab_manager_search_bar_placeholder">Přepytajće swoje rajtarki</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Runje začinjene rajtarki</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">Wšě wubrać</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Kontowe nastajenja</string>
   <!-- Text shown in the menu to view tab settings -->

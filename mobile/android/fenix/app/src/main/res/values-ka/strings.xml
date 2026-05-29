@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">%1$s წაშლილია ისტორიიდან</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">ამ ჩანაწერის წაშლა ისტორიიდან</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">დარჩეს %1$s</string>
   <!--
     Home onboarding
 
@@ -4516,9 +4518,9 @@
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">მოახლოებული</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_suffix">(დასრულებული)</string>
+  <string name="sports_widget_match_full_time_suffix">(დასრულდა)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2">დასრულებული</string>
+  <string name="sports_widget_match_full_time_2">დასრულდა</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).

@@ -1645,6 +1645,8 @@
   <string name="tab_manager_search_bar_placeholder">Eheka ne rendaykeita</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Tendayke oñemboty ramóva</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">Mbosa’ypa</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Mba’ete ñemboheko</string>
   <!-- Text shown in the menu to view tab settings -->

@@ -19,6 +19,8 @@
   <string name="content_description_menu">Дадаткова</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Прыватнае агляданне</string>
+  <!-- Content description (not visible, for screen readers etc.): "Normal Browsing" menu button. -->
+  <string name="content_description_normal_browsing">Звычайны прагляд</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Увядзіце запыт або адрас</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -1445,8 +1447,24 @@
   <string name="create_tab_group_save_button">Захаваць</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
   <string name="create_tab_group_name_label">Назва</string>
+  <!-- Label for adding to a new tab group. -->
+  <string name="add_to_new_tab_group_title">Новая група картак</string>
+  <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_confirm">Выдаліць групу</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Скасаваць</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Жоўты</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Аранжавы</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Чырвоны</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Ружовы</string>
   <!--
     History
 
@@ -1747,6 +1765,8 @@
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
   <string name="bookmark_folder_label">ПАПКА</string>
+  <!-- Text indicating which folder a bookmark or folder will be saved in -->
+  <string name="bookmark_save_in_label">Захаваць у</string>
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">НАЗВА</string>
   <!-- Label for a text input field for a bookmark or folder name -->
@@ -1876,6 +1896,8 @@
   <string name="preferences_category_permissions">Дазволы</string>
   <!-- Category header of a preference that allows a user to alter settings related to web content. -->
   <string name="preferences_category_content">Змесціва</string>
+  <!-- Preference for altering the default browsing mode. When enabled, the desktop site will always be requested. -->
+  <string name="preference_feature_desktop_mode_default">Заўсёды запытваць поўную версію сайта</string>
   <!--
     Collections
 

@@ -255,7 +255,7 @@
   <!-- This is displayed when the add-on is not allowed to run in private browsing. -->
   <string name="mozac_feature_addons_not_allowed_in_private_browsing">من نیمدری یل سیخومی موجاز نؽ</string>
   <!-- Indicates the add-on is enabled. -->
-  <string name="mozac_feature_addons_enabled">فعال وابی</string>
+  <string name="mozac_feature_addons_enabled">فعال وابیڌه</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the installed section. -->
   <string name="mozac_feature_addons_installed_section">پۊرنیڌه وابی</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the recommended section. -->
