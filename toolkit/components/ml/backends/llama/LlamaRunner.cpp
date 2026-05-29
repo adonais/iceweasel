@@ -304,7 +304,7 @@ RefPtr<LlamaGenerateTaskPromise> LlamaGenerateTask::GetMessage() {
 }
 
 bool LlamaGenerateTask::IsActive() const {
-  return mState != TaskState::Idle && mState != TaskState::Running;
+  return mState == TaskState::Idle || mState == TaskState::Running;
 }
 
 }  // namespace mozilla::llama

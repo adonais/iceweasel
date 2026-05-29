@@ -240,6 +240,76 @@ add_task(async function test_ml_smoke_test_llama_fails() {
   await llama_fails_with_wrong_samplers();
 });
 
+add_task(async function test_ml_smoke_test_llama_sequential_runs() {
+  const { cleanup } = await setup();
+  try {
+    const engine = await createEngine({
+      taskName: "text-generation",
+      modelId: "Mozilla/test-llama",
+      modelFile: "TinyStories-656K.Q8_0.gguf",
+      kvCacheDtype: "q8_0",
+      modelRevision: "main",
+      backend: "llama.cpp",
+      numContext: 128,
+    });
+
+    const request = {
+      prompt: [
+        { role: "system", content: "blah" },
+        { role: "user", content: "Once upon a time there was" },
+      ],
+      nPredict: 16,
+    };
+
+    await engine.run(request);
+    await engine.run(request);
+    Assert.ok(true, "Two sequential run() calls completed without rejection");
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+});
+
+add_task(async function test_ml_smoke_test_llama_overlap_guard() {
+  const { cleanup } = await setup();
+  try {
+    const engine = await createEngine({
+      taskName: "text-generation",
+      modelId: "Mozilla/test-llama",
+      modelFile: "TinyStories-656K.Q8_0.gguf",
+      kvCacheDtype: "q8_0",
+      modelRevision: "main",
+      backend: "llama.cpp",
+      numContext: 128,
+    });
+
+    const request = {
+      prompt: [
+        { role: "system", content: "blah" },
+        { role: "user", content: "Once upon a time there was" },
+      ],
+      nPredict: 128,
+    };
+
+    const results = await Promise.allSettled([
+      engine.run(request),
+      engine.run(request),
+    ]);
+
+    const rejections = results
+      .filter(r => r.status === "rejected")
+      .map(r => String(r.reason?.message ?? r.reason));
+
+    Assert.ok(
+      rejections.some(m => m.includes("A generation is already in progress")),
+      `Expected a rejection from the LlamaRunner guard, got: ${JSON.stringify(rejections)}`
+    );
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+});
+
 /**
  * Runs a full end-to-end test on the llama.cpp backend with a model that loads in llama but crashes during inference.
  */
