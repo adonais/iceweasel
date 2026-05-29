@@ -827,8 +827,7 @@ export class AIWindowTabStatesManager {
   };
 
   #onCloseSidebar = () => {
-    lazy.AIWindowUI.closeSidebar(this.#window);
-    this.#updateEmptyCloseCount(null, false, "close");
+    lazy.AIWindowUI.closeSidebar(this.#window, "toggle");
   };
 
   /**
