@@ -80,6 +80,12 @@ const AUTH_TOKEN_ERROR_CODE = 418;
 let gFlowId;
 let gAllowListCollection;
 let gDenyListCollection;
+let gProfileInfoPromise = null;
+
+const RELAY_PROFILE_CACHE_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+const RELAY_PROFILE_CACHE_PREF = "signon.firefoxRelay.profileInfo.cache";
+const RELAY_PROFILE_CACHE_TS_PREF =
+  "signon.firefoxRelay.profileInfo.cacheTimestamp";
 
 async function getRelayTokenAsync() {
   try {
@@ -1116,16 +1122,53 @@ class RelayFeature extends OptInFeature {
   }
 
   async getRelayProfileInfo() {
-    if (!lazy.fxAccounts.constructor.config.isProductionConfig()) {
-      return null;
+    if (gProfileInfoPromise) {
+      return gProfileInfoPromise;
     }
-
-    const hasSession = await lazy.fxAccounts.hasLocalSession();
-    if (!hasSession) {
-      return null;
-    }
-
+    gProfileInfoPromise = this.#fetchRelayProfileInfo();
     try {
+      return await gProfileInfoPromise;
+    } finally {
+      gProfileInfoPromise = null;
+    }
+  }
+
+  async #fetchRelayProfileInfo() {
+    try {
+      const featureStatus = Services.prefs.getStringPref(
+        gConfig.relayFeaturePref,
+        ""
+      );
+      if (featureStatus !== "enabled") {
+        return null;
+      }
+
+      if (!lazy.fxAccounts.constructor.config.isProductionConfig()) {
+        return null;
+      }
+
+      const hasSession = await lazy.fxAccounts.hasLocalSession();
+      if (!hasSession) {
+        return null;
+      }
+
+      // Return persistent cache if fresh enough.
+      const cachedTimestamp = Number(
+        Services.prefs.getStringPref(RELAY_PROFILE_CACHE_TS_PREF, "0")
+      );
+      if (Date.now() - cachedTimestamp < RELAY_PROFILE_CACHE_INTERVAL) {
+        try {
+          const cached = JSON.parse(
+            Services.prefs.getStringPref(RELAY_PROFILE_CACHE_PREF, "")
+          );
+          if (cached) {
+            return cached;
+          }
+        } catch {
+          // Invalid JSON — fall through to fetch.
+        }
+      }
+
       const token = await getRelayTokenAsync();
       if (!token) {
         return null;
@@ -1140,7 +1183,7 @@ class RelayFeature extends OptInFeature {
       });
 
       if (!profileResponse.ok) {
-        return null;
+        return this.#readStaleProfileCacheOrNull();
       }
 
       const profiles = await profileResponse.json();
@@ -1155,24 +1198,47 @@ class RelayFeature extends OptInFeature {
         },
       });
 
-      let masksCount = 0;
-      if (masksResponse.ok) {
-        const masks = await masksResponse.json();
-        masksCount = Array.isArray(masks) ? masks.length : 0;
+      if (!masksResponse.ok) {
+        return this.#readStaleProfileCacheOrNull();
       }
+      const masks = await masksResponse.json();
+      const masksCount = Array.isArray(masks) ? masks.length : 0;
 
-      return {
+      const result = {
         has_premium: profile?.has_premium || false,
         has_phone: profile?.has_phone || false,
         has_vpn: profile?.has_vpn || false,
         masksCount,
       };
+
+      // Persist to prefs so the cache survives restarts.
+      Services.prefs.setStringPref(
+        RELAY_PROFILE_CACHE_PREF,
+        JSON.stringify(result)
+      );
+      Services.prefs.setStringPref(
+        RELAY_PROFILE_CACHE_TS_PREF,
+        String(Date.now())
+      );
+
+      return result;
     } catch (e) {
       console.error("Error fetching Relay profile:", e);
+      return this.#readStaleProfileCacheOrNull();
+    }
+  }
+
+  #readStaleProfileCacheOrNull() {
+    try {
+      const cached = JSON.parse(
+        Services.prefs.getStringPref(RELAY_PROFILE_CACHE_PREF, "")
+      );
+      return cached || null;
+    } catch {
       return null;
     }
   }
 }
 
-export { isOriginInList };
+export { isOriginInList, RELAY_PROFILE_CACHE_INTERVAL };
 export const FirefoxRelay = new RelayFeature();

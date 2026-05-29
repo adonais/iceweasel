@@ -43,6 +43,10 @@ const { PlacesUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesUtils.sys.mjs"
 );
 
+// eslint-disable-next-line mozilla/use-static-import
+const { FirefoxRelay, RELAY_PROFILE_CACHE_INTERVAL } =
+  ChromeUtils.importESModule("resource://gre/modules/FirefoxRelay.sys.mjs");
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -64,7 +68,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   FeatureCalloutBroker:
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
-  FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
@@ -472,10 +475,10 @@ export const QueryCache = {
     relayProfileInfo: new CachedTargetingGetter(
       "getRelayProfileInfo",
       null,
-      FRECENT_SITES_UPDATE_INTERVAL,
+      RELAY_PROFILE_CACHE_INTERVAL,
       {
         async getRelayProfileInfo() {
-          return lazy.FirefoxRelay.getRelayProfileInfo();
+          return FirefoxRelay.getRelayProfileInfo();
         },
       }
     ),
