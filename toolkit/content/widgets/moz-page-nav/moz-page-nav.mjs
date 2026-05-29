@@ -2,7 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, when } from "chrome://global/content/vendor/lit.all.mjs";
+import {
+  html,
+  when,
+  ifDefined,
+} from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-support-link.mjs";
@@ -201,6 +205,9 @@ customElements.define("moz-page-nav", MozPageNav);
  * @property {string} iconSrc - The chrome:// url for the icon used for the button.
  * @property {boolean} selected - Whether or not the button is currently selected.
  * @property {string} supportPage - (optional) The short name for the support page a secondary link should launch to
+ * @property {string} title - The title used for the button or link, it should always be set to make sure the components
+ *   will be detected as labeled also when the moz-page-nav is in collapsed mode and the moz-page-nav-button child elements
+ *   and text nodes are hidden. Used in shadow DOM and therefore not as an attribute on moz-page-nav-button.
  * @slot [default] - Used to append the l10n string to the button.
  */
 export class MozPageNavButton extends MozLitElement {
@@ -209,6 +216,7 @@ export class MozPageNavButton extends MozLitElement {
     href: { type: String },
     selected: { type: Boolean },
     supportPage: { type: String, attribute: "support-page" },
+    title: { type: String, mapped: true },
   };
 
   connectedCallback() {
@@ -251,6 +259,7 @@ export class MozPageNavButton extends MozLitElement {
         tabindex=${this.selected ? 0 : -1}
         role="tab"
         ?selected=${this.selected}
+        title=${ifDefined(this.title)}
         @click=${this.activate}
       >
         ${this.innerContentTemplate()}
@@ -265,13 +274,19 @@ export class MozPageNavButton extends MozLitElement {
           is="moz-support-link"
           class="moz-page-nav-link"
           support-page=${this.supportPage}
+          title=${ifDefined(this.title)}
         >
           ${this.innerContentTemplate()}
         </a>
       `;
     }
     return html`
-      <a href=${this.href} class="moz-page-nav-link" target="_blank">
+      <a
+        href=${this.href}
+        class="moz-page-nav-link"
+        target="_blank"
+        title=${ifDefined(this.title)}
+      >
         ${this.innerContentTemplate()}
       </a>
     `;

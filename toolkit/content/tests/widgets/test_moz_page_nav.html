@@ -492,6 +492,64 @@
       });
 
       /**
+       * Tests that setting the title property maps it to the wrapped element
+       * for all three variants (tab button, support link, external link).
+       */
+      add_task(async function test_title_attribute() {
+        const tabButton = mozPageNav.pageNavButtons[0];
+        const supportLink = mozPageNav.secondaryNavButtons[0];
+        const externalLink = mozPageNav.secondaryNavButtons[1];
+
+        // Tab button — title mapped to the wrapped <button>.
+        const EXPECTED_TAB_BUTTON_TITLE = "Tab button title";
+        tabButton.title = EXPECTED_TAB_BUTTON_TITLE;
+        await tabButton.updateComplete;
+        is(
+          tabButton.buttonEl.getAttribute("title"),
+          EXPECTED_TAB_BUTTON_TITLE,
+          "Tab button wrapped button has the expected title attribute"
+        );
+        tabButton.title = undefined;
+        await tabButton.updateComplete;
+        ok(
+          !tabButton.buttonEl.hasAttribute("title"),
+          "Tab button wrapped button has no title attribute when title is unset"
+        );
+
+        // Support link — title mapped to the wrapped <a>.
+        const EXPECTED_SUPPORT_LINK_TITLE = "Support link title";
+        supportLink.title = EXPECTED_SUPPORT_LINK_TITLE;
+        await supportLink.updateComplete;
+        is(
+          supportLink.linkEl.getAttribute("title"),
+          EXPECTED_SUPPORT_LINK_TITLE,
+          "Support link wrapped link has the expected title attribute"
+        );
+        supportLink.title = undefined;
+        await supportLink.updateComplete;
+        ok(
+          !supportLink.linkEl.hasAttribute("title"),
+          "Support link wrapped link has no title attribute when title is unset"
+        );
+
+        // External link — title mapped to the inner <a>.
+        const EXPECTED_EXTERNAL_LINK_TITLE = "External link title";
+        externalLink.title = EXPECTED_EXTERNAL_LINK_TITLE;
+        await externalLink.updateComplete;
+        is(
+          externalLink.linkEl.getAttribute("title"),
+          EXPECTED_EXTERNAL_LINK_TITLE,
+          "External link wrapped link has the expected title attribute"
+        );
+        externalLink.title = undefined;
+        await externalLink.updateComplete;
+        ok(
+          !externalLink.linkEl.hasAttribute("title"),
+          "External link wrapped link has no title attribute when title is unset"
+        );
+      });
+
+      /**
        * Tests that allowNoSelection prevents auto-selecting the first button
        * when currentView doesn't match any button.
        */
