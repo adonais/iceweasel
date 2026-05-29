@@ -353,6 +353,7 @@ rtc_library("media_session") {
     "../api:sctp_transport_interface",
     "../api/environment",
     "../api/transport:sctp_transport_factory_interface",
+    "../call:payload_type",
     "../media:codec",
     "../media:media_constants",
     "../media:media_engine",
@@ -370,6 +371,7 @@ rtc_library("media_session") {
     "../rtc_base/experiments:field_trial_parser",
     "../rtc_base/memory:always_valid_pointer",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -1236,6 +1238,7 @@ rtc_library("sdp_payload_type_suggester") {
     "../api:payload_type",
     "../api:peer_connection_interface",
     "../api:rtc_error",
+    "../api:rtp_parameters",
     "../call:payload_type",
     "../call:payload_type_picker",
     "../media:codec",
@@ -2230,7 +2233,6 @@ if (rtc_include_tests && !build_with_chromium) {
       "srtp_transport_unittest.cc",
       "test/rtp_transport_test_util.h",
       "test/srtp_test_util.h",
-      "used_ids_unittest.cc",
       "video_rtp_receiver_unittest.cc",
     ]
 
