@@ -370,7 +370,6 @@ export default [
       "browser/components/protections/content/lockwise-card.mjs",
       "browser/components/protections/content/monitor-card.mjs",
       "browser/components/protections/content/protections.mjs",
-      "browser/components/protections/content/proxy-card.mjs",
       "browser/components/protections/content/vpn-card.mjs",
       "browser/components/shopping/content/settings.mjs",
       "browser/components/shopping/content/shopping-container.mjs",
