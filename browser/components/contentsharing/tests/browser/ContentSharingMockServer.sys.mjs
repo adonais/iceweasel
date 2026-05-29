@@ -6,6 +6,7 @@ import { NetUtil } from "resource://gre/modules/NetUtil.sys.mjs";
 
 const SERVER_PATH = "/api/v1/create";
 const SHARE_PATH = "/share/mockShare001";
+const AUTH_COMPLETE_PATH = "/auth-complete";
 
 const COOKIE_CONTENTS = "auth=1; Path=/; Max-Age=6000; HttpOnly; SameSite=Lax";
 
@@ -58,6 +59,9 @@ class ContentSharingMockServerClass {
     this.#httpServer = new HttpServer();
     this.#httpServer.registerPathHandler(SERVER_PATH, (req, resp) =>
       this.#handleRequest(req, resp)
+    );
+    this.#httpServer.registerPathHandler(AUTH_COMPLETE_PATH, (req, resp) =>
+      this.#handleAuthComplete(req, resp)
     );
   }
 
@@ -144,6 +148,14 @@ class ContentSharingMockServerClass {
     } else {
       respond();
     }
+  }
+
+  #handleAuthComplete(httpRequest, httpResponse) {
+    httpResponse.setStatusLine("", 200, "OK");
+    httpResponse.setHeader("Content-Type", "text/html", false);
+    httpResponse.write(
+      "<!doctype html><title>Signed in</title><p>Signed in.</p>"
+    );
   }
 }
 

@@ -14,6 +14,8 @@ prefs = [
 
 ["browser_testPrivateBrowsing.js"]
 
+["browser_testReuseAuthCompleteTab.js"]
+
 ["browser_testServerErrors.js"]
 
 ["browser_testShareBookmarks.js"]

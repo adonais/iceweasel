@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -112,6 +113,10 @@ class ContentSharingUtilsClass {
 
   get serverURL() {
     return lazy.CONTENT_SHARING_SERVER_URL;
+  }
+
+  get redirectURL() {
+    return this.serverURL + "/auth-complete";
   }
 
   disable() {
@@ -410,14 +415,20 @@ class ContentSharingUtilsClass {
         return;
       }
 
-      // The most recent window may have changed during the login flow.
+      // If we're able to find the auth-complete tab, reuse it.
+      let foundTab = lazy.URILoadingHelper.switchToTabHavingURI(
+        window,
+        this.redirectURL,
+        false,
+        { ignoreQueryString: true }
+      );
       window = Services.wm.getMostRecentBrowserWindow();
 
       // Borrowing a hack from unexpectedScriptLoad.js, which we use to ensure
       // opened tabs are foregrounded. To be fixed in bug 2040823.
       window.top.document.documentElement.removeAttribute("window-modal-open");
 
-      window.openWebLinkIn(shareResult.url, "tab");
+      window.openWebLinkIn(shareResult.url, foundTab ? "current" : "tab");
     } catch (ex) {
       // Either we timed out waiting for the cookie to be set, or something
       // else went wrong. The user will have to try again.
