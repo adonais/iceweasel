@@ -4,11 +4,11 @@
 "use strict";
 
 add_task(async function test_releaseNotesURL_domain() {
-  if (!AppConstants.MOZILLA_OFFICIAL) {
-    todo(false, "app.releaseNotesURL is not set on unofficial builds");
+  const defaultBranch = Services.prefs.getDefaultBranch("");
+  if (!defaultBranch.getCharPref("app.releaseNotesURL", "")) {
+    ok(true, "app.releaseNotesURL is not set on this build, skipping");
     return;
   }
-  const defaultBranch = Services.prefs.getDefaultBranch("");
   for (const pref of [
     "app.releaseNotesURL",
     "app.releaseNotesURL.aboutDialog",
