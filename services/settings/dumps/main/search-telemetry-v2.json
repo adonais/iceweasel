@@ -1,6 +1,96 @@
 {
   "data": [
     {
+      "schema": 1779580811115,
+      "subframes": [
+        {
+          "regexp": "^https://www\\.startpage\\.com/sp/afs/ads"
+        }
+      ],
+      "components": [
+        {
+          "type": "ad_subframe",
+          "topDown": true,
+          "included": {
+            "parent": {
+              "selector": "iframe[src^='https://www.startpage.com/sp/afs/ads']"
+            }
+          }
+        },
+        {
+          "type": "ad_carousel",
+          "included": {
+            "parent": {
+              "selector": ".pa-bg-carousel, .carousel-container"
+            },
+            "children": [
+              {
+                "selector": ".glider-slide",
+                "countChildren": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "ad_link",
+          "default": true
+        }
+      ],
+      "taggedCodes": [
+        "startpage.apex.desktop",
+        "startpage.apex.ios",
+        "startpage.apex.android"
+      ],
+      "telemetryId": "startpage",
+      "organicCodes": [
+        "startpage.udog"
+      ],
+      "codeParamName": "segment",
+      "queryParamName": "query",
+      "alwaysMatchSERP": {
+        "child": true
+      },
+      "queryParamNames": [
+        "q",
+        "query"
+      ],
+      "searchPageRegexp": "^https://www\\.startpage\\.com/sp/search",
+      "filter_expression": "env.version|versionCompare(\"152.0a1\")>=0",
+      "searchPageMatches": [
+        "https://www.startpage.com/sp/search*"
+      ],
+      "impressionAttributes": [
+        {
+          "key": "is_shopping_page",
+          "url": {
+            "regexp": "[?&]cat=shopping"
+          }
+        },
+        {
+          "key": "shopping_tab_displayed",
+          "element": {
+            "selector": "button[data-testid='Shopping']",
+            "component": {
+              "type": "shopping_tab",
+              "countImpressions": true
+            }
+          }
+        },
+        {
+          "key": "has_ai_summary",
+          "element": {
+            "selector": ".ai-summaries-qi"
+          }
+        }
+      ],
+      "extraAdServersRegexps": [
+        "^https://syndicatedsearch\\.goog/",
+        "https://www\\.bing\\.com/aclick"
+      ],
+      "id": "233cb5cb-0225-43d1-8ffb-205ef2d8b0ca",
+      "last_modified": 1779985790144
+    },
+    {
       "schema": 1774280721627,
       "subframes": [],
       "components": [
@@ -1108,5 +1198,5 @@
       "last_modified": 1774283138101
     }
   ],
-  "timestamp": 1774283138114
+  "timestamp": 1779985790144
 }
