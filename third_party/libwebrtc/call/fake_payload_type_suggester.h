@@ -12,9 +12,7 @@
 #define CALL_FAKE_PAYLOAD_TYPE_SUGGESTER_H_
 
 #include "absl/strings/string_view.h"
-#include "api/payload_type.h"
 #include "api/rtc_error.h"
-#include "api/rtp_parameters.h"
 #include "call/payload_type.h"
 #include "call/payload_type_picker.h"
 #include "media/base/codec.h"
@@ -23,35 +21,22 @@ namespace webrtc {
 // Fake payload type suggester, for use in tests.
 // It uses a real PayloadTypePicker in order to do consistent PT
 // assignment.
-class FakePayloadTypeSuggester : public PayloadTypeSuggester {
+class FakePayloadTypeSuggester : public webrtc::PayloadTypeSuggester {
  public:
-  RTCErrorOr<PayloadType> SuggestPayloadType(absl::string_view mid,
-                                             const Codec& codec) override {
+  webrtc::RTCErrorOr<webrtc::PayloadType> SuggestPayloadType(
+      absl::string_view mid,
+      const Codec& codec) override {
     // Ignores mid argument.
     return pt_picker_.SuggestMapping(codec, nullptr);
   }
-  RTCError AddLocalMapping(absl::string_view,
-                           PayloadType payload_type,
-                           const Codec& codec) override {
-    return RTCError::OK();
-  }
-  RTCErrorOr<int> SuggestRtpHeaderExtensionId(
-      absl::string_view mid,
-      const RtpExtension& extension,
-      RtpTransceiverIdDomain id_domain) override {
-    return rtp_extension_picker_.SuggestMapping(
-        extension.uri, extension.encrypt, extension.id, id_domain, nullptr);
-  }
-  RTCError AddRtpHeaderExtensionMapping(absl::string_view mid,
-                                        const RtpExtension& extension,
-                                        bool local) override {
-    return rtp_extension_picker_.AddMapping(extension.id, extension.uri,
-                                            extension.encrypt);
+  webrtc::RTCError AddLocalMapping(absl::string_view,
+                                   webrtc::PayloadType payload_type,
+                                   const Codec& codec) override {
+    return webrtc::RTCError::OK();
   }
 
  private:
-  PayloadTypePicker pt_picker_;
-  RtpHeaderExtensionPicker rtp_extension_picker_;
+  webrtc::PayloadTypePicker pt_picker_;
 };
 
 }  // namespace webrtc
