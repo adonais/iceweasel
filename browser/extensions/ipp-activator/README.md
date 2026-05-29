@@ -130,6 +130,26 @@ Supported types
     }
     ```
 
+- **date**: matches when the current time falls within an optional date range.
+  - Fields (both optional):
+    - `start` (string): ISO 8601 lower bound; match requires `now() >= start`.
+    - `end` (string): ISO 8601 upper bound; match requires `now() <= end`.
+  - Result: true when the current time is within all provided bounds (inclusive). With no bounds, always true. Invalid date strings are ignored (treated as absent).
+  - Notes: the condition is static and does not emit change notifications when a bound is crossed; re-evaluation happens whenever any other condition triggers a check. Combine with `not` to express "before `start`" or "after `end`".
+  - Examples:
+    ```json
+    { "type": "date", "start": "2026-07-11T00:00:00Z", "end": "2026-07-20T23:59:59Z" }
+    ```
+    ```json
+    { "type": "date", "start": "2026-07-11T00:00:00Z" }
+    ```
+    ```json
+    {
+      "type": "not",
+      "condition": { "type": "date", "start": "2026-07-11T00:00:00Z" }
+    }
+    ```
+
 - **url**: matches a URL against a regular expression.
   - Fields:
     - `pattern` (string, required): JavaScript RegExp pattern (without flags) tested against a URL string.
