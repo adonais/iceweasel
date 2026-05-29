@@ -29,6 +29,7 @@ registerCleanupFunction(async function () {
   let folderPath = PathUtils.join(PathUtils.profileDir, "distribution");
   await IOUtils.remove(folderPath, { ignoreAbsent: true, recursive: true });
   Services.prefs.clearUserPref("distribution.testing.loadFromProfile");
+  Services.prefs.clearUserPref("distribution.mozillaonline.ignore");
   Services.fog.testResetFOG();
 });
 
@@ -39,6 +40,8 @@ add_setup(async function () {
 });
 
 add_task(async function test_mozillaonline_distribution_ignored() {
+  Services.prefs.setBoolPref("distribution.mozillaonline.ignore", true);
+
   let { DistributionManagement } = ChromeUtils.importESModule(
     "resource:///modules/distribution.sys.mjs"
   );

@@ -3612,3 +3612,6 @@ pref("browser.contentsharing.enabled", false);
 
 // Controls whether the "New" badge is shown on the content sharing menu items
 pref("browser.contentsharing.newBadge.enabled", true);
+
+// When enabled, Firefox ignores the distribution.ini file if global.id is MozillaOnline.
+pref("distribution.mozillaonline.ignore", false);

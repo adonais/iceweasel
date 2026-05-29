@@ -392,7 +392,10 @@ DistributionCustomizer.prototype = {
       return this._checkCustomizationComplete();
     }
 
-    if (distroID == "MozillaOnline") {
+    if (
+      distroID == "MozillaOnline" &&
+      Services.prefs.getBoolPref("distribution.mozillaonline.ignore", false)
+    ) {
       Glean.distribution.mozillaonlineIgnored.set(true);
       this.__defineGetter__("_ini", () => null);
       return this._checkCustomizationComplete();
