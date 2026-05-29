@@ -15,6 +15,11 @@
   padding-inline-start: calc(var(--button-size-icon) + var(--space-small));
 }
 
+:host(:focus-visible) {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-inset);
+}
+
 .text-content {
   .label-wrapper {
     grid-area: label;

@@ -66,6 +66,17 @@ export default class MozBoxGroup extends MozLitElement {
     this.updateItems();
   }
 
+  /**
+   * Whether this group renders its items as a list.
+   *
+   * @returns {boolean}
+   */
+  get isListType() {
+    return (
+      this.type == GROUP_TYPES.list || this.type == GROUP_TYPES.reorderable
+    );
+  }
+
   contentTemplate() {
     if (this.type == GROUP_TYPES.reorderable) {
       return html`<moz-reorderable-list
@@ -82,7 +93,7 @@ export default class MozBoxGroup extends MozLitElement {
 
   slotTemplate() {
     let isReorderable = this.type == GROUP_TYPES.reorderable;
-    if (this.type == GROUP_TYPES.list || isReorderable) {
+    if (this.isListType) {
       let listTag = isReorderable ? literal`ol` : literal`ul`;
       return staticHtml`<${listTag}
           tabindex="-1"
@@ -109,6 +120,42 @@ export default class MozBoxGroup extends MozLitElement {
     return html`<div class="scroll-container" tabindex="-1">
       <slot></slot>
     </div>`;
+  }
+
+  /**
+   * Returns the moz-box element for a list item: either the item itself
+   * if it matches, or the first moz-box descendant (e.g. when the item is
+   * a setting-control wrapper). Returns null if neither is a moz-box element.
+   *
+   * @param {Element} listItem
+   * @returns {Element | null}
+   */
+  getMozBoxElement(listItem) {
+    let selector = "moz-box-item, moz-box-link, moz-box-button";
+    if (listItem.matches(selector)) {
+      return listItem;
+    }
+    return listItem.querySelector(selector);
+  }
+
+  /**
+   * Resets the tabindex on an item so it participates in focus traversal
+   * again. moz-box-item in list is made focusable directly; other items defer to
+   * their inner focusable descendants.
+   *
+   * @param {Element} item
+   */
+  restoreTabindex(item) {
+    let element = this.getMozBoxElement(item);
+    if (element?.localName === "moz-box-item") {
+      if (this.isListType) {
+        element.setAttribute("tabindex", "0");
+      } else {
+        element.removeAttribute("tabindex");
+      }
+    } else {
+      item.removeAttribute("tabindex");
+    }
   }
 
   /**
@@ -144,16 +191,21 @@ export default class MozBoxGroup extends MozLitElement {
   }
 
   handleKeydown(event) {
-    if (
-      this.type == GROUP_TYPES.reorderable &&
-      event.originalTarget == event.target.handleEl
-    ) {
+    let item = event.originalTarget;
+    if (item.localName === "moz-box-item" && item.isDraggable) {
       let detail = this.reorderableList.evaluateKeyDownEvent(event);
       if (detail) {
+        event.preventDefault();
         event.stopPropagation();
         this.handleReorder({ detail });
         return;
       }
+    }
+
+    // Plain arrows are for navigation between rows. Any modifier
+    // means this isn't a navigation key.
+    if (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) {
+      return;
     }
 
     let positionElement = event.target.closest("[position]");
@@ -186,12 +238,29 @@ export default class MozBoxGroup extends MozLitElement {
     }
   }
 
-  handleFocus() {
+  handleFocus(event) {
     if (this.#tabbable) {
+      let activeElement = event.target.closest("[position]");
+      if (!activeElement) {
+        // Focus landed on the list container itself (e.g. clicking on
+        // whitespace)
+        return;
+      }
       this.#tabbable = false;
+      let activeMozBox = this.getMozBoxElement(activeElement);
       let allItems = [...this.listItems, ...this.staticItems];
       allItems.forEach(item => {
-        item.setAttribute("tabindex", "-1");
+        let element = this.getMozBoxElement(item);
+        // For moz-box-item, tabindex applies directly to it. Other elements
+        // delegate focus to an inner control.
+        if (element?.localName === "moz-box-item") {
+          element.setAttribute(
+            "tabindex",
+            element === activeMozBox ? "0" : "-1"
+          );
+        } else {
+          item.setAttribute("tabindex", "-1");
+        }
       });
     }
   }
@@ -201,7 +270,7 @@ export default class MozBoxGroup extends MozLitElement {
       this.#tabbable = true;
       let allItems = [...this.listItems, ...this.staticItems];
       allItems.forEach(item => {
-        item.removeAttribute("tabindex");
+        this.restoreTabindex(item);
       });
     }
   }
@@ -245,10 +314,7 @@ export default class MozBoxGroup extends MozLitElement {
 
     if (changedProperties.has("listItems") && this.listItems.length) {
       this.listItems.forEach((item, i) => {
-        if (
-          this.type == GROUP_TYPES.list ||
-          this.type == GROUP_TYPES.reorderable
-        ) {
+        if (this.isListType) {
           item.slot = i;
         }
         item.setAttribute("position", i);
@@ -259,7 +325,7 @@ export default class MozBoxGroup extends MozLitElement {
             !this.staticItems.length &&
             !footerNode
         );
-        item.removeAttribute("tabindex");
+        this.restoreTabindex(item);
       });
       if (!this.#tabbable) {
         this.#tabbable = true;
@@ -280,14 +346,11 @@ export default class MozBoxGroup extends MozLitElement {
           "last",
           i == this.staticItems.length - 1 && !footerNode
         );
-        item.removeAttribute("tabindex");
+        this.restoreTabindex(item);
       });
     }
 
-    if (
-      changedProperties.has("type") &&
-      (this.type == GROUP_TYPES.list || this.type == GROUP_TYPES.reorderable)
-    ) {
+    if (changedProperties.has("type") && this.isListType) {
       this.updateItems();
     }
   }

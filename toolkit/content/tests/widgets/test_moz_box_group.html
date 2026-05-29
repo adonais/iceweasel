@@ -384,6 +384,15 @@
         await boxGroup.updateComplete;
         await Promise.all(boxGroup.listItems.map(item => item.updateComplete));
 
+        // Tab from outside lands on the moz-box-item row.
+        synthesizeKey("KEY_Tab", {});
+        is(
+          document.activeElement,
+          boxItem,
+          "Focus moves to the moz-box-item row."
+        );
+
+        // Tab from the row enters its actions, then steps through them.
         synthesizeKey("KEY_Tab", {});
         is(
           document.activeElement,
@@ -433,11 +442,55 @@
           "Focus skips disabled button and image and moves to the second button action element in the moz-box-item."
         );
 
+        // Shift+Tab from an action steps back through actions, then to the row.
+        synthesizeKey("KEY_Tab", { shiftKey: true });
+        is(
+          document.activeElement,
+          boxItem.querySelector("moz-toggle"),
+          "Shift+Tab from an action goes to the previous action."
+        );
+
+        synthesizeKey("KEY_Tab", { shiftKey: true });
+        is(
+          document.activeElement,
+          boxItem.querySelector(".first-button"),
+          "Shift+Tab continues to the first action."
+        );
+
+        synthesizeKey("KEY_Tab", { shiftKey: true });
+        is(
+          document.activeElement,
+          boxItem,
+          "Shift+Tab from the first action returns to the row."
+        );
+
+        // Arrow Down/Up navigate between rows.
+        await keyboardNavigate("down", boxGroup);
+        is(
+          document.activeElement,
+          boxLink,
+          "Focus moves to the moz-box-link element."
+        );
+
+        await keyboardNavigate("down", boxGroup);
+        is(
+          document.activeElement,
+          boxButton,
+          "Focus moves to the moz-box-button element."
+        );
+
+        await keyboardNavigate("down", boxGroup);
+        is(
+          document.activeElement,
+          boxButton,
+          "Down arrow key does not move focus out of the group from the last item."
+        );
+
         synthesizeKey("KEY_Tab", {});
         is(
           document.activeElement,
           footerButton,
-          "Other list items are not tabbable, so focus moves to the footer button."
+          "Focus moves to the footer button."
         );
 
         synthesizeKey("KEY_Tab", {});
@@ -478,43 +531,56 @@
         await keyboardNavigate("up", boxGroup);
         is(
           document.activeElement,
-          boxItem.querySelector(".second-button"),
-          "Focus moves to the second button action element in the moz-box-item."
-        );
-
-        await keyboardNavigate("left", boxGroup);
-        is(
-          document.activeElement,
-          boxItem.querySelector("moz-toggle"),
-          "Focus skips disabled button and image and moves to the toggle action element in the moz-box-item."
+          boxItem,
+          "Arrow up returns to the moz-box-item row."
         );
 
         await keyboardNavigate("up", boxGroup);
         is(
           document.activeElement,
-          boxItem.querySelector("moz-toggle"),
+          boxItem,
           "Up arrow key does not move focus out of the group from the first item."
         );
 
-        await keyboardNavigate("down", boxGroup);
+        // Tab forward exits the group via the footer; non-focused rows are
+        // taken out of tab order while focus is inside the group.
+        synthesizeKey("KEY_Tab", {}); // → .first-button
+        synthesizeKey("KEY_Tab", {}); // → moz-toggle
+        synthesizeKey("KEY_Tab", {}); // → .second-button
+        synthesizeKey("KEY_Tab", {});
         is(
           document.activeElement,
-          boxLink,
-          "Focus moves to the moz-box-link element."
+          footerButton,
+          "Other list items are not tabbable, so focus moves to the footer button."
         );
 
-        await keyboardNavigate("down", boxGroup);
+        synthesizeKey("KEY_Tab", {});
+        is(
+          document.activeElement,
+          afterButton,
+          "Focus moves out of the group."
+        );
+
+        // Shift+Tab from outside walks back through the footer and last row
+        synthesizeKey("KEY_Tab", { shiftKey: true });
+        is(
+          document.activeElement,
+          footerButton,
+          "Focus moves to the last element in the group."
+        );
+
+        synthesizeKey("KEY_Tab", { shiftKey: true });
         is(
           document.activeElement,
           boxButton,
-          "Focus moves to the moz-box-button element."
+          "Focus moves to the last element in the list."
         );
 
-        await keyboardNavigate("down", boxGroup);
+        synthesizeKey("KEY_Tab", { shiftKey: true });
         is(
           document.activeElement,
-          boxButton,
-          "Down arrow key does not move focus out of the group from the last item."
+          beforeButton,
+          "Focus moves out of the group"
         );
 
         // Validate left/right keyboard navigation between action items for RTL.
@@ -522,16 +588,16 @@
           set: [["intl.l10n.pseudo", "bidi"]],
         });
 
-        // Navigate up to focus moz-box-item
-        await keyboardNavigate("up", boxGroup);
-        await keyboardNavigate("up", boxGroup);
+        synthesizeKey("KEY_Tab", {}); // → moz-box-item
+        synthesizeKey("KEY_Tab", {}); // → .first-button
+        synthesizeKey("KEY_Tab", {}); // → moz-toggle
 
+        synthesizeKey("KEY_Tab", {});
         is(
           document.activeElement,
           boxItem.querySelector(".second-button"),
-          "Focus moves to the second button action element in the moz-box-item."
+          "Focus lands on the last action of the moz-box-item."
         );
-
         await keyboardNavigate("right", boxGroup);
         is(
           document.activeElement,
@@ -660,12 +726,11 @@
         let [item1, item2, item3, footer] = getNewRefs();
 
         async function moveItem(item, direction) {
-          let handle = item.handleEl;
-          if (!handle) {
+          if (!item.isDraggable) {
             return;
           }
-          let keydown = BrowserTestUtils.waitForEvent(handle, "keydown");
-          handle.focus();
+          let keydown = BrowserTestUtils.waitForEvent(item, "keydown");
+          item.focus();
           synthesizeKey(
             `KEY_Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`,
             { shiftKey: true, ctrlKey: true }
@@ -827,20 +892,28 @@
         await keyboardNavigate("down", boxGroup);
         is(
           document.activeElement.label,
+          "item 3",
+          "The last item in the box group should be focused."
+        );
+        await synthesizeKey("KEY_Tab");
+        is(
+          document.activeElement.label,
           "item 3 action 1",
           "The last action in the box group should be focused."
         );
+
         await synthesizeKey("KEY_Enter");
 
         await boxGroup.updateComplete;
         await Promise.all(boxGroup.listItems.map(item => item.updateComplete));
 
-        // Ensure the tabindex attribute has been removed from all the
-        // list items.
+        // Ensure each remaining list item is restored to the focusable
+        // tabindex so the user can tab back into the group.
         boxGroup.listItems.forEach(item => {
-          ok(
-            !item.getAttribute("tabindex"),
-            "List item should not have tab index due to an item being removed"
+          is(
+            item.getAttribute("tabindex"),
+            "0",
+            "List item is restored to tabindex=0 after an item is removed"
           );
         });
 
@@ -946,7 +1019,7 @@
         ok(item2.handleEl, "Regular item 2 has handle element.");
 
         boxGroup.reorderableList.getItems();
-        item1.handleEl.focus();
+        item1.focus();
         let reordered = BrowserTestUtils.waitForEvent(boxGroup, "reorder");
         synthesizeKey("KEY_ArrowDown", { shiftKey: true, ctrlKey: true });
         await reordered;
@@ -998,15 +1071,15 @@
         let allItems = [...boxGroup.listItems, ...boxGroup.staticItems];
         await Promise.all(allItems.map(item => item.updateComplete));
 
-        // Focus first action button.
-        allItems[0].querySelector("moz-button").focus();
+        // Focus the first row.
+        allItems[0].focus();
 
         // Navigate down through all items.
         for (let i = 1; i < allItems.length; i++) {
           await keyboardNavigate("down", boxGroup);
           is(
             document.activeElement,
-            allItems[i].querySelector("moz-button"),
+            allItems[i],
             `Down navigates to item ${i}.`
           );
         }
@@ -1014,11 +1087,7 @@
         // Navigate up through all items.
         for (let i = allItems.length - 2; i >= 0; i--) {
           await keyboardNavigate("up", boxGroup);
-          is(
-            document.activeElement,
-            allItems[i].querySelector("moz-button"),
-            `Up navigates to item ${i}.`
-          );
+          is(document.activeElement, allItems[i], `Up navigates to item ${i}.`);
         }
       });
 
