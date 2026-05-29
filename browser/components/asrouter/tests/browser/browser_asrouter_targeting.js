@@ -1186,6 +1186,32 @@ add_task(async function check_pinned_tabs() {
   );
 });
 
+add_task(async function check_tabsOpenInTopWindow() {
+  const baseline = await ASRouterTargeting.Environment.tabsOpenInTopWindow;
+
+  const tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  is(
+    await ASRouterTargeting.Environment.tabsOpenInTopWindow,
+    baseline + 1,
+    "Should count one additional tab"
+  );
+
+  const tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  is(
+    await ASRouterTargeting.Environment.tabsOpenInTopWindow,
+    baseline + 2,
+    "Should count two additional tabs"
+  );
+
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+  is(
+    await ASRouterTargeting.Environment.tabsOpenInTopWindow,
+    baseline,
+    "Should return to baseline after closing tabs"
+  );
+});
+
 class FakeTabWithNote extends EventTarget {
   /**
    * @param {string} canonicalUrl
