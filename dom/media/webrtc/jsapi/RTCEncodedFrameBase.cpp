@@ -53,10 +53,14 @@ RTCEncodedFrameBase::RTCEncodedFrameBase(nsIGlobalObject* aGlobal,
 
   mozilla::HoldJSObjects(this);
 
-  // Avoid a copy
-  mData = JS::NewArrayBufferWithUserOwnedContents(
-      jsapi.cx(), mState.mFrame->GetData().size(),
-      (void*)(mState.mFrame->GetData().data()));
+  if (mState.mFrame->GetData().data()) {
+    // Avoid a copy
+    mData = JS::NewArrayBufferWithUserOwnedContents(
+        jsapi.cx(), mState.mFrame->GetData().size(),
+        (void*)(mState.mFrame->GetData().data()));
+  } else {
+    mData = JS::NewArrayBuffer(jsapi.cx(), 0);
+  }
 }
 
 RTCEncodedFrameState::RTCEncodedFrameState(
