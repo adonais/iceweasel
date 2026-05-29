@@ -11,7 +11,7 @@ category app-startup nsBrowserGlue @mozilla.org/browser/browserglue;1 applicatio
 
 category first-startup-new-profile resource:///modules/AboutNewTabResourceMapping.sys.mjs AboutNewTabResourceMapping.firstStartupNewProfile
 #ifdef XP_WIN
-category first-startup-new-profile resource:///modules/DefaultWindowsLaunchOnLogin.sys.mjs DefaultWindowsLaunchOnLogin.firstStartupNewProfile
+category first-startup-new-profile resource:///modules/DefaultWindowsLaunchOnLogin.sys.mjs DefaultWindowsLaunchOnLogin.applyExperimentOverride
 #endif
 
 # Browser global components initializing before UI startup

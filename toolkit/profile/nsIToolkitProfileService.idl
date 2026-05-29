@@ -9,7 +9,7 @@ interface nsIFile;
 interface nsIToolkitProfile;
 interface nsIProfileLock;
 
-[scriptable, builtinclass, uuid(fcb10bd5-3065-413f-a1ca-0c7818c5227b)]
+[scriptable, builtinclass, uuid(e3909911-5518-4bec-bbb1-37b54f36f162)]
 interface nsIToolkitProfileService : nsISupports
 {
     /**
@@ -17,6 +17,14 @@ interface nsIToolkitProfileService : nsISupports
      * loaded. When this is true attempts to flush changes to disk will fail.
      */
     [infallible] readonly attribute boolean isListOutdated;
+
+    /**
+     * True if no default profile was assigned to this install at startup,
+     * which normally indicates the very first run for this install.
+     * Distinguishes a brand-new install from a user creating an
+     * additional profile on an existing install or reinstalling.
+     */
+    [infallible] readonly attribute boolean isFirstRun;
 
     /**
      * When a downgrade is detected UI is presented to the user to ask how to

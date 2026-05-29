@@ -326,6 +326,10 @@ pref("browser.startup.preXulSkeletonUI", true);
 pref("browser.startup.windowsLaunchOnLogin.enabled", true);
 // Whether to show the launch on login infobar notification
 pref("browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt", false);
+// Whether new installs should default to launching Firefox on Windows login.
+// Set to false by DefaultWindowsLaunchOnLogin.applyExperimentOverride when
+// Nimbus opts users out. Read by StartupOSIntegration on first run.
+pref("browser.startup.windowsLaunchOnLogin.defaultEnabled", true);
 #endif
 
 // Show an upgrade dialog on major upgrades.

@@ -24,24 +24,38 @@ add_task(async function test_check_uncheck_checkbox() {
   let doc = gBrowser.contentDocument;
 
   let launchOnLoginCheckbox = doc.getElementById("windowsLaunchOnLogin");
+
+  // Launch-on-login is enabled by default for new installs,
+  // so on a fresh profile the checkbox starts checked and the
+  // startup task is already enabled.
+  ok(
+    launchOnLoginCheckbox.checked,
+    "Autostart checkbox starts checked (default-enabled for new installs)"
+  );
+  ok(
+    await WindowsLaunchOnLogin.getLaunchOnLoginEnabled(),
+    "Launch on login is enabled at startup"
+  );
+
+  // Click once: should disable launch-on-login.
   launchOnLoginCheckbox.click();
-  ok(launchOnLoginCheckbox.checked, "Autostart checkbox checked");
-
-  // Checking whether everything was enabled as expected isn't
-  // really a problem in-product but we can encounter a race condition
-  // here as both enabling and checking are asynchronous.
+  ok(
+    !launchOnLoginCheckbox.checked,
+    "Autostart checkbox unchecked after first click"
+  );
   await TestUtils.waitForCondition(async () => {
-    let enabled = await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
-    return enabled;
-  }, "Wait for async get enabled operation to return true");
+    return !(await WindowsLaunchOnLogin.getLaunchOnLoginEnabled());
+  }, "Launch on login is disabled after unchecking");
 
+  // Click again: should re-enable launch-on-login.
   launchOnLoginCheckbox.click();
-  ok(!launchOnLoginCheckbox.checked, "Autostart checkbox unchecked");
-
+  ok(
+    launchOnLoginCheckbox.checked,
+    "Autostart checkbox re-checked after second click"
+  );
   await TestUtils.waitForCondition(async () => {
-    let enabled = await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
-    return !enabled;
-  }, "Wait for async get enabled operation to return false");
+    return await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
+  }, "Launch on login is re-enabled after rechecking");
 
   gBrowser.removeCurrentTab();
   await doCleanup();

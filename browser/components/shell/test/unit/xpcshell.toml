@@ -20,6 +20,11 @@ run-if = [
   "os == 'mac'",
 ]
 
+["test_maybeCreateLaunchOnLoginOnFirstRun.js"]
+run-if = [
+  "os == 'win'"
+]
+
 ["test_secondaryTileJs.js"]
 run-if = [
   "os == 'win'"
