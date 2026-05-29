@@ -82,6 +82,20 @@
         "parameters": []
       },
       {
+        "name": "getTabBreakagesUrl",
+        "type": "function",
+        "description": "Return the URL to fetch the base tab breakages from (pref: extensions.ippactivator.tabBreakagesUrl). Empty string means use the built-in file.",
+        "async": true,
+        "parameters": []
+      },
+      {
+        "name": "getWebRequestBreakagesUrl",
+        "type": "function",
+        "description": "Return the URL to fetch the base webRequest breakages from (pref: extensions.ippactivator.webrequestBreakagesUrl). Empty string means use the built-in file.",
+        "async": true,
+        "parameters": []
+      },
+      {
         "name": "getBaseDomainFromURL",
         "type": "function",
         "description": "Return both the eTLD+1 (baseDomain) and full host for the given URL.",
