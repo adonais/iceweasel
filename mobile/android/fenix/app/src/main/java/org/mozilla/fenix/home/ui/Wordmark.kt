@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.contentDescription
@@ -22,6 +23,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.modifier.thenConditional
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_LOGO
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
@@ -50,7 +52,12 @@ internal fun WordmarkLogo(
                     contentDescription = sportsLogoContentDescription
                 }
             }
-            .clickable(onClick = onLogoClicked)
+            .thenConditional(
+                Modifier.clickable(
+                    onClick = onLogoClicked,
+                    role = Role.Button,
+                ),
+            ) { isSportsWidgetEnabled }
             .padding(end = 10.dp),
         painter = painterResource(
             getAttr(
