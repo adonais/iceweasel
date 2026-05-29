@@ -301,11 +301,10 @@ already_AddRefed<PTextureParent> ImageBridgeParent::AllocPTextureParent(
     const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
     const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
     const uint64_t& aSerial, const wr::MaybeExternalImageId& aExternalImageId) {
-  if (aExternalImageId.isSome()) {
-    uint32_t ns = static_cast<uint32_t>(wr::AsUint64(*aExternalImageId) >> 32);
-    if (ns == 0) {
-      return nullptr;
-    }
+  if (aExternalImageId.isSome() &&
+      !OwnsExternalImageId(aExternalImageId.ref())) {
+    NS_ERROR("We do not own this external image id.");
+    return nullptr;
   }
   return TextureHost::CreateIPDLActor(this, aSharedData, std::move(aReadLock),
                                       aLayersBackend, aFlags, mContentId,
@@ -387,6 +386,12 @@ already_AddRefed<ImageBridgeParent> ImageBridgeParent::GetInstance(
   }
   RefPtr<ImageBridgeParent> bridge = i->second;
   return bridge.forget();
+}
+
+bool ImageBridgeParent::OwnsExternalImageId(
+    const wr::ExternalImageId& aId) const {
+  return (static_cast<uint32_t>(wr::AsUint64(aId) >> 32) ==
+          static_cast<uint32_t>(static_cast<uint64_t>(mContentId) >> 32));
 }
 
 bool ImageBridgeParent::AllocShmem(size_t aSize, ipc::Shmem* aShmem) {

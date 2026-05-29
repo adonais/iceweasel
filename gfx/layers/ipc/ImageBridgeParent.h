@@ -120,6 +120,9 @@ class ImageBridgeParent final : public PImageBridgeParent,
   static void ShutdownInternal();
 
   void DeferredDestroy();
+
+  bool OwnsExternalImageId(const wr::ExternalImageId& aId) const;
+
   nsCOMPtr<nsISerialEventTarget> mThread;
 
   dom::ContentParentId mContentId;
