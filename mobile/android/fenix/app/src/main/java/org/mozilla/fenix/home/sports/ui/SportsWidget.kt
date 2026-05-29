@@ -169,14 +169,14 @@ private fun SportsCardPagerSection(
     )
 }
 
-private data class SportsCardPagesResult(
+internal data class SportsCardPagesResult(
     val pages: List<@Composable (pageNumber: Int, pageCount: Int) -> Unit>,
     val championsPageIndices: Set<Int>,
     val errorPageIndices: Set<Int>,
 )
 
 @Suppress("LongParameterList")
-private fun sportsCardPages(
+internal fun sportsCardPages(
     isOneWeekToWorldCup: Boolean,
     isFollowTeamsCardShown: Boolean,
     selectedTeam: Team?,
@@ -191,7 +191,14 @@ private fun sportsCardPages(
     val championsPageIndices = mutableSetOf<Int>()
     val errorPageIndices = mutableSetOf<Int>()
     val pages = buildList<@Composable (pageNumber: Int, pageCount: Int) -> Unit> {
-        if (addCollapsedErrorPage(matchCardStates, errorState, onRefresh, errorPageIndices)) {
+        if (addCollapsedErrorPage(
+                isOneWeekToWorldCup = isOneWeekToWorldCup,
+                matchCardStates = matchCardStates,
+                errorState = errorState,
+                onRefresh = onRefresh,
+                errorPageIndices = errorPageIndices,
+            )
+        ) {
             return@buildList
         }
         addPromoPage(isOneWeekToWorldCup, isFollowTeamsCardShown, selectedTeam, matchCardStates, onFollowTeam)
@@ -214,8 +221,16 @@ private fun sportsCardPages(
  * returns `false` without modifying the list — when a live match is present, [MatchCard]
  * swaps the error in-line within that one card and the surrounding pages keep their
  * content, so the page list (and the user's pager position) stays stable.
+ *
+ * During the pre-tournament one-week phase ([isOneWeekToWorldCup]), an error is also
+ * suppressed if [matchCardStates] is non-empty: there are no live scores to be wrong
+ * about, just a schedule the user already saw, so a stale cached schedule is more
+ * useful than an error banner. The error is only surfaced when the cache is empty —
+ * i.e. the user has nothing else to look at.
  */
+@Suppress("LongParameterList", "ReturnCount")
 private fun MutableList<@Composable (pageNumber: Int, pageCount: Int) -> Unit>.addCollapsedErrorPage(
+    isOneWeekToWorldCup: Boolean,
     matchCardStates: List<MatchCardState>,
     errorState: SportCardErrorState?,
     onRefresh: (LiveMatchRefreshSource) -> Unit,
@@ -226,6 +241,7 @@ private fun MutableList<@Composable (pageNumber: Int, pageCount: Int) -> Unit>.a
         (card.matches + card.relatedMatches).any { it.matchStatus.isLive() }
     }
     if (anyLive) return false
+    if (isOneWeekToWorldCup && matchCardStates.isNotEmpty()) return false
 
     errorPageIndices.add(size)
     add { _, _ ->
