@@ -4426,21 +4426,11 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
   SetupMacApplicationDelegate(&gRestartedByOS);
 
   if (EnvHasValue("MOZ_LAUNCHED_CHILD")) {
-    // This is needed, on relaunch, to force the OS to use the "Cocoa Dock
-    // API".  Otherwise the call to ReceiveNextEvent() below will make it
-    // use the "Carbon Dock API".  For more info see bmo bug 377166.
+    // Initialize the shared NSApplication early on relaunch so the dock
+    // tile for the child process gets registered before the original
+    // process exits. `[NSApplication sharedApplication]` calls
+    // `_NSDoOneTimeDockRegistration` internally, which is enough.
     EnsureUseCocoaDockAPI();
-
-    // When the app relaunches, the original process exits.  This causes
-    // the dock tile to stop bouncing, lose the "running" triangle, and
-    // if the tile does not permanently reside in the Dock, even disappear.
-    // This can be confusing to the user, who is expecting the app to launch.
-    // Calling ReceiveNextEvent without requesting any event is enough to
-    // cause a dock tile for the child process to appear.
-    const EventTypeSpec kFakeEventList[] = {{INT_MAX, INT_MAX}};
-    EventRef event;
-    ::ReceiveNextEvent(GetEventTypeCount(kFakeEventList), kFakeEventList,
-                       kEventDurationNoWait, false, &event);
   }
 
   if (CheckArg("foreground")) {
