@@ -586,7 +586,8 @@ void ImageBridgeChild::InitSameProcess(uint32_t aNamespace) {
   sImageBridgeChildThread = thread.forget();
 
   RefPtr<ImageBridgeChild> child = new ImageBridgeChild(aNamespace);
-  RefPtr<ImageBridgeParent> parent = ImageBridgeParent::CreateSameProcess();
+  RefPtr<ImageBridgeParent> parent =
+      ImageBridgeParent::CreateSameProcess(aNamespace);
 
   RefPtr<Runnable> runnable =
       WrapRunnable(child, &ImageBridgeChild::BindSameProcess, parent);

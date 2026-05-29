@@ -91,7 +91,8 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorBridgeParentBase, final);
 
-  explicit CompositorBridgeParentBase(CompositorManagerParent* aManager);
+  explicit CompositorBridgeParentBase(CompositorManagerParent* aManager,
+                                      uint32_t aNamespace);
 
   virtual bool SetTestSampleTime(const LayersId& aId, const TimeStamp& aTime) {
     return true;
@@ -151,6 +152,14 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   virtual void EnsureWebRenderBridgeParentInitialized() = 0;
 
   bool OwnsExternalImageId(const wr::ExternalImageId& aId) const;
+
+  CompositorManagerParent* GetCompositorManager() const {
+    return mCompositorManager;
+  }
+
+  uint32_t GetNamespace() const { return mNamespace; }
+
+  void SetNamespace(uint32_t aNamespace) { mNamespace = aNamespace; }
 
  protected:
   virtual ~CompositorBridgeParentBase();
@@ -216,6 +225,7 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
 
  protected:
   RefPtr<CompositorManagerParent> mCompositorManager;
+  uint32_t mNamespace;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(
@@ -229,13 +239,11 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
   friend class PCompositorBridgeParent;
 
  public:
-  explicit CompositorBridgeParent(CompositorManagerParent* aManager,
-                                  CSSToLayoutDeviceScale aScale,
-                                  const TimeDuration& aVsyncRate,
-                                  const CompositorOptions& aOptions,
-                                  bool aUseExternalSurfaceSize,
-                                  const gfx::IntSize& aSurfaceSize,
-                                  uint64_t aInnerWindowId);
+  explicit CompositorBridgeParent(
+      CompositorManagerParent* aManager, uint32_t aNamespace,
+      CSSToLayoutDeviceScale aScale, const TimeDuration& aVsyncRate,
+      const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
+      const gfx::IntSize& aSurfaceSize, uint64_t aInnerWindowId);
 
   void InitSameProcess(widget::CompositorWidget* aWidget,
                        const LayersId& aLayerTreeId);

@@ -28,6 +28,7 @@
 #include "mozilla/layers/APZUpdater.h"
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/CompositorAnimationStorage.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/CompositorVsyncScheduler.h"
@@ -871,7 +872,8 @@ bool WebRenderBridgeParent::AddSharedExternalImage(
     return true;
   }
 
-  if (!GetCompositorBridge()->OwnsExternalImageId(aExtId)) {
+  if (!GetCompositorBridge()->GetCompositorManager()->OwnsExternalImageId(
+          aExtId)) {
     gfxCriticalNote << "We do not own extId:" << wr::AsUint64(aExtId);
     return false;
   }
