@@ -1077,7 +1077,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     // Destroy existing encoder instance before creating a new one. Otherwise
     // attempt to create another instance will fail if encoder factory
     // supports only single instance of encoder of given type.
-    ReleaseEncoder();
     encoder_.reset();
 
     encoder_ = MaybeCreateFrameDumpingEncoderWrapper(
