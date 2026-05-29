@@ -31,6 +31,8 @@ skip-if = [
 
 ["test_distribution_cachedexistence.js"]
 
+["test_distribution_mozillaonline.js"]
+
 ["test_profileDataUpgrade_smartwindow.js"]
 
 ["test_profileDataUpgrade_smartwindow_semanticHistory.js"]

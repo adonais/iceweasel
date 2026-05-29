@@ -1145,3 +1145,20 @@ browser:
         type: string
         description: >
           The state of the "Block AI Enhancements" dropdown.
+
+distribution:
+  mozillaonline_ignored:
+    type: boolean
+    description: >
+      Recorded when Firefox detects a mozillaonline distribution and ignores it,
+      applying no distribution customizations.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027788
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2027788
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - amarchesini@mozilla.com
+    expires: never
+    lifetime: application
