@@ -32,8 +32,8 @@ data class TeamMatchesResponseDto(
 data class EventInfoDto(
     val date: String = "",
     @SerialName("global_event_id") val globalEventId: Long = 0L,
-    @SerialName("home_team") val homeTeam: TeamInfoDto = TeamInfoDto(),
-    @SerialName("away_team") val awayTeam: TeamInfoDto = TeamInfoDto(),
+    @SerialName("home_team") val homeTeam: TeamInfoDto? = null,
+    @SerialName("away_team") val awayTeam: TeamInfoDto? = null,
     val period: String? = null,
     @SerialName("home_score") val homeScore: Int? = null,
     @SerialName("away_score") val awayScore: Int? = null,

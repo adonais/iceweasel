@@ -103,6 +103,7 @@ class SportsWidgetMiddleware(
         (result.previous + result.current + result.next)
             .asSequence()
             .flatMap { sequenceOf(it.homeTeam, it.awayTeam) }
+            .filterNotNull()
             .filter { it.eliminated }
             .map { it.key }
             .toSet()
@@ -162,8 +163,8 @@ class SportsWidgetMiddleware(
         return codes.all { code ->
             val snapshot = allMatches.firstNotNullOfOrNull { match ->
                 when (code) {
-                    match.homeTeam.key -> match.homeTeam
-                    match.awayTeam.key -> match.awayTeam
+                    match.homeTeam?.key -> match.homeTeam
+                    match.awayTeam?.key -> match.awayTeam
                     else -> null
                 }
             }
@@ -177,8 +178,8 @@ class SportsWidgetMiddleware(
         // even when the followed team isn't in them.
         fun List<SportsMatch>.relevantFor(codes: Set<String>): List<SportsMatch> =
             filter { match ->
-                match.homeTeam.key in codes ||
-                    match.awayTeam.key in codes ||
+                match.homeTeam?.key in codes ||
+                    match.awayTeam?.key in codes ||
                     match.stage == TournamentRound.FINAL ||
                     match.stage == TournamentRound.THIRD_PLACE_PLAYOFF
             }
