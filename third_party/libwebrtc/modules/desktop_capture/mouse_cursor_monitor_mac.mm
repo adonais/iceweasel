@@ -155,8 +155,7 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
   // crbug.com/632995.) After 10.12, OSX may report 2X cursor on non-Retina
   // screen. (See crbug.com/671436.) So scaling the cursor if needed.
   CGImageRef scaled_cg_image = nil;
-  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
-      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height())) {
+  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width())) {
     scaled_cg_image =
         CreateScaledCGImage(cg_image, size.width(), size.height());
     if (scaled_cg_image != nil) {
@@ -165,7 +164,6 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
   }
   if (CGImageGetBitsPerPixel(cg_image) != DesktopFrame::kBytesPerPixel * 8 ||
       CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
-      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height()) ||
       CGImageGetBitsPerComponent(cg_image) != 8) {
     if (scaled_cg_image != nil) CGImageRelease(scaled_cg_image);
     return;
