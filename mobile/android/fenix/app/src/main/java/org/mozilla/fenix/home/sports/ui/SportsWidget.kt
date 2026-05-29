@@ -158,6 +158,7 @@ private fun SportsCardPagerSection(
     }
 
     SportsCardPager(
+        isTeamSelected = selectedTeam != null,
         pages = pagesResult.pages,
         onChangeTeam = onFollowTeam,
         onGetCustomWallpaper = onGetCustomWallpaper,

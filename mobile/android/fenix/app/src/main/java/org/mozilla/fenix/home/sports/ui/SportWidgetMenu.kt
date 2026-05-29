@@ -14,6 +14,7 @@ import org.mozilla.fenix.home.sports.CountrySelectorSource
 @Composable
 internal fun SportsWidgetMenu(
     expanded: Boolean,
+    isTeamSelected: Boolean? = null,
     onDismissRequest: () -> Unit,
     onChangeTeam: ((CountrySelectorSource) -> Unit)?,
     onGetCustomWallpaper: () -> Unit,
@@ -23,7 +24,13 @@ internal fun SportsWidgetMenu(
         menuItems = listOfNotNull(
             onChangeTeam?.let { handler ->
                 MenuItem.TextItem(
-                    text = Text.Resource(R.string.sports_widget_change_team),
+                    text = Text.Resource(
+                        if (isTeamSelected == true) {
+                            R.string.sports_widget_change_team
+                        } else {
+                            R.string.sports_widget_country_selector_title
+                        },
+                    ),
                     onClick = {
                         onDismissRequest()
                         handler(CountrySelectorSource.SPORTS_WIDGET_MENU)
