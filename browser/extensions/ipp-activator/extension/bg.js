@@ -322,7 +322,7 @@ class IPPAddonActivator {
     if (!entry) {
       let condition = null;
       if (breakage.condition !== undefined) {
-        const factory = new ConditionFactory({ tabId: tab.id, url });
+        const factory = new ConditionFactory({ tabId: tab.id });
         condition = factory.create(breakage.condition);
         await condition.init();
       }
