@@ -86,10 +86,6 @@ document.addEventListener(
           break;
         case "context_shareSelectedTabs":
           lazy.ContentSharingUtils.handleShareTabs(TabContextMenu.contextTabs);
-          Services.prefs.setBoolPref(
-            "browser.contentsharing.newBadge.enabled",
-            false
-          );
           break;
         case "context_bookmarkTab":
           PlacesCommandHook.bookmarkTabs([TabContextMenu.contextTab]);

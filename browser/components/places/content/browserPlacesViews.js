@@ -768,11 +768,12 @@ class PlacesViewBase {
     ) {
       // Add the "Share Folder" menuitem.
       aPopup._endOptShareFolder = document.createXULElement("menuitem");
-      aPopup._endOptShareFolder.className = "openintabs-menuitem";
+      aPopup._endOptShareFolder.className = "openintabs-menuitem badge-new";
       aPopup._endOptShareFolder.setAttribute(
         "data-l10n-id",
         "places-share-folder2"
       );
+      aPopup._endOptShareFolder.setAttribute("data-l10n-attrs", "badge");
 
       aPopup._endOptShareFolder.addEventListener("command", event => {
         ContentSharingUtils.createShareableLinkFromBookmarkFolders([

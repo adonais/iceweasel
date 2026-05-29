@@ -10740,15 +10740,7 @@ var TabContextMenu = {
     document.getElementById("context_shareSelectedTabsSeparator").hidden =
       hideContentSharing;
     if (!contentSharingShareTabs.hidden) {
-      this.removeNewBadge(contentSharingShareTabs);
-      if (
-        Services.prefs.getBoolPref(
-          "browser.contentsharing.newBadge.enabled",
-          true
-        )
-      ) {
-        this.addNewBadge(contentSharingShareTabs);
-      }
+      this.addNewBadge(contentSharingShareTabs);
     }
 
     let toggleMute = document.getElementById("context_toggleMuteTab");
