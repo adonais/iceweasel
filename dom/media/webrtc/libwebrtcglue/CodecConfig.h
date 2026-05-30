@@ -78,6 +78,8 @@ struct AudioCodecConfig {
     ss << "audio/" << mName;
     return ss.str();
   }
+
+  bool HasCongestionControlAck() const { return false; }
 };
 
 /*
