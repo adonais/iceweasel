@@ -120,7 +120,7 @@ export class ContentSharingModal extends MozLitElement {
       return html`<div class="too-many-links">
         <img class="icon" src="chrome://global/skin/icons/error.svg" />
         <span
-          data-l10n-id="content-sharing-modal-too-many-links"
+          data-l10n-id="content-sharing-modal-too-many-links-2"
           data-l10n-args=${JSON.stringify({
             count: MAX_ITEM_COUNT,
           })}
@@ -240,10 +240,17 @@ export class ContentSharingModal extends MozLitElement {
       >`;
     }
 
+    if (this.shareResult.error === ERRORS.INVALID_SCHEMA) {
+      return html`<moz-message-bar
+        type="critical"
+        data-l10n-id="content-sharing-modal-no-shareable-links"
+      ></moz-message-bar>`;
+    }
+
     if (this.shareResult.error) {
       return html`<moz-message-bar
         type="critical"
-        data-l10n-id="content-sharing-modal-generic-error"
+        data-l10n-id="content-sharing-modal-generic-error-2"
       ></moz-message-bar>`;
     }
 
@@ -259,7 +266,7 @@ export class ContentSharingModal extends MozLitElement {
       return html`<moz-button
           @click=${this.handleViewPageClick}
           id="view-page"
-          data-l10n-id="content-sharing-modal-view-page"
+          data-l10n-id="content-sharing-modal-view-page-2"
         ></moz-button
         ><moz-button
           id="copy-button"
@@ -273,7 +280,7 @@ export class ContentSharingModal extends MozLitElement {
     return html`<moz-button
       @click=${this.handleSignInClick}
       id="sign-in"
-      data-l10n-id="content-sharing-modal-sign-in"
+      data-l10n-id="content-sharing-modal-sign-in-2"
       type="primary"
     ></moz-button>`;
   }
@@ -335,8 +342,16 @@ export class ContentSharingModal extends MozLitElement {
 
           <div class="description-content">
             <div>
-              <h2 data-l10n-id="content-sharing-modal-title"></h2>
-              <p data-l10n-id="content-sharing-modal-description"></p>
+              <h2
+                data-l10n-id=${this.shareResult.isSignedIn
+                  ? "content-sharing-modal-title-signed-in"
+                  : "content-sharing-modal-title-2"}
+              ></h2>
+              <p
+                data-l10n-id=${this.shareResult.isSignedIn
+                  ? "content-sharing-modal-description-signed-in"
+                  : "content-sharing-modal-description-2"}
+              ></p>
             </div>
             ${this.descriptionActionTemplate()}
           </div>

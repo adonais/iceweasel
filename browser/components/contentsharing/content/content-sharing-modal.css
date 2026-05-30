@@ -82,6 +82,7 @@
         display: inline-flex;
         gap: var(--space-xsmall);
         align-items: center;
+        white-space: nowrap;
         color: var(--text-color-deemphasized);
 
         .share-icon {

@@ -515,8 +515,7 @@ class ContentSharingUtilsClass {
           canRetry = false;
           if (response.status === 401) {
             shareResult.error = ERRORS.UNAUTHORIZED;
-          }
-          if (response.status === 410) {
+          } else if (response.status === 410) {
             shareResult.error = ERRORS.DISABLED;
             this.disable();
           } else {
