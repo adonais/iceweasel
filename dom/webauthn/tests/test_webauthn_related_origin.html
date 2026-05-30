@@ -57,6 +57,19 @@ function makeGetOptions(credId) {
   };
 }
 
+function makeConditionalGetOptions() {
+  let challenge = new Uint8Array(16);
+  crypto.getRandomValues(challenge);
+  return {
+    mediation: "conditional",
+    publicKey: {
+      rpId: RP_ID,
+      challenge,
+      allowCredentials: [],
+    },
+  };
+}
+
 async function setWellKnownState(state) {
   let resp = await fetch(
     `well-known-webauthn-state.sjs?state=${encodeURIComponent(state)}`
@@ -125,6 +138,25 @@ add_task(async function test_mode1_no_prompt() {
   let assertion = await navigator.credentials.get(makeGetOptions(cred.rawId));
   ok(assertion !== null, "mode 1: assertion succeeds without prompt");
   is(assertion.id, cred.id, "mode 1: asserted the created credential");
+  await SpecialPowers.popPrefEnv();
+});
+
+// Bug 2043449: A conditionally mediated get must not trigger a related origin
+// request, even when the well-known state would otherwise allow the request to
+// succeed.
+add_task(async function test_conditional_get_short_circuits_ror() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.webauthn.related_origin_requests_mode", 1]],
+  });
+  await setWellKnownState("valid");
+  let getErr = await navigator.credentials
+    .get(makeConditionalGetOptions())
+    .catch(e => e);
+  is(
+    getErr.name,
+    "SecurityError",
+    "conditional get requiring RoR gives SecurityError"
+  );
   await SpecialPowers.popPrefEnv();
 });
 
