@@ -1647,6 +1647,8 @@
   <string name="tab_manager_search_bar_placeholder">Поиск во вкладках</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Недавно закрытые вкладки</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">Выделить всё</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Настройки аккаунта</string>
   <!-- Text shown in the menu to view tab settings -->

@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">%1$s út skiednis fuortsmite</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Dizze skiednisfermelding fuortsmite</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">Yn %1$s bliuwe</string>
   <!--
     Home onboarding
 
@@ -1643,6 +1645,8 @@
   <string name="tab_manager_search_bar_placeholder">Jo ljepblêden trochsykje</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Koartlyn sluten ljepblêden</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">Alles selektearje</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Accountynstellingen</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -2695,6 +2699,15 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s beskermet jo tsjin in protte fan de meast foarkommende trackers dy\\’t folgje wat jo online dogge.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Mear ynfo</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d tracker blokkearre</item>
+    <item quantity="other">%d trackers blokkearre</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -3086,6 +3099,8 @@
   <string name="saved_logins_sort_strategy_last_used">Lêst brûkt</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Wachtwurdmenu sortearje</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Ut bestân ymportearje</string>
   <!--
     Email Masks
 
@@ -4613,6 +4628,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Einresultaten WK, side %1$d fan %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">Einresultaten WK</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Wrâldkampioenskip-widget fan jo startside fuortsmite</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4633,6 +4650,8 @@
   <string name="sports_widget_error_load_failed_title">Wedstriidynfo is op dit stuit net beskikber.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">Probearje oer in pear minuten te ferfarskjen.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">Team noch te bepalen</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

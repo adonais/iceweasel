@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">已从历史记录中删除“%1$s”</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">删除此历史记录</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">留在 %1$s</string>
   <!--
     Home onboarding
 
@@ -2670,6 +2672,14 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s 保护您免受众多常见跟踪器对您在线活动的窥视。</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">详细了解</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="other">已拦截 %d 个跟踪器</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -3058,6 +3068,8 @@
   <string name="saved_logins_sort_strategy_last_used">上次使用</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">密码排序菜单</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">从文件导入</string>
   <!--
     Email Masks
 
@@ -4585,6 +4597,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">世界杯最终结果，第 %1$d/%2$d 页</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">世界杯决赛结果</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">从主页移除世界杯内容</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4603,6 +4617,8 @@
   <string name="sports_widget_error_load_failed_title">暂时无法获取比赛信息。</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">请过几分钟再尝试刷新。</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">球队待定</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

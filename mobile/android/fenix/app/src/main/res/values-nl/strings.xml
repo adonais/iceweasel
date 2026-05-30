@@ -1645,6 +1645,8 @@
   <string name="tab_manager_search_bar_placeholder">Uw tabbladen doorzoeken</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Onlangs gesloten tabbladen</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">Alles selecteren</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Accountinstellingen</string>
   <!-- Text shown in the menu to view tab settings -->
