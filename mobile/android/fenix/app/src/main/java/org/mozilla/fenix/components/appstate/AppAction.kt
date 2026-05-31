@@ -906,6 +906,14 @@ sealed class AppAction : Action {
         data class FetchFailed(val error: SportCardErrorState) : SportsWidgetAction()
 
         /**
+         * Dispatched to clear any active [SportsWidgetState.errorState] without otherwise
+         * touching widget data. Used on resume to retire a stale ConnectionInterrupted
+         * banner once the device is back online and there's no fetch to schedule (e.g.
+         * during the pre-7-day countdown phase).
+         */
+        data object ErrorStateCleared : SportsWidgetAction()
+
+        /**
          * Dispatched when the user toggles the one week to the world cup override setting
          * in the sport widget's debug tool. This overrides [SportsWidgetState.isOneWeekToWorldCup] and should
          * be used for debug only.

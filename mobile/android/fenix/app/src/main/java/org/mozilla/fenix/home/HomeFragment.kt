@@ -1294,17 +1294,23 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         )
 
         val sportsWidgetState = components.appStore.state.sportsWidgetState
-        if (sportsWidgetState.isShown &&
-            (sportsWidgetState.hasWorldCupStarted || sportsWidgetState.isOneWeekToWorldCup)
-        ) {
-            // Fetches the full tournament schedule. The middleware caches the response
-            // so a later team selection re-derives cards without another network call.
+        val needsFetch = sportsWidgetState.hasWorldCupStarted || sportsWidgetState.isOneWeekToWorldCup
+        if (sportsWidgetState.isShown && (needsFetch || sportsWidgetState.isCountdownShown)) {
+            // Fetches the full tournament schedule once we're within seven days of kickoff
+            // or past it. The middleware caches the response so a later team selection
+            // re-derives cards without another network call.
+            //
             // When offline, skip the fetch and surface ConnectionInterrupted so the widget
-            // shows an error card instead of silently rendering empty matches.
-            val action = if (requireContext().getSystemService<ConnectivityManager>()?.isOnline() == true) {
-                SportsWidgetAction.FetchMatches
-            } else {
-                SportsWidgetAction.FetchFailed(SportCardErrorState.ConnectionInterrupted)
+            // shows an error card instead of the countdown / promo flow. Countdown mode
+            // (pre-7-day window) has no data to fetch, but still flips to the error card
+            // when offline so the user knows the widget isn't current. Conversely, when
+            // back online with nothing to fetch (countdown phase), clear any stale error
+            // so the countdown UI returns without requiring a manual Refresh tap.
+            val isOnline = requireContext().getSystemService<ConnectivityManager>()?.isOnline() == true
+            val action = when {
+                !isOnline -> SportsWidgetAction.FetchFailed(SportCardErrorState.ConnectionInterrupted)
+                needsFetch -> SportsWidgetAction.FetchMatches
+                else -> SportsWidgetAction.ErrorStateCleared
             }
             components.appStore.dispatch(action)
         }

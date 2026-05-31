@@ -13,14 +13,13 @@ import org.mozilla.fenix.home.sports.client.WorldCupMatchesClient
 class WorldCupMatchesRepositoryTest {
 
     @Test
-    fun `GIVEN client returns null WHEN fetchMatches THEN returns successful empty result`() = runTest {
+    fun `GIVEN client returns null WHEN fetchMatches THEN returns failure`() = runTest {
+        // A null body from the client means the underlying network / API call was
+        // caught as an exception (e.g. 5xx). Surface as failure so the middleware
+        // dispatches an error state instead of silently rendering an empty schedule.
         val repo = WorldCupMatchesRepository(client = { null })
         val result = repo.fetchMatches()
-        assertTrue(result.isSuccess)
-        val value = result.getOrNull()!!
-        assertTrue(value.previous.isEmpty())
-        assertTrue(value.current.isEmpty())
-        assertTrue(value.next.isEmpty())
+        assertTrue(result.isFailure)
     }
 
     @Test
