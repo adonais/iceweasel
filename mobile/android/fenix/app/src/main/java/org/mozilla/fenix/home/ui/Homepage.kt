@@ -162,7 +162,10 @@ internal fun Homepage(
                         onStoriesTapped = { interactor.onDiscoverMoreClicked() },
                         onNewsAnimationShown = { settings.recordNewsButtonAnimationShown() },
                         onLogoClicked = {
-                            if (settings.showHomepageSportsWidget) showSportsCountrySelector = true
+                            if (settings.showHomepageSportsWidget) {
+                                interactor.onCountrySelectorShown(CountrySelectorSource.SPORTS_LOGO)
+                                showSportsCountrySelector = true
+                            }
                         },
                         onLogoLongClicked = interactor::onLogoLongClicked,
                     )
