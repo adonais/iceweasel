@@ -229,8 +229,8 @@ private fun statusSubtitle(status: MatchStatus, date: String, isTeamSelected: Bo
 
 @Composable
 private fun secondStatusSubtitle(status: MatchStatus, time: String): String = when (status) {
-    is MatchStatus.Penalties -> "(${status.homeScore ?: "-"} - ${status.awayScore ?: "-"})"
-    is MatchStatus.FinalAfterPenalties -> "(${status.homeScore ?: "-"} - ${status.awayScore ?: "-"})"
+    is MatchStatus.Penalties -> "(${status.homePenalty ?: "-"} - ${status.awayPenalty ?: "-"})"
+    is MatchStatus.FinalAfterPenalties -> "(${status.homePenalty ?: "-"} - ${status.awayPenalty ?: "-"})"
     else -> time
 }
 

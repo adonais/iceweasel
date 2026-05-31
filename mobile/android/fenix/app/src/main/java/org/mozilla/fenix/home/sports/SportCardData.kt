@@ -12,7 +12,7 @@ import androidx.annotation.DrawableRes
  * @property key Abbreviation named for a given name (e.g. "ENG").
  * @property flagResId Local fallback drawable for the flag.
  * @property globalTeamId Unique numeric identifier for this team.
- * @property name Long display name (e.g. "England").
+ * @property name Long display name (e.g. "England"). This is not localized.
  * @property region ISO3 region code This may differ from [key] (e.g. "ENG").
  * @property iconUrl Optional URL for the team logo.
  * @property group [Group] name (e.g. "Group A"). This will be null after the knockout stage starts.
@@ -67,10 +67,10 @@ sealed class MatchStatus {
     /**
      * Match is in a penalty shootout.
      *
-     * @property homeScore Home team score.
-     * @property awayScore Away team score.
+     * @property homePenalty Home team penalty score.
+     * @property awayPenalty Away team penalty score.
      */
-    data class Penalties(val homeScore: Int? = null, val awayScore: Int? = null) : MatchStatus()
+    data class Penalties(val homePenalty: Int? = null, val awayPenalty: Int? = null) : MatchStatus()
 
     /**
      * Match has ended.
@@ -80,10 +80,10 @@ sealed class MatchStatus {
     /**
      * Match has ended with penalities.
      *
-     * @property homeScore Home team score.
-     * @property awayScore Away team score.
+     * @property homePenalty Home team penalty score.
+     * @property awayPenalty Away team penalty score.
      */
-    data class FinalAfterPenalties(val homeScore: Int? = null, val awayScore: Int? = null) : MatchStatus()
+    data class FinalAfterPenalties(val homePenalty: Int? = null, val awayPenalty: Int? = null) : MatchStatus()
 
     /**
      * API returned an unrecognized status string.
@@ -158,6 +158,11 @@ sealed class FollowedTeamOutcome {
      * Followed team won the tournament with this match.
      */
     data object TournamentWinner : FollowedTeamOutcome()
+
+    /**
+     * Followed team won the third-place playoff with this match.
+     */
+    data object ThirdPlace : FollowedTeamOutcome()
 }
 
 /**

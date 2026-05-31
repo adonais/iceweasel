@@ -1,0 +1,136 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+package org.mozilla.fenix.home.sports
+
+import org.mozilla.fenix.home.sports.api.EventInfoDto
+import org.mozilla.fenix.home.sports.api.MatchesResponseDto
+import org.mozilla.fenix.home.sports.api.TeamInfoDto
+import org.mozilla.fenix.home.sports.api.TeamMatchesResponseDto
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+
+/**
+ * Maps API response DTOs into [SportsMatch] / [SportsTeam] domain models.
+ *
+ * Status bucketing uses `status_type` only ("scheduled", "live", "past"). Provider-level
+ * detail statuses (Break, Suspended, Awarded, etc.) are intentionally collapsed: anything
+ * in-progress or interrupted maps to [MatchStatus.Live]; anything decided maps to
+ * [MatchStatus.Final] or [MatchStatus.FinalAfterPenalties].
+ *
+ * UTC date strings are converted to [zoneId] (defaults to the device's local zone).
+ *
+ * @param zoneId Target timezone for date conversion.
+ */
+class MatchesResponseMapper(
+    private val zoneId: ZoneId = ZoneId.systemDefault(),
+) {
+
+    /**
+     * Maps the flat event list returned when no team filter is applied.
+     */
+    fun mapAllMatches(response: MatchesResponseDto): List<SportsMatch> =
+        response.data.map { mapEvent(it) }
+
+    /**
+     * Maps the bucketed response returned when a team filter is applied.
+     */
+    fun mapTeamMatches(response: TeamMatchesResponseDto): TeamMatchesResult = TeamMatchesResult(
+        previous = response.previous.map { mapEvent(it) },
+        current = response.current.map { mapEvent(it) },
+        next = response.next.map { mapEvent(it) },
+    )
+
+    private fun mapEvent(dto: EventInfoDto) = SportsMatch(
+        globalEventId = dto.globalEventId,
+        date = parseDate(dto.date),
+        homeTeam = mapTeam(dto.homeTeam),
+        awayTeam = mapTeam(dto.awayTeam),
+        matchStatus = mapMatchStatus(dto),
+        homeScore = dto.homeScore,
+        awayScore = dto.awayScore,
+        homeExtra = dto.homeExtra,
+        awayExtra = dto.awayExtra,
+        homePenalty = dto.homePenalty,
+        awayPenalty = dto.awayPenalty,
+        clock = dto.clock,
+        period = dto.period,
+        updated = dto.updated,
+        venue = dto.venue,
+        stage = mapStage(dto.stage),
+    )
+
+    private fun mapTeam(dto: TeamInfoDto) = SportsTeam(
+        key = dto.key,
+        globalTeamId = dto.globalTeamId,
+        name = dto.name,
+        region = dto.region,
+        iconUrl = dto.iconUrl,
+        group = dto.group,
+        eliminated = dto.eliminated,
+    )
+
+    private fun parseDate(utcDate: String): ZonedDateTime = try {
+        ZonedDateTime.parse(utcDate, DateTimeFormatter.ISO_DATE_TIME)
+            .withZoneSameInstant(zoneId)
+    } catch (e: DateTimeParseException) {
+        ZonedDateTime.now(zoneId)
+    }
+
+    private fun mapMatchStatus(dto: EventInfoDto): MatchStatus = when (dto.statusType) {
+        STATUS_TYPE_SCHEDULED -> MatchStatus.Scheduled
+        STATUS_TYPE_LIVE -> mapLiveStatus(dto)
+        STATUS_TYPE_PAST -> mapPastStatus(dto)
+        else -> MatchStatus.Unknown
+    }
+
+    private fun mapLiveStatus(dto: EventInfoDto): MatchStatus =
+        if (dto.period == PERIOD_LIVE_PENALTIES) {
+            MatchStatus.Penalties(homePenalty = dto.homePenalty, awayPenalty = dto.awayPenalty)
+        } else {
+            MatchStatus.Live(period = dto.period.orEmpty(), clock = dto.clock.orEmpty())
+        }
+
+    // Past matches: only "FT(P)" indicates a penalty-shootout finish. "FT" (regulation)
+    // and "AET" (after extra time) both end without a shootout and collapse to Final.
+    private fun mapPastStatus(dto: EventInfoDto): MatchStatus =
+        if (dto.period == PERIOD_FINAL_AFTER_PENALTIES) {
+            MatchStatus.FinalAfterPenalties(
+                homePenalty = dto.homePenalty,
+                awayPenalty = dto.awayPenalty,
+            )
+        } else {
+            MatchStatus.Final
+        }
+
+    private fun mapStage(stage: String): TournamentRound = when (stage) {
+        STAGE_GROUP -> TournamentRound.GROUP_STAGE
+        STAGE_ROUND_OF_32 -> TournamentRound.ROUND_OF_32
+        STAGE_ROUND_OF_16 -> TournamentRound.ROUND_OF_16
+        STAGE_QUARTER_FINAL -> TournamentRound.QUARTER_FINAL
+        STAGE_SEMI_FINAL -> TournamentRound.SEMI_FINAL
+        STAGE_FINAL -> TournamentRound.FINAL
+        STAGE_THIRD_PLACE_PLAYOFF -> TournamentRound.THIRD_PLACE_PLAYOFF
+        else -> TournamentRound.GROUP_STAGE
+    }
+
+    private companion object {
+        const val STATUS_TYPE_LIVE = "live"
+        const val STATUS_TYPE_SCHEDULED = "scheduled"
+        const val STATUS_TYPE_PAST = "past"
+
+        const val PERIOD_LIVE_PENALTIES = "P"
+        const val PERIOD_FINAL_AFTER_PENALTIES = "FT(P)"
+
+        const val STAGE_GROUP = "group_stage"
+        const val STAGE_ROUND_OF_32 = "round_of_32"
+        const val STAGE_ROUND_OF_16 = "round_of_16"
+        const val STAGE_QUARTER_FINAL = "quarter_final"
+        const val STAGE_SEMI_FINAL = "semi_final"
+        const val STAGE_FINAL = "final"
+        const val STAGE_THIRD_PLACE_PLAYOFF = "third_place_playoff"
+    }
+}
