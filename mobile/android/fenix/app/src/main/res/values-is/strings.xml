@@ -1675,6 +1675,14 @@
   <string name="pwa_site_controls_title_private">%1$s (huliðshamur)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Opna flipaleit</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Búa til flipahóp</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Dragðu einn flipa yfir á annan til að hópa þá.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Veldu marga flipa til að búa til hóp.</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Prófaðu flipahópa fyrir minna skrun og meiri einbeitingu</string>
   <!--
     Tab Group
 
@@ -1704,6 +1712,33 @@
     -->
     <item quantity="one">%1$d flipi</item>
     <item quantity="other">%1$d flipar</item>
+  </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Bæta við %1$s flipahóp, %2$d flipi, litur %3$s</item>
+    <item quantity="other">Bæta við %1$s flipahóp, %2$d flipar, litur %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Deila %1$s flipahópi með %2$d flipa.</item>
+    <item quantity="other">Deila %1$s flipahópi með %2$d flipum.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Skoða flipahóp, fella saman draghandfang</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s flipahópur með %2$d flipa, litur %3$s</item>
+    <item quantity="other">%1$s flipahópur með %2$d flipum, litur %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Eyða flipahópi?</string>

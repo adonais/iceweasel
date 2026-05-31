@@ -33,4 +33,11 @@
   <string name="protections_dashboard_category_social">Κοινωνικών δικτύων</string>
   <!-- Tracker category: Other trackers -->
   <string name="protections_dashboard_category_others">Άλλoi</string>
+  <!-- Title shown in the protection dashboard header next to the shield icon -->
+  <string name="mozac_protections_dashboard_trackers_blocked_this_week_title">Αποκλεισμένοι ιχνηλάτες αυτήν την εβδομάδα</string>
+  <!--
+    Title shown when no trackers have been blocked yet
+    %1$s will be replaced by the app name (e.g. Firefox Focus)
+  -->
+  <string name="mozac_protections_dashboard_empty_title">Το %1$s αποκλείει ιχνηλάτες κατά την περιήγησή σας.</string>
 </resources>

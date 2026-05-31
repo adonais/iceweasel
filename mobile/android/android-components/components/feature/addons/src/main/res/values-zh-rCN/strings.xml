@@ -10,7 +10,7 @@
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">访问您用于 %1$s 的数据</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
-  <string name="mozac_feature_addons_permissions_sites_in_domain_description">访问您用于 %1$s 域名的数据</string>
+  <string name="mozac_feature_addons_permissions_sites_in_domain_description">访问您用于 %1$s 域名的网站的数据</string>
   <!--
     When an add-on requires access to more than 4 sites, for example the add-on requires access for 5 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
     then we will show another collapsed entry saying "Access your data on another site".

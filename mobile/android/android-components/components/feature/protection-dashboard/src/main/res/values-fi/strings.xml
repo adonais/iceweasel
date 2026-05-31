@@ -9,6 +9,15 @@
 <resources>
   <!-- Title shown in the protection dashboard indicating the user is protected -->
   <string name="mozac_protections_dashboard_youre_protected">Olet suojattu</string>
+  <plurals name="mozac_protections_dashboard_trackers_blocked_this_week">
+    <!--
+      Label shown below the tracker count in the dashboard. The count is displayed separately
+      above this string and is used to select the correct plural form. Do not include the number in
+      the translation.
+    -->
+    <item quantity="one">Seurain estetty tällä viikolla</item>
+    <item quantity="other">Seuraimia estetty tällä viikolla</item>
+  </plurals>
   <plurals name="mozac_protections_dashboard_data_saved">
     <!-- Label showing data saved in megabytes. %1$d is the number of MB saved -->
     <item quantity="one">%1$d Mt säästetty</item>
