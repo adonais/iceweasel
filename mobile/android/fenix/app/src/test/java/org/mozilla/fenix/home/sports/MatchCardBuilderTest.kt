@@ -11,6 +11,7 @@ import org.mozilla.fenix.R
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import kotlin.test.assertIs
 
 class MatchCardBuilderTest {
 
@@ -380,7 +381,8 @@ class MatchCardBuilderTest {
     // region celebration outcome
 
     @Test
-    fun `viewerOutcome GIVEN decided final via buildForTeam THEN TournamentWinner`() {
+    fun `viewerOutcome GIVEN decided final via buildForTeam THEN TournamentWinner carries the winning team`() {
+        // CAN home, AUS away. Regulation 1-1, penalties 4-3 → CAN wins.
         val finalMatch = sportsMatch(
             id = 1L,
             stage = TournamentRound.FINAL,
@@ -395,11 +397,13 @@ class MatchCardBuilderTest {
         val cards = MatchCardBuilder.buildForTeam(
             TeamMatchesResult(previous = listOf(finalMatch), current = emptyList(), next = emptyList()),
         )
-        assertEquals(FollowedTeamOutcome.TournamentWinner, cards[0].viewerOutcome)
+        val outcome = cards[0].viewerOutcome
+        assertIs<FollowedTeamOutcome.TournamentWinner>(outcome)
+        assertEquals("CAN", outcome.winner.key)
     }
 
     @Test
-    fun `viewerOutcome GIVEN decided final via buildForNoTeam THEN TournamentWinner`() {
+    fun `viewerOutcome GIVEN decided final via buildForNoTeam THEN TournamentWinner carries the winning team`() {
         val finalMatch = sportsMatch(
             id = 1L,
             stage = TournamentRound.FINAL,
@@ -413,11 +417,32 @@ class MatchCardBuilderTest {
         )
         val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(finalMatch))
         assertEquals(1, cards.size)
-        assertEquals(FollowedTeamOutcome.TournamentWinner, cards[0].viewerOutcome)
+        val outcome = cards[0].viewerOutcome
+        assertIs<FollowedTeamOutcome.TournamentWinner>(outcome)
+        assertEquals("CAN", outcome.winner.key)
     }
 
     @Test
-    fun `viewerOutcome GIVEN decided third-place playoff THEN ThirdPlace`() {
+    fun `viewerOutcome GIVEN final where away team wins THEN winner is the away team`() {
+        // CAN home, AUS away. Regulation 0-2 → AUS wins outright.
+        val finalMatch = sportsMatch(
+            id = 1L,
+            stage = TournamentRound.FINAL,
+            homeKey = "CAN",
+            awayKey = "AUS",
+            status = MatchStatus.Final,
+            homeScore = 0,
+            awayScore = 2,
+        )
+        val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(finalMatch))
+        val outcome = cards[0].viewerOutcome
+        assertIs<FollowedTeamOutcome.TournamentWinner>(outcome)
+        assertEquals("AUS", outcome.winner.key)
+    }
+
+    @Test
+    fun `viewerOutcome GIVEN decided third-place playoff THEN ThirdPlace carries the winning team`() {
+        // USA home, PAR away. Regulation 8-5 → USA wins the playoff.
         val playoff = sportsMatch(
             id = 1L,
             stage = TournamentRound.THIRD_PLACE_PLAYOFF,
@@ -429,7 +454,9 @@ class MatchCardBuilderTest {
         )
         val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(playoff))
         assertEquals(1, cards.size)
-        assertEquals(FollowedTeamOutcome.ThirdPlace, cards[0].viewerOutcome)
+        val outcome = cards[0].viewerOutcome
+        assertIs<FollowedTeamOutcome.ThirdPlace>(outcome)
+        assertEquals("USA", outcome.winner.key)
     }
 
     @Test

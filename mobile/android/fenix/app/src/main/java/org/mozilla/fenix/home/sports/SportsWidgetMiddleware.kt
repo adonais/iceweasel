@@ -88,12 +88,20 @@ class SportsWidgetMiddleware(
         }
 
     private fun filterByTeam(result: TeamMatchesResult, codes: Set<String>): TeamMatchesResult {
-        fun List<SportsMatch>.involving(): List<SportsMatch> =
-            filter { it.homeTeam.key in codes || it.awayTeam.key in codes }
+        // The followed team's own matches PLUS the bracket-finishing matches (FINAL and
+        // THIRD_PLACE_PLAYOFF) so the universal celebration card surfaces in the pager
+        // even when the followed team isn't in them.
+        fun List<SportsMatch>.relevantFor(codes: Set<String>): List<SportsMatch> =
+            filter { match ->
+                match.homeTeam.key in codes ||
+                    match.awayTeam.key in codes ||
+                    match.stage == TournamentRound.FINAL ||
+                    match.stage == TournamentRound.THIRD_PLACE_PLAYOFF
+            }
         return TeamMatchesResult(
-            previous = result.previous.involving(),
-            current = result.current.involving(),
-            next = result.next.involving(),
+            previous = result.previous.relevantFor(codes),
+            current = result.current.relevantFor(codes),
+            next = result.next.relevantFor(codes),
         )
     }
 }
