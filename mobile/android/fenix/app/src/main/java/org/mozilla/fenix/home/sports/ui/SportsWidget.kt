@@ -22,12 +22,12 @@ import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.home.sports.CountrySelectorSource
 import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
 import org.mozilla.fenix.home.sports.Team
+import org.mozilla.fenix.home.sports.WORLD_CUP_KICKOFF_UTC
 import org.mozilla.fenix.home.sports.regionGrouping
 import org.mozilla.fenix.home.ui.horizontalMargin
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
 
-private const val WORLD_CUP_KICKOFF_DATE = "2026-06-11T00:00:00Z"
 private const val WIDE_LAYOUT_WIDTH_FRACTION = 0.7f
 private const val FULL_WIDTH_FRACTION = 1f
 private val SportsWidgetTopSpacing = 44.dp
@@ -78,7 +78,7 @@ fun SportsWidget(
     when {
         sportsWidgetState.isCountdownShown -> {
             CountdownPromoCard(
-                dateInUtc = WORLD_CUP_KICKOFF_DATE,
+                dateInUtc = WORLD_CUP_KICKOFF_UTC,
                 actionButtonLabelResId = R.string.sports_widget_view_schedule,
                 onClick = onViewSchedule,
                 onDismiss = onCountdownWidgetDismiss,
@@ -139,7 +139,7 @@ private fun sportsCardPages(
         if (isOneWeekToWorldCup) {
             add {
                 CountdownPromoCard(
-                    dateInUtc = WORLD_CUP_KICKOFF_DATE,
+                    dateInUtc = WORLD_CUP_KICKOFF_UTC,
                     actionButtonLabelResId = R.string.sports_widget_country_selector_title,
                     onClick = { onFollowTeam(CountrySelectorSource.COUNTDOWN_CARD_FOLLOW_TEAM_BUTTON) },
                     onDismiss = null,

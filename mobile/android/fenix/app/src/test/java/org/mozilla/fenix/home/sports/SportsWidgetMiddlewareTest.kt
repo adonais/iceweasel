@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.sports
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -18,6 +19,7 @@ import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SportsWidgetMiddlewareTest {
 
     private val zone = ZoneId.of("America/New_York")
@@ -27,7 +29,7 @@ class SportsWidgetMiddlewareTest {
         val repo = StubRepository(Result.success(resultWithMatches()))
         val store = appStore(repo)
 
-        store.dispatchAndAwait(SportsWidgetAction.FetchMatches)
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
 
         assertEquals(1, repo.fetchCount)
         assertTrue(store.state.sportsWidgetState.matchCardStates.isNotEmpty())
@@ -38,7 +40,7 @@ class SportsWidgetMiddlewareTest {
         val repo = StubRepository(Result.failure(RuntimeException("boom")))
         val store = appStore(repo)
 
-        store.dispatchAndAwait(SportsWidgetAction.FetchMatches)
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
 
         assertEquals(SportCardErrorState.LoadFailed, store.state.sportsWidgetState.errorState)
     }
@@ -48,7 +50,7 @@ class SportsWidgetMiddlewareTest {
         val repo = StubRepository(Result.success(resultWithMatches()))
         val store = appStore(repo)
 
-        store.dispatchAndAwait(SportsWidgetAction.CountriesSelected(setOf("USA")))
+        dispatchAndAwait(store, SportsWidgetAction.CountriesSelected(setOf("USA")))
 
         assertEquals(1, repo.fetchCount)
     }
@@ -58,9 +60,9 @@ class SportsWidgetMiddlewareTest {
         val repo = StubRepository(Result.success(resultWithMatches()))
         val store = appStore(repo)
 
-        store.dispatchAndAwait(SportsWidgetAction.FetchMatches)
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
         val baselineFetches = repo.fetchCount
-        store.dispatchAndAwait(SportsWidgetAction.CountriesSelected(setOf("USA")))
+        dispatchAndAwait(store, SportsWidgetAction.CountriesSelected(setOf("MEX")))
 
         assertEquals(baselineFetches, repo.fetchCount)
         assertTrue(store.state.sportsWidgetState.matchCardStates.isNotEmpty())
@@ -71,8 +73,8 @@ class SportsWidgetMiddlewareTest {
         val repo = StubRepository(Result.success(resultWithMatches()))
         val store = appStore(repo)
 
-        store.dispatchAndAwait(SportsWidgetAction.FetchMatches)
-        store.dispatchAndAwait(SportsWidgetAction.CountriesSelected(setOf("JPN")))
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        dispatchAndAwait(store, SportsWidgetAction.CountriesSelected(setOf("JPN")))
 
         // No matches in our fixture involve JPN, so buildForTeam yields zero cards.
         assertEquals(0, store.state.sportsWidgetState.matchCardStates.size)
@@ -83,7 +85,8 @@ class SportsWidgetMiddlewareTest {
         val repo = StubRepository(Result.success(resultWithMatches()))
         val store = appStore(repo)
 
-        store.dispatchAndAwait(
+        dispatchAndAwait(
+            store,
             SportsWidgetAction.OneWeekToWorldCupOverrideUpdated(isOneWeekToWorldCupOverride = true),
         )
 
@@ -96,7 +99,8 @@ class SportsWidgetMiddlewareTest {
         val repo = StubRepository(Result.success(resultWithMatches()))
         val store = appStore(repo)
 
-        store.dispatchAndAwait(
+        dispatchAndAwait(
+            store,
             SportsWidgetAction.WorldCupStartedOverrideUpdated(hasWorldCupStartedOverride = true),
         )
 
@@ -140,8 +144,10 @@ class SportsWidgetMiddlewareTest {
         )
     }
 
-    private suspend fun AppStore.dispatchAndAwait(action: SportsWidgetAction) {
-        dispatch(action).join()
+    private fun TestScope.dispatchAndAwait(store: AppStore, action: SportsWidgetAction) {
+        store.dispatch(action)
+        // Drain the middleware's launched coroutine before assertions.
+        testScheduler.advanceUntilIdle()
     }
 
     private class StubRepository(private val response: Result<TeamMatchesResult>) : SportsRepository {

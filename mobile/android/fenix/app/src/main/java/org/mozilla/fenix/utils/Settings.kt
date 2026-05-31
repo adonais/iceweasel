@@ -2524,6 +2524,14 @@ class Settings(
     )
 
     /**
+     * Nimbus override: when true, treat the user as being within one week of the World Cup
+     * kickoff regardless of the device date. The natural date-based check still applies when
+     * false (the default).
+     */
+    val forceOneWeekToWorldCup: Boolean
+        get() = FxNimbus.features.homepageSportsWidget.value().forceOneWeekToWorldCup
+
+    /**
      * Indicates if the Homepage Sports Widget should be visible on the homepage.
      * This is the user-controlled visibility toggle, independent of the
      * [enableHomepageSportsWidget] feature flag.

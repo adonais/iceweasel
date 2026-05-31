@@ -379,6 +379,7 @@ class Components(private val context: Context) {
         isVisible = settings.showHomepageSportsWidget,
         isFeatureEnabled = settings.enableHomepageSportsWidget,
         isCountdownWidgetVisible = settings.showHomepageCountdownWidget,
+        forceOneWeekToWorldCup = settings.forceOneWeekToWorldCup,
     )
 
     val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value, analytics.crashReporter) }

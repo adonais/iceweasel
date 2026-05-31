@@ -16,6 +16,20 @@ import java.time.format.DateTimeParseException
 private const val MILLIS_PER_MINUTE = 60_000L
 private const val MINS_PER_DAY = 1440L
 private const val MINS_PER_HOUR = 60L
+private const val ONE_WEEK_DAYS = 7L
+
+/**
+ * Date of the World Cup tournament kickoff. Use this for any local-date comparisons
+ * (e.g. "is today after kickoff?") and to derive the ISO `yyyy-MM-dd` string accepted
+ * by the Merino WCS `date` query parameter.
+ */
+val WORLD_CUP_KICKOFF: LocalDate = LocalDate.of(2026, 6, 11)
+
+/**
+ * ISO-8601 timestamp for the World Cup kickoff at midnight UTC. Use this for the
+ * countdown widget's `dateInUtc` input, which counts down to a precise moment.
+ */
+const val WORLD_CUP_KICKOFF_UTC: String = "2026-06-11T00:00:00Z"
 
 internal fun countdownFlow(
     utcDate: String,
@@ -68,23 +82,14 @@ private fun parseUtcDate(utcDate: String): Long? = try {
  *
  * @param today Source of "today's" date. Defaults to the device's date.
  */
-fun hasWorldCupStarted(today: () -> LocalDate = LocalDate::now): Boolean {
-    val worldCupYear = 2026
-    val worldCupMonth = 6
-    val worldCupDay = 11
-    return today() >= LocalDate.of(worldCupYear, worldCupMonth, worldCupDay)
-}
+fun hasWorldCupStarted(today: () -> LocalDate = LocalDate::now): Boolean =
+    today() >= WORLD_CUP_KICKOFF
 
 /**
- * Checks if the world cup starts in one week.
- * Returns true only during the window June 4–10, 2026 (i.e. on or after June 4 but before kickoff).
+ * Checks if the world cup starts within one week.
+ * Returns true only during the seven-day window leading up to (but not including) kickoff.
  *
  * @param today Source of "today's" date. Defaults to the device's date.
  */
-fun isOneWeekToWorldCup(today: () -> LocalDate = LocalDate::now): Boolean {
-    val worldCupYear = 2026
-    val worldCupMonth = 6
-    val oneWeekToWorldCupDay = 4
-    return today() >= LocalDate.of(worldCupYear, worldCupMonth, oneWeekToWorldCupDay) &&
-        !hasWorldCupStarted(today)
-}
+fun isOneWeekToWorldCup(today: () -> LocalDate = LocalDate::now): Boolean =
+    today() >= WORLD_CUP_KICKOFF.minusDays(ONE_WEEK_DAYS) && !hasWorldCupStarted(today)
