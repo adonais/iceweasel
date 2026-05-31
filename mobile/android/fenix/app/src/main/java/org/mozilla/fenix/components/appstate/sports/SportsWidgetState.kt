@@ -13,6 +13,8 @@ import org.mozilla.fenix.home.sports.isOneWeekToWorldCup
  * State of the sports widget on the homepage.
  *
  * @property countriesSelected Set of ISO codes of the selected countries, empty if none.
+ * @property eliminatedCountries Set of ISO codes of teams that have been eliminated from the
+ * tournament, empty if none. Derived from match data.
  * @property hasSkippedFollowTeam Whether the user skipped the "Follow your team" card.
  * @property isVisible Whether the sports widget is visible on the homepage.
  * @property isFeatureEnabled Whether the Homepage Sports Widget feature is enabled.
@@ -27,6 +29,7 @@ import org.mozilla.fenix.home.sports.isOneWeekToWorldCup
  */
 data class SportsWidgetState(
     val countriesSelected: Set<String> = emptySet(),
+    val eliminatedCountries: Set<String> = emptySet(),
     val hasSkippedFollowTeam: Boolean = false,
     val isVisible: Boolean = true,
     val isFeatureEnabled: Boolean = false,

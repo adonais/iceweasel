@@ -11,10 +11,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -28,9 +32,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -41,6 +48,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.badge.CheckmarkBadge
+import mozilla.components.compose.base.badge.CheckmarkBadgeColors
+import mozilla.components.compose.base.theme.information
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BottomSheetHandle
@@ -53,6 +62,9 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * A bottom sheet that displays a country selector for the sports tournament.
  *
  * @param selectedCountryCode The ISO code of the currently selected country, or null if none.
+ * @param eliminatedCountryCodes ISO codes of teams that have been eliminated from the tournament.
+ * Eliminated flags are dimmed and not selectable, but the currently selected country can always
+ * be tapped to deselect.
  * @param onCountrySelected Callback when a country is selected, with the country's ISO code.
  * @param onDismiss Callback when the bottom sheet is dismissed.
  */
@@ -60,16 +72,20 @@ import org.mozilla.fenix.theme.FirefoxTheme
 @Composable
 fun SportsCountrySelectorBottomSheet(
     selectedCountryCode: String?,
+    eliminatedCountryCodes: Set<String>,
     onCountrySelected: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val topPadding = 72.dp
 
     LaunchedEffect(Unit) {
         sheetState.show()
     }
 
     ModalBottomSheet(
+        modifier = Modifier.padding(top = topPadding),
+        contentWindowInsets = { WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom) },
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
@@ -85,6 +101,7 @@ fun SportsCountrySelectorBottomSheet(
     ) {
         CountrySelectorContent(
             selectedCountryCode = selectedCountryCode,
+            eliminatedCountryCodes = eliminatedCountryCodes,
             onCountrySelected = onCountrySelected,
         )
     }
@@ -93,6 +110,7 @@ fun SportsCountrySelectorBottomSheet(
 @Composable
 private fun CountrySelectorContent(
     selectedCountryCode: String?,
+    eliminatedCountryCodes: Set<String>,
     onCountrySelected: (String) -> Unit,
 ) {
     Column(
@@ -119,6 +137,7 @@ private fun CountrySelectorContent(
             RegionSection(
                 region = region,
                 selectedCountryCode = selectedCountryCode,
+                eliminatedCountryCodes = eliminatedCountryCodes,
                 onCountrySelected = onCountrySelected,
             )
 
@@ -131,6 +150,7 @@ private fun CountrySelectorContent(
 private fun RegionSection(
     region: Region,
     selectedCountryCode: String?,
+    eliminatedCountryCodes: Set<String>,
     onCountrySelected: (String) -> Unit,
 ) {
     Text(
@@ -159,6 +179,7 @@ private fun RegionSection(
                 CountryFlagItem(
                     team = team,
                     isSelected = team.key == selectedCountryCode,
+                    isEliminated = team.key in eliminatedCountryCodes,
                     onClick = { onCountrySelected(team.key) },
                 )
             }
@@ -170,11 +191,17 @@ private fun RegionSection(
 private fun CountryFlagItem(
     team: Team,
     isSelected: Boolean,
+    isEliminated: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isClickable = !isEliminated || isSelected
+    val grayscaleFilter = remember {
+        ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+    }
+
     Column(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier.clickable(enabled = isClickable, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
@@ -183,6 +210,7 @@ private fun CountryFlagItem(
             Image(
                 painter = painterResource(team.flagResId),
                 contentDescription = null,
+                colorFilter = if (isEliminated) grayscaleFilter else null,
                 modifier = Modifier
                     .matchParentSize()
                     .clip(RoundedCornerShape(4.dp)),
@@ -191,9 +219,13 @@ private fun CountryFlagItem(
             if (isSelected) {
                 CheckmarkBadge(
                     contentDescription = null,
+                    colors = CheckmarkBadgeColors(
+                        containerColor = MaterialTheme.colorScheme.information,
+                        checkmarkColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 8.dp, y = 8.dp),
+                        .align(Alignment.TopEnd)
+                        .offset(x = 8.dp, y = (-8).dp),
                 )
             }
         }
@@ -220,6 +252,7 @@ private fun CountrySelectorContentPreview() {
         Surface {
             CountrySelectorContent(
                 selectedCountryCode = "USA",
+                eliminatedCountryCodes = setOf("MEX", "GHA"),
                 onCountrySelected = {},
             )
         }

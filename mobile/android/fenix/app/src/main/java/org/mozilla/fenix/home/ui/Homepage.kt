@@ -303,11 +303,17 @@ internal fun Homepage(
                             Spacer(Modifier.height(bottomPadding.dp))
 
                             if (showSportsCountrySelector) {
+                                val selectedCountryCode = sportsWidgetState.countriesSelected.firstOrNull()
                                 SportsCountrySelectorBottomSheet(
-                                    selectedCountryCode = sportsWidgetState.countriesSelected.firstOrNull(),
+                                    selectedCountryCode = selectedCountryCode,
+                                    eliminatedCountryCodes = sportsWidgetState.eliminatedCountries,
                                     onCountrySelected = { countryCode ->
-                                        interactor.onCountriesSelected(setOf(countryCode))
-                                        showSportsCountrySelector = false
+                                        val selection = if (countryCode == selectedCountryCode) {
+                                            emptySet()
+                                        } else {
+                                            setOf(countryCode)
+                                        }
+                                        interactor.onCountriesSelected(selection)
                                     },
                                     onDismiss = { showSportsCountrySelector = false },
                                 )
