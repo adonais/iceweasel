@@ -111,6 +111,7 @@ fun MatchCard(
             if (relatedMatches.isNotEmpty()) {
                 RelatedMatchesSection(
                     matches = relatedMatches,
+                    round = state.round,
                     isTeamSelected = isTeamSelected,
                     onMatchClicked = onMatchClicked,
                 )

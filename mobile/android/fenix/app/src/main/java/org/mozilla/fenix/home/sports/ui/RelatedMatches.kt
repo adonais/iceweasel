@@ -35,12 +35,14 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
+import org.mozilla.fenix.home.sports.TournamentRound
 import org.mozilla.fenix.home.sports.fake.FakeSportsPreview
 import org.mozilla.fenix.theme.FirefoxTheme
 
 @Composable
 internal fun RelatedMatchesSection(
     matches: List<Match>,
+    round: TournamentRound,
     isTeamSelected: Boolean,
     onMatchClicked: (String?, String?, String?) -> Unit,
     modifier: Modifier = Modifier,
@@ -57,6 +59,7 @@ internal fun RelatedMatchesSection(
         matches.forEachIndexed { index, match ->
             RelatedMatchRow(
                 match = match,
+                round = round,
                 isTeamSelected = isTeamSelected,
                 onMatchClicked = onMatchClicked,
                 positionInList = index,
@@ -68,6 +71,7 @@ internal fun RelatedMatchesSection(
 @Composable
 internal fun RelatedMatchRow(
     match: Match,
+    round: TournamentRound,
     isTeamSelected: Boolean,
     onMatchClicked: (String?, String?, String?) -> Unit,
     positionInList: Int,
@@ -81,7 +85,14 @@ internal fun RelatedMatchRow(
     } else {
         null
     }
-    val group = groupDisplayName(group = match.home?.group)
+    // Group label only makes sense on group-stage cards. In knockout rounds the teams
+    // come from different groups so home.group would be misleading — fall back to the
+    // match date instead.
+    val group = if (round == TournamentRound.GROUP_STAGE) {
+        groupDisplayName(group = match.home?.group ?: match.away?.group)
+    } else {
+        null
+    }
     val upcomingPrefix = if (isTeamSelected) match.date else group ?: match.date
     val rowContentDescription = buildRowContentDescription(
         homeName = homeName,
@@ -127,15 +138,12 @@ internal fun RelatedMatchRow(
 
         Spacer(Modifier.weight(1f))
 
-        if (scoreText != null) {
-            Text(text = scoreText, style = FirefoxTheme.typography.subtitle2)
-        } else if (isTeamSelected || group != null) {
-            Text(
-                text = "$upcomingPrefix · ${match.time}",
-                style = FirefoxTheme.typography.body2,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        RelatedMatchMiddleText(
+            scoreText = scoreText,
+            hasPrefix = isTeamSelected || group != null,
+            upcomingPrefix = upcomingPrefix,
+            time = match.time,
+        )
 
         Spacer(Modifier.weight(1f))
 
@@ -151,6 +159,29 @@ internal fun RelatedMatchRow(
             modifier = Modifier.size(width = 30.dp, height = 20.dp),
         )
     }
+}
+
+// Middle text of a related-match row: score when the match has one, otherwise the
+// kickoff time — optionally with a date/group prefix when there's useful framing.
+// No-team knockouts have neither a useful prefix (group is irrelevant) nor a
+// selected-team date framing, so the row falls through to just the kickoff time.
+@Composable
+private fun RelatedMatchMiddleText(
+    scoreText: String?,
+    hasPrefix: Boolean,
+    upcomingPrefix: String,
+    time: String,
+) {
+    if (scoreText != null) {
+        Text(text = scoreText, style = FirefoxTheme.typography.subtitle2)
+        return
+    }
+    val displayText = if (hasPrefix) "$upcomingPrefix · $time" else time
+    Text(
+        text = displayText,
+        style = FirefoxTheme.typography.body2,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable
@@ -231,7 +262,12 @@ private fun RelatedMatchesSectionPreview(
 ) {
     FirefoxTheme {
         Surface {
-            RelatedMatchesSection(matches = state.matches, isTeamSelected = true, onMatchClicked = { _, _, _ -> })
+            RelatedMatchesSection(
+                matches = state.matches,
+                round = TournamentRound.GROUP_STAGE,
+                isTeamSelected = true,
+                onMatchClicked = { _, _, _ -> },
+            )
         }
     }
 }
