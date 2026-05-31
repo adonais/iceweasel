@@ -152,16 +152,19 @@ internal fun Homepage(
 
             when (val headerState = state.headerState) {
                 is HeaderState.Experimental.Normal -> {
-                    val components = components
+                    val settings = components.settings
 
                     ExperimentalHomepageHeader(
                         wordmarkTextColor = headerState.wordmarkTextColor,
                         showStoriesButton = headerState.showStoriesButton,
                         showButtonAnimation = headerState.showButtonAnimation,
+                        isSportsWidgetEnabled = settings.enableHomepageSportsWidget,
                         onPrivateModeTapped = { browsingModeChanged(BrowsingMode.Private) },
                         onStoriesTapped = { interactor.onDiscoverMoreClicked() },
-                        onNewsAnimationShown = { components.settings.recordNewsButtonAnimationShown() },
-                        onLogoClicked = {},
+                        onNewsAnimationShown = { settings.recordNewsButtonAnimationShown() },
+                        onLogoClicked = {
+                            if (settings.showHomepageSportsWidget) showSportsCountrySelector = true
+                        },
                         onLogoLongClicked = interactor::onLogoLongClicked,
                     )
                 }
@@ -173,12 +176,17 @@ internal fun Homepage(
                 }
 
                 is HeaderState.Normal -> {
+                    val settings = components.settings
+
                     HomepageHeader(
                         wordmarkTextColor = headerState.wordmarkTextColor,
                         privateBrowsingButtonColor = headerState.privateBrowsingButtonColor,
                         browsingMode = state.browsingMode,
                         browsingModeChanged = browsingModeChanged,
-                        onLogoClicked = {},
+                        isSportsWidgetEnabled = settings.enableHomepageSportsWidget,
+                        onLogoClicked = {
+                            if (settings.showHomepageSportsWidget) showSportsCountrySelector = true
+                        },
                         onLogoLongClicked = interactor::onLogoLongClicked,
                     )
                 }

@@ -27,6 +27,7 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 internal fun WordmarkLogo(
     onLogoClicked: () -> Unit,
     onLogoLongClicked: () -> Unit,
+    isSportsWidgetEnabled: Boolean,
 ) {
     Image(
         modifier = Modifier
@@ -37,7 +38,11 @@ internal fun WordmarkLogo(
             }
             .combinedClickable(onClick = onLogoClicked, onLongClick = onLogoLongClicked)
             .padding(end = 10.dp),
-        painter = painterResource(getAttr(R.attr.fenixWordmarkLogo)),
+        painter = painterResource(
+            getAttr(
+                if (isSportsWidgetEnabled) R.attr.fenixWordmarkSportLogo else R.attr.fenixWordmarkLogo,
+            ),
+        ),
         contentDescription = null,
     )
 }
