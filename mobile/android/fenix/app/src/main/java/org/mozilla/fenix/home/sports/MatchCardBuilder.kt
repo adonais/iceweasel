@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.home.sports
 
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
@@ -48,21 +47,13 @@ object MatchCardBuilder {
     }
 
     /**
-     * Path 2 — no team selected. Renders the next-available day's matches as a single
-     * card during the group stage, and one card per date during knockout rounds.
+     * Path 2 — no team selected. Surfaces the full schedule available in the response as
+     * one card per match day, in chronological order. Every match on a given day is rendered
+     * inside that day's card; the round label is derived from that day's matches.
      */
-    fun buildForNoTeam(
-        matches: List<SportsMatch>,
-        today: LocalDate = LocalDate.now(),
-    ): List<MatchCard> {
+    fun buildForNoTeam(matches: List<SportsMatch>): List<MatchCard> {
         if (matches.isEmpty()) return emptyList()
-        val sorted = matches.sortedBy { it.date }
-        val cards = if (sorted.first().stage == TournamentRound.GROUP_STAGE) {
-            listOf(buildNoTeamGroupCard(sorted, today))
-        } else {
-            buildNoTeamKnockoutCards(sorted)
-        }
-        return cards.orderedForPager()
+        return buildNoTeamPerDayCards(matches.sortedBy { it.date }).orderedForPager()
     }
 
     private fun buildGroupStageCard(
@@ -108,31 +99,12 @@ object MatchCardBuilder {
         )
     }
 
-    private fun buildNoTeamGroupCard(
-        sortedMatches: List<SportsMatch>,
-        today: LocalDate,
-    ): MatchCard {
-        val targetDay = sortedMatches
-            .map { it.date.toLocalDate() }
-            .firstOrNull { !it.isBefore(today) }
-            ?: sortedMatches.last().date.toLocalDate()
-        val dayMatches = sortedMatches.filter { it.date.toLocalDate() == targetDay }
-        val (live, others) = dayMatches.partition { it.matchStatus.isLive() }
-        val liveUi = live.map { it.toMatch() }
-        val relatedUi = others.map { it.toMatch() }
-        return MatchCard(
-            matches = liveUi,
-            round = TournamentRound.GROUP_STAGE,
-            relatedMatches = relatedUi,
-        )
-    }
-
-    private fun buildNoTeamKnockoutCards(sortedMatches: List<SportsMatch>): List<MatchCard> {
-        val round = sortedMatches.first().stage
-        return sortedMatches
+    private fun buildNoTeamPerDayCards(sortedMatches: List<SportsMatch>): List<MatchCard> =
+        sortedMatches
             .groupBy { it.date.toLocalDate() }
             .toSortedMap()
             .map { (_, dayMatches) ->
+                val round = dayMatches.first().stage
                 val uiMatches = dayMatches.map { it.toMatch() }
                 MatchCard(
                     matches = uiMatches,
@@ -141,7 +113,6 @@ object MatchCardBuilder {
                     relatedMatches = emptyList(),
                 )
             }
-    }
 }
 
 private enum class CardBucket { LIVE, PAST, UPCOMING }
