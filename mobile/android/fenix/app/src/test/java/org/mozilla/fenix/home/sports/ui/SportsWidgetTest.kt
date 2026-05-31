@@ -9,6 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.home.sports.MatchCard
 import org.mozilla.fenix.home.sports.SportCardErrorState
+import org.mozilla.fenix.home.sports.SportsCardType
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.fake.FakeMatchCardScenario
 
@@ -109,6 +110,40 @@ class SportsWidgetTest {
 
         assertTrue(result.errorPageIndices.isEmpty())
         assertEquals(cached.size + 1, result.pages.size)
+    }
+
+    // --- "Keep tabs on the World Cup" promo suppression when a champions card is present ---
+
+    @Test
+    fun `GIVEN follow-team promo eligible and a champions card present THEN the keep-tabs promo is suppressed`() {
+        val champions = FakeMatchCardScenario.SingleChampionCard.build()
+
+        val result = invokeSportsCardPages(
+            isOneWeekToWorldCup = false,
+            isFollowTeamsCardShown = true,
+            matchCardStates = champions,
+            errorState = null,
+        )
+
+        assertTrue(result.pages.none { it.type == SportsCardType.FOLLOW_TEAM_PROMO })
+        // Only the champions card(s) remain; no leading promo page is prepended.
+        assertEquals(champions.size, result.pages.size)
+        assertTrue(result.championsPageIndices.isNotEmpty())
+    }
+
+    @Test
+    fun `GIVEN follow-team promo eligible and no champions card THEN the keep-tabs promo is shown`() {
+        val scheduled = FakeMatchCardScenario.Scheduled.build()
+
+        val result = invokeSportsCardPages(
+            isOneWeekToWorldCup = false,
+            isFollowTeamsCardShown = true,
+            matchCardStates = scheduled,
+            errorState = null,
+        )
+
+        assertTrue(result.pages.any { it.type == SportsCardType.FOLLOW_TEAM_PROMO })
+        assertEquals(scheduled.size + 1, result.pages.size)
     }
 
     private fun invokeSportsCardPages(
