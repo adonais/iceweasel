@@ -7,10 +7,14 @@ package org.mozilla.fenix.debugsettings.sportswidget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -24,11 +28,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -131,8 +138,15 @@ private fun SportsWidgetDebugToolContent(
 @Composable
 private fun MockServerSection(appStore: AppStore) {
     val settings = LocalContext.current.settings()
+    val focusManager = LocalFocusManager.current
     var useMockServer by remember { mutableStateOf(settings.useMockWorldCupServer) }
     var sessionId by remember { mutableStateOf(settings.mockWorldCupServerSession) }
+
+    val applySession = {
+        settings.mockWorldCupServerSession = sessionId
+        appStore.dispatch(SportsWidgetAction.FetchMatches)
+        focusManager.clearFocus()
+    }
 
     SwitchListItem(
         label = stringResource(R.string.debug_drawer_sports_widget_tool_use_mock_server),
@@ -141,24 +155,41 @@ private fun MockServerSection(appStore: AppStore) {
         onClick = { checked ->
             useMockServer = checked
             settings.useMockWorldCupServer = checked
-            // Re-trigger a fetch so the change is visible immediately.
-            appStore.dispatch(SportsWidgetAction.FetchMatches)
+            // Skip the fetch when turning the mock server ON — the session id is still
+            // pending and we don't want to hit the API against a half-typed value;
+            // the Apply button drives that fetch instead. When turning OFF, refetch
+            // immediately so the widget swaps back to real-server data without
+            // requiring the user to navigate away and back.
+            if (!checked) {
+                appStore.dispatch(SportsWidgetAction.FetchMatches)
+            }
         },
     )
 
     if (useMockServer) {
-        OutlinedTextField(
-            value = sessionId,
-            onValueChange = { newValue ->
-                sessionId = newValue
-                settings.mockWorldCupServerSession = newValue
-            },
-            label = { Text(stringResource(R.string.debug_drawer_sports_widget_tool_mock_server_session)) },
-            singleLine = true,
+        // Hold the entered session as draft state — only persist + refetch on Apply so
+        // every keystroke doesn't trigger a network call against a half-typed session id.
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = FirefoxTheme.layout.space.static200),
-        )
+            horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static100),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            OutlinedTextField(
+                value = sessionId,
+                onValueChange = { sessionId = it },
+                label = { Text(stringResource(R.string.debug_drawer_sports_widget_tool_mock_server_session)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { applySession() }),
+                modifier = Modifier.weight(1f),
+            )
+
+            Button(onClick = { applySession() }) {
+                Text(stringResource(R.string.debug_drawer_sports_widget_tool_apply_session))
+            }
+        }
     }
 }
 
