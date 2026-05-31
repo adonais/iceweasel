@@ -15520,6 +15520,120 @@ world_cup:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+  country_selected:
+    type: event
+    description: |
+      A user has selected a country from the country selector bottom sheet
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D300279
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  skip_follow_team_clicked:
+    type: event
+    description: |
+      A user has tapped the "Skip" button and decided not to follow a team
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D300279
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  sports_widget_displayed:
+    type: event
+    description: |
+      The sports widget is displayed
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D300279
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  sports_widget_dismissed:
+    type: event
+    description: |
+      A user has dismissed the sports widget from the sports widget menu
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D300279
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  refresh_clicked:
+    type: event
+    description: |
+      A user has clicked the refresh button
+    extra_keys:
+      source:
+        description: |
+          Where the interaction occurred. One of: live_match_header, live_match_error_button.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D300279
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  get_custom_wallpaper_clicked:
+    type: event
+    description: |
+      A user has clicked the "Get custom wallpaper" menu item
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D300279
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  match_clicked:
+    type: event
+    description: |
+      A user has clicked on a match
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D300279
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  country_selector_displayed:
+    type: event
+    description: |
+      The country selector bottom sheet is displayed
+    extra_keys:
+      source:
+        description: |
+          Where the interaction occurred. One of: sports_logo, countdown_card_follow_team_button, keep_tabs_card_follow_team_button, sports_widget_menu.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D300279
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
 
 vpn:
   onboarding_shown:

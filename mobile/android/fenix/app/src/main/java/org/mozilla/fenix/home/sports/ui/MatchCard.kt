@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
+import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
 import org.mozilla.fenix.home.sports.Team
@@ -46,7 +47,7 @@ import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
 fun MatchCard(
     state: MatchCardState,
     isTeamSelected: Boolean,
-    onRefresh: () -> Unit,
+    onRefresh: (LiveMatchRefreshSource) -> Unit,
     onMatchClicked: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {

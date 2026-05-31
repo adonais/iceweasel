@@ -77,6 +77,7 @@ import org.mozilla.fenix.home.recentvisits.view.RecentlyVisited
 import org.mozilla.fenix.home.sessioncontrol.CollectionInteractor
 import org.mozilla.fenix.home.sessioncontrol.MessageCardInteractor
 import org.mozilla.fenix.home.setup.ui.SetupChecklist
+import org.mozilla.fenix.home.sports.CountrySelectorSource
 import org.mozilla.fenix.home.sports.ui.SportsCountrySelectorBottomSheet
 import org.mozilla.fenix.home.sports.ui.SportsWidget
 import org.mozilla.fenix.home.store.HeaderState
@@ -181,7 +182,10 @@ internal fun Homepage(
                         browsingModeChanged = browsingModeChanged,
                         isSportsWidgetEnabled = settings.enableHomepageSportsWidget,
                         onLogoClicked = {
-                            if (settings.showHomepageSportsWidget) showSportsCountrySelector = true
+                            if (settings.showHomepageSportsWidget) {
+                                interactor.onCountrySelectorShown(CountrySelectorSource.SPORTS_LOGO)
+                                showSportsCountrySelector = true
+                            }
                         },
                         onLogoLongClicked = interactor::onLogoLongClicked,
                     )
@@ -216,15 +220,21 @@ internal fun Homepage(
                             }
 
                             if (sportsWidgetState.isShown) {
+                                interactor.onSportsWidgetShown()
                                 SportsWidget(
                                     sportsWidgetState = sportsWidgetState,
                                     onDismiss = interactor::onSportsWidgetDismissed,
                                     onCountdownWidgetDismiss = interactor::onCountdownWidgetDismissed,
                                     onViewSchedule = interactor::onViewScheduleClicked,
-                                    onFollowTeam = { showSportsCountrySelector = true },
+                                    onFollowTeam = { source ->
+                                        interactor.onCountrySelectorShown(source)
+                                        showSportsCountrySelector = true
+                                    },
                                     onSkip = interactor::onSkippedFollowTeam,
                                     onGetCustomWallpaper = interactor::onGetCustomWallpaperClicked,
-                                    onRefresh = interactor::onRefreshClicked,
+                                    onRefresh = { source ->
+                                        interactor.onRefreshClicked(source)
+                                    },
                                     onMatchClicked = { homeTeam, awayTeam ->
                                         interactor.onMatchClicked(homeTeam, awayTeam)
                                     },

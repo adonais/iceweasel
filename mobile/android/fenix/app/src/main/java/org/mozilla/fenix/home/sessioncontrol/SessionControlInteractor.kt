@@ -27,6 +27,8 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGrou
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHighlight
 import org.mozilla.fenix.home.recentvisits.controller.RecentVisitsController
 import org.mozilla.fenix.home.search.HomeSearchController
+import org.mozilla.fenix.home.sports.CountrySelectorSource
+import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
 import org.mozilla.fenix.home.sports.SportsController
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerController
 import org.mozilla.fenix.home.toolbar.ToolbarController
@@ -435,8 +437,8 @@ class SessionControlInteractor(
         sportsController.handleViewScheduleClicked()
     }
 
-    override fun onRefreshClicked() {
-        sportsController.handleRefreshClicked()
+    override fun onRefreshClicked(source: LiveMatchRefreshSource) {
+        sportsController.handleRefreshClicked(source)
     }
 
     override fun onCountdownWidgetDismissed() {
@@ -449,5 +451,13 @@ class SessionControlInteractor(
 
     override fun onMatchClicked(homeTeam: String, awayTeam: String) {
         sportsController.handleMatchClicked(homeTeam = homeTeam, awayTeam = awayTeam)
+    }
+
+    override fun onSportsWidgetShown() {
+        sportsController.handleSportsWidgetShown()
+    }
+
+    override fun onCountrySelectorShown(source: CountrySelectorSource) {
+        sportsController.handleCountrySelectorShown(source)
     }
 }

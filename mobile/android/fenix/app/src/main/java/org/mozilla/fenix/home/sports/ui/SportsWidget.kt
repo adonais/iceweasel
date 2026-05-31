@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
+import org.mozilla.fenix.home.sports.CountrySelectorSource
+import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.regionGrouping
 import org.mozilla.fenix.home.ui.horizontalMargin
@@ -52,10 +54,10 @@ fun SportsWidget(
     onDismiss: () -> Unit,
     onCountdownWidgetDismiss: () -> Unit,
     onViewSchedule: () -> Unit,
-    onFollowTeam: () -> Unit,
+    onFollowTeam: (CountrySelectorSource) -> Unit,
     onSkip: () -> Unit,
     onGetCustomWallpaper: () -> Unit,
-    onRefresh: () -> Unit,
+    onRefresh: (LiveMatchRefreshSource) -> Unit,
     onMatchClicked: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -100,6 +102,7 @@ fun SportsWidget(
                 sportsWidgetState.matchCardStates,
                 onFollowTeam,
                 onRefresh,
+                onMatchClicked,
             ) {
                 sportsCardPages(
                     isOneWeekToWorldCup = sportsWidgetState.isOneWeekToWorldCup,
@@ -128,8 +131,8 @@ private fun sportsCardPages(
     isFollowTeamsCardShown: Boolean,
     selectedTeam: Team?,
     matchCardStates: List<MatchCardState>,
-    onFollowTeam: () -> Unit,
-    onRefresh: () -> Unit,
+    onFollowTeam: (CountrySelectorSource) -> Unit,
+    onRefresh: (LiveMatchRefreshSource) -> Unit,
     onMatchClicked: (String, String) -> Unit,
 ): List<@Composable () -> Unit> = buildList {
     if (isFollowTeamsCardShown) {
@@ -138,7 +141,7 @@ private fun sportsCardPages(
                 CountdownPromoCard(
                     dateInUtc = WORLD_CUP_KICKOFF_DATE,
                     actionButtonLabelResId = R.string.sports_widget_country_selector_title,
-                    onClick = onFollowTeam,
+                    onClick = { onFollowTeam(CountrySelectorSource.COUNTDOWN_CARD_FOLLOW_TEAM_BUTTON) },
                     onDismiss = null,
                 )
             }

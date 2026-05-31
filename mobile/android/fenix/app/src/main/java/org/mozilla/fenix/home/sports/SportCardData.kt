@@ -202,3 +202,21 @@ data class ChampionCard(
     val winner: Team,
     val thirdPlace: Boolean = false,
 )
+
+/**
+ * Represents the source of the Country Selector BottomSheet impressions.
+ */
+enum class CountrySelectorSource(val value: String) {
+    COUNTDOWN_CARD_FOLLOW_TEAM_BUTTON("countdown_card_follow_team_button"),
+    KEEP_TABS_CARD_FOLLOW_TEAM_BUTTON("keep_tabs_card_follow_team_button"),
+    SPORTS_WIDGET_MENU("sports_widget_menu"),
+    SPORTS_LOGO("sports_logo"),
+}
+
+/**
+ * Represents the source of the Live Match Refresh button clicks.
+ */
+enum class LiveMatchRefreshSource(val value: String) {
+    LIVE_MATCH_HEADER("live_match_header"),
+    LIVE_MATCH_ERROR_BUTTON("live_match_error_button"),
+}

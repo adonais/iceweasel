@@ -9,12 +9,13 @@ import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import org.mozilla.fenix.R
+import org.mozilla.fenix.home.sports.CountrySelectorSource
 
 @Composable
 internal fun SportsWidgetMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
-    onChangeTeam: () -> Unit,
+    onChangeTeam: (CountrySelectorSource) -> Unit,
     onGetCustomWallpaper: () -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -24,7 +25,7 @@ internal fun SportsWidgetMenu(
                 text = Text.Resource(R.string.sports_widget_change_team),
                 onClick = {
                     onDismissRequest()
-                    onChangeTeam()
+                    onChangeTeam(CountrySelectorSource.SPORTS_WIDGET_MENU)
                 },
             ),
             MenuItem.TextItem(

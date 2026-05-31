@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.compose.PagerIndicator
 import org.mozilla.fenix.R
+import org.mozilla.fenix.home.sports.CountrySelectorSource
 import org.mozilla.fenix.home.sports.Group
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
@@ -58,7 +59,7 @@ private val PAGER_SIZE_ANIMATION_EASING = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.
 @Composable
 fun SportsCardPager(
     pages: List<@Composable () -> Unit>,
-    onChangeTeam: () -> Unit,
+    onChangeTeam: (CountrySelectorSource) -> Unit,
     onGetCustomWallpaper: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,

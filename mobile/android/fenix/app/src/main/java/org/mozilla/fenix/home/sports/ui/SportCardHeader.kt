@@ -27,6 +27,7 @@ import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.StatusBadge
 import org.mozilla.fenix.home.sports.Group
+import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
 import org.mozilla.fenix.home.sports.Team
@@ -39,7 +40,7 @@ internal fun SportCardHeader(
     match: Match,
     round: TournamentRound,
     isTeamSelected: Boolean,
-    onRefresh: () -> Unit,
+    onRefresh: (LiveMatchRefreshSource) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val title = if (isTeamSelected) {
@@ -86,7 +87,7 @@ internal fun SportCardHeader(
 
         if (match.matchStatus.isLive()) {
             IconButton(
-                onClick = onRefresh,
+                onClick = { onRefresh(LiveMatchRefreshSource.LIVE_MATCH_HEADER) },
                 contentDescription = stringResource(R.string.sports_widget_error_refresh),
                 modifier = Modifier.size(24.dp),
             ) {

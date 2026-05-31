@@ -53,7 +53,7 @@ interface SportsController {
     /**
      * Handles the user tapping the reload button to manually refresh match data.
      */
-    fun handleRefreshClicked()
+    fun handleRefreshClicked(source: LiveMatchRefreshSource)
 
     /**
      * Handles the user clicking the "Get custom wallpaper" menu item.
@@ -64,6 +64,16 @@ interface SportsController {
      * Called when the user clicks a Match.
      */
     fun handleMatchClicked(homeTeam: String, awayTeam: String)
+
+    /**
+     * Called when the sports widget is displayed.
+     */
+    fun handleSportsWidgetShown()
+
+    /**
+     * Called when the country selector bottom sheet is displayed.
+     */
+    fun handleCountrySelectorShown(source: CountrySelectorSource)
 }
 
 /**
@@ -86,16 +96,21 @@ class DefaultSportsController(
     override fun handleCountriesSelected(countryCodes: Set<String>) {
         settings.sportsSelectedCountries = countryCodes
         appStore.dispatch(AppAction.SportsWidgetAction.CountriesSelected(countryCodes = countryCodes))
+        if (countryCodes.isNotEmpty()) {
+            WorldCup.countrySelected.record()
+        }
     }
 
     override fun handleSkippedFollowTeam() {
         settings.hasSkippedSportsFollowTeam = true
         appStore.dispatch(AppAction.SportsWidgetAction.FollowTeamSkipped)
+        WorldCup.skipFollowTeamClicked.record()
     }
 
     override fun handleSportsWidgetDismissed() {
         settings.showHomepageSportsWidget = false
         appStore.dispatch(AppAction.SportsWidgetAction.VisibilityChanged(isVisible = false))
+        WorldCup.sportsWidgetDismissed.record()
     }
 
     override fun handleCountdownWidgetDismissed() {
@@ -104,8 +119,11 @@ class DefaultSportsController(
         WorldCup.countdownCrossActionClicked.record()
     }
 
-    override fun handleRefreshClicked() {
+    override fun handleRefreshClicked(source: LiveMatchRefreshSource) {
         appStore.dispatch(AppAction.SportsWidgetAction.FetchMatches)
+        WorldCup.refreshClicked.record(
+            extra = WorldCup.RefreshClickedExtra(source = source.value),
+        )
     }
 
     override fun handleViewScheduleClicked() {
@@ -121,6 +139,7 @@ class DefaultSportsController(
 
     override fun handleOnGetCustomWallpaperClicked() {
         navController.navigate(R.id.wallpaperSettingsFragment)
+        WorldCup.getCustomWallpaperClicked.record()
     }
 
     override fun handleMatchClicked(homeTeam: String, awayTeam: String) {
@@ -133,6 +152,16 @@ class DefaultSportsController(
             searchEngine = appStore.state.searchState.selectedSearchEngine?.searchEngine
                 ?: browserStore.state.search.selectedOrDefaultSearchEngine,
         )
+
+        WorldCup.matchClicked.record()
+    }
+
+    override fun handleSportsWidgetShown() {
+        WorldCup.sportsWidgetDisplayed.record()
+    }
+
+    override fun handleCountrySelectorShown(source: CountrySelectorSource) {
+        WorldCup.countrySelectorDisplayed.record(extra = WorldCup.CountrySelectorDisplayedExtra(source = source.value))
     }
 
     /**

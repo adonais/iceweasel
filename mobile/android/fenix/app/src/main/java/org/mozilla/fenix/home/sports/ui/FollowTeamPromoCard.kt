@@ -24,6 +24,7 @@ import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.PromoCard
 import org.mozilla.fenix.compose.PromoCardColors
+import org.mozilla.fenix.home.sports.CountrySelectorSource
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -34,7 +35,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  */
 @Composable
 fun FollowTeamPromoCard(
-    onFollowTeam: () -> Unit,
+    onFollowTeam: (CountrySelectorSource) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     PromoCard(
@@ -51,7 +52,7 @@ fun FollowTeamPromoCard(
 
             FilledButton(
                 text = stringResource(R.string.sports_widget_country_selector_title),
-                onClick = onFollowTeam,
+                onClick = { onFollowTeam(CountrySelectorSource.KEEP_TABS_CARD_FOLLOW_TEAM_BUTTON) },
             )
         },
         illustration = {
