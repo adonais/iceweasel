@@ -88,6 +88,7 @@ internal fun pagerHeadingContentDescription(
  * heading for assistive technology (e.g. "Group D, page 1 of 2"). The pager itself is not a single
  * TalkBack focus stop — children inside each page remain individually focusable.
  *
+ * @param isTeamSelected Used to indicate that the user has selected a team.
  * @param pages Composables to display as pages; the order determines swipe order. Each is invoked
  * with `(pageNumber, pageCount)` where `pageNumber` is 1-based.
  * @param onChangeTeam Invoked when "Change team" is selected from the overflow menu.
@@ -103,6 +104,7 @@ internal fun pagerHeadingContentDescription(
  */
 @Composable
 fun SportsCardPager(
+    isTeamSelected: Boolean,
     pages: List<@Composable (pageNumber: Int, pageCount: Int) -> Unit>,
     onChangeTeam: (CountrySelectorSource) -> Unit,
     onGetCustomWallpaper: () -> Unit,
@@ -139,6 +141,7 @@ fun SportsCardPager(
             )
             if (!isChampionsPage && !isErrorPage) {
                 SportsCardPagerOverflowMenu(
+                    isTeamSelected = isTeamSelected,
                     onChangeTeam = onChangeTeam,
                     onGetCustomWallpaper = onGetCustomWallpaper,
                     onRemove = onRemove,
@@ -200,6 +203,7 @@ private fun SportsCardPagerContent(
 
 @Composable
 private fun SportsCardPagerOverflowMenu(
+    isTeamSelected: Boolean,
     onChangeTeam: (CountrySelectorSource) -> Unit,
     onGetCustomWallpaper: () -> Unit,
     onRemove: () -> Unit,
@@ -220,6 +224,7 @@ private fun SportsCardPagerOverflowMenu(
         }
         SportsWidgetMenu(
             expanded = showMenu,
+            isTeamSelected = isTeamSelected,
             onDismissRequest = { showMenu = false },
             onChangeTeam = onChangeTeam,
             onGetCustomWallpaper = onGetCustomWallpaper,
@@ -237,6 +242,7 @@ private fun SportsCardPagerPreview() {
     FirefoxTheme {
         Surface {
             SportsCardPager(
+                isTeamSelected = true,
                 pages = listOf(
                     { pageNumber, pageCount ->
                         CountdownPromoCard(
