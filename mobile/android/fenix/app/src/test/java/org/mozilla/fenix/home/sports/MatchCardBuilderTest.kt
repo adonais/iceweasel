@@ -112,7 +112,7 @@ class MatchCardBuilderTest {
 
         assertEquals(2, cards.size)
         assertEquals(TournamentRound.GROUP_STAGE, cards[0].round)
-        // Group card features the most recent past since there's no live or upcoming group match.
+        // No live match: featured falls back to the most-recent past (g2); older sibling collapses to related.
         assertEquals(listOf(2L), cards[0].matches.map { it.globalEventId })
         assertEquals(listOf(1L), cards[0].relatedMatches.map { it.globalEventId })
         assertEquals(TournamentRound.ROUND_OF_16, cards[1].round)
@@ -225,14 +225,16 @@ class MatchCardBuilderTest {
         )
 
         assertEquals(2, cards.size)
-        assertEquals(listOf(1L, 2L), cards[0].matches.map { it.globalEventId })
-        assertTrue(cards[0].relatedMatches.isEmpty())
+        // Day 1: soonest scheduled is featured, sibling collapses to a related row.
+        assertEquals(listOf(1L), cards[0].matches.map { it.globalEventId })
+        assertEquals(listOf(2L), cards[0].relatedMatches.map { it.globalEventId })
+        // Day 2: lone match is featured, no siblings.
         assertEquals(listOf(3L), cards[1].matches.map { it.globalEventId })
         assertTrue(cards[1].relatedMatches.isEmpty())
     }
 
     @Test
-    fun `buildForNoTeam GIVEN multiple matches on one day THEN single card lists them all`() {
+    fun `buildForNoTeam GIVEN multiple matches on one day THEN live is featured and others are related`() {
         val past = sportsMatch(
             id = 1L,
             date = zonedDateTime(2026, 6, 12, 9),
@@ -256,8 +258,8 @@ class MatchCardBuilderTest {
         )
 
         assertEquals(1, cards.size)
-        assertEquals(listOf(1L, 2L, 3L), cards[0].matches.map { it.globalEventId })
-        assertTrue(cards[0].relatedMatches.isEmpty())
+        assertEquals(listOf(2L), cards[0].matches.map { it.globalEventId })
+        assertEquals(listOf(1L, 3L), cards[0].relatedMatches.map { it.globalEventId })
     }
 
     @Test
@@ -308,11 +310,14 @@ class MatchCardBuilderTest {
         val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(d1a, d1b, d2))
 
         assertEquals(2, cards.size)
-        assertEquals(listOf(3L), cards[0].matches.map { it.globalEventId }) // live day first
-        assertEquals(listOf(1L, 2L), cards[1].matches.map { it.globalEventId }) // upcoming day after
+        // Live day comes first; its lone live match is featured with no siblings.
+        assertEquals(listOf(3L), cards[0].matches.map { it.globalEventId })
+        assertTrue(cards[0].relatedMatches.isEmpty())
+        // Upcoming day: soonest scheduled is featured, the sibling collapses to a related row.
+        assertEquals(listOf(1L), cards[1].matches.map { it.globalEventId })
+        assertEquals(listOf(2L), cards[1].relatedMatches.map { it.globalEventId })
         assertEquals(TournamentRound.ROUND_OF_16, cards[0].round)
         assertEquals(TournamentRound.ROUND_OF_16, cards[1].round)
-        cards.forEach { assertTrue(it.relatedMatches.isEmpty()) }
     }
 
     // endregion

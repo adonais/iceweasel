@@ -61,9 +61,9 @@ object MatchCardBuilder {
         liveIds: Set<Long>,
     ): MatchCard {
         // Featured (enlarged) matches go in `matches`; the rest go in `relatedMatches`.
-        // Priority: live > next upcoming > most recent past — so the user always sees
-        // the most-actionable game given the selected team's schedule.
-        val featured = pickFeaturedGroupMatches(groupMatches, liveIds)
+        // Priority: live > next upcoming > most recent past — so the user always sees the
+        // most-actionable game given the selected team's schedule.
+        val featured = pickFeaturedMatches(groupMatches, liveIds)
         val featuredIds = featured.map { it.globalEventId }.toSet()
         val featuredUi = featured.map { it.toMatch() }
         val relatedUi = groupMatches
@@ -76,16 +76,16 @@ object MatchCardBuilder {
         )
     }
 
-    private fun pickFeaturedGroupMatches(
-        groupMatches: List<SportsMatch>,
+    private fun pickFeaturedMatches(
+        matches: List<SportsMatch>,
         liveIds: Set<Long>,
     ): List<SportsMatch> {
-        val live = groupMatches.filter { it.globalEventId in liveIds }
+        val live = matches.filter { it.globalEventId in liveIds }
         if (live.isNotEmpty()) return live
-        // groupMatches is sorted oldest-first; firstOrNull on Scheduled returns the next upcoming,
+        // matches is sorted oldest-first; firstOrNull on Scheduled returns the next upcoming,
         // lastOrNull on past returns the most recently played.
-        groupMatches.firstOrNull { it.matchStatus is MatchStatus.Scheduled }?.let { return listOf(it) }
-        return groupMatches.lastOrNull { it.matchStatus.isPast() }?.let { listOf(it) } ?: emptyList()
+        matches.firstOrNull { it.matchStatus is MatchStatus.Scheduled }?.let { return listOf(it) }
+        return matches.lastOrNull { it.matchStatus.isPast() }?.let { listOf(it) } ?: emptyList()
     }
 
     private fun buildSingleMatchCard(match: SportsMatch): MatchCard {
@@ -103,16 +103,27 @@ object MatchCardBuilder {
         sortedMatches
             .groupBy { it.date.toLocalDate() }
             .toSortedMap()
-            .map { (_, dayMatches) ->
-                val round = dayMatches.first().stage
-                val uiMatches = dayMatches.map { it.toMatch() }
-                MatchCard(
-                    matches = uiMatches,
-                    round = round,
-                    viewerOutcome = celebrationOutcomeFor(round, uiMatches) ?: FollowedTeamOutcome.NotInvolved,
-                    relatedMatches = emptyList(),
-                )
-            }
+            .map { (_, dayMatches) -> buildDayCard(dayMatches, dayMatches.first().stage) }
+
+    // Featured (enlarged) match in `matches`, everything else as compact rows in
+    // `relatedMatches`. Featured priority: live > next upcoming > most recent past — same
+    // shape the team-selected group-stage card uses, so a day with one live and two
+    // scheduled matches renders one big tile + two related rows rather than three big tiles.
+    private fun buildDayCard(dayMatches: List<SportsMatch>, round: TournamentRound): MatchCard {
+        val liveIds = dayMatches.filter { it.matchStatus.isLive() }.map { it.globalEventId }.toSet()
+        val featured = pickFeaturedMatches(dayMatches, liveIds)
+        val featuredIds = featured.map { it.globalEventId }.toSet()
+        val featuredUi = featured.map { it.toMatch() }
+        val relatedUi = dayMatches
+            .filter { it.globalEventId !in featuredIds }
+            .map { it.toMatch() }
+        return MatchCard(
+            matches = featuredUi,
+            round = round,
+            viewerOutcome = celebrationOutcomeFor(round, featuredUi) ?: FollowedTeamOutcome.NotInvolved,
+            relatedMatches = relatedUi,
+        )
+    }
 }
 
 private enum class CardBucket { LIVE, PAST, UPCOMING }
