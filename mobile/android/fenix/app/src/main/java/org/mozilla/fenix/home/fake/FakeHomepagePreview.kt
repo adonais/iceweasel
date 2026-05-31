@@ -119,7 +119,7 @@ internal object FakeHomepagePreview {
 
             override fun onGetCustomWallpaperClicked() { /* no op */ }
 
-            override fun onMatchClicked(homeTeam: String, awayTeam: String) { /* no op */ }
+            override fun onMatchClicked(homeTeam: String?, awayTeam: String?, date: String?) { /* no op */ }
 
             override fun onSportsWidgetShown() { /* no op */ }
 

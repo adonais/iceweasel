@@ -63,7 +63,7 @@ interface SportsController {
     /**
      * Called when the user clicks a Match.
      */
-    fun handleMatchClicked(homeTeam: String, awayTeam: String)
+    fun handleMatchClicked(homeTeam: String?, awayTeam: String?, date: String?)
 
     /**
      * Called when the sports widget is displayed.
@@ -149,11 +149,20 @@ class DefaultSportsController(
         WorldCup.getCustomWallpaperClicked.record()
     }
 
-    override fun handleMatchClicked(homeTeam: String, awayTeam: String) {
+    override fun handleMatchClicked(homeTeam: String?, awayTeam: String?, date: String?) {
         navController.openToBrowser()
 
+        val homeName = homeTeam?.let { localizedCountryName(it) }
+        val awayName = awayTeam?.let { localizedCountryName(it) }
+        val searchTerm = when {
+            homeName != null && awayName != null -> "$homeName vs $awayName"
+            homeName != null -> "$date $homeName vs"
+            awayName != null -> "$date $awayName vs"
+            else -> date.orEmpty()
+        }
+
         fenixBrowserUseCases.loadUrlOrSearch(
-            searchTermOrURL = "${localizedCountryName(homeTeam)} vs ${localizedCountryName(awayTeam)}",
+            searchTermOrURL = searchTerm,
             newTab = true,
             private = appStore.state.mode.isPrivate,
             searchEngine = appStore.state.searchState.selectedSearchEngine?.searchEngine

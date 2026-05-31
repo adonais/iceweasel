@@ -497,8 +497,8 @@ class MatchCardBuilderTest {
             .relatedMatches
             .first()
             .home
-        assertEquals("XYZ", home.key)
-        assertEquals(0, home.flagResId)
+        assertEquals("XYZ", home?.key)
+        assertEquals(0, home?.flagResId)
     }
 
     @Test
@@ -508,10 +508,10 @@ class MatchCardBuilderTest {
             .first()
             .relatedMatches
             .first()
-        assertEquals("ENG", ui.home.key)
-        assertEquals(R.drawable.flag_eng, ui.home.flagResId)
-        assertEquals("BRA", ui.away.key)
-        assertEquals(R.drawable.flag_br, ui.away.flagResId)
+        assertEquals("ENG", ui.home?.key)
+        assertEquals(R.drawable.flag_eng, ui.home?.flagResId)
+        assertEquals("BRA", ui.away?.key)
+        assertEquals(R.drawable.flag_br, ui.away?.flagResId)
     }
 
     // endregion

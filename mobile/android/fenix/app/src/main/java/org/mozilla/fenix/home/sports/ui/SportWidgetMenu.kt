@@ -15,19 +15,21 @@ import org.mozilla.fenix.home.sports.CountrySelectorSource
 internal fun SportsWidgetMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
-    onChangeTeam: (CountrySelectorSource) -> Unit,
+    onChangeTeam: ((CountrySelectorSource) -> Unit)?,
     onGetCustomWallpaper: () -> Unit,
     onRemove: () -> Unit,
 ) {
     DropdownMenu(
-        menuItems = listOf(
-            MenuItem.TextItem(
-                text = Text.Resource(R.string.sports_widget_change_team),
-                onClick = {
-                    onDismissRequest()
-                    onChangeTeam(CountrySelectorSource.SPORTS_WIDGET_MENU)
-                },
-            ),
+        menuItems = listOfNotNull(
+            onChangeTeam?.let { handler ->
+                MenuItem.TextItem(
+                    text = Text.Resource(R.string.sports_widget_change_team),
+                    onClick = {
+                        onDismissRequest()
+                        handler(CountrySelectorSource.SPORTS_WIDGET_MENU)
+                    },
+                )
+            },
             MenuItem.TextItem(
                 text = Text.Resource(R.string.sports_widget_get_custom_wallpaper),
                 onClick = {

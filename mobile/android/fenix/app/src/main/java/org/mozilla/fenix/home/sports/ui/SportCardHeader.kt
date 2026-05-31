@@ -51,7 +51,7 @@ internal fun SportCardHeader(
     pageCount: Int? = null,
 ) {
     val title = if (isTeamSelected) {
-        groupDisplayName(group = match.home.group) ?: roundDisplayName(round)
+        groupDisplayName(group = match.home?.group) ?: roundDisplayName(round)
     } else {
         roundDisplayName(round)
     }

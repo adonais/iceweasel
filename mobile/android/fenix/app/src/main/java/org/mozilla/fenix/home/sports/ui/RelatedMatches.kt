@@ -42,7 +42,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 internal fun RelatedMatchesSection(
     matches: List<Match>,
     isTeamSelected: Boolean,
-    onMatchClicked: (String, String) -> Unit,
+    onMatchClicked: (String?, String?, String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -69,17 +69,19 @@ internal fun RelatedMatchesSection(
 internal fun RelatedMatchRow(
     match: Match,
     isTeamSelected: Boolean,
-    onMatchClicked: (String, String) -> Unit,
+    onMatchClicked: (String?, String?, String?) -> Unit,
     positionInList: Int,
 ) {
-    val homeName = localizedTeamName(match.home)
-    val awayName = localizedTeamName(match.away)
+    val homeName = match.home?.let { localizedTeamName(it) }
+        ?: stringResource(R.string.sports_widget_team_to_be_determined)
+    val awayName = match.away?.let { localizedTeamName(it) }
+        ?: stringResource(R.string.sports_widget_team_to_be_determined)
     val scoreText = if (match.homeScore != null && match.awayScore != null) {
         formatScoreWithSuffix(match)
     } else {
         null
     }
-    val group = groupDisplayName(group = match.home.group)
+    val group = groupDisplayName(group = match.home?.group)
     val upcomingPrefix = if (isTeamSelected) match.date else group ?: match.date
     val rowContentDescription = buildRowContentDescription(
         homeName = homeName,
@@ -93,7 +95,13 @@ internal fun RelatedMatchRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(24.dp)
-            .clickable(onClick = { onMatchClicked(match.home.key, match.away.key) })
+            .clickable(
+                onClick = {
+                    if (match.home != null || match.away != null) {
+                        onMatchClicked(match.home?.key, match.away?.key, "${match.date} ${match.time}")
+                    }
+                },
+            )
             .clearAndSetSemantics {
                 contentDescription = rowContentDescription
                 collectionItemInfo = CollectionItemInfo(
@@ -106,24 +114,21 @@ internal fun RelatedMatchRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         FlagContainer(
-            flagResId = match.home.flagResId,
+            flagResId = match.home?.flagResId,
             modifier = Modifier.size(width = 30.dp, height = 20.dp),
         )
 
         Spacer(Modifier.width(FirefoxTheme.layout.space.static100))
 
         Text(
-            text = match.home.key,
+            text = match.home?.key ?: "--",
             style = FirefoxTheme.typography.subtitle2,
         )
 
         Spacer(Modifier.weight(1f))
 
         if (scoreText != null) {
-            Text(
-                text = scoreText,
-                style = FirefoxTheme.typography.subtitle2,
-            )
+            Text(text = scoreText, style = FirefoxTheme.typography.subtitle2)
         } else if (isTeamSelected || group != null) {
             Text(
                 text = "$upcomingPrefix · ${match.time}",
@@ -135,14 +140,14 @@ internal fun RelatedMatchRow(
         Spacer(Modifier.weight(1f))
 
         Text(
-            text = match.away.key,
+            text = match.away?.key ?: "--",
             style = FirefoxTheme.typography.subtitle2,
         )
 
         Spacer(Modifier.width(FirefoxTheme.layout.space.static100))
 
         FlagContainer(
-            flagResId = match.away.flagResId,
+            flagResId = match.away?.flagResId,
             modifier = Modifier.size(width = 30.dp, height = 20.dp),
         )
     }
@@ -226,7 +231,7 @@ private fun RelatedMatchesSectionPreview(
 ) {
     FirefoxTheme {
         Surface {
-            RelatedMatchesSection(matches = state.matches, isTeamSelected = true, onMatchClicked = { _, _ -> })
+            RelatedMatchesSection(matches = state.matches, isTeamSelected = true, onMatchClicked = { _, _, _ -> })
         }
     }
 }
