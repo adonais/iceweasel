@@ -861,6 +861,15 @@ sealed class AppAction : Action {
         data class MatchCardStateUpdated(val matchCardStates: List<MatchCard>) : SportsWidgetAction()
 
         /**
+         * Dispatched when the set of teams eliminated from the tournament changes,
+         * derived from the latest fetched match data. Drives the eliminated-team
+         * styling in the country selector bottom sheet.
+         *
+         * @property countryCodes ISO codes of teams flagged eliminated in the last response.
+         */
+        data class EliminatedCountriesUpdated(val countryCodes: Set<String>) : SportsWidgetAction()
+
+        /**
          * Dispatched when the sport widget's debug tool visibility changes.
          *
          * @property visible Whether the debug tool should be displayed.

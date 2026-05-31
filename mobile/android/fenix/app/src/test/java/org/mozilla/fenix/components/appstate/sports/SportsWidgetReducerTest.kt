@@ -359,6 +359,32 @@ class SportsWidgetReducerTest {
     }
 
     @Test
+    fun `GIVEN no eliminated countries WHEN EliminatedCountriesUpdated is dispatched THEN eliminatedCountries is set`() {
+        val initialState = AppState(sportsWidgetState = SportsWidgetState())
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.EliminatedCountriesUpdated(countryCodes = setOf("MEX", "RSA")),
+        )
+
+        assertEquals(setOf("MEX", "RSA"), finalState.sportsWidgetState.eliminatedCountries)
+    }
+
+    @Test
+    fun `GIVEN eliminated countries set WHEN EliminatedCountriesUpdated is dispatched with empty set THEN eliminatedCountries is cleared`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(eliminatedCountries = setOf("MEX")),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.EliminatedCountriesUpdated(countryCodes = emptySet()),
+        )
+
+        assertTrue(finalState.sportsWidgetState.eliminatedCountries.isEmpty())
+    }
+
+    @Test
     fun `GIVEN isDebugToolVisible is false WHEN DebugToolVisibilityChanged is dispatched with true THEN isDebugToolVisible is true`() {
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(isDebugToolVisible = false),

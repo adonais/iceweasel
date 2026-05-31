@@ -154,6 +154,143 @@ class SportsWidgetMiddlewareTest {
             assertEquals("CAN", outcome.winner.key)
         }
 
+    @Test
+    fun `GIVEN followed team is eliminated WHEN fetch succeeds THEN renders the generic experience`() = runTest {
+        // MEX (followed) is eliminated; RSA is still in. The R32 match is between two
+        // unrelated teams. The expectation: cards reflect the bracket-wide view
+        // (R32 match present) rather than MEX-only cards (which would otherwise produce
+        // a single group-stage card for the followed team).
+        val mex = SportsTeam("MEX", 1L, "Mexico", "MEX", null, null, eliminated = true)
+        val rsa = SportsTeam("RSA", 2L, "South Africa", "RSA", null, null, false)
+        val can = SportsTeam("CAN", 3L, "Canada", "CAN", null, null, false)
+        val aus = SportsTeam("AUS", 4L, "Australia", "AUS", null, null, false)
+        val groupMatch = SportsMatch(
+            globalEventId = 1L,
+            date = ZonedDateTime.of(2026, 6, 11, 14, 0, 0, 0, zone),
+            homeTeam = mex, awayTeam = rsa,
+            matchStatus = MatchStatus.Final,
+            homeScore = 0, awayScore = 2,
+            homeExtra = null, awayExtra = null, homePenalty = null, awayPenalty = null,
+            clock = null, period = null, updated = null, venue = null,
+            stage = TournamentRound.GROUP_STAGE,
+        )
+        val r32Match = SportsMatch(
+            globalEventId = 2L,
+            date = ZonedDateTime.of(2026, 6, 28, 14, 0, 0, 0, zone),
+            homeTeam = can, awayTeam = aus,
+            matchStatus = MatchStatus.Scheduled,
+            homeScore = null, awayScore = null,
+            homeExtra = null, awayExtra = null, homePenalty = null, awayPenalty = null,
+            clock = null, period = null, updated = null, venue = null,
+            stage = TournamentRound.ROUND_OF_32,
+        )
+        val repo = StubRepository(
+            Result.success(
+                TeamMatchesResult(
+                    previous = listOf(groupMatch),
+                    current = emptyList(),
+                    next = listOf(r32Match),
+                ),
+            ),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        dispatchAndAwait(store, SportsWidgetAction.CountriesSelected(setOf("MEX")))
+
+        val cards = store.state.sportsWidgetState.matchCardStates
+        // The R32 match — not involving the followed team — surfaces in the generic
+        // bracket-wide view, confirming we routed through buildForNoTeam.
+        val anyR32 = cards.any { card ->
+            card.round == TournamentRound.ROUND_OF_32 ||
+                card.matches.any { it.home?.key == "CAN" || it.away?.key == "CAN" } ||
+                card.relatedMatches.any { it.home?.key == "CAN" || it.away?.key == "CAN" }
+        }
+        assertTrue(anyR32)
+    }
+
+    @Test
+    fun `GIVEN response includes eliminated teams WHEN fetch succeeds THEN eliminatedCountries reflects them`() = runTest {
+        val mex = SportsTeam("MEX", 1L, "Mexico", "MEX", null, null, eliminated = true)
+        val rsa = SportsTeam("RSA", 2L, "South Africa", "RSA", null, null, eliminated = false)
+        val can = SportsTeam("CAN", 3L, "Canada", "CAN", null, null, eliminated = true)
+        val aus = SportsTeam("AUS", 4L, "Australia", "AUS", null, null, eliminated = false)
+        val groupMatch = SportsMatch(
+            globalEventId = 1L,
+            date = ZonedDateTime.of(2026, 6, 11, 14, 0, 0, 0, zone),
+            homeTeam = mex, awayTeam = rsa,
+            matchStatus = MatchStatus.Final,
+            homeScore = 0, awayScore = 2,
+            homeExtra = null, awayExtra = null, homePenalty = null, awayPenalty = null,
+            clock = null, period = null, updated = null, venue = null,
+            stage = TournamentRound.GROUP_STAGE,
+        )
+        val r32Match = SportsMatch(
+            globalEventId = 2L,
+            date = ZonedDateTime.of(2026, 6, 28, 14, 0, 0, 0, zone),
+            homeTeam = can, awayTeam = aus,
+            matchStatus = MatchStatus.Scheduled,
+            homeScore = null, awayScore = null,
+            homeExtra = null, awayExtra = null, homePenalty = null, awayPenalty = null,
+            clock = null, period = null, updated = null, venue = null,
+            stage = TournamentRound.ROUND_OF_32,
+        )
+        val repo = StubRepository(
+            Result.success(
+                TeamMatchesResult(
+                    previous = listOf(groupMatch),
+                    current = emptyList(),
+                    next = listOf(r32Match),
+                ),
+            ),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        assertEquals(setOf("MEX", "CAN"), store.state.sportsWidgetState.eliminatedCountries)
+    }
+
+    @Test
+    fun `GIVEN no eliminated teams in response WHEN fetch succeeds THEN eliminatedCountries is empty`() = runTest {
+        val repo = StubRepository(Result.success(resultWithMatches()))
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        assertTrue(store.state.sportsWidgetState.eliminatedCountries.isEmpty())
+    }
+
+    @Test
+    fun `GIVEN followed team is not eliminated WHEN fetch succeeds THEN keeps the team-specific view`() = runTest {
+        val mex = SportsTeam("MEX", 1L, "Mexico", "MEX", null, null, eliminated = false)
+        val rsa = SportsTeam("RSA", 2L, "South Africa", "RSA", null, null, false)
+        val match = SportsMatch(
+            globalEventId = 1L,
+            date = ZonedDateTime.of(2026, 6, 11, 14, 0, 0, 0, zone),
+            homeTeam = mex, awayTeam = rsa,
+            matchStatus = MatchStatus.Scheduled,
+            homeScore = null, awayScore = null,
+            homeExtra = null, awayExtra = null, homePenalty = null, awayPenalty = null,
+            clock = null, period = null, updated = null, venue = null,
+            stage = TournamentRound.GROUP_STAGE,
+        )
+        val repo = StubRepository(
+            Result.success(TeamMatchesResult(emptyList(), emptyList(), listOf(match))),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        dispatchAndAwait(store, SportsWidgetAction.CountriesSelected(setOf("MEX")))
+
+        val cards = store.state.sportsWidgetState.matchCardStates
+        // Standard team-followed path: at least one card includes MEX.
+        val anyMex = cards.any { card ->
+            (card.matches + card.relatedMatches).any { it.home?.key == "MEX" || it.away?.key == "MEX" }
+        }
+        assertTrue(anyMex)
+    }
+
     // region helpers
 
     private fun resultWithMatches(): TeamMatchesResult {

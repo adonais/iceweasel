@@ -43,6 +43,12 @@ internal object SportsWidgetReducer {
             ),
         )
 
+        is SportsWidgetAction.EliminatedCountriesUpdated -> state.copy(
+            sportsWidgetState = state.sportsWidgetState.copy(
+                eliminatedCountries = action.countryCodes,
+            ),
+        )
+
         is SportsWidgetAction.DebugToolVisibilityChanged -> state.copy(
             sportsWidgetState = state.sportsWidgetState.copy(
                 isDebugToolVisible = action.visible,

@@ -73,6 +73,7 @@ class SportsWidgetMiddleware(
                     cachedMatches = result
                     val countryCodes = store.state.sportsWidgetState.countriesSelected
                     store.dispatch(SportsWidgetAction.MatchCardStateUpdated(buildCards(result, countryCodes)))
+                    store.dispatch(SportsWidgetAction.EliminatedCountriesUpdated(eliminatedCodes(result)))
                 }
                 .onFailure {
                     store.dispatch(SportsWidgetAction.FetchFailed(SportCardErrorState.LoadFailed))
@@ -80,12 +81,53 @@ class SportsWidgetMiddleware(
         }
     }
 
-    private fun buildCards(result: TeamMatchesResult, countryCodes: Set<String>): List<MatchCard> =
-        if (countryCodes.isEmpty()) {
+    private fun eliminatedCodes(result: TeamMatchesResult): Set<String> =
+        (result.previous + result.current + result.next)
+            .asSequence()
+            .flatMap { sequenceOf(it.homeTeam, it.awayTeam) }
+            .filter { it.eliminated }
+            .map { it.key }
+            .toSet()
+
+    private fun buildCards(result: TeamMatchesResult, countryCodes: Set<String>): List<MatchCard> {
+        // Once the followed team is out of the tournament, switch to the generic experience
+        // (the bracket-wide view) rather than continuing to render an empty team-specific
+        // pager. The user's selection is preserved in state — they can still see and
+        // change it via the country selector — we just stop rendering as if their team
+        // were still in play.
+        val effectiveCodes = if (allFollowedTeamsEliminated(result, countryCodes)) {
+            emptySet()
+        } else {
+            countryCodes
+        }
+        return if (effectiveCodes.isEmpty()) {
             MatchCardBuilder.buildForNoTeam(result.previous + result.current + result.next)
         } else {
-            MatchCardBuilder.buildForTeam(filterByTeam(result, countryCodes))
+            MatchCardBuilder.buildForTeam(filterByTeam(result, effectiveCodes))
         }
+    }
+
+    // True when every followed team appears in the response with `eliminated = true`. If a
+    // followed code isn't found in the response at all, we treat it as not-eliminated
+    // (safe default: keep rendering the team-specific view rather than disappearing it
+    // on stale or partial data).
+    private fun allFollowedTeamsEliminated(
+        result: TeamMatchesResult,
+        codes: Set<String>,
+    ): Boolean {
+        if (codes.isEmpty()) return false
+        val allMatches = result.previous + result.current + result.next
+        return codes.all { code ->
+            val snapshot = allMatches.firstNotNullOfOrNull { match ->
+                when (code) {
+                    match.homeTeam.key -> match.homeTeam
+                    match.awayTeam.key -> match.awayTeam
+                    else -> null
+                }
+            }
+            snapshot?.eliminated == true
+        }
+    }
 
     private fun filterByTeam(result: TeamMatchesResult, codes: Set<String>): TeamMatchesResult {
         // The followed team's own matches PLUS the bracket-finishing matches (FINAL and
