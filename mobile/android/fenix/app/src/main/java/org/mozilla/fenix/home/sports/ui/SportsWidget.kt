@@ -284,10 +284,13 @@ private fun MutableList<SportsPage>.addPromoPage(
     onFollowTeam: (CountrySelectorSource) -> Unit,
 ) {
     when {
-        isFollowTeamsCardShown ->
-            add(if (isOneWeekToWorldCup) countdownFollowTeamPage(onFollowTeam) else followTeamPromoPage(onFollowTeam))
-        selectedTeam != null && matchCardStates.isEmpty() ->
-            add(followingPromoPage(selectedTeam))
+        isFollowTeamsCardShown -> when {
+            isOneWeekToWorldCup -> add(countdownFollowTeamPage(onFollowTeam))
+            // Suppress the "Keep tabs on the World Cup" promo once a champions card is in the pager
+            matchCardStates.any { shouldDisplayChampionsCard(it.viewerOutcome) } -> Unit
+            else -> add(followTeamPromoPage(onFollowTeam))
+        }
+        selectedTeam != null && matchCardStates.isEmpty() -> add(followingPromoPage(selectedTeam))
     }
 }
 

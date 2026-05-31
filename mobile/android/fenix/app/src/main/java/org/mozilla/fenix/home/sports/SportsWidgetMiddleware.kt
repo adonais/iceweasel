@@ -15,6 +15,16 @@ import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.ext.isOnline
 
+// The tournament's bracket-finishing matches. These are always surfaced — both for a
+// followed team and in the no-team pager — so the schedule and result of the tournament's
+// last matches stay visible regardless of which round is currently active. The semi-finals
+// are deliberately excluded: they are surfaced by the active-round logic when current, and
+// only the terminal matches warrant being pinned ahead of time.
+private val BRACKET_FINISHING_STAGES = setOf(
+    TournamentRound.FINAL,
+    TournamentRound.THIRD_PLACE_PLAYOFF,
+)
+
 /**
  * [Middleware] that handles side effects for [SportsWidgetAction].
  *
@@ -123,11 +133,14 @@ class SportsWidgetMiddleware(
             // Filter to the active round before handing to the builder. The response —
             // which spans multiple rounds in the mock and a ±10-day window in prod —
             // would otherwise mix stages in the pager and surface group-stage matches
-            // even after R32 has begun.
+            // even after R32 has begun. The bracket-finishing matches are kept on top of
+            // the active round so the schedule (and eventual result) of the tournament's
+            // last matches stays visible even before they become the active round —
+            // mirroring the followed-team path.
             val activeRound = result.activeRound() ?: return emptyList()
             MatchCardBuilder.buildForNoTeam(
                 (result.previous + result.current + result.next)
-                    .filter { it.stage == activeRound },
+                    .filter { it.stage == activeRound || it.stage in BRACKET_FINISHING_STAGES },
             )
         } else {
             MatchCardBuilder.buildForTeam(filterByTeam(result, effectiveCodes))
@@ -180,8 +193,7 @@ class SportsWidgetMiddleware(
             filter { match ->
                 match.homeTeam?.key in codes ||
                     match.awayTeam?.key in codes ||
-                    match.stage == TournamentRound.FINAL ||
-                    match.stage == TournamentRound.THIRD_PLACE_PLAYOFF
+                    match.stage in BRACKET_FINISHING_STAGES
             }
         return TeamMatchesResult(
             previous = result.previous.relevantFor(codes),

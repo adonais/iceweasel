@@ -433,6 +433,56 @@ class SportsWidgetMiddlewareTest {
         cards.forEach { assertEquals(TournamentRound.GROUP_STAGE, it.round) }
     }
 
+    @Test
+    fun `GIVEN no team WHEN third place is decided and the final is upcoming THEN both surface`() = runTest {
+        // Active round is the third-place playoff (max played ordinal), but the upcoming
+        // final is pinned alongside it so its schedule stays visible; the past semi-final
+        // drops away.
+        val sfDone = match(1L, day = 15, stage = TournamentRound.SEMI_FINAL, status = MatchStatus.Final, month = 7)
+        val thirdPlaceDone =
+            match(2L, day = 18, stage = TournamentRound.THIRD_PLACE_PLAYOFF, status = MatchStatus.Final, month = 7)
+        val finalNext = match(3L, day = 19, stage = TournamentRound.FINAL, status = MatchStatus.Scheduled, month = 7)
+        val repo = StubRepository(
+            Result.success(
+                TeamMatchesResult(
+                    previous = listOf(sfDone, thirdPlaceDone),
+                    current = emptyList(),
+                    next = listOf(finalNext),
+                ),
+            ),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
+        assertEquals(setOf(2L, 3L), matches.map { it.globalEventId }.toSet())
+    }
+
+    @Test
+    fun `GIVEN no team WHEN the final is decided THEN the final and third place both surface`() = runTest {
+        // Active round is the final, and the third-place playoff is pinned alongside it —
+        // mirroring the followed-team path's bracket-finishing inclusion.
+        val thirdPlaceDone =
+            match(1L, day = 18, stage = TournamentRound.THIRD_PLACE_PLAYOFF, status = MatchStatus.Final, month = 7)
+        val finalDone = match(2L, day = 19, stage = TournamentRound.FINAL, status = MatchStatus.Final, month = 7)
+        val repo = StubRepository(
+            Result.success(
+                TeamMatchesResult(
+                    previous = listOf(thirdPlaceDone, finalDone),
+                    current = emptyList(),
+                    next = emptyList(),
+                ),
+            ),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
+        assertEquals(setOf(1L, 2L), matches.map { it.globalEventId }.toSet())
+    }
+
     // region helpers
 
     private val teamA = SportsTeam("MEX", 1L, "Mexico", "MEX", null, null, false)
