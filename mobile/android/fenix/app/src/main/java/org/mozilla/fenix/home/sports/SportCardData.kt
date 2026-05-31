@@ -242,5 +242,59 @@ enum class CountrySelectorSource(val value: String) {
  */
 enum class LiveMatchRefreshSource(val value: String) {
     LIVE_MATCH_HEADER("live_match_header"),
-    LIVE_MATCH_ERROR_BUTTON("live_match_error_button"),
+    LIVE_MATCH_CARD_ERROR_BUTTON("live_match_card_error_button"),
+    SPORTS_WIDGET_CARD_ERROR_BUTTON("sports_widget_card_error_button"),
+}
+
+/**
+ * Identifies which card variant is displayed in the sports widget. Used as a Glean extra to
+ * distinguish error/promo/match cards and — for match cards — the tournament stage.
+ */
+enum class SportsCardType(val value: String) {
+    ERROR_LOAD_FAILED("error_load_failed"),
+    ERROR_CONNECTION_INTERRUPTED("error_connection_interrupted"),
+    COUNTDOWN_PROMO("countdown_promo"),
+    FOLLOW_TEAM_PROMO("follow_team_promo"),
+    FOLLOWING_PROMO("following_promo"),
+    CHAMPIONS_WINNER("champions_winner"),
+    CHAMPIONS_THIRD_PLACE("champions_third_place"),
+    MATCH_GROUP_STAGE("match_group_stage"),
+    MATCH_ROUND_OF_32("match_round_of_32"),
+    MATCH_ROUND_OF_16("match_round_of_16"),
+    MATCH_QUARTER_FINAL("match_quarter_final"),
+    MATCH_SEMI_FINAL("match_semi_final"),
+    MATCH_THIRD_PLACE_PLAYOFF("match_third_place_playoff"),
+    MATCH_FINAL("match_final"),
+    ;
+
+    companion object {
+        /**
+         * Maps a tournament [round] to its corresponding match-card [SportsCardType].
+         */
+        fun fromRound(round: TournamentRound): SportsCardType = when (round) {
+            TournamentRound.GROUP_STAGE -> MATCH_GROUP_STAGE
+            TournamentRound.ROUND_OF_32 -> MATCH_ROUND_OF_32
+            TournamentRound.ROUND_OF_16 -> MATCH_ROUND_OF_16
+            TournamentRound.QUARTER_FINAL -> MATCH_QUARTER_FINAL
+            TournamentRound.SEMI_FINAL -> MATCH_SEMI_FINAL
+            TournamentRound.THIRD_PLACE_PLAYOFF -> MATCH_THIRD_PLACE_PLAYOFF
+            TournamentRound.FINAL -> MATCH_FINAL
+        }
+
+        /**
+         * Maps an [error] state to its corresponding error-card [SportsCardType].
+         */
+        fun fromError(error: SportCardErrorState): SportsCardType = when (error) {
+            SportCardErrorState.LoadFailed -> ERROR_LOAD_FAILED
+            SportCardErrorState.ConnectionInterrupted -> ERROR_CONNECTION_INTERRUPTED
+        }
+    }
+}
+
+/**
+ * Distinguishes the first card seen on widget mount from cards reached by swiping the pager.
+ */
+enum class SportsCardImpressionSource(val value: String) {
+    IMPRESSION("impression"),
+    SWIPE("swipe"),
 }

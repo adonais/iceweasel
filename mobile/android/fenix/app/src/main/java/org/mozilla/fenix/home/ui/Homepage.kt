@@ -227,7 +227,6 @@ internal fun Homepage(
                             }
 
                             if (sportsWidgetState.isShown) {
-                                interactor.onSportsWidgetShown()
                                 SportsWidget(
                                     sportsWidgetState = sportsWidgetState,
                                     onDismiss = interactor::onSportsWidgetDismissed,
@@ -245,6 +244,7 @@ internal fun Homepage(
                                     onMatchClicked = { homeTeam, awayTeam, date ->
                                         interactor.onMatchClicked(homeTeam, awayTeam, date)
                                     },
+                                    onCardShown = interactor::onSportsWidgetCardShown,
                                 )
                             }
 

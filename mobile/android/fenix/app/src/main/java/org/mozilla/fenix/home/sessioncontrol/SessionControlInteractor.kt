@@ -29,6 +29,8 @@ import org.mozilla.fenix.home.recentvisits.controller.RecentVisitsController
 import org.mozilla.fenix.home.search.HomeSearchController
 import org.mozilla.fenix.home.sports.CountrySelectorSource
 import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
+import org.mozilla.fenix.home.sports.SportsCardImpressionSource
+import org.mozilla.fenix.home.sports.SportsCardType
 import org.mozilla.fenix.home.sports.SportsController
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerController
 import org.mozilla.fenix.home.toolbar.ToolbarController
@@ -453,8 +455,8 @@ class SessionControlInteractor(
         sportsController.handleMatchClicked(homeTeam = homeTeam, awayTeam = awayTeam, date = date)
     }
 
-    override fun onSportsWidgetShown() {
-        sportsController.handleSportsWidgetShown()
+    override fun onSportsWidgetCardShown(cardType: SportsCardType, source: SportsCardImpressionSource) {
+        sportsController.handleSportsWidgetCardShown(cardType = cardType, source = source)
     }
 
     override fun onCountrySelectorShown(source: CountrySelectorSource) {

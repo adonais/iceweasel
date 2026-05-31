@@ -15546,10 +15546,26 @@ world_cup:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
-  sports_widget_displayed:
+  sports_widget_card_shown:
     type: event
     description: |
-      The sports widget is displayed
+      A card is shown in the sports widget. Fires once per widget mount as an impression
+      and once per subsequent swipe to a different page.
+    extra_keys:
+      source:
+        description: |
+          How the card became visible. One of: impression, swipe.
+          `impression` fires once per widget mount for the first card seen; `swipe` fires
+          when the user lands on a different page in the sports pager.
+        type: string
+      card_type:
+        description: |
+          Which card variant was shown. One of: error_load_failed,
+          error_connection_interrupted, countdown_promo, follow_team_promo,
+          following_promo, champions_winner, champions_third_place, match_group_stage,
+          match_round_of_32, match_round_of_16, match_quarter_final, match_semi_final,
+          match_third_place_playoff, match_final.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817
     data_reviews:
@@ -15579,7 +15595,9 @@ world_cup:
     extra_keys:
       source:
         description: |
-          Where the interaction occurred. One of: live_match_header, live_match_error_button.
+          Where the interaction occurred. One of: live_match_header,
+          live_match_card_error_button (inside a match card),
+          sports_widget_card_error_button (standalone SportsWidgetErrorCard).
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037817

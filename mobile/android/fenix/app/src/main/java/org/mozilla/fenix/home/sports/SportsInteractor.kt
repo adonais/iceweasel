@@ -52,9 +52,10 @@ interface SportsInteractor {
     fun onMatchClicked(homeTeam: String?, awayTeam: String?, date: String?)
 
     /**
-     * Called when the sports widget is displayed.
+     * Called when a sports widget card is shown — either as the initial impression
+     * or after a swipe within the pager.
      */
-    fun onSportsWidgetShown()
+    fun onSportsWidgetCardShown(cardType: SportsCardType, source: SportsCardImpressionSource)
 
     /**
      * Called when the country selector bottom sheet is displayed.
@@ -103,8 +104,8 @@ class DefaultSportsInteractor(
         controller.handleMatchClicked(homeTeam = homeTeam, awayTeam = awayTeam, date = date)
     }
 
-    override fun onSportsWidgetShown() {
-        controller.handleSportsWidgetShown()
+    override fun onSportsWidgetCardShown(cardType: SportsCardType, source: SportsCardImpressionSource) {
+        controller.handleSportsWidgetCardShown(cardType = cardType, source = source)
     }
 
     override fun onCountrySelectorShown(source: CountrySelectorSource) {

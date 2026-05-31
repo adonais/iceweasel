@@ -20,11 +20,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -36,6 +38,8 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.distinctUntilChanged
 import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.PagerIndicator
@@ -43,6 +47,8 @@ import org.mozilla.fenix.home.sports.CountrySelectorSource
 import org.mozilla.fenix.home.sports.Group
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
+import org.mozilla.fenix.home.sports.SportsCardImpressionSource
+import org.mozilla.fenix.home.sports.SportsCardType
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.TournamentRound
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -57,6 +63,15 @@ private val PAGER_SIZE_ANIMATION_EASING = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.
  * can render its own [PagerIndicator] in place of the shared one. `null` when no pager is active.
  */
 internal val LocalSportsPagerState = compositionLocalOf<PagerState?> { null }
+
+/**
+ * Pairs a [SportsCardType] with its rendering composable so the pager can identify which card is
+ * settled on each page without a parallel list that could drift from [pages].
+ */
+data class SportsPage(
+    val type: SportsCardType,
+    val content: @Composable (pageNumber: Int, pageCount: Int) -> Unit,
+)
 
 /**
  * Returns [baseText] with a "page X of Y" suffix appended for TalkBack, using
@@ -89,12 +104,16 @@ internal fun pagerHeadingContentDescription(
  * TalkBack focus stop — children inside each page remain individually focusable.
  *
  * @param isTeamSelected Used to indicate that the user has selected a team.
- * @param pages Composables to display as pages; the order determines swipe order. Each is invoked
- * with `(pageNumber, pageCount)` where `pageNumber` is 1-based.
+ * @param pages Pages to display, paired with their [SportsCardType] so the pager can emit
+ * card-typed telemetry without a parallel structure. Order determines swipe order. Each
+ * [SportsPage.content] is invoked with `(pageNumber, pageCount)` where `pageNumber` is 1-based.
  * @param onChangeTeam Invoked when "Change team" is selected from the overflow menu.
  * @param onGetCustomWallpaper Invoked when "Get custom wallpaper" is selected from the overflow menu.
  * @param onRemove Invoked when "Remove" is selected from the overflow menu.
  * @param modifier [Modifier] to apply to the outer container.
+ * @param onCardShown Invoked once per pages-list mount for the initially-visible card
+ * ([SportsCardImpressionSource.IMPRESSION]) and once per subsequent settle on a different page
+ * ([SportsCardImpressionSource.SWIPE]). With a single page only the impression fires.
  * @param championsPageIndices 0-based indices of pages for the Champion cards.
  * When the pager settles on one of these pages, the shared background, padding, and overflow menu
  * are suppressed so the page fills the full container.
@@ -105,11 +124,12 @@ internal fun pagerHeadingContentDescription(
 @Composable
 fun SportsCardPager(
     isTeamSelected: Boolean,
-    pages: List<@Composable (pageNumber: Int, pageCount: Int) -> Unit>,
+    pages: List<SportsPage>,
     onChangeTeam: (CountrySelectorSource) -> Unit,
     onGetCustomWallpaper: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
+    onCardShown: (SportsCardType, SportsCardImpressionSource) -> Unit = { _, _ -> },
     championsPageIndices: Set<Int> = emptySet(),
     errorPageIndices: Set<Int> = emptySet(),
 ) {
@@ -117,6 +137,21 @@ fun SportsCardPager(
     val isChampionsPage = pagerState.currentPage in championsPageIndices
     val isErrorPage = pagerState.currentPage in errorPageIndices
     val showIndicator = pages.size > 1 && !isChampionsPage
+
+    LaunchedEffect(pages) {
+        snapshotFlow { pagerState.settledPage }
+            .distinctUntilChanged()
+            .collectIndexed { emissionIndex, settledPage ->
+                val source = if (emissionIndex == 0) {
+                    SportsCardImpressionSource.IMPRESSION
+                } else {
+                    SportsCardImpressionSource.SWIPE
+                }
+                pages.getOrNull(settledPage)?.let { page ->
+                    onCardShown(page.type, source)
+                }
+            }
+    }
 
     Column(
         modifier = modifier.sportsCardPagerContainer(
@@ -183,7 +218,7 @@ private fun Modifier.sportsCardPagerContainer(
 @Composable
 private fun SportsCardPagerContent(
     pagerState: PagerState,
-    pages: List<@Composable (pageNumber: Int, pageCount: Int) -> Unit>,
+    pages: List<SportsPage>,
     isChampionsPage: Boolean,
 ) {
     val pagerBottomPadding = if (isChampionsPage) 0.dp else FirefoxTheme.layout.space.static150
@@ -196,7 +231,7 @@ private fun SportsCardPagerContent(
                 .padding(bottom = pagerBottomPadding)
                 .clipToBounds(),
         ) { page ->
-            pages[page](page + 1, pages.size)
+            pages[page].content(page + 1, pages.size)
         }
     }
 }
@@ -244,7 +279,7 @@ private fun SportsCardPagerPreview() {
             SportsCardPager(
                 isTeamSelected = true,
                 pages = listOf(
-                    { pageNumber, pageCount ->
+                    SportsPage(type = SportsCardType.COUNTDOWN_PROMO) { pageNumber, pageCount ->
                         CountdownPromoCard(
                             dateInUtc = "2026-06-11T00:00:00Z",
                             actionButtonLabelResId = R.string.sports_widget_country_selector_title,
@@ -254,7 +289,7 @@ private fun SportsCardPagerPreview() {
                             pageCount = pageCount,
                         )
                     },
-                    { pageNumber, pageCount ->
+                    SportsPage(type = SportsCardType.MATCH_GROUP_STAGE) { pageNumber, pageCount ->
                         MatchCard(
                             state = MatchCardState(
                                 matches = listOf(

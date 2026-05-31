@@ -50,6 +50,8 @@ import org.mozilla.fenix.home.search.HomeSearchInteractor
 import org.mozilla.fenix.home.sessioncontrol.CollectionInteractor
 import org.mozilla.fenix.home.sports.CountrySelectorSource
 import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
+import org.mozilla.fenix.home.sports.SportsCardImpressionSource
+import org.mozilla.fenix.home.sports.SportsCardType
 import org.mozilla.fenix.home.sports.SportsInteractor
 import org.mozilla.fenix.home.store.NimbusMessageState
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerInteractor
@@ -121,7 +123,10 @@ internal object FakeHomepagePreview {
 
             override fun onMatchClicked(homeTeam: String?, awayTeam: String?, date: String?) { /* no op */ }
 
-            override fun onSportsWidgetShown() { /* no op */ }
+            override fun onSportsWidgetCardShown(
+                cardType: SportsCardType,
+                source: SportsCardImpressionSource,
+            ) { /* no op */ }
 
             override fun onCountrySelectorShown(source: CountrySelectorSource) { /* no op */ }
         }
