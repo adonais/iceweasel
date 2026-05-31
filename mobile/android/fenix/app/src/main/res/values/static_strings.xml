@@ -252,6 +252,7 @@
     <!-- Debug drawer Homepage Sports Widget tool -->
     <string name="debug_drawer_sports_widget_tool_title">Homepage Sports Widget Tool</string>
     <string name="debug_drawer_sports_widget_tool_world_cup_started">World Cup has started</string>
+    <string name="debug_drawer_sports_widget_tool_one_week_to_world_cup">One week to World Cup</string>
     <string name="debug_drawer_sports_widget_tool_skipped_follow_team">Skip follow your team</string>
 
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->

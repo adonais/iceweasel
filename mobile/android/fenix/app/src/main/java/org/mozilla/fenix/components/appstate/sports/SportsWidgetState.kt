@@ -7,6 +7,7 @@ package org.mozilla.fenix.components.appstate.sports
 import org.mozilla.fenix.home.sports.MatchCard
 import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.sports.hasWorldCupStarted
+import org.mozilla.fenix.home.sports.isOneWeekToWorldCup
 
 /**
  * State of the sports widget on the homepage.
@@ -22,6 +23,7 @@ import org.mozilla.fenix.home.sports.hasWorldCupStarted
  * is currently displayed on the homepage.
  * @property hasWorldCupStartedOverride Debug-only override for [hasWorldCupStarted].
  * @property errorState The [SportCardErrorState] if the last fetch failed, null otherwise.
+ * @property isOneWeekToWorldCupOverride Debug-only override for [isOneWeekToWorldCup].
  */
 data class SportsWidgetState(
     val countriesSelected: Set<String> = emptySet(),
@@ -33,6 +35,7 @@ data class SportsWidgetState(
     val isDebugToolVisible: Boolean = false,
     val hasWorldCupStartedOverride: Boolean? = null,
     val errorState: SportCardErrorState? = null,
+    val isOneWeekToWorldCupOverride: Boolean? = null,
 ) {
     /**
      * Whether the sports widget should be rendered on the homepage: true only when the feature
@@ -44,9 +47,12 @@ data class SportsWidgetState(
     val hasWorldCupStarted: Boolean
         get() = hasWorldCupStartedOverride ?: hasWorldCupStarted()
 
+    val isOneWeekToWorldCup: Boolean
+        get() = isOneWeekToWorldCupOverride ?: isOneWeekToWorldCup()
+
     val isCountdownShown: Boolean
-        get() = !hasWorldCupStarted && isCountdownWidgetVisible
+        get() = !hasWorldCupStarted && !isOneWeekToWorldCup && isCountdownWidgetVisible
 
     val isFollowTeamsCardShown: Boolean
-        get() = hasWorldCupStarted && !hasSkippedFollowTeam && countriesSelected.isEmpty()
+        get() = !hasSkippedFollowTeam && countriesSelected.isEmpty()
 }

@@ -68,5 +68,11 @@ internal object SportsWidgetReducer {
                 errorState = action.error,
             ),
         )
+
+        is SportsWidgetAction.OneWeekToWorldCupOverrideUpdated -> state.copy(
+            sportsWidgetState = state.sportsWidgetState.copy(
+                isOneWeekToWorldCupOverride = action.isOneWeekToWorldCupOverride,
+            ),
+        )
     }
 }

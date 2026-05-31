@@ -362,4 +362,18 @@ class SportsWidgetReducerTest {
 
         assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
     }
+
+    @Test
+    fun `GIVEN isOneWeekToWorldCupOverride is false WHEN WorldCupStartedUpdated is dispatched with true THEN isOneWeekToWorldCup is true`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(isOneWeekToWorldCupOverride = false),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.OneWeekToWorldCupOverrideUpdated(isOneWeekToWorldCupOverride = true),
+        )
+
+        assertTrue(finalState.sportsWidgetState.isOneWeekToWorldCup)
+    }
 }

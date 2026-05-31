@@ -895,5 +895,14 @@ sealed class AppAction : Action {
          * @property error The [SportCardErrorState] describing the failure.
          */
         data class FetchFailed(val error: SportCardErrorState) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the user toggles the one week to the world cup override setting
+         * in the sport widget's debug tool. This overrides [SportsWidgetState.isOneWeekToWorldCup] and should
+         * be used for debug only.
+         *
+         * @property isOneWeekToWorldCupOverride Whether it's one week to the World Cup.
+         */
+        data class OneWeekToWorldCupOverrideUpdated(val isOneWeekToWorldCupOverride: Boolean) : SportsWidgetAction()
     }
 }

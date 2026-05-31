@@ -79,6 +79,19 @@ private fun SportsWidgetDebugToolContent(
         )
 
         SwitchListItem(
+            label = stringResource(R.string.debug_drawer_sports_widget_tool_one_week_to_world_cup),
+            checked = state.isOneWeekToWorldCup,
+            showSwitchAfter = true,
+            onClick = {
+                appStore.dispatch(
+                    SportsWidgetAction.OneWeekToWorldCupOverrideUpdated(
+                        isOneWeekToWorldCupOverride = it,
+                    ),
+                )
+            },
+        )
+
+        SwitchListItem(
             label = stringResource(R.string.debug_drawer_sports_widget_tool_skipped_follow_team),
             checked = state.hasSkippedFollowTeam,
             showSwitchAfter = true,

@@ -64,11 +64,27 @@ private fun parseUtcDate(utcDate: String): Long? = try {
 }
 
 /**
- * Checks if the world cup has started using the device's date
+ * Checks if the world cup has started.
+ *
+ * @param today Source of "today's" date. Defaults to the device's date.
  */
-fun hasWorldCupStarted(): Boolean {
+fun hasWorldCupStarted(today: () -> LocalDate = LocalDate::now): Boolean {
     val worldCupYear = 2026
     val worldCupMonth = 6
     val worldCupDay = 11
-    return LocalDate.now() >= LocalDate.of(worldCupYear, worldCupMonth, worldCupDay)
+    return today() >= LocalDate.of(worldCupYear, worldCupMonth, worldCupDay)
+}
+
+/**
+ * Checks if the world cup starts in one week.
+ * Returns true only during the window June 4–10, 2026 (i.e. on or after June 4 but before kickoff).
+ *
+ * @param today Source of "today's" date. Defaults to the device's date.
+ */
+fun isOneWeekToWorldCup(today: () -> LocalDate = LocalDate::now): Boolean {
+    val worldCupYear = 2026
+    val worldCupMonth = 6
+    val oneWeekToWorldCupDay = 4
+    return today() >= LocalDate.of(worldCupYear, worldCupMonth, oneWeekToWorldCupDay) &&
+        !hasWorldCupStarted(today)
 }

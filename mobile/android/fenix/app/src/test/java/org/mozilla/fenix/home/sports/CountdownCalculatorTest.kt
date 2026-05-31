@@ -8,7 +8,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import java.time.Instant
+import java.time.LocalDate
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class CountdownCalculatorTest {
 
@@ -127,5 +130,50 @@ class CountdownCalculatorTest {
         assertEquals(2, emissions.size)
         assertEquals(CountdownTime(days = "00", hours = "00", mins = "01"), emissions[0])
         assertEquals(CountdownTime(days = "00", hours = "00", mins = "00"), emissions[1])
+    }
+
+    @Test
+    fun `GIVEN today is before kickoff WHEN checking hasWorldCupStarted THEN returns false`() {
+        assertFalse(hasWorldCupStarted(today = { LocalDate.of(2026, 6, 10) }))
+    }
+
+    @Test
+    fun `GIVEN today is exactly the kickoff date WHEN checking hasWorldCupStarted THEN returns true`() {
+        assertTrue(hasWorldCupStarted(today = { LocalDate.of(2026, 6, 11) }))
+    }
+
+    @Test
+    fun `GIVEN today is after kickoff WHEN checking hasWorldCupStarted THEN returns true`() {
+        assertTrue(hasWorldCupStarted(today = { LocalDate.of(2026, 7, 1) }))
+    }
+
+    @Test
+    fun `GIVEN today is before the one-week window WHEN checking isOneWeekToWorldCup THEN returns false`() {
+        assertFalse(isOneWeekToWorldCup(today = { LocalDate.of(2026, 6, 3) }))
+    }
+
+    @Test
+    fun `GIVEN today is the start of the one-week window WHEN checking isOneWeekToWorldCup THEN returns true`() {
+        assertTrue(isOneWeekToWorldCup(today = { LocalDate.of(2026, 6, 4) }))
+    }
+
+    @Test
+    fun `GIVEN today is mid-window WHEN checking isOneWeekToWorldCup THEN returns true`() {
+        assertTrue(isOneWeekToWorldCup(today = { LocalDate.of(2026, 6, 8) }))
+    }
+
+    @Test
+    fun `GIVEN today is the day before kickoff WHEN checking isOneWeekToWorldCup THEN returns true`() {
+        assertTrue(isOneWeekToWorldCup(today = { LocalDate.of(2026, 6, 10) }))
+    }
+
+    @Test
+    fun `GIVEN today is the kickoff date WHEN checking isOneWeekToWorldCup THEN returns false`() {
+        assertFalse(isOneWeekToWorldCup(today = { LocalDate.of(2026, 6, 11) }))
+    }
+
+    @Test
+    fun `GIVEN today is after kickoff WHEN checking isOneWeekToWorldCup THEN returns false`() {
+        assertFalse(isOneWeekToWorldCup(today = { LocalDate.of(2026, 7, 1) }))
     }
 }

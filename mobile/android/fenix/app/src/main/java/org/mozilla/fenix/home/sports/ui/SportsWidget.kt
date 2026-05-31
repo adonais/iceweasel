@@ -34,6 +34,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param modifier [Modifier] to apply to the composable.
  */
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun SportsWidget(
     sportsWidgetState: SportsWidgetState,
     onDismiss: () -> Unit,
@@ -45,6 +46,7 @@ fun SportsWidget(
 ) {
     Spacer(modifier = Modifier.height(44.dp))
 
+    val worldCupKickoffDate = "2026-06-11T00:00:00Z"
     val isLargeWindow = LocalContext.current.isLargeWindow()
     val isLandscape = LocalContext.current.isLandscape()
     val modifier = Modifier.fillMaxWidth(
@@ -54,27 +56,89 @@ fun SportsWidget(
         },
     )
 
-    if (sportsWidgetState.isCountdownShown) {
-        val worldCupKickoffDate = "2026-06-11T00:00:00Z"
-        CountdownPromoCard(
-            dateInUtc = worldCupKickoffDate,
-            actionButtonLabelResId = R.string.sports_widget_view_schedule,
-            onClick = onViewSchedule,
-            onDismiss = onCountdownWidgetDismiss,
-            modifier = modifier.padding(horizontal = horizontalMargin),
-        )
-    } else if (sportsWidgetState.isFollowTeamsCardShown) {
-        FollowTeamPromoCard(
-            onFollowTeam = onFollowTeam,
-            onSkip = onSkip,
-            onDismiss = onDismiss,
-            modifier = modifier.padding(horizontal = horizontalMargin),
-        )
-    } else if (sportsWidgetState.matchCardState != null) {
-        MatchCard(
-            state = sportsWidgetState.matchCardState,
-            modifier = modifier.padding(horizontal = horizontalMargin),
-        )
+    when {
+        sportsWidgetState.isCountdownShown -> {
+            CountdownPromoCard(
+                dateInUtc = worldCupKickoffDate,
+                actionButtonLabelResId = R.string.sports_widget_view_schedule,
+                onClick = onViewSchedule,
+                onDismiss = onCountdownWidgetDismiss,
+                modifier = modifier.padding(horizontal = horizontalMargin),
+            )
+        }
+
+        sportsWidgetState.isOneWeekToWorldCup -> {
+            SportsCardPager(
+                pages = oneWeekToWorldCupPages(
+                    sportsWidgetState = sportsWidgetState,
+                    onFollowTeam = onFollowTeam,
+                    worldCupKickoffDate = worldCupKickoffDate,
+                ),
+                onChangeTeam = onFollowTeam,
+                onGetCustomWallpaper = {},
+                onRemove = onDismiss,
+                modifier = modifier.padding(horizontal = horizontalMargin),
+            )
+        }
+
+        sportsWidgetState.hasWorldCupStarted -> {
+            SportsCardPager(
+                pages = worldCupStartedPages(
+                    sportsWidgetState = sportsWidgetState,
+                    onFollowTeam = onFollowTeam,
+                    onSkip = onSkip,
+                    onDismiss = onDismiss,
+                ),
+                onChangeTeam = onFollowTeam,
+                onGetCustomWallpaper = {},
+                onRemove = onDismiss,
+                modifier = modifier.padding(horizontal = horizontalMargin),
+            )
+        }
+    }
+}
+
+private fun oneWeekToWorldCupPages(
+    sportsWidgetState: SportsWidgetState,
+    onFollowTeam: () -> Unit,
+    worldCupKickoffDate: String,
+): List<@Composable () -> Unit> = buildList {
+    if (sportsWidgetState.isFollowTeamsCardShown) {
+        add {
+            CountdownPromoCard(
+                dateInUtc = worldCupKickoffDate,
+                actionButtonLabelResId = R.string.sports_widget_country_selector_title,
+                onClick = onFollowTeam,
+                onDismiss = null,
+            )
+        }
+    }
+    if (sportsWidgetState.matchCardState != null) {
+        add {
+            MatchCard(state = sportsWidgetState.matchCardState)
+        }
+    }
+}
+
+private fun worldCupStartedPages(
+    sportsWidgetState: SportsWidgetState,
+    onFollowTeam: () -> Unit,
+    onSkip: () -> Unit,
+    onDismiss: () -> Unit,
+): List<@Composable () -> Unit> = buildList {
+    if (sportsWidgetState.isFollowTeamsCardShown) {
+        add {
+            FollowTeamPromoCard(
+                onFollowTeam = onFollowTeam,
+                onSkip = onSkip,
+                onDismiss = onDismiss,
+            )
+        }
+    }
+    if (sportsWidgetState.matchCardState != null) {
+        add {
+            MatchCard(state = sportsWidgetState.matchCardState)
+        }
     }
 }
 
