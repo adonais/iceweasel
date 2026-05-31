@@ -4348,6 +4348,8 @@
   <string name="sports_widget_confederation_asia">Осиё</string>
   <!-- Section header for the Europe confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_europe">Аврупо</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live">ПАХШИ МУСТАҚИМ</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
   <string name="sports_widget_third_place_title">Ҷойи сеюм</string>
   <!-- Sports widget action label to refresh match data after an error. -->

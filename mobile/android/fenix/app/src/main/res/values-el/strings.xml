@@ -23,6 +23,8 @@
   <string name="content_description_normal_browsing">Κανονική περιήγηση</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Αναζήτηση όρου ή εισαγωγή διεύθυνσης</string>
+  <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+  <string name="search_hint_short">Αναζήτηση</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">Αναζήτηση στο διαδίκτυο</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -2845,6 +2847,8 @@
   <string name="etp_suspected_fingerprinters_description">Ενεργοποιεί την προστασία από fingerprinting για την αποτροπή των πιθανών fingerprinter.</string>
   <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_known_fingerprinters_title">Γνωστά fingerprinter</string>
+  <!-- Label for the fingerprinters category shown in the tracking protections dashboard breakdown -->
+  <string name="tracking_dashboard_fingerprinters_category_name">Fingerprinter</string>
   <!--
     Description of the SmartBlock Enhanced Tracking Protection feature. The * symbol is intentionally hardcoded here,
     as we use it on the UI to indicate which trackers have been partially unblocked.
@@ -4666,4 +4670,14 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Σημείωση απορρήτου</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Μάθετε περισσότερα</string>
+  <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
+  <string name="firefox_labs_restore_default_button_text">Επαναφορά προεπιλογών</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
+  <string name="firefox_labs_feature_dialog_title">Απαιτείται επανεκκίνηση</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+  <string name="firefox_labs_dialog_restart_button">Επανεκκίνηση</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+  <string name="firefox_labs_dialog_cancel_button">Ακύρωση</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+  <string name="firefox_labs_restore_defaults_dialog_title">Απαιτείται επανεκκίνηση</string>
 </resources>

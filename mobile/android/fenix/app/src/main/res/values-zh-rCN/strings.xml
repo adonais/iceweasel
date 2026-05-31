@@ -3862,7 +3862,7 @@
 
     Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_banner_not_secure_title">请谨慎浏览此网站</string>
+  <string name="protection_panel_banner_not_secure_title">谨慎使用此网站</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">您的连接不安全。</string>
   <!-- Title text for the protection panel banner when tracking protection is disabled. -->
