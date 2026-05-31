@@ -34,8 +34,8 @@ data class SportsTeam(
  *
  * @property globalEventId Stable upstream identifier; the natural cache key.
  * @property date Match start time in the device's local timezone.
- * @property homeTeam Home [SportsTeam].
- * @property awayTeam Away [SportsTeam].
+ * @property homeTeam Home [SportsTeam]. Null if the match has not been scheduled.
+ * @property awayTeam Away [SportsTeam]. Null if the match has not been scheduled.
  * @property matchStatus Current [MatchStatus].
  * @property homeScore Home team score, or null if the match has not started.
  * @property awayScore Away team score, or null if the match has not started.
@@ -52,8 +52,8 @@ data class SportsTeam(
 data class SportsMatch(
     val globalEventId: Long,
     val date: ZonedDateTime,
-    val homeTeam: SportsTeam,
-    val awayTeam: SportsTeam,
+    val homeTeam: SportsTeam?,
+    val awayTeam: SportsTeam?,
     val matchStatus: MatchStatus,
     val homeScore: Int?,
     val awayScore: Int?,

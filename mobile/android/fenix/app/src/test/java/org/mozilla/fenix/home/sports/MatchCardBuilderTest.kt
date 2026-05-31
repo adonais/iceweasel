@@ -48,6 +48,25 @@ class MatchCardBuilderTest {
     }
 
     @Test
+    fun `buildForTeam GIVEN a match with undetermined teams THEN null teams pass through to the UI`() {
+        val tbd = sportsMatch(
+            id = 1L,
+            stage = TournamentRound.SEMI_FINAL,
+            status = MatchStatus.Scheduled,
+            homeKey = null,
+            awayKey = null,
+        )
+
+        val cards = MatchCardBuilder.buildForTeam(
+            TeamMatchesResult(previous = emptyList(), current = emptyList(), next = listOf(tbd)),
+        )
+
+        val match = cards.single().matches.single()
+        assertEquals(null, match.home)
+        assertEquals(null, match.away)
+    }
+
+    @Test
     fun `buildForTeam GIVEN knockout matches THEN live before past before upcoming`() {
         val r32 = sportsMatch(
             id = 1L,
@@ -524,8 +543,8 @@ class MatchCardBuilderTest {
     private fun sportsMatch(
         id: Long,
         date: ZonedDateTime = zonedDateTime(2026, 6, 12, 18),
-        homeKey: String = "USA",
-        awayKey: String = "MEX",
+        homeKey: String? = "USA",
+        awayKey: String? = "MEX",
         status: MatchStatus = MatchStatus.Scheduled,
         stage: TournamentRound = TournamentRound.GROUP_STAGE,
         homeScore: Int? = null,
@@ -537,24 +556,8 @@ class MatchCardBuilderTest {
     ): SportsMatch = SportsMatch(
         globalEventId = id,
         date = date,
-        homeTeam = SportsTeam(
-            key = homeKey,
-            globalTeamId = 0L,
-            name = homeKey,
-            region = homeKey,
-            iconUrl = null,
-            group = null,
-            eliminated = homeEliminated,
-        ),
-        awayTeam = SportsTeam(
-            key = awayKey,
-            globalTeamId = 0L,
-            name = awayKey,
-            region = awayKey,
-            iconUrl = null,
-            group = null,
-            eliminated = awayEliminated,
-        ),
+        homeTeam = homeKey?.let { sportsTeam(it, homeEliminated) },
+        awayTeam = awayKey?.let { sportsTeam(it, awayEliminated) },
         matchStatus = status,
         homeScore = homeScore,
         awayScore = awayScore,
@@ -567,6 +570,16 @@ class MatchCardBuilderTest {
         updated = null,
         venue = null,
         stage = stage,
+    )
+
+    private fun sportsTeam(key: String, eliminated: Boolean): SportsTeam = SportsTeam(
+        key = key,
+        globalTeamId = 0L,
+        name = key,
+        region = key,
+        iconUrl = null,
+        group = null,
+        eliminated = eliminated,
     )
 
     // endregion

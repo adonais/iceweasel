@@ -42,8 +42,8 @@ class MatchesResponseMapperTest {
         assertEquals(1, result.size)
         with(result[0]) {
             assertEquals(42L, globalEventId)
-            assertEquals("USA", homeTeam.key)
-            assertEquals("ENG", awayTeam.key)
+            assertEquals("USA", homeTeam?.key)
+            assertEquals("ENG", awayTeam?.key)
             assertEquals(1, homeScore)
             assertEquals(2, awayScore)
             assertEquals(0, homeExtra)
@@ -146,7 +146,7 @@ class MatchesResponseMapperTest {
                 eliminated = true,
             ),
         )
-        val team = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0].homeTeam
+        val team = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0].homeTeam!!
 
         assertEquals("USA", team.key)
         assertEquals(99L, team.globalTeamId)
@@ -164,22 +164,22 @@ class MatchesResponseMapperTest {
             awayTeam = TeamInfoDto(key = "DEU"),
         )
         val match = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0]
-        assertEquals("URU", match.homeTeam.key)
-        assertEquals("GER", match.awayTeam.key)
+        assertEquals("URU", match.homeTeam?.key)
+        assertEquals("GER", match.awayTeam?.key)
     }
 
     @Test
     fun `GIVEN a team with a CVI key WHEN mapped THEN key is normalized to FIFA`() {
         val dto = minimalEvent().copy(homeTeam = TeamInfoDto(key = "CVI"))
         val match = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0]
-        assertEquals("CPV", match.homeTeam.key)
+        assertEquals("CPV", match.homeTeam?.key)
     }
 
     @Test
     fun `GIVEN a team key with no alias WHEN mapped THEN key is left untouched`() {
         val dto = minimalEvent().copy(homeTeam = TeamInfoDto(key = "ENG"))
         val match = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0]
-        assertEquals("ENG", match.homeTeam.key)
+        assertEquals("ENG", match.homeTeam?.key)
     }
 
     @Test
@@ -189,8 +189,29 @@ class MatchesResponseMapperTest {
         )
         val team = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0].homeTeam
 
-        assertNull(team.iconUrl)
-        assertNull(team.group)
+        assertNull(team?.iconUrl)
+        assertNull(team?.group)
+    }
+
+    @Test
+    fun `GIVEN a blank placeholder team WHEN mapped THEN the team is null`() {
+        // Undetermined participant: the feed sends an empty team object.
+        val dto = minimalEvent().copy(
+            homeTeam = TeamInfoDto(),
+            awayTeam = TeamInfoDto(key = "ENG", globalTeamId = 2L),
+        )
+        val match = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0]
+
+        assertNull(match.homeTeam)
+        assertEquals("ENG", match.awayTeam?.key)
+    }
+
+    @Test
+    fun `GIVEN a team with a key but no id WHEN mapped THEN the team is kept`() {
+        val dto = minimalEvent().copy(homeTeam = TeamInfoDto(key = "USA", globalTeamId = 0L))
+        val match = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0]
+
+        assertEquals("USA", match.homeTeam?.key)
     }
 
     // endregion

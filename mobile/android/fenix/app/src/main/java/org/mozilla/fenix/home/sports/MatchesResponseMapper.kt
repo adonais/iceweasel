@@ -64,18 +64,28 @@ class MatchesResponseMapper(
         stage = mapStage(dto.stage),
     )
 
+    // Unscheduled teams arrive either as an explicit null or as a blank placeholder.
+    // Map both to null so the card builder and UI can render an empty team slot.
+    //
     // The feed uses ISO 3166-1 alpha-3; normalize to the
     // FIFA codes that the rest of the app keys teams by, so downstream filtering
     // and lookups have a single identity to work against.
-    private fun mapTeam(dto: TeamInfoDto) = SportsTeam(
-        key = apiKeyToFifa[dto.key] ?: dto.key,
-        globalTeamId = dto.globalTeamId,
-        name = dto.name,
-        region = dto.region,
-        iconUrl = dto.iconUrl,
-        group = dto.group,
-        eliminated = dto.eliminated,
-    )
+    private fun mapTeam(dto: TeamInfoDto?): SportsTeam? {
+        if (dto == null) return null
+        // The team object exists but has no numeric team ID and no team key string. There's nothing to key on, so it's
+        //  treated the same as a missing team and mapped to null,
+        //  letting the UI render an empty slot rather than a fake team with name = "", region = "", etc.
+        if (dto.globalTeamId == 0L && dto.key.isBlank()) return null
+        return SportsTeam(
+            key = apiKeyToFifa[dto.key] ?: dto.key,
+            globalTeamId = dto.globalTeamId,
+            name = dto.name,
+            region = dto.region,
+            iconUrl = dto.iconUrl,
+            group = dto.group,
+            eliminated = dto.eliminated,
+        )
+    }
 
     private fun parseDate(utcDate: String): ZonedDateTime = try {
         ZonedDateTime.parse(utcDate, DateTimeFormatter.ISO_DATE_TIME)
@@ -120,7 +130,7 @@ class MatchesResponseMapper(
             "semifinal", "semifinals" -> TournamentRound.SEMI_FINAL
             "final" -> TournamentRound.FINAL
             "3rdplace", "thirdplace", "3rdplaceplayoff", "thirdplaceplayoff",
-                -> TournamentRound.THIRD_PLACE_PLAYOFF
+            -> TournamentRound.THIRD_PLACE_PLAYOFF
 
             else -> TournamentRound.GROUP_STAGE
         }
