@@ -50,8 +50,14 @@ internal fun SportCardHeader(
     pageNumber: Int? = null,
     pageCount: Int? = null,
 ) {
-    val title = if (isTeamSelected) {
-        groupDisplayName(group = match.home?.group) ?: roundDisplayName(round)
+    // Group label only makes sense on the group-stage card (both teams share a group).
+    // Knockout rounds pair teams from different groups, so showing the home team's group
+    // would be misleading — use the round name there.
+    // For the group-stage case, fall through home → away so the label still resolves
+    // when the followed team is the away side or one side carries partial data.
+    val title = if (isTeamSelected && round == TournamentRound.GROUP_STAGE) {
+        val groupForDisplay = match.home?.group ?: match.away?.group
+        groupDisplayName(group = groupForDisplay) ?: roundDisplayName(round)
     } else {
         roundDisplayName(round)
     }
