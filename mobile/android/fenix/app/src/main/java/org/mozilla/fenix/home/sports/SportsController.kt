@@ -43,6 +43,11 @@ interface SportsController {
      * Handles the user clicking the "View Schedule" button.
      */
     fun handleViewScheduleClicked()
+
+    /**
+     * Handles the user tapping the reload button to manually refresh match data.
+     */
+    fun handleRefreshClicked()
 }
 
 /**
@@ -79,6 +84,10 @@ class DefaultSportsController(
         settings.showHomepageCountdownWidget = false
         appStore.dispatch(AppAction.SportsWidgetAction.CountdownVisibilityChanged(isCountdownVisible = false))
         WorldCup.countdownCrossActionClicked.record()
+    }
+
+    override fun handleRefreshClicked() {
+        appStore.dispatch(AppAction.SportsWidgetAction.FetchMatches)
     }
 
     override fun handleViewScheduleClicked() {

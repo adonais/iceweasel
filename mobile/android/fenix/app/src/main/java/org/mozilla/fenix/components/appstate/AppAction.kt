@@ -35,6 +35,7 @@ import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTabState
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.home.sports.MatchCard
+import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.library.history.PendingDeletionHistory
 import org.mozilla.fenix.messaging.MessagingState
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -881,5 +882,18 @@ sealed class AppAction : Action {
          * @property hasSkippedFollowTeam Whether the user skipped the "Follow your team" card.
          */
         data class SkipFollowTeamUpdated(val hasSkippedFollowTeam: Boolean) : SportsWidgetAction()
+
+        /**
+         * Dispatched to request a fetch of the latest match data from the sports API.
+         * Triggered by manual user refresh or when the selected countries change.
+         */
+        data object FetchMatches : SportsWidgetAction()
+
+        /**
+         * Dispatched when a match data fetch fails.
+         *
+         * @property error The [SportCardErrorState] describing the failure.
+         */
+        data class FetchFailed(val error: SportCardErrorState) : SportsWidgetAction()
     }
 }

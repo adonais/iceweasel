@@ -110,6 +110,7 @@ internal object FakeHomepagePreview {
             override fun onSportsWidgetDismissed() { /* no op */ }
 
             override fun onViewScheduleClicked() { /* no op */ }
+            override fun onRefreshClicked() { /* no op */ }
 
             override fun onCountdownWidgetDismissed() { /* no op */ }
         }

@@ -35,6 +35,11 @@ interface SportsInteractor {
      * Called when the user clicks the "View Schedule" button.
      */
     fun onViewScheduleClicked()
+
+    /**
+     * Called when the user taps the reload button to manually refresh match data.
+     */
+    fun onRefreshClicked()
 }
 
 /**
@@ -64,5 +69,9 @@ class DefaultSportsInteractor(
 
     override fun onViewScheduleClicked() {
         controller.handleViewScheduleClicked()
+    }
+
+    override fun onRefreshClicked() {
+        controller.handleRefreshClicked()
     }
 }

@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.appstate.sports
 
 import org.mozilla.fenix.home.sports.MatchCard
+import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.sports.hasWorldCupStarted
 
 /**
@@ -20,6 +21,7 @@ import org.mozilla.fenix.home.sports.hasWorldCupStarted
  * @property isDebugToolVisible Whether the debug tool for adjusting [SportsWidgetState]
  * is currently displayed on the homepage.
  * @property hasWorldCupStartedOverride Debug-only override for [hasWorldCupStarted].
+ * @property errorState The [SportCardErrorState] if the last fetch failed, null otherwise.
  */
 data class SportsWidgetState(
     val countriesSelected: Set<String> = emptySet(),
@@ -30,6 +32,7 @@ data class SportsWidgetState(
     val matchCardState: MatchCard? = null,
     val isDebugToolVisible: Boolean = false,
     val hasWorldCupStartedOverride: Boolean? = null,
+    val errorState: SportCardErrorState? = null,
 ) {
     /**
      * Whether the sports widget should be rendered on the homepage: true only when the feature
