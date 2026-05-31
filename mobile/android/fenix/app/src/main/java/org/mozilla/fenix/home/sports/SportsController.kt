@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.home.sports
 
+import android.net.ConnectivityManager
 import androidx.navigation.NavController
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
@@ -12,6 +13,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.ext.isOnline
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.home.sports.util.localizedCountryName
 import org.mozilla.fenix.utils.Settings
@@ -82,6 +84,7 @@ interface SportsController {
  * @param settings [Settings] used to persist sports widget preferences.
  * @param navController [NavController] used to navigate to a new browser fragment.
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used to load the sports schedule.
+ * @param connectivityManager [ConnectivityManager] used to short-circuit refresh requests when the device is offline.
  */
 class DefaultSportsController(
     private val appStore: AppStore,
@@ -89,6 +92,7 @@ class DefaultSportsController(
     private val settings: Settings,
     private val navController: NavController,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
+    private val connectivityManager: ConnectivityManager?,
 ) : SportsController {
 
     override fun handleCountriesSelected(countryCodes: Set<String>) {
@@ -118,7 +122,12 @@ class DefaultSportsController(
     }
 
     override fun handleRefreshClicked(source: LiveMatchRefreshSource) {
-        appStore.dispatch(AppAction.SportsWidgetAction.FetchMatches)
+        val action = if (connectivityManager?.isOnline() == true) {
+            AppAction.SportsWidgetAction.FetchMatches
+        } else {
+            AppAction.SportsWidgetAction.FetchFailed(SportCardErrorState.ConnectionInterrupted)
+        }
+        appStore.dispatch(action)
         WorldCup.refreshClicked.record(
             extra = WorldCup.RefreshClickedExtra(source = source.value),
         )

@@ -23,6 +23,10 @@ import org.mozilla.fenix.components.appstate.AppState
  * team) can re-derive cards locally without a network round-trip. On cold
  * cache the selection falls through to a fresh fetch.
  *
+ * Connectivity is checked at the dispatch sites of [SportsWidgetAction.FetchMatches];
+ * a [SportsWidgetAction.FetchFailed] with [SportCardErrorState.ConnectionInterrupted]
+ * is dispatched instead when the device is offline, and [fetchAndBuild] is not invoked.
+ *
  * @param sportsRepository [SportsRepository] used to fetch match data.
  * @param coroutineScope [CoroutineScope] used for async fetch operations.
  */

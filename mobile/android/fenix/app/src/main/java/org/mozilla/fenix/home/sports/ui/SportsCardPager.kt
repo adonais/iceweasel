@@ -201,6 +201,7 @@ private fun SportsCardPagerPreview() {
                                 round = TournamentRound.GROUP_STAGE,
                                 relatedMatches = emptyList(),
                             ),
+                            errorState = null,
                             isTeamSelected = true,
                             modifier = Modifier.fillMaxWidth(),
                             onRefresh = {},
