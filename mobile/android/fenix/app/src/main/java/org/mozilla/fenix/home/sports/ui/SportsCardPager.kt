@@ -23,8 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import org.mozilla.fenix.compose.PagerIndicator
+import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
+import org.mozilla.fenix.compose.PagerIndicator
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
@@ -56,6 +57,7 @@ fun SportsCardPager(
     var showMenu by remember { mutableStateOf(false) }
     val contentDescription = stringResource(R.string.sports_widget_more_options_content_description)
     val pagerState = rememberPagerState { pages.size }
+    val bottomPadding = if (pages.size > 1) FirefoxTheme.layout.space.static200 else 0.dp
 
     Box(
         modifier = modifier
@@ -65,7 +67,7 @@ fun SportsCardPager(
             )
             .padding(
                 top = FirefoxTheme.layout.space.static150,
-                bottom = FirefoxTheme.layout.space.static200,
+                bottom = bottomPadding,
             ),
     ) {
         HorizontalPager(
