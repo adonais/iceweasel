@@ -66,9 +66,10 @@ interface SportsController {
     fun handleMatchClicked(homeTeam: String?, awayTeam: String?, date: String?)
 
     /**
-     * Called when the sports widget is displayed.
+     * Called when a sports widget card is shown to the user, either as the initial impression or
+     * after the user swipes to a new page in the pager.
      */
-    fun handleSportsWidgetShown()
+    fun handleSportsWidgetCardShown(cardType: SportsCardType, source: SportsCardImpressionSource)
 
     /**
      * Called when the country selector bottom sheet is displayed.
@@ -172,8 +173,13 @@ class DefaultSportsController(
         WorldCup.matchClicked.record()
     }
 
-    override fun handleSportsWidgetShown() {
-        WorldCup.sportsWidgetDisplayed.record()
+    override fun handleSportsWidgetCardShown(cardType: SportsCardType, source: SportsCardImpressionSource) {
+        WorldCup.sportsWidgetCardShown.record(
+            extra = WorldCup.SportsWidgetCardShownExtra(
+                source = source.value,
+                cardType = cardType.value,
+            ),
+        )
     }
 
     override fun handleCountrySelectorShown(source: CountrySelectorSource) {

@@ -208,10 +208,10 @@ class SportsControllerTest {
     }
 
     @Test
-    fun `GIVEN the live match error button source WHEN refresh is clicked THEN matches are fetched and telemetry is recorded with the source`() {
+    fun `GIVEN the live match card error button source WHEN refresh is clicked THEN matches are fetched and telemetry is recorded with the source`() {
         assertNull(WorldCup.refreshClicked.testGetValue())
 
-        controller.handleRefreshClicked(LiveMatchRefreshSource.LIVE_MATCH_ERROR_BUTTON)
+        controller.handleRefreshClicked(LiveMatchRefreshSource.LIVE_MATCH_CARD_ERROR_BUTTON)
 
         verify {
             appStore.dispatch(AppAction.SportsWidgetAction.FetchMatches)
@@ -220,7 +220,25 @@ class SportsControllerTest {
         assertEquals(1, snapshot.size)
         assertEquals("refresh_clicked", snapshot.single().name)
         assertEquals(
-            LiveMatchRefreshSource.LIVE_MATCH_ERROR_BUTTON.value,
+            LiveMatchRefreshSource.LIVE_MATCH_CARD_ERROR_BUTTON.value,
+            snapshot.single().extra!!["source"],
+        )
+    }
+
+    @Test
+    fun `GIVEN the sports widget card error button source WHEN refresh is clicked THEN matches are fetched and telemetry is recorded with the source`() {
+        assertNull(WorldCup.refreshClicked.testGetValue())
+
+        controller.handleRefreshClicked(LiveMatchRefreshSource.SPORTS_WIDGET_CARD_ERROR_BUTTON)
+
+        verify {
+            appStore.dispatch(AppAction.SportsWidgetAction.FetchMatches)
+        }
+        val snapshot = WorldCup.refreshClicked.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals("refresh_clicked", snapshot.single().name)
+        assertEquals(
+            LiveMatchRefreshSource.SPORTS_WIDGET_CARD_ERROR_BUTTON.value,
             snapshot.single().extra!!["source"],
         )
     }
@@ -382,14 +400,50 @@ class SportsControllerTest {
     }
 
     @Test
-    fun `WHEN the sports widget is shown THEN telemetry is recorded`() {
-        assertNull(WorldCup.sportsWidgetDisplayed.testGetValue())
+    fun `WHEN a sports widget card impression is recorded THEN telemetry carries the card type and impression source`() {
+        assertNull(WorldCup.sportsWidgetCardShown.testGetValue())
 
-        controller.handleSportsWidgetShown()
+        controller.handleSportsWidgetCardShown(
+            cardType = SportsCardType.MATCH_GROUP_STAGE,
+            source = SportsCardImpressionSource.IMPRESSION,
+        )
 
-        val snapshot = WorldCup.sportsWidgetDisplayed.testGetValue()!!
+        val snapshot = WorldCup.sportsWidgetCardShown.testGetValue()!!
         assertEquals(1, snapshot.size)
-        assertEquals("sports_widget_displayed", snapshot.single().name)
+        val event = snapshot.single()
+        assertEquals("sports_widget_card_shown", event.name)
+        assertEquals(SportsCardImpressionSource.IMPRESSION.value, event.extra!!["source"])
+        assertEquals(SportsCardType.MATCH_GROUP_STAGE.value, event.extra!!["card_type"])
+    }
+
+    @Test
+    fun `WHEN a sports widget card swipe is recorded THEN telemetry carries the card type and swipe source`() {
+        assertNull(WorldCup.sportsWidgetCardShown.testGetValue())
+
+        controller.handleSportsWidgetCardShown(
+            cardType = SportsCardType.ERROR_CONNECTION_INTERRUPTED,
+            source = SportsCardImpressionSource.SWIPE,
+        )
+
+        val snapshot = WorldCup.sportsWidgetCardShown.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        val event = snapshot.single()
+        assertEquals("sports_widget_card_shown", event.name)
+        assertEquals(SportsCardImpressionSource.SWIPE.value, event.extra!!["source"])
+        assertEquals(SportsCardType.ERROR_CONNECTION_INTERRUPTED.value, event.extra!!["card_type"])
+    }
+
+    @Test
+    fun `GIVEN a load-failed error WHEN the error card is recorded as a card shown THEN the error type is preserved in the extra`() {
+        assertNull(WorldCup.sportsWidgetCardShown.testGetValue())
+
+        controller.handleSportsWidgetCardShown(
+            cardType = SportsCardType.fromError(SportCardErrorState.LoadFailed),
+            source = SportsCardImpressionSource.IMPRESSION,
+        )
+
+        val event = WorldCup.sportsWidgetCardShown.testGetValue()!!.single()
+        assertEquals(SportsCardType.ERROR_LOAD_FAILED.value, event.extra!!["card_type"])
     }
 
     @Test
