@@ -6,6 +6,7 @@ package org.mozilla.fenix.home.sports
 
 import androidx.navigation.NavController
 import org.mozilla.fenix.GleanMetrics.WorldCup
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
@@ -48,6 +49,11 @@ interface SportsController {
      * Handles the user tapping the reload button to manually refresh match data.
      */
     fun handleRefreshClicked()
+
+    /**
+     * Handles the user clicking the "Get custom wallpaper" menu item.
+     */
+    fun handleOnGetCustomWallpaperClicked()
 }
 
 /**
@@ -98,6 +104,10 @@ class DefaultSportsController(
             newTab = true,
         )
         WorldCup.viewScheduleOnCountdownClicked.record()
+    }
+
+    override fun handleOnGetCustomWallpaperClicked() {
+        navController.navigate(R.id.wallpaperSettingsFragment)
     }
 
     companion object {

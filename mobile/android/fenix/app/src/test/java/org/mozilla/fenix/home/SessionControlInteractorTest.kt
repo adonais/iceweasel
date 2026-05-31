@@ -314,4 +314,10 @@ class SessionControlInteractorTest {
         interactor.onCountdownWidgetDismissed()
         verify { sportsController.handleCountdownWidgetDismissed() }
     }
+
+    @Test
+    fun `WHEN the get custom wallpaper menu item is clicked THEN sports controller handles the navigation`() {
+        interactor.onGetCustomWallpaperClicked()
+        verify { sportsController.handleOnGetCustomWallpaperClicked() }
+    }
 }

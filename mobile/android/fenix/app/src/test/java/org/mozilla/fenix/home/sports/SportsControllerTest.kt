@@ -8,6 +8,7 @@ import androidx.navigation.NavController
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Test
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
@@ -95,6 +96,15 @@ class SportsControllerTest {
         verify {
             settings.showHomepageCountdownWidget = false
             appStore.dispatch(AppAction.SportsWidgetAction.CountdownVisibilityChanged(isCountdownVisible = false))
+        }
+    }
+
+    @Test
+    fun `WHEN the get custom wallpaper menu item is clicked THEN the Wallpaper Settings fragment is opened`() {
+        controller.handleOnGetCustomWallpaperClicked()
+
+        verify {
+            navController.navigate(R.id.wallpaperSettingsFragment)
         }
     }
 }

@@ -40,6 +40,7 @@ private val SportsWidgetTopSpacing = 44.dp
  * @param onViewSchedule Invoked when the "View schedule" button is tapped.
  * @param onFollowTeam Invoked when a team is followed.
  * @param onSkip Invoked when the user dismisses the "Follow team" card.
+ * @param onGetCustomWallpaper Invoked when the user clicks on the "Get custom wallpaper" menu item.
  * @param modifier [Modifier] to apply to the composable.
  */
 @Composable
@@ -51,6 +52,7 @@ fun SportsWidget(
     onViewSchedule: () -> Unit,
     onFollowTeam: () -> Unit,
     onSkip: () -> Unit,
+    onGetCustomWallpaper: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Spacer(modifier = Modifier.height(SportsWidgetTopSpacing))
@@ -96,7 +98,7 @@ fun SportsWidget(
                     onFollowTeam = onFollowTeam,
                 ),
                 onChangeTeam = onFollowTeam,
-                onGetCustomWallpaper = {},
+                onGetCustomWallpaper = onGetCustomWallpaper,
                 onRemove = onDismiss,
                 modifier = containerModifier,
             )

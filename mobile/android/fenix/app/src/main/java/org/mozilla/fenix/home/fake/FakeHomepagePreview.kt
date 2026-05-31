@@ -113,6 +113,8 @@ internal object FakeHomepagePreview {
             override fun onRefreshClicked() { /* no op */ }
 
             override fun onCountdownWidgetDismissed() { /* no op */ }
+
+            override fun onGetCustomWallpaperClicked() { /* no op */ }
         }
 
     internal val storiesInteractor
