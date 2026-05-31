@@ -92,6 +92,18 @@ sealed class MatchStatus {
 }
 
 /**
+ * True when the match is currently being played (regulation or penalty shootout).
+ */
+internal fun MatchStatus.isLive(): Boolean =
+    this is MatchStatus.Live || this is MatchStatus.Penalties
+
+/**
+ * True when the match has finished (regulation or after a shootout).
+ */
+internal fun MatchStatus.isPast(): Boolean =
+    this is MatchStatus.Final || this is MatchStatus.FinalAfterPenalties
+
+/**
  * Information related to a given sport event (game/match).
  *
  * @property globalEventId Stable upstream identifier; the natural cache key.
@@ -176,8 +188,13 @@ enum class TournamentRound {
     ROUND_OF_16,
     QUARTER_FINAL,
     SEMI_FINAL,
-    FINAL,
+
+    // Third-place playoff is played before the final in the World Cup schedule, so
+    // FINAL is the last entry — keeps `ordinal` aligned with actual progression so
+    // SportsWidgetMiddleware.activeRound's max-ordinal-by-played picks the climactic
+    // round correctly.
     THIRD_PLACE_PLAYOFF,
+    FINAL,
 }
 
 /**

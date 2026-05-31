@@ -2532,6 +2532,26 @@ class Settings(
         get() = FxNimbus.features.homepageSportsWidget.value().forceOneWeekToWorldCup
 
     /**
+     * Debug-only: when true, the Homepage Sports Widget calls the GCP-hosted mock World
+     * Cup server instead of production Merino. Combined with [mockWorldCupServerSession],
+     * the device hits the mock's `<session-id>/api/v1/wcs/...` routes so QA can simulate
+     * any tournament state ahead of kickoff.
+     */
+    var useMockWorldCupServer by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_use_mock_world_cup_server),
+        default = false,
+    )
+
+    /**
+     * Debug-only: session prefix issued by the mock server's UI (e.g. `jolly-narwhal-39`).
+     * Required when [useMockWorldCupServer] is true.
+     */
+    var mockWorldCupServerSession by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_mock_world_cup_server_session),
+        default = "",
+    )
+
+    /**
      * Indicates if the Homepage Sports Widget should be visible on the homepage.
      * This is the user-controlled visibility toggle, independent of the
      * [enableHomepageSportsWidget] feature flag.

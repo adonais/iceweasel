@@ -439,4 +439,59 @@ class SportsWidgetReducerTest {
 
         assertTrue(finalState.sportsWidgetState.isOneWeekToWorldCup)
     }
+
+    @Test
+    fun `WHEN WorldCupStarted override turned ON THEN OneWeek override is forced off`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(
+                hasWorldCupStartedOverride = false,
+                isOneWeekToWorldCupOverride = true,
+            ),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.WorldCupStartedOverrideUpdated(hasWorldCupStartedOverride = true),
+        )
+
+        assertTrue(finalState.sportsWidgetState.hasWorldCupStarted)
+        assertFalse(finalState.sportsWidgetState.isOneWeekToWorldCup)
+    }
+
+    @Test
+    fun `WHEN OneWeek override turned ON THEN WorldCupStarted override is forced off`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(
+                hasWorldCupStartedOverride = true,
+                isOneWeekToWorldCupOverride = false,
+            ),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.OneWeekToWorldCupOverrideUpdated(isOneWeekToWorldCupOverride = true),
+        )
+
+        assertTrue(finalState.sportsWidgetState.isOneWeekToWorldCup)
+        assertFalse(finalState.sportsWidgetState.hasWorldCupStarted)
+    }
+
+    @Test
+    fun `WHEN OneWeek override turned OFF THEN WorldCupStarted override is preserved`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(
+                hasWorldCupStartedOverride = true,
+                isOneWeekToWorldCupOverride = false,
+            ),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.OneWeekToWorldCupOverrideUpdated(isOneWeekToWorldCupOverride = false),
+        )
+
+        // Toggling one OFF doesn't touch the other.
+        assertTrue(finalState.sportsWidgetState.hasWorldCupStarted)
+        assertFalse(finalState.sportsWidgetState.isOneWeekToWorldCup)
+    }
 }

@@ -110,14 +110,6 @@ class MatchesResponseMapper(
             MatchStatus.Final
         }
 
-    /**
-     Canonical API values (per spec): "Group Stage", "Round of 32", "Round of 16",
-    "Quarter-Finals", "Semi-Finals", "3rd Place", "Final".
-
-    We normalize (lowercase + strip non-alphanumerics) before matching, so any
-    capitalization or punctuation variant — and any snake_case form we may have seen
-    in earlier drafts — maps to the same canonical key.
-     */
     private fun mapStage(stage: String): TournamentRound {
         val normalized = stage.lowercase().filter { it.isLetterOrDigit() }
         return when (normalized) {
@@ -133,7 +125,6 @@ class MatchesResponseMapper(
             else -> TournamentRound.GROUP_STAGE
         }
     }
-
 
     private companion object {
         const val STATUS_TYPE_LIVE = "live"

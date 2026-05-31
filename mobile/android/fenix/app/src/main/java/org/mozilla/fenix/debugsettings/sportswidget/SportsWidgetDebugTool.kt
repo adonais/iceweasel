@@ -15,12 +15,19 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -31,6 +38,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.compose.list.SwitchListItem
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.sports.MatchCard
 import org.mozilla.fenix.home.sports.MatchStatus
 import org.mozilla.fenix.home.sports.SportCardErrorState
@@ -108,11 +116,49 @@ private fun SportsWidgetDebugToolContent(
 
         HorizontalDivider()
 
+        MockServerSection(appStore = appStore)
+
+        HorizontalDivider()
+
         MatchCardScenariosSection(state = state, appStore = appStore)
 
         HorizontalDivider()
 
         ErrorStateScenariosSection(state = state, appStore = appStore)
+    }
+}
+
+@Composable
+private fun MockServerSection(appStore: AppStore) {
+    val settings = LocalContext.current.settings()
+    var useMockServer by remember { mutableStateOf(settings.useMockWorldCupServer) }
+    var sessionId by remember { mutableStateOf(settings.mockWorldCupServerSession) }
+
+    SwitchListItem(
+        label = stringResource(R.string.debug_drawer_sports_widget_tool_use_mock_server),
+        checked = useMockServer,
+        showSwitchAfter = true,
+        onClick = { checked ->
+            useMockServer = checked
+            settings.useMockWorldCupServer = checked
+            // Re-trigger a fetch so the change is visible immediately.
+            appStore.dispatch(SportsWidgetAction.FetchMatches)
+        },
+    )
+
+    if (useMockServer) {
+        OutlinedTextField(
+            value = sessionId,
+            onValueChange = { newValue ->
+                sessionId = newValue
+                settings.mockWorldCupServerSession = newValue
+            },
+            label = { Text(stringResource(R.string.debug_drawer_sports_widget_tool_mock_server_session)) },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = FirefoxTheme.layout.space.static200),
+        )
     }
 }
 

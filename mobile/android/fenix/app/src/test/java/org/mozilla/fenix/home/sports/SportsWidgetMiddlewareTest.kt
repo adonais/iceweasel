@@ -178,8 +178,8 @@ class SportsWidgetMiddlewareTest {
             globalEventId = 2L,
             date = ZonedDateTime.of(2026, 6, 28, 14, 0, 0, 0, zone),
             homeTeam = can, awayTeam = aus,
-            matchStatus = MatchStatus.Scheduled,
-            homeScore = null, awayScore = null,
+            matchStatus = MatchStatus.Final,
+            homeScore = 1, awayScore = 0,
             homeExtra = null, awayExtra = null, homePenalty = null, awayPenalty = null,
             clock = null, period = null, updated = null, venue = null,
             stage = TournamentRound.ROUND_OF_32,
@@ -187,9 +187,9 @@ class SportsWidgetMiddlewareTest {
         val repo = StubRepository(
             Result.success(
                 TeamMatchesResult(
-                    previous = listOf(groupMatch),
+                    previous = listOf(groupMatch, r32Match),
                     current = emptyList(),
-                    next = listOf(r32Match),
+                    next = emptyList(),
                 ),
             ),
         )
@@ -291,7 +291,135 @@ class SportsWidgetMiddlewareTest {
         assertTrue(anyMex)
     }
 
+    @Test
+    fun `GIVEN no team WHEN first R32 game has kicked off THEN group stage is filtered out`() = runTest {
+        // Group stage fully played; R32 day 1 also finished but nothing live right now —
+        // the exact case where the -10-day window keeps surfacing prior-round matches.
+        val groupDone = match(1L, day = 18, stage = TournamentRound.GROUP_STAGE, status = MatchStatus.Final)
+        val r32Done = match(2L, day = 28, stage = TournamentRound.ROUND_OF_32, status = MatchStatus.Final)
+        val r32Next = match(3L, day = 29, stage = TournamentRound.ROUND_OF_32, status = MatchStatus.Scheduled)
+        val repo = StubRepository(
+            Result.success(
+                TeamMatchesResult(
+                    previous = listOf(groupDone, r32Done),
+                    current = emptyList(),
+                    next = listOf(r32Next),
+                ),
+            ),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
+        assertEquals(setOf(2L, 3L), matches.map { it.globalEventId }.toSet())
+    }
+
+    @Test
+    fun `GIVEN no team WHEN a live group-stage match exists THEN that round wins over any played R32`() = runTest {
+        // Defensive case — the contract says one stage per day, so this shouldn't happen,
+        // but if a live game and a past higher-round match coexist, the live game's round
+        // takes priority (rule 1 beats rule 2).
+        val groupLive = match(
+            id = 1L,
+            day = 28,
+            stage = TournamentRound.GROUP_STAGE,
+            status = MatchStatus.Live(period = "2", clock = "60"),
+        )
+        val r32Done = match(2L, day = 28, stage = TournamentRound.ROUND_OF_32, status = MatchStatus.Final)
+        val repo = StubRepository(
+            Result.success(
+                TeamMatchesResult(
+                    previous = listOf(r32Done),
+                    current = listOf(groupLive),
+                    next = emptyList(),
+                ),
+            ),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
+        assertEquals(listOf(1L), matches.map { it.globalEventId })
+    }
+
+    @Test
+    fun `GIVEN no team WHEN R16 has begun THEN R32 and group stage drop away`() = runTest {
+        // QF, SF, FINAL still upcoming; max ordinal among played stages is R16.
+        val groupDone = match(1L, day = 18, stage = TournamentRound.GROUP_STAGE, status = MatchStatus.Final)
+        val r32Done = match(2L, day = 28, stage = TournamentRound.ROUND_OF_32, status = MatchStatus.Final)
+        val r16Done = match(3L, day = 4, stage = TournamentRound.ROUND_OF_16, status = MatchStatus.Final)
+        val qfNext = match(4L, day = 8, stage = TournamentRound.QUARTER_FINAL, status = MatchStatus.Scheduled)
+        val repo = StubRepository(
+            Result.success(
+                TeamMatchesResult(
+                    previous = listOf(groupDone, r32Done, r16Done),
+                    current = emptyList(),
+                    next = listOf(qfNext),
+                ),
+            ),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
+        assertEquals(listOf(3L), matches.map { it.globalEventId })
+    }
+
+    @Test
+    fun `GIVEN no team WHEN no match has been played yet THEN the soonest upcoming round wins`() = runTest {
+        // Pre-tournament: nothing live, nothing finished. Fall back to the soonest match's stage.
+        val firstGroup = match(1L, day = 11, stage = TournamentRound.GROUP_STAGE, status = MatchStatus.Scheduled)
+        val laterGroup = match(2L, day = 12, stage = TournamentRound.GROUP_STAGE, status = MatchStatus.Scheduled)
+        val repo = StubRepository(
+            Result.success(
+                TeamMatchesResult(
+                    previous = emptyList(),
+                    current = emptyList(),
+                    next = listOf(firstGroup, laterGroup),
+                ),
+            ),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        val cards = store.state.sportsWidgetState.matchCardStates
+        assertTrue(cards.isNotEmpty())
+        cards.forEach { assertEquals(TournamentRound.GROUP_STAGE, it.round) }
+    }
+
     // region helpers
+
+    private val teamA = SportsTeam("MEX", 1L, "Mexico", "MEX", null, null, false)
+    private val teamB = SportsTeam("RSA", 2L, "South Africa", "RSA", null, null, false)
+
+    private fun match(
+        id: Long,
+        day: Int,
+        stage: TournamentRound,
+        status: MatchStatus,
+        month: Int = 6,
+    ): SportsMatch = SportsMatch(
+        globalEventId = id,
+        date = ZonedDateTime.of(2026, month, day, 14, 0, 0, 0, zone),
+        homeTeam = teamA,
+        awayTeam = teamB,
+        matchStatus = status,
+        homeScore = null,
+        awayScore = null,
+        homeExtra = null,
+        awayExtra = null,
+        homePenalty = null,
+        awayPenalty = null,
+        clock = null,
+        period = null,
+        updated = null,
+        venue = null,
+        stage = stage,
+    )
 
     private fun resultWithMatches(): TeamMatchesResult {
         val mex = SportsTeam("MEX", 1L, "Mexico", "MEX", null, null, false)
