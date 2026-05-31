@@ -90,11 +90,10 @@ object MatchCardBuilder {
 
     private fun buildSingleMatchCard(match: SportsMatch): MatchCard {
         val ui = match.toMatch()
-        val matchesList = listOf(ui)
         return MatchCard(
-            matches = matchesList,
+            matches = listOf(ui),
             round = match.stage,
-            viewerOutcome = celebrationOutcomeFor(match.stage, matchesList) ?: FollowedTeamOutcome.NotInvolved,
+            viewerOutcome = celebrationOutcomeFor(match.stage, listOf(match)) ?: FollowedTeamOutcome.NotInvolved,
             relatedMatches = emptyList(),
         )
     }
@@ -120,7 +119,7 @@ object MatchCardBuilder {
         return MatchCard(
             matches = featuredUi,
             round = round,
-            viewerOutcome = celebrationOutcomeFor(round, featuredUi) ?: FollowedTeamOutcome.NotInvolved,
+            viewerOutcome = celebrationOutcomeFor(round, featured) ?: FollowedTeamOutcome.NotInvolved,
             relatedMatches = relatedUi,
         )
     }
@@ -160,12 +159,12 @@ private fun List<MatchCard>.orderedForPager(): List<MatchCard> {
 // celebration (wrong stage, no decided match, or no clear winner).
 private fun celebrationOutcomeFor(
     stage: TournamentRound,
-    matches: List<Match>,
+    matches: List<SportsMatch>,
 ): FollowedTeamOutcome? {
     val decided = matches.firstOrNull {
         it.matchStatus is MatchStatus.Final || it.matchStatus is MatchStatus.FinalAfterPenalties
     } ?: return null
-    val winner = winnerOf(decided) ?: return null
+    val winner = winnerOf(decided)?.toTeam() ?: return null
     return when (stage) {
         TournamentRound.FINAL -> FollowedTeamOutcome.TournamentWinner(winner)
         TournamentRound.THIRD_PLACE_PLAYOFF -> FollowedTeamOutcome.ThirdPlace(winner)
@@ -173,16 +172,17 @@ private fun celebrationOutcomeFor(
     }
 }
 
-// Total = regulation score + penalty score. For a plain Final the penalties are null/0 and
-// the regulation score decides; for a FinalAfterPenalties the regulation is tied (knockout
-// matches can't draw) so the penalty diff decides. Returns null on a tie (which shouldn't
-// happen in a real knockout match — defensive guard).
-private fun winnerOf(match: Match): Team? {
-    val homeTotal = (match.homeScore ?: 0) + (match.homePenalty ?: 0)
-    val awayTotal = (match.awayScore ?: 0) + (match.awayPenalty ?: 0)
+// Total = regulation + extra-time + penalty goals. Regulation alone decides a Final that
+// ended in 90 minutes; extra-time goals decide an AET match (which also maps to
+// MatchStatus.Final since there's no shootout); the penalty diff decides a
+// FinalAfterPenalties. Returns null on a tie (which shouldn't happen in a real knockout
+// match — defensive guard).
+private fun winnerOf(match: SportsMatch): SportsTeam? {
+    val homeTotal = (match.homeScore ?: 0) + (match.homeExtra ?: 0) + (match.homePenalty ?: 0)
+    val awayTotal = (match.awayScore ?: 0) + (match.awayExtra ?: 0) + (match.awayPenalty ?: 0)
     return when {
-        homeTotal > awayTotal -> match.home
-        awayTotal > homeTotal -> match.away
+        homeTotal > awayTotal -> match.homeTeam
+        awayTotal > homeTotal -> match.awayTeam
         else -> null
     }
 }
