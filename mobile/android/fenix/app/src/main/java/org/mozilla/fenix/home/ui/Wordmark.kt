@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.contentDescription
@@ -51,7 +52,17 @@ internal fun WordmarkLogo(
                     contentDescription = sportsLogoContentDescription
                 }
             }
-            .combinedClickable(onClick = onLogoClicked, onLongClick = onLogoLongClicked)
+            .then(
+                if (isSportsWidgetEnabled) {
+                    Modifier.combinedClickable(
+                        onClick = onLogoClicked,
+                        onLongClick = onLogoLongClicked,
+                        role = Role.Button,
+                    )
+                } else {
+                    Modifier
+                },
+            )
             .padding(end = 10.dp),
         painter = painterResource(
             getAttr(
