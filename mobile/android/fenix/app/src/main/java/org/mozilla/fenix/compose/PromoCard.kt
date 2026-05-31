@@ -36,8 +36,6 @@ import mozilla.components.ui.icons.R as iconsR
  * Card for presenting promotional messages.
  *
  * @param description The primary piece of text.
- * @param closeButtonContentDescription The content description for the close button.
- * @param onDismiss Callback invoked when the close button is clicked.
  * @param modifier The [Modifier] to be applied to the card.
  * @param title The optional header text shown above the [description].
  * @param footer An optional piece of text with a clickable link.
@@ -45,21 +43,24 @@ import mozilla.components.ui.icons.R as iconsR
  * @param contentSpacing The vertical spacing between the title, message, and actions slots.
  * @param colors Defines the color styling for the card. Defaults to
  * [PromoCardColors.promoCardColors].
+ * @param closeButtonContentDescription The content description for the close button. Ignored
+ * when [onDismiss] is null.
+ * @param onDismiss Callback invoked when the close button is clicked. When null, the close
+ * button is not rendered.
  */
 @Composable
 fun PromoCard(
     description: String,
-    closeButtonContentDescription: String?,
-    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     title: String? = null,
     footer: Pair<String, LinkTextState>? = null,
     illustration: (@Composable () -> Unit)? = null,
     contentSpacing: Dp = FirefoxTheme.layout.space.static50,
     colors: PromoCardColors = PromoCardColors.promoCardColors(),
+    closeButtonContentDescription: String? = null,
+    onDismiss: (() -> Unit)? = null,
 ) {
     PromoCard(
-        closeButtonContentDescription = closeButtonContentDescription,
         modifier = modifier,
         title = title?.let { titleText -> { Text(text = titleText) } },
         message = { Text(text = remember(description) { parseHtml(description) }) },
@@ -76,6 +77,7 @@ fun PromoCard(
         illustration = illustration,
         contentSpacing = contentSpacing,
         colors = colors,
+        closeButtonContentDescription = closeButtonContentDescription,
         onDismiss = onDismiss,
     )
 }
@@ -84,8 +86,6 @@ fun PromoCard(
  * Card for presenting promotional messages with slotted content for title, message, actions and
  * illustration.
  *
- * @param closeButtonContentDescription The content description for the close button.
- * @param onDismiss Callback invoked when the close button is clicked.
  * @param modifier The [Modifier] to be applied to the card.
  * @param title Composable slot for the card's heading.
  * @param message Composable slot displayed below the title. Intended for descriptive or supporting content.
@@ -93,11 +93,13 @@ fun PromoCard(
  * @param illustration Composable slot displayed at the end of the card.
  * @param contentSpacing The vertical spacing between the title, message, and actions slots.
  * @param colors Defines the color styling for the card. Defaults to [PromoCardColors.promoCardColors].
+ * @param closeButtonContentDescription The content description for the close button. Ignored
+ * when [onDismiss] is null.
+ * @param onDismiss Callback invoked when the close button is clicked. When null, the close
+ * button is not rendered.
  */
 @Composable
 fun PromoCard(
-    closeButtonContentDescription: String?,
-    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     title: (@Composable () -> Unit)? = null,
     message: (@Composable () -> Unit)? = null,
@@ -105,6 +107,8 @@ fun PromoCard(
     illustration: (@Composable () -> Unit)? = null,
     contentSpacing: Dp = FirefoxTheme.layout.space.static50,
     colors: PromoCardColors = PromoCardColors.promoCardColors(),
+    closeButtonContentDescription: String? = null,
+    onDismiss: (() -> Unit)? = null,
 ) {
     InfoCardContainer(
         modifier = modifier,
@@ -154,12 +158,14 @@ fun PromoCard(
                 illustration?.invoke()
             }
 
-            CloseButton(
-                modifier = Modifier.align(Alignment.TopEnd),
-                color = colors.iconColor,
-                contentDescription = closeButtonContentDescription,
-                onCloseButtonClick = onDismiss,
-            )
+            if (onDismiss != null) {
+                CloseButton(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    color = colors.iconColor,
+                    contentDescription = closeButtonContentDescription,
+                    onCloseButtonClick = onDismiss,
+                )
+            }
         }
     }
 }
@@ -229,7 +235,6 @@ data class PromoCardColors(
 private fun PromoCardWithSlotsPreview() {
     FirefoxTheme {
         PromoCard(
-            closeButtonContentDescription = null,
             title = { Text("Title") },
             message = { Text("Description") },
             actions = {
@@ -244,7 +249,31 @@ private fun PromoCardWithSlotsPreview() {
                     contentDescription = null,
                 )
             },
+            closeButtonContentDescription = null,
             onDismiss = {},
+        )
+    }
+}
+
+@Composable
+@PreviewLightDark
+private fun PromoCardWithSlotsAndNoCloseButtonPreview() {
+    FirefoxTheme {
+        PromoCard(
+            title = { Text("Title") },
+            message = { Text("Description") },
+            actions = {
+                Text(
+                    text = "Link",
+                    textDecoration = TextDecoration.Underline,
+                )
+            },
+            illustration = {
+                Image(
+                    painter = painterResource(iconsR.drawable.mozac_ic_fox_ai_on_state),
+                    contentDescription = null,
+                )
+            },
         )
     }
 }
@@ -254,7 +283,6 @@ private fun PromoCardWithSlotsPreview() {
 private fun PromoCardWithoutTitlePreview() {
     FirefoxTheme {
         PromoCard(
-            closeButtonContentDescription = null,
             message = { Text("Description") },
             actions = {
                 Text(
@@ -262,6 +290,7 @@ private fun PromoCardWithoutTitlePreview() {
                     textDecoration = TextDecoration.Underline,
                 )
             },
+            closeButtonContentDescription = null,
             onDismiss = {},
         )
     }
