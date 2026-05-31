@@ -158,6 +158,31 @@ class MatchesResponseMapperTest {
     }
 
     @Test
+    fun `GIVEN a team with an ISO3 key that has a FIFA alias WHEN mapped THEN key is normalized to FIFA`() {
+        val dto = minimalEvent().copy(
+            homeTeam = TeamInfoDto(key = "URY"),
+            awayTeam = TeamInfoDto(key = "DEU"),
+        )
+        val match = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0]
+        assertEquals("URU", match.homeTeam.key)
+        assertEquals("GER", match.awayTeam.key)
+    }
+
+    @Test
+    fun `GIVEN a team with a CVI key WHEN mapped THEN key is normalized to FIFA`() {
+        val dto = minimalEvent().copy(homeTeam = TeamInfoDto(key = "CVI"))
+        val match = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0]
+        assertEquals("CPV", match.homeTeam.key)
+    }
+
+    @Test
+    fun `GIVEN a team key with no alias WHEN mapped THEN key is left untouched`() {
+        val dto = minimalEvent().copy(homeTeam = TeamInfoDto(key = "ENG"))
+        val match = mapper.mapAllMatches(MatchesResponseDto(listOf(dto)))[0]
+        assertEquals("ENG", match.homeTeam.key)
+    }
+
+    @Test
     fun `GIVEN a team with null icon and group WHEN mapped THEN iconUrl and group are null`() {
         val dto = minimalEvent().copy(
             homeTeam = TeamInfoDto(key = "USA", iconUrl = null, group = null),

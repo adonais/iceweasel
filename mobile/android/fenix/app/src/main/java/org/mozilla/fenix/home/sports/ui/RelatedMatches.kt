@@ -21,6 +21,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CollectionInfo
+import androidx.compose.ui.semantics.CollectionItemInfo
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.collectionInfo
+import androidx.compose.ui.semantics.collectionItemInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
@@ -41,22 +48,61 @@ internal fun RelatedMatchesSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = FirefoxTheme.layout.space.static100),
+            .padding(horizontal = FirefoxTheme.layout.space.static100)
+            .semantics {
+                collectionInfo = CollectionInfo(rowCount = matches.size, columnCount = 1)
+            },
         verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static100),
     ) {
-        matches.forEach { match ->
-            RelatedMatchRow(match = match, isTeamSelected = isTeamSelected, onMatchClicked = onMatchClicked)
+        matches.forEachIndexed { index, match ->
+            RelatedMatchRow(
+                match = match,
+                isTeamSelected = isTeamSelected,
+                onMatchClicked = onMatchClicked,
+                positionInList = index,
+            )
         }
     }
 }
 
 @Composable
-internal fun RelatedMatchRow(match: Match, isTeamSelected: Boolean, onMatchClicked: (String, String) -> Unit) {
+internal fun RelatedMatchRow(
+    match: Match,
+    isTeamSelected: Boolean,
+    onMatchClicked: (String, String) -> Unit,
+    positionInList: Int,
+) {
+    val homeName = localizedTeamName(match.home)
+    val awayName = localizedTeamName(match.away)
+    val scoreText = if (match.homeScore != null && match.awayScore != null) {
+        formatScoreWithSuffix(match)
+    } else {
+        null
+    }
+    val group = groupDisplayName(group = match.home.group)
+    val upcomingPrefix = if (isTeamSelected) match.date else group ?: match.date
+    val rowContentDescription = buildRowContentDescription(
+        homeName = homeName,
+        awayName = awayName,
+        scoreText = scoreText,
+        upcomingPrefix = upcomingPrefix,
+        time = match.time,
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(24.dp)
-            .clickable(onClick = { onMatchClicked(match.home.region, match.away.region) }),
+            .clickable(onClick = { onMatchClicked(match.home.key, match.away.key) })
+            .clearAndSetSemantics {
+                contentDescription = rowContentDescription
+                collectionItemInfo = CollectionItemInfo(
+                    rowIndex = positionInList,
+                    rowSpan = 1,
+                    columnIndex = 0,
+                    columnSpan = 1,
+                )
+            },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         FlagContainer(
@@ -73,21 +119,17 @@ internal fun RelatedMatchRow(match: Match, isTeamSelected: Boolean, onMatchClick
 
         Spacer(Modifier.weight(1f))
 
-        if (match.homeScore != null && match.awayScore != null) {
+        if (scoreText != null) {
             Text(
-                text = formatScoreWithSuffix(match),
+                text = scoreText,
                 style = FirefoxTheme.typography.subtitle2,
             )
-        } else {
-            val group = groupDisplayName(group = match.home.group)
-            if (isTeamSelected || group != null) {
-                val prefix = "${if (isTeamSelected) match.date else group} · "
-                Text(
-                    text = "$prefix${match.time}",
-                    style = FirefoxTheme.typography.body2,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        } else if (isTeamSelected || group != null) {
+            Text(
+                text = "$upcomingPrefix · ${match.time}",
+                style = FirefoxTheme.typography.body2,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         Spacer(Modifier.weight(1f))
@@ -104,6 +146,30 @@ internal fun RelatedMatchRow(match: Match, isTeamSelected: Boolean, onMatchClick
             modifier = Modifier.size(width = 30.dp, height = 20.dp),
         )
     }
+}
+
+@Composable
+private fun buildRowContentDescription(
+    homeName: String,
+    awayName: String,
+    scoreText: String?,
+    upcomingPrefix: String,
+    time: String,
+): String = if (scoreText != null) {
+    stringResource(
+        R.string.sports_widget_match_content_description,
+        homeName,
+        awayName,
+        scoreText,
+    )
+} else {
+    stringResource(
+        R.string.sports_widget_upcoming_match_content_description,
+        homeName,
+        awayName,
+        upcomingPrefix,
+        time,
+    )
 }
 
 /**

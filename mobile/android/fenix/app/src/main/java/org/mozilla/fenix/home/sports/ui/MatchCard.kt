@@ -21,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -42,6 +44,9 @@ import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
  * @param onRefresh Used to refresh the scores for live matches.
  * @param onMatchClicked Used to handle match click actions.
  * @param modifier [Modifier] to be applied to the card.
+ * @param pageNumber 1-based page position when this card is rendered inside a pager; used by the
+ * header to announce e.g. "Group D, page 1 of 2" for assistive technology.
+ * @param pageCount Total number of pages when rendered inside a pager. Ignored if `pageNumber` is null.
  */
 @Composable
 fun MatchCard(
@@ -50,6 +55,8 @@ fun MatchCard(
     onRefresh: (LiveMatchRefreshSource) -> Unit,
     onMatchClicked: (String, String) -> Unit,
     modifier: Modifier = Modifier,
+    pageNumber: Int? = null,
+    pageCount: Int? = null,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -81,6 +88,8 @@ fun MatchCard(
                     round = state.round,
                     isTeamSelected = isTeamSelected,
                     onRefresh = onRefresh,
+                    pageNumber = pageNumber,
+                    pageCount = pageCount,
                 )
             }
 
@@ -115,11 +124,16 @@ private fun MatchBody(
     isTeamSelected: Boolean,
     onMatchClicked: (String, String) -> Unit,
 ) {
+    val rowContentDescription = matchBodyContentDescription(match = match, isTeamSelected = isTeamSelected)
+
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = { onMatchClicked(match.home.region, match.away.region) }),
+                .clickable(onClick = { onMatchClicked(match.home.key, match.away.key) })
+                .clearAndSetSemantics {
+                    contentDescription = rowContentDescription
+                },
             horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static100),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -232,6 +246,64 @@ private fun secondStatusSubtitle(status: MatchStatus, time: String): String = wh
     is MatchStatus.Penalties -> "(${status.homePenalty ?: "-"} - ${status.awayPenalty ?: "-"})"
     is MatchStatus.FinalAfterPenalties -> "(${status.homePenalty ?: "-"} - ${status.awayPenalty ?: "-"})"
     else -> time
+}
+
+@Composable
+private fun matchBodyContentDescription(
+    match: Match,
+    isTeamSelected: Boolean,
+): String {
+    val homeName = localizedTeamName(match.home)
+    val awayName = localizedTeamName(match.away)
+    val middleText = matchBodyMiddleText(match = match, isTeamSelected = isTeamSelected)
+
+    return when {
+        match.homeScore == null || match.awayScore == null ->
+            stringResource(
+                R.string.sports_widget_match_content_description,
+                homeName,
+                awayName,
+                middleText,
+            )
+
+        match.matchStatus.isLive() ->
+            stringResource(
+                R.string.sports_widget_live_score_content_description,
+                homeName,
+                match.homeScore,
+                awayName,
+                match.awayScore,
+                middleText,
+            )
+
+        else -> listOf(
+            homeName,
+            match.homeScore.toString(),
+            awayName,
+            match.awayScore.toString(),
+            middleText,
+        ).filter { it.isNotEmpty() }.joinToString(separator = " ")
+    }
+}
+
+@Composable
+private fun matchBodyMiddleText(match: Match, isTeamSelected: Boolean): String {
+    val status = match.matchStatus
+    val primary = if (status is MatchStatus.Live) {
+        stringResource(R.string.sports_widget_match_elapsed_minutes, status.clock)
+    } else {
+        statusSubtitle(
+            status = status,
+            date = match.date,
+            isTeamSelected = isTeamSelected,
+        )
+    }
+    val secondary = if (status.hasSecondaryStatusSubtitle()) {
+        secondStatusSubtitle(status = status, time = match.time)
+    } else {
+        ""
+    }
+    return listOf(primary, secondary).filter { it.isNotEmpty() }.joinToString(separator = " ")
 }
 
 private data class MatchCardPreviewState(

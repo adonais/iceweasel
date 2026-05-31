@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -36,6 +38,9 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param onClick Callback invoked when the action button is tapped.
  * @param onDismiss Callback invoked when the close button is tapped. When it's null, no close button is displayed.
  * @param modifier The [Modifier] to be applied to the card.
+ * @param pageNumber 1-based page position when shown inside a pager; appended to the title for
+ * assistive technology (e.g. "Countdown to World Cup, page 1 of 2").
+ * @param pageCount Total page count when inside a pager. Ignored if `pageNumber` is null.
  */
 @Composable
 fun CountdownPromoCard(
@@ -44,9 +49,17 @@ fun CountdownPromoCard(
     onClick: () -> Unit,
     onDismiss: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    pageNumber: Int? = null,
+    pageCount: Int? = null,
 ) {
-    val contentDescription = stringResource(R.string.sports_widget_close_content_description)
+    val closeButtonContentDescription = stringResource(R.string.sports_widget_close_content_description)
     val sportPainter = painterResource(R.drawable.firefox_sport)
+    val titleText = stringResource(R.string.sports_widget_countdown_to_world_cup)
+    val titleContentDescription = pagerHeadingContentDescription(
+        baseText = titleText,
+        pageNumber = pageNumber,
+        pageCount = pageCount,
+    )
 
     Box(
         modifier = modifier.background(
@@ -55,7 +68,7 @@ fun CountdownPromoCard(
         ),
     ) {
         PromoCard(
-            closeButtonContentDescription = contentDescription,
+            closeButtonContentDescription = closeButtonContentDescription,
             onDismiss = onDismiss,
             modifier = Modifier
                 .clip(MaterialTheme.shapes.large)
@@ -73,10 +86,12 @@ fun CountdownPromoCard(
                 },
             title = {
                 Text(
-                    text = stringResource(R.string.sports_widget_countdown_to_world_cup),
+                    text = titleText,
                     style = FirefoxTheme.typography.headline7,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(end = FirefoxTheme.layout.space.static500),
+                    modifier = Modifier
+                        .padding(end = FirefoxTheme.layout.space.static500)
+                        .semantics { contentDescription = titleContentDescription },
                 )
             },
             message = {

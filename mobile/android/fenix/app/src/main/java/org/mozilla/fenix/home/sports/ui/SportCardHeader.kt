@@ -19,6 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -42,6 +45,8 @@ internal fun SportCardHeader(
     isTeamSelected: Boolean,
     onRefresh: (LiveMatchRefreshSource) -> Unit,
     modifier: Modifier = Modifier,
+    pageNumber: Int? = null,
+    pageCount: Int? = null,
 ) {
     val title = if (isTeamSelected) {
         groupDisplayName(group = match.home.group) ?: roundDisplayName(round)
@@ -49,20 +54,40 @@ internal fun SportCardHeader(
         roundDisplayName(round)
     }
 
+    val isLive = match.matchStatus.isLive()
+    val baseContentDescription = when {
+        isLive -> stringResource(R.string.sports_widget_live_game_content_description, title)
+        !isTeamSelected -> "$title, ${match.date}"
+        else -> title
+    }
+    val headerContentDescription = pagerHeadingContentDescription(
+        baseText = baseContentDescription,
+        pageNumber = pageNumber,
+        pageCount = pageCount,
+    )
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = FirefoxTheme.layout.space.static100),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = title,
-            style = FirefoxTheme.typography.headline8,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .clearAndSetSemantics {
+                    heading()
+                    contentDescription = headerContentDescription
+                },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                style = FirefoxTheme.typography.headline8,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
 
-        Row(modifier = Modifier.weight(1f)) {
-            if (match.matchStatus.isLive()) {
+            if (isLive) {
                 Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
                 LiveBadge()
@@ -73,6 +98,7 @@ internal fun SportCardHeader(
                     text = "·",
                     style = FirefoxTheme.typography.body2,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.clearAndSetSemantics {},
                 )
 
                 Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
@@ -85,7 +111,7 @@ internal fun SportCardHeader(
             }
         }
 
-        if (match.matchStatus.isLive()) {
+        if (isLive) {
             IconButton(
                 onClick = { onRefresh(LiveMatchRefreshSource.LIVE_MATCH_HEADER) },
                 contentDescription = stringResource(R.string.sports_widget_error_refresh),
@@ -110,7 +136,7 @@ private fun LiveBadge() {
     )
 }
 
-private fun MatchStatus.isLive(): Boolean = when (this) {
+internal fun MatchStatus.isLive(): Boolean = when (this) {
     is MatchStatus.Live,
     is MatchStatus.Penalties,
         -> true

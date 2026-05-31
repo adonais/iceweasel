@@ -5,7 +5,6 @@
 package org.mozilla.fenix.home.sports.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +21,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +40,9 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +86,8 @@ fun SportsCountrySelectorBottomSheet(
         sheetState.show()
     }
 
+    val dragHandleContentDescription =
+        stringResource(R.string.sports_widget_close_team_selection_sheet_content_description)
     ModalBottomSheet(
         modifier = Modifier.padding(top = topPadding),
         contentWindowInsets = { WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom) },
@@ -95,7 +100,10 @@ fun SportsCountrySelectorBottomSheet(
                 contentDescription = stringResource(R.string.a11y_action_label_collapse),
                 modifier = Modifier
                     .padding(vertical = FirefoxTheme.layout.space.static200)
-                    .semantics { traversalIndex = -1f },
+                    .semantics {
+                        traversalIndex = -1f
+                        contentDescription = dragHandleContentDescription
+                    },
             )
         },
     ) {
@@ -199,9 +207,19 @@ private fun CountryFlagItem(
     val grayscaleFilter = remember {
         ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
     }
+    val localizedName = localizedTeamName(team)
 
     Column(
-        modifier = modifier.clickable(enabled = isClickable, onClick = onClick),
+        modifier = modifier
+            .toggleable(
+                value = isSelected,
+                enabled = isClickable,
+                role = Role.Checkbox,
+                onValueChange = { onClick() },
+            )
+            .semantics(mergeDescendants = true) {
+                contentDescription = localizedName
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
@@ -240,7 +258,9 @@ private fun CountryFlagItem(
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.width(72.dp),
+            modifier = Modifier
+                .width(72.dp)
+                .clearAndSetSemantics {},
         )
     }
 }

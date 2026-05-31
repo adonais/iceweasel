@@ -8,6 +8,7 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,17 +29,25 @@ internal fun FlagContainer(
     modifier: Modifier = Modifier,
 ) {
     val shape = MaterialTheme.shapes.extraSmall
+    val containerModifier = modifier
+        .border(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+            shape = shape,
+        )
+        .clip(shape)
+
+    // Guard against an unknown country code (resolves to 0) so painterResource doesn't crash,
+    // and an empty box is displayed instead.
+    if (flagResId == 0) {
+        Box(modifier = containerModifier)
+        return
+    }
 
     Image(
         painter = painterResource(flagResId),
         contentDescription = null,
-        modifier = modifier
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = shape,
-            )
-            .clip(shape),
+        modifier = containerModifier,
     )
 }
 
