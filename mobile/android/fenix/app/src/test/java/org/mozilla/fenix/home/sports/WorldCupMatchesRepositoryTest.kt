@@ -13,54 +13,49 @@ import org.mozilla.fenix.home.sports.client.WorldCupMatchesClient
 class WorldCupMatchesRepositoryTest {
 
     @Test
-    fun `GIVEN client returns null WHEN fetchMatches THEN returns successful empty list`() = runTest {
+    fun `GIVEN client returns null WHEN fetchMatches THEN returns successful empty result`() = runTest {
         val repo = WorldCupMatchesRepository(client = { null })
-        val result = repo.fetchMatches(emptySet())
+        val result = repo.fetchMatches()
         assertTrue(result.isSuccess)
-        assertEquals(emptyList<MatchCard>(), result.getOrNull())
+        val value = result.getOrNull()!!
+        assertTrue(value.previous.isEmpty())
+        assertTrue(value.current.isEmpty())
+        assertTrue(value.next.isEmpty())
     }
 
     @Test
     fun `GIVEN malformed JSON WHEN fetchMatches THEN returns failure`() = runTest {
         val repo = WorldCupMatchesRepository(client = { "not-json" })
-        val result = repo.fetchMatches(emptySet())
+        val result = repo.fetchMatches()
         assertTrue(result.isFailure)
     }
 
     @Test
-    fun `GIVEN empty bucketed response and no countryCodes WHEN fetchMatches THEN returns empty list`() = runTest {
+    fun `GIVEN empty bucketed response WHEN fetchMatches THEN returns empty buckets`() = runTest {
         val repo = WorldCupMatchesRepository(
             client = { """{"previous":[],"current":[],"next":[]}""" },
         )
-        val result = repo.fetchMatches(emptySet())
+        val result = repo.fetchMatches()
         assertTrue(result.isSuccess)
-        assertEquals(0, result.getOrNull()!!.size)
+        val value = result.getOrNull()!!
+        assertEquals(0, value.previous.size)
+        assertEquals(0, value.current.size)
+        assertEquals(0, value.next.size)
     }
 
     @Test
-    fun `GIVEN empty bucketed response and countryCodes set WHEN fetchMatches THEN returns empty list`() = runTest {
-        val repo = WorldCupMatchesRepository(
-            client = { """{"previous":[],"current":[],"next":[]}""" },
-        )
-        val result = repo.fetchMatches(setOf("USA"))
-        assertTrue(result.isSuccess)
-        assertEquals(0, result.getOrNull()!!.size)
-    }
-
-    @Test
-    fun `WHEN fetchMatches THEN countryCodes are forwarded to the client`() = runTest {
+    fun `WHEN fetchMatches THEN client is called with empty team filter`() = runTest {
         var captured: Set<String>? = null
         val client = WorldCupMatchesClient { teams ->
             captured = teams
             """{"previous":[],"current":[],"next":[]}"""
         }
-        val repo = WorldCupMatchesRepository(client = client)
-        repo.fetchMatches(setOf("USA", "MEX"))
-        assertEquals(setOf("USA", "MEX"), captured)
+        WorldCupMatchesRepository(client = client).fetchMatches()
+        assertEquals(emptySet<String>(), captured)
     }
 
     @Test
-    fun `GIVEN a single upcoming match and no countryCodes WHEN fetchMatches THEN one card`() = runTest {
+    fun `GIVEN a single upcoming match WHEN fetchMatches THEN result contains the match`() = runTest {
         val body = """
             {
               "previous": [],
@@ -92,10 +87,11 @@ class WorldCupMatchesRepositoryTest {
             }
         """.trimIndent()
         val repo = WorldCupMatchesRepository(client = { body })
-        val result = repo.fetchMatches(emptySet())
+        val result = repo.fetchMatches()
         assertTrue(result.isSuccess)
-        val cards = result.getOrNull()!!
-        assertEquals(1, cards.size)
-        assertEquals(TournamentRound.GROUP_STAGE, cards[0].round)
+        val value = result.getOrNull()!!
+        assertEquals(1, value.next.size)
+        assertEquals(1L, value.next[0].globalEventId)
+        assertEquals(TournamentRound.GROUP_STAGE, value.next[0].stage)
     }
 }

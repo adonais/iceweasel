@@ -15,14 +15,14 @@ import org.mozilla.fenix.home.sports.client.WorldCupMatchesClient
 /**
  * [SportsRepository] backed by the Merino WCS endpoint via app-services.
  *
- * Fetches a JSON response from [client], parses it via [MatchesResponseMapper], then
- * shapes the result for the pager via [MatchCardBuilder]:
- * - if [countryCodes] is empty (no team selected), the bucketed previous/current/next
- *   matches are flattened and fed into [MatchCardBuilder.buildForNoTeam];
- * - otherwise, the bucketed response is fed into [MatchCardBuilder.buildForTeam].
+ * Fetches the entire bucketed [TeamMatchesResult] without a team filter on the
+ * server side. The middleware is expected to cache this result and re-derive
+ * [MatchCard]s locally when the selected team changes.
  *
  * Any exception during fetch, deserialization, or mapping is captured into a failed
- * [Result] for the middleware to translate into an error state.
+ * [Result] for the middleware to translate into an error state. When the network
+ * call returns no body (e.g. transient network failure), an empty
+ * [TeamMatchesResult] is surfaced as success.
  *
  * @param client Fetches raw JSON from the Merino WCS endpoint.
  * @param mapper Converts response DTOs into the [SportsMatch] domain model.
@@ -36,19 +36,16 @@ class WorldCupMatchesRepository(
 
     private val logger = Logger("WorldCupMatchesRepository")
 
-    override suspend fun fetchMatches(countryCodes: Set<String>): Result<List<MatchCard>> =
+    override suspend fun fetchMatches(): Result<TeamMatchesResult> =
         withContext(Dispatchers.IO) {
             runCatching {
-                val body = client.fetchMatches(countryCodes)
-                    ?: return@runCatching emptyList()
+                val body = client.fetchMatches(teams = emptySet())
+                    ?: return@runCatching emptyResult()
                 val response = json.decodeFromString<TeamMatchesResponseDto>(body)
-                val result = mapper.mapTeamMatches(response)
-                if (countryCodes.isEmpty()) {
-                    val all = result.previous + result.current + result.next
-                    MatchCardBuilder.buildForNoTeam(all)
-                } else {
-                    MatchCardBuilder.buildForTeam(result)
-                }
+                mapper.mapTeamMatches(response)
             }.onFailure { logger.error("Failed to fetch World Cup matches", it) }
         }
+
+    private fun emptyResult(): TeamMatchesResult =
+        TeamMatchesResult(previous = emptyList(), current = emptyList(), next = emptyList())
 }

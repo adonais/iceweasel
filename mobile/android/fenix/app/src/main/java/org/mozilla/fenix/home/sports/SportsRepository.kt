@@ -10,10 +10,14 @@ package org.mozilla.fenix.home.sports
 interface SportsRepository {
 
     /**
-     * Fetches the current match card data for the given country codes.
+     * Fetches all match data for the tournament, without filtering by team.
      *
-     * @param countryCodes ISO codes of the followed teams, or empty to fetch all matches.
-     * @return [Result] containing a list of [MatchCard]s on success, or an exception on failure.
+     * Returns the raw bucketed [TeamMatchesResult]; downstream code (middleware) is
+     * responsible for caching this and building [MatchCard]s for the active team
+     * selection. Fetching unfiltered lets the same response be re-filtered for a
+     * different team without another network round-trip.
+     *
+     * @return [Result] containing the [TeamMatchesResult] on success, or an exception on failure.
      */
-    suspend fun fetchMatches(countryCodes: Set<String>): Result<List<MatchCard>>
+    suspend fun fetchMatches(): Result<TeamMatchesResult>
 }

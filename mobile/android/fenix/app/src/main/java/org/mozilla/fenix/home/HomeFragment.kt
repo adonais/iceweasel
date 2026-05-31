@@ -1289,7 +1289,11 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         )
 
         val sportsWidgetState = components.appStore.state.sportsWidgetState
-        if (sportsWidgetState.isShown && sportsWidgetState.hasWorldCupStarted) {
+        if (sportsWidgetState.isShown &&
+            (sportsWidgetState.hasWorldCupStarted || sportsWidgetState.isOneWeekToWorldCup)
+        ) {
+            // Fetches the full tournament schedule. The middleware caches the response
+            // so a later team selection re-derives cards without another network call.
             components.appStore.dispatch(SportsWidgetAction.FetchMatches)
         }
 
