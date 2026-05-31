@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.sports.fake
 
 import org.mozilla.fenix.R
+import org.mozilla.fenix.home.sports.Group
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchCard
 import org.mozilla.fenix.home.sports.MatchStatus
@@ -16,13 +17,13 @@ import org.mozilla.fenix.home.sports.TournamentRound
  */
 internal object FakeSportsPreview {
 
-    const val GROUP_LABEL = "Group D"
+    private val GROUP_LABEL = Group.D
 
-    val usa = Team(key = "USA", flagResId = R.drawable.flag_us, group = GROUP_LABEL)
-    val par = Team(key = "PAR", flagResId = R.drawable.flag_py, group = GROUP_LABEL)
-    val aus = Team(key = "AUS", flagResId = R.drawable.flag_au, group = GROUP_LABEL)
-    val tur = Team(key = "TUR", flagResId = R.drawable.flag_tr, group = GROUP_LABEL)
-    val can = Team(key = "CAN", flagResId = R.drawable.flag_ca, group = GROUP_LABEL)
+    val usa = Team(key = "USA", flagResId = R.drawable.flag_us, region = "USA", group = GROUP_LABEL)
+    val par = Team(key = "PAR", flagResId = R.drawable.flag_py, region = "PRY", group = GROUP_LABEL)
+    val aus = Team(key = "AUS", flagResId = R.drawable.flag_au, region = "AUS", group = GROUP_LABEL)
+    val tur = Team(key = "TUR", flagResId = R.drawable.flag_tr, region = "TUR", group = GROUP_LABEL)
+    val can = Team(key = "CAN", flagResId = R.drawable.flag_ca, region = "CAN", group = GROUP_LABEL)
 
     /**
      * Builds a fake [Match].
@@ -30,12 +31,14 @@ internal object FakeSportsPreview {
     fun match(
         home: Team = usa,
         away: Team = par,
-        date: String = "2026-06-22T18:00:00Z",
+        date: String = "Jun 28",
+        time: String = "2:00 PM",
         homeScore: Int? = null,
         awayScore: Int? = null,
         matchStatus: MatchStatus = MatchStatus.Scheduled,
     ): Match = Match(
         date = date,
+        time = time,
         home = home,
         away = away,
         homeScore = homeScore,
@@ -47,8 +50,8 @@ internal object FakeSportsPreview {
      * Returns a list of related [Match]es.
      */
     fun relatedMatches(): List<Match> = listOf(
-        match(home = usa, away = aus, date = "2026-06-19T18:00:00Z"),
-        match(home = tur, away = usa, date = "2026-06-25T21:00:00Z"),
+        match(home = usa, away = aus, date = "Jun 19", time = "5:00 PM"),
+        match(home = tur, away = usa, date = "Jun 25", time = "5:00 PM"),
     )
 }
 
@@ -57,64 +60,105 @@ internal object FakeSportsPreview {
  */
 internal enum class FakeMatchCardScenario(val label: String) {
     Live("Live") {
-        override fun build() = MatchCard(
-            match = FakeSportsPreview.match(
-                homeScore = 1,
-                awayScore = 2,
-                matchStatus = MatchStatus.Live(period = "1", clock = "29"),
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(
+                    FakeSportsPreview.match(
+                        homeScore = 1,
+                        awayScore = 2,
+                        matchStatus = MatchStatus.Live(period = "1", clock = "29"),
+                    ),
+                ),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = FakeSportsPreview.relatedMatches(),
             ),
-            round = TournamentRound.GROUP_STAGE,
-            relatedMatches = FakeSportsPreview.relatedMatches(),
         )
     },
 
     Scheduled("Scheduled") {
-        override fun build() = MatchCard(
-            match = FakeSportsPreview.match(matchStatus = MatchStatus.Scheduled),
-            round = TournamentRound.GROUP_STAGE,
-            relatedMatches = FakeSportsPreview.relatedMatches(),
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(FakeSportsPreview.match(matchStatus = MatchStatus.Scheduled)),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = FakeSportsPreview.relatedMatches(),
+            ),
         )
     },
 
     Penalties("Penalties") {
-        override fun build() = MatchCard(
-            match = FakeSportsPreview.match(
-                date = "2026-07-15T20:00:00Z",
-                homeScore = 3,
-                awayScore = 3,
-                matchStatus = MatchStatus.Penalties(homeScore = 5, awayScore = 4),
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(
+                    FakeSportsPreview.match(
+                        date = "Jun 15",
+                        time = "8:00 PM",
+                        homeScore = 3,
+                        awayScore = 3,
+                        matchStatus = MatchStatus.Penalties(homeScore = 5, awayScore = 4),
+                    ),
+                ),
+                round = TournamentRound.SEMI_FINAL,
+                relatedMatches = emptyList(),
             ),
-            round = TournamentRound.SEMI_FINAL,
-            relatedMatches = emptyList(),
         )
     },
 
     Final("Final") {
-        override fun build() = MatchCard(
-            match = FakeSportsPreview.match(
-                date = "2026-07-19T20:00:00Z",
-                homeScore = 2,
-                awayScore = 1,
-                matchStatus = MatchStatus.Final,
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(
+                    FakeSportsPreview.match(
+                        date = "Jun 19",
+                        time = "8:00 PM",
+                        homeScore = 2,
+                        awayScore = 1,
+                        matchStatus = MatchStatus.Final,
+                    ),
+                ),
+                round = TournamentRound.FINAL,
+                relatedMatches = emptyList(),
             ),
-            round = TournamentRound.FINAL,
-            relatedMatches = emptyList(),
         )
     },
 
     FinalAfterPenalties("Final after penalties") {
-        override fun build() = MatchCard(
-            match = FakeSportsPreview.match(
-                date = "2026-07-19T20:00:00Z",
-                homeScore = 3,
-                awayScore = 3,
-                matchStatus = MatchStatus.FinalAfterPenalties(homeScore = 5, awayScore = 4),
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(
+                    FakeSportsPreview.match(
+                        date = "Jun 19",
+                        time = "8:00 PM",
+                        homeScore = 3,
+                        awayScore = 3,
+                        matchStatus = MatchStatus.FinalAfterPenalties(homeScore = 5, awayScore = 4),
+                    ),
+                ),
+                round = TournamentRound.FINAL,
+                relatedMatches = emptyList(),
             ),
-            round = TournamentRound.FINAL,
-            relatedMatches = emptyList(),
+        )
+    },
+
+    FollowAllSchedule("Follow all schedule") {
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(FakeSportsPreview.match(matchStatus = MatchStatus.Scheduled)),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = emptyList(),
+            ),
+            MatchCard(
+                matches = listOf(FakeSportsPreview.match(matchStatus = MatchStatus.Scheduled)),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = emptyList(),
+            ),
+            MatchCard(
+                matches = listOf(FakeSportsPreview.match(matchStatus = MatchStatus.Scheduled)),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = emptyList(),
+            ),
         )
     },
     ;
 
-    abstract fun build(): MatchCard
+    abstract fun build(): List<MatchCard>
 }

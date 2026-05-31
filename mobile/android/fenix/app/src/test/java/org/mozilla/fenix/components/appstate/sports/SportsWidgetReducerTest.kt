@@ -6,7 +6,6 @@ package org.mozilla.fenix.components.appstate.sports
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.components.appstate.AppAction
@@ -94,7 +93,7 @@ class SportsWidgetReducerTest {
             AppAction.SportsWidgetAction.FollowTeamSkipped,
         )
 
-       assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
+        assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
     }
 
     @Test
@@ -108,7 +107,7 @@ class SportsWidgetReducerTest {
             AppAction.SportsWidgetAction.FollowTeamSkipped,
         )
 
-       assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
+        assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
     }
 
     @Test
@@ -253,53 +252,53 @@ class SportsWidgetReducerTest {
     }
 
     @Test
-    fun `GIVEN matchCardState is null WHEN MatchCardStateUpdated is dispatched with a card THEN matchCardState is set`() {
+    fun `GIVEN matchCardStates is empty WHEN MatchCardStateUpdated is dispatched with a card THEN matchCardStates is set`() {
         val initialState = AppState(
-            sportsWidgetState = SportsWidgetState(matchCardState = null),
+            sportsWidgetState = SportsWidgetState(matchCardStates = emptyList()),
         )
-        val matchCardState = FakeMatchCardScenario.Live.build()
+        val matchCardStates = FakeMatchCardScenario.Live.build()
 
         val finalState = AppStoreReducer.reduce(
             initialState,
-            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardState = matchCardState),
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardStates = matchCardStates),
         )
 
-        assertEquals(matchCardState, finalState.sportsWidgetState.matchCardState)
+        assertEquals(matchCardStates, finalState.sportsWidgetState.matchCardStates)
     }
 
     @Test
-    fun `GIVEN a matchCardState is set WHEN MatchCardStateUpdated is dispatched with null THEN matchCardState is cleared`() {
+    fun `GIVEN matchCardStates is set WHEN MatchCardStateUpdated is dispatched with an empty list THEN matchCardStates is cleared`() {
         val initialState = AppState(
-            sportsWidgetState = SportsWidgetState(matchCardState = FakeMatchCardScenario.Live.build()),
+            sportsWidgetState = SportsWidgetState(matchCardStates = FakeMatchCardScenario.Live.build()),
         )
 
         val finalState = AppStoreReducer.reduce(
             initialState,
-            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardState = null),
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardStates = emptyList()),
         )
 
-        assertNull(finalState.sportsWidgetState.matchCardState)
+        assertTrue(finalState.sportsWidgetState.matchCardStates.isEmpty())
     }
 
     @Test
-    fun `GIVEN a matchCardState is set WHEN MatchCardStateUpdated is dispatched with a different card THEN matchCardState is replaced`() {
+    fun `GIVEN matchCardStates is set WHEN MatchCardStateUpdated is dispatched with a different card THEN matchCardStates is replaced`() {
         val original = FakeMatchCardScenario.Live.build()
-        val replacement = FakeMatchCardScenario.Live.build().copy(round = TournamentRound.QUARTER_FINAL)
+        val replacement = original.first().copy(round = TournamentRound.QUARTER_FINAL)
         val initialState = AppState(
-            sportsWidgetState = SportsWidgetState(matchCardState = original),
+            sportsWidgetState = SportsWidgetState(matchCardStates = original),
         )
 
         val finalState = AppStoreReducer.reduce(
             initialState,
-            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardState = replacement),
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardStates = listOf(replacement)),
         )
 
-        assertEquals(replacement, finalState.sportsWidgetState.matchCardState)
+        assertEquals(listOf(replacement), finalState.sportsWidgetState.matchCardStates)
     }
 
     @Test
     fun `GIVEN unrelated fields are set WHEN MatchCardStateUpdated is dispatched THEN other fields are preserved`() {
-        val matchCardState = FakeMatchCardScenario.Live.build()
+        val matchCardStates = FakeMatchCardScenario.Live.build()
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(
                 countriesSelected = setOf("US"),
@@ -311,14 +310,14 @@ class SportsWidgetReducerTest {
 
         val finalState = AppStoreReducer.reduce(
             initialState,
-            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardState = matchCardState),
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardStates = matchCardStates),
         )
 
         assertEquals(setOf("US"), finalState.sportsWidgetState.countriesSelected)
         assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
         assertTrue(finalState.sportsWidgetState.isVisible)
         assertTrue(finalState.sportsWidgetState.isFeatureEnabled)
-        assertEquals(matchCardState, finalState.sportsWidgetState.matchCardState)
+        assertEquals(matchCardStates, finalState.sportsWidgetState.matchCardStates)
     }
 
     @Test

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.home.sports.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,8 +33,9 @@ import org.mozilla.fenix.theme.FirefoxTheme
 
 @Composable
 internal fun RelatedMatchesSection(
-    label: String?,
     matches: List<Match>,
+    isTeamSelected: Boolean,
+    onMatchClicked: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -42,26 +44,19 @@ internal fun RelatedMatchesSection(
             .padding(horizontal = FirefoxTheme.layout.space.static100),
         verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static100),
     ) {
-        if (!label.isNullOrEmpty()) {
-            Text(
-                text = label,
-                modifier = Modifier.fillMaxWidth(),
-                style = FirefoxTheme.typography.subtitle2,
-            )
-        }
-
         matches.forEach { match ->
-            RelatedMatchRow(match = match)
+            RelatedMatchRow(match = match, isTeamSelected = isTeamSelected, onMatchClicked = onMatchClicked)
         }
     }
 }
 
 @Composable
-internal fun RelatedMatchRow(match: Match) {
+internal fun RelatedMatchRow(match: Match, isTeamSelected: Boolean, onMatchClicked: (String, String) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(24.dp),
+            .height(24.dp)
+            .clickable(onClick = { onMatchClicked(match.home.region, match.away.region) }),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         FlagContainer(
@@ -84,11 +79,15 @@ internal fun RelatedMatchRow(match: Match) {
                 style = FirefoxTheme.typography.subtitle2,
             )
         } else {
-            Text(
-                text = match.date,
-                style = FirefoxTheme.typography.body2,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            val group = groupDisplayName(group = match.home.group)
+            if (isTeamSelected || group != null) {
+                val prefix = "${if (isTeamSelected) match.date else group} · "
+                Text(
+                    text = "$prefix${match.time}",
+                    style = FirefoxTheme.typography.body2,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         Spacer(Modifier.weight(1f))
@@ -161,10 +160,7 @@ private fun RelatedMatchesSectionPreview(
 ) {
     FirefoxTheme {
         Surface {
-            RelatedMatchesSection(
-                label = state.labelResId?.let { stringResource(it) },
-                matches = state.matches,
-            )
+            RelatedMatchesSection(matches = state.matches, isTeamSelected = true, onMatchClicked = { _, _ -> })
         }
     }
 }

@@ -706,6 +706,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
                 settings = components.settings,
                 navController = findNavController(),
                 fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
+                browserStore = components.core.store,
             ),
         )
 

@@ -110,11 +110,14 @@ internal object FakeHomepagePreview {
             override fun onSportsWidgetDismissed() { /* no op */ }
 
             override fun onViewScheduleClicked() { /* no op */ }
+
             override fun onRefreshClicked() { /* no op */ }
 
             override fun onCountdownWidgetDismissed() { /* no op */ }
 
             override fun onGetCustomWallpaperClicked() { /* no op */ }
+
+            override fun onMatchClicked(homeTeam: String, awayTeam: String) { /* no op */ }
         }
 
     internal val storiesInteractor

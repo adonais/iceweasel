@@ -38,7 +38,7 @@ internal object SportsWidgetReducer {
 
         is SportsWidgetAction.MatchCardStateUpdated -> state.copy(
             sportsWidgetState = state.sportsWidgetState.copy(
-                matchCardState = action.matchCardState,
+                matchCardStates = action.matchCardStates,
                 errorState = null,
             ),
         )

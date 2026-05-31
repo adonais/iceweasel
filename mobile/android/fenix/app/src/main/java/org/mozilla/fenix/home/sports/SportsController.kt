@@ -5,6 +5,8 @@
 package org.mozilla.fenix.home.sports
 
 import androidx.navigation.NavController
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
+import mozilla.components.browser.state.store.BrowserStore
 import org.mozilla.fenix.GleanMetrics.WorldCup
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
@@ -12,6 +14,9 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.utils.Settings
+import java.util.IllformedLocaleException
+import java.util.Locale
+import java.util.MissingResourceException
 
 /**
  * Controller for handling sports widget interactions on the homepage.
@@ -54,18 +59,25 @@ interface SportsController {
      * Handles the user clicking the "Get custom wallpaper" menu item.
      */
     fun handleOnGetCustomWallpaperClicked()
+
+    /**
+     * Called when the user clicks a Match.
+     */
+    fun handleMatchClicked(homeTeam: String, awayTeam: String)
 }
 
 /**
  * Default implementation of [SportsController] that dispatches actions to the [AppStore].
  *
  * @param appStore The [AppStore] to dispatch actions to.
+ * @param browserStore [BrowserStore] to sync from.
  * @param settings [Settings] used to persist sports widget preferences.
  * @param navController [NavController] used to navigate to a new browser fragment.
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used to load the sports schedule.
  */
 class DefaultSportsController(
     private val appStore: AppStore,
+    private val browserStore: BrowserStore,
     private val settings: Settings,
     private val navController: NavController,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
@@ -101,6 +113,7 @@ class DefaultSportsController(
 
         fenixBrowserUseCases.loadUrlOrSearch(
             searchTermOrURL = SPORT_SCHEDULE_URL,
+            private = appStore.state.mode.isPrivate,
             newTab = true,
         )
         WorldCup.viewScheduleOnCountdownClicked.record()
@@ -108,6 +121,36 @@ class DefaultSportsController(
 
     override fun handleOnGetCustomWallpaperClicked() {
         navController.navigate(R.id.wallpaperSettingsFragment)
+    }
+
+    override fun handleMatchClicked(homeTeam: String, awayTeam: String) {
+        navController.openToBrowser()
+
+        fenixBrowserUseCases.loadUrlOrSearch(
+            searchTermOrURL = "${localizedCountryName(homeTeam)} vs ${localizedCountryName(awayTeam)}",
+            newTab = true,
+            private = appStore.state.mode.isPrivate,
+            searchEngine = appStore.state.searchState.selectedSearchEngine?.searchEngine
+                ?: browserStore.state.search.selectedOrDefaultSearchEngine,
+        )
+    }
+
+    /**
+     * Resolves an ISO 3166-1 alpha-3 region code (as stored on [Team.region]) to a country name
+     * localized to the user's current [Locale]. Falls back to the original code when no match
+     * is found.
+     */
+    private fun localizedCountryName(iso3Code: String): String {
+        return try {
+            val iso2Code = Locale.getISOCountries().firstOrNull {
+                Locale.Builder().setRegion(it).build().isO3Country.equals(iso3Code, ignoreCase = true)
+            } ?: return iso3Code
+            Locale.Builder().setRegion(iso2Code).build().getDisplayCountry(Locale.getDefault())
+        } catch (e: IllformedLocaleException) {
+            iso3Code
+        } catch (e: MissingResourceException) {
+            iso3Code
+        }
     }
 
     companion object {

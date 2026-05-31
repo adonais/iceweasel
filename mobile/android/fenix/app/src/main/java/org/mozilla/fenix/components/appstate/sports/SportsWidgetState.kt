@@ -19,7 +19,7 @@ import org.mozilla.fenix.home.sports.isOneWeekToWorldCup
  * @property isVisible Whether the sports widget is visible on the homepage.
  * @property isFeatureEnabled Whether the Homepage Sports Widget feature is enabled.
  * @property isCountdownWidgetVisible Whether the Homepage Countdown Widget feature is enabled.
- * @property matchCardState The [MatchCard] to render on the homepage, or null when no match
+ * @property matchCardStates The list of [MatchCard]s to render on the homepage, or empty when no match
  * data is available.
  * @property isDebugToolVisible Whether the debug tool for adjusting [SportsWidgetState]
  * is currently displayed on the homepage.
@@ -34,7 +34,7 @@ data class SportsWidgetState(
     val isVisible: Boolean = true,
     val isFeatureEnabled: Boolean = false,
     val isCountdownWidgetVisible: Boolean = true,
-    val matchCardState: MatchCard? = null,
+    val matchCardStates: List<MatchCard> = emptyList(),
     val isDebugToolVisible: Boolean = false,
     val hasWorldCupStartedOverride: Boolean? = null,
     val errorState: SportCardErrorState? = null,

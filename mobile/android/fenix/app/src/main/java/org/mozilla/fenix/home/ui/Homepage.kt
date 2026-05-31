@@ -224,6 +224,10 @@ internal fun Homepage(
                                     onFollowTeam = { showSportsCountrySelector = true },
                                     onSkip = interactor::onSkippedFollowTeam,
                                     onGetCustomWallpaper = interactor::onGetCustomWallpaperClicked,
+                                    onRefresh = interactor::onRefreshClicked,
+                                    onMatchClicked = { homeTeam, awayTeam ->
+                                        interactor.onMatchClicked(homeTeam, awayTeam)
+                                    },
                                 )
                             }
 

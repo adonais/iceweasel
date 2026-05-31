@@ -45,6 +45,11 @@ interface SportsInteractor {
      * Called when the user clicks the "Get custom wallpaper" menu item.
      */
     fun onGetCustomWallpaperClicked()
+
+    /**
+     * Called when the user clicks a Match.
+     */
+    fun onMatchClicked(homeTeam: String, awayTeam: String)
 }
 
 /**
@@ -82,5 +87,9 @@ class DefaultSportsInteractor(
 
     override fun onGetCustomWallpaperClicked() {
         controller.handleOnGetCustomWallpaperClicked()
+    }
+
+    override fun onMatchClicked(homeTeam: String, awayTeam: String) {
+        controller.handleMatchClicked(homeTeam = homeTeam, awayTeam = awayTeam)
     }
 }

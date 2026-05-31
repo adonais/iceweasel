@@ -47,7 +47,7 @@ class SportsWidgetMiddleware(
             val countryCodes = store.state.sportsWidgetState.countriesSelected
             sportsRepository.fetchMatches(countryCodes)
                 .onSuccess { matchCards ->
-                    store.dispatch(SportsWidgetAction.MatchCardStateUpdated(matchCards.firstOrNull()))
+                    store.dispatch(SportsWidgetAction.MatchCardStateUpdated(matchCards))
                 }
                 .onFailure {
                     store.dispatch(SportsWidgetAction.FetchFailed(SportCardErrorState.LoadFailed))

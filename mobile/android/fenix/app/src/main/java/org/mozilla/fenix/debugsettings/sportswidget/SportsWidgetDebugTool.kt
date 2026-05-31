@@ -30,6 +30,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.compose.list.SwitchListItem
+import org.mozilla.fenix.home.sports.MatchCard
 import org.mozilla.fenix.home.sports.fake.FakeMatchCardScenario
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -117,16 +118,19 @@ private fun MatchCardScenariosSection(
             .padding(horizontal = FirefoxTheme.layout.space.static200),
         horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static50),
     ) {
-        val currentCardState = state.matchCardState
+        val currentCardStates = state.matchCardStates
 
         FakeMatchCardScenario.entries.forEach { scenario ->
-            val matchCardState = scenario.build()
+            val matchCardStates: List<MatchCard> = scenario.build()
+            val isSelected = currentCardStates == matchCardStates
             SelectableChip(
                 text = scenario.label,
-                selected = currentCardState == matchCardState,
+                selected = isSelected,
                 onClick = {
                     appStore.dispatch(
-                        SportsWidgetAction.MatchCardStateUpdated(matchCardState = matchCardState),
+                        SportsWidgetAction.MatchCardStateUpdated(
+                            matchCardStates = if (isSelected) emptyList() else matchCardStates,
+                        ),
                     )
                 },
             )
@@ -141,13 +145,13 @@ private class SportsWidgetDebugToolPreviewProvider : PreviewParameterProvider<Sp
             countriesSelected = setOf("USA", "PAR"),
             isCountdownWidgetVisible = true,
             hasSkippedFollowTeam = false,
-            matchCardState = FakeMatchCardScenario.Live.build(),
+            matchCardStates = FakeMatchCardScenario.Live.build(),
         ),
         SportsWidgetState(
             countriesSelected = setOf("USA"),
             isCountdownWidgetVisible = false,
             hasSkippedFollowTeam = true,
-            matchCardState = FakeMatchCardScenario.Final.build(),
+            matchCardStates = FakeMatchCardScenario.Final.build(),
         ),
     )
 }

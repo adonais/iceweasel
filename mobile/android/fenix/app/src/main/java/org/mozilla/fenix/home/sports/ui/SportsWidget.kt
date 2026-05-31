@@ -41,10 +41,12 @@ private val SportsWidgetTopSpacing = 44.dp
  * @param onFollowTeam Invoked when a team is followed.
  * @param onSkip Invoked when the user dismisses the "Follow team" card.
  * @param onGetCustomWallpaper Invoked when the user clicks on the "Get custom wallpaper" menu item.
+ * @param onRefresh Used to refresh the scores for live matches.
+ * @param onMatchClicked Used to handle match click actions.
  * @param modifier [Modifier] to apply to the composable.
  */
 @Composable
-@Suppress("UNUSED_PARAMETER")
+@Suppress("UNUSED_PARAMETER", "LongParameterList")
 fun SportsWidget(
     sportsWidgetState: SportsWidgetState,
     onDismiss: () -> Unit,
@@ -53,6 +55,8 @@ fun SportsWidget(
     onFollowTeam: () -> Unit,
     onSkip: () -> Unit,
     onGetCustomWallpaper: () -> Unit,
+    onRefresh: () -> Unit,
+    onMatchClicked: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Spacer(modifier = Modifier.height(SportsWidgetTopSpacing))
@@ -89,14 +93,27 @@ fun SportsWidget(
                     .firstOrNull { it.key in countriesSelected }
             }
 
-            SportsCardPager(
-                pages = sportsCardPages(
+            val pages = remember(
+                sportsWidgetState.isOneWeekToWorldCup,
+                sportsWidgetState.isFollowTeamsCardShown,
+                selectedTeam,
+                sportsWidgetState.matchCardStates,
+                onFollowTeam,
+                onRefresh,
+            ) {
+                sportsCardPages(
                     isOneWeekToWorldCup = sportsWidgetState.isOneWeekToWorldCup,
                     isFollowTeamsCardShown = sportsWidgetState.isFollowTeamsCardShown,
                     selectedTeam = selectedTeam,
-                    matchCardState = sportsWidgetState.matchCardState,
+                    matchCardStates = sportsWidgetState.matchCardStates,
                     onFollowTeam = onFollowTeam,
-                ),
+                    onRefresh = onRefresh,
+                    onMatchClicked = onMatchClicked,
+                )
+            }
+
+            SportsCardPager(
+                pages = pages,
                 onChangeTeam = onFollowTeam,
                 onGetCustomWallpaper = onGetCustomWallpaper,
                 onRemove = onDismiss,
@@ -110,8 +127,10 @@ private fun sportsCardPages(
     isOneWeekToWorldCup: Boolean,
     isFollowTeamsCardShown: Boolean,
     selectedTeam: Team?,
-    matchCardState: MatchCardState?,
+    matchCardStates: List<MatchCardState>,
     onFollowTeam: () -> Unit,
+    onRefresh: () -> Unit,
+    onMatchClicked: (String, String) -> Unit,
 ): List<@Composable () -> Unit> = buildList {
     if (isFollowTeamsCardShown) {
         if (isOneWeekToWorldCup) {
@@ -128,20 +147,20 @@ private fun sportsCardPages(
                 FollowTeamPromoCard(onFollowTeam = onFollowTeam)
             }
         }
-        when {
-            matchCardState != null -> add {
-                MatchCard(state = matchCardState)
-            }
+    } else if (selectedTeam != null && matchCardStates.isEmpty()) {
+        add {
+            FollowingPromoCard(team = selectedTeam)
         }
-    } else {
-        when {
-            selectedTeam != null && matchCardState == null -> add {
-                FollowingPromoCard(team = selectedTeam)
-            }
+    }
 
-            matchCardState != null -> add {
-                MatchCard(state = matchCardState)
-            }
+    matchCardStates.forEach { matchCardState ->
+        add {
+            MatchCard(
+                state = matchCardState,
+                isTeamSelected = selectedTeam != null,
+                onRefresh = onRefresh,
+                onMatchClicked = onMatchClicked,
+            )
         }
     }
 }
