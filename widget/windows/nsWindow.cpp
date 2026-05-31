@@ -1522,13 +1522,7 @@ DWORD nsWindow::WindowExStyle() {
  **************************************************************/
 
 bool nsWindow::ShouldAssociateWithWinAppSDK() const {
-  // We currently don't need any SDK functionality for for PiP windows,
-  // and using the SDK on these windows causes them to go under the
-  // taskbar (bug 1995838).
-  //
-  // TODO(emilio): That might not be true anymore after bug 1993474,
-  // consider re-testing and removing that special-case.
-  return IsTopLevelWidget() && mPiPType == PiPType::NoPiP;
+  return IsTopLevelWidget();
 }
 
 bool nsWindow::AssociateWithNativeWindow() {
