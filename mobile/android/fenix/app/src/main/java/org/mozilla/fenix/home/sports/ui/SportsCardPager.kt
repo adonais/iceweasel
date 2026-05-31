@@ -1,0 +1,153 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+package org.mozilla.fenix.home.sports.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import org.mozilla.fenix.compose.PagerIndicator
+import mozilla.components.compose.base.button.IconButton
+import org.mozilla.fenix.R
+import org.mozilla.fenix.home.sports.Match
+import org.mozilla.fenix.home.sports.MatchStatus
+import org.mozilla.fenix.home.sports.Team
+import org.mozilla.fenix.home.sports.TournamentRound
+import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
+
+/**
+ * A horizontally-swipeable pager that accepts arbitrary card composables, with a page indicator
+ * overlaid at the bottom of the card and a shared overflow menu at the top end. The indicator is
+ * hidden when there is only one page.
+ *
+ * @param pages Composables to display as pages; the order determines swipe order.
+ * @param onChangeTeam Invoked when "Change team" is selected from the overflow menu.
+ * @param onGetCustomWallpaper Invoked when "Get custom wallpaper" is selected from the overflow menu.
+ * @param onRemove Invoked when "Remove" is selected from the overflow menu.
+ * @param modifier [Modifier] to apply to the outer container.
+ */
+@Composable
+fun SportsCardPager(
+    pages: List<@Composable () -> Unit>,
+    onChangeTeam: () -> Unit,
+    onGetCustomWallpaper: () -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    val contentDescription = stringResource(R.string.sports_widget_more_options_content_description)
+    val pagerState = rememberPagerState { pages.size }
+
+    Box(
+        modifier = modifier
+            .background(
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                shape = MaterialTheme.shapes.large,
+            )
+            .padding(
+                top = FirefoxTheme.layout.space.static150,
+                bottom = FirefoxTheme.layout.space.static200,
+            ),
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = FirefoxTheme.layout.space.static150),
+        ) { page ->
+            pages[page]()
+        }
+
+        if (pages.size > 1) {
+            PagerIndicator(
+                pagerState = pagerState,
+                modifier = Modifier.align(Alignment.BottomCenter),
+                inactiveColor = MaterialTheme.colorScheme.surfaceTint,
+            )
+        }
+
+        Box(modifier = Modifier.align(Alignment.TopEnd)) {
+            IconButton(
+                onClick = { showMenu = true },
+                contentDescription = contentDescription,
+            ) {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            SportsWidgetMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+                onChangeTeam = onChangeTeam,
+                onGetCustomWallpaper = onGetCustomWallpaper,
+                onRemove = onRemove,
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun SportsCardPagerPreview() {
+    val usa = Team(key = "USA", flagResId = R.drawable.flag_us, group = "Group D")
+    val par = Team(key = "PAR", flagResId = R.drawable.flag_py, group = "Group D")
+
+    FirefoxTheme {
+        Surface {
+            SportsCardPager(
+                pages = listOf(
+                    {
+                        CountdownPromoCard(
+                            dateInUtc = "2026-06-11T00:00:00Z",
+                            actionButtonLabelResId = R.string.sports_widget_country_selector_title,
+                            onClick = {},
+                            onDismiss = null,
+                        )
+                    },
+                    {
+                        MatchCard(
+                            state = MatchCardState(
+                                match = Match(
+                                    date = "2026-06-22T18:00:00Z",
+                                    home = usa,
+                                    away = par,
+                                    homeScore = 1,
+                                    awayScore = 2,
+                                    matchStatus = MatchStatus.Live(period = "1", clock = "29"),
+                                ),
+                                round = TournamentRound.GROUP_STAGE,
+                                relatedMatches = emptyList(),
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    },
+                ),
+                onChangeTeam = {},
+                onGetCustomWallpaper = {},
+                onRemove = {},
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}

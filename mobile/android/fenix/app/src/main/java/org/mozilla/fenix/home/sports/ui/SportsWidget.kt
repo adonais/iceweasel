@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.support.utils.ext.isLandscape
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.ext.isLargeWindow
 import org.mozilla.fenix.home.ui.horizontalMargin
@@ -57,7 +58,8 @@ fun SportsWidget(
         val worldCupKickoffDate = "2026-06-11T00:00:00Z"
         CountdownPromoCard(
             dateInUtc = worldCupKickoffDate,
-            onViewSchedule = onViewSchedule,
+            actionButtonLabelResId = R.string.sports_widget_view_schedule,
+            onClick = onViewSchedule,
             onDismiss = onCountdownWidgetDismiss,
             modifier = modifier.padding(horizontal = horizontalMargin),
         )
@@ -71,7 +73,6 @@ fun SportsWidget(
     } else if (sportsWidgetState.matchCardState != null) {
         MatchCard(
             state = sportsWidgetState.matchCardState,
-            onMenuClick = {},
             modifier = modifier.padding(horizontal = horizontalMargin),
         )
     }
@@ -83,12 +84,11 @@ private fun SportsWidgetCountdownPreview() {
     FirefoxTheme {
         Surface {
             CountdownPromoCard(
-                dateInUtc = "2026-06-11T00:00:00Z",
-                onViewSchedule = {},
-                onDismiss = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(FirefoxTheme.layout.space.static200),
+                dateInUtc = "2026-06-11T19:00:00Z",
+                actionButtonLabelResId = R.string.sports_widget_country_selector_title,
+                onClick = {},
+                onDismiss = null,
+                modifier = Modifier.padding(FirefoxTheme.layout.space.static200),
             )
         }
     }

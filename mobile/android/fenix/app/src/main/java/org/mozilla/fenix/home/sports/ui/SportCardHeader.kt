@@ -10,19 +10,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.theme.success
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.StatusBadge
@@ -31,13 +28,11 @@ import org.mozilla.fenix.home.sports.MatchStatus
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.TournamentRound
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun SportCardHeader(
     match: Match,
     round: TournamentRound,
-    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val groupOrRound = match.home.group ?: roundDisplayName(round)
@@ -75,20 +70,6 @@ internal fun SportCardHeader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-
-        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
-
-        Spacer(Modifier.weight(1f))
-
-        IconButton(
-            onClick = onMenuClick,
-            contentDescription = null,
-        ) {
-            Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-                contentDescription = null,
-            )
-        }
     }
 }
 
@@ -104,6 +85,7 @@ private fun MatchStatus.isLive(): Boolean = when (this) {
     is MatchStatus.Live,
     is MatchStatus.Penalties,
         -> true
+
     else -> false
 }
 
@@ -183,7 +165,6 @@ private fun SportCardHeaderPreview(
                     matchStatus = state.status,
                 ),
                 round = state.round,
-                onMenuClick = {},
             )
         }
     }

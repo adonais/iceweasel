@@ -4089,11 +4089,11 @@
     <!-- Sports widget card description shown below the title on the homepage entry point. -->
     <string name="sports_widget_card_description" tools:ignore="UnusedResources">Get live match updates and more.</string>
     <!-- Sports widget menu item to change the selected team. -->
-    <string name="sports_widget_change_team" tools:ignore="UnusedResources">Change team</string>
+    <string name="sports_widget_change_team">Change team</string>
     <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-    <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Get custom wallpaper</string>
+    <string name="sports_widget_get_custom_wallpaper">Get custom wallpaper</string>
     <!-- Sports widget menu item to remove the widget from the homepage. -->
-    <string name="sports_widget_remove" tools:ignore="UnusedResources">Remove</string>
+    <string name="sports_widget_remove">Remove</string>
     <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
     <string name="sports_widget_still_want_to_follow">Still want to follow along?</string>
     <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
@@ -4101,7 +4101,7 @@
     <!-- Sports widget button label to follow another team after the current team is eliminated. -->
     <string name="sports_widget_follow_another_team">Follow another team</string>
     <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-    <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Countdown to the World Cup</string>
+    <string name="sports_widget_countdown_to_world_cup">Countdown to the World Cup</string>
     <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
     <string name="sports_widget_view_schedule">View schedule</string>
     <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->

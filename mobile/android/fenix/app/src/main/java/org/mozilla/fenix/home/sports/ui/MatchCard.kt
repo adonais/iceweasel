@@ -37,13 +37,11 @@ import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
  * Card that renders a sports match and their related matches.
  *
  * @param state The [MatchCardState] to display in this card.
- * @param onMenuClick Invoked when the overflow menu button is clicked.
  * @param modifier [Modifier] to be applied to the card.
  */
 @Composable
 fun MatchCard(
     state: MatchCardState,
-    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -63,7 +61,6 @@ fun MatchCard(
             SportCardHeader(
                 match = state.match,
                 round = state.round,
-                onMenuClick = onMenuClick,
             )
 
             MatchBody(
@@ -220,7 +217,6 @@ private fun MatchCardPreview(
         Surface {
             MatchCard(
                 state = preview.state,
-                onMenuClick = {},
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(FirefoxTheme.layout.space.static200),

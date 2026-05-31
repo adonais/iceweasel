@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.home.sports.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -31,15 +32,17 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * Card counting down to kickoff and prompting the user to pick a team to follow.
  *
  * @param dateInUtc ISO 8601 UTC date string (e.g. "2025-06-28T14:00:00Z") remaining until kickoff.
- * @param onViewSchedule Callback invoked when the "View schedule" button is tapped.
- * @param onDismiss Callback invoked when the close button is tapped.
+ * @param actionButtonLabelResId The string resource displayed on the action button.
+ * @param onClick Callback invoked when the action button is tapped.
+ * @param onDismiss Callback invoked when the close button is tapped. When it's null, no close button is displayed.
  * @param modifier The [Modifier] to be applied to the card.
  */
 @Composable
 fun CountdownPromoCard(
     dateInUtc: String,
-    onViewSchedule: () -> Unit,
-    onDismiss: () -> Unit,
+    @StringRes actionButtonLabelResId: Int,
+    onClick: () -> Unit,
+    onDismiss: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val contentDescription = stringResource(R.string.sports_widget_close_content_description)
@@ -81,8 +84,8 @@ fun CountdownPromoCard(
             },
             actions = {
                 FilledButton(
-                    text = stringResource(R.string.sports_widget_view_schedule),
-                    onClick = onViewSchedule,
+                    text = stringResource(actionButtonLabelResId),
+                    onClick = onClick,
                 )
             },
             contentSpacing = FirefoxTheme.layout.space.static200,
@@ -95,13 +98,30 @@ fun CountdownPromoCard(
 
 @PreviewLightDark
 @Composable
-private fun CountdownPromoCardPreview() {
+private fun CountdownViewSchedulePromoCardPreview() {
     FirefoxTheme {
         Surface {
             CountdownPromoCard(
                 dateInUtc = "2026-06-11T19:00:00Z",
-                onViewSchedule = {},
+                actionButtonLabelResId = R.string.sports_widget_view_schedule,
+                onClick = {},
                 onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun CountdownFollowTeamPromoCardPreview() {
+    FirefoxTheme {
+        Surface {
+            CountdownPromoCard(
+                dateInUtc = "2026-06-11T19:00:00Z",
+                actionButtonLabelResId = R.string.sports_widget_country_selector_title,
+                onClick = {},
+                onDismiss = null,
                 modifier = Modifier.padding(16.dp),
             )
         }
