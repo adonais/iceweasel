@@ -784,16 +784,7 @@ nsresult nsUnknownDecoder::ConvertEncodedData(nsIRequest* request,
 //
 NS_IMETHODIMP
 nsUnknownDecoder::CheckListenerChain() {
-  nsCOMPtr<nsIThreadRetargetableStreamListener> listener;
-  {
-    MutexAutoLock lock(mMutex);
-    listener = do_QueryInterface(mNextListener);
-  }
-  if (!listener) {
-    return NS_ERROR_NO_INTERFACE;
-  }
-
-  return listener->CheckListenerChain();
+  return NS_ERROR_NO_INTERFACE;
 }
 
 void nsBinaryDetector::DetermineContentType(nsIRequest* aRequest) {
