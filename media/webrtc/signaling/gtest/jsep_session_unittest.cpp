@@ -4563,7 +4563,7 @@ TEST_F(JsepSessionTest, TestExtmap) {
   auto& offerMediaAttrs = parsedOffer->GetMediaSection(0).GetAttributeList();
   ASSERT_TRUE(offerMediaAttrs.HasAttribute(SdpAttribute::kExtmapAttribute));
   auto& offerExtmap = offerMediaAttrs.GetExtmap().mExtmaps;
-  ASSERT_EQ(5U, offerExtmap.size());
+  ASSERT_EQ(6U, offerExtmap.size());
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:ssrc-audio-level",
             offerExtmap[0].extensionname);
   ASSERT_EQ(1U, offerExtmap[0].entry);
@@ -4573,10 +4573,15 @@ TEST_F(JsepSessionTest, TestExtmap) {
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:sdes:mid",
             offerExtmap[2].extensionname);
   ASSERT_EQ(3U, offerExtmap[2].entry);
-  ASSERT_EQ("foo", offerExtmap[3].extensionname);
-  ASSERT_EQ(8U, offerExtmap[3].entry);
-  ASSERT_EQ("bar", offerExtmap[4].extensionname);
-  ASSERT_EQ(9U, offerExtmap[4].entry);
+  ASSERT_EQ(
+      "http://www.ietf.org/id/"
+      "draft-holmer-rmcat-transport-wide-cc-extensions-01",
+      offerExtmap[3].extensionname);
+  ASSERT_EQ(7U, offerExtmap[3].entry);
+  ASSERT_EQ("foo", offerExtmap[4].extensionname);
+  ASSERT_EQ(8U, offerExtmap[4].entry);
+  ASSERT_EQ("bar", offerExtmap[5].extensionname);
+  ASSERT_EQ(9U, offerExtmap[5].entry);
 
   UniquePtr<Sdp> parsedAnswer(Parse(answer));
   ASSERT_EQ(1U, parsedAnswer->GetMediaSectionCount());
@@ -4584,16 +4589,21 @@ TEST_F(JsepSessionTest, TestExtmap) {
   auto& answerMediaAttrs = parsedAnswer->GetMediaSection(0).GetAttributeList();
   ASSERT_TRUE(answerMediaAttrs.HasAttribute(SdpAttribute::kExtmapAttribute));
   auto& answerExtmap = answerMediaAttrs.GetExtmap().mExtmaps;
-  ASSERT_EQ(3U, answerExtmap.size());
+  ASSERT_EQ(4U, answerExtmap.size());
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:ssrc-audio-level",
             answerExtmap[0].extensionname);
   ASSERT_EQ(1U, answerExtmap[0].entry);
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:sdes:mid",
             answerExtmap[1].extensionname);
   ASSERT_EQ(3U, answerExtmap[1].entry);
+  ASSERT_EQ(
+      "http://www.ietf.org/id/"
+      "draft-holmer-rmcat-transport-wide-cc-extensions-01",
+      answerExtmap[2].extensionname);
+  ASSERT_EQ(7U, answerExtmap[2].entry);
   // We ensure that the entry for "bar" matches what was in the offer
-  ASSERT_EQ("bar", answerExtmap[2].extensionname);
-  ASSERT_EQ(9U, answerExtmap[2].entry);
+  ASSERT_EQ("bar", answerExtmap[3].extensionname);
+  ASSERT_EQ(9U, answerExtmap[3].entry);
 }
 
 TEST_F(JsepSessionTest, TestExtmapDefaults) {
@@ -4617,7 +4627,7 @@ TEST_F(JsepSessionTest, TestExtmapDefaults) {
   ASSERT_TRUE(
       offerAudioMediaAttrs.HasAttribute(SdpAttribute::kExtmapAttribute));
   auto& offerAudioExtmap = offerAudioMediaAttrs.GetExtmap().mExtmaps;
-  ASSERT_EQ(3U, offerAudioExtmap.size());
+  ASSERT_EQ(4U, offerAudioExtmap.size());
 
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:ssrc-audio-level",
             offerAudioExtmap[0].extensionname);
@@ -4627,6 +4637,11 @@ TEST_F(JsepSessionTest, TestExtmapDefaults) {
   ASSERT_EQ(2U, offerAudioExtmap[1].entry);
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:sdes:mid",
             offerAudioExtmap[2].extensionname);
+  ASSERT_EQ(
+      "http://www.ietf.org/id/"
+      "draft-holmer-rmcat-transport-wide-cc-extensions-01",
+      offerAudioExtmap[3].extensionname);
+  ASSERT_EQ(7U, offerAudioExtmap[3].entry);
 
   auto& offerVideoMediaAttrs =
       parsedOffer->GetMediaSection(1).GetAttributeList();
@@ -4661,7 +4676,7 @@ TEST_F(JsepSessionTest, TestExtmapDefaults) {
   ASSERT_TRUE(
       answerAudioMediaAttrs.HasAttribute(SdpAttribute::kExtmapAttribute));
   auto& answerAudioExtmap = answerAudioMediaAttrs.GetExtmap().mExtmaps;
-  ASSERT_EQ(2U, answerAudioExtmap.size());
+  ASSERT_EQ(3U, answerAudioExtmap.size());
 
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:ssrc-audio-level",
             answerAudioExtmap[0].extensionname);
@@ -4669,6 +4684,11 @@ TEST_F(JsepSessionTest, TestExtmapDefaults) {
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:sdes:mid",
             answerAudioExtmap[1].extensionname);
   ASSERT_EQ(3U, answerAudioExtmap[1].entry);
+  ASSERT_EQ(
+      "http://www.ietf.org/id/"
+      "draft-holmer-rmcat-transport-wide-cc-extensions-01",
+      answerAudioExtmap[2].extensionname);
+  ASSERT_EQ(7U, answerAudioExtmap[2].entry);
 
   auto& answerVideoMediaAttrs =
       parsedAnswer->GetMediaSection(1).GetAttributeList();
@@ -4714,7 +4734,7 @@ TEST_F(JsepSessionTest, TestExtmapWithDuplicates) {
   auto& offerMediaAttrs = parsedOffer->GetMediaSection(0).GetAttributeList();
   ASSERT_TRUE(offerMediaAttrs.HasAttribute(SdpAttribute::kExtmapAttribute));
   auto& offerExtmap = offerMediaAttrs.GetExtmap().mExtmaps;
-  ASSERT_EQ(6U, offerExtmap.size());
+  ASSERT_EQ(7U, offerExtmap.size());
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:ssrc-audio-level",
             offerExtmap[0].extensionname);
   ASSERT_EQ(1U, offerExtmap[0].entry);
@@ -4724,12 +4744,17 @@ TEST_F(JsepSessionTest, TestExtmapWithDuplicates) {
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:sdes:mid",
             offerExtmap[2].extensionname);
   ASSERT_EQ(3U, offerExtmap[2].entry);
-  ASSERT_EQ("foo", offerExtmap[3].extensionname);
-  ASSERT_EQ(8U, offerExtmap[3].entry);
-  ASSERT_EQ("bar", offerExtmap[4].extensionname);
-  ASSERT_EQ(9U, offerExtmap[4].entry);
-  ASSERT_EQ("baz", offerExtmap[5].extensionname);
-  ASSERT_EQ(10U, offerExtmap[5].entry);
+  ASSERT_EQ(
+      "http://www.ietf.org/id/"
+      "draft-holmer-rmcat-transport-wide-cc-extensions-01",
+      offerExtmap[3].extensionname);
+  ASSERT_EQ(7U, offerExtmap[3].entry);
+  ASSERT_EQ("foo", offerExtmap[4].extensionname);
+  ASSERT_EQ(8U, offerExtmap[4].entry);
+  ASSERT_EQ("bar", offerExtmap[5].extensionname);
+  ASSERT_EQ(9U, offerExtmap[5].entry);
+  ASSERT_EQ("baz", offerExtmap[6].extensionname);
+  ASSERT_EQ(10U, offerExtmap[6].entry);
 }
 
 TEST_F(JsepSessionTest, TestExtmapZeroId) {

@@ -9,8 +9,10 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "CodecConfig.h"
 #include "MockJsepCodecPreferences.h"
 #include "jsapi/DefaultCodecPreferences.h"
+#include "jsapi/RTCRtpTransceiver.h"
 #include "jsep/JsepTrack.h"
 #include "sdp/SipccSdp.h"
 #include "sdp/SipccSdpParser.h"
@@ -34,9 +36,11 @@ struct CodecOverrides {
   bool addDtmfCodec = false;
   bool enableRemb = true;
   bool enableTransportCC = true;
+  bool enableAudioTransportCC = true;
   void ApplyToPrefs(MockJsepCodecPreferences& aPrefs) const {
     aPrefs.mUseRemb = enableRemb;
     aPrefs.mUseTransportCC = enableTransportCC;
+    aPrefs.mUseAudioTransportCC = enableAudioTransportCC;
   }
 };
 
@@ -76,7 +80,7 @@ class JsepTrackTest : public JsepTrackTestBase {
     std::cout << "CodecPrefrences: " << prefsRef << "\n";
     std::vector<UniquePtr<JsepCodecDescription>> results;
     results.emplace_back(JsepAudioCodecDescription::CreateDefaultOpus(prefs));
-    results.emplace_back(JsepAudioCodecDescription::CreateDefaultG722());
+    results.emplace_back(JsepAudioCodecDescription::CreateDefaultG722(prefs));
     if (overrides.addDtmfCodec) {
       results.emplace_back(
           JsepAudioCodecDescription::CreateDefaultTelephoneEvent());
@@ -271,9 +275,10 @@ class JsepTrackTest : public JsepTrackTestBase {
         static_cast<JsepAudioCodecDescription*>(codec.release()));
   }
 
-  void CheckOtherFbExists(const JsepVideoCodecDescription& videoCodec,
+  template <typename T>
+  void CheckOtherFbExists(const T& codec,
                           SdpRtcpFbAttributeList::Type type) const {
-    for (const auto& fb : videoCodec.mOtherFbTypes) {
+    for (const auto& fb : codec.mOtherFbTypes) {
       if (fb.type == type) {
         return;  // found the RtcpFb type, so stop looking
       }
@@ -1070,6 +1075,145 @@ TEST_F(JsepTrackTest, VideoNegotiationOfferAnswerRemb) {
   ASSERT_TRUE((codec = GetVideoCodec(mRecvOff, 3, 0)));
   ASSERT_EQ(codec->mOtherFbTypes.size(), 1U);
   CheckOtherFbExists(*codec, SdpRtcpFbAttributeList::kRemb);
+}
+
+TEST_F(JsepTrackTest, AudioNegotiationOfferTransportCC) {
+  InitCodecs({.enableAudioTransportCC = false});
+  // enable TransportCC on the offer codecs
+  ((JsepAudioCodecDescription&)*mOffCodecs[0]).EnableTransportCC();
+  InitTracks(SdpMediaSection::kAudio);
+  InitSdp(SdpMediaSection::kAudio);
+  OfferAnswer();
+
+  // make sure TransportCC is on offer and not on answer
+  ASSERT_NE(mOffer->ToString().find("a=rtcp-fb:109 transport-cc"),
+            std::string::npos);
+  ASSERT_EQ(mAnswer->ToString().find("a=rtcp-fb:109 transport-cc"),
+            std::string::npos);
+  CheckOffEncodingCount(1);
+  CheckAnsEncodingCount(1);
+
+  UniquePtr<JsepAudioCodecDescription> codec;
+  ASSERT_TRUE((codec = GetAudioCodec(mSendOff, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 0U);
+  ASSERT_TRUE((codec = GetAudioCodec(mRecvAns, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 0U);
+  ASSERT_TRUE((codec = GetAudioCodec(mSendAns, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 0U);
+  ASSERT_TRUE((codec = GetAudioCodec(mRecvOff, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 0U);
+}
+
+TEST_F(JsepTrackTest, AudioNegotiationAnswerTransportCC) {
+  InitCodecs({.enableAudioTransportCC = false});
+  // enable TransportCC on the answer codecs
+  ((JsepAudioCodecDescription&)*mAnsCodecs[0]).EnableTransportCC();
+  InitTracks(SdpMediaSection::kAudio);
+  InitSdp(SdpMediaSection::kAudio);
+  OfferAnswer();
+
+  // make sure TransportCC is not on offer and not on answer
+  ASSERT_EQ(mOffer->ToString().find("a=rtcp-fb:109 transport-cc"),
+            std::string::npos);
+  ASSERT_EQ(mAnswer->ToString().find("a=rtcp-fb:109 transport-cc"),
+            std::string::npos);
+  CheckOffEncodingCount(1);
+  CheckAnsEncodingCount(1);
+
+  UniquePtr<JsepAudioCodecDescription> codec;
+  ASSERT_TRUE((codec = GetAudioCodec(mSendOff, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 0U);
+  ASSERT_TRUE((codec = GetAudioCodec(mRecvAns, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 0U);
+  ASSERT_TRUE((codec = GetAudioCodec(mSendAns, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 0U);
+  ASSERT_TRUE((codec = GetAudioCodec(mRecvOff, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 0U);
+}
+
+TEST_F(JsepTrackTest, AudioNegotiationOfferAnswerTransportCC) {
+  InitCodecs({.enableAudioTransportCC = false});
+  // enable TransportCC on the offer and answer codecs
+  ((JsepAudioCodecDescription&)*mOffCodecs[0]).EnableTransportCC();
+  ((JsepAudioCodecDescription&)*mAnsCodecs[0]).EnableTransportCC();
+  InitTracks(SdpMediaSection::kAudio);
+  InitSdp(SdpMediaSection::kAudio);
+  OfferAnswer();
+
+  // make sure TransportCC is on offer and on answer
+  ASSERT_NE(mOffer->ToString().find("a=rtcp-fb:109 transport-cc"),
+            std::string::npos);
+  ASSERT_NE(mAnswer->ToString().find("a=rtcp-fb:109 transport-cc"),
+            std::string::npos);
+  CheckOffEncodingCount(1);
+  CheckAnsEncodingCount(1);
+
+  UniquePtr<JsepAudioCodecDescription> codec;
+  ASSERT_TRUE((codec = GetAudioCodec(mSendOff, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 1U);
+  CheckOtherFbExists<JsepAudioCodecDescription>(
+      *codec, SdpRtcpFbAttributeList::kTransportCC);
+  ASSERT_TRUE((codec = GetAudioCodec(mRecvAns, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 1U);
+  CheckOtherFbExists<JsepAudioCodecDescription>(
+      *codec, SdpRtcpFbAttributeList::kTransportCC);
+  ASSERT_TRUE((codec = GetAudioCodec(mSendAns, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 1U);
+  CheckOtherFbExists<JsepAudioCodecDescription>(
+      *codec, SdpRtcpFbAttributeList::kTransportCC);
+  ASSERT_TRUE((codec = GetAudioCodec(mRecvOff, 2, 0)));
+  ASSERT_EQ(codec->mOtherFbTypes.size(), 1U);
+  CheckOtherFbExists<JsepAudioCodecDescription>(
+      *codec, SdpRtcpFbAttributeList::kTransportCC);
+}
+
+TEST_F(JsepTrackTest, AudioTransportCCFbSetUnsetWhenAnswerRejects) {
+  InitCodecs({.enableAudioTransportCC = false});
+  // Offer enables TransportCC, answer does not. After negotiation TC is
+  // dropped; AudioCodecConfig::mTransportCCFbSet must reflect that even though
+  // JsepAudioCodecDescription::mTransportCCEnabled stays true on the offerer.
+  ((JsepAudioCodecDescription&)*mOffCodecs[0]).EnableTransportCC();
+  InitTracks(SdpMediaSection::kAudio);
+  InitSdp(SdpMediaSection::kAudio);
+  OfferAnswer();
+
+  for (const JsepTrack* track : {&mSendOff, &mRecvAns, &mSendAns, &mRecvOff}) {
+    ASSERT_TRUE(track->GetNegotiatedDetails());
+    std::vector<AudioCodecConfig> configs;
+    dom::RTCRtpTransceiver::NegotiatedDetailsToAudioCodecConfigs(
+        *track->GetNegotiatedDetails(), &configs);
+    ASSERT_FALSE(configs.empty());
+    for (const auto& config : configs) {
+      EXPECT_FALSE(config.mTransportCCFbSet)
+          << "codec " << config.mName
+          << " has mTransportCCFbSet=true despite negotiation rejecting TC";
+    }
+  }
+}
+
+TEST_F(JsepTrackTest, AudioTransportCCFbSetWhenBothSidesNegotiate) {
+  InitCodecs(CodecOverrides{});
+  ((JsepAudioCodecDescription&)*mOffCodecs[0]).EnableTransportCC();
+  ((JsepAudioCodecDescription&)*mAnsCodecs[0]).EnableTransportCC();
+  InitTracks(SdpMediaSection::kAudio);
+  InitSdp(SdpMediaSection::kAudio);
+  OfferAnswer();
+
+  for (const JsepTrack* track : {&mSendOff, &mRecvAns, &mSendAns, &mRecvOff}) {
+    ASSERT_TRUE(track->GetNegotiatedDetails());
+    std::vector<AudioCodecConfig> configs;
+    dom::RTCRtpTransceiver::NegotiatedDetailsToAudioCodecConfigs(
+        *track->GetNegotiatedDetails(), &configs);
+    bool sawOpusWithTC = false;
+    for (const auto& config : configs) {
+      if (config.mName == "opus") {
+        sawOpusWithTC = config.mTransportCCFbSet;
+      }
+    }
+    EXPECT_TRUE(sawOpusWithTC)
+        << "opus should have mTransportCCFbSet=true after both sides negotiate "
+           "transport-cc";
+  }
 }
 
 TEST_F(JsepTrackTest, VideoNegotiationOfferTransportCC) {

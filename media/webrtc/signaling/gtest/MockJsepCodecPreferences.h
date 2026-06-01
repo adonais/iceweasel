@@ -34,6 +34,7 @@ struct MockJsepCodecPreferences : public JsepCodecPreferences {
   bool UseRemb() const override { return mUseRemb; }
   bool UseRtx() const override { return mUseRtx; }
   bool UseTransportCC() const override { return mUseTransportCC; }
+  bool UseAudioTransportCC() const override { return mUseAudioTransportCC; }
   bool UseAudioFec() const override { return mUseAudioFec; }
   bool RedUlpfecEnabled() const override { return mRedUlpfecEnabled; }
 
@@ -65,6 +66,8 @@ struct MockJsepCodecPreferences : public JsepCodecPreferences {
       StaticPrefs::GetPrefDefault_media_peerconnection_video_use_rtx();
   bool mUseTransportCC =
       StaticPrefs::GetPrefDefault_media_navigator_video_use_transport_cc();
+  bool mUseAudioTransportCC =
+      StaticPrefs::GetPrefDefault_media_navigator_audio_use_transport_cc();
   bool mUseAudioFec =
       StaticPrefs::GetPrefDefault_media_navigator_audio_use_fec();
   bool mRedUlpfecEnabled =

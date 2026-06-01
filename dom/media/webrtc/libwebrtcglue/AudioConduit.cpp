@@ -955,6 +955,12 @@ RtpExtList WebrtcAudioConduit::FilterExtensions(LocalDirection aDirection,
       filteredExtensions.push_back(
           webrtc::RtpExtension(extension.uri, extension.id));
     }
+
+    // TransportCC header extension
+    if (extension.uri == webrtc::RtpExtension::kTransportSequenceNumberUri) {
+      filteredExtensions.push_back(
+          webrtc::RtpExtension(extension.uri, extension.id));
+    }
   }
 
   return filteredExtensions;

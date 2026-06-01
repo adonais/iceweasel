@@ -13481,6 +13481,11 @@
   value: true
   mirror: always
 
+- name: media.navigator.audio.use_transport_cc
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 - name: media.navigator.video.max_fs
   type: RelaxedAtomicUint32
   value: 12288 # Enough for 2048x1536

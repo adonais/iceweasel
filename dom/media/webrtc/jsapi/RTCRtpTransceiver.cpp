@@ -709,6 +709,7 @@ static void JsepCodecDescToAudioCodecConfig(
   (*aConfig)->mMinFrameSizeMs = aCodec.mMinFrameSizeMs;
   (*aConfig)->mMaxFrameSizeMs = aCodec.mMaxFrameSizeMs;
   (*aConfig)->mCbrEnabled = aCodec.mCbrEnabled;
+  (*aConfig)->mTransportCCFbSet = aCodec.RtcpFbTransportCCIsSet();
 }
 
 // TODO: This and the next function probably should move to JsepTransceiver

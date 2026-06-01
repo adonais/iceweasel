@@ -43,6 +43,7 @@ class JsepCodecPreferences {
   virtual bool UseRemb() const = 0;
   virtual bool UseRtx() const = 0;
   virtual bool UseTransportCC() const = 0;
+  virtual bool UseAudioTransportCC() const = 0;
   virtual bool UseAudioFec() const = 0;
   virtual bool RedUlpfecEnabled() const = 0;
 
@@ -77,6 +78,8 @@ class JsepCodecPreferences {
     os << "  UseRtx: " << (aPrefs.UseRtx() ? "true" : "false") << "\n";
     os << "  UseTransportCC: " << (aPrefs.UseTransportCC() ? "true" : "false")
        << "\n";
+    os << "  UseAudioTransportCC: "
+       << (aPrefs.UseAudioTransportCC() ? "true" : "false") << "\n";
 
     // Error correction
     os << "  UseAudioFec: " << (aPrefs.UseAudioFec() ? "true" : "false")
@@ -261,6 +264,15 @@ class JsepCodecDescription {
     });
   }
 
+  bool RtcpFbTransportCCIsSet() const {
+    for (const auto& fb : mOtherFbTypes) {
+      if (fb.type == SdpRtcpFbAttributeList::kTransportCC) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // The direction supported by encoders and decoders, to distinguish recvonly
   // codecs from sendrecv.
   sdp::Direction mSupportedDirection;
@@ -275,6 +287,7 @@ class JsepCodecDescription {
   sdp::Direction mDirection;
   // Will hold constraints from both fmtp and rid
   VideoEncodingConstraints mConstraints;
+  std::vector<SdpRtcpFbAttributeList::Feedback> mOtherFbTypes;
 };
 
 struct CompareCodecPriority {
@@ -299,7 +312,8 @@ class JsepAudioCodecDescription final : public JsepCodecDescription {
         mFrameSizeMs(0),
         mMinFrameSizeMs(0),
         mMaxFrameSizeMs(0),
-        mCbrEnabled(false) {}
+        mCbrEnabled(false),
+        mTransportCCEnabled(false) {}
 
   static constexpr SdpMediaSection::MediaType type = SdpMediaSection::kAudio;
 
@@ -307,6 +321,15 @@ class JsepAudioCodecDescription final : public JsepCodecDescription {
 
   JSEP_CODEC_CLONE(JsepAudioCodecDescription)
  public:
+  static auto ConfigureCommonAudioCodec(
+      UniquePtr<JsepAudioCodecDescription> aCodec,
+      const JsepCodecPreferences& aPrefs) {
+    if (aPrefs.UseAudioTransportCC()) {
+      aCodec->EnableTransportCC();
+    }
+    return aCodec;
+  }
+
   static UniquePtr<JsepAudioCodecDescription> CreateDefaultOpus(
       const JsepCodecPreferences& aPrefs) {
     // Per jmspeex on IRC:
@@ -319,19 +342,25 @@ class JsepAudioCodecDescription final : public JsepCodecDescription {
     // 12Kbps.
     auto codec = MakeUnique<JsepAudioCodecDescription>("109", "opus", 48000, 2);
     codec->mFECEnabled = aPrefs.UseAudioFec();
-    return codec;
+    return ConfigureCommonAudioCodec(std::move(codec), aPrefs);
   }
 
-  static UniquePtr<JsepAudioCodecDescription> CreateDefaultG722() {
-    return MakeUnique<JsepAudioCodecDescription>("9", "G722", 8000, 1);
+  static UniquePtr<JsepAudioCodecDescription> CreateDefaultG722(
+      const JsepCodecPreferences& aPrefs) {
+    auto codec = MakeUnique<JsepAudioCodecDescription>("9", "G722", 8000, 1);
+    return ConfigureCommonAudioCodec(std::move(codec), aPrefs);
   }
 
-  static UniquePtr<JsepAudioCodecDescription> CreateDefaultPCMU() {
-    return MakeUnique<JsepAudioCodecDescription>("0", "PCMU", 8000, 1);
+  static UniquePtr<JsepAudioCodecDescription> CreateDefaultPCMU(
+      const JsepCodecPreferences& aPrefs) {
+    auto codec = MakeUnique<JsepAudioCodecDescription>("0", "PCMU", 8000, 1);
+    return ConfigureCommonAudioCodec(std::move(codec), aPrefs);
   }
 
-  static UniquePtr<JsepAudioCodecDescription> CreateDefaultPCMA() {
-    return MakeUnique<JsepAudioCodecDescription>("8", "PCMA", 8000, 1);
+  static UniquePtr<JsepAudioCodecDescription> CreateDefaultPCMA(
+      const JsepCodecPreferences& aPrefs) {
+    auto codec = MakeUnique<JsepAudioCodecDescription>("8", "PCMA", 8000, 1);
+    return ConfigureCommonAudioCodec(std::move(codec), aPrefs);
   }
 
   static UniquePtr<JsepAudioCodecDescription> CreateDefaultTelephoneEvent() {
@@ -369,6 +398,14 @@ class JsepAudioCodecDescription final : public JsepCodecDescription {
     return result;
   }
 
+  void EnableTransportCC() {
+    if (!mTransportCCEnabled) {
+      mTransportCCEnabled = true;
+      mOtherFbTypes.push_back(
+          {"", SdpRtcpFbAttributeList::kTransportCC, "", ""});
+    }
+  }
+
   void AddParametersToMSection(SdpMediaSection& msection) const override {
     if (mDirection == sdp::kSend) {
       return;
@@ -388,6 +425,24 @@ class JsepAudioCodecDescription final : public JsepCodecDescription {
           GetTelephoneEventParameters(mDefaultPt, msection));
       msection.SetFmtp(SdpFmtpAttributeList::Fmtp(mDefaultPt, teParams));
     }
+
+    AddRtcpFbsToMSection(msection);
+  }
+
+  void AddRtcpFbsToMSection(SdpMediaSection& msection) const {
+    SdpRtcpFbAttributeList rtcpfbs(msection.GetRtcpFbs());
+
+    for (const auto& rtcpfb : rtcpfbs.mFeedbacks) {
+      if (rtcpfb.pt == mDefaultPt) {
+        return;
+      }
+    }
+
+    for (const auto& fb : mOtherFbTypes) {
+      rtcpfbs.PushEntry(mDefaultPt, fb.type, fb.parameter, fb.extra);
+    }
+
+    msection.SetRtcpFbs(rtcpfbs);
   }
 
   bool Negotiate(const std::string& pt, const SdpMediaSection& remoteMsection,
@@ -426,7 +481,19 @@ class JsepAudioCodecDescription final : public JsepCodecDescription {
       mCbrEnabled = opusParams.useCbr;
     }
 
+    NegotiateRtcpFb(remoteMsection);
+
     return true;
+  }
+
+  void NegotiateRtcpFb(const SdpMediaSection& remote) {
+    std::vector<SdpRtcpFbAttributeList::Feedback> temp;
+    for (auto& fb : mOtherFbTypes) {
+      if (remote.HasRtcpFb(mDefaultPt, fb.type, fb.parameter)) {
+        temp.push_back(fb);
+      }
+    }
+    mOtherFbTypes = std::move(temp);
   }
 
   void ApplyConfigToFmtp(
@@ -479,6 +546,7 @@ class JsepAudioCodecDescription final : public JsepCodecDescription {
   uint32_t mMinFrameSizeMs;
   uint32_t mMaxFrameSizeMs;
   bool mCbrEnabled;
+  bool mTransportCCEnabled;
 };
 
 class JsepVideoCodecDescription final : public JsepCodecDescription {
@@ -1307,15 +1375,6 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
     return false;
   }
 
-  bool RtcpFbTransportCCIsSet() const {
-    for (const auto& fb : mOtherFbTypes) {
-      if (fb.type == SdpRtcpFbAttributeList::kTransportCC) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   void EnsureNoDuplicatePayloadTypes(std::set<std::string>& aUsedPts) override {
     JsepCodecDescription::EnsureNoDuplicatePayloadTypes(aUsedPts);
     if (mFECEnabled) {
@@ -1332,7 +1391,6 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
   std::vector<std::string> mAckFbTypes;
   std::vector<std::string> mNackFbTypes;
   std::vector<std::string> mCcmFbTypes;
-  std::vector<SdpRtcpFbAttributeList::Feedback> mOtherFbTypes;
   bool mTmmbrEnabled;
   bool mRembEnabled;
   bool mFECEnabled;
