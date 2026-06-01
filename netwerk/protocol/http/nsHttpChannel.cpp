@@ -7946,7 +7946,8 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
     MOZ_ASSERT(!LoadOnStopRequestCalled(),
                "We should not call OnStopRequest twice");
     StoreOnStopRequestCalled(true);
-    mListener->OnStopRequest(this, aStatus);
+    nsCOMPtr<nsIStreamListener> listener(mListener);
+    listener->OnStopRequest(this, aStatus);
   }
   StoreOnStopRequestCalled(true);
 
