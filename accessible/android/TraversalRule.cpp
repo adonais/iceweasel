@@ -174,6 +174,7 @@ uint16_t TraversalRule::ControlMatch(Accessible* aAccessible) {
     case roles::COMBOBOX:
     case roles::LISTBOX:
     case roles::ENTRY:
+    case roles::SEARCHBOX:
     case roles::PASSWORD_TEXT:
     case roles::PAGETAB:
     case roles::RADIOBUTTON:
@@ -267,6 +268,7 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
     case roles::RADIO_MENU_ITEM:
     case roles::TOGGLE_BUTTON:
     case roles::ENTRY:
+    case roles::SEARCHBOX:
     case roles::KEY:
     case roles::SLIDER:
     case roles::SPINBUTTON:
