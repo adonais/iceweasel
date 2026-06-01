@@ -265,8 +265,9 @@ void nsBaseChannel::ContinueHandleAsyncRedirect(nsresult result) {
 
   if (NS_FAILED(result) && mListener) {
     // Notify our consumer ourselves
-    mListener->OnStartRequest(this);
-    mListener->OnStopRequest(this, mStatus);
+    nsCOMPtr<nsIStreamListener> listener = mListener;
+    listener->OnStartRequest(this);
+    listener->OnStopRequest(this, mStatus);
     ChannelDone();
   }
 
@@ -802,8 +803,9 @@ nsBaseChannel::OnStartRequest(nsIRequest* request) {
 
   SUSPEND_PUMP_FOR_SCOPE();
 
-  if (mListener) {  // null in case of redirect
-    return mListener->OnStartRequest(this);
+  // null in case of redirect
+  if (nsCOMPtr<nsIStreamListener> listener = mListener) {
+    return listener->OnStartRequest(this);
   }
   return NS_OK;
 }
@@ -820,8 +822,9 @@ nsBaseChannel::OnStopRequest(nsIRequest* request, nsresult status) {
   mCancelableAsyncRequest = nullptr;
   mPumpingData = false;
 
-  if (mListener) {  // null in case of redirect
-    mListener->OnStopRequest(this, mStatus);
+  // null in case of redirect
+  if (nsCOMPtr<nsIStreamListener> listener = mListener) {
+    listener->OnStopRequest(this, mStatus);
   }
   ChannelDone();
 
@@ -845,7 +848,8 @@ nsBaseChannel::OnDataAvailable(nsIRequest* request, nsIInputStream* stream,
                                uint64_t offset, uint32_t count) {
   SUSPEND_PUMP_FOR_SCOPE();
 
-  nsresult rv = mListener->OnDataAvailable(this, stream, offset, count);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  nsresult rv = listener->OnDataAvailable(this, stream, offset, count);
   if (mSynthProgressEvents && NS_SUCCEEDED(rv)) {
     int64_t prog = offset + count;
     if (NS_IsMainThread()) {

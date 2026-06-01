@@ -108,7 +108,8 @@ nsIndexedToHTML::OnStartRequest(nsIRequest* request) {
     request->Cancel(rv);
   }
 
-  rv = mListener->OnStartRequest(request);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  rv = listener->OnStartRequest(request);
   if (NS_FAILED(rv)) return rv;
 
   // The request may have been canceled, and if that happens, we want to
@@ -147,7 +148,8 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
   rv = mParser->SetListener(this);
   if (NS_FAILED(rv)) return rv;
 
-  rv = mParser->OnStartRequest(request);
+  nsCOMPtr<nsIDirIndexParser> parser = mParser;
+  rv = parser->OnStartRequest(request);
   if (NS_FAILED(rv)) return rv;
 
   nsAutoCString baseUri, titleUri;
@@ -613,10 +615,12 @@ nsIndexedToHTML::OnStopRequest(nsIRequest* request, nsresult aStatus) {
     aStatus = SendToListener(request, buffer);
   }
 
-  mParser->OnStopRequest(request, aStatus);
+  nsCOMPtr<nsIDirIndexParser> parser = mParser;
+  parser->OnStopRequest(request, aStatus);
   mParser = nullptr;
 
-  return mListener->OnStopRequest(request, aStatus);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStopRequest(request, aStatus);
 }
 
 nsresult nsIndexedToHTML::SendToListener(nsIRequest* aRequest,
@@ -624,13 +628,15 @@ nsresult nsIndexedToHTML::SendToListener(nsIRequest* aRequest,
   nsCOMPtr<nsIInputStream> inputData;
   nsresult rv = NS_NewCStringInputStream(getter_AddRefs(inputData), aBuffer);
   NS_ENSURE_SUCCESS(rv, rv);
-  return mListener->OnDataAvailable(aRequest, inputData, 0, aBuffer.Length());
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnDataAvailable(aRequest, inputData, 0, aBuffer.Length());
 }
 
 NS_IMETHODIMP
 nsIndexedToHTML::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInput,
                                  uint64_t aOffset, uint32_t aCount) {
-  return mParser->OnDataAvailable(aRequest, aInput, aOffset, aCount);
+  nsCOMPtr<nsIDirIndexParser> parser = mParser;
+  return parser->OnDataAvailable(aRequest, aInput, aOffset, aCount);
 }
 
 NS_IMETHODIMP

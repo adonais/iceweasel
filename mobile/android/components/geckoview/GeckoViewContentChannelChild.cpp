@@ -199,7 +199,8 @@ void GeckoViewContentChannelChild::DoOnStartRequest(
   }
 
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-  rv = mListener->OnStartRequest(reinterpret_cast<nsBaseChannel*>(this));
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  rv = listener->OnStartRequest(reinterpret_cast<nsBaseChannel*>(this));
   if (MOZ_UNLIKELY(NS_FAILED(rv))) {
     Cancel(rv);
   }
@@ -228,8 +229,9 @@ void GeckoViewContentChannelChild::DoOnDataAvailable(
   }
 
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-  rv = mListener->OnDataAvailable(reinterpret_cast<nsBaseChannel*>(this),
-                                  stringStream, aOffset, aData.Length());
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  rv = listener->OnDataAvailable(reinterpret_cast<nsBaseChannel*>(this),
+                                 stringStream, aOffset, aData.Length());
   stringStream->Close();
   if (MOZ_UNLIKELY(NS_FAILED(rv))) {
     Cancel(rv);
@@ -252,8 +254,9 @@ void GeckoViewContentChannelChild::DoOnStopRequest(
 
   {
     AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-    mListener->OnStopRequest(reinterpret_cast<nsBaseChannel*>(this),
-                             aChannelStatus);
+    nsCOMPtr<nsIStreamListener> listener = mListener;
+    listener->OnStopRequest(reinterpret_cast<nsBaseChannel*>(this),
+                            aChannelStatus);
     mListener = nullptr;
 
     if (mLoadGroup) {
@@ -280,10 +283,10 @@ void GeckoViewContentChannelChild::DoOnAsyncOpenFailed(
     mLoadGroup->RemoveRequest(this, nullptr, aChannelStatus);
   }
 
-  if (mListener) {
-    mListener->OnStartRequest(reinterpret_cast<nsBaseChannel*>(this));
-    mListener->OnStopRequest(reinterpret_cast<nsBaseChannel*>(this),
-                             aChannelStatus);
+  if (nsCOMPtr<nsIStreamListener> listener = mListener) {
+    listener->OnStartRequest(reinterpret_cast<nsBaseChannel*>(this));
+    listener->OnStopRequest(reinterpret_cast<nsBaseChannel*>(this),
+                            aChannelStatus);
   }
 
   mListener = nullptr;

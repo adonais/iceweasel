@@ -536,7 +536,8 @@ void HttpTransactionParent::DoOnStartRequest(
   }
 
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-  nsresult rv = mChannel->OnStartRequest(this);
+  nsCOMPtr<nsIStreamListener> channel = mChannel;
+  nsresult rv = channel->OnStartRequest(this);
   mOnStartRequestCalled = true;
   if (NS_FAILED(rv)) {
     Cancel(rv);
@@ -606,7 +607,8 @@ void HttpTransactionParent::DoOnDataAvailable(
 
   mOnDataAvailableStartTime = aOnDataAvailableStartTime;
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-  rv = mChannel->OnDataAvailable(this, stringStream, aOffset, aData.Length());
+  nsCOMPtr<nsIStreamListener> channel = mChannel;
+  rv = channel->OnDataAvailable(this, stringStream, aOffset, aData.Length());
   if (NS_FAILED(rv)) {
     CancelOnMainThread(rv);
   }
@@ -696,7 +698,8 @@ void HttpTransactionParent::DoOnStopRequest(
   }
 
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-  (void)mChannel->OnStopRequest(this, mStatus);
+  nsCOMPtr<nsIStreamListener> channel = mChannel;
+  (void)channel->OnStopRequest(this, mStatus);
   mOnStopRequestCalled = true;
 }
 

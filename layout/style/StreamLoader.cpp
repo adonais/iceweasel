@@ -43,7 +43,8 @@ NS_IMETHODIMP
 StreamLoader::OnStartRequest(nsIRequest* aRequest) {
   MOZ_ASSERT(aRequest);
   mRequest = aRequest;
-  mSheetLoadData->OnStartRequest(aRequest);
+  RefPtr<SheetLoadData> sheetLoadData = mSheetLoadData;
+  sheetLoadData->OnStartRequest(aRequest);
 
   // It's kinda bad to let Web content send a number that results
   // in a potentially large allocation directly, but efficiency of

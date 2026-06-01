@@ -101,12 +101,14 @@ nsForceXMLListener::OnStartRequest(nsIRequest* aRequest) {
     channel->SetContentType("text/xml"_ns);
   }
 
-  return mListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP
 nsForceXMLListener::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
-  return mListener->OnStopRequest(aRequest, aStatusCode);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStopRequest(aRequest, aStatusCode);
 }
 
 nsSyncLoader::~nsSyncLoader() {
@@ -246,7 +248,8 @@ nsresult nsSyncLoader::PushSyncStream(nsIStreamListener* aListener) {
 
 NS_IMETHODIMP
 nsSyncLoader::OnStartRequest(nsIRequest* aRequest) {
-  return mListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP
@@ -254,7 +257,8 @@ nsSyncLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   if (NS_SUCCEEDED(mAsyncLoadStatus) && NS_FAILED(aStatusCode)) {
     mAsyncLoadStatus = aStatusCode;
   }
-  nsresult rv = mListener->OnStopRequest(aRequest, aStatusCode);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  nsresult rv = listener->OnStopRequest(aRequest, aStatusCode);
   if (NS_SUCCEEDED(mAsyncLoadStatus) && NS_FAILED(rv)) {
     mAsyncLoadStatus = rv;
   }

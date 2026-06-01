@@ -45,8 +45,8 @@ MediaDocumentStreamListener::OnStartRequest(nsIRequest* request) {
 
   mDocument->StartLayout();
 
-  if (mNextStream) {
-    return mNextStream->OnStartRequest(request);
+  if (nsCOMPtr<nsIStreamListener> nextStream = mNextStream) {
+    return nextStream->OnStartRequest(request);
   }
 
   return NS_ERROR_PARSED_DATA_CACHED;
@@ -56,8 +56,8 @@ NS_IMETHODIMP
 MediaDocumentStreamListener::OnStopRequest(nsIRequest* request,
                                            nsresult status) {
   nsresult rv = NS_OK;
-  if (mNextStream) {
-    rv = mNextStream->OnStopRequest(request, status);
+  if (nsCOMPtr<nsIStreamListener> nextStream = mNextStream) {
+    rv = nextStream->OnStopRequest(request, status);
   }
 
   // Don't release mDocument here if we're in the middle of a multipart
@@ -79,8 +79,8 @@ MediaDocumentStreamListener::OnDataAvailable(nsIRequest* request,
                                              nsIInputStream* inStr,
                                              uint64_t sourceOffset,
                                              uint32_t count) {
-  if (mNextStream) {
-    return mNextStream->OnDataAvailable(request, inStr, sourceOffset, count);
+  if (nsCOMPtr<nsIStreamListener> nextStream = mNextStream) {
+    return nextStream->OnDataAvailable(request, inStr, sourceOffset, count);
   }
 
   return NS_OK;

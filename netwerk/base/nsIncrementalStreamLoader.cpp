@@ -43,7 +43,8 @@ nsIncrementalStreamLoader::GetRequest(nsIRequest** aRequest) {
 
 NS_IMETHODIMP
 nsIncrementalStreamLoader::OnStartRequest(nsIRequest* request) {
-  nsresult rv = mObserver->OnStartRequest(request);
+  nsCOMPtr<nsIIncrementalStreamLoaderObserver> observer = mObserver;
+  nsresult rv = observer->OnStartRequest(request);
   if (NS_FAILED(rv)) {
     return rv;
   }
