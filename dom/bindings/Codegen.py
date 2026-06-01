@@ -2053,7 +2053,9 @@ def finalizeHook(descriptor, hookName, gcx, obj):
         ret = ""
         parent = descriptor.interface.parent
         if parent:
-            ret += cleanUpObservableArrayProxy(descriptor.getDescriptor(parent.identifier.name), obj)
+            ret += cleanUpObservableArrayProxy(
+                descriptor.getDescriptor(parent.identifier.name), obj
+            )
         for m in descriptor.interface.members:
             if m.isAttr() and m.type.isObservableArray():
                 ret += fill(
