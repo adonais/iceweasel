@@ -1207,8 +1207,9 @@ TRRServiceChannel::OnDataAvailable(nsIRequest* request, nsIInputStream* input,
 
   MOZ_ASSERT(mResponseHead, "No response head in ODA!!");
 
-  if (mListener) {
-    return mListener->OnDataAvailable(this, input, offset, count);
+
+  if (nsCOMPtr<nsIStreamListener> listener = mListener) {
+    return listener->OnDataAvailable(this, input, offset, count);
   }
 
   return NS_ERROR_ABORT;
@@ -1233,7 +1234,8 @@ TRRServiceChannel::OnStopRequest(nsIRequest* request, nsresult status) {
     MOZ_ASSERT(!LoadOnStopRequestCalled(),
                "We should not call OnStopRequest twice");
     StoreOnStopRequestCalled(true);
-    mListener->OnStopRequest(this, status);
+    nsCOMPtr<nsIStreamListener> listener = mListener;
+    listener->OnStopRequest(this, status);
   }
   StoreOnStopRequestCalled(true);
 
