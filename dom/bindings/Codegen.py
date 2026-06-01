@@ -2049,7 +2049,30 @@ class CGGetWrapperCacheHook(CGAbstractClassHook):
 
 
 def finalizeHook(descriptor, hookName, gcx, obj):
+    def cleanUpObservableArrayProxy(descriptor, obj):
+        ret = ""
+        parent = descriptor.interface.parent
+        if parent:
+            ret += cleanUpObservableArrayProxy(descriptor.getDescriptor(parent.identifier.name), obj)
+        for m in descriptor.interface.members:
+            if m.isAttr() and m.type.isObservableArray():
+                ret += fill(
+                    """
+                    {
+                      JS::Value val = JS::GetReservedSlot(${obj}, ${slot});
+                      if (!val.isUndefined()) {
+                        JSObject* obj = &val.toObject();
+                        js::SetProxyReservedSlot(obj, OBSERVABLE_ARRAY_DOM_INTERFACE_SLOT, JS::UndefinedValue());
+                      }
+                    }
+                    """,
+                    obj=obj,
+                    slot=memberReservedSlot(m, descriptor),
+                )
+        return ret
+
     finalize = "JS::SetReservedSlot(%s, DOM_OBJECT_SLOT, JS::UndefinedValue());\n" % obj
+    finalize += cleanUpObservableArrayProxy(descriptor, obj)
     if descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns"):
         finalize += fill(
             """
@@ -2073,20 +2096,6 @@ def finalizeHook(descriptor, hookName, gcx, obj):
             """,
             obj=obj,
         )
-    for m in descriptor.interface.members:
-        if m.isAttr() and m.type.isObservableArray():
-            finalize += fill(
-                """
-                {
-                  JS::Value val = JS::GetReservedSlot(obj, ${slot});
-                  if (!val.isUndefined()) {
-                    JSObject* obj = &val.toObject();
-                    js::SetProxyReservedSlot(obj, OBSERVABLE_ARRAY_DOM_INTERFACE_SLOT, JS::UndefinedValue());
-                  }
-                }
-                """,
-                slot=memberReservedSlot(m, descriptor),
-            )
     if descriptor.wrapperCache:
         finalize += "ClearWrapper(self, self, %s);\n" % obj
     if descriptor.isGlobal():
