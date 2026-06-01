@@ -3624,4 +3624,4 @@ pref("widget.support-xdg-config", true, locked);
 pref("browser.contentsharing.enabled", false);
 
 // When enabled, Firefox ignores the distribution.ini file if global.id is MozillaOnline.
-pref("distribution.mozillaonline.ignore", false);
+pref("distribution.mozillaonline.ignore", true);
