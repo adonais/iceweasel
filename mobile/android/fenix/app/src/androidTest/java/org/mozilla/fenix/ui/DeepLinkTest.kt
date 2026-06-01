@@ -100,6 +100,13 @@ class DeepLinkTest {
     }
 
     @Test
+    fun openSettingsAIControls() {
+        robot.openSettingsAIControls {
+            verifyAIControlsToolbarTitle()
+        }
+    }
+
+    @Test
     fun openSettingsTrackingProtection() {
         robot.openSettingsTrackingProtection {
             verifyEnhancedTrackingProtectionSummary()
