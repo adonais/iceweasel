@@ -4670,6 +4670,17 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Personvernfråsegn</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Les meir</string>
+  <!--
+    Firefox Labs
+
+    Banner title text on the Firefox Labs screen.
+  -->
+  <string name="firefox_labs_banner_title">Prøv dei eksperimentelle funksjonane våre!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">Dei er under utvikling og blir heile tida forbetra, noko som kan påverke korleis %s fungerer.</string>
   <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
   <string name="firefox_labs_restore_default_button_text">Gjenopprett standardverdiar</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
@@ -4680,4 +4691,8 @@
   <string name="firefox_labs_dialog_cancel_button">Avbryt</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
   <string name="firefox_labs_restore_defaults_dialog_title">Omstart påkravd</string>
+  <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_restore_defaults_dialog_message">For å gjenopprette standardinnstillingane, start %s på nytt.</string>
+  <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+  <string name="firefox_labs_no_labs_available_description">Ingen eksperimentelle funksjonar å prøve akkurat no</string>
 </resources>

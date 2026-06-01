@@ -35,4 +35,11 @@
   <string name="protections_dashboard_category_others">Andre</string>
   <!-- Title shown in the protection dashboard header next to the shield icon -->
   <string name="mozac_protections_dashboard_trackers_blocked_this_week_title">Sporarar blokkerte denne veka</string>
+  <!--
+    Title shown when no trackers have been blocked yet
+    %1$s will be replaced by the app name (e.g. Firefox Focus)
+  -->
+  <string name="mozac_protections_dashboard_empty_title">%1$s blokkerer sporarar medan du surfar.</string>
+  <!-- Subtitle shown when no trackers have been blocked yet -->
+  <string name="mozac_protections_dashboard_empty_subtitle">Du vil sjå dei her.</string>
 </resources>

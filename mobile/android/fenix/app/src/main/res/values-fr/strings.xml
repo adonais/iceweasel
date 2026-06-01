@@ -467,7 +467,7 @@
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Supprimer cette entrée de l’historique</string>
   <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="applinks_prompt_negative_button">Restez dans %1$s</string>
+  <string name="applinks_prompt_negative_button">Rester dans %1$s</string>
   <!--
     Home onboarding
 
@@ -1712,13 +1712,13 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Ouvrir la recherche d’onglet</string>
   <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
-  <string name="tab_group_onboarding_item_title">Créer un groupe d’onglets</string>
+  <string name="tab_group_onboarding_item_title">Créez un groupe d’onglets</string>
   <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
-  <string name="tab_group_onboarding_grid_item_description">Faites glisser des onglets vers un autre pour les regrouper.</string>
+  <string name="tab_group_onboarding_grid_item_description">Faites glisser un onglet sur un autre pour créer un groupe.</string>
   <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
   <string name="tab_group_onboarding_list_item_description">Sélectionnez plusieurs onglets pour créer un groupe.</string>
   <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
-  <string name="tab_group_onboarding_item_dismiss_content_description">Fermer l’accueil du groupe d’onglets</string>
+  <string name="tab_group_onboarding_item_dismiss_content_description">Fermer l’accueil des groupes d’onglets</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Essayez les groupes d’onglets pour gagner en efficacité</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -4633,7 +4633,7 @@
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Résultats définitifs de la Coupe du monde, page %1$d sur %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
-  <string name="sports_widget_final_results_content_description">résultats de la finale de la coupe du monde</string>
+  <string name="sports_widget_final_results_content_description">Résultats définitifs de la Coupe du monde</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Retirer la Coupe du monde de l’accueil</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4651,7 +4651,7 @@
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Phase de groupes</string>
   <!-- Sports widget error card title shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed_title">Les informations de correspondance ne sont pas disponibles pour le moment.</string>
+  <string name="sports_widget_error_load_failed_title">Les informations du match ne sont pas disponibles pour le moment.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">Essayez d’actualiser dans quelques minutes.</string>
   <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
@@ -4680,9 +4680,9 @@
     Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
     Text will appear under the Firefox Labs banner title.
   -->
-  <string name="firefox_labs_experimental_description">Ils sont en cours de développement et évoluent, ce qui pourrait avoir un impact sur le fonctionnement de %s.</string>
+  <string name="firefox_labs_experimental_description">Elles sont en cours de développement et évoluent, ce qui pourrait affecter le fonctionnement de %s.</string>
   <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
-  <string name="firefox_labs_restore_default_button_text">Restaurer moteurs par défaut</string>
+  <string name="firefox_labs_restore_default_button_text">Restaurer les valeurs par défaut</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
   <string name="firefox_labs_feature_dialog_title">Redémarrage nécessaire</string>
   <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
@@ -4692,7 +4692,7 @@
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
   <string name="firefox_labs_restore_defaults_dialog_title">Redémarrage nécessaire</string>
   <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
-  <string name="firefox_labs_restore_defaults_dialog_message">Pour restaurer les paramètres par défaut, redémarrez %s.</string>
+  <string name="firefox_labs_restore_defaults_dialog_message">Pour restaurer les valeurs par défaut, redémarrez %s.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">Aucune fonctionnalité expérimentale à essayer pour l’instant</string>
 </resources>

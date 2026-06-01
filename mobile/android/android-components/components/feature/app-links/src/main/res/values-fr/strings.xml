@@ -17,7 +17,7 @@
     The title of the prompt with app suffix.
     %s is a placeholder that will be replaced by an app name
   -->
-  <string name="mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2">Ouvrir ce lien dans l\'application %s\u00a0?</string>
+  <string name="mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2">Ouvrir ce lien dans l’application %s\u00a0?</string>
   <!--
     The title of the prompt that warns users their normal browsing session is trying to open another app
     %s is a placeholder that will be replaced by an app name
@@ -51,5 +51,5 @@
   <!-- The text shown when there is no Firefox URL -->
   <string name="mozac_feature_applinks_none">Aucune</string>
   <!-- The subtitle showing where the link was navigated from. %s is the domain. -->
-  <string name="mozac_feature_applinks_link_from">Lien depuis %s</string>
+  <string name="mozac_feature_applinks_link_from">Lien de %s</string>
 </resources>
