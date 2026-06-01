@@ -17,6 +17,7 @@
 #include "LocalAccessible-inl.h"
 #include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/RemoteAccessible.h"
+#include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "MsaaAccessible.h"
 #include "MsaaRootAccessible.h"
 #include "nsAccessibilityService.h"
@@ -310,6 +311,15 @@ void uiaRawElmProvider::RaiseUiaNotificationEvent(
   if (!Compatibility::IsUiaEnabled() || !::UiaClientsAreListening()) {
     return;
   }
+  static const StaticDynamicallyLinkedFunctionPtr<
+      decltype(&::UiaRaiseNotificationEvent)>
+      sUiaRaiseNotificationEvent(L"UIAutomationCore.dll",
+                                 "UiaRaiseNotificationEvent");
+  if (!sUiaRaiseNotificationEvent) {
+    // UiaRaiseNotificationEvent is only available on Windows 10 version 1709
+    // and later.
+    return;
+  }
   // Find the nearest Accessible that is in the UIA control view.
   uiaRawElmProvider* uia = nullptr;
   for (Accessible* acc = aAcc; acc; acc = acc->Parent()) {
@@ -323,7 +333,7 @@ void uiaRawElmProvider::RaiseUiaNotificationEvent(
     }
   }
   if (uia) {
-    ::UiaRaiseNotificationEvent(
+    sUiaRaiseNotificationEvent(
         uia, NotificationKind_ActionCompleted,
         aPriority == nsIAccessibleAnnouncementEvent::ASSERTIVE
             ? NotificationProcessing_ImportantAll
