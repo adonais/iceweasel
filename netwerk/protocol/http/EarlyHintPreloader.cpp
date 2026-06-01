@@ -593,9 +593,9 @@ EarlyHintPreloader::OnStartRequest(nsIRequest* aRequest) {
   nsresult status = NS_OK;
   Unused << aRequest->GetStatus(&status);
 
-  if (mParent) {
+  if (nsCOMPtr<nsIParentChannel> parent = mParent) {
     SetParentChannel();
-    mParent->OnStartRequest(aRequest);
+    parent->OnStartRequest(aRequest);
     InvokeStreamListenerFunctions();
   } else {
     // Don't suspend the chanel when the channel got cancelled with

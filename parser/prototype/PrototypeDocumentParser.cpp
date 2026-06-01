@@ -123,8 +123,8 @@ PrototypeDocumentParser::Parse(nsIURI* aURL) {
 
 NS_IMETHODIMP
 PrototypeDocumentParser::OnStartRequest(nsIRequest* request) {
-  if (mStreamListener) {
-    return mStreamListener->OnStartRequest(request);
+  if (nsCOMPtr<nsIStreamListener> streamListener = mStreamListener) {
+    return streamListener->OnStartRequest(request);
   }
   // There's already a prototype cached, so return cached here so the original
   // request will be aborted. Either OnStopRequest or the prototype load
@@ -135,8 +135,8 @@ PrototypeDocumentParser::OnStartRequest(nsIRequest* request) {
 
 NS_IMETHODIMP
 PrototypeDocumentParser::OnStopRequest(nsIRequest* request, nsresult aStatus) {
-  if (mStreamListener) {
-    return mStreamListener->OnStopRequest(request, aStatus);
+  if (nsCOMPtr<nsIStreamListener> streamListener = mStreamListener) {
+    return streamListener->OnStopRequest(request, aStatus);
   }
   if (mPrototypeAlreadyLoaded) {
     return this->OnPrototypeLoadDone();
@@ -150,9 +150,9 @@ PrototypeDocumentParser::OnDataAvailable(nsIRequest* request,
                                          nsIInputStream* aInStr,
                                          uint64_t aSourceOffset,
                                          uint32_t aCount) {
-  if (mStreamListener) {
-    return mStreamListener->OnDataAvailable(request, aInStr, aSourceOffset,
-                                            aCount);
+  if (nsCOMPtr<nsIStreamListener> streamListener = mStreamListener) {
+    return streamListener->OnDataAvailable(request, aInStr, aSourceOffset,
+                                           aCount);
   }
   MOZ_ASSERT_UNREACHABLE("Cached prototype doesn't receive data");
   return NS_ERROR_UNEXPECTED;

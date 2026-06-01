@@ -41,12 +41,14 @@ NS_IMETHODIMP
 nsHTTPSOnlyStreamListener::OnDataAvailable(nsIRequest* aRequest,
                                            nsIInputStream* aInputStream,
                                            uint64_t aOffset, uint32_t aCount) {
-  return mListener->OnDataAvailable(aRequest, aInputStream, aOffset, aCount);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnDataAvailable(aRequest, aInputStream, aOffset, aCount);
 }
 
 NS_IMETHODIMP
 nsHTTPSOnlyStreamListener::OnStartRequest(nsIRequest* request) {
-  return mListener->OnStartRequest(request);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStartRequest(request);
 }
 
 NS_IMETHODIMP
@@ -77,7 +79,8 @@ nsHTTPSOnlyStreamListener::OnStopRequest(nsIRequest* request,
     }
   }
 
-  return mListener->OnStopRequest(request, aStatus);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStopRequest(request, aStatus);
 }
 
 void nsHTTPSOnlyStreamListener::RecordUpgradeTelemetry(nsIRequest* request,

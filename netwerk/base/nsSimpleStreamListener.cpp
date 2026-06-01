@@ -23,12 +23,14 @@ NS_IMPL_ISUPPORTS(nsSimpleStreamListener, nsISimpleStreamListener,
 //
 NS_IMETHODIMP
 nsSimpleStreamListener::OnStartRequest(nsIRequest* aRequest) {
-  return mObserver ? mObserver->OnStartRequest(aRequest) : NS_OK;
+  nsCOMPtr<nsIRequestObserver> observer = mObserver;
+  return observer ? observer->OnStartRequest(aRequest) : NS_OK;
 }
 
 NS_IMETHODIMP
 nsSimpleStreamListener::OnStopRequest(nsIRequest* request, nsresult aStatus) {
-  return mObserver ? mObserver->OnStopRequest(request, aStatus) : NS_OK;
+  nsCOMPtr<nsIRequestObserver> observer = mObserver;
+  return observer ? observer->OnStopRequest(request, aStatus) : NS_OK;
 }
 
 //

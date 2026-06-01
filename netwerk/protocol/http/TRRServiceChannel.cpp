@@ -1207,7 +1207,6 @@ TRRServiceChannel::OnDataAvailable(nsIRequest* request, nsIInputStream* input,
 
   MOZ_ASSERT(mResponseHead, "No response head in ODA!!");
 
-
   if (nsCOMPtr<nsIStreamListener> listener = mListener) {
     return listener->OnDataAvailable(this, input, offset, count);
   }

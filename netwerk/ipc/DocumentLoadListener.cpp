@@ -304,7 +304,8 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     // handled in the content process.
     if (NS_SUCCEEDED(rv) && !mUsedContentHandler && !m_targetStreamListener) {
       m_targetStreamListener = mListener;
-      return m_targetStreamListener->OnStartRequest(request);
+      nsCOMPtr<nsIStreamListener> listener = m_targetStreamListener;
+      return listener->OnStartRequest(request);
     }
     if (m_targetStreamListener != mListener) {
       LOG(

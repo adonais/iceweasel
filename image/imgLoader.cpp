@@ -2987,7 +2987,8 @@ ProxyListener::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  return mDestListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP
@@ -2996,7 +2997,8 @@ ProxyListener::OnStopRequest(nsIRequest* aRequest, nsresult status) {
     return NS_ERROR_FAILURE;
   }
 
-  return mDestListener->OnStopRequest(aRequest, status);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnStopRequest(aRequest, status);
 }
 
 /** nsIStreamListener methods **/
@@ -3008,7 +3010,8 @@ ProxyListener::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* inStr,
     return NS_ERROR_FAILURE;
   }
 
-  return mDestListener->OnDataAvailable(aRequest, inStr, sourceOffset, count);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnDataAvailable(aRequest, inStr, sourceOffset, count);
 }
 
 /** nsThreadRetargetableStreamListener methods **/
@@ -3215,7 +3218,8 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
   // changes the caching behaviour for imgRequests.
   mImgLoader->PutIntoCache(mNewRequest->CacheKey(), mNewEntry);
   UpdateProxies(/* aCancelRequest */ false, /* aSyncNotify */ true);
-  return mDestListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP
@@ -3227,7 +3231,8 @@ imgCacheValidator::OnStopRequest(nsIRequest* aRequest, nsresult status) {
     return NS_OK;
   }
 
-  return mDestListener->OnStopRequest(aRequest, status);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnStopRequest(aRequest, status);
 }
 
 /** nsIStreamListener methods **/
@@ -3242,7 +3247,8 @@ imgCacheValidator::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* inStr,
     return NS_OK;
   }
 
-  return mDestListener->OnDataAvailable(aRequest, inStr, sourceOffset, count);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnDataAvailable(aRequest, inStr, sourceOffset, count);
 }
 
 /** nsIThreadRetargetableStreamListener methods **/
