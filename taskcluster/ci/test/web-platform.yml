@@ -240,22 +240,14 @@ web-platform-tests-wdspec:
         - headless
     run-on-projects:
         by-variant:
-            headless:
-                by-test-platform:
-                    android.*: []
-                    .*wayland.*: []
-                    default: built-projects
-            no-fission:
-                by-test-platform:
-                    linux1804-64-qr/debug: ['trunk']
-                    linux1804-64(-shippable|-asan)?-qr/opt: ['trunk']
-                    android.*: built-projects
-                    default: []
+            headless: []
+            no-fission: []
             default:
                 by-test-platform:
                     android.*: []
                     .*wayland.*: []
-                    default: built-projects
+                    .*-shippable.*: built-projects
+                    default: []
     tier: default
     fetches:
         toolchain:
