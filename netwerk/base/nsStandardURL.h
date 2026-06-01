@@ -412,6 +412,9 @@ class nsStandardURL : public nsIFileURL,
     }
 
     [[nodiscard]] NS_IMETHOD Finalize(nsIURI** aURI) override {
+      if (!BaseURIMutator<T>::mURI) {
+        return NS_ERROR_NULL_POINTER;
+      }
       BaseURIMutator<T>::mURI.forget(aURI);
       return NS_OK;
     }
