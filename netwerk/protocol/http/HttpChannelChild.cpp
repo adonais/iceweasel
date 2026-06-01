@@ -786,8 +786,8 @@ void HttpChannelChild::DoOnStatus(nsIRequest* aRequest, nsresult status) {
       !(mLoadFlags & LOAD_BACKGROUND)) {
     nsAutoCString host;
     mURI->GetHost(host);
-    mProgressSink->OnStatus(aRequest, status,
-                            NS_ConvertUTF8toUTF16(host).get());
+    nsCOMPtr<nsIProgressEventSink> progressSink(mProgressSink);
+    progressSink->OnStatus(aRequest, status, NS_ConvertUTF8toUTF16(host).get());
   }
 }
 
@@ -807,7 +807,8 @@ void HttpChannelChild::DoOnProgress(nsIRequest* aRequest, int64_t progress,
     // OnProgress
     //
     if (progress > 0) {
-      mProgressSink->OnProgress(aRequest, progress, progressMax);
+      nsCOMPtr<nsIProgressEventSink> progressSink(mProgressSink);
+      progressSink->OnProgress(aRequest, progress, progressMax);
     }
   }
 
