@@ -1,3 +1,7 @@
+// This library is patched, thus considered first-party. Ignore warnings
+// as if it were third-party.
+#![allow(warnings)]
+
 #![doc = core::include_str!("../README.md")]
 #![cfg_attr(not(any(test, feature = "rust-allocator")), no_std)]
 
