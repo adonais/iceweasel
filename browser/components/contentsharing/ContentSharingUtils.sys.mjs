@@ -458,6 +458,7 @@ class ContentSharingUtilsClass {
     if (!this.serverURL) {
       console.error("ContentSharingUtils: server URL is not set");
       shareResult.error = ERRORS.GENERIC;
+      Glean.collectionShare.error.record({ error_type: ERRORS.GENERIC });
       return shareResult;
     }
 
@@ -531,7 +532,10 @@ class ContentSharingUtilsClass {
       } catch (error) {
         console.error(error);
         canRetry = false;
-        shareResult.error = ERRORS.MAX_REQUEST_ATTEMPTS;
+        shareResult.error = ERRORS.MAX_RETRY_ATTEMPTS;
+        Glean.collectionShare.error.record({
+          error_type: ERRORS.MAX_RETRY_ATTEMPTS,
+        });
       }
 
       attempts += 1;
@@ -597,6 +601,7 @@ class ContentSharingUtilsClass {
     shareResult.isSchemaValid = result.valid;
     if (!result.valid || this.countItems(shareResult.share) > MAX_ITEM_COUNT) {
       shareResult.error = ERRORS.INVALID_SCHEMA;
+      Glean.collectionShare.error.record({ error_type: ERRORS.INVALID_SCHEMA });
     }
 
     return shareResult;

@@ -56,6 +56,32 @@ add_task(async function test_tooManyLinks() {
   });
 });
 
+add_task(async function test_invalidSchemaGlean() {
+  await withContentSharingMockServer(async () => {
+    let tabs = [
+      BrowserTestUtils.addTab(gBrowser, "about:blank"),
+      BrowserTestUtils.addTab(gBrowser, "about:blank"),
+    ];
+
+    await Services.fog.testFlushAllChildren();
+    Services.fog.testResetFOG();
+
+    await ContentSharingUtils.handleShareTabs(tabs);
+
+    await Services.fog.testFlushAllChildren();
+    let gleanData = Glean.collectionShare.error.testGetValue();
+    Assert.equal(gleanData.length, 1, "Should have one error event");
+    Assert.equal(
+      gleanData[0].extra.error_type,
+      ERRORS.INVALID_SCHEMA,
+      "Should have invalid schema error type"
+    );
+
+    window.gDialogBox.dialog.close();
+    gBrowser.removeTabs(tabs);
+  });
+});
+
 add_task(async function test_genericError() {
   await withContentSharingMockServer(async server => {
     let tabs = [
