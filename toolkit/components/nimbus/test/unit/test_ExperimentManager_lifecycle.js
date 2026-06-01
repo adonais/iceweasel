@@ -597,3 +597,57 @@ add_task(async function testForceEnrollMultifeature() {
 
   await cleanup();
 });
+
+// `ExperimentAPI.init()` is now called by multiple consumers. If a second
+// caller arrives while the first is still doing init work, the second caller's
+// `await init()` shouldn't resolve until the first caller's work has
+// actually completed. See Bug 2042553
+add_task(async function test_concurrent_init_callers_await_real_completion() {
+  const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest({
+    init: false,
+  });
+
+  // Gate _rsLoader.enable() so the first init() can be held in flight
+  const enableGate = Promise.withResolvers();
+  const realEnable = loader.enable.bind(loader);
+  sandbox.stub(loader, "enable").callsFake(async (...args) => {
+    await enableGate.promise;
+    return realEnable(...args);
+  });
+
+  // Kick off both callers without awaiting, and capture loader state at the
+  // moment the second call resolves
+  const p1 = ExperimentAPI.init();
+  let hasUpdatedOnceWhenP2Resolved = null;
+  const p2 = ExperimentAPI.init().then(result => {
+    hasUpdatedOnceWhenP2Resolved = loader._hasUpdatedOnce;
+    return result;
+  });
+
+  // Unblock init now that both callers are pending
+  enableGate.resolve();
+
+  const [result1, result2] = await Promise.all([p1, p2]);
+
+  Assert.strictEqual(result1, true, "First caller returned true");
+  Assert.strictEqual(
+    result2,
+    false,
+    "Second caller returned false (init was already in flight)"
+  );
+  Assert.strictEqual(
+    hasUpdatedOnceWhenP2Resolved,
+    true,
+    "Second init() did not resolve until the RS loader had actually finished updating"
+  );
+
+  // A subsequent call after completion still returns false
+  const result3 = await ExperimentAPI.init();
+  Assert.strictEqual(
+    result3,
+    false,
+    "Post-completion caller returned false (init already done)"
+  );
+
+  await cleanup();
+});

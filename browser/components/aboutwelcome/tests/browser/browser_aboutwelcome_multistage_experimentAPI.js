@@ -341,6 +341,17 @@ add_task(async function test_multistage_aboutwelcome_utm_term() {
   const browser = tab.linkedBrowser;
   const aboutWelcomeActor = await getAboutWelcomeParent(browser);
 
+  // Wait for the experiment screen to render before stubbing
+  // onContentMessage to prevent in-flight queries from getAWContent getting
+  // caught by the stub
+  await SpecialPowers.spawn(browser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector("button[value='secondary_button_top']"),
+      "experiment screen has rendered"
+    );
+  });
+
   sandbox.stub(aboutWelcomeActor, "onContentMessage");
 
   await onButtonClick(browser, "button[value='secondary_button_top']");
