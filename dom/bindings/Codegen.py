@@ -2124,6 +2124,29 @@ class CGDefineHTMLAttributeSlots(CGThing):
 
 
 def finalizeHook(descriptor, gcx, obj):
+    def cleanUpObservableArrayProxy(descriptor, obj, getReservedSlotFunc):
+        ret = ""
+        parent = descriptor.interface.parent
+        if parent:
+            ret += cleanUpObservableArrayProxy(descriptor.getDescriptor(parent.identifier.name), obj, getReservedSlotFunc)
+        for m in descriptor.interface.members:
+            if m.isAttr() and m.type.isObservableArray():
+                ret += fill(
+                    """
+                    {
+                      JS::Value val = ${getReservedSlotFunc}(${obj}, ${slot});
+                      if (!val.isUndefined()) {
+                        JSObject* proxyObj = &val.toObject();
+                        js::SetProxyReservedSlot(proxyObj, OBSERVABLE_ARRAY_DOM_INTERFACE_SLOT, JS::UndefinedValue());
+                      }
+                    }
+                    """,
+                    getReservedSlotFunc=getReservedSlotFunc,
+                    obj=obj,
+                    slot=memberReservedSlot(m, descriptor),
+                )
+        return ret
+
     finalize = fill(
         """
         ${setReservedSlot}(${obj}, DOM_OBJECT_SLOT, JS::UndefinedValue());
@@ -2131,6 +2154,7 @@ def finalizeHook(descriptor, gcx, obj):
         setReservedSlot=setReservedSlotFunc(descriptor),
         obj=obj,
     )
+    finalize += cleanUpObservableArrayProxy(descriptor, obj, getReservedSlotFunc(descriptor))
     if descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns"):
         finalize += fill(
             """
@@ -2154,21 +2178,6 @@ def finalizeHook(descriptor, gcx, obj):
             """,
             obj=obj,
         )
-    for m in descriptor.interface.members:
-        if m.isAttr() and m.type.isObservableArray():
-            finalize += fill(
-                """
-                {
-                  JS::Value val = ${getReservedSlot}(obj, ${slot});
-                  if (!val.isUndefined()) {
-                    JSObject* proxyObj = &val.toObject();
-                    js::SetProxyReservedSlot(proxyObj, OBSERVABLE_ARRAY_DOM_INTERFACE_SLOT, JS::UndefinedValue());
-                  }
-                }
-                """,
-                getReservedSlot=getReservedSlotFunc(descriptor),
-                slot=memberReservedSlot(m, descriptor),
-            )
     iface = getReflectedHTMLAttributesIface(descriptor)
     if iface:
         finalize += "%s::ReflectedHTMLAttributeSlots::Finalize(%s);\n" % (
