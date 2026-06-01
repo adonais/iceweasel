@@ -1609,6 +1609,19 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 2034343
 ]
 
+["test_ssl_token_cache_persist_disabled.js"]
+run-sequentially = ["true"] # tlsserver uses fixed port; profile dir must be exclusive
+# Init() sees pref=true; the test flips it to false before profile-after-change.
+prefs = [
+  "network.ssl_tokens_cache_persistence=true",
+  "logging.SSLTokensCache=5",
+  "logging.config.sync=true",
+]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix", # Bug 2034343
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 2034343
+]
+
 ["test_stale-while-revalidate_loop.js"]
 
 ["test_stale-while-revalidate_max-age-0.js"]

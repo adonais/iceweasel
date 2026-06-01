@@ -10,12 +10,13 @@
 //   2. "application-background" — Android backgrounding write
 //   3. profile-before-change via AsyncShutdown — on-quit write
 //
-// The network.ssl_tokens_cache_persistence pref must be in the toml [prefs]
-// block so that SSLTokensCache::Init() sees it when the IO service starts
-// (triggered by head.js before any test code runs).
-//
-// profile-after-change fires during the test infrastructure setup; our
-// Observe() handler sets mBackingFile and registers the shutdown blocker.
+// network.ssl_tokens_cache_persistence is set in the toml [prefs] block.
+// SSLTokensCache::Init() runs early (triggered by the IO service start in
+// head.js) and the pref may still be false at that point.  Init() therefore
+// only registers the profile-after-change observer unconditionally; the
+// write observers (idle-daily, application-background) and the shutdown
+// blocker are registered in Observe("profile-after-change"), which fires
+// after prefs are fully applied.
 
 "use strict";
 
