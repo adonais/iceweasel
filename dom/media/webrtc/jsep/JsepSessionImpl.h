@@ -226,7 +226,7 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
       const std::string& transportId) const;
   // The w3c and IETF specs have a lot of "magical" behavior that happens when
   // addTrack is used. This was a deliberate design choice. Sadface.
-  Maybe<JsepTransceiver> FindUnassociatedTransceiver(
+  Maybe<JsepTransceiver> FindUnassociatedRtpTransceiver(
       SdpMediaSection::MediaType type, bool magic);
   // Called for rollback of local description
   void RollbackLocalOffer();
