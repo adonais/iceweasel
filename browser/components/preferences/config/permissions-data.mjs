@@ -57,19 +57,13 @@ Preferences.addAll([
 
   { id: PREF_NORMANDY_ENABLED, type: "bool" },
   { id: "nimbus.rollouts.enabled", type: "bool" },
-]);
 
-// Study opt out
-if (lazy.AppConstants.MOZ_DATA_REPORTING) {
-  Preferences.addAll([
-    // Preference instances for prefs that we need to monitor while the page is open.
-    { id: PREF_OPT_OUT_STUDIES_ENABLED, type: "bool" },
-    { id: PREF_ADDON_RECOMMENDATIONS_ENABLED, type: "bool" },
-    { id: PREF_UPLOAD_ENABLED, type: "bool" },
-    { id: "datareporting.usage.uploadEnabled", type: "bool" },
-    { id: "dom.private-attribution.submission.enabled", type: "bool" },
-  ]);
-}
+  // Preference instances for prefs that we need to monitor while the page is open.
+  { id: PREF_OPT_OUT_STUDIES_ENABLED, type: "bool" },
+  { id: PREF_ADDON_RECOMMENDATIONS_ENABLED, type: "bool" },
+  { id: PREF_UPLOAD_ENABLED, type: "bool" },
+  { id: "datareporting.usage.uploadEnabled", type: "bool" },
+]);
 
 /**
  * Displays a dialog for managing permission exceptions for a specific permission type.
