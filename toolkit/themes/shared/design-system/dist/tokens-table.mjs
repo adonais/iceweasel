@@ -1350,6 +1350,7 @@ export const tokensTable = {
     { value: "var(--card-padding)", name: "--card-gap" },
     { value: "var(--space-small)", name: "--card-gap-article" },
     { value: "var(--space-small)", name: "--checkbox-margin-inline" },
+    { value: { brand: { default: "64px" } }, name: "--page-space-block-start" },
     {
       value:
         "var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline)",
@@ -1378,7 +1379,10 @@ export const tokensTable = {
     { value: "var(--space-small)", name: "--breadcrumb-gap" },
     { value: "var(--space-xsmall)", name: "--page-nav-button-gap" },
     { value: "var(--space-large)", name: "--page-nav-gap" },
-    { value: "64px", name: "--page-nav-margin-block-start" },
+    {
+      value: "var(--page-space-block-start)",
+      name: "--page-nav-margin-block-start",
+    },
     { value: "40px", name: "--page-nav-margin-inline-start" },
     { value: "var(--space-medium)", name: "--promo-padding" },
     {
@@ -3132,6 +3136,7 @@ export const variableLookupTable = {
   "opacity-deemphasized-strong": { default: "0.6", prefersContrast: "1" },
   "opacity-deemphasized": { default: "0.8", prefersContrast: "1" },
   "page-main-content-width": { brand: { default: "664px" } },
+  "page-space-block-start": { brand: { default: "64px" } },
   "panel-menuitem-border-radius": "var(--border-radius-small)",
   "panel-menuitem-margin":
     "var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline)",
@@ -3388,7 +3393,7 @@ export const variableLookupTable = {
   "page-nav-gap": "var(--space-large)",
   "page-nav-heading-logo-size": "var(--icon-size-large)",
   "page-nav-hr-background-color": "var(--border-color)",
-  "page-nav-margin-block-start": "64px",
+  "page-nav-margin-block-start": "var(--page-space-block-start)",
   "page-nav-margin-inline-start": "40px",
   "promo-background-color": {
     default: "color-mix(in lch, currentColor 8%, transparent)",

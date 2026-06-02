@@ -85,7 +85,7 @@
      up after searching. */
   z-index: 2;
   background-color: var(--background-color-canvas);
-  padding-top: 40px;
+  padding-top: var(--page-space-block-start);
   padding-bottom: var(--search-container-padding);
   padding-inline: var(--focus-outline-offset);
   /* Ensure focus indicators on elements below the search container
@@ -106,11 +106,8 @@
   --search-container-margin: calc(var(--focus-outline-width) + var(--focus-outline-offset));
 
   contain: inline-size;
-  /* 72px matches moz-page-nav's --page-nav-margin-top, minus the 40px
-     padding-top already set in common-shared.css. */
-  margin-top: 32px;
   padding-top: 0;
-  scroll-padding-top: calc(40px + var(--search-container-padding) + var(--search-container-margin) + 40px);
+  scroll-padding-top: calc(calc(2 * var(--page-space-block-start)) + var(--search-container-padding) + var(--search-container-margin));
 
   @media (max-width: 950px) {
     padding-inline: var(--space-medium);

@@ -36,7 +36,7 @@
   "margin": {
     "block": {
       "start": {
-        "value": "64px"
+        "value": "{page.space.block.start}"
       }
     },
     "inline": {

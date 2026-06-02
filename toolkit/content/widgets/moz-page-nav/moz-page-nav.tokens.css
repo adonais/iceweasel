@@ -16,7 +16,7 @@
     --page-nav-gap: var(--space-large);
     --page-nav-heading-logo-size: var(--icon-size-large);
     --page-nav-hr-background-color: var(--border-color);
-    --page-nav-margin-block-start: 64px;
+    --page-nav-margin-block-start: var(--page-space-block-start);
     --page-nav-margin-inline-start: 40px;
   }
 }
