@@ -1123,17 +1123,7 @@ features:
       enabled:
         description: If true, Email Mask feature is enabled.
         type: Boolean
-        default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
-      - channel: beta
-        value:
-          enabled: true
+        default: true
 
   ip-protection:
     description: Feature to enable IP Protection (VPN) for users on Firefox on Android.
