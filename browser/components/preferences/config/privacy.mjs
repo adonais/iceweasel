@@ -950,6 +950,7 @@ SettingGroupManager.registerGroups({
               {
                 id: "customHistoryButton",
                 control: "moz-box-button",
+                loadPane: "history",
                 l10nId: "history-custom-button",
               },
             ],
@@ -1032,6 +1033,7 @@ SettingGroupManager.registerGroups({
           },
           {
             id: "dohAdvancedButton",
+            loadPane: "dnsOverHttps",
             l10nId: "preferences-doh-advanced-button",
             control: "moz-box-button",
           },
@@ -1117,6 +1119,7 @@ SettingGroupManager.registerGroups({
           {
             id: "etpStatusAdvancedButton",
             l10nId: "preferences-etp-status-advanced-button",
+            loadPane: "etp",
             control: "moz-box-button",
           },
         ],
@@ -1186,6 +1189,7 @@ SettingGroupManager.registerGroups({
               {
                 id: "etpCustomizeButton",
                 l10nId: "preferences-etp-customize-button",
+                loadPane: "etpCustomize",
                 control: "moz-box-button",
               },
             ],
@@ -1393,6 +1397,7 @@ SettingGroupManager.registerGroups({
       {
         id: "connectionLinkButton",
         l10nId: "preferences-connection-link-button",
+        loadPane: "connectionSecurity",
         control: "moz-box-button",
       },
     ],

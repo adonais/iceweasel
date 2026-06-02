@@ -26,4 +26,6 @@ tags = "os_integration"
 
 ["browser_setting_pane_sub_pane.js"]
 
+["browser_setting_pane_sub_pane_search.js"]
+
 ["browser_sub_pane_navigation_selection.js"]

@@ -822,6 +822,7 @@ export class AboutPreferences {
           id: "homepageGoToCustomHomepageUrlPanel",
           control: "moz-box-button",
           l10nId: "home-homepage-custom-homepage-button",
+          loadPane: "customHomepage",
         },
         {
           id: "homepageNewTabs",

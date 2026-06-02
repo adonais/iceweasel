@@ -567,3 +567,81 @@ async function waitForPrefChange(prefName, expectedValue) {
     `Waiting for ${prefName} to be ${expectedValue}`
   );
 }
+
+/**
+ * Opens preferences and registers a `testTopLevel` pane with a `testSubPane`
+ * sub-pane. The default top-level pane has a single `moz-box-button` that
+ * navigates to (and is wired to load via `loadPane`) the sub-pane. Callers
+ * can override either group's `items` to add searchkeywords, swap the
+ * control, etc.
+ *
+ * @param {object} [options]
+ * @param {object[]} [options.parentItems]
+ *   `items` for the top-level setting-group. Each item.id is registered as a
+ *   basic Setting (with `testLoadSubPane` getting an onUserClick that
+ *   navigates to the sub-pane).
+ * @param {object[]} [options.subPaneItems]
+ *   `items` for the sub-pane setting-group. Each item.id is registered as a
+ *   basic Setting.
+ * @returns {Promise<{ doc: Document, win: Window }>}
+ */
+async function setupTestSubPane({
+  parentItems = [
+    {
+      id: "testLoadSubPane",
+      control: "moz-box-button",
+      loadPane: "testSubPane",
+      controlAttrs: { label: "Top level setting" },
+    },
+  ],
+  subPaneItems = [
+    {
+      id: "testSetting",
+      controlAttrs: { label: "Test setting" },
+    },
+  ],
+} = {}) {
+  await openPreferencesViaOpenPreferencesAPI("sync", { leaveOpen: true });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let win = doc.documentGlobal;
+
+  win.Preferences.addSetting({
+    id: "testLoadSubPane",
+    onUserClick: () => win.gotoPref("paneTestSubPane"),
+  });
+  for (let item of [...parentItems, ...subPaneItems]) {
+    if (item.id !== "testLoadSubPane") {
+      win.Preferences.addSetting({ id: item.id, get: () => true });
+    }
+  }
+
+  win.SettingGroupManager.registerGroup("testTopLevelGroup", {
+    l10nId: "home-default-browser-title",
+    headingLevel: 2,
+    items: parentItems,
+  });
+  win.SettingPaneManager.registerPane("testTopLevel", {
+    l10nId: "home-section",
+    groupIds: ["testTopLevelGroup"],
+  });
+  let syncCategory = doc.getElementById("category-sync");
+  let testTopLevelCategory = syncCategory.cloneNode(true);
+  testTopLevelCategory.setAttribute("view", "paneTestTopLevel");
+  syncCategory.insertAdjacentElement("afterend", testTopLevelCategory);
+
+  win.SettingGroupManager.registerGroup("testSubGroup", {
+    headingLevel: 2,
+    items: subPaneItems,
+  });
+  win.SettingPaneManager.registerPane("testSubPane", {
+    parent: "testTopLevel",
+    l10nId: "containers-section-header",
+    groupIds: ["testSubGroup"],
+  });
+
+  let viewChanged = waitForPaneChange("paneTestTopLevel");
+  win.gotoPref("paneTestTopLevel");
+  await viewChanged;
+
+  return { doc, win };
+}

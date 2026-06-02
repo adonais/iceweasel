@@ -137,14 +137,14 @@ var gSearchResultsPane = {
    * array if it's a TEXT_NODE, and otherwise recurses to check text nodes within it.
    * Source - http://stackoverflow.com/questions/10730309/find-all-text-nodes-in-html-page
    *
-   * @param Node nodeObject
-   *    DOM element
-   * @returns array of text nodes
+   * @param {Node | HTMLElement | ShadowRoot | null} node DOM element
+   * @returns {Node[]}
    */
   textNodeDescendants(node) {
     if (!node) {
       return [];
     }
+    /** @type {Node[]} */
     let all = [];
     let originalNode = node;
     for (node = node.firstChild; node; node = node.nextSibling) {
@@ -463,21 +463,23 @@ var gSearchResultsPane = {
    * Finding leaf nodes and checking their content for words to search,
    * It is a recursive function
    *
-   * @param Node nodeObject
-   *    DOM Element
-   * @param String searchPhrase
-   * @returns boolean
+   * @param {Node} nodeObject DOM Element
+   * @param {string} searchPhrase
+   * @param {boolean} forceSearch Allow this node to be searched.
+   * @returns {Promise<boolean>}
    *    Returns true when found in at least one childNode, false otherwise
    */
-  async searchWithinNode(nodeObject, searchPhrase) {
+  async searchWithinNode(nodeObject, searchPhrase, forceSearch = false) {
     let matchesFound = false;
     if (
-      nodeObject.childElementCount == 0 ||
-      (typeof nodeObject.children !== "undefined" &&
-        Array.prototype.every.call(nodeObject.children, this._isAnchor)) ||
-      this.searchableNodes.has(nodeObject.localName) ||
-      (nodeObject.localName?.startsWith("moz-") &&
-        nodeObject.localName !== "moz-input-box")
+      Element.isInstance(nodeObject) &&
+      (nodeObject.childElementCount == 0 ||
+        (typeof nodeObject.children !== "undefined" &&
+          Array.prototype.every.call(nodeObject.children, this._isAnchor)) ||
+        forceSearch ||
+        this.searchableNodes.has(nodeObject.localName) ||
+        (nodeObject.localName?.startsWith("moz-") &&
+          nodeObject.localName !== "moz-input-box"))
     ) {
       let simpleTextNodes = this.textNodeDescendants(nodeObject);
       for (let node of simpleTextNodes) {
@@ -540,6 +542,27 @@ var gSearchResultsPane = {
       let keywordsResult =
         nodeObject.hasAttribute("search-l10n-ids") &&
         (await this.matchesSearchL10nIDs(nodeObject, searchPhrase));
+
+      if (!keywordsResult && nodeObject.getAttribute("data-load-pane")) {
+        let subPane = document.querySelector(
+          `setting-pane[data-category="${nodeObject.getAttribute("data-load-pane")}"]`
+        );
+        if (subPane) {
+          for (let group of subPane.querySelectorAll("setting-group")) {
+            // The this.searchWithinNode() call will highlight matches that are
+            // never shown which is unnecessary work, but won't cause any harm.
+            // We just need the result of "does anything match".
+            keywordsResult = await this.searchWithinNode(
+              group,
+              searchPhrase,
+              true
+            );
+            if (keywordsResult) {
+              break;
+            }
+          }
+        }
+      }
 
       if (!keywordsResult) {
         // Searching some elements, such as xul:button, buttons to open subdialogs

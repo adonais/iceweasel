@@ -687,6 +687,7 @@ SettingGroupManager.registerGroups({
           },
           {
             id: "browserContainersSettings",
+            loadPane: "containers",
             l10nId: "browser-containers-settings-2",
             control: "moz-box-button",
             controlAttrs: {

@@ -946,6 +946,7 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "translationsManageButton",
+        loadPane: "translations",
         l10nId: "settings-translations-more-settings-button",
         control: "moz-box-button",
       },

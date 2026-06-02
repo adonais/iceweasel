@@ -1452,6 +1452,7 @@ SettingGroupManager.registerGroups({
               },
               {
                 id: "personalizeSmartWindowButton",
+                loadPane: "personalizeSmartWindow",
                 l10nId: "ai-window-personalize-button",
                 control: "moz-box-button",
               },
@@ -1660,6 +1661,7 @@ SettingGroupManager.registerGroups({
           },
           {
             id: "manageMemoriesButton",
+            loadPane: "manageMemories",
             l10nId: "ai-window-manage-memories-button",
             control: "moz-box-button",
           },

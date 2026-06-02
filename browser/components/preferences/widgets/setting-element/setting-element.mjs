@@ -19,6 +19,17 @@ const lazy = XPCOMUtils.declareLazy({
   srdEnabled: { pref: "browser.settings-redesign.enabled" },
 });
 
+/**
+ * Convert "friendly" pane names to internal names (home -> paneHome).
+ *
+ * @param {string} category
+ */
+function expandPaneName(category) {
+  return category
+    ? `pane${category[0].toUpperCase()}${category.slice(1)}`
+    : undefined;
+}
+
 /** @import { AttributePart } from "chrome://global/content/vendor/lit.all.mjs" */
 
 /**
@@ -31,6 +42,9 @@ const lazy = XPCOMUtils.declareLazy({
  * @property {string} [slot] - The named slot for the control
  * @property {string} [supportPage] - The SUMO support page slug for the setting
  * @property {string} [subcategory] - The sub-category slug used for direct linking to a setting from SUMO
+ * @property {string} [loadPane]
+ *   Friendly pane name loaded by this element, searches matching that pane will
+ *   highlight this element.
  */
 
 /**
@@ -171,6 +185,7 @@ export class SettingElement extends MozLitElement {
         ? JSON.stringify(config.l10nArgs)
         : undefined,
       ".iconSrc": config.iconSrc,
+      "data-load-pane": expandPaneName(config.loadPane),
       ".supportPage":
         config.supportPage != undefined ? config.supportPage : undefined,
       slot: config.slot,

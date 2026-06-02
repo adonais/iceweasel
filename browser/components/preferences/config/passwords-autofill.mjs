@@ -205,6 +205,7 @@ const FORM_AUTOFILL_CONFIG = {
       },
       {
         id: "savedPaymentsButton",
+        loadPane: "managePayments",
         l10nId: "autofill-payment-methods-manage-payments-button",
         control: "moz-box-button",
         controlAttrs: {
@@ -227,6 +228,7 @@ const FORM_AUTOFILL_CONFIG = {
       },
       {
         id: "savedAddressesButton",
+        loadPane: "manageAddresses",
         l10nId: "autofill-addresses-manage-addresses-button",
         control: "moz-box-button",
         controlAttrs: {
