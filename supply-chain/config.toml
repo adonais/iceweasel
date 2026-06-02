@@ -335,6 +335,10 @@ notes = "This is an in-tree first-party crate that is published to crates.io by 
 [policy.wr_malloc_size_of]
 audit-as-crates-io = false
 
+[policy.zlib-rs]
+audit-as-crates-io = true
+notes = "This is the upstream code plus a workaround for Raptor Lake CPUs, see bug 1950764."
+
 [[exemptions.alsa]]
 version = "0.4.3"
 criteria = "safe-to-deploy"
