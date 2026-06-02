@@ -21,6 +21,8 @@
   <string name="content_description_private_browsing">گشتن سیخومی</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">پیتینیڌن یا زیڌن نشۊوی</string>
+  <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+  <string name="search_hint_short">پیتینیڌن</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">پیتینیڌن من وب</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -281,6 +283,8 @@
   <string name="browser_menu_edit_bookmark">آلشت نشووک</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">زفت و عونوان PDF</string>
+  <!-- Browser menu label for moving the current private tab to a non-private tab -->
+  <string name="browser_menu_move_to_non_private_tab">آلشت و بلگه قیر سیخومی</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">ولرنیڌن بلگه</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
@@ -353,6 +357,24 @@
   <string name="translation_toolbar_expand_action">گۊشیڌن بلگه ولرنیڌن</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">رڌ کردن پیوم</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">کونتورولا هۊش مسنۊعی</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">قلوه دووسته بۊین</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">ولرنیڌنا</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">سامووا قلوه سی ولرنیڌنا</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">پیتینیڌن دونگی</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">لقو</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">مسدۊد کردن</string>
   <!--
     Locale Settings Fragment
 
@@ -587,6 +609,8 @@
   <string name="nova_onboarding_continue_button">رئڌن وا پؽش</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">سکو ن</string>
+  <!-- "Skip" onboarding button. -->
+  <string name="nova_onboarding_skip_button" tools:ignore="UnusedResources">گوم زیڌن</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">ٱماڌه داونیڌن آزاڌووه بۊوین</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
@@ -647,8 +671,12 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">بارت آشنایی خوت وا Firefox وو یو ک و کارس اگیری ن وا هومکورووݩ بازارجۊری Mozilla یک رسۊوی کۊنین. ای داده یل هرگشت فوروهڌه نؽبۊن. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">بارت آشنایی خوت وا Firefox وو یو ک و کارس اگیری ن وا هومکورووݩ بازارجۊری Mozilla یک رسۊوی کۊنین. ای داده یل هرگشت فوروهڌه نؽبۊن.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">بارت و کار گرؽڌن ایما ز داده یل</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">ن ممنووݩ</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">وارسۊویا هیاری اکونن تا وا Firefox ٱمن تر بۊین</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -940,6 +968,9 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">ایسا نترین ای دوبلگه ن و کار گیرین. ی دوبلگه دی ن و کار بیگیرین.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">دؽوۉداری دانلودا وا برنومه ای دی</string>
+  <string name="preferences_downloads_delete_from_device">پاک کردن ز دسگا</string>
+  <!-- Preference for downloads -->
+  <string name="preferences_downloads_2">سامووا دانلود</string>
   <!-- Preference for enabling gecko engine logs -->
   <string name="preferences_enable_gecko_logs">و کار وندن گوزارشا گکو</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
@@ -992,6 +1023,12 @@
   <string name="customize_addon_collection_user_hint">ساهاو کتن (شناسه منتوری)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">کتن وردنی یل آلشت وابیڌه. سی ائمال آلشتکاریا برنومه ن بووندین…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">گوزارش هریم سیخومی</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">وورگرتین و من</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -1009,6 +1046,8 @@
   <string name="customize_wallpapers">کاقز دیواری یل</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">ره نهنگا هؽزگرووݩ</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">جام جهۊوی</string>
   <!--
     Wallpapers
 
@@ -1290,6 +1329,8 @@
   <string name="toolbar_customize_shortcut_homepage">بلگه هووه ای</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">وورگشتن</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">هیچ کویکسووݩ</string>
   <!--
     App icon Preferences
 
@@ -1324,6 +1365,8 @@
   <string name="preference_gestures_dynamic_toolbar">سی بؽڌار کردن نوار ٱوزار اسکرۊل کۊنین</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">نوار نشۊوی ن و ای ترف اۊ ترف بکشین تا بلگه یل ن آلشت کۊنین</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">سی خولاسه کردن، تکووݩ بڌه</string>
   <!--
     Library
 
@@ -1499,6 +1542,8 @@
   <string name="tab_manager_search_bar_placeholder">بلگه یل خوتووݩ ن بپیتینین</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">بلگه یلی ک سکو بسته وابین</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">پسند پوی</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">سامووا هساو</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1521,6 +1566,8 @@
   <string name="tab_manager_multiselect_menu_item_share">یک رسۊوی</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">ٱووردن و کتن</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">ٱووردن و بونکۊ</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">نومگه بلگه یل پسند بیڌه</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1559,15 +1606,60 @@
   <string name="pwa_site_controls_title_private">%1$s (هالت سیخومی)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">گۊشیڌن بلگه پیتینیڌن</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">وورکل ی بونکۊ بلگه</string>
   <!--
     Tab Group
 
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">وورکل بونکۊ بلگه</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">آلشت بونکۊ</string>
   <string name="create_tab_group_save_button">زفت</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">بونکۊ %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
   <string name="create_tab_group_name_label">نوم</string>
+  <!-- Title for adding more tabs to a tab group. -->
+  <string name="add_to_tab_group_title">ٱووردن و</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">ٱووردن و بونکۊ بلگه نۊ</string>
+  <!-- Label for adding to a new tab group. -->
+  <string name="add_to_new_tab_group_title">بونکۊ بلگه نۊ</string>
+  <plurals name="tab_group_tabs_count_subtitle">
+    <!--
+      Subtitle for the number of tabs in a tab group.
+      %1$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%1$d بلگه</item>
+    <item quantity="other">%1$d بلگه</item>
+  </plurals>
+  <!-- Title for the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_title">بونکۊ بلگه پاک بۊ؟</string>
+  <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_confirm">پاک کردن بونکۊ</string>
+  <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_cancel">لقو</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">پاک کردن بونکۊ</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">لقو</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">سوئر</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">آل</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">بناوش</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">بناوش</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">کوۊ</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">ساوز</string>
   <!--
     History
 
@@ -1677,6 +1769,12 @@
   <string name="download_delete_multi_select_dialog_confirm">پاک کردن</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">لقو</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_device">پاک کردن ز دسگا</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">لقو</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">قوۊل</string>
   <!-- Title for the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_title">آلشت نوم فایل</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
@@ -1774,6 +1872,11 @@
   <string name="download_content_type_filter_document">سندا</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">دیر</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location
+    when the file size is not available before downloading it.
+  -->
+  <string name="download_rename_and_change_location_dialog_title_with_unknown_size">فایل دانلود بۊ؟</string>
   <!--
     WebCompat Reporter
 
@@ -1927,6 +2030,8 @@
   <string name="bookmark_sort_menu_a_to_z">ترتیب و ری ا تا ی</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">ترتیب و ری ی تا ا</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">و من ٱووردن ز فایل</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1979,6 +2084,8 @@
   <string name="bookmark_select_folder_close_folder_content_description">بستن دوبلگه: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">بستن نشووکا</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">و من ٱووردن ز فایل</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">هنی نشووکی نؽ</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
@@ -2788,6 +2895,34 @@
   <string name="email_masks_max_free_tier_reached">ایسا ز 5 ماسک ایمیل خوتووݩ استفاڌه کردینه، سی دل هیمو ایما یکی ن سی و کار گرؽڌن دووارته سی ایسا پسند کردیمه.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">ماسکا ایمیل سکو من دسرس نؽڌن.\nچن دیقه دی دووارته امتهووݩ کۊنین.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">جاگه</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">پؽشنهاڌ وابیڌه</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">رۊشن</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">کۊر</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">هونی منپیز ابۊ…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">واڌاشتن</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">ختا</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">امتهووس کوݩ</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">گۊشیڌن سامووا VPN</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label">VPN رۊشن</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description">VPN فعال هڌ.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">ناهاڌن پا کار</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">وا زفت وابیڌن قلوه بگردین</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">سکو ن</string>
   <!--
     Autofill
 
@@ -3086,6 +3221,10 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">نشووݩ داڌن پوی ره نهنگا</string>
+  <!-- Label for the "Add shortcut" button displayed as a tile. -->
+  <string name="homepage_shortcuts_add_shortcut">ٱووردن ره نهنگ</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">ی نشۊوی اینترنتی بزنین</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">و هندا موجاز ره نهنگ رسیڌین</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3184,6 +3323,8 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">داستانا</string>
+  <!-- Header text for the Stories screen. -->
+  <string name="stories_screen_text_news">هوالا</string>
   <!--
     Context description text for the "Discover more" button in the stories home screen section
     which navigates the user to a screen displaying more stories.
@@ -3318,6 +3459,10 @@
   <string name="translation_settings_automatic_never_translate_sites">هرگشت ای وبگه یل ن نولرنین</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">دانلود زووا</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">ولرنیڌنا</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">قلوه دووسته بۊین</string>
   <!--
     Automatic translation preference screen
 
@@ -3992,6 +4137,32 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">ایسا ترین قلوه دووسته بۊین %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">ایچو</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america">آمریکای شومالی</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa">آفریقا</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia">آسیا</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf">كونكاكاف</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe">اۊرۊپا</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania">اوقیانۊسیه</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america">آمریکای جۊنۊبی</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england">انگلستووݩ</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland">اسکاتلند</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live">زنده</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title">قئرمووا جام جهۊوی 2026</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">نیشتن نتیجه یل</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove">پاک کردن</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

@@ -406,7 +406,7 @@
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Αποκλεισμός βελτιώσεων ΤΝ;</string>
   <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_dialog_body">Δεν θα βλέπετε τις νέες ή τρέχουσες βελτιώσεις τεχνητής νοημοσύνης στο %1$s, ούτε αναδυόμενα παράθυρα σχετικά με αυτές. Αργότερα, μπορείτε να άρετε τον αποκλεισμό όποιας λειτουργίας θέλετε να συνεχίσετε να χρησιμοποιείτε.\n\nΟ αποκλεισμός επηρεάζει και τις επεκτάσεις που χρησιμοποιούν τεχνητή νοημοσύνη που τροφοδοτείται από το %1$s.</string>
+  <string name="ai_controls_block_dialog_body">Δεν θα βλέπετε τις νέες ή τρέχουσες βελτιώσεις τεχνητής νοημοσύνης στο %1$s, ούτε αναδυόμενα παράθυρα σχετικά με αυτές. Μπορείτε μετέπειτα να άρετε τον αποκλεισμό όποιας λειτουργίας θέλετε να συνεχίσετε να χρησιμοποιείτε.\n\nΟ αποκλεισμός επηρεάζει και τις επεκτάσεις που χρησιμοποιούν τεχνητή νοημοσύνη που τροφοδοτείται από το %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Τι θα αποκλειστεί:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -4670,6 +4670,17 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Σημείωση απορρήτου</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Μάθετε περισσότερα</string>
+  <!--
+    Firefox Labs
+
+    Banner title text on the Firefox Labs screen.
+  -->
+  <string name="firefox_labs_banner_title">Δοκιμάστε τις πειραματικές μας λειτουργίες!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">Βρίσκονται υπό ανάπτυξη και εξέλιξη και ενδέχεται να επηρεάσουν τον τρόπο λειτουργίας του %s.</string>
   <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
   <string name="firefox_labs_restore_default_button_text">Επαναφορά προεπιλογών</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
@@ -4680,4 +4691,8 @@
   <string name="firefox_labs_dialog_cancel_button">Ακύρωση</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
   <string name="firefox_labs_restore_defaults_dialog_title">Απαιτείται επανεκκίνηση</string>
+  <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_restore_defaults_dialog_message">Για να επαναφέρετε τις προεπιλογές, επανεκκινήστε το %s.</string>
+  <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+  <string name="firefox_labs_no_labs_available_description">Δεν υπάρχουν πειραματικές λειτουργίες αυτήν τη στιγμή</string>
 </resources>

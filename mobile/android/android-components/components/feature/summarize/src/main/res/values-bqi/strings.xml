@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <!-- Link text to learn more about downloading Gemini Nano -->
+  <string name="mozac_summarize_learn_more_link">قلوه دووسته بۊین</string>
+  <!-- Button text for the off-device shake summarization consent screen approving shake consent. Localization note: "Continue" turns on the shake to summarize feature. -->
+  <string name="mozac_summarize_shake_consent_off_device_button_positive">رئڌن وا پؽش</string>
+  <!-- Button text for the off-device shake summarization consent screen denying shake consent. Localization note: "Not now" dismisses the request to turn on the shake to summarize feature. -->
+  <string name="mozac_summarize_shake_consent_off_device_negative_button">سکو ن</string>
+  <!-- Button text for the on-device shake summarization and download consent screen denying shake and download consent -->
+  <string name="mozac_summarize_shake_consent_on_device_negative_button">سکو ن</string>
+  <!-- Button text for the consent to download an on-device model denying download consent -->
+  <string name="mozac_summarize_download_consent_button_negative">لقو</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">رڌ کردن</string>
+</resources>

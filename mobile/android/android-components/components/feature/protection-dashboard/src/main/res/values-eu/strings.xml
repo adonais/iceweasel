@@ -33,4 +33,13 @@
   <string name="protections_dashboard_category_social">Sare sozialak</string>
   <!-- Tracker category: Other trackers -->
   <string name="protections_dashboard_category_others">Besteak</string>
+  <!-- Title shown in the protection dashboard header next to the shield icon -->
+  <string name="mozac_protections_dashboard_trackers_blocked_this_week_title">Jarraipen-elementu blokeatuta aste honetan</string>
+  <!--
+    Title shown when no trackers have been blocked yet
+    %1$s will be replaced by the app name (e.g. Firefox Focus)
+  -->
+  <string name="mozac_protections_dashboard_empty_title">%1$s(e)k jarraipen-elementuak blokeatzen ditu zuk nabigatu ahala.</string>
+  <!-- Subtitle shown when no trackers have been blocked yet -->
+  <string name="mozac_protections_dashboard_empty_subtitle">Hemen ikusiko dituzu.</string>
 </resources>

@@ -54,6 +54,10 @@
   <string name="menu_open_with_a_browser2">एकरा में खोलियै…</string>
   <!-- Menu item: Add the current page as a shortcut to the device's home screen (launcher). -->
   <string name="menu_add_to_home_screen">होम स्क्रीन में जोड़ि‍यै</string>
+  <!-- Menu item: Add the current site as a shortcut on the Home screen -->
+  <string name="menu_add_to_shortcuts">शॉर्टकट्स में जोड़ू</string>
+  <!-- Menu item: Remove the current site as a shortcut from the Home screen -->
+  <string name="menu_remove_from_shortcuts">शॉर्टकट से हटाबोॅ</string>
   <!-- Menu item: Shows information about features and changes that are new to this version -->
   <string name="menu_settings">सेटिंग्स</string>
   <string name="menu_about">के संबंध में</string>
@@ -66,6 +70,11 @@
     doesn't work correctly with blocked content.
   -->
   <string name="menu_trackers_blocked_title">ट्रेकर्स ब्लॉक भेलै</string>
+  <!--
+    Menu item: This is the subtitle for the Trackers blocked menu entry that shows how many
+    trackers have been blocked for the currently loaded website.
+  -->
+  <string name="menu_trackers_blocked_subtitle">इनका बंद करियै शायद साइट के तनी सा समस्या ठीक भै जाय</string>
   <!-- This is the subtitle content blocking toggle -->
   <string name="menu_content_blocking_subtitle">कुछ साइटों के ठीक करै ले बंद करियै</string>
   <!--
