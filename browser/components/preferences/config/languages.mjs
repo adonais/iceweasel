@@ -662,15 +662,14 @@ Preferences.addSetting({
   id: "websiteLanguageWrapper",
   deps: ["acceptLanguages"],
   onUserReorder(event, deps) {
-    const { draggedIndex, targetIndex } = event.detail;
-
     let re = /\s*(?:,|$)\s*/;
-    let languages = deps.acceptLanguages.value.split(re).filter(lang => lang);
-
-    const [draggedLang] = languages.splice(draggedIndex, 1);
-
-    languages.splice(targetIndex, 0, draggedLang);
-
+    let languages = /**@type {string} */ (deps.acceptLanguages.value)
+      .split(re)
+      .filter(lang => lang);
+    languages = /** @type {MozBoxGroup} */ (event.target).reorderArrayFromEvent(
+      languages,
+      event
+    );
     deps.acceptLanguages.value = languages.join(",");
   },
   getControlConfig(config, deps) {

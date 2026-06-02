@@ -1120,11 +1120,7 @@ export class AboutPreferences {
         let urls = lazy.HomePage.parseCustomHomepageURLs(
           homepageDisplayPref.value
         );
-
-        let { draggedIndex, targetIndex } = e.detail;
-        let [moved] = urls.splice(draggedIndex, 1);
-        urls.splice(targetIndex, 0, moved);
-
+        urls = e.target.reorderArrayFromEvent(urls, e);
         homepageDisplayPref.value = urls.join("|");
       },
       onUserClick(e, { homepageDisplayPref }) {

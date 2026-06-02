@@ -276,9 +276,14 @@ export default class MozReorderableList extends MozLitElement {
     this.emitEvent(REORDER_EVENT, {
       draggedElement: this.#draggedElement,
       targetElement: this.#dropTargetInfo.targetElement,
-      position: this.#dropTargetInfo.position,
+      position,
       draggedIndex,
       targetIndex,
+      // +1 to insert after target; subtract 1 when draggedIndex < targetIndex
+      // to compensate for the left-shift after splice.
+      insertAt:
+        (position < 0 ? targetIndex : targetIndex + 1) -
+        (draggedIndex < targetIndex ? 1 : 0),
     });
     this.onDragEnd();
   }

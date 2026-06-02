@@ -179,6 +179,29 @@ export default class MozBoxGroup extends MozLitElement {
   }
 
   /**
+   * Reorder an array based on the reorder event. For consumers that store
+   * the items in an array, you can use this to get the new ordering after the
+   * reorder operation.
+   *
+   * @example
+   * onReorder(event) {
+   *   this.items = event.target.reorderArrayFromEvent(this.items, event);
+   *   this.saveItems(this.items);
+   * }
+   *
+   * @param {any[]} array The array of items that represent this group.
+   * @param {CustomEvent} event The reorder event dispatched from this group.
+   * @returns {any[]} The reordered array.
+   */
+  reorderArrayFromEvent(array, event) {
+    let { draggedIndex, insertAt } = event.detail;
+    array = Array.from(array);
+    let [moved] = array.splice(draggedIndex, 1);
+    array.splice(insertAt, 0, moved);
+    return array;
+  }
+
+  /**
    * Handles reordering of items in the list.
    *
    * @param {object} event - Event object or wrapper containing detail from moz-reorderable-list.

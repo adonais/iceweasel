@@ -16,3 +16,5 @@ tags = "os_integration"
 ["browser_browser_languages_preferred_remote.js"]
 
 ["browser_languages_pane.js"]
+
+["browser_website_language_reorder.js"]

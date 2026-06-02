@@ -644,3 +644,36 @@ async function setupTestSubPane({
 
   return { doc, win };
 }
+
+function performDragAndDrop({ contentWindow, dragItem, targetItem, position }) {
+  dragItem.scrollIntoView({ behavior: "instant", block: "center" });
+  EventUtils.startDragSession(contentWindow, "move");
+  try {
+    let [result, dataTransfer] = EventUtils.synthesizeDragOver(
+      dragItem,
+      targetItem,
+      null,
+      "move",
+      contentWindow,
+      contentWindow
+    );
+
+    let rect = targetItem.getBoundingClientRect();
+    let threshold = rect.top + rect.height * 0.5;
+    let dragEvent = {
+      clientY: position === "before" ? threshold - 10 : threshold + 10,
+    };
+
+    EventUtils.synthesizeDropAfterDragOver(
+      result,
+      dataTransfer,
+      targetItem,
+      contentWindow,
+      dragEvent
+    );
+  } finally {
+    EventUtils._getDOMWindowUtils(contentWindow).dragSession?.endDragSession(
+      true
+    );
+  }
+}
