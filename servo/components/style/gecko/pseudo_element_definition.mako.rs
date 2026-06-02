@@ -63,13 +63,9 @@ impl PseudoElement {
     fn flags_for_index(i: usize) -> PseudoStyleTypeFlags {
         static FLAGS: [PseudoStyleTypeFlags; PSEUDO_COUNT + 1] = [
         % for pseudo in PSEUDOS:
-        PseudoStyleTypeFlags::from_bits_truncate(${' | '.join(f"PseudoStyleTypeFlags::{flag}.bits()" for flag in pseudo.flags())}), // ${pseudo.name}
+        PseudoStyleTypeFlags::from_bits_truncate(${' | '.join(f"PseudoStyleTypeFlags::{flag}.bits()" for flag in pseudo.flags())}),
         % endfor
-        // Unknown ::-webkit-* pseudos allow user-action state pseudo-classes.
-        PseudoStyleTypeFlags::from_bits_truncate(
-            PseudoStyleTypeFlags::IS_PSEUDO_ELEMENT.bits() |
-            PseudoStyleTypeFlags::SUPPORTS_USER_ACTION_STATE.bits()
-        ),
+        PseudoStyleTypeFlags::NONE, // :-webkit-*
         ];
         FLAGS[i]
     }
