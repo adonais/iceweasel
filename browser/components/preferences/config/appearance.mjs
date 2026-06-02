@@ -104,6 +104,9 @@ SettingGroupManager.registerGroups({
         id: "web-appearance-override-warning",
         l10nId: "preferences-web-appearance-override-warning3",
         control: "moz-message-bar",
+        controlAttrs: {
+          role: "status",
+        },
       },
       {
         id: "web-appearance-chooser",

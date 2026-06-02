@@ -482,6 +482,9 @@ SettingGroupManager.registerGroups({
         id: "updatesManagedByOS",
         l10nId: "update-application-updates-managed-by-os",
         control: "moz-message-bar",
+        controlAttrs: {
+          role: "status",
+        },
       },
       {
         id: "updateApp",
@@ -514,6 +517,9 @@ SettingGroupManager.registerGroups({
             id: "updateSettingCrossUserWarning",
             control: "moz-message-bar",
             l10nId: "update-application-warning-cross-user-setting-2",
+            controlAttrs: {
+              role: "status",
+            },
           },
           {
             id: "updateRadioGroup",

@@ -1321,6 +1321,9 @@ SettingGroupManager.registerGroups({
             id: "aiBlockedMessage",
             control: "moz-message-bar",
             l10nId: "preferences-ai-controls-blocked-message",
+            controlAttrs: {
+              role: "status",
+            },
           },
         ],
       },
@@ -1570,6 +1573,7 @@ SettingGroupManager.registerGroups({
                 l10nId: "smart-window-model-custom-info",
                 controlAttrs: {
                   type: "info",
+                  role: "status",
                 },
                 options: [
                   {

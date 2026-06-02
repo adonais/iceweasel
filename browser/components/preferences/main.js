@@ -650,6 +650,9 @@ function createStartupConfig(hidden = false) {
       {
         id: "windowsLaunchOnLoginDisabledBox",
         control: "moz-message-bar",
+        controlAttrs: {
+          role: "status",
+        },
         options: [
           {
             control: "span",
@@ -672,6 +675,9 @@ function createStartupConfig(hidden = false) {
         id: "windowsLaunchOnLoginDisabledProfileBox",
         control: "moz-message-bar",
         l10nId: "startup-windows-launch-on-login-profile-disabled",
+        controlAttrs: {
+          role: "status",
+        },
       },
       {
         id: "alwaysCheckDefault",

@@ -607,6 +607,7 @@ SettingGroupManager.registerGroups({
         controlAttrs: {
           type: "warning",
           dismissable: true,
+          role: "status",
         },
       },
     ],
@@ -657,6 +658,7 @@ SettingGroupManager.registerGroups({
         supportPage: "how-do-i-turn-do-not-track-feature",
         controlAttrs: {
           dismissable: true,
+          role: "status",
         },
       },
     ],
@@ -716,6 +718,9 @@ SettingGroupManager.registerGroups({
         id: "deleteOnCloseInfo",
         l10nId: "sitedata-delete-on-close-private-browsing3",
         control: "moz-message-bar",
+        controlAttrs: {
+          role: "status",
+        },
       },
       {
         id: "manageDataSettingsGroup",
@@ -934,6 +939,9 @@ SettingGroupManager.registerGroups({
         id: "deleteOnCloseInfo",
         l10nId: "sitedata-delete-on-close-private-browsing4",
         control: "moz-message-bar",
+        controlAttrs: {
+          role: "status",
+        },
       },
       {
         id: "historyMode",
@@ -1050,6 +1058,9 @@ SettingGroupManager.registerGroups({
       {
         id: "dohStatusBox",
         control: "moz-message-bar",
+        controlAttrs: {
+          role: "status",
+        },
       },
       {
         id: "dohRadioGroup",
