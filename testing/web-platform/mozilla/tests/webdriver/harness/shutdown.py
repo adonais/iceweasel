@@ -1,9 +1,11 @@
+# META: timeout = long
+
 import os
 import signal
 import subprocess
-import time
 
 import pytest
+from tests.support.sync import Poll
 
 IS_WINDOWS = os.name == "nt"
 
@@ -30,15 +32,6 @@ def is_process_alive(pid):
         return False
 
 
-def wait_for_process_exit(pid, timeout=10):
-    end_time = time.time() + timeout
-    while time.time() < end_time:
-        if not is_process_alive(pid):
-            return True
-        time.sleep(0.1)
-    return False
-
-
 @pytest.mark.parametrize("signal", SIGNALS)
 def test_firefox_quits_on_signal(configuration, geckodriver, signal):
     popen_kwargs = {}
@@ -49,13 +42,22 @@ def test_firefox_quits_on_signal(configuration, geckodriver, signal):
         # "Terminate batch job (Y/N)?" and hang.
         popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
 
-    driver = geckodriver(config=configuration, popen_kwargs=popen_kwargs)
+    driver = geckodriver(
+        config=configuration,
+        popen_kwargs=popen_kwargs,
+    )
     driver.new_session()
 
     firefox_pid = driver.session.capabilities["moz:processID"]
 
     driver.proc.send_signal(signal)
 
-    assert wait_for_process_exit(firefox_pid), (
-        "Firefox process still running after geckodriver was terminated"
+    wait = Poll(
+        driver.session,
+        # geckodriver first attempts a graceful Firefox shutdown and waits
+        # up to 70s before force-killing the process. Add a few extra seconds
+        # to avoid false positives on slower systems.
+        timeout=75,
+        message="Firefox process still running after geckodriver was terminated",
     )
+    wait.until(lambda session: not is_process_alive(firefox_pid))
