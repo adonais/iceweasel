@@ -37,7 +37,7 @@ add_task(async function test_tooManyLinks() {
     Assert.equal(body.type, "tabs", "Share type is 'tabs'");
     Assert.equal(
       body.title,
-      "33 tabs",
+      "30 tabs",
       "Title reflects tab count for tab shares"
     );
     Assert.equal(body.links.length, 30, "Share contains 30 links");

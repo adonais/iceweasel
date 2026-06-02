@@ -165,12 +165,7 @@ class ContentSharingUtilsClass {
       return;
     }
 
-    const title = await lazy.contentSharingL10n.formatValue(
-      "content-sharing-tabs-title",
-      {
-        count: tabs.length,
-      }
-    );
+    const title = "tab share title";
 
     const shareObject = {
       type: "tabs",
@@ -181,6 +176,13 @@ class ContentSharingUtilsClass {
       })),
     };
     const result = this.buildShare(shareObject);
+
+    result.share.title = await lazy.contentSharingL10n.formatValue(
+      "content-sharing-tabs-title",
+      {
+        count: this.countItems(result.share),
+      }
+    );
     await this.#createLinkAndOpenModal(result, "tabs");
   }
 
@@ -344,6 +346,7 @@ class ContentSharingUtilsClass {
 
     share.links = links;
     shareResult.share = share;
+
     return shareResult;
   }
 

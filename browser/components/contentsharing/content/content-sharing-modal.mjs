@@ -301,6 +301,27 @@ export class ContentSharingModal extends MozLitElement {
     </div>`;
   }
 
+  previewTitleTemplate() {
+    if (this.shareResult.share.type === "tabs") {
+      return html`<div>
+        <img
+          class="share-icon"
+          src="chrome://browser/content/contentsharing/content-sharing-icon.svg"
+        />
+        <span class="share-title">${this.shareResult.share.title}</span>
+      </div>`;
+    }
+
+    return html`<span class="share-title">${this.shareResult.share.title}</span
+      ><span class="share-count"
+        ><img
+          class="share-icon"
+          src="chrome://browser/content/contentsharing/content-sharing-icon.svg"
+        />
+        ${this.shareResult.share.links.length}</span
+      >`;
+  }
+
   render() {
     if (!this.shareResult.share) {
       return null;
@@ -319,16 +340,7 @@ export class ContentSharingModal extends MozLitElement {
       <div class="container">
         <div class="preview">
           <moz-card
-            ><label class="share-header"
-              ><span class="share-title">${this.shareResult.share.title}</span>
-              <span class="share-count"
-                ><img
-                  class="share-icon"
-                  src="chrome://browser/content/contentsharing/content-sharing-icon.svg"
-                />
-                ${this.shareResult.share.links.length}</span
-              ></label
-            >
+            ><label class="share-header">${this.previewTitleTemplate()}</label>
             <div class="link-preview-list">${this.linksTemplate()}</div>
           </moz-card>
         </div>

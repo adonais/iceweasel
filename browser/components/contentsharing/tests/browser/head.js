@@ -114,11 +114,13 @@ async function assertContentSharingModal(window, expected, leaveOpen = false) {
     "Modal has the correct share title"
   );
 
-  Assert.equal(
-    modalEl.linkCount.innerText,
-    `${expected.share.links.length}`,
-    "Modal has the correct link count"
-  );
+  if (expected.share.type !== "tabs") {
+    Assert.equal(
+      modalEl.linkCount.innerText,
+      `${expected.share.links.length}`,
+      "Modal has the correct link count"
+    );
+  }
 
   Assert.equal(
     modalEl.links.length,
