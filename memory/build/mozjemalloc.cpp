@@ -1106,10 +1106,7 @@ bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
   size_t fresh = 0;
   for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages - gPagesPerRealPage;
        i++) {
-    // There must not be any pages that are not fresh, madvised, decommitted or
-    // dirty.
-    MOZ_ASSERT(aChunk->mPageMap[i].bits &
-               (CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED | CHUNK_MAP_DIRTY));
+    MOZ_ASSERT((aChunk->mPageMap[i].bits & CHUNK_MAP_ALLOCATED) == 0);
     MOZ_ASSERT((aChunk->mPageMap[i].bits & CHUNK_MAP_BUSY) == 0);
 
     if (aChunk->mPageMap[i].bits & CHUNK_MAP_MADVISED) {
