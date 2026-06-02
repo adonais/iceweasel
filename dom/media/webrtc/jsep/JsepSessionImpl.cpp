@@ -1661,6 +1661,7 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForRemote(
     if (!transceiver->CanRecycleMyMsection()) {
       return transceiver;
     }
+    // Recycle
     transceiver->Disassociate();
     transceiver->ClearLevel();
     transceiver->mSendTrack.ClearRids();
@@ -1668,11 +1669,13 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForRemote(
   }
 
   // No transceiver for |level|
-  transceiver = FindUnassociatedTransceiver(msection.GetMediaType(), true);
-  if (transceiver) {
-    transceiver->SetLevel(level);
-    SetTransceiver(*transceiver);
-    return transceiver;
+  if (msection.IsReceiving()) {
+    transceiver = FindUnassociatedTransceiver(msection.GetMediaType(), true);
+    if (transceiver) {
+      transceiver->SetLevel(level);
+      SetTransceiver(*transceiver);
+      return transceiver;
+    }
   }
 
   // Make a new transceiver
