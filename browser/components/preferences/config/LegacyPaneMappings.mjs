@@ -19,9 +19,10 @@ export const LEGACY_PANE_MAPPINGS = new Map([
     { category: "privacy", subcategory: "etpStatus" },
   ],
   ["privacy-doh", { category: "privacy", subcategory: "dnsOverHttps" }],
-  ["search-locationBar", { category: "search", subcategory: "firefoxSuggest" }],
+  ["search-firefoxSuggest", { category: "search", subcategory: "locationBar" }],
 
   ["general", { category: "sync" }],
+  ["general-layout", { category: "appearance", subcategory: "layout" }],
   [
     "general-update-box-group",
     { category: "about", subcategory: "update-box-group" },
@@ -57,18 +58,6 @@ export const LEGACY_PANE_MAPPINGS = new Map([
   ],
   ["general-netsettings", { category: "privacy", subcategory: "netsettings" }],
 
-  // Several home-* keys share the same destination because they all live in
-  // the same setting-group in the redesigned Home pane. Keys are kept
-  // distinct so the original anchor ID is preserved for downstream consumers
-  // that match on the exact subcategory value.
-  ["home-homeOverride", { category: "home", subcategory: "homepage" }],
-  ["home-newtabOverride", { category: "home", subcategory: "homepage" }],
-  ["home-web-search", { category: "home", subcategory: "home" }],
-  ["home-weather", { category: "home", subcategory: "home" }],
-  ["home-topsites", { category: "home", subcategory: "home" }],
-  ["home-support-firefox", { category: "home", subcategory: "home" }],
-  ["home-highlights", { category: "home", subcategory: "home" }],
-
   [
     "privacy-permissions-block-popups",
     { category: "permissionsData", subcategory: "permissions-block-popups" },
@@ -76,6 +65,7 @@ export const LEGACY_PANE_MAPPINGS = new Map([
   ["privacy-reports", { category: "permissionsData", subcategory: "reports" }],
   ["privacy-privacy-segmentation", { category: "privacy" }],
 
+  ["privacy-logins", { category: "passwordsAutofill", subcategory: "logins" }],
   [
     "privacy-payment-methods-autofill",
     {

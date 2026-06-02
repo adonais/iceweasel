@@ -21,12 +21,7 @@ const CONTROLLED_BY_OTHER = "controlled_by_other_extensions";
 const NOT_CONTROLLABLE = "not_controllable";
 
 const HOMEPAGE_URL_PREF = "browser.startup.homepage";
-const SPOTLIGHT_SUBCATEGORY = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled",
-  false
-)
-  ? "homepage"
-  : "homeOverride";
+const SPOTLIGHT_SUBCATEGORY = "homeOverride";
 
 const getHomePageURL = () => {
   return Services.prefs.getStringPref(HOMEPAGE_URL_PREF);

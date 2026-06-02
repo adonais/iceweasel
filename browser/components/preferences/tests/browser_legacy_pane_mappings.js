@@ -201,12 +201,25 @@ add_task(async function test_paneSearch_normalization() {
  */
 add_task(async function test_legacy_name_routing_and_subcategory_attr() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
+    set: [
+      ["browser.settings-redesign.enabled", true],
+      ["browser.newtabpage.activity-stream.feeds.system.topstories", true],
+    ],
   });
 
   // [arg, expectedHash, expectedPane, expectedSubcategory | null]
   // null subcategory = feature-gated group; only assert hash and pane.
   for (let [arg, expectedHash, expectedPane, expectedSubcategory] of [
+    ["general-layout", "#tabsBrowsing", "paneTabsBrowsing", "layout"],
+    ["home-homeOverride", "#home", "paneHome", "homeOverride"],
+    ["home-newtabOverride", "#home", "paneHome", "newtabOverride"],
+    ["home-contents", "#home", "paneHome", "contents"],
+    ["home-web-search", "#home", "paneHome", "web-search"],
+    ["home-weather", "#home", "paneHome", "weather"],
+    ["home-topsites", "#home", "paneHome", "topsites"],
+    ["home-topstories", "#home", "paneHome", "topstories"],
+    ["home-support-firefox", "#home", "paneHome", "support-firefox"],
+    ["home-highlights", "#home", "paneHome", "highlights"],
     ["privacy-trackingprotection", "#privacy", "panePrivacy", "etpStatus"],
     ["privacy-doh", "#privacy", "panePrivacy", "dnsOverHttps"],
     ["privacy-sitedata", "#privacy", "panePrivacy", "sitedata"],
@@ -252,7 +265,11 @@ add_task(async function test_legacy_name_routing_and_subcategory_attr() {
     is(prefs.selectedPane, expectedPane, `${arg}: correct pane selected`);
 
     if (expectedSubcategory) {
-      let spotlight = doc.querySelector(".spotlight");
+      // Find the first visible spotlight, could be leftovers from pre-SRD since
+      // the actual highlighting doesn't check [data-category].
+      let spotlight = [...doc.querySelectorAll(".spotlight")].find(el =>
+        el.checkVisibility()
+      );
       Assert.stringContains(
         spotlight.getAttribute("data-subcategory"),
         expectedSubcategory,
