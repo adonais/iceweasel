@@ -54,6 +54,7 @@ export class SettingPane extends MozLitElement {
     config: { type: Object },
     showRedesignPromo: { type: Boolean, attribute: false },
     onSearchPane: { type: Boolean, reflect: true },
+    initialized: { type: Boolean, state: true },
   };
 
   /** @returns {MozPageHeader} */
@@ -81,6 +82,8 @@ export class SettingPane extends MozLitElement {
      * h2 stays above it in the heading hierarchy.
      */
     this.onSearchPane = false;
+    /** @type {boolean} */
+    this.initialized = false;
   }
 
   createRenderRoot() {
@@ -169,12 +172,13 @@ export class SettingPane extends MozLitElement {
   };
 
   init() {
-    if (!this.hasUpdated) {
+    if (!this.initialized) {
+      this.initialized = true;
       this.performUpdate();
     }
-    if (this.config.module) {
-      ChromeUtils.importESModule(this.config.module, { global: "current" });
-    }
+
+    // Import the modules necessary to load this pane.
+    SettingPaneManager.importPane(this.paneId);
 
     // Notify observers that the module is loaded. This needs to be done prior
     // to the initSettingGroup calls since the home pane relies on this event
@@ -183,8 +187,6 @@ export class SettingPane extends MozLitElement {
       /** @type {nsISupports} */ (window),
       `${this.config.id}-pane-loaded`
     );
-
-    SettingPaneManager.importPane(this.paneId);
 
     for (let groupId of this.config.groupIds) {
       window.initSettingGroup(groupId);
@@ -255,6 +257,9 @@ export class SettingPane extends MozLitElement {
   }
 
   render() {
+    if (!this.initialized) {
+      return "";
+    }
     return html`
       ${this.settingsRedesignPromoTemplate()}
       <section>
