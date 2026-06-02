@@ -321,7 +321,7 @@ add_task(async function test_scroll_update_button_switches_panel_and_scrolls() {
       );
 
       let updateApp = doc.querySelector(
-        'moz-fieldset[data-subcategory="update-state"]'
+        '[data-subcategory="update-state"] moz-fieldset'
       );
       Assert.notEqual(updateApp, null, "updateApp exists in document");
       Assert.ok(updateApp.checkVisibility(), "update element is visible");

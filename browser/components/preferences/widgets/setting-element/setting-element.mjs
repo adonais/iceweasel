@@ -171,7 +171,6 @@ export class SettingElement extends MozLitElement {
         ? JSON.stringify(config.l10nArgs)
         : undefined,
       ".iconSrc": config.iconSrc,
-      "data-subcategory": config.subcategory,
       ".supportPage":
         config.supportPage != undefined ? config.supportPage : undefined,
       slot: config.slot,
