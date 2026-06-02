@@ -126,8 +126,6 @@ export class SettingGroup extends SettingElement {
     }
     if (this.config?.subcategory) {
       this.setAttribute("data-subcategory", this.config.subcategory);
-    } else if (this.config) {
-      this.removeAttribute("data-subcategory");
     }
   }
 

@@ -11,25 +11,61 @@ const { resolveLegacyCategory, LEGACY_PANE_MAPPINGS } =
   );
 
 /**
+ * Remove the pane prefix from a category name.
+ *
+ * @param {string} paneName
+ */
+function getFriendlyPaneName(paneName) {
+  return paneName.startsWith("pane")
+    ? paneName[4].toLowerCase() + paneName.slice(5)
+    : paneName;
+}
+
+/**
+ * Get the closest [data-category] without the "pane" prefix, or "".
+ *
+ * @param {Element} el
+ * @returns {string} The closest category name or "".
+ */
+function getElementCategory(el) {
+  let paneEl = el.closest("[data-category]");
+  if (!paneEl) {
+    return "";
+  }
+  return getFriendlyPaneName(paneEl.getAttribute("data-category"));
+}
+
+/**
  * Walk the DOM and return a Set of "category" and "category-subcategory"
  * strings using the friendly (non-pane-prefixed) form.
  *
  * The DOM is the source of truth here because the legacy layout has no
  * JS registry; pane/subcategory inventory lives in *.inc.xhtml markup.
+ *
+ * @param {Document} doc
+ * @param {boolean} srdEnabled
+ * @returns {Set<string>}
  */
-function collectPanesAndSubcategories(doc) {
+function collectPanesAndSubcategories(doc, srdEnabled) {
+  /** @type {Set<string>} */
   let pairs = new Set();
+  // Include each category.
   for (let paneEl of doc.querySelectorAll("[data-category]")) {
-    let raw = paneEl.getAttribute("data-category");
-    let category = raw.startsWith("pane")
-      ? raw[4].toLowerCase() + raw.slice(5)
-      : raw;
-    pairs.add(category);
-    for (let el of paneEl.querySelectorAll("[data-subcategory]")) {
-      for (let sub of el.getAttribute("data-subcategory").trim().split(/\s+/)) {
-        if (sub) {
-          pairs.add(`${category}-${sub}`);
-        }
+    pairs.add(getElementCategory(paneEl));
+  }
+  // Include matching subcategories (skip the old ones in SRD).
+  for (let el of doc.querySelectorAll("[data-subcategory]")) {
+    let category = getElementCategory(el);
+    if (srdEnabled && !category) {
+      continue;
+    }
+    if (srdEnabled && el.closest("[data-srd-migrated], [data-srd-groupid]")) {
+      // Shouldn't happen, these elements had their [data-category] removed.
+      throw new Error("Unexpected legacy UI with [data-category]");
+    }
+    for (let sub of el.getAttribute("data-subcategory").trim().split(/\s+/)) {
+      if (sub) {
+        pairs.add(`${category}-${sub}`);
       }
     }
   }
@@ -175,8 +211,9 @@ add_task(async function test_legacy_name_routing_and_subcategory_attr() {
     ["privacy-doh", "#privacy", "panePrivacy", "dnsOverHttps"],
     ["privacy-sitedata", "#privacy", "panePrivacy", "sitedata"],
     ["privacy-vpn", "#privacy", "panePrivacy", null],
+    ["privacy-logins", "#passwordsAutofill", "panePasswordsAutofill", "logins"],
     ["privacy-permissions", "#permissionsData", "panePermissionsData", null],
-    ["search-locationBar", "#search", "paneSearch", "firefoxSuggest"],
+    ["search-firefoxSuggest", "#search", "paneSearch", "locationBar"],
     [
       "privacy-payment-methods-autofill",
       "#passwordsAutofill",
@@ -203,24 +240,28 @@ add_task(async function test_legacy_name_routing_and_subcategory_attr() {
     ],
     ["privacy-logins", "#passwordsAutofill", "panePasswordsAutofill", "logins"],
   ]) {
+    let friendlyCategoryName = getFriendlyPaneName(expectedPane);
+    let loaded = TestUtils.topicObserved(`${friendlyCategoryName}-pane-loaded`);
     let prefs = await openPreferencesViaOpenPreferencesAPI(arg, {
       leaveOpen: true,
     });
+    await loaded;
     let doc = gBrowser.contentDocument;
 
     is(doc.location.hash, expectedHash, `${arg}: hash is ${expectedHash}`);
     is(prefs.selectedPane, expectedPane, `${arg}: correct pane selected`);
 
     if (expectedSubcategory) {
-      // The setting-group for this subcategory must eventually carry the
-      // data-subcategory attribute (set asynchronously by willUpdate once
-      // initSettingGroup applies the config).
-      await TestUtils.waitForCondition(
-        () =>
-          doc.querySelector(
-            `setting-group[data-subcategory~="${expectedSubcategory}"]`
-          ),
-        `${arg}: setting-group[data-subcategory~="${expectedSubcategory}"] rendered`
+      let spotlight = doc.querySelector(".spotlight");
+      Assert.stringContains(
+        spotlight.getAttribute("data-subcategory"),
+        expectedSubcategory,
+        `${arg}: subcategory highlighted`
+      );
+      is(
+        getElementCategory(spotlight),
+        friendlyCategoryName,
+        `${arg}: spotlight category correct`
       );
     }
 
@@ -259,6 +300,14 @@ add_task(async function test_unknown_category_fallback() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
+function makeHashFromMapping({ category, subcategory }) {
+  let newMapping = resolveLegacyCategory(category, subcategory);
+  if (newMapping.subcategory) {
+    return newMapping.category + "-" + newMapping.subcategory;
+  }
+  return newMapping.category;
+}
+
 /**
  * Two-phase DOM completeness check and cycle-detection.
  *
@@ -272,9 +321,14 @@ add_task(async function test_dom_completeness_and_cycle_detection() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.settings-redesign.enabled", false]],
   });
+  let initialized = TestUtils.topicObserved(
+    "preferences-MaybeCategoriesInitializedSLOW"
+  );
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  await initialized;
   let oldPairs = collectPanesAndSubcategories(
-    gBrowser.selectedBrowser.contentDocument
+    gBrowser.selectedBrowser.contentDocument,
+    false
   );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
@@ -283,22 +337,32 @@ add_task(async function test_dom_completeness_and_cycle_detection() {
     set: [["browser.settings-redesign.enabled", true]],
   });
   // For some reason this seems to be delayed...
-  let initialized = TestUtils.topicObserved(
+  initialized = TestUtils.topicObserved(
     "preferences-MaybeCategoriesInitializedSLOW"
   );
   await openPreferencesViaOpenPreferencesAPI("sync", { leaveOpen: true });
   await initialized;
   let newPairs = collectPanesAndSubcategories(
-    gBrowser.selectedBrowser.contentDocument
+    gBrowser.selectedBrowser.contentDocument,
+    true
   );
 
   // Every old pair missing from the new DOM must have a mapping entry.
   for (let pair of oldPairs) {
     if (!newPairs.has(pair)) {
+      let mapping = LEGACY_PANE_MAPPINGS.get(pair);
       ok(
-        LEGACY_PANE_MAPPINGS.has(pair),
+        !!mapping,
         `"${pair}" removed from redesign DOM must have a mapping entry`
       );
+      // Ensure the redirect actually exists in the DOM.
+      if (mapping) {
+        let newHash = makeHashFromMapping(mapping);
+        ok(
+          newPairs.has(newHash),
+          `"${pair}" mapping "${newHash}" is in the DOM`
+        );
+      }
     }
   }
 
