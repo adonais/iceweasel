@@ -11406,7 +11406,7 @@
 # overlay scrollbars.
 - name: layout.css.fake-webkit-scrollbar.enabled
   type: RelaxedAtomicBool
-  value: true
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 
