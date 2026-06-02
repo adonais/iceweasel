@@ -149,7 +149,7 @@ async function openPreferencesViaOpenPreferencesAPI(aPane, aOptions) {
   }
 
   let win = gBrowser.contentWindow;
-  let selectedPane = win.history.state;
+  let selectedPane = win.gLastCategory?.category;
   if (!aOptions || !aOptions.leaveOpen) {
     gBrowser.removeCurrentTab();
   }
@@ -484,8 +484,7 @@ async function maybeNavigateToPane(
   paneName,
   win = gBrowser.selectedBrowser.contentWindow
 ) {
-  const expectId = `pane${paneName[0].toUpperCase()}${paneName.substring(1)}`;
-  if (win.history.state === expectId) {
+  if (win.history.state?.category === paneName) {
     return;
   }
   const paneShown = waitForPaneChange(paneName, win);

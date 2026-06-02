@@ -3,8 +3,10 @@
 
 "use strict";
 
-// Tests that parent navigation buttons stay selected when on sub-panes,
-// enabling keyboard navigation from sub-panes (Bug 2038759).
+// Tests for moz-page-nav behavior with sub-panes: parent navigation
+// buttons stay selected to enable keyboard navigation from sub-panes
+// (Bug 2038759), and clicking a nav button performs a forward
+// navigation that starts the destination pane fresh (scroll at 0).
 
 /**
  * Helper to get a nav button by its view attribute.
@@ -129,7 +131,40 @@ add_task(async function test_arrow_key_navigation_from_subpane() {
 
   // Verify Search button is now selected and we navigated to Search pane
   ok(searchButton.selected, "Search button selected after arrow up");
-  is(win.history.state, "paneSearch", "Navigated to Search pane");
+  is(win.gLastCategory?.category, "paneSearch", "Navigated to Search pane");
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+// Test that clicking a moz-page-nav-button while scrolled on a sub-pane
+// performs a forward navigation: the destination pane starts at scrollTop 0
+// rather than restoring any prior scroll position.
+add_task(async function test_nav_button_click_resets_scroll() {
+  await openPreferencesViaOpenPreferencesAPI("etp", { leaveOpen: true });
+  let doc = gBrowser.contentDocument;
+  let win = gBrowser.contentWindow;
+  let mainContent = doc.querySelector(".main-content");
+
+  // Force the pane to overflow so scrollTop assignment actually takes effect.
+  let padding = doc.createElement("div");
+  padding.style.marginBlock = "100vh";
+  padding.textContent = "Make sure it scrolls";
+  mainContent.append(padding);
+
+  mainContent.scrollTop = 50;
+  Assert.greater(mainContent.scrollTop, 0, "Sub-pane scrolled before click");
+
+  // Click a different top-level nav button.
+  let syncButton = getNavButton(doc, "paneSync");
+  let paneChangePromise = waitForPaneChange("sync");
+  EventUtils.synthesizeMouseAtCenter(syncButton.buttonEl, {}, win);
+  await paneChangePromise;
+
+  is(
+    mainContent.scrollTop,
+    0,
+    "Scroll resets to 0 after nav-button forward navigation"
+  );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
@@ -184,7 +219,11 @@ add_task(async function test_back_button_from_subpane() {
     "panePrivacy",
     "Privacy still selected after clicking back button"
   );
-  is(win.history.state, "panePrivacy", "Navigated back to privacy pane");
+  is(
+    win.gLastCategory?.category,
+    "panePrivacy",
+    "Navigated back to privacy pane"
+  );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

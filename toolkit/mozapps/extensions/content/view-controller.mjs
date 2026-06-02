@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { isDiscoverEnabled } from "./aboutaddons-utils.mjs";
+import { ScrollOffsets } from "chrome://global/content/ScrollOffsets.mjs";
 
 // Used by external callers to load a specific view into the manager
 export function loadView(viewId) {
@@ -11,40 +12,6 @@ export function loadView(viewId) {
   }
   gViewController.loadView(viewId);
 }
-
-/**
- * Helper for saving and restoring the scroll offsets when a previously loaded
- * view is accessed again.
- */
-export var ScrollOffsets = {
-  _key: null,
-  _offsets: new Map(),
-  canRestore: true,
-
-  setView(historyEntryId) {
-    this._key = historyEntryId;
-    this.canRestore = true;
-  },
-
-  getPosition() {
-    if (!this.canRestore) {
-      return { top: 0, left: 0 };
-    }
-    let { scrollTop: top, scrollLeft: left } = document.documentElement;
-    return { top, left };
-  },
-
-  save() {
-    if (this._key) {
-      this._offsets.set(this._key, this.getPosition());
-    }
-  },
-
-  restore() {
-    let { top = 0, left = 0 } = this._offsets.get(this._key) || {};
-    window.scrollTo({ top, left, behavior: "auto" });
-  },
-};
 
 export var gViewController = {
   currentViewId: null,
@@ -56,13 +23,8 @@ export var gViewController = {
     return "addons://discover/";
   },
   isLoading: true,
-  // All historyEntryId values must be unique within one session, because the
-  // IDs are used to map history entries to page state. It is not possible to
-  // see whether a historyEntryId was used in history entries before this page
-  // was loaded, so start counting from a random value to avoid collisions.
-  // This is used for scroll offsets in aboutaddons.js
-  nextHistoryEntryId: Math.floor(Math.random() * 2 ** 32),
   views: {},
+  scrollOffsets: new ScrollOffsets(),
 
   initialize(container) {
     this.container = container;
@@ -129,7 +91,7 @@ export var gViewController = {
     const state = {
       view: viewId,
       previousView: replace ? null : this.currentViewId,
-      historyEntryId: ++this.nextHistoryEntryId,
+      historyEntryId: this.scrollOffsets.newHistoryEntryId(),
     };
     if (replace) {
       history.replaceState(state, "");
@@ -148,8 +110,8 @@ export var gViewController = {
       return;
     }
 
-    ScrollOffsets.save();
-    ScrollOffsets.setView(state.historyEntryId);
+    this.scrollOffsets.save();
+    this.scrollOffsets.setView(state.historyEntryId);
 
     this.currentViewId = state.view;
     this.isLoading = true;
@@ -185,7 +147,7 @@ export var gViewController = {
                 });
               });
             }
-            ScrollOffsets.restore();
+            this.scrollOffsets.restore();
             resolve();
           });
         });

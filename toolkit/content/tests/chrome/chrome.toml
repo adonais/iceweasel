@@ -343,6 +343,8 @@ support-files = ["window_preferences_onsyncfrompreference.xhtml"]
 
 ["test_screenPersistence.xhtml"]
 
+["test_scroll_offsets.html"]
+
 ["test_showcaret.xhtml"]
 
 ["test_subframe_origin.xhtml"]

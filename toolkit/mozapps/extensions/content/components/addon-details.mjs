@@ -12,7 +12,7 @@ import {
   isAllowedInPrivateBrowsing,
   nl2br,
 } from "../aboutaddons-utils.mjs";
-import { ScrollOffsets } from "../view-controller.mjs";
+import { gViewController } from "../view-controller.mjs";
 
 const { AddonManager } = ChromeUtils.importESModule(
   "resource://gre/modules/AddonManager.sys.mjs"
@@ -296,7 +296,8 @@ export class AddonDetails extends AboutAddonsHTMLElement {
       // When a details view is rendered again, the default details view is
       // unconditionally shown. So if any other tab is selected, do not save
       // the current scroll offset, but start at the top of the page instead.
-      ScrollOffsets.canRestore = this.deck.selectedViewName === "details";
+      gViewController.scrollOffsets.canRestore =
+        this.deck.selectedViewName === "details";
     } else if (
       e.type == "click" &&
       e.target == this.descriptionShowMoreButton

@@ -105,7 +105,7 @@ add_task(async function test_etp_category_radios_and_customize_navigation() {
   synthesizeClick(customizeButton);
   await paneShown;
   is(
-    win.history.state,
+    win.gLastCategory?.category,
     "paneEtpCustomize",
     "Customize button navigated to the ETP custom pane"
   );
