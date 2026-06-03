@@ -1644,7 +1644,6 @@ CanvasTranslator::LookupSourceSurfaceFromSurfaceDescriptor(
   RefPtr<VideoBridgeParent> parent =
       VideoBridgeParent::GetSingleton(sdrd.source());
   if (!parent) {
-    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     gfxCriticalNote << "TexUnpackSurface failed to get VideoBridgeParent";
     return nullptr;
   }
