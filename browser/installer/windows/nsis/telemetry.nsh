@@ -10,6 +10,8 @@
 !define DESKTOP_LAUNCHER_STATUS_REINSTALLED 5
 !define DESKTOP_LAUNCHER_STATUS_REMOVED 6
 
+!include "control_utils.nsh"
+
 !ifndef GenerateUUID ; mock out when testing
 !define GenerateUUID "Call GenerateUUID_dontcall"
 !endif
@@ -518,11 +520,21 @@ Function WasDesktopLauncherPreviouslyInstalled
 FunctionEnd
 
 Function IsDesktopLauncherInstalled
+  ; TODO Use $USERDESKTOP once we've updated to NSIS 3.08:
+  ;   https://nsis.sourceforge.io/Docs/AppendixF.html#v3.08-c
+  ; This would allow avoiding SetShellVarContextToValue/SwapShellVarContext.
+  Push $0
+  ${SwapShellVarContext} current $0
+
   ${If} ${FileExists} "$DESKTOP\${BrandShortName}.exe"
     Push 1
   ${Else}
     Push 0
   ${EndIf}
+
+  ${SetShellVarContextToValue} $0
+  Exch
+  Pop $0
 FunctionEnd
 
 Function IsDesktopLauncherEnabled
