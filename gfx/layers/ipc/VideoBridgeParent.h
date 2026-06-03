@@ -73,6 +73,8 @@ class VideoBridgeParent final : public PVideoBridgeParent,
   void ReleaseCompositorThread();
   void DoUnregisterExternalImages();
 
+  void UnregisterSingleton();
+
   RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
 
   std::map<uint64_t, PTextureParent*> mTextureMap;
