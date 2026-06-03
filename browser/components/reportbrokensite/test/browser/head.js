@@ -473,9 +473,10 @@ class ReportBrokenSiteHelper {
   }
 
   click(elem, options = {}) {
-    return new Promise(r =>
-      EventUtils.synthesizeMouseAtCenter(elem, options, this.win, r)
-    );
+    return new Promise(r => {
+      elem.scrollIntoView({ behavior: "instant" });
+      return EventUtils.synthesizeMouseAtCenter(elem, options, this.win, r);
+    });
   }
 
   open(triggerMenuItem) {

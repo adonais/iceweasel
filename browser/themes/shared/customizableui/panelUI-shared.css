@@ -2132,13 +2132,8 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   display: none;
 }
 
-.panel-viewcontainer:has(.report-broken-site-view[visible]) {
-  min-height: auto !important;
-}
-
 .report-broken-site-view {
-  min-height: fit-content !important;
-  max-height: fit-content !important;
+  max-height: 80vh;
 
   &.wrong-tab-info {
     .favicon,
