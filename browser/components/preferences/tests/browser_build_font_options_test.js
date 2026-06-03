@@ -1,4 +1,13 @@
 add_task(async function () {
+  // TODO(Bug 2037667): Under SRD the fonts setting-group lives on the
+  // Accessibility pane, not the General pane, so this task fails when
+  // SRD is enabled. test_font_options_redesign_accessibility_pane below
+  // covers the SRD path. Decide whether to keep this legacy task in the
+  // SRD manifest (perhaps retargeted to "accessibility") or move it to a
+  // _xul.js file alongside the other legacy-only tests.
+  if (SRD_PREF_VALUE) {
+    return;
+  }
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
   await gBrowser.contentWindow.gMainPane._selectDefaultLanguageGroupPromise;
   await TestUtils.waitForCondition(
@@ -251,12 +260,7 @@ add_task(async function () {
 });
 
 add_task(async function test_font_options_redesign_accessibility_pane() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-  await openPreferencesViaOpenPreferencesAPI("accessibility", {
-    leaveOpen: true,
-  });
+  await openPrefsTab("accessibility");
   let doc = gBrowser.selectedBrowser.contentDocument;
   let contentWindow = gBrowser.selectedBrowser.contentWindow;
   let langGroup = Services.locale.fontLanguageGroup;

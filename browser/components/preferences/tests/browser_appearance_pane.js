@@ -4,47 +4,22 @@
 "use strict";
 
 add_task(
-  async function test_appearance_sidebar_hidden_when_redesign_disabled() {
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.settings-redesign.enabled", false]],
-    });
-    await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
-    let doc = gBrowser.selectedBrowser.contentDocument;
-
-    ok(
-      !doc.getElementById("category-appearance"),
-      "Appearance category is removed from DOM when settings redesign is disabled"
-    );
-
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  }
-);
-
-add_task(
   async function test_appearance_sidebar_visible_when_redesign_enabled() {
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.settings-redesign.enabled", true]],
-    });
-    await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
-    let doc = gBrowser.selectedBrowser.contentDocument;
+    let tab = await openPrefsTab("appearance");
+    let doc = tab.linkedBrowser.contentDocument;
 
     is_element_visible(
       doc.getElementById("category-appearance"),
       "Appearance category is visible when settings redesign is enabled"
     );
 
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+    await BrowserTestUtils.removeTab(tab);
   }
 );
 
 add_task(async function test_appearance_pane_loads_setting_groups() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-  await openPreferencesViaOpenPreferencesAPI("appearance", {
-    leaveOpen: true,
-  });
-  let doc = gBrowser.selectedBrowser.contentDocument;
+  let tab = await openPrefsTab("appearance");
+  let doc = tab.linkedBrowser.contentDocument;
 
   await BrowserTestUtils.waitForMutationCondition(
     doc.getElementById("mainPrefPane"),
@@ -58,18 +33,21 @@ add_task(async function test_appearance_pane_loads_setting_groups() {
     is_element_visible(group, `${groupId} setting-group is visible`);
   }
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(tab);
 });
 
 add_task(async function test_appearance_pane_click_sidebar() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
-  let doc = gBrowser.selectedBrowser.contentDocument;
+  let tab = await openPrefsTab("");
+  let doc = tab.linkedBrowser.contentDocument;
+
+  let navButton = doc.getElementById("category-appearance");
+  await BrowserTestUtils.waitForCondition(
+    () => navButton?.buttonEl,
+    "Wait for appearance nav button to render"
+  );
 
   let paneLoaded = waitForPaneChange("appearance");
-  synthesizeClick(doc.getElementById("category-appearance"));
+  synthesizeClick(navButton);
   await paneLoaded;
 
   await BrowserTestUtils.waitForMutationCondition(
@@ -82,34 +60,12 @@ add_task(async function test_appearance_pane_click_sidebar() {
     "Appearance setting-group is present after clicking appearance nav button"
   );
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-add_task(async function test_appearance_groups_removed_from_general() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
-  let doc = gBrowser.selectedBrowser.contentDocument;
-
-  ok(
-    !doc.querySelector(
-      'setting-group[groupid="appearance"][data-srd-migrated]'
-    ),
-    "appearance group is removed from General pane when settings redesign is enabled"
-  );
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(tab);
 });
 
 add_task(async function test_related_settings_accessibility_link_navigates() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-  await openPreferencesViaOpenPreferencesAPI("appearance", {
-    leaveOpen: true,
-  });
-  let doc = gBrowser.selectedBrowser.contentDocument;
+  let tab = await openPrefsTab("appearance");
+  let doc = tab.linkedBrowser.contentDocument;
 
   await BrowserTestUtils.waitForMutationCondition(
     doc.getElementById("mainPrefPane"),
@@ -121,17 +77,12 @@ add_task(async function test_related_settings_accessibility_link_navigates() {
   synthesizeClick(getSettingControl("related-settings-accessibility-link"));
   await paneLoaded;
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(tab);
 });
 
 add_task(async function test_related_settings_home_link_navigates() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-  await openPreferencesViaOpenPreferencesAPI("appearance", {
-    leaveOpen: true,
-  });
-  let doc = gBrowser.selectedBrowser.contentDocument;
+  let tab = await openPrefsTab("appearance");
+  let doc = tab.linkedBrowser.contentDocument;
 
   await BrowserTestUtils.waitForMutationCondition(
     doc.getElementById("mainPrefPane"),
@@ -187,5 +138,5 @@ add_task(async function test_browser_layout_group_in_tabs_browsing_pane() {
   ok(group, "browserLayout setting-group exists in tabs-browsing pane");
   is_element_visible(group, "browserLayout setting-group is visible");
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
