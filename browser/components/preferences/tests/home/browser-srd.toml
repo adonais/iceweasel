@@ -32,6 +32,8 @@ tags = "os_integration"
 
 ["browser_homepage_firefox_home_disabled_windows_on.js"]
 
+["browser_homepage_firefox_home_firefox_logo.js"]
+
 ["browser_homepage_firefox_home_recent_activity.js"]
 
 ["browser_homepage_firefox_home_shortcuts.js"]

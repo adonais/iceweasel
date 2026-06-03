@@ -1039,6 +1039,9 @@ home-prefs-content-header =
 home-prefs-content-header2 = { -firefox-home-brand-name } Content
 home-prefs-content-description2 = Choose what content you want on your { -firefox-home-brand-name } screen.
 
+home-prefs-firefox-logo-header =
+    .label = { -brand-short-name } logo
+
 home-prefs-search-header =
     .label = Web Search
 home-prefs-search-header2 =

@@ -232,6 +232,14 @@ describe("AboutPreferences Feed", () => {
             "browser.newtabpage.activity-stream.section.highlights.includeVisited"
         )
       );
+      assert.isTrue(
+        prefs.some(
+          p =>
+            p.id === "browser.newtabpage.activity-stream.hideLogo" &&
+            p.type === "bool" &&
+            p.inverted === true
+        )
+      );
     });
   });
 

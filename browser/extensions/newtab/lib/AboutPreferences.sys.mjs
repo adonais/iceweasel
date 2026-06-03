@@ -347,6 +347,11 @@ export class AboutPreferences {
     Preferences.addAll([
       { id: "browser.newtabpage.activity-stream.showSearch", type: "bool" },
       {
+        id: "browser.newtabpage.activity-stream.hideLogo",
+        type: "bool",
+        inverted: true,
+      },
+      {
         id: "browser.newtabpage.activity-stream.system.showWeather",
         type: "bool",
       },
@@ -1174,6 +1179,23 @@ export class AboutPreferences {
       visible: deps => !firefoxHomeActive(deps),
     });
 
+    // @nova-cleanup(remove-conditional): Remove this lookup and inline `true` at every novaEnabled check below.
+    const novaEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.nova.enabled",
+      false
+    );
+
+    // hideLogo only affects rendering when Nova is enabled (see Base.jsx),
+    // so the toggle is registered only in that branch.
+    if (novaEnabled) {
+      Preferences.addSetting({
+        id: "firefoxLogo",
+        pref: "browser.newtabpage.activity-stream.hideLogo",
+        deps: firefoxHomeDeps,
+        disabled: deps => !firefoxHomeActive(deps),
+      });
+    }
+
     // Search
     Preferences.addSetting({
       id: "webSearch",
@@ -1184,11 +1206,6 @@ export class AboutPreferences {
 
     // Weather
     // @nova-cleanup(remove-conditional): Remove novaEnabled check and else branch; keep only the Nova registration block (weatherEnabled + weather addSetting calls)
-    const novaEnabled = Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.nova.enabled",
-      false
-    );
-
     if (novaEnabled) {
       Preferences.addSetting({
         id: "weatherEnabled",
@@ -1611,6 +1628,15 @@ export class AboutPreferences {
           },
           iconSrc: "chrome://browser/skin/customize.svg",
         },
+        ...(novaEnabled
+          ? [
+              {
+                id: "firefoxLogo",
+                l10nId: "home-prefs-firefox-logo-header",
+                control: "moz-toggle",
+              },
+            ]
+          : []),
       ],
     };
   }

@@ -6,7 +6,7 @@
 const HOMEPAGE_PREF = "browser.startup.homepage";
 const NEWTAB_ENABLED_PREF = "browser.newtabpage.enabled";
 const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
-// @nova-cleanup(remove-conditional): Delete this constant; only used by the test_firefox_home_enabled_when_tabs_is_home_classic task below.
+// @nova-cleanup(remove-conditional): Delete this constant; the firefoxLogo gate in assertSectionEnabled below and the _classic task become unconditional after cleanup.
 const NOVA_ENABLED_PREF = "browser.newtabpage.activity-stream.nova.enabled";
 const WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.widgets.system.weather.enabled";
@@ -40,6 +40,8 @@ async function assertSectionEnabled(win) {
   ok(messageBar, "Message bar element exists");
   ok(messageBar.hidden, "Message bar is hidden when New tabs is Firefox Home");
 
+  // firefoxLogo is only registered when Nova is enabled.
+  const novaEnabled = Services.prefs.getBoolPref(NOVA_ENABLED_PREF, false);
   for (let settingId of [
     "webSearch",
     "weather",
@@ -48,6 +50,7 @@ async function assertSectionEnabled(win) {
     "stories",
     "supportFirefox",
     "recentActivity",
+    ...(novaEnabled ? ["firefoxLogo"] : []),
   ]) {
     let control = await settingControlRenders(settingId, win);
     ok(
