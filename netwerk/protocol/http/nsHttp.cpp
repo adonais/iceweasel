@@ -1164,18 +1164,19 @@ nsLiteralCString HttpVersionToTelemetryLabel(HttpVersion version) {
   return "unknown"_ns;
 }
 
-ProxyDNSStrategy GetProxyDNSStrategyHelper(const char* aType, uint32_t aFlag) {
+nsIHttpChannelInternal::ProxyDNSStrategy GetProxyDNSStrategyHelper(
+    const char* aType, uint32_t aFlag) {
   if (!aType) {
-    return ProxyDNSStrategy::ORIGIN;
+    return nsIHttpChannelInternal::PROXY_DNS_STRATEGY_ORIGIN;
   }
 
   if (!(aFlag & nsIProxyInfo::TRANSPARENT_PROXY_RESOLVES_HOST)) {
     if (aType == kProxyType_SOCKS) {
-      return ProxyDNSStrategy::ORIGIN;
+      return nsIHttpChannelInternal::PROXY_DNS_STRATEGY_ORIGIN;
     }
   }
 
-  return ProxyDNSStrategy::PROXY;
+  return nsIHttpChannelInternal::PROXY_DNS_STRATEGY_PROXY;
 }
 
 }  // namespace net

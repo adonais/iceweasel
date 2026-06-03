@@ -4077,6 +4077,14 @@ HttpBaseChannel::SetBypassProxy(bool aBypassProxy) {
 }
 
 NS_IMETHODIMP
+HttpBaseChannel::GetProxyDNSStrategy(
+    nsIHttpChannelInternal::ProxyDNSStrategy* aStrategy) {
+  NS_ENSURE_ARG_POINTER(aStrategy);
+  *aStrategy = nsIHttpChannelInternal::PROXY_DNS_STRATEGY_ORIGIN;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 HttpBaseChannel::GetIsTRRServiceChannel(bool* aIsTRRServiceChannel) {
   NS_ENSURE_ARG_POINTER(aIsTRRServiceChannel);
 

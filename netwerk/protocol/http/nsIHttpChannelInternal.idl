@@ -276,6 +276,18 @@ interface nsIHttpChannelInternal : nsISupports
     [must_use] attribute boolean bypassProxy;
 
     /**
+     * Based on the proxy configuration, indicates how the end server host
+     * name will be resolved. ORIGIN (1) means the client resolves the host
+     * locally; PROXY (2) means the proxy resolves the host (so no DNS query
+     * for the origin host should be issued by the client).
+     */
+    cenum ProxyDNSStrategy : 8 {
+      PROXY_DNS_STRATEGY_ORIGIN = 1,
+      PROXY_DNS_STRATEGY_PROXY = 2,
+    };
+    [must_use, noscript] readonly attribute nsIHttpChannelInternal_ProxyDNSStrategy proxyDNSStrategy;
+
+    /**
      * True if channel is used by the internal trusted recursive resolver
      * This flag places data for the request in a cache segment specific to TRR
      */

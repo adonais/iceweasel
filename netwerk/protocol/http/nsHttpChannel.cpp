@@ -1094,8 +1094,8 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
       return true;
     }
 
-    auto dnsStrategy = GetProxyDNSStrategy();
-    if (dnsStrategy != ProxyDNSStrategy::ORIGIN) {
+    auto dnsStrategy = ComputeProxyDNSStrategy();
+    if (dnsStrategy != nsIHttpChannelInternal::PROXY_DNS_STRATEGY_ORIGIN) {
       return true;
     }
 
@@ -7719,16 +7719,25 @@ nsHttpChannel::GetOrCreateChannelClassifier() {
   return classifier.forget();
 }
 
-ProxyDNSStrategy nsHttpChannel::GetProxyDNSStrategy() {
+nsIHttpChannelInternal::ProxyDNSStrategy
+nsHttpChannel::ComputeProxyDNSStrategy() {
   // When network_dns_force_use_https_rr is true, return DNS_PREFETCH_ORIGIN.
   // This ensures that we always perform HTTPS RR query.
   nsCOMPtr<nsProxyInfo> proxyInfo(static_cast<nsProxyInfo*>(mProxyInfo.get()));
   if (!proxyInfo || StaticPrefs::network_dns_force_use_https_rr()) {
-    return ProxyDNSStrategy::ORIGIN;
+    return nsIHttpChannelInternal::PROXY_DNS_STRATEGY_ORIGIN;
   }
 
   // If the proxy is not to perform name resolution itself.
   return GetProxyDNSStrategyHelper(proxyInfo->Type(), proxyInfo->Flags());
+}
+
+NS_IMETHODIMP
+nsHttpChannel::GetProxyDNSStrategy(
+    nsIHttpChannelInternal::ProxyDNSStrategy* aStrategy) {
+  NS_ENSURE_ARG_POINTER(aStrategy);
+  *aStrategy = ComputeProxyDNSStrategy();
+  return NS_OK;
 }
 
 // BeginConnect() SHOULD NOT call AsyncAbort(). AsyncAbort will be called by
@@ -7939,13 +7948,13 @@ nsresult nsHttpChannel::BeginConnect() {
   }
 
   bool trrEnabled = false;
-  auto dnsStrategy = GetProxyDNSStrategy();
+  auto dnsStrategy = ComputeProxyDNSStrategy();
   bool httpsRRAllowed =
       !LoadBeConservative() && !(mCaps & NS_HTTP_BE_CONSERVATIVE) &&
       !(mLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
         mLoadInfo->GetExternalContentPolicyType() !=
             ExtContentPolicy::TYPE_DOCUMENT) &&
-      dnsStrategy == ProxyDNSStrategy::ORIGIN &&
+      dnsStrategy == nsIHttpChannelInternal::PROXY_DNS_STRATEGY_ORIGIN &&
       !mConnectionInfo->UsingConnect() && canUseHTTPSRRonNetwork(trrEnabled) &&
       StaticPrefs::network_dns_use_https_rr_as_altsvc();
   if (!httpsRRAllowed) {
@@ -8145,7 +8154,7 @@ void nsHttpChannel::MaybeStartDNSPrefetch() {
     return;
   }
 
-  auto dnsStrategy = GetProxyDNSStrategy();
+  auto dnsStrategy = ComputeProxyDNSStrategy();
 
   LOG(
       ("nsHttpChannel::MaybeStartDNSPrefetch [this=%p, strategy=%u] "
@@ -8153,7 +8162,7 @@ void nsHttpChannel::MaybeStartDNSPrefetch() {
        this, static_cast<uint32_t>(dnsStrategy),
        mCaps & NS_HTTP_REFRESH_DNS ? ", refresh requested" : ""));
 
-  if (dnsStrategy == ProxyDNSStrategy::ORIGIN) {
+  if (dnsStrategy == nsIHttpChannelInternal::PROXY_DNS_STRATEGY_ORIGIN) {
     OriginAttributes originAttributes;
     StoragePrincipalHelper::GetOriginAttributesForNetworkState(
         this, originAttributes);
