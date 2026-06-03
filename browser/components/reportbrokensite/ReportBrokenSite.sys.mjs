@@ -528,6 +528,8 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     ReportBrokenSite.#hasCustomElements.add(window);
   }
 
+  #descriptionErrorTextPromise;
+
   init(win) {
     // Called in browser-init.js via the category manager registration
     // in BrowserComponents.manifest
@@ -543,6 +545,18 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       state.detailsViewDescriptionError,
       "report-broken-site-panel-invalid-description-label",
       { minLength: MINIMUM_DESCRIPTION_LENGTH }
+    );
+
+    // use Promise.resolve to avoid leaking document until shutdown
+    this.#descriptionErrorTextPromise ??= Promise.resolve(
+      document.l10n
+        .formatMessages([
+          {
+            id: "report-broken-site-panel-invalid-description-label",
+            args: { minLength: MINIMUM_DESCRIPTION_LENGTH },
+          },
+        ])
+        .then(result => result[0].value)
     );
 
     for (const id of ["menu_HelpPopup", "appMenu-popup"]) {
@@ -686,7 +700,9 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     const { target } = event;
     const state = ViewState.get(target.documentGlobal.document);
     const { descriptionTextArea, isDescriptionValid } = state;
-    descriptionTextArea.setCustomValidity(isDescriptionValid ? "" : "invalid");
+    this.#descriptionErrorTextPromise.then(errorText =>
+      descriptionTextArea.setCustomValidity(isDescriptionValid ? "" : errorText)
+    );
     state.updateProgressDisabledState();
     return isDescriptionValid;
   }
