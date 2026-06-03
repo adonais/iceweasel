@@ -389,7 +389,7 @@ StyleDynamicRange Gecko_MediaFeatures_VideoDynamicRange(
   // As a proxy for those requirements, return 'High' if the screen associated
   // with the device context claims to be HDR capable.
   if (nsDeviceContext* dx = GetDeviceContextFor(aDocument)) {
-    if (dx->GetScreenIsHDR()) {
+    if (dx->GetScreenIsVideoHDR()) {
       return StyleDynamicRange::High;
     }
   }

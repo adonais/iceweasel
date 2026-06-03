@@ -101,6 +101,7 @@ class DeviceManagerDx final {
   bool SystemHDREnabled();
   bool WindowHDREnabled(HWND aWindow);
   bool MonitorHDREnabled(HMONITOR aMonitor);
+  bool VideoProcessorHDREnabled();
   Maybe<DXGI_HDR_METADATA_HDR10> WindowHDRMetadata(HWND aWindow);
   Maybe<DXGI_HDR_METADATA_HDR10> MonitorHDRMetadata(HMONITOR aMonitor);
 
@@ -223,6 +224,7 @@ class DeviceManagerDx final {
   Maybe<DeviceResetReason> mDeviceResetReason MOZ_GUARDED_BY(mDeviceLock);
   RefPtr<Runnable> mUpdateMonitorInfoRunnable MOZ_GUARDED_BY(mDeviceLock);
   Maybe<bool> mSystemHdrEnabled MOZ_GUARDED_BY(mDeviceLock);
+  Maybe<bool> mVideoHdrEnabled MOZ_GUARDED_BY(mDeviceLock);
   std::set<HMONITOR> mHdrMonitors MOZ_GUARDED_BY(mDeviceLock);
   std::unordered_map<HMONITOR, DXGI_HDR_METADATA_HDR10> mHdrMetadatas
       MOZ_GUARDED_BY(mDeviceLock);

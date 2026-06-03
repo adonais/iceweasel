@@ -21,6 +21,7 @@
 #include <d3d10_1.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+#include <dxgiformat.h>
 
 namespace mozilla {
 namespace gfx {
@@ -495,6 +496,244 @@ bool D3D11Checks::DoesRemotePresentWork(IDXGIAdapter* adapter) {
   if (doesP016Work()) {
     options += VideoFormatOption::P016;
   }
+  return options;
+}
+
+/* static */ D3D11Checks::VideoProcessorOptionSet D3D11Checks::ProcessorOptions(
+    ID3D11Device* aDevice) {
+  VideoProcessorOptionSet options;
+
+  RefPtr<ID3D11DeviceContext> context;
+  aDevice->GetImmediateContext(getter_AddRefs(context));
+
+  HRESULT hr;
+  RefPtr<ID3D11VideoDevice> videoDevice;
+  hr =
+      aDevice->QueryInterface((ID3D11VideoDevice**)getter_AddRefs(videoDevice));
+  if (FAILED(hr)) {
+    gfxCriticalNoteOnce << "D3D11Checks: Failed to get D3D11VideoDevice: "
+                        << gfx::hexa(hr);
+    return options;
+  }
+
+  RefPtr<ID3D11VideoContext> videoContext;
+  hr = context->QueryInterface(
+      (ID3D11VideoContext**)getter_AddRefs(videoContext));
+  if (FAILED(hr)) {
+    gfxCriticalNoteOnce << "D3D11Checks: Failed to get D3D11VideoContext: "
+                        << gfx::hexa(hr);
+    return options;
+  }
+
+  RefPtr<ID3D11VideoContext1> videoContext1;
+  hr = videoContext->QueryInterface(
+      (ID3D11VideoContext1**)getter_AddRefs(videoContext1));
+  if (FAILED(hr)) {
+    gfxCriticalNoteOnce << "D3D11Checks: Failed to get D3D11VideoContext1: "
+                        << gfx::hexa(hr);
+    return options;
+  }
+
+  gfx::IntSize size(1920, 1080);
+
+  D3D11_VIDEO_PROCESSOR_CONTENT_DESC desc = {};
+  desc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+  desc.InputFrameRate.Numerator = 60;
+  desc.InputFrameRate.Denominator = 1;
+  desc.InputWidth = size.width;
+  desc.InputHeight = size.height;
+  desc.OutputFrameRate.Numerator = 60;
+  desc.OutputFrameRate.Denominator = 1;
+  desc.OutputWidth = size.width;
+  desc.OutputHeight = size.height;
+  desc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+
+  RefPtr<ID3D11VideoProcessorEnumerator> videoProcessorEnumerator = nullptr;
+  hr = videoDevice->CreateVideoProcessorEnumerator(
+      &desc, getter_AddRefs(videoProcessorEnumerator));
+  if (FAILED(hr)) {
+    gfxCriticalNoteOnce
+        << "D3D11Checks: Failed to create VideoProcessorEnumerator: "
+        << gfx::hexa(hr);
+    return options;
+  }
+
+  RefPtr<ID3D11VideoProcessorEnumerator1> videoProcessorEnumerator1 = nullptr;
+  hr = videoProcessorEnumerator->QueryInterface(
+      (ID3D11VideoProcessorEnumerator1**)getter_AddRefs(
+          videoProcessorEnumerator1));
+  if (FAILED(hr)) {
+    gfxCriticalNoteOnce
+        << "D3D11Checks: Failed to get VideoProcessorEnumerator1: "
+        << gfx::hexa(hr);
+    return options;
+  }
+
+  BOOL supported;
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_NV12, DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709,
+      DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::NV12_STUDIO_709;
+  } else {
+    gfxCriticalNoteOnce
+        << "D3D11Checks: VideoProcessorFormatConversion hr=" << gfx::hexa(hr)
+        << " unsupported combination: DXGI_FORMAT_NV12 "
+           "DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709 to "
+           "DXGI_FORMAT_B8G8R8A8_UNORM DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_NV12, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709,
+      DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::NV12_FULL_709;
+  } else {
+    gfxCriticalNoteOnce
+        << "D3D11Checks: VideoProcessorFormatConversion hr=" << gfx::hexa(hr)
+        << " unsupported combination: DXGI_FORMAT_NV12 "
+           "DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 to "
+           "DXGI_FORMAT_B8G8R8A8_UNORM DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709,
+      DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::P010_STUDIO_709;
+  } else {
+    gfxCriticalNoteOnce << "D3D11Checks: VideoProcessorFormatConversion hr="
+                        << gfx::hexa(hr)
+                        << " unsupported combination: DXGI_FORMAT_P010 "
+                           "DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709 to "
+                           "DXGI_FORMAT_R10G10B10A2_UNORM "
+                           "DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709,
+      DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::P010_FULL_709;
+  } else {
+    gfxCriticalNoteOnce << "D3D11Checks: VideoProcessorFormatConversion hr="
+                        << gfx::hexa(hr)
+                        << " unsupported combination: DXGI_FORMAT_P010 "
+                           "DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709 to "
+                           "DXGI_FORMAT_R10G10B10A2_UNORM "
+                           "DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020,
+      DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::P010_STUDIO_2020;
+  } else {
+    gfxCriticalNoteOnce << "D3D11Checks: VideoProcessorFormatConversion hr="
+                        << gfx::hexa(hr)
+                        << " unsupported combination: DXGI_FORMAT_P010 "
+                           "DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020 to "
+                           "DXGI_FORMAT_R10G10B10A2_UNORM "
+                           "DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020,
+      DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::P010_STUDIO_2100_HLG;
+  } else {
+    gfxCriticalNoteOnce << "D3D11Checks: VideoProcessorFormatConversion hr="
+                        << gfx::hexa(hr)
+                        << " unsupported combination: DXGI_FORMAT_P010 "
+                           "DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020 "
+                           "to DXGI_FORMAT_R10G10B10A2_UNORM "
+                           "DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020,
+      DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::P010_FULL_2100_HLG;
+  } else {
+    gfxCriticalNoteOnce << "D3D11Checks: VideoProcessorFormatConversion hr="
+                        << gfx::hexa(hr)
+                        << " unsupported combination: DXGI_FORMAT_P010 "
+                           "DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020 to "
+                           "DXGI_FORMAT_R10G10B10A2_UNORM "
+                           "DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020,
+      DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::P010_STUDIO_2100_PQ;
+  } else {
+    gfxCriticalNoteOnce << "D3D11Checks: VideoProcessorFormatConversion hr="
+                        << gfx::hexa(hr)
+                        << " unsupported combination: DXGI_FORMAT_P010 "
+                           "DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020 to "
+                           "DXGI_FORMAT_R10G10B10A2_UNORM "
+                           "DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020,
+      DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::P010_STUDIO_2100_HLG_SCRGB;
+  } else {
+    gfxCriticalNoteOnce << "D3D11Checks: VideoProcessorFormatConversion hr="
+                        << gfx::hexa(hr)
+                        << " unsupported combination: DXGI_FORMAT_P010 "
+                           "DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020 "
+                           "to DXGI_FORMAT_R16G16B16A16_FLOAT "
+                           "DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020,
+      DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::P010_FULL_2100_HLG_SCRGB;
+  } else {
+    gfxCriticalNoteOnce << "D3D11Checks: VideoProcessorFormatConversion hr="
+                        << gfx::hexa(hr)
+                        << " unsupported combination: DXGI_FORMAT_P010 "
+                           "DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020 to "
+                           "DXGI_FORMAT_R16G16B16A16_FLOAT "
+                           "DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709";
+  }
+  supported = FALSE;
+  hr = videoProcessorEnumerator1->CheckVideoProcessorFormatConversion(
+      DXGI_FORMAT_P010, DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020,
+      DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709,
+      &supported);
+  if (SUCCEEDED(hr) && supported) {
+    options += VideoProcessorOption::P010_STUDIO_2100_PQ_SCRGB;
+  } else {
+    gfxCriticalNoteOnce << "D3D11Checks: VideoProcessorFormatConversion hr="
+                        << gfx::hexa(hr)
+                        << " unsupported combination: DXGI_FORMAT_P010 "
+                           "DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020 to "
+                           "DXGI_FORMAT_R16G16B16A16_FLOAT "
+                           "DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709";
+  }
+
   return options;
 }
 

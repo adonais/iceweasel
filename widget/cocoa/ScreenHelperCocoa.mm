@@ -147,7 +147,7 @@ static already_AddRefed<Screen> MakeScreen(NSScreen* aScreen) {
   RefPtr<Screen> screen =
       new Screen(rect, availRect, pixelDepth, pixelDepth, 0,
                  contentsScaleFactor, defaultCssScaleFactor, dpi,
-                 Screen::IsPseudoDisplay::No, Screen::IsHDR(isHDR));
+                 Screen::IsPseudoDisplay::No, Screen::IsHDR(isHDR), Screen::IsHDR(isHDR));
   return screen.forget();
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);

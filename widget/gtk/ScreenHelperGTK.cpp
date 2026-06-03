@@ -67,10 +67,10 @@ static uint32_t GetGTKPixelDepth() {
 #ifdef MOZ_WAYLAND
 static already_AddRefed<Screen> MakeDummyScreen(unsigned int aMonitor) {
   LOG_SCREEN("MakeScreenGtk() create dummy screen for monitor [%d]", aMonitor);
-  return MakeAndAddRef<Screen>(LayoutDeviceIntRect(), LayoutDeviceIntRect(), 0,
-                               0, 0, DesktopToLayoutDeviceScale(1.0),
-                               CSSToLayoutDeviceScale(1.0), 1,
-                               Screen::IsPseudoDisplay::No, Screen::IsHDR(0));
+  return MakeAndAddRef<Screen>(
+      LayoutDeviceIntRect(), LayoutDeviceIntRect(), 0, 0, 0,
+      DesktopToLayoutDeviceScale(1.0), CSSToLayoutDeviceScale(1.0), 1,
+      Screen::IsPseudoDisplay::No, Screen::IsHDR(0), Screen::IsHDR(0));
 }
 #endif
 
@@ -182,9 +182,10 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
       "DPI %f refresh %d HDR %d]",
       aMonitor, rect.x, rect.y, rect.width, rect.height, pixelDepth,
       contentsScale.scale, defaultCssScale.scale, dpi, refreshRate, aIsHDR);
-  return MakeAndAddRef<Screen>(
-      rect, availRect, pixelDepth, pixelDepth, refreshRate, contentsScale,
-      defaultCssScale, dpi, Screen::IsPseudoDisplay::No, Screen::IsHDR(aIsHDR));
+  return MakeAndAddRef<Screen>(rect, availRect, pixelDepth, pixelDepth,
+                               refreshRate, contentsScale, defaultCssScale, dpi,
+                               Screen::IsPseudoDisplay::No,
+                               Screen::IsHDR(aIsHDR), Screen::IsHDR(aIsHDR));
 }
 
 #ifdef MOZ_WAYLAND

@@ -126,7 +126,8 @@ BOOL CALLBACK CollectMonitors(HMONITOR aMon, HDC, LPRECT, LPARAM ioParam) {
                  refreshRate);
 
   auto* manager = gfx::DeviceManagerDx::Get();
-  bool isHDR = manager ? manager->MonitorHDREnabled(aMon) : false;
+  bool isHDR = manager && manager->MonitorHDREnabled(aMon);
+  bool isVideoHDR = isHDR && manager && manager->VideoProcessorHDREnabled();
 
   MOZ_LOG(sScreenLog, LogLevel::Debug,
           ("New screen [%s (%s) %d %u %f %f %f %d %d %d]",
@@ -136,7 +137,7 @@ BOOL CALLBACK CollectMonitors(HMONITOR aMon, HDC, LPRECT, LPARAM ioParam) {
   auto screen = MakeRefPtr<Screen>(
       rect, availRect, pixelDepth, pixelDepth, refreshRate, contentsScaleFactor,
       defaultCssScaleFactor, dpi, Screen::IsPseudoDisplay(isPseudoDisplay),
-      Screen::IsHDR(isHDR), orientation, angle);
+      Screen::IsHDR(isHDR), Screen::IsHDR(isVideoHDR), orientation, angle);
   if (info.dwFlags & MONITORINFOF_PRIMARY) {
     // The primary monitor must be the first element of the screen list.
     cmParam->screens.InsertElementAt(0, std::move(screen));

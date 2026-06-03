@@ -43,7 +43,8 @@ static already_AddRefed<Screen> MakePrimaryScreen() {
   return MakeAndAddRef<Screen>(
       bounds, bounds, depth, depth, refreshRate,
       DesktopToLayoutDeviceScale(density), CSSToLayoutDeviceScale(1.0f), dpi,
-      Screen::IsPseudoDisplay::No, Screen::IsHDR(isHDR), orientation, angle);
+      Screen::IsPseudoDisplay::No, Screen::IsHDR(isHDR), Screen::IsHDR(isHDR),
+      orientation, angle);
 }
 
 ScreenHelperAndroid::ScreenHelperAndroid() {

@@ -12,6 +12,8 @@ using mozilla::gfx::IntSize from "mozilla/gfx/Point.h";
 using gfxImageFormat from "mozilla/gfx/Types.h";
 using mozilla::gfx::D3D11Checks::VideoFormatOption from "mozilla/gfx/D3D11Checks.h";
 using mozilla::gfx::D3D11Checks::VideoFormatOptionSet from "mozilla/gfx/D3D11Checks.h";
+using mozilla::gfx::D3D11Checks::VideoProcessorOption from "mozilla/gfx/D3D11Checks.h";
+using mozilla::gfx::D3D11Checks::VideoProcessorOptionSet from "mozilla/gfx/D3D11Checks.h";
 
 namespace mozilla {
 namespace gfx {
@@ -24,6 +26,7 @@ struct D3D11DeviceStatus
   DxgiAdapterDesc adapter;
   int32_t sequenceNumber;
   VideoFormatOptionSet formatOptions;
+  VideoProcessorOptionSet processorOptions;
 };
 
 struct DevicePrefs

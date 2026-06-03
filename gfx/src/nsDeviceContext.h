@@ -157,6 +157,12 @@ class nsDeviceContext final {
   bool GetScreenIsHDR();
 
   /**
+   * Get the status of HDR video playback support of the associated screen.
+   * Some displays can do HDR video but not HDR desktop mode.
+   */
+  bool GetScreenIsVideoHDR();
+
+  /**
    * Get the size of the displayable area of the output device in app units.
    */
   nsSize GetDeviceSurfaceDimensions();
