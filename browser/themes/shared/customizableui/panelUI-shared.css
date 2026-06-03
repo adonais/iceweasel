@@ -2203,7 +2203,8 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   button.arrow-button {
     font-weight: normal;
     padding: var(--space-large) var(--space-medium);
-    margin: 0;
+    margin: 0 0 var(--space-large);
+    border: 0;
 
     > hbox > label {
       text-align: start;
@@ -2212,11 +2213,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
       display: block !important;
       text-wrap: balance;
       width: 100%;
-    }
-
-    &:last-of-type {
-      /* so the bottom of the focus outline doesn't get cut off under the following element */
-      margin-block-end: var(--space-small);
     }
 
     background: url("chrome://global/skin/icons/arrow-right.svg") no-repeat calc(100% - var(--panel-menuitem-padding-inline)) center;
