@@ -1678,21 +1678,11 @@ SettingGroupManager.registerGroups({
     items: [
       {
         id: "ipProtectionNotOptedInSection",
-        l10nId: "ip-protection-not-opted-in-3",
-        l10nArgs: {
-          maxUsage: "50",
-        },
         control: "moz-promo",
-        controlAttrs: {
-          imagesrc:
-            "chrome://browser/content/ipprotection/assets/vpn-settings-get-started.svg",
-          imagealignment: "end",
-          imagewidth: "large",
-        },
         items: [
           {
             id: "getStartedButton",
-            l10nId: "ip-protection-not-opted-in-button",
+            l10nId: "unauthenticated-vpn-title",
             control: "moz-button",
             slot: "actions",
             controlAttrs: {
