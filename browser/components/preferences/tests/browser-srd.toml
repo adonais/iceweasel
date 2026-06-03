@@ -59,6 +59,8 @@ tags = "os_integration"
 
 ["browser_spotlight.js"]
 
+["browser_srd_telemetry_bucket_migration.js"]
+
 ["browser_sub_pane_navigation_selection.js"]
 
 ["browser_subdialogs.js"]
