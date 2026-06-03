@@ -779,15 +779,6 @@ features:
         type: Boolean
         default: false
 
-  homepage-search-bar:
-    description: Enables the homepage search bar.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable the homepage search bar.
-        type: Boolean
-        default: false
-
   homepage-hide-frecent-top-sites:
     description: Hides frecent top sites on the homepage.
     variables:

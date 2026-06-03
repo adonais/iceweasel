@@ -2419,8 +2419,8 @@ class Settings(
      * Indicates if the Homepage Search Bar is enabled.
      */
     var enableHomepageSearchBar by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_homepage_searchbar),
-        default = { FxNimbus.features.homepageSearchBar.value().enabled },
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_homepage_searchbar2),
+        default = false,
     )
 
     /**

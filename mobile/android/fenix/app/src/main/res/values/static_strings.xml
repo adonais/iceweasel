@@ -99,8 +99,6 @@
     <string name="preferences_sync_debug_oauth_token_scopes_title">Scopes (space-separated)</string>
     <string name="preferences_sync_debug_oauth_token_fetch_title">Fetch Token</string>
     <string name="preferences_sync_debug_oauth_token_result_title">Result</string>
-    <!-- Label for enabling the Homepage Search Bar -->
-    <string name="preferences_debug_settings_homepage_searchbar" translatable="false">Enable Homepage Search Bar</string>
     <!-- Label for enabling Homepage as a New Tab -->
     <string name="preferences_debug_settings_homepage_as_new_tab" translatable="false">Enable Homepage as a New Tab</string>
     <!-- Label for enabling Firefox Labs -->
