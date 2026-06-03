@@ -494,6 +494,11 @@ split-view-footer {
   border-style: none;
   border-top-style: solid;
 
+  @media (-moz-mac-tahoe-theme) {
+    /* Slightly increasing the padding to prevent the first letter from partially getting cut off by the large window corner radius. */
+    padding: 3px 5px;
+  }
+
   #statuspanel:not([mirror]) > &:-moz-locale-dir(ltr),
   #statuspanel[mirror] > &:-moz-locale-dir(rtl) {
     border-right-style: solid;
