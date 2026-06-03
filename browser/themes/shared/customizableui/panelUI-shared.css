@@ -2298,7 +2298,10 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
         background-repeat: no-repeat;
         -moz-context-properties: fill;
         fill: currentColor;
+      }
 
+      > summary,
+      > .data {
         /* prevent the keyboard-focus outlines from being partly cut off due to the summaries taking up the full width */
         outline-offset: calc(-1 * var(--default-focusring-width));
       }

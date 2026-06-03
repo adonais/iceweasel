@@ -1024,7 +1024,8 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       details.appendChild(summary);
 
       const info = state.createElement("div");
-      info.className = "data";
+      // text-link so it gets focus, but without the weird behavior of data-captures-focus.
+      info.className = "data text-link";
       for (const [k, v] of Object.entries(values)) {
         if (k == "isTabSpecific") {
           details.classList.add("tab-specific-data");
