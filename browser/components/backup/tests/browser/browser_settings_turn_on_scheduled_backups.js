@@ -33,6 +33,33 @@ add_setup(async () => {
 });
 
 /**
+ * Asserts that the location label and the "choose location" button both point
+ * at the file path input that is actually rendered, so the input stays labelled
+ * whether the default or custom input is shown.
+ *
+ * @param {Element} turnOnScheduledBackups the turn-on-scheduled-backups element
+ * @param {Element} expectedInput the file path input expected to be rendered
+ */
+function assertLocationInputLabelled(turnOnScheduledBackups, expectedInput) {
+  let shadow = turnOnScheduledBackups.shadowRoot;
+  let label = shadow.getElementById("backup-location-label");
+  let button = shadow.getElementById("backup-location-filepicker-button");
+
+  Assert.ok(expectedInput, "Expected file path input should be rendered");
+  Assert.ok(expectedInput.id, "Rendered file path input should have an id");
+  Assert.equal(
+    label.getAttribute("for"),
+    expectedInput.id,
+    "Location label should be associated with the rendered input"
+  );
+  Assert.equal(
+    button.getAttribute("aria-controls"),
+    expectedInput.id,
+    "Choose location button should control the rendered input"
+  );
+}
+
+/**
  * Tests that the turn on scheduled backups dialog can set
  * browser.backup.scheduled.enabled to true from the settings page.
  */
@@ -161,6 +188,7 @@ add_task(async function test_turn_on_custom_location_filepicker() {
       filePathButton,
       "Button for choosing a file path should be found"
     );
+    assertLocationInputLabelled(turnOnScheduledBackups, filePathInputDefault);
 
     // Next, verify the filepicker and updated dialog
     let inputUpdatePromise = BrowserTestUtils.waitForCondition(
@@ -182,6 +210,7 @@ add_task(async function test_turn_on_custom_location_filepicker() {
       PathUtils.filename(mockCustomParentDir),
       "Input should display file path from filepicker"
     );
+    assertLocationInputLabelled(turnOnScheduledBackups, filePathInputCustom);
 
     // Now close the dialog by confirming choices and verify that backup settings are saved
     let confirmButton = turnOnScheduledBackups.confirmButtonEl;

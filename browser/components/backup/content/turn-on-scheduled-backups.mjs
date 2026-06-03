@@ -136,6 +136,19 @@ export default class TurnOnScheduledBackups extends MozLitElement {
     this.disableSubmit = false;
   }
 
+  /**
+   * Whether the default backup location should be shown, i.e. the user hasn't
+   * chosen a custom path and there's no persisted path from a previous screen.
+   *
+   * @returns {boolean}
+   */
+  get showDefaultFilePath() {
+    return (
+      !this._newPath &&
+      !this.backupServiceState?.embeddedComponentPersistentData?.path
+    );
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.dispatchEvent(
@@ -361,25 +374,27 @@ export default class TurnOnScheduledBackups extends MozLitElement {
   }
 
   allOptionsTemplate() {
+    let locationInputId = this.showDefaultFilePath
+      ? "backup-location-filepicker-input-default"
+      : "backup-location-filepicker-input-custom";
     return html`
       <fieldset id="all-controls">
         <div id="backup-location-controls">
           <label
             id="backup-location-label"
-            for="backup-location-filepicker-input"
+            for=${locationInputId}
             data-l10n-id=${this.filePathLabelL10nId ||
             "turn-on-scheduled-backups-location-label"}
           ></label>
           <div id="backup-location-filepicker">
-            ${!this._newPath &&
-            !this.backupServiceState?.embeddedComponentPersistentData?.path
+            ${this.showDefaultFilePath
               ? this.defaultFilePathInputTemplate()
               : this.customFilePathInputTemplate()}
             <moz-button
               id="backup-location-filepicker-button"
               @click=${this.handleChooseLocation}
               data-l10n-id="turn-on-scheduled-backups-location-choose-button"
-              aria-controls="backup-location-filepicker-input"
+              aria-controls=${locationInputId}
             ></moz-button>
           </div>
         </div>
