@@ -88,7 +88,8 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   friend class PCompositorBridgeParent;
 
  public:
-  explicit CompositorBridgeParentBase(CompositorManagerParent* aManager);
+  explicit CompositorBridgeParentBase(CompositorManagerParent* aManager,
+                                      uint32_t aNamespace);
 
   virtual bool SetTestSampleTime(const LayersId& aId, const TimeStamp& aTime) {
     return true;
@@ -156,9 +157,17 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   // Ensures the WebRenderBridgeParent has completed initialization (either
   // successfully or with failure) by the time this returns. Must be called
   // from the Compositor thread.
-  virtual void EnsureWebRenderBridgeParentInitialized() = 0;
+  virtual void EnsureWebRenderBridgeParentInitialized() {}
 
   bool OwnsExternalImageId(const wr::ExternalImageId& aId) const;
+
+  CompositorManagerParent* GetCompositorManager() const {
+    return mCompositorManager;
+  }
+
+  uint32_t GetNamespace() const { return mNamespace; }
+
+  void SetNamespace(uint32_t aNamespace) { mNamespace = aNamespace; }
 
  protected:
   virtual ~CompositorBridgeParentBase();
@@ -230,6 +239,7 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
 
  protected:
   RefPtr<CompositorManagerParent> mCompositorManager;
+  uint32_t mNamespace;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(
@@ -252,6 +262,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   }
 
   explicit CompositorBridgeParent(CompositorManagerParent* aManager,
+                                  uint32_t aNamespace,
                                   CSSToLayoutDeviceScale aScale,
                                   const TimeDuration& aVsyncRate,
                                   const CompositorOptions& aOptions,

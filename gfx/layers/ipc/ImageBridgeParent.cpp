@@ -63,9 +63,11 @@ void ImageBridgeParent::Setup() {
 
 ImageBridgeParent::ImageBridgeParent(nsISerialEventTarget* aThread,
                                      ProcessId aChildProcessId,
-                                     dom::ContentParentId aContentId)
+                                     dom::ContentParentId aContentId,
+                                     uint32_t aNamespace)
     : mThread(aThread),
       mContentId(aContentId),
+      mNamespace(aNamespace),
       mClosed(false),
       mCompositorThreadHolder(CompositorThreadHolder::GetSingleton()) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -75,10 +77,10 @@ ImageBridgeParent::ImageBridgeParent(nsISerialEventTarget* aThread,
 ImageBridgeParent::~ImageBridgeParent() = default;
 
 /* static */
-ImageBridgeParent* ImageBridgeParent::CreateSameProcess() {
+ImageBridgeParent* ImageBridgeParent::CreateSameProcess(uint32_t aNamespace) {
   base::ProcessId pid = base::GetCurrentProcId();
-  RefPtr<ImageBridgeParent> parent =
-      new ImageBridgeParent(CompositorThread(), pid, dom::ContentParentId());
+  RefPtr<ImageBridgeParent> parent = new ImageBridgeParent(
+      CompositorThread(), pid, dom::ContentParentId(), aNamespace);
 
   {
     MonitorAutoLock lock(*sImageBridgesLock);
@@ -92,7 +94,7 @@ ImageBridgeParent* ImageBridgeParent::CreateSameProcess() {
 
 /* static */
 bool ImageBridgeParent::CreateForGPUProcess(
-    Endpoint<PImageBridgeParent>&& aEndpoint) {
+    Endpoint<PImageBridgeParent>&& aEndpoint, uint32_t aNamespace) {
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_GPU);
 
   nsCOMPtr<nsISerialEventTarget> compositorThread = CompositorThread();
@@ -101,7 +103,8 @@ bool ImageBridgeParent::CreateForGPUProcess(
   }
 
   RefPtr<ImageBridgeParent> parent = new ImageBridgeParent(
-      compositorThread, aEndpoint.OtherPid(), dom::ContentParentId());
+      compositorThread, aEndpoint.OtherPid(), dom::ContentParentId(),
+      aNamespace);
 
   compositorThread->Dispatch(NewRunnableMethod<Endpoint<PImageBridgeParent>&&>(
       "layers::ImageBridgeParent::Bind", parent, &ImageBridgeParent::Bind,
@@ -215,14 +218,15 @@ mozilla::ipc::IPCResult ImageBridgeParent::RecvUpdate(
 
 /* static */
 bool ImageBridgeParent::CreateForContent(
-    Endpoint<PImageBridgeParent>&& aEndpoint, dom::ContentParentId aContentId) {
+    Endpoint<PImageBridgeParent>&& aEndpoint, dom::ContentParentId aContentId,
+    uint32_t aNamespace) {
   nsCOMPtr<nsISerialEventTarget> compositorThread = CompositorThread();
   if (!compositorThread) {
     return false;
   }
 
-  RefPtr<ImageBridgeParent> bridge =
-      new ImageBridgeParent(compositorThread, aEndpoint.OtherPid(), aContentId);
+  RefPtr<ImageBridgeParent> bridge = new ImageBridgeParent(
+      compositorThread, aEndpoint.OtherPid(), aContentId, aNamespace);
   compositorThread->Dispatch(NewRunnableMethod<Endpoint<PImageBridgeParent>&&>(
       "layers::ImageBridgeParent::Bind", bridge, &ImageBridgeParent::Bind,
       std::move(aEndpoint)));
@@ -384,8 +388,7 @@ already_AddRefed<ImageBridgeParent> ImageBridgeParent::GetInstance(
 
 bool ImageBridgeParent::OwnsExternalImageId(
     const wr::ExternalImageId& aId) const {
-  return (static_cast<uint32_t>(wr::AsUint64(aId) >> 32) ==
-          static_cast<uint32_t>(static_cast<uint64_t>(mContentId) >> 32));
+  return (mNamespace == static_cast<uint32_t>(wr::AsUint64(aId) >> 32));
 }
 
 bool ImageBridgeParent::AllocShmem(size_t aSize, ipc::Shmem* aShmem) {

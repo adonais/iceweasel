@@ -3202,7 +3202,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   Endpoint<PImageBridgeChild> imageBridge;
   Endpoint<PVRManagerChild> vrBridge;
   Endpoint<PRemoteDecoderManagerChild> videoManager;
-  AutoTArray<uint32_t, 3> namespaces;
+  AutoTArray<uint32_t, 4> namespaces;
 
   if (!gpm->CreateContentBridges(OtherPid(), &compositor, &imageBridge,
                                  &vrBridge, &videoManager, mChildID,
@@ -3383,7 +3383,7 @@ void ContentParent::OnCompositorUnexpectedShutdown() {
   Endpoint<PImageBridgeChild> imageBridge;
   Endpoint<PVRManagerChild> vrBridge;
   Endpoint<PRemoteDecoderManagerChild> videoManager;
-  AutoTArray<uint32_t, 3> namespaces;
+  AutoTArray<uint32_t, 4> namespaces;
 
   if (!gpm->CreateContentBridges(OtherPid(), &compositor, &imageBridge,
                                  &vrBridge, &videoManager, mChildID,

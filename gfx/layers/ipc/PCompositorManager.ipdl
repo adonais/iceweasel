@@ -77,7 +77,7 @@ parent:
    *   GPU/UI process for each "top level browser window" as above.
    * See gfx/layers/ipc/PCompositorBridge.ipdl for more details.
    */
-  async PCompositorBridge(CompositorBridgeOptions options);
+  async PCompositorBridge(CompositorBridgeOptions options, uint32_t aNamespace);
 
   async AddSharedSurface(ExternalImageId aId, SurfaceDescriptorShared aDesc);
   async RemoveSharedSurface(ExternalImageId aId);
