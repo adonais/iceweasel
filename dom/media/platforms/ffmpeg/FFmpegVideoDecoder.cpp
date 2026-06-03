@@ -920,10 +920,13 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVideoDecoder(
 }
 
 FFmpegVideoDecoder<LIBAV_VER>::~FFmpegVideoDecoder() {
-#ifdef CUSTOMIZED_BUFFER_ALLOCATION
-  auto lock = mAllocatedImages.Lock();
-  MOZ_DIAGNOSTIC_ASSERT(lock->IsEmpty(),
-                        "Should release all shmem buffers before destroy!");
+#ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+  // ffmpeg should have cleared all of its strong references to the decoded data
+  // buffers.
+  if (mImageTracker) {
+    MOZ_DIAGNOSTIC_ASSERT(mImageTracker->IsEmpty(),
+                          "Should release all shmem buffers before destroy!");
+  }
 #endif
 }
 
@@ -1043,9 +1046,9 @@ static int GetVideoBufferWrapper(struct AVCodecContext* aCodecContext,
 
 static void ReleaseVideoBufferWrapper(void* opaque, uint8_t* data) {
   if (opaque) {
-    FFMPEGV_LOG("ReleaseVideoBufferWrapper: PlanarYCbCrImage=%p", opaque);
-    RefPtr<ImageBufferWrapper> image = static_cast<ImageBufferWrapper*>(opaque);
-    image->ReleaseBuffer();
+    FFMPEGV_LOG("ReleaseVideoBufferWrapper: ImageBufferWrapper=%p", opaque);
+    RefPtr image = dont_AddRef(static_cast<ImageBufferWrapper*>(opaque));
+    image->StopTracking();
   }
 }
 
@@ -1275,9 +1278,20 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
 #  endif
   MOZ_ASSERT(aFrame->data[0] && aFrame->data[1] && aFrame->data[2]);
 
-  // This will hold a reference to image, and the reference would be dropped
-  // when ffmpeg tells us that the buffer is no longer needed.
-  auto imageWrapper = MakeRefPtr<ImageBufferWrapper>(image.get(), this);
+#  ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+  if (!mImageTracker) {
+    mImageTracker = MakeRefPtr<ImageBufferTracker>();
+  }
+  auto imageWrapper =
+      MakeRefPtr<ImageBufferWrapper>(std::move(image), mImageTracker);
+#  else
+  auto imageWrapper = MakeRefPtr<ImageBufferWrapper>(std::move(image));
+#  endif
+
+  // This will hold a strong reference to imageWrapper, and the reference will
+  // be dropped when ffmpeg tells us that the buffer is no longer needed. Since
+  // the wrapper keeps image alive, it will prevent recycling until ffmpeg is
+  // done with the buffer.
   aFrame->buf[0] =
       mLib->av_buffer_create(aFrame->data[0], dataSize.value(),
                              ReleaseVideoBufferWrapper, imageWrapper.get(), 0);
@@ -1286,13 +1300,12 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
     return AVERROR(EINVAL);
   }
 
+  auto* imageWrapperPtr = imageWrapper.forget().take();
+  imageWrapperPtr->StartTracking();
+
   FFMPEG_LOG("Created av buffer, buf=%p, data=%p, image=%p, sz=%d",
-             aFrame->buf[0], aFrame->data[0], imageWrapper.get(),
+             aFrame->buf[0], aFrame->data[0], imageWrapperPtr,
              dataSize.value());
-  {
-    auto lock = mAllocatedImages.Lock();
-    lock->Insert(imageWrapper.get());
-  }
   mIsUsingShmemBufferForDecode = Some(true);
   return 0;
 }
@@ -2050,10 +2063,10 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
 #  endif
   if (mIsUsingShmemBufferForDecode && *mIsUsingShmemBufferForDecode &&
       !requiresCopy) {
-    RefPtr<ImageBufferWrapper> wrapper = static_cast<ImageBufferWrapper*>(
+    auto* wrapper = static_cast<ImageBufferWrapper*>(
         mLib->av_buffer_get_opaque(mFrame->buf[0]));
     MOZ_ASSERT(wrapper);
-    FFMPEG_LOGV("Create a video data from a shmem image=%p", wrapper.get());
+    FFMPEG_LOGV("Create a video data from a shmem image=%p", wrapper);
     v = VideoData::CreateFromImage(
         mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
         TimeUnit::FromMicroseconds(aDuration), wrapper->AsImage(),
