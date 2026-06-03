@@ -14,6 +14,7 @@
 
 #include "SerialLogging.h"
 #include "mozilla/AsyncPlatformPipes.h"
+#include "mozilla/SyncRunnable.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsString.h"
@@ -129,9 +130,57 @@ void PosixSerialPlatformService::Shutdown() {
   MOZ_LOG(gWebSerialLog, LogLevel::Info,
           ("PosixSerialPlatformService[%p]::Shutdown (closing %u open ports)",
            this, mOpenPorts.Count()));
-  StopMonitoring();
-  mOpenPorts.Clear();
+
   SerialPlatformService::Shutdown();
+
+#ifdef XP_LINUX
+  if (mMonitorSourceID) {
+    g_source_remove(mMonitorSourceID);
+    mMonitorSourceID = 0;
+  }
+#elif defined(XP_MACOSX)
+  if (mAddedIterator) {
+    IOObjectRelease(mAddedIterator);
+    mAddedIterator = 0;
+  }
+
+  if (mRemovedIterator) {
+    IOObjectRelease(mRemovedIterator);
+    mRemovedIterator = 0;
+  }
+
+  if (mNotificationPort) {
+    CFRunLoopSourceRef runLoopSource =
+        IONotificationPortGetRunLoopSource(mNotificationPort);
+    if (runLoopSource) {
+      CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource,
+                            kCFRunLoopDefaultMode);
+      MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+              ("PosixSerialPlatformService[%p]::Shutdown removed run "
+               "loop source from main run loop",
+               this));
+    }
+    IONotificationPortDestroy(mNotificationPort);
+    mNotificationPort = nullptr;
+  }
+#endif
+
+  RefPtr<PosixSerialPlatformService> self = this;
+  SyncRunnable::DispatchToThread(
+      IOThread(), NS_NewRunnableFunction(
+                      "PosixSerialPlatformService::Shutdown:IOCleanup", [self] {
+                        self->mOpenPorts.Clear();
+#ifdef XP_LINUX
+                        if (self->mMonitor && self->mUdevLib) {
+                          self->mUdevLib->udev_monitor_unref(self->mMonitor);
+                          self->mMonitor = nullptr;
+                        }
+                        self->mUdevLib = nullptr;
+#endif
+                      }));
+
+  MOZ_LOG(gWebSerialLog, LogLevel::Info,
+          ("PosixSerialPlatformService[%p]::Shutdown complete", this));
 }
 
 nsresult PosixSerialPlatformService::EnumeratePortsImpl(
@@ -1111,41 +1160,6 @@ nsresult PosixSerialPlatformService::InitializeMacOS() {
 }
 #endif
 
-void PosixSerialPlatformService::StopMonitoring() {
-#ifdef XP_LINUX
-  ShutdownUdev();
-#elif defined(XP_MACOSX)
-  if (mAddedIterator) {
-    IOObjectRelease(mAddedIterator);
-    mAddedIterator = 0;
-  }
-
-  if (mRemovedIterator) {
-    IOObjectRelease(mRemovedIterator);
-    mRemovedIterator = 0;
-  }
-
-  if (mNotificationPort) {
-    CFRunLoopSourceRef runLoopSource =
-        IONotificationPortGetRunLoopSource(mNotificationPort);
-    if (runLoopSource) {
-      CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource,
-                            kCFRunLoopDefaultMode);
-      MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-              ("PosixSerialPlatformService[%p]::StopMonitoring removed run "
-               "loop source from main run loop",
-               this));
-    }
-    IONotificationPortDestroy(mNotificationPort);
-    mNotificationPort = nullptr;
-  }
-
-  MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("PosixSerialPlatformService[%p]::StopMonitoring monitoring stopped",
-           this));
-#endif
-}
-
 #ifdef XP_LINUX
 nsresult PosixSerialPlatformService::InitializeUdev() {
   mUdevLib = MakeUnique<udev_lib>();
@@ -1221,25 +1235,6 @@ nsresult PosixSerialPlatformService::InitializeUdev() {
            "initialized",
            this));
   return NS_OK;
-}
-
-void PosixSerialPlatformService::ShutdownUdev() {
-  if (mMonitorSourceID) {
-    g_source_remove(mMonitorSourceID);
-    mMonitorSourceID = 0;
-  }
-
-  if (mMonitor && mUdevLib) {
-    mUdevLib->udev_monitor_unref(mMonitor);
-    mMonitor = nullptr;
-  }
-
-  mUdevLib = nullptr;
-
-  MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("PosixSerialPlatformService[%p]::ShutdownUdev udev monitoring "
-           "shutdown",
-           this));
 }
 
 gboolean PosixSerialPlatformService::OnUdevMonitor(GIOChannel* source,

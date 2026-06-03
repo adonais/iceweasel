@@ -49,11 +49,9 @@ class PosixSerialPlatformService final : public SerialPlatformService {
   nsresult ConfigurePort(int aFd, const IPCSerialOptions& aOptions);
 
   nsresult StartMonitoring();
-  void StopMonitoring();
 
 #ifdef XP_LINUX
   nsresult InitializeUdev();
-  void ShutdownUdev();
   static gboolean OnUdevMonitor(GIOChannel* source, GIOCondition condition,
                                 gpointer data);
   void ReadUdevChange();
