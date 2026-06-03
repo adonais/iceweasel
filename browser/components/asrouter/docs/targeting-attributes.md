@@ -639,16 +639,6 @@ declare const currentTabInstalledAsWebApp: Promise<boolean>;
 
 Returns the number of currently open tab groups.
 
-### `tabsOpenInTopWindow`
-
-Returns the number of tabs open in the top browser window.
-
-#### Definition
-
-```ts
-declare const tabsOpenInTopWindow: number;
-```
-
 ### `savedTabGroups`
 
 Returns the number of tab groups the user has saved.
