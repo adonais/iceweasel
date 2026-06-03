@@ -86,7 +86,8 @@
             android:layout_height="24dp"
             android:layout_gravity="center"
             android:contentDescription="@string/radio_preference_info_content_description"
-            app:srcCompat="@drawable/mozac_ic_information_24" />
+            app:srcCompat="@drawable/mozac_ic_information_24"
+            app:tint="?attr/colorOnSurface" />
     </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
