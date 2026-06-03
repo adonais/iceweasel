@@ -1036,7 +1036,8 @@ ExternalResourceMap::PendingLoad::OnStartRequest(nsIRequest* aRequest) {
     return rv2;
   }
 
-  return mTargetListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> listener = mTargetListener;
+  return listener->OnStartRequest(aRequest);
 }
 
 nsresult ExternalResourceMap::PendingLoad::SetupViewer(
@@ -1127,7 +1128,8 @@ ExternalResourceMap::PendingLoad::OnDataAvailable(nsIRequest* aRequest,
   if (mDisplayDocument->ExternalResourceMap().HaveShutDown()) {
     return NS_BINDING_ABORTED;
   }
-  return mTargetListener->OnDataAvailable(aRequest, aStream, aOffset, aCount);
+  nsCOMPtr<nsIStreamListener> listener = mTargetListener;
+  return listener->OnDataAvailable(aRequest, aStream, aOffset, aCount);
 }
 
 NS_IMETHODIMP

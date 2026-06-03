@@ -250,7 +250,8 @@ AlternativeDataStreamListener::OnStartRequest(nsIRequest* aRequest) {
   mStatus = AlternativeDataStreamListener::FALLBACK;
   mAlternativeDataCacheEntryId = 0;
   MOZ_ASSERT(mFetchDriver);
-  return mFetchDriver->OnStartRequest(aRequest);
+  RefPtr<FetchDriver> fetchDriver = mFetchDriver;
+  return fetchDriver->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP
@@ -266,8 +267,9 @@ AlternativeDataStreamListener::OnDataAvailable(nsIRequest* aRequest,
   }
   if (mStatus == AlternativeDataStreamListener::FALLBACK) {
     MOZ_ASSERT(mFetchDriver);
-    return mFetchDriver->OnDataAvailable(aRequest, aInputStream, aOffset,
-                                         aCount);
+    RefPtr<FetchDriver> fetchDriver = mFetchDriver;
+    return fetchDriver->OnDataAvailable(aRequest, aInputStream, aOffset,
+                                        aCount);
   }
   return NS_OK;
 }
@@ -1260,7 +1262,8 @@ class DataAvailableRunnable final : public Runnable {
 
   NS_IMETHOD
   Run() override {
-    mObserver->OnDataAvailable();
+    RefPtr<FetchDriverObserver> observer = mObserver;
+    observer->OnDataAvailable();
     mObserver = nullptr;
     return NS_OK;
   }

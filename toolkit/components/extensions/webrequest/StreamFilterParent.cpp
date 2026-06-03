@@ -413,8 +413,8 @@ nsresult StreamFilterParent::Write(Data& aData) {
       NS_ASSIGNMENT_DEPEND);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv =
-      mOrigListener->OnDataAvailable(mChannel, stream, mOffset, aData.Length());
+  nsCOMPtr<nsIStreamListener> origListener = mOrigListener;
+  rv = origListener->OnDataAvailable(mChannel, stream, mOffset, aData.Length());
   NS_ENSURE_SUCCESS(rv, rv);
 
   mOffset += aData.Length();
@@ -585,7 +585,8 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  nsresult rv = mOrigListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> origListener = mOrigListener;
+  nsresult rv = origListener->OnStartRequest(aRequest);
 
   // Important: Do this only *after* running the next listener in the chain, so
   // that we get the final delivery target after any retargeting that it may do.
@@ -649,7 +650,8 @@ nsresult StreamFilterParent::EmitStopRequest(nsresult aStatusCode) {
   MOZ_ASSERT(!mSentStop);
 
   mSentStop = true;
-  nsresult rv = mOrigListener->OnStopRequest(mChannel, aStatusCode);
+  nsCOMPtr<nsIStreamListener> origListener = mOrigListener;
+  nsresult rv = origListener->OnStopRequest(mChannel, aStatusCode);
 
   if (mLoadGroup && !mDisconnected) {
     Unused << mLoadGroup->RemoveRequest(this, nullptr, aStatusCode);
@@ -689,8 +691,9 @@ StreamFilterParent::OnDataAvailable(nsIRequest* aRequest,
     }
 
     mOffset += aCount;
-    return mOrigListener->OnDataAvailable(aRequest, aInputStream,
-                                          mOffset - aCount, aCount);
+    nsCOMPtr<nsIStreamListener> origListener = mOrigListener;
+    return origListener->OnDataAvailable(aRequest, aInputStream,
+                                         mOffset - aCount, aCount);
   }
 
   Data data;

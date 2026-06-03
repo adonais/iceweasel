@@ -134,7 +134,8 @@ NS_IMETHODIMP nsDeflateConverter::OnDataAvailable(nsIRequest* aRequest,
 NS_IMETHODIMP nsDeflateConverter::OnStartRequest(nsIRequest* aRequest) {
   if (!mListener) return NS_ERROR_NOT_INITIALIZED;
 
-  return mListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP nsDeflateConverter::OnStopRequest(nsIRequest* aRequest,
@@ -152,7 +153,8 @@ NS_IMETHODIMP nsDeflateConverter::OnStopRequest(nsIRequest* aRequest,
 
   deflateEnd(&mZstream);
 
-  return mListener->OnStopRequest(aRequest, aStatusCode);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStopRequest(aRequest, aStatusCode);
 }
 
 nsresult nsDeflateConverter::PushAvailableData(nsIRequest* aRequest) {
@@ -167,7 +169,8 @@ nsresult nsDeflateConverter::PushAvailableData(nsIRequest* aRequest) {
                                       NS_ASSIGNMENT_DEPEND);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = mListener->OnDataAvailable(aRequest, stream, mOffset, bytesToWrite);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  rv = listener->OnDataAvailable(aRequest, stream, mOffset, bytesToWrite);
 
   // now set the state for 'deflate'
   mZstream.next_out = mWriteBuffer;

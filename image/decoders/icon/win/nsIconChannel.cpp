@@ -971,16 +971,16 @@ nsIconChannel::GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) {
 
 // nsIRequestObserver methods
 NS_IMETHODIMP nsIconChannel::OnStartRequest(nsIRequest* aRequest) {
-  if (mListener) {
-    return mListener->OnStartRequest(this);
+  if (nsCOMPtr<nsIStreamListener> listener = mListener) {
+    return listener->OnStartRequest(this);
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsIconChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
-  if (mListener) {
-    mListener->OnStopRequest(this, aStatus);
+  if (nsCOMPtr<nsIStreamListener> listener = mListener) {
+    listener->OnStopRequest(this, aStatus);
     mListener = nullptr;
   }
 
@@ -999,8 +999,8 @@ nsIconChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
 NS_IMETHODIMP
 nsIconChannel::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aStream,
                                uint64_t aOffset, uint32_t aCount) {
-  if (mListener) {
-    return mListener->OnDataAvailable(this, aStream, aOffset, aCount);
+  if (nsCOMPtr<nsIStreamListener> listener = mListener) {
+    return listener->OnDataAvailable(this, aStream, aOffset, aCount);
   }
   return NS_OK;
 }

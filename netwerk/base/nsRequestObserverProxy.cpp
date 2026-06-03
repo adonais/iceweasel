@@ -43,6 +43,7 @@ class nsOnStartRequestEvent : public nsARequestObserverEvent {
 
   NS_IMETHOD Run() override {
     LOG(("nsOnStartRequestEvent::HandleEvent [req=%p]\n", mRequest.get()));
+    nsMainThreadPtrHandle<nsIRequestObserver> observer = mProxy->mObserver;
 
     if (!mProxy->mObserver) {
       MOZ_ASSERT_UNREACHABLE(
@@ -52,7 +53,7 @@ class nsOnStartRequestEvent : public nsARequestObserverEvent {
     }
 
     LOG(("handle startevent=%p\n", this));
-    nsresult rv = mProxy->mObserver->OnStartRequest(mRequest);
+    nsresult rv = observer->OnStartRequest(mRequest);
     if (NS_FAILED(rv)) {
       LOG(("OnStartRequest failed [rv=%" PRIx32 "] canceling request!\n",
            static_cast<uint32_t>(rv)));

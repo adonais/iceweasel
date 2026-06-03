@@ -60,14 +60,16 @@ NS_IMPL_ISUPPORTS(ChannelMediaResource::Listener, nsIRequestObserver,
 nsresult ChannelMediaResource::Listener::OnStartRequest(nsIRequest* aRequest) {
   MOZ_ASSERT(NS_IsMainThread());
   if (!mResource) return NS_OK;
-  return mResource->OnStartRequest(aRequest, mOffset);
+  RefPtr<ChannelMediaResource> resource = mResource;
+  return resource->OnStartRequest(aRequest, mOffset);
 }
 
 nsresult ChannelMediaResource::Listener::OnStopRequest(nsIRequest* aRequest,
                                                        nsresult aStatus) {
   MOZ_ASSERT(NS_IsMainThread());
   if (!mResource) return NS_OK;
-  return mResource->OnStopRequest(aRequest, aStatus);
+  RefPtr<ChannelMediaResource> resource = mResource;
+  return resource->OnStopRequest(aRequest, aStatus);
 }
 
 nsresult ChannelMediaResource::Listener::OnDataAvailable(

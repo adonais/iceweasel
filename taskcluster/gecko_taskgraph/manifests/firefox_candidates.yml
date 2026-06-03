@@ -50,7 +50,6 @@ tasktype_map:
     repackage-deb-l10n: repackage
     repackage-signing: repackage
     repackage-signing-msi: repackage
-    repackage-signing-shippable-l10n-msix: signing
     langpack-copy: scriptworker
     attribution: build
     attribution-l10n: build
@@ -361,19 +360,6 @@ mapping:
             - win32-devedition
         pretty_name: Firefox Setup ${version}.msi
         checksums_path: ${path_platform}/${locale}/Firefox Setup ${version}.msi
-    target.installer.msix:
-        <<: *default
-        description: "Windows MSIX installer"
-        from:
-            - repackage-signing-shippable-l10n-msix
-        only_for_platforms:
-            - win64-shippable
-            - win32-shippable
-            - win64-devedition
-            - win32-devedition
-        locale_prefix: 'multi/'
-        pretty_name: Firefox Setup ${version}.msix
-        checksums_path: ${path_platform}/multi/Firefox Setup ${version}.msix
     target.complete.mar:
         <<: *default
         description: "Complete MAR to serve as updates"

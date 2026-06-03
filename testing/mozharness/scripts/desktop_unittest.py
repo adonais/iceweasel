@@ -950,12 +950,6 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
             )
 
     def _stage_xpcshell(self, suites):
-        if "WindowsApps" in self.binary_path:
-            self.log(
-                "Skipping stage xpcshell for MSIX tests because we cannot copy files into the installation directory."
-            )
-            return
-
         self._stage_files(self.config["xpcshell_name"])
         # http3server isn't built for Windows tests or Linux asan/tsan
         # builds. Only stage if the `http3server_name` config is set and if
@@ -1324,14 +1318,8 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
         return True
 
     def uninstall(self):
-        # Technically, we might miss this step if earlier steps fail badly.
-        # If that becomes a big issue we should consider moving this to
-        # something that is more likely to execute, such as
-        # postflight_run_cmd_suites
-        if "WindowsApps" in self.binary_path:
-            self.uninstall_app(self.binary_path)
-        else:
-            self.log("Skipping uninstall for non-MSIX test")
+        # Suppresses the parent's mozuninstall; desktop tests don't need it.
+        pass
 
 
 # main {{{1

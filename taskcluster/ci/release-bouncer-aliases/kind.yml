@@ -39,7 +39,6 @@ jobs:
             firefox-devedition-latest: installer
             firefox-devedition-stub: stub-installer
             firefox-devedition-msi-latest-ssl: msi
-            firefox-devedition-msix-latest-ssl: msix
         shipping-product: devedition
         treeherder:
             platform: devedition-release/opt
@@ -52,7 +51,6 @@ jobs:
                     firefox-beta-latest: installer
                     firefox-beta-stub: stub-installer
                     firefox-beta-msi-latest-ssl: msi
-                    firefox-beta-msix-latest-ssl: msix
                     firefox-beta-pkg-latest-ssl: pkg
                     firefox-beta-langpack-latest-ssl: langpack
                 release.*:
@@ -60,14 +58,12 @@ jobs:
                     firefox-latest: installer
                     firefox-stub: stub-installer
                     firefox-msi-latest-ssl: msi
-                    firefox-msix-latest-ssl: msix
                     firefox-pkg-latest-ssl: pkg
                     firefox-langpack-latest-ssl: langpack
                 esr115:
                     firefox-esr115-latest-ssl: installer-ssl
                     firefox-esr115-latest: installer
                     firefox-esr115-msi-latest-ssl: msi
-                    firefox-esr115-msix-latest-ssl: msix
                     firefox-esr115-pkg-latest-ssl: pkg
                     firefox-esr115-langpack-latest-ssl: langpack
                 esrXXX:  # XXX - to change when we branch next ESR
@@ -77,13 +73,11 @@ jobs:
                     firefox-esr-latest-ssl: installer-ssl
                     firefox-esr-latest: installer
                     firefox-esr-msi-latest-ssl: msi
-                    firefox-esr-msix-latest-ssl: msix
                     firefox-esr-pkg-latest-ssl: pkg
                     firefox-esr-langpack-latest-ssl: langpack
                     firefox-esr-next-latest-ssl: installer-ssl
                     firefox-esr-next-latest: installer
                     firefox-esr-next-msi-latest-ssl: msi
-                    firefox-esr-next-msix-latest-ssl: msix
                     firefox-esr-next-pkg-latest-ssl: pkg
                     firefox-esr-next-langpack-latest-ssl: langpack
                 default: {}

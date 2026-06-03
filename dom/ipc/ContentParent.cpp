@@ -4275,6 +4275,10 @@ mozilla::ipc::IPCResult ContentParent::RecvCloneDocumentTreeInto(
     return IPC_FAIL(this, "Illegal subframe clone");
   }
 
+  if (aPrintData.remotePrintJob()) {
+    return IPC_FAIL(this, "Shouldn't pass print jobs around this IPC call");
+  }
+
   ContentParent* cp = source->GetContentParent();
   if (NS_WARN_IF(!cp)) {
     return IPC_OK();

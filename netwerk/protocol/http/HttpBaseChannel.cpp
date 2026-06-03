@@ -1401,7 +1401,8 @@ class InterceptFailedOnStop : public nsIStreamListener {
   NS_DECL_THREADSAFE_ISUPPORTS
 
   NS_IMETHOD OnStartRequest(nsIRequest* aRequest) override {
-    return mNext->OnStartRequest(aRequest);
+    nsCOMPtr<nsIStreamListener> next = mNext;
+    return next->OnStartRequest(aRequest);
   }
 
   NS_IMETHOD OnStopRequest(nsIRequest* aRequest,
@@ -1411,12 +1412,14 @@ class InterceptFailedOnStop : public nsIStreamListener {
            mChannel, static_cast<uint32_t>(aStatusCode)));
       mChannel->mStatus = aStatusCode;
     }
-    return mNext->OnStopRequest(aRequest, aStatusCode);
+    nsCOMPtr<nsIStreamListener> next = mNext;
+    return next->OnStopRequest(aRequest, aStatusCode);
   }
 
   NS_IMETHOD OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInputStream,
                              uint64_t aOffset, uint32_t aCount) override {
-    return mNext->OnDataAvailable(aRequest, aInputStream, aOffset, aCount);
+    nsCOMPtr<nsIStreamListener> next = mNext;
+    return next->OnDataAvailable(aRequest, aInputStream, aOffset, aCount);
   }
 };
 
@@ -3403,7 +3406,8 @@ OpaqueResponse HttpBaseChannel::PerformOpaqueResponseSafelistCheckAfterSniff(
 }
 
 bool HttpBaseChannel::NeedOpaqueResponseAllowedCheckAfterSniff() const {
-  return mORB ? mORB->IsSniffing() : false;
+  RefPtr<OpaqueResponseBlocker> orb(mORB);
+  return orb ? orb->IsSniffing() : false;
 }
 
 void HttpBaseChannel::BlockOpaqueResponseAfterSniff(
@@ -3411,12 +3415,14 @@ void HttpBaseChannel::BlockOpaqueResponseAfterSniff(
     const OpaqueResponseBlockedTelemetryReason aTelemetryReason) {
   MOZ_DIAGNOSTIC_ASSERT(mORB);
   LogORBError(aReason, aTelemetryReason);
-  mORB->BlockResponse(this, NS_ERROR_FAILURE);
+  RefPtr<OpaqueResponseBlocker> orb(mORB);
+  orb->BlockResponse(this, NS_ERROR_FAILURE);
 }
 
 void HttpBaseChannel::AllowOpaqueResponseAfterSniff() {
   MOZ_DIAGNOSTIC_ASSERT(mORB);
-  mORB->AllowResponse();
+  RefPtr<OpaqueResponseBlocker> orb(mORB);
+  orb->AllowResponse();
 }
 
 void HttpBaseChannel::SetChannelBlockedByOpaqueResponse() {

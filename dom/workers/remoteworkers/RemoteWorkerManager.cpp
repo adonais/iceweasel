@@ -103,7 +103,8 @@ bool RemoteWorkerManager::MatchRemoteType(const nsACString& processRemoteType,
 
 // static
 Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
-    const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerKind aWorkerKind) {
+    const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerKind aWorkerKind,
+    const nsACString& aCurrentRemoteType) {
   AssertIsOnMainThread();
 
   MOZ_ASSERT_IF(aWorkerKind == WorkerKind::WorkerKindService,
@@ -114,17 +115,6 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
   if (NS_WARN_IF(!e10sUtils)) {
     LOG(("GetRemoteType Abort: could not import E10SUtils"));
     return Err(NS_ERROR_DOM_ABORT_ERR);
-  }
-
-  nsCString preferredRemoteType = DEFAULT_REMOTE_TYPE;
-  if (aWorkerKind == WorkerKind::WorkerKindShared) {
-    if (auto* contentChild = ContentChild::GetSingleton()) {
-      // For a shared worker set the preferred remote type to the content
-      // child process remote type.
-      preferredRemoteType = contentChild->GetRemoteType();
-    } else if (aPrincipal->IsSystemPrincipal()) {
-      preferredRemoteType = NOT_REMOTE_TYPE;
-    }
   }
 
   nsIE10SUtils::RemoteWorkerType workerType;
@@ -154,7 +144,7 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
   nsCString remoteType = NOT_REMOTE_TYPE;
 
   nsresult rv = e10sUtils->GetRemoteTypeForWorkerPrincipal(
-      aPrincipal, workerType, isMultiprocess, isFission, preferredRemoteType,
+      aPrincipal, workerType, isMultiprocess, isFission, aCurrentRemoteType,
       remoteType);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     LOG(
@@ -228,7 +218,7 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
         "processRemoteType=%s, errorName=%s, errorLocation=%s:%d",
         aWorkerKind == WorkerKind::WorkerKindService ? "service" : "shared",
         principalTypeOrScheme.get(),
-        PromiseFlatCString(RemoteTypePrefix(preferredRemoteType)).get(),
+        PromiseFlatCString(RemoteTypePrefix(aCurrentRemoteType)).get(),
         processRemoteType.get(), errorName.get(), errorFilename.get(),
         jsmErrorLineNumber);
     MOZ_CRASH_UNSAFE_PRINTF(
@@ -245,7 +235,7 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
         ("GetRemoteType workerType=%s, principal=%s, "
          "preferredRemoteType=%s, selectedRemoteType=%s",
          aWorkerKind == WorkerKind::WorkerKindService ? "service" : "shared",
-         principalOrigin.get(), preferredRemoteType.get(), remoteType.get()));
+         principalOrigin.get(), PromiseFlatCString(aCurrentRemoteType).get(), remoteType.get()));
   }
 
   return remoteType;
@@ -299,7 +289,8 @@ bool RemoteWorkerManager::IsRemoteTypeAllowed(const RemoteWorkerData& aData) {
   bool isServiceWorker = aData.serviceWorkerData().type() ==
                          OptionalServiceWorkerData::TServiceWorkerData;
   auto remoteType = GetRemoteType(
-      principal, isServiceWorker ? WorkerKindService : WorkerKindShared);
+      principal, isServiceWorker ? WorkerKindService : WorkerKindShared,
+      contentChild->GetRemoteType());
   if (NS_WARN_IF(remoteType.isErr())) {
     LOG(("IsRemoteTypeAllowed: Error to retrieve remote type"));
     return false;

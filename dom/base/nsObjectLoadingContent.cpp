@@ -456,7 +456,8 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
           NS_GetFinalChannelURI(mChannel, getter_AddRefs(mURI)));
     }
 
-    return mFinalListener->OnStartRequest(aRequest);
+    nsCOMPtr<nsIStreamListener> listener = mFinalListener;
+    return listener->OnStartRequest(aRequest);
   }
 
   // Otherwise we should be state loading, and call LoadObject with the channel

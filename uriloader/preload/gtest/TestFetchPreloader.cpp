@@ -26,20 +26,25 @@ class FakeChannel : public nsIChannel {
   NS_DECL_NSICHANNEL
   NS_DECL_NSIREQUEST
 
-  nsresult Start() { return mListener->OnStartRequest(this); }
+  nsresult Start() {
+    nsCOMPtr<nsIStreamListener> listener = mListener;
+    return listener->OnStartRequest(this);
+  }
   nsresult Data(const nsACString& aData) {
     if (NS_FAILED(mStatus)) {
       return mStatus;
     }
     nsCOMPtr<nsIInputStream> is;
     NS_NewCStringInputStream(getter_AddRefs(is), aData);
-    return mListener->OnDataAvailable(this, is, 0, aData.Length());
+    nsCOMPtr<nsIStreamListener> listener = mListener;
+    return listener->OnDataAvailable(this, is, 0, aData.Length());
   }
   nsresult Stop(nsresult status) {
     if (NS_SUCCEEDED(mStatus)) {
       mStatus = status;
     }
-    mListener->OnStopRequest(this, mStatus);
+    nsCOMPtr<nsIStreamListener> listener = mListener;
+    listener->OnStopRequest(this, mStatus);
     mListener = nullptr;
     return mStatus;
   }

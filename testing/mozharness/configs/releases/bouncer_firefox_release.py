@@ -66,20 +66,6 @@ config = {
                 "win64",
             ],
         },
-        "msix": {
-            "product-name": "Firefox-%(version)s-msix-SSL",
-            "platforms": [
-                "win",
-                "win64",
-            ],
-        },
-        "msix-latest": {
-            "product-name": "Firefox-msix-latest-SSL",
-            "platforms": [
-                "win",
-                "win64",
-            ],
-        },
         "langpack": {
             "product-name": "Firefox-%(version)s-langpack-SSL",
             "platforms": [

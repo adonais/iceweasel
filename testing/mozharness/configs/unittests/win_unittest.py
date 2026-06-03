@@ -204,14 +204,6 @@ config = {
             ],
             "tests": [],
         },
-        "xpcshell-msix": {
-            "options": [
-                "--app-binary=%(binary_path)s",
-                "--app-path=%(install_dir)s",
-                "--xre-path=%(install_dir)s",
-            ],
-            "tests": [],
-        },
     },
     "all_cppunittest_suites": {"cppunittest": ["tests/cppunittest"]},
     "all_gtest_suites": {"gtest": []},

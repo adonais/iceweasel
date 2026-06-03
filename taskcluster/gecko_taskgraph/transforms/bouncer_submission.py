@@ -95,14 +95,6 @@ CONFIG_PER_BOUNCER_PRODUCT = {
             "win64": "{pretty_product}%20Setup%20{version}.msi",
         },
     },
-    "msix": {
-        "name_postfix": "-msix-SSL",
-        "path_template": RELEASES_PATH_TEMPLATE.replace(":lang", "multi"),
-        "file_names": {
-            "win": "{pretty_product}%20Setup%20{version}.msix",
-            "win64": "{pretty_product}%20Setup%20{version}.msix",
-        },
-    },
     "pkg": {
         "name_postfix": "-pkg-SSL",
         "path_template": RELEASES_PATH_TEMPLATE,
@@ -210,7 +202,7 @@ partial-related entry for "{}"'.format(
             previous_version,
         ): {
             "options": {
-                "add_locales": False if "msix" in bouncer_product else True,
+                "add_locales": True,
                 "ssl_only": craft_ssl_only(bouncer_product, project),
             },
             "paths_per_bouncer_platform": craft_paths_per_bouncer_platform(

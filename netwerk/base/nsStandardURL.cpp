@@ -3898,6 +3898,10 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
   NS_ENSURE_TRUE(isSubSegment(mUsername, mAuthority), false);
   NS_ENSURE_TRUE(isSubSegment(mPassword, mAuthority), false);
 
+  if (mAuthority.mLen >= 0 && mPath.mLen >= 0) {
+    NS_ENSURE_TRUE(mPath.mPos == mAuthority.mPos + mAuthority.mLen, false);
+  }
+
   if (!IsValid()) {
     return false;
   }

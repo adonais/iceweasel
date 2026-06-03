@@ -28,7 +28,6 @@ SIGNING_FORMATS = {
     "target.installer.exe": ["gcp_prod_autograph_authenticode_202412_stub"],
     "target.stub-installer.exe": ["gcp_prod_autograph_authenticode_202412_stub"],
     "target.installer.msi": ["gcp_prod_autograph_authenticode_202412"],
-    "target.installer.msix": ["gcp_prod_autograph_authenticode_202412"],
 }
 
 transforms = TransformSequence()
@@ -58,15 +57,6 @@ def make_repackage_signing_description(config, jobs):
         if config.kind == "repackage-signing-msi":
             treeherder["symbol"] = "MSIs({})".format(locale or "N")
 
-        elif config.kind in (
-            "repackage-signing-msix",
-            "repackage-signing-shippable-l10n-msix",
-        ):
-            # Like "MSIXs(Bs-multi)".
-            treeherder["symbol"] = "MSIXs({})".format(
-                dep_job.task.get("extra", {}).get("treeherder", {}).get("symbol", "B")
-            )
-
         label = job["label"]
 
         dep_kind = dep_job.kind
@@ -77,15 +67,9 @@ def make_repackage_signing_description(config, jobs):
 
         signing_dependencies = dep_job.dependencies
         # This is so we get the build task etc in our dependencies to have better beetmover
-        # support.  But for multi-locale MSIX packages, we don't want the signing task to directly
-        # depend on the langpack tasks.
+        # support.
         dependencies.update(
-            {
-                k: v
-                for k, v in signing_dependencies.items()
-                if k != "docker-image"
-                and not k.startswith("shippable-l10n-signing-linux64")
-            }
+            {k: v for k, v in signing_dependencies.items() if k != "docker-image"}
         )
 
         description = (

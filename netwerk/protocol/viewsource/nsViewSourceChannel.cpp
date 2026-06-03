@@ -704,7 +704,8 @@ nsViewSourceChannel::OnStartRequest(nsIRequest* aRequest) {
     Cancel(rv);
   }
 
-  return mListener->OnStartRequest(static_cast<nsIViewSourceChannel*>(this));
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStartRequest(static_cast<nsIViewSourceChannel*>(this));
 }
 
 NS_IMETHODIMP
@@ -719,7 +720,8 @@ nsViewSourceChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     }
   }
 
-  nsresult rv = mListener->OnStopRequest(
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  nsresult rv = listener->OnStopRequest(
       static_cast<nsIViewSourceChannel*>(this), aStatus);
 
   ReleaseListeners();
@@ -733,8 +735,9 @@ nsViewSourceChannel::OnDataAvailable(nsIRequest* aRequest,
                                      nsIInputStream* aInputStream,
                                      uint64_t aSourceOffset, uint32_t aLength) {
   NS_ENSURE_TRUE(mListener, NS_ERROR_FAILURE);
-  return mListener->OnDataAvailable(static_cast<nsIViewSourceChannel*>(this),
-                                    aInputStream, aSourceOffset, aLength);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnDataAvailable(static_cast<nsIViewSourceChannel*>(this),
+                                   aInputStream, aSourceOffset, aLength);
 }
 
 // nsIHttpChannel methods
