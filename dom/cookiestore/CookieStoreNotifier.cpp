@@ -47,13 +47,18 @@ already_AddRefed<CookieStoreNotifier> CookieStoreNotifier::Create(
     return nullptr;
   }
 
+  nsCString host;
+  if (NS_WARN_IF(NS_FAILED(principal->GetAsciiHost(host))) || host.IsEmpty()) {
+    return nullptr;
+  }
+
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (NS_WARN_IF(!os)) {
     return nullptr;
   }
 
   RefPtr<CookieStoreNotifier> notifier = new CookieStoreNotifier(
-      aCookieStore, baseDomain, principal->OriginAttributesRef());
+      aCookieStore, baseDomain, host, principal->OriginAttributesRef());
 
   nsresult rv =
       os->AddObserver(notifier,
@@ -68,9 +73,10 @@ already_AddRefed<CookieStoreNotifier> CookieStoreNotifier::Create(
 
 CookieStoreNotifier::CookieStoreNotifier(
     CookieStore* aCookieStore, const nsACString& aBaseDomain,
-    const OriginAttributes& aOriginAttributes)
+    const nsACString& aHost, const OriginAttributes& aOriginAttributes)
     : mCookieStore(aCookieStore),
       mBaseDomain(aBaseDomain),
+      mHost(aHost),
       mOriginAttributes(aOriginAttributes) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCookieStore);
@@ -126,6 +132,10 @@ CookieStoreNotifier::Observe(nsISupports* aSubject, const char* aTopic,
   }
 
   if (cookie->OriginAttributesNative() != mOriginAttributes) {
+    return NS_OK;
+  }
+
+  if (!net::CookieCommons::DomainMatches(net::Cookie::Cast(cookie), mHost)) {
     return NS_OK;
   }
 
