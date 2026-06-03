@@ -8,7 +8,7 @@
 
 <resources>
   <!-- Title for the passwords import loading dialog. -->
-  <string name="mozac_feature_passwords_importer_dialog_title">Mewnforio cyfrineiriau</string>
+  <string name="mozac_feature_passwords_importer_dialog_title">Yn mewnforio cyfrineiriau</string>
   <!-- Description for the passwords import loading dialog. -->
   <string name="mozac_feature_passwords_importer_dialog_description">Cadwch y sgrin hon ar agor. Dim ond ychydig eiliadau dylai gymryd.</string>
   <!-- Label for the cancel action on the passwords import loading dialog. -->

@@ -4676,12 +4676,19 @@
     Banner title text on the Firefox Labs screen.
   -->
   <string name="firefox_labs_banner_title">Deneysel özelliklerimizi deneyin!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">Bu özellikler geliştirme aşamasındadır ve %s uygulamasının çalışma şeklini etkileyebilirler.</string>
   <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
   <string name="firefox_labs_restore_default_button_text">Varsayılanları geri yükle</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
   <string name="firefox_labs_feature_dialog_title">Yeniden başlatma gerekiyor</string>
   <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
   <string name="firefox_labs_dialog_restart_button">Yeniden başlat</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+  <string name="firefox_labs_dialog_cancel_button">İptal</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
   <string name="firefox_labs_restore_defaults_dialog_title">Yeniden başlatma gerekiyor</string>
   <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->

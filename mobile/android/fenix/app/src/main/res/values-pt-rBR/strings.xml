@@ -23,6 +23,8 @@
   <string name="content_description_normal_browsing">Navegação normal</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Pesquise ou digite um endereço</string>
+  <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+  <string name="search_hint_short">Pesquisar</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">Pesquisar na web</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -403,6 +405,8 @@
   <string name="ai_controls_voice_search_description">O áudio é convertido em texto pelo Google Speech Services.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Bloquear aprimoramentos de inteligência artificial?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Não aparecerão novos ou atuais aprimoramentos de inteligência artificial no %1$s, nem notificações sobre eles. Depois, você pode desbloquear o que quiser continuar usando.\n\nBloquear isso também afeta extensões que usam inteligência artificial fornecida pelo %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">O que será bloqueado:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -462,6 +466,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">%1$s excluído do histórico</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Excluir este item do histórico</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">Permanecer no %1$s</string>
   <!--
     Home onboarding
 
@@ -709,8 +715,28 @@
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Compartilhe que você usa o Firefox e como o descobriu, com parceiros de marketing da Mozilla. Esses dados nunca são vendidos. %1$s</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Compartilhe que você usa o Firefox e como o descobriu, com parceiros de marketing da Mozilla. Esses dados nunca são vendidos.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Você pode nos ajudar a alcançar mais pessoas ao permitir que a Mozilla informe aos canais onde promovemos o Firefox que você é um usuário do Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Você pode nos ajudar a alcançar mais pessoas ao permitir que a Mozilla informe à plataforma de onde você veio que você usa o Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Nos ajude a alcançar mais pessoas ao permitir que a Mozilla informe à plataforma de onde você veio que você usa o Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">Nos ajude a alcançar mais pessoas ao permitr que a Mozilla informe à plataforma de onde você veio que você usa o Firefox. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Como usamos os dados</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Ajude o Firefox</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text">Não, obrigado</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -1621,6 +1647,8 @@
   <string name="tab_manager_search_bar_placeholder">Pesquisar em abas</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Fechadas recentemente</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">Selecionar tudo</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Configurações de contas</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1683,6 +1711,18 @@
   <string name="pwa_site_controls_title_private">%1$s (modo privativo)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Abrir pesquisa em abas</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Criar grupo de abas</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Arraste uma aba sobre outra para agrupar.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Selecione várias abas para criar um grupo.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Descartar apresentação de grupos de abas</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Experimente grupos de abas para deslizar menos e produzir mais</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Selecione abas para criar um grupo. Elas são salvas lá, prontas quando você precisar.</string>
   <!--
     Tab Group
 
@@ -1692,6 +1732,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Editar grupo</string>
   <string name="create_tab_group_save_button">Salvar</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Novo grupo, alça de arrastar usada para recolher</string>
   <!--
     Default tab group name when creating a tab group
     %d is the number of existing tab groups + 1.
@@ -1713,6 +1755,14 @@
     <item quantity="one">%1$d aba</item>
     <item quantity="other">%1$d abas</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Adicionar ao grupo de abas %1$s, %2$d aba, cor %3$s</item>
+    <item quantity="other">Adicionar ao grupo de abas %1$s, %2$d abas, cor %3$s</item>
+  </plurals>
   <plurals name="share_tab_group_button_content_description">
     <!--
       Content Description for share tab group button.
@@ -1721,6 +1771,14 @@
     -->
     <item quantity="one">Compartilhar %1$s grupo de abas com %2$d aba.</item>
     <item quantity="other">Compartilhar %1$s grupo de abas com %2$d abas.</item>
+  </plurals>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Grupo de abas %1$s com %2$d aba, cor %3$s</item>
+    <item quantity="other">Grupo de abas %1$s com %2$d abas, cor %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Excluir grupo de abas?</string>
@@ -1897,6 +1955,8 @@
   <string name="download_rename_error_exists_error">Um arquivo de nome “%s” já existe neste local</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Nomes de arquivo não podem ter “/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">O nome que você digitou muda apenas letras maiúsculas ou minúsculas. Tente outro nome de arquivo.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Não foi possível renomear o arquivo</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2146,6 +2206,8 @@
   <string name="bookmark_sort_menu_z_to_a">Ordenar de Z a A</string>
   <!-- Label for button to import bookmarks from file. -->
   <string name="bookmark_import_menu_button">Importar de arquivo</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Não foi possível importar favoritos. Tente novamente.</string>
   <!-- Default name for the folder created when importing bookmarks from a file. -->
   <string name="bookmark_import_destination_default_name">Favoritos importados</string>
   <!--
@@ -2635,6 +2697,15 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">O %s te protege de muitos dos rastreadores mais comuns que tentam seguir o que você faz online.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Saiba mais</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d rastreador bloqueado</item>
+    <item quantity="other">%d rastreadores bloqueados</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -2646,6 +2717,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Você está protegido</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Ajude a capturar rastreadores</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Normal (padrão)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2770,6 +2843,8 @@
   <string name="etp_suspected_fingerprinters_description">Ativa a proteção contra rastreamento de identidade digital para impedir suspeitos.</string>
   <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_known_fingerprinters_title">Rastreadores de identidade digital (fingerprinters) conhecidos</string>
+  <!-- Label for the fingerprinters category shown in the tracking protections dashboard breakdown -->
+  <string name="tracking_dashboard_fingerprinters_category_name">Fingerprinters (rastreadores de identidade digital)</string>
   <!--
     Description of the SmartBlock Enhanced Tracking Protection feature. The * symbol is intentionally hardcoded here,
     as we use it on the UI to indicate which trackers have been partially unblocked.
@@ -3024,6 +3099,8 @@
   <string name="saved_logins_sort_strategy_last_used">Data de uso</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Menu de ordenação de senhas</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Importar de arquivo</string>
   <!--
     Email Masks
 
@@ -3056,6 +3133,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">VPN integrada no %s</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">Navegue com proteção extra, ocultando sua localização, mesmo em redes públicas de WiFi. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">Navegue com proteção extra, ocultando sua localização, mesmo em redes públicas de WiFi.</string>
   <!-- Link text that opens additional information about the browser VPN -->
@@ -3068,6 +3147,11 @@
     %2$.1f is the total monthly allowance in GB (for example "50.0").
   -->
   <string name="ip_protection_data_limit_value">Resta %1$.1f GB de %2$.1f GB</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">É renovado para %1$.0f GB no início de cada mês.</string>
   <!-- Header for the browser VPN `location` section -->
   <string name="ip_protection_location_section">Local</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
@@ -3106,10 +3190,18 @@
   <string name="ip_protection_get_started">Introdução</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_onboarding_card_headline">Experimente a VPN integrada no %s</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s ao ocultar sua localização, mesmo em redes públicas de WiFi. Tenha %2$d GB gratuitos todo mês.</string>
   <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
   <string name="ip_protection_onboarding_body_link">Navegue com proteção extra</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">Agora não</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Não foi possível se conectar à VPN. Tente novamente mais tarde.</string>
   <!--
     Autofill
 
@@ -4366,6 +4458,8 @@
   <string name="sports_widget_match_live">AO VIVO</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title">Campeões da Copa do Mundo de 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title">Terceiro lugar</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">Rodada de 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4378,12 +4472,56 @@
   <string name="sports_widget_final">Final</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">Final para terceiro lugar</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Atualizar</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a">Grupo A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b">Grupo B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c">Grupo C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d">Grupo D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e">Grupo E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f">Grupo F</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g">Grupo G</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h">Grupo H</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i">Grupo I</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j">Grupo J</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k">Grupo K</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l">Grupo L</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Ver resultados</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Ver detalhes do jogo</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Jogos relacionados</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Seguintes</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(tempo regulamentar)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_2">Tempo regulamentar</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description">Receba atualizações em tempo real sobre os jogos e muito mais.</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team">Mudar time</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper">Obter fundo de tela personalizado</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove">Remover</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow">Ainda quer acompanhar?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">Escolha outro time para acompanhar na Copa do Mundo.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Seguir outro time</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
@@ -4427,6 +4565,26 @@
   <string name="sports_widget_countdown_remaining_content_description">Tempo restante. Dias: %1$d. Horas: %2$d. Minutos: %3$d.</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Ir para o site da Copa do Mundo</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description">%s, jogo ao vivo</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, ao vivo</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description">%1$s, página %2$d de %3$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Remover Copa do Mundo da página inicial</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
   <string name="sports_widget_team_followed_title">Seguindo: \n%s</string>
   <!-- Sports widget match status label shown during first half of a match. -->

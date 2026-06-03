@@ -8,9 +8,9 @@
 
 <resources>
   <!-- Title for the passwords import loading dialog. -->
-  <string name="mozac_feature_passwords_importer_dialog_title">Parolalar içe aktarılıyor</string>
+  <string name="mozac_feature_passwords_importer_dialog_title">Import parole</string>
   <!-- Description for the passwords import loading dialog. -->
-  <string name="mozac_feature_passwords_importer_dialog_description">Bu ekranı açık tutun. İşlem birkaç saniye sürecek.</string>
+  <string name="mozac_feature_passwords_importer_dialog_description">Ține deschis acest ecran. Ar trebui să dureze numai câteva secunde.</string>
   <!-- Label for the cancel action on the passwords import loading dialog. -->
-  <string name="mozac_feature_passwords_importer_dialog_cancel">Vazgeç</string>
+  <string name="mozac_feature_passwords_importer_dialog_cancel">Anulează</string>
 </resources>

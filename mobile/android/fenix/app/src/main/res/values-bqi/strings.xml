@@ -2895,6 +2895,14 @@
   <string name="email_masks_max_free_tier_reached">ایسا ز 5 ماسک ایمیل خوتووݩ استفاڌه کردینه، سی دل هیمو ایما یکی ن سی و کار گرؽڌن دووارته سی ایسا پسند کردیمه.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">ماسکا ایمیل سکو من دسرس نؽڌن.\nچن دیقه دی دووارته امتهووݩ کۊنین.</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">آزمایشی</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">قلوه دووسته بۊین</string>
   <!-- Header for the browser VPN `location` section -->
   <string name="ip_protection_location_section">جاگه</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
@@ -4159,10 +4167,44 @@
   <string name="sports_widget_match_live">زنده</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title">قئرمووا جام جهۊوی 2026</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">وانۊ کردن</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a">بونکۊ A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b">بونکۊ B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c">بونکۊ C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d">بونکۊ D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e">بونکۊ E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f">بونکۊ F</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g">بونکۊ G</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h">بونکۊ H</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i">بونکۊ I</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j">بونکۊ J</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k">بونکۊ K</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l">بونکۊ L</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">نیشتن نتیجه یل</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">آینده</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove">پاک کردن</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">نیمه ٱول</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">مجال ازافه</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties">جریمه یل</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
@@ -4177,4 +4219,10 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">نوکات زفت مهرمووه ای</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">قلوه دووسته بۊین</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+  <string name="firefox_labs_dialog_restart_button">ره وندن دووارته</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+  <string name="firefox_labs_dialog_cancel_button">لقو</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+  <string name="firefox_labs_restore_defaults_dialog_title">ره وندن دووارته لازوم هڌ</string>
 </resources>

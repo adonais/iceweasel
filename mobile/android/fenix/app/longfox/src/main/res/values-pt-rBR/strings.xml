@@ -25,4 +25,6 @@
   <string name="sound_off">🔇 som desativado</string>
   <!-- Back button -->
   <string name="back">voltar</string>
+  <!-- Share hiscore action label. hiscore is an abbreviation for "Highest Score" -->
+  <string name="share_hiscore">Compartilhar maior pontuação</string>
 </resources>
