@@ -158,4 +158,4 @@ GFXINFO_FEATURE(MESA_THREADING, "mesa.threading")
 /* Whether WebGL is allowed, starting in 150. */
 GFXINFO_FEATURE(WEBGL, "webgl")
 /* Whether high dynamic range video is reported in media capabilities, starting in 152. */
-GFXINFO_FEATURE_ALLOWLIST(VIDEO_HDR, "video-hdr")
+GFXINFO_FEATURE(VIDEO_HDR, "video-hdr")

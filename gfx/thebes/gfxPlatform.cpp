@@ -3095,7 +3095,7 @@ void gfxPlatform::InitHardwareVideoConfig() {
                                           failureId, &status))) {
     featureHdr.Disable(FeatureStatus::BlockedNoGfxInfo, "gfxInfo is broken",
                        "FEATURE_FAILURE_NO_GFX_INFO"_ns);
-  } else if (status != nsIGfxInfo::FEATURE_ALLOW_ALWAYS) {
+  } else if (status != nsIGfxInfo::FEATURE_STATUS_OK) {
     featureHdr.Disable(FeatureStatus::Blocklisted, "Blocklisted by gfxInfo",
                        failureId);
   }

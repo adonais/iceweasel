@@ -1275,16 +1275,7 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         "FEATURE_HARDWARE_VIDEO_ZERO_COPY_LINUX_AMD_DISABLE", "Mesa 24.2.0.0");
 
     ////////////////////////////////////
-    // FEATURE_VIDEO_HDR - ALLOWLIST
-
-    // Allow HDR video on Wayland - this is also controlled by the pref
-    // gfx.color_management.hdr which is currently false as of this writing (see
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1642854)
-    APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
-        WindowProtocol::Wayland, DriverVendor::All, DeviceFamily::All,
-        nsIGfxInfo::FEATURE_VIDEO_HDR, nsIGfxInfo::FEATURE_ALLOW_ALWAYS,
-        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_ROLLOUT_ALL", "");
+    // FEATURE_VIDEO_HDR
 
     ////////////////////////////////////
     // FEATURE_WEBRENDER_PARTIAL_PRESENT
