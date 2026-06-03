@@ -38,8 +38,6 @@ skip-if = [
 
 ["browser_prefers_contrast.js"]
 
-["browser_reason_randomization.js"]
-
 ["browser_report_preview.js"]
 
 ["browser_report_send.js"]

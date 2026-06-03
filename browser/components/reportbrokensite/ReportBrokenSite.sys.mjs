@@ -8,7 +8,6 @@ const MINIMUM_DESCRIPTION_LENGTH = 10;
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
 });
 
@@ -18,7 +17,6 @@ export class ViewState {
   #detailsView;
   #previewView;
   #reportSentView;
-  #reasonOptions;
 
   #reportURL;
   currentTabURL;
@@ -43,10 +41,6 @@ export class ViewState {
       "report-broken-site-popup-reportSentView"
     );
     ViewState.#cache.set(doc, this);
-
-    this.#reasonOptions = Array.from(
-      this.#mainView.querySelectorAll(".reason-button")
-    );
   }
 
   static #cache = new WeakMap();
@@ -295,46 +289,6 @@ export class ViewState {
     );
   }
 
-  randomizeReasonsOrdering() {
-    // As with QuickActionsLoaderDefault, we use the Normandy
-    // randomizationId as our PRNG seed to ensure that the same
-    // user should always get the same sequence.
-    const seed = [...lazy.ClientEnvironment.randomizationId]
-      .map(x => x.charCodeAt(0))
-      .reduce((sum, a) => sum + a, 0);
-
-    const items = [...this.#reasonOptions];
-    this.#shuffleArray(items, seed);
-    items[0].parentNode.append(...items);
-  }
-
-  #shuffleArray(array, seed) {
-    // We use SplitMix as it is reputed to have a strong distribution of values.
-    const prng = this.#getSplitMix32PRNG(seed);
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(prng() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-  }
-
-  // SplitMix32 is a splittable pseudorandom number generator (PRNG).
-  // License: MIT (https://github.com/attilabuti/SimplexNoise)
-  #getSplitMix32PRNG(a) {
-    return () => {
-      a |= 0;
-      a = (a + 0x9e3779b9) | 0;
-      var t = a ^ (a >>> 16);
-      t = Math.imul(t, 0x21f0aaad);
-      t = t ^ (t >>> 15);
-      t = Math.imul(t, 0x735a2d97);
-      return ((t = t ^ (t >>> 15)) >>> 0) / 4294967296;
-    };
-  }
-
-  restoreReasonsOrdering() {
-    this.#reasonOptions[0].parentNode.append(...this.#reasonOptions);
-  }
-
   reset() {
     this.currentTabWebcompatDetailsPromise = undefined;
     this.lastBlurredURLInputSelection = undefined;
@@ -451,8 +405,6 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
 
   static SCREENSHOTS_ENABLED_PREF =
     "ui.new-webcompat-reporter.screenshots.enabled";
-  static REASON_RANDOMIZED_PREF =
-    "ui.new-webcompat-reporter.reason-dropdown.randomized";
   static SEND_MORE_INFO_PREF = "ui.new-webcompat-reporter.send-more-info-link";
   static NEW_REPORT_ENDPOINT_PREF =
     "ui.new-webcompat-reporter.new-report-endpoint";
@@ -496,8 +448,6 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
   }
 
   #OBSERVED_PREFS = {
-    [ReportBrokenSite.REASON_RANDOMIZED_PREF]:
-      "onReasonRandomizationPrefChanged",
     [ReportBrokenSite.SCREENSHOTS_ENABLED_PREF]: "onScreenshotsPrefChanged",
     [ReportBrokenSite.SEND_MORE_INFO_PREF]: "onSendMoreInfoPrefChanged",
   };
@@ -535,14 +485,6 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     for (const { document } of windows) {
       const state = ViewState.get(document);
       checkFn(prefValue, state);
-    }
-  }
-
-  onReasonRandomizationPrefChanged(prefValue, state) {
-    if (prefValue) {
-      state.randomizeReasonsOrdering();
-    } else {
-      state.restoreReasonsOrdering();
     }
   }
 
