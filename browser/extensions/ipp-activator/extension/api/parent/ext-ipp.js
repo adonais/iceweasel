@@ -233,6 +233,9 @@ this.ippActivator = class extends ExtensionAPI {
                   label: { "l10n-id": message.l10nId },
                   priority: nbox.PRIORITY_WARNING_HIGH,
                   eventCallback: param => {
+                    if (param === "dismissed") {
+                      Glean.ipprotection.breakageMessageDismissed.record();
+                    }
                     resolveDismiss(param === "dismissed");
                   },
                 },
@@ -242,6 +245,7 @@ this.ippActivator = class extends ExtensionAPI {
                 // Persist the notification until the user removes so it
                 // doesn't get removed on redirects.
                 notification.persistence = -1;
+                Glean.ipprotection.breakageMessageShown.record();
               });
 
             return dismissedPromise;
