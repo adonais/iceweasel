@@ -207,6 +207,12 @@ export class ViewState {
     const panelview = this.#doc.documentGlobal.PanelView.forNode(view);
     panelview.selectedElement = input;
     panelview.focusSelectedElement(true);
+    // Ignore the next mouse-move to prevent the focus from accidentally being
+    // cleared immediately when the user clicks on "Something else" (see bz2040437).
+    panelview.ignoreMouseMove = true;
+    input.addEventListener("blur", () => (panelview.ignoreMouseMove = false), {
+      once: true,
+    });
   }
 
   lastBlurredURLInputSelection;
