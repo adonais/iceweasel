@@ -9,6 +9,8 @@ report-broken-site-panel-header =
 report-broken-site-panel-intro-text = Your report helps us understand and fix issues in { -brand-product-name } to make it better for everyone.
 report-broken-site-panel-learn-more-link = Learn more
 
+report-broken-site-panel-url-label = URL of broken site
+
 report-broken-site-panel-reason-intro-text = What’s not working?
 
 report-broken-site-panel-reason-load-moz-box-button =
