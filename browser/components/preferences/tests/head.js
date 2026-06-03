@@ -53,6 +53,29 @@ function is_element_hidden(aElement, aMsg) {
   ok(BrowserTestUtils.isHidden(aElement), aMsg);
 }
 
+/**
+ * Opens a fresh preferences tab at the given pane and waits for it to
+ * fully initialize before returning. Pre-registers the "Initialized" listener
+ * before navigation starts to avoid the race where the event fires before
+ * the listener is attached.
+ *
+ * @param {string} [pane] Fragment to append (e.g. "appearance"). Omit or
+ *   pass "" to open the default pane.
+ * @returns {Promise<MozTabbrowserTab>} The opened tab.
+ */
+async function openPrefsTab(pane) {
+  let url = "about:preferences" + (pane ? "#" + pane : "");
+  let tab = BrowserTestUtils.addTab(gBrowser, url);
+  let initialized = BrowserTestUtils.waitForEvent(
+    tab.linkedBrowser,
+    "Initialized",
+    true
+  );
+  gBrowser.selectedTab = tab;
+  await initialized;
+  return tab;
+}
+
 function open_preferences(aCallback) {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:preferences");
   let newTabBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);

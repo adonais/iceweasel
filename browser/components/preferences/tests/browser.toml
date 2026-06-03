@@ -1,4 +1,5 @@
 [DEFAULT]
+dupe-manifest = true
 prefs = [
   "extensions.formautofill.addresses.available='on'",
   "signon.management.page.os-auth.enabled=true",
@@ -16,10 +17,12 @@ tags = "os_integration"
 
 ["browser_about_settings.js"]
 
+["browser_accessibility_pane_xul.js"]
+
 ["browser_advanced_update.js"]
 run-if = ["updater"]
 
-["browser_appearance_pane.js"]
+["browser_appearance_pane_xul.js"]
 
 ["browser_backup_visibility.js"]
 
@@ -40,11 +43,7 @@ support-files = [
 
 ["browser_bug1579418.js"]
 
-["browser_build_font_options_test.js"]
-
-["browser_checkspelling.js"]
-
-["browser_colors_dialog.js"]
+["browser_colors_dialog_xul.js"]
 
 ["browser_ensure_prefs_bindings_initted.js"]
 
@@ -64,16 +63,12 @@ run-if = ["os == 'mac'"]
 
 ["browser_open_migration_wizard.js"]
 
-["browser_privacy_trustPanelBreachAlerts.js"]
-
 ["browser_spotlight.js"]
 
 ["browser_subdialogs.js"]
 support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
 
 ["browser_tabs_open_external_next_to_active_tab.js"]
-
-["browser_updates_managed_by_os.js"]
 
 ["browser_windows_launch_on_login.js"]
 run-if = ["os == 'win' && !msix"]
