@@ -88,6 +88,20 @@ async function checkURLWidget(rbs, blurringClick, expectedFavicon) {
     "reset is visible when focused by focused by clicking on it"
   );
 
+  // Ensure progress buttons are disabled/re-enabled as the URL is changed to invalid/valid values.
+  rbs.urlComponent.input.setSelectionRange(3, 3);
+  await EventUtils.synthesizeKey(" ", {}, rbs.win);
+  const progressButton = rbs.progressionButtons[0];
+  ok(
+    await isDisabled(progressButton),
+    "progress buttons are disabled on invalid URL"
+  );
+  await EventUtils.synthesizeKey("KEY_Backspace", {}, rbs.win);
+  ok(
+    await isNotDisabled(progressButton),
+    "progress buttons are re-enabled on valid URL"
+  );
+
   // Ensure that clicking on the URL widget's reset button also resets the URL.
   // Also ensure that blurring again hides the input and shows the highlight origin.
 
@@ -100,7 +114,7 @@ async function checkURLWidget(rbs, blurringClick, expectedFavicon) {
   AccessibilityUtils.resetEnv();
 
   await blurringClick();
-  is(rbs.url, url, "clicking on the rest button resets the URL");
+  is(rbs.url, url, "clicking on the reset button resets the URL");
   ok(
     await isOpaque(emphasizedUrl),
     "emphasized URL is again visible after click-blurring the input"

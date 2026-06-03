@@ -614,7 +614,7 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     });
 
     for (const input of state.urlInputs) {
-      input.addEventListener("input", e => this.#maybeDisableProgression(e));
+      input.addEventListener("input", e => this.#onURLEdited(e));
       input.addEventListener("reset", e => this.#onURLInputReset(e));
       input.addEventListener("change", e => this.#onURLInputChanged(e));
       input.addEventListener("blur", e => this.#saveURLInputSelectionRange(e));
@@ -742,9 +742,9 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     state.url = state.currentTabURL;
   }
 
-  #maybeDisableProgression({ target }) {
+  #onURLEdited({ target }) {
     const state = ViewState.get(target.documentGlobal.document);
-    state.updateProgressDisabledState();
+    state.url = target.input.value;
   }
 
   #onURLInputChanged({ target, detail }) {
