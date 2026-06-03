@@ -779,7 +779,8 @@ void FrameIter::wasmUpdateBytecodeOffset() {
 
   // Relookup the current frame, updating the bytecode offset in the process.
   data_.jitFrames_ = JitFrameIter(data_.activations_->asJit());
-  while (!isWasm() || wasmFrame().debugFrame() != frame) {
+  while (!isWasm() || !wasmFrame().debugEnabled() ||
+         wasmFrame().debugFrame() != frame) {
     ++data_.jitFrames_;
   }
 
