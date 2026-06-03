@@ -75,6 +75,11 @@ add_task(async function test_shortcuts_rows() {
   let nativeSelect = select.inputEl;
   ok(nativeSelect, "Shortcuts rows native select exists");
 
+  ok(
+    nativeSelect.getAttribute("aria-label"),
+    "Shortcuts rows select has an aria-label"
+  );
+
   let optionValues = [...nativeSelect.options].map(option =>
     Number(option.value)
   );

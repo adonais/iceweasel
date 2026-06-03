@@ -89,6 +89,11 @@ add_task(async function test_recent_activity_rows() {
   let nativeSelect = select.inputEl;
   ok(nativeSelect, "Recent Activity rows native select exists");
 
+  ok(
+    nativeSelect.getAttribute("aria-label"),
+    "Recent Activity rows select has an aria-label"
+  );
+
   let optionValues = [...nativeSelect.options].map(option =>
     Number(option.value)
   );
