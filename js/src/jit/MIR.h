@@ -9353,12 +9353,6 @@ class MObjectToIterator : public MUnaryInstruction,
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, object))
 
-  AliasSet getAliasSet() const override {
-    return skipRegistration_
-               ? AliasSet::Load(AliasSet::ObjectFields | AliasSet::Element)
-               : AliasSet::Store(AliasSet::Any);
-  }
-
   bool wantsIndices() const { return wantsIndices_; }
   void setWantsIndices(bool value) { wantsIndices_ = value; }
 

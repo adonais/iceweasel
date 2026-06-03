@@ -15,6 +15,10 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -23,21 +27,48 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_LOGO
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 
+/**
+ * Semantic property for accessing a Composable item's current resource property.
+ */
+internal val ResourceId = SemanticsPropertyKey<Int>("ResourceId")
+internal var SemanticsPropertyReceiver.resourceId by ResourceId
+
 @Composable
 internal fun WordmarkLogo(
     onLogoClicked: () -> Unit,
     onLogoLongClicked: () -> Unit,
+    isSportsWidgetEnabled: Boolean,
 ) {
+    val wordmarkResourceId = if (isSportsWidgetEnabled) R.attr.fenixWordmarkSportLogo else R.attr.fenixWordmarkLogo
+    val sportsLogoContentDescription = stringResource(R.string.sports_widget_country_selector_title)
     Image(
         modifier = Modifier
             .height(40.dp)
             .semantics {
                 testTagsAsResourceId = true
                 testTag = HOMEPAGE_WORDMARK_LOGO
+                resourceId = wordmarkResourceId
+                if (isSportsWidgetEnabled) {
+                    contentDescription = sportsLogoContentDescription
+                }
             }
-            .combinedClickable(onClick = onLogoClicked, onLongClick = onLogoLongClicked)
+            .then(
+                if (isSportsWidgetEnabled) {
+                    Modifier.combinedClickable(
+                        onClick = onLogoClicked,
+                        onLongClick = onLogoLongClicked,
+                        role = Role.Button,
+                    )
+                } else {
+                    Modifier
+                },
+            )
             .padding(end = 10.dp),
-        painter = painterResource(getAttr(R.attr.fenixWordmarkLogo)),
+        painter = painterResource(
+            getAttr(
+                wordmarkResourceId,
+            ),
+        ),
         contentDescription = null,
     )
 }

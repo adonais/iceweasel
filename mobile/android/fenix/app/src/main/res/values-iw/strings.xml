@@ -23,6 +23,8 @@
   <string name="content_description_normal_browsing">גלישה רגילה</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">חיפוש או הכנסת כתובת</string>
+  <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+  <string name="search_hint_short">חיפוש</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">חיפוש ברשת</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -464,6 +466,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">‏%1$s נמחק מההיסטוריה</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">מחיקת רשומת היסטוריה זו</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">להישאר ב־%1$s</string>
   <!--
     Home onboarding
 
@@ -1645,6 +1649,8 @@
   <string name="tab_manager_search_bar_placeholder">חיפוש הלשוניות שלך</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">לשוניות שנסגרו לאחרונה</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">בחירת הכול</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">הגדרות חשבון</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -2702,6 +2708,16 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">‏%s מגן עליך מפני רוב רכיבי הריגול שעוקבים אחר הפעילות המקוונת שלך.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">מידע נוסף</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">נחסם רכיב מעקב אחד</item>
+    <item quantity="two">נחסמו %d רכיבי מעקב</item>
+    <item quantity="other">נחסמו %d רכיבי מעקב</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -2840,6 +2856,8 @@
   <string name="etp_suspected_fingerprinters_description">הפעלת הגנה מפני מעקב זהות דיגיטלית כדי לבלום רכיבי זהות דיגיטלית חשודים.</string>
   <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_known_fingerprinters_title">רכיבי זהות דיגיטלית ידועים</string>
+  <!-- Label for the fingerprinters category shown in the tracking protections dashboard breakdown -->
+  <string name="tracking_dashboard_fingerprinters_category_name">רכיבי זהות דיגיטלית</string>
   <!--
     Description of the SmartBlock Enhanced Tracking Protection feature. The * symbol is intentionally hardcoded here,
     as we use it on the UI to indicate which trackers have been partially unblocked.
@@ -3094,6 +3112,8 @@
   <string name="saved_logins_sort_strategy_last_used">שימוש אחרון</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">תפריט מיון ססמאות</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">ייבוא מקובץ</string>
   <!--
     Email Masks
 
@@ -4617,6 +4637,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">תוצאות גמר המונדיאל, עמוד %1$d מתוך %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">תוצאות גמר המונדיאל</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">הסרת המונדיאל ממסך הבית</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4637,6 +4659,8 @@
   <string name="sports_widget_error_load_failed_title">פרטי המשחק אינם זמינים כעת.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">נא לנסות לרענן בעוד מספר דקות.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">קבוצה שטרם נקבעה</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
@@ -4651,4 +4675,29 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">הצהרת הפרטיות</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">מידע נוסף</string>
+  <!--
+    Firefox Labs
+
+    Banner title text on the Firefox Labs screen.
+  -->
+  <string name="firefox_labs_banner_title">נסו את התכונות הניסיוניות שלנו!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">הם נמצאים בפיתוח ומשתדרגים, דבר שעשוי להשפיע על אופן הפעולה של %s.</string>
+  <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
+  <string name="firefox_labs_restore_default_button_text">שחזור בררות מחדל</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
+  <string name="firefox_labs_feature_dialog_title">נדרשת הפעלה מחדש</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+  <string name="firefox_labs_dialog_restart_button">הפעלה מחדש</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+  <string name="firefox_labs_dialog_cancel_button">ביטול</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+  <string name="firefox_labs_restore_defaults_dialog_title">נדרשת הפעלה מחדש</string>
+  <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_restore_defaults_dialog_message">כדי לשחזר את בררות המחדל, יש להפעיל מחדש את %s.</string>
+  <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+  <string name="firefox_labs_no_labs_available_description">אין תכונות ניסיוניות לנסות כרגע</string>
 </resources>

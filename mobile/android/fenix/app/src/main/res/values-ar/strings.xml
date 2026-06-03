@@ -101,7 +101,7 @@
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">الانتقال إلى الإعدادات</string>
   <!-- Text for the negative action button -->
-  <string name="open_in_app_cfr_negative_button_text">رفض</string>
+  <string name="open_in_app_cfr_negative_button_text">أهمِل</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
   <!--
@@ -115,13 +115,13 @@
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">الانتقال إلى الإعدادات</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
-  <string name="camera_permissions_needed_negative_button_text">رفض</string>
+  <string name="camera_permissions_needed_negative_button_text">أهمِل</string>
   <!-- Text for the banner message to tell users about our auto close feature. -->
   <string name="tab_tray_close_tabs_banner_message">ضبط التبويبات المفتوحة لتُغلَق من تلقاء نفسها إن لم تُعرض منذ اليوم أو الأسبوع أو الشهر الماضي.</string>
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
   <string name="tab_tray_close_tabs_banner_positive_button_text">خيارات العرض</string>
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
-  <string name="tab_tray_close_tabs_banner_negative_button_text">رفض</string>
+  <string name="tab_tray_close_tabs_banner_negative_button_text">أهمِل</string>
   <!-- Text for the banner message to tell users about our inactive tabs feature. -->
   <string name="tab_tray_inactive_onboarding_message">سيتم نقل التبويبات التي لم تعرضها منذ أسبوعين إلى هنا.</string>
   <!-- Text for the action link to go to Settings for inactive tabs. -->
@@ -310,7 +310,7 @@
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">سريع وخاص وصٌنع خصيصًا لك.</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss_promotion">تجاهل العرض الترويجي</string>
+  <string name="browser_menu_default_banner_dismiss_promotion">أهمِل العرض الترويجي</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
   <string name="browser_menu_recommended_extensions_content_description">المزيد من المعلومات</string>
   <!--
@@ -358,7 +358,7 @@
   <!-- Content description for the translate toolbar action that opens the translations dialog. -->
   <string name="translation_toolbar_expand_action">فتح ورقة الترجمة</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
-  <string name="translation_toolbar_close_action">تجاهل الرسالة</string>
+  <string name="translation_toolbar_close_action">أهمِل الرسالة</string>
   <!--
     Page summaries
 
@@ -464,6 +464,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">حذف %1$s من سجل التصفح</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">حذف سجل هذ البحث</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">ابقَ في %1$s</string>
   <!--
     Home onboarding
 
@@ -1649,6 +1651,8 @@
   <string name="tab_manager_search_bar_placeholder">ابحث في تبويباتك</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">التبويبات المُغلقة حديثًا</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">حدّد الكل</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">إعدادات الحساب</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1715,6 +1719,10 @@
   <string name="tab_group_onboarding_item_title">أنشئ مجموعة ألسنة</string>
   <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
   <string name="tab_group_onboarding_grid_item_description">اسحب علامة تبويب واحدة فوق أخرى لتجميعها.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">حدد عدة علامات تبويب لإنشاء مجموعة.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">أهمِل عملية إعداد مجموعة علامات التبويب</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">جرّب استخدام مجموعات اللسان لتقليل التمرير وزيادة الإنجاز</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -3112,6 +3120,8 @@
   <string name="saved_logins_sort_strategy_last_used">آخر استخدام</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">قائمة فرز كلمات المرور</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">استورِد من ملف</string>
   <!--
     Email Masks
 
@@ -3144,6 +3154,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">شبكة VPN المدمجة في %s</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">تصفح الإنترنت بأمان إضافي عن طريق إخفاء موقعك، حتى على شبكات الواي فاي العامة. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">تصفح الإنترنت بحماية إضافية عن طريق إخفاء موقعك حتى على شبكات الواي فاي العامة.</string>
   <!-- Link text that opens additional information about the browser VPN -->
@@ -3177,6 +3189,8 @@
   <string name="ip_protection_menu_paused">أُلبِث</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">خطأ</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">جرّبه</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">افتح إعدادات VPN</string>
   <!--

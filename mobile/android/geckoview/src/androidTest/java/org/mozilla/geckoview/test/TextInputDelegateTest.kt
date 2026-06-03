@@ -1810,4 +1810,25 @@ class TextInputDelegateTest : BaseSessionTest() {
 
         assertSelection("selection moves by enter key", ic, 5, 5)
     }
+
+    // Bug 2038467 - Samsung Keyboard doesn't use batch mode when setting both composing range and composing text
+    // at once.
+    @WithDisplay(width = 512, height = 512)
+    @Test
+    fun inputConnection_samsungKeyboard_email() {
+        assumeThat("input only", id, equalTo("#input"))
+
+        setupContent("")
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+
+        // Emulate Samsung Keyboard's InputConnection API calls on <input type="email">
+        commitText(ic, "foo@", 1)
+        ic.setComposingRegion(0, 4)
+        ic.setComposingText("foo@1", 1)
+        ic.setComposingText("foo@12", 1)
+        finishComposingText(ic)
+        processChildEvents()
+
+        assertText("committed text is \"foo@12\"", ic, "foo@12")
+    }
 }

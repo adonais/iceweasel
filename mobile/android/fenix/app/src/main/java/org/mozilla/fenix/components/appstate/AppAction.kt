@@ -35,6 +35,7 @@ import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTabState
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.home.sports.MatchCard
+import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.library.history.PendingDeletionHistory
 import org.mozilla.fenix.messaging.MessagingState
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -854,10 +855,19 @@ sealed class AppAction : Action {
         /**
          * Dispatched when new match card data is available for the homepage sports widget.
          *
-         * @property matchCardState The new [MatchCard] to display, or null if no match
+         * @property matchCardStates The new [MatchCard]s to display, or empty if no match
          * should be shown.
          */
-        data class MatchCardStateUpdated(val matchCardState: MatchCard?) : SportsWidgetAction()
+        data class MatchCardStateUpdated(val matchCardStates: List<MatchCard>) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the set of teams eliminated from the tournament changes,
+         * derived from the latest fetched match data. Drives the eliminated-team
+         * styling in the country selector bottom sheet.
+         *
+         * @property countryCodes ISO codes of teams flagged eliminated in the last response.
+         */
+        data class EliminatedCountriesUpdated(val countryCodes: Set<String>) : SportsWidgetAction()
 
         /**
          * Dispatched when the sport widget's debug tool visibility changes.
@@ -881,5 +891,35 @@ sealed class AppAction : Action {
          * @property hasSkippedFollowTeam Whether the user skipped the "Follow your team" card.
          */
         data class SkipFollowTeamUpdated(val hasSkippedFollowTeam: Boolean) : SportsWidgetAction()
+
+        /**
+         * Dispatched to request a fetch of the latest match data from the sports API.
+         * Triggered by manual user refresh or when the selected countries change.
+         */
+        data object FetchMatches : SportsWidgetAction()
+
+        /**
+         * Dispatched when a match data fetch fails.
+         *
+         * @property error The [SportCardErrorState] describing the failure.
+         */
+        data class FetchFailed(val error: SportCardErrorState) : SportsWidgetAction()
+
+        /**
+         * Dispatched to clear any active [SportsWidgetState.errorState] without otherwise
+         * touching widget data. Used on resume to retire a stale ConnectionInterrupted
+         * banner once the device is back online and there's no fetch to schedule (e.g.
+         * during the pre-7-day countdown phase).
+         */
+        data object ErrorStateCleared : SportsWidgetAction()
+
+        /**
+         * Dispatched when the user toggles the one week to the world cup override setting
+         * in the sport widget's debug tool. This overrides [SportsWidgetState.isOneWeekToWorldCup] and should
+         * be used for debug only.
+         *
+         * @property isOneWeekToWorldCupOverride Whether it's one week to the World Cup.
+         */
+        data class OneWeekToWorldCupOverrideUpdated(val isOneWeekToWorldCupOverride: Boolean) : SportsWidgetAction()
     }
 }

@@ -293,3 +293,74 @@ add_task(async function test_ask_button_close_persists_across_tab_switches() {
     await restore();
   }
 });
+
+// Bug 2037378: closing the sidebar via its X close button must persist across
+// tab switches the same way the toolbar Ask button toggle does.
+add_task(async function test_x_close_persists_across_tab_switches() {
+  let win, tab2;
+
+  const { restore } = await stubEngineNetworkBoundaries();
+
+  try {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    const originalTab = win.gBrowser.selectedTab;
+
+    await typeInSmartbar(browser, "hello");
+    await submitSmartbar(browser);
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.querySelector("ai-window");
+      await ContentTaskUtils.waitForCondition(
+        () => el.conversationMessageCount > 0,
+        "Wait for chat response before navigating"
+      );
+    });
+
+    await promiseNavigateAndLoad(browser, "https://example.com/");
+    Assert.ok(
+      AIWindowUI.isSidebarOpen(win),
+      "Sidebar should open after navigating away with active conversation"
+    );
+
+    const aiBrowser = win.document.getElementById("ai-window-browser");
+    const aiWindow = await TestUtils.waitForCondition(
+      () => aiBrowser.contentDocument?.querySelector("ai-window:defined"),
+      "Wait for sidebar ai-window to be defined"
+    );
+    const closeButton = await TestUtils.waitForCondition(
+      () => aiWindow.shadowRoot?.querySelector(".close-sidebar-button"),
+      "Wait for sidebar close button"
+    );
+    closeButton.click();
+
+    await TestUtils.waitForCondition(
+      () => !AIWindowUI.isSidebarOpen(win),
+      "Sidebar should be closed after X close button"
+    );
+
+    tab2 = BrowserTestUtils.addTab(win.gBrowser, AIWINDOW_URL);
+    await BrowserTestUtils.browserLoaded(tab2.linkedBrowser);
+    await BrowserTestUtils.switchTab(win.gBrowser, tab2);
+    await TestUtils.waitForTick();
+
+    await BrowserTestUtils.switchTab(win.gBrowser, originalTab);
+    await TestUtils.waitForTick();
+
+    Assert.ok(
+      !AIWindowUI.isSidebarOpen(win),
+      "Sidebar should remain closed after switching back to tab where user closed it via X"
+    );
+  } finally {
+    if (tab2) {
+      BrowserTestUtils.removeTab(tab2);
+    }
+
+    // Navigate away from the remote page before closing so the content
+    // process shuts down cleanly and doesn't leave an unhandled rejection.
+    await promiseNavigateAndLoad(win.gBrowser.selectedBrowser, "about:blank");
+
+    await BrowserTestUtils.closeWindow(win);
+    await restore();
+  }
+});

@@ -31,4 +31,13 @@
   <string name="protections_dashboard_category_social">社交網路</string>
   <!-- Tracker category: Other trackers -->
   <string name="protections_dashboard_category_others">其他</string>
+  <!-- Title shown in the protection dashboard header next to the shield icon -->
+  <string name="mozac_protections_dashboard_trackers_blocked_this_week_title">本週追蹤器封鎖數量</string>
+  <!--
+    Title shown when no trackers have been blocked yet
+    %1$s will be replaced by the app name (e.g. Firefox Focus)
+  -->
+  <string name="mozac_protections_dashboard_empty_title">隨您上網，%1$s 會自動封鎖追蹤器。</string>
+  <!-- Subtitle shown when no trackers have been blocked yet -->
+  <string name="mozac_protections_dashboard_empty_subtitle">將在此處看到。</string>
 </resources>

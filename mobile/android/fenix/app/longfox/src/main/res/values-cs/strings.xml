@@ -25,4 +25,6 @@
   <string name="sound_off">🔇 zvuk vypnutý</string>
   <!-- Back button -->
   <string name="back">zpět</string>
+  <!-- Share hiscore action label. hiscore is an abbreviation for "Highest Score" -->
+  <string name="share_hiscore">Sdílet nejvyšší skóre</string>
 </resources>

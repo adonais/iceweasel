@@ -23,6 +23,8 @@
   <string name="content_description_normal_browsing">Ñeikundaha porã</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Eheka térã ehai kundaharape</string>
+  <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+  <string name="search_hint_short">Eheka</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">Eheka ñandutípe</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -464,6 +466,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">Emboguete %1$s tembiasakuégui</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Embogue ko jeikeha tembiasakuégui</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">Epyta %1$s-pe</string>
   <!--
     Home onboarding
 
@@ -711,6 +715,24 @@
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Emombe’u marketing Mozilla-guápe mba’éichapa eikuaáraka’e Firefox ha ijeporu. Ko’ã mba’ekuaarã noñevendemo’ãi. %1$s</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Emoherakuã marketing Mozilla-guápe mba’éicha eikuaáraka’e Firefox ha ijeporu. Ko’ã mba’ekuaarã araka’eve noñevendéi.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Ore pytyvõkuaa rog̃uahẽ hag̃ua tapichaitápe rohejávo Mozilla oikuaauka moõ rupi romoherakuãta Firefox nde ha’ére Firefox poruhára.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Ore pytyvõ roguahẽ hag̃ua hetave tapichápe ehejávo Mozilla toikuaauka pyendavusu eikehague guive eiporúvo Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Ore pytyvõ roguahẽ hag̃ua hetave tapichápe ehejávo Mozilla toikuaauka pyendavusu eiporuha ára guive Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body_6" tools:ignore="BrandUsage,UnusedResources">Ore pytyvõ roguahẽ hag̃ua hetave tapichápe: eheja Mozilla toikuaauka pyendavusu ypykuéva eipuruha Firefox. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Mba’éichapa jaiporu mba’ekuaarãita</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
@@ -1625,6 +1647,8 @@
   <string name="tab_manager_search_bar_placeholder">Eheka ne rendaykeita</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Tendayke oñemboty ramóva</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">Mbosa’ypa</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Mba’ete ñemboheko</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1689,6 +1713,12 @@
   <string name="tab_manager_open_tab_search">Embojuruja jehekaha tendayképe</string>
   <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
   <string name="tab_group_onboarding_item_title">Emoheñói tendayke aty</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Embosyryry tendayke ambue ári embyaty hag̃ua.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Embosa’y heta tendayke emoheñói hag̃ua aty.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Emboyke tendayke aty ñemoinge</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Eiporu tendayke aty eku’e’ive ha ejapove hag̃ua</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -2671,6 +2701,15 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s nemo’ãta heta tapykuehohágui ohecháva mba’etépa ejapohína ñandutípe.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Kuaave</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d tapykuehoha jokopyre</item>
+    <item quantity="other">%d tapykuehohaita jokopyre</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -2808,6 +2847,8 @@
   <string name="etp_suspected_fingerprinters_description">Emyandy kuãhũngue mo’ãha emboyke hag̃ua tapykuehoha ombyaikuaáva.</string>
   <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_known_fingerprinters_title">Kuãhũ juhuha ojekuaáva</string>
+  <!-- Label for the fingerprinters category shown in the tracking protections dashboard breakdown -->
+  <string name="tracking_dashboard_fingerprinters_category_name">Kuãhũ rapykuere</string>
   <!--
     Description of the SmartBlock Enhanced Tracking Protection feature. The * symbol is intentionally hardcoded here,
     as we use it on the UI to indicate which trackers have been partially unblocked.
@@ -3062,6 +3103,8 @@
   <string name="saved_logins_sort_strategy_last_used">Jejuru paha</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Emoĩporã ñe’ẽñemi poravorã</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Egueru marandurendágui</string>
   <!--
     Email Masks
 
@@ -3094,6 +3137,8 @@
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">VPN juajupyre %s rehegua</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">Eikundaha ñemo’ãve ndive eñomívo ne rendaite, taha’e Wi-Fi ojeporukuaávape. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">Ñeikundaha ñemo’ãve ndive oñomívo hendaite, taha’e Wi-Fi ojeporukuaávape.</string>
   <!-- Link text that opens additional information about the browser VPN -->
@@ -3159,6 +3204,13 @@
   <string name="ip_protection_onboarding_body_link">Eikundaha ñemo’ã jo’a reheve</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">Ani ko’ág̃a</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Ndaikatúi oike VPN-pe. Eha’ã jey agamieve.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">Ojeporu %1$d GB mba’ekuaarã VPN-pe. Eikekuaáta ambue jasýpe.</string>
   <!--
     Autofill
 
@@ -4546,6 +4598,13 @@
   -->
   <string name="sports_widget_upcoming_match_content_description">Tenondeve: %1$s %2$srovái, %3$s %4$s-pe</string>
   <!--
+    Content description (for accessibility, not displayed) announcing a soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
+    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
+    or a match status like "Full time").
+  -->
+  <string name="sports_widget_match_content_description">%1$s versus %2$s, %3$s</string>
+  <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
     or Final represented by sports_widget_final).
@@ -4558,6 +4617,11 @@
   -->
   <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, ñandutípe</string>
   <!--
+    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
+  -->
+  <string name="sports_widget_match_elapsed_minutes">Pa’ũ ohasáva aravo’ípe: %1$s</string>
+  <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
@@ -4568,6 +4632,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Mba’éicha osẽ Copa del Mundo rehegua, kuatiarogue %1$d %2$d rehegua</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">Mba’éicha opa partidokuéra Mundial-pe</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Eipe’a Copa del Mundo nde rógagui</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4578,8 +4644,18 @@
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">Tiempo peteĩha</string>
   <!-- Sports widget match status label shown during second half of a match. -->
   <string name="sports_widget_second_half" tools:ignore="UnusedResources">Tiempo mokõiha</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title">Ha’ete ndaipóriva ñanduti.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description">Ehechajey ne ñanduti reko ha eha’ã jey ag̃ave.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Atygua jehuga</string>
+  <!-- Sports widget error card title shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_title">Marandu partído rehegua ndaipóri ko’ag̃aite.</string>
+  <!-- Sports widget error card description shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_description">Embohekopyahukuaa ag̃amieve.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">Aty oikotavahína</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
@@ -4594,4 +4670,29 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Marandu’i ñemiguáva</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Eikuaave</string>
+  <!--
+    Firefox Labs
+
+    Banner title text on the Firefox Labs screen.
+  -->
+  <string name="firefox_labs_banner_title">¡Eiporu ore rembiapoite ipyahuvéva!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">Okakuaa ha tuichave, ikatúva omyangekói mba’éichapa omba’apo %s.</string>
+  <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
+  <string name="firefox_labs_restore_default_button_text">Ijypykue mbojevy</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
+  <string name="firefox_labs_feature_dialog_title">Tekotevẽ emoñepyrũjey</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+  <string name="firefox_labs_dialog_restart_button">Moñepyrũjey</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+  <string name="firefox_labs_dialog_cancel_button">Eheja</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+  <string name="firefox_labs_restore_defaults_dialog_title">Tekotevẽ emoñepyrũjey</string>
+  <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_restore_defaults_dialog_message">Emoĩporãjey ñemboheko ypygua, emoñepyrũjey %s.</string>
+  <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+  <string name="firefox_labs_no_labs_available_description">Ndaipóri tembiapoite ikatúva eiporu ko’aĝa</string>
 </resources>

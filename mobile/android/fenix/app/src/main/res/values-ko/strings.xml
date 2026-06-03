@@ -1643,6 +1643,8 @@
   <string name="tab_manager_search_bar_placeholder">탭 검색</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">최근에 닫은 탭</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">모두 선택</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">계정 설정</string>
   <!-- Text shown in the menu to view tab settings -->

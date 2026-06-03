@@ -4816,57 +4816,47 @@ nsresult nsIFrame::GetDataForTableSelection(
   bool foundCell = false;
   bool foundTable = false;
 
-  // Get the limiting node to stop parent frame search
   const Element* const independentSelectionLimiter =
       aFrameSelection->GetIndependentSelectionRootElement();
 
-  // If our content node is not under the limiting node,
-  // we should stop the search right now.
   if (independentSelectionLimiter &&
       !independentSelectionLimiter->Contains(GetContent())) {
+    // If our content is not under the limiting node, stop the search right now.
     return NS_OK;
   }
 
-  // We don't initiate row/col selection from here now,
-  //  but we may in future
-  // bool selectColumn = false;
-  // bool selectRow = false;
-
-  while (frame) {
+  for (; frame; frame = frame->GetParent()) {
     // Check for a table cell by querying to a known CellFrame interface
-    nsITableCellLayout* cellElement = do_QueryFrame(frame);
-    if (cellElement) {
+    if (static_cast<nsITableCellLayout*>(do_QueryFrame(frame))) {
       foundCell = true;
       // TODO: If we want to use proximity to top or left border
       //      for row and column selection, this is the place to do it
       break;
-    } else {
-      // If not a cell, check for table
-      // This will happen when starting frame is the table or child of a table,
-      //  such as a row (we were inbetween cells or in table border)
-      nsTableWrapperFrame* tableFrame = do_QueryFrame(frame);
-      if (tableFrame) {
-        foundTable = true;
-        // TODO: How can we select row when along left table edge
-        //  or select column when along top edge?
-        break;
-      } else {
-        frame = frame->GetParent();
-        // Stop if we have hit the selection's limiting content node
-        if (frame && frame->GetContent() == independentSelectionLimiter) {
-          break;
-        }
-      }
+    }
+    if (frame->IsTableWrapperFrame()) {
+      // If not a cell, check for table. This will happen when the starting
+      // frame is the table or child of a table, such as a row (we were
+      // in-between cells or in table border).
+      // TODO: How can we select row when along left table edge
+      //       or select column when along top edge?
+      foundTable = true;
+      break;
     }
   }
-  // We aren't in a cell or table
+
   if (!foundCell && !foundTable) {
+    // We aren't in a cell or table.
     return NS_OK;
   }
 
   nsIContent* tableOrCellContent = frame->GetContent();
   if (!tableOrCellContent) {
-    return NS_ERROR_FAILURE;
+    return NS_OK;
+  }
+
+  if (independentSelectionLimiter &&
+      !independentSelectionLimiter->Contains(tableOrCellContent)) {
+    return NS_OK;
   }
 
   nsCOMPtr<nsIContent> parentContent = tableOrCellContent->GetParent();

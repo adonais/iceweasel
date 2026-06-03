@@ -62,6 +62,7 @@ private const val NEWS_BUTTON_ANIMATION_DELAY = 500L
  * @param onNewsAnimationShown Callback invoked when the news button animation starts playing.
  * @param onLogoClicked Callback for when the logo is clicked.
  * @param onLogoLongClicked Callback for when the logo is long-clicked.
+ * @param isSportsWidgetEnabled Whether to show the Firefox sports logo or not.
  */
 @Suppress("LongParameterList")
 @Composable
@@ -74,6 +75,7 @@ fun ExperimentalHomepageHeader(
     onNewsAnimationShown: () -> Unit,
     onLogoClicked: () -> Unit,
     onLogoLongClicked: () -> Unit,
+    isSportsWidgetEnabled: Boolean,
 ) {
     Box(
         modifier = Modifier
@@ -113,6 +115,7 @@ fun ExperimentalHomepageHeader(
                 wordmarkTextColor = wordmarkTextColor,
                 onLogoClicked = onLogoClicked,
                 onLogoLongClicked = onLogoLongClicked,
+                isSportsWidgetEnabled = isSportsWidgetEnabled,
             )
         }
     }
@@ -143,12 +146,17 @@ private fun WordmarkAndLogo(
     modifier: Modifier = Modifier,
     onLogoClicked: () -> Unit,
     onLogoLongClicked: () -> Unit,
+    isSportsWidgetEnabled: Boolean,
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        WordmarkLogo(onLogoClicked = onLogoClicked, onLogoLongClicked = onLogoLongClicked)
+        WordmarkLogo(
+            onLogoClicked = onLogoClicked,
+            onLogoLongClicked = onLogoLongClicked,
+            isSportsWidgetEnabled = isSportsWidgetEnabled,
+        )
         WordmarkText(wordmarkTextColor)
     }
 }
@@ -238,6 +246,7 @@ private fun HomepageHeaderPreview(
                 onNewsAnimationShown = {},
                 onLogoLongClicked = {},
                 onLogoClicked = {},
+                isSportsWidgetEnabled = false,
             )
         }
     }

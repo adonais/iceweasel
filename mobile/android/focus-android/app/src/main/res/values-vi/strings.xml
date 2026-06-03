@@ -946,7 +946,7 @@
     This is the subtitle of promote search widget dialog. %1$s will get replaced with the name
     of the app (e.g. "Focus")
   -->
-  <string name="promote_search_widget_dialog_subtitle">Chúng tôi sẽ để bạn ở chế độ duyệt web riêng tư, nhưng hãy bắt đầu nhanh hơn vào lần sau với tiện ích %1$s trên màn hình chính của bạn.</string>
+  <string name="promote_search_widget_dialog_subtitle">Chúng tôi sẽ để bạn ở chế độ duyệt web riêng tư, nhưng hãy bắt đầu nhanh hơn vào lần sau với widget %1$s trên màn hình chính của bạn.</string>
   <!--
     This is te text from add search widget to home screen button .The button is located on
     promote search widget dialog.

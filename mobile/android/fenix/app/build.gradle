@@ -627,6 +627,8 @@ dependencies {
     implementation project(':components:lib-ai-controls')
 
     implementation ComponentsDependencies.mozilla_appservices_syncmanager
+    implementation ComponentsDependencies.mozilla_appservices_merino
+
     implementation libs.accompanist.drawablepainter
     implementation libs.adjust
     implementation libs.androidx.activity

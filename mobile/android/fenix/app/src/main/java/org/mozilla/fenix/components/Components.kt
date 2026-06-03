@@ -6,10 +6,12 @@ package org.mozilla.fenix.components
 
 import android.app.Application
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.getSystemService
 import com.google.android.play.core.review.ReviewManagerFactory
 import mozilla.components.concept.ai.controls.AIFeatureBlock
 import mozilla.components.concept.ai.controls.AIFeatureRegistry
@@ -78,6 +80,10 @@ import org.mozilla.fenix.home.middleware.HomeTelemetryMiddleware
 import org.mozilla.fenix.home.setup.store.DefaultSetupChecklistRepository
 import org.mozilla.fenix.home.setup.store.SetupChecklistPreferencesMiddleware
 import org.mozilla.fenix.home.setup.store.SetupChecklistTelemetryMiddleware
+import org.mozilla.fenix.home.sports.SportsWidgetMiddleware
+import org.mozilla.fenix.home.sports.WorldCupMatchesRepository
+import org.mozilla.fenix.home.sports.client.AppServicesWorldCupMatchesClient
+import org.mozilla.fenix.home.sports.client.mockWorldCupBaseHost
 import org.mozilla.fenix.messaging.state.MessagingMiddleware
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.onboarding.FenixOnboarding
@@ -350,6 +356,22 @@ class Components(private val context: Context) {
                     settings.migrateLastReviewPromptTimePrefIfNeeded(nimbus.events)
                 },
                 AppVisualCompletenessMiddleware(performance.visualCompletenessQueue),
+                SportsWidgetMiddleware(
+                    sportsRepository = WorldCupMatchesRepository(
+                        client = AppServicesWorldCupMatchesClient(
+                            baseHostProvider = {
+                                if (settings.useMockWorldCupServer) {
+                                    mockWorldCupBaseHost(settings.mockWorldCupServerSession)
+                                } else {
+                                    null
+                                }
+                            },
+                        ),
+                    ),
+                    connectivityManager = requireNotNull(context.getSystemService<ConnectivityManager>()) {
+                        "ConnectivityManager unavailable"
+                    },
+                ),
             ),
         ).also {
             it.dispatch(AppAction.SetupChecklistAction.Init)
@@ -376,6 +398,7 @@ class Components(private val context: Context) {
         isVisible = settings.showHomepageSportsWidget,
         isFeatureEnabled = settings.enableHomepageSportsWidget,
         isCountdownWidgetVisible = settings.showHomepageCountdownWidget,
+        forceOneWeekToWorldCup = settings.forceOneWeekToWorldCup,
     )
 
     val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value, analytics.crashReporter) }

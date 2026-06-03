@@ -6,6 +6,7 @@ package org.mozilla.fenix.home.sports.ui
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -19,26 +20,39 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
 @Composable
 internal fun FlagContainer(
-    @DrawableRes flagResId: Int,
+    @DrawableRes flagResId: Int?,
     modifier: Modifier = Modifier,
 ) {
     val shape = MaterialTheme.shapes.extraSmall
+    val containerModifier = modifier
+        .border(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+            shape = shape,
+        )
+        .clip(shape)
+
+    // Guard against an unknown country code (resolves to 0) so painterResource doesn't crash,
+    // and an empty box is displayed instead.
+    if (flagResId == 0 || flagResId == null) {
+        Image(
+            painter = painterResource(R.drawable.fox_hand_over_eyes),
+            contentDescription = null,
+            modifier = containerModifier.background(color = PhotonColors.LightGrey40),
+        )
+        return
+    }
 
     Image(
         painter = painterResource(flagResId),
         contentDescription = null,
-        modifier = modifier
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = shape,
-            )
-            .clip(shape),
+        modifier = containerModifier,
     )
 }
 
@@ -58,6 +72,10 @@ private fun FlagContainerPreview() {
 
                 FlagContainer(
                     flagResId = R.drawable.flag_us,
+                    modifier = Modifier.size(width = 30.dp, height = 20.dp),
+                )
+                FlagContainer(
+                    flagResId = null,
                     modifier = Modifier.size(width = 30.dp, height = 20.dp),
                 )
             }

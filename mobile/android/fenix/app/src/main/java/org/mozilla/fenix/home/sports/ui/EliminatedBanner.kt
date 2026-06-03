@@ -64,7 +64,7 @@ fun EliminatedBanner(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(
-                    text = stringResource(R.string.sports_widget_remove),
+                    text = stringResource(R.string.sports_widget_skip),
                     onClick = onRemove,
                 )
 

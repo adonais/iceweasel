@@ -23,6 +23,8 @@
   <string name="mozac_feature_applinks_normal_confirm_dialog_message">اخۊین %s ن هیلین وو رین تا ای موئتوا ن بنیرین؟</string>
   <!-- Opens the selected time -->
   <string name="mozac_feature_applinks_confirm_dialog_confirm">گۊشیڌن</string>
+  <!-- Opens the selected app link -->
+  <string name="mozac_feature_applinks_confirm_dialog_confirm_2">گۊشیڌن من برنومه</string>
   <!-- Cancels the prompt -->
   <string name="mozac_feature_applinks_confirm_dialog_deny">لقو</string>
   <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->

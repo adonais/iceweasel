@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight.Companion.W700
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -30,7 +31,7 @@ internal fun ScorePill(
     ) {
         Row(
             modifier = Modifier.padding(
-                horizontal = FirefoxTheme.layout.space.static300,
+                horizontal = FirefoxTheme.layout.space.static200,
                 vertical = FirefoxTheme.layout.space.static50,
             ),
             verticalAlignment = Alignment.CenterVertically,
@@ -39,6 +40,7 @@ internal fun ScorePill(
                 text = homeScore?.toString() ?: "-",
                 style = FirefoxTheme.typography.headline5,
                 color = MaterialTheme.colorScheme.primary,
+                fontWeight = W700,
             )
             Text(
                 text = " - ",
@@ -49,6 +51,7 @@ internal fun ScorePill(
                 text = awayScore?.toString() ?: "-",
                 style = FirefoxTheme.typography.headline5,
                 color = MaterialTheme.colorScheme.primary,
+                fontWeight = W700,
             )
         }
     }

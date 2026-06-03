@@ -21,11 +21,14 @@ enum class SportCardErrorState {
     ConnectionInterrupted,
 }
 
-internal val SportCardErrorState.messageResId: Int
+internal val SportCardErrorState.titleResId: Int
     get() = when (this) {
-        SportCardErrorState.LoadFailed -> R.string.sports_widget_error_load_failed
-        SportCardErrorState.ConnectionInterrupted -> R.string.sports_widget_error_connection_interrupted
+        SportCardErrorState.LoadFailed -> R.string.sports_widget_error_load_failed_title
+        SportCardErrorState.ConnectionInterrupted -> R.string.sports_widget_error_connection_offline_title
     }
 
-internal val SportCardErrorState.isRefreshable: Boolean
-    get() = this != SportCardErrorState.ConnectionInterrupted
+internal val SportCardErrorState.messageResId: Int
+    get() = when (this) {
+        SportCardErrorState.LoadFailed -> R.string.sports_widget_error_load_failed_description
+        SportCardErrorState.ConnectionInterrupted -> R.string.sports_widget_error_connection_offline_description
+    }
