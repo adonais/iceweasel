@@ -1214,8 +1214,6 @@ bool GPUProcessManager::CreateContentCompositorManager(
 bool GPUProcessManager::CreateContentImageBridge(
     base::ProcessId aOtherProcess, dom::ContentParentId aChildId,
     uint32_t aNamespace, ipc::Endpoint<PImageBridgeChild>* aOutEndpoint) {
-  MOZ_DIAGNOSTIC_ASSERT(IsGPUReady());
-
   if (!EnsureImageBridgeChild()) {
     return false;
   }
@@ -1261,8 +1259,6 @@ base::ProcessId GPUProcessManager::GPUProcessPid() {
 bool GPUProcessManager::CreateContentVRManager(
     base::ProcessId aOtherProcess, dom::ContentParentId aChildId,
     uint32_t aNamespace, ipc::Endpoint<PVRManagerChild>* aOutEndpoint) {
-  MOZ_DIAGNOSTIC_ASSERT(IsGPUReady());
-
   if (NS_WARN_IF(!EnsureVRManager())) {
     return false;
   }
