@@ -1922,6 +1922,28 @@ export var PanelView = class extends AssociatedToNode {
       ? this.#arrowNavigableWalker
       : this._tabNavigableWalker;
     let oldSel = this.selectedElement;
+
+    // It's possible that we have no selectedElement, but there is still
+    // an activeElement (if the user clicks on an input in a shadowRoot,
+    // for instance). We should start from the activeElement in that case,
+    // and take care to get the right activeElement if shadowRoots are
+    // involved (as we can allow focus to be on elements in shadowRoots).
+    if (!oldSel) {
+      oldSel = this.document.activeElement;
+      if (
+        oldSel &&
+        !(
+          this.node.compareDocumentPosition(oldSel) &
+          Node.DOCUMENT_POSITION_CONTAINED_BY
+        )
+      ) {
+        oldSel = null;
+      }
+      while (oldSel?.shadowRoot?.activeElement) {
+        oldSel = oldSel.shadowRoot.activeElement;
+      }
+    }
+
     let newSel;
     if (oldSel) {
       walker.currentNode = oldSel;

@@ -740,3 +740,15 @@ add_task(async function testTabbingThroughNonDelegatingShadowRoots() {
 
   await hidePopup();
 });
+
+// Test that tab is not confused if we are focused on an input in a shadowRoot
+add_task(async function testTabbingThroughNonDelegatingShadowRoots() {
+  await openPopup();
+  await showSubView(gNonDelegatingComponentView);
+
+  gNonDelegatingShadowRoot.focus();
+  gNonDelegatingShadowRootInput.focus();
+  await expectFocusAfterKey("Tab", gNonDelegatingShadowRootButton);
+
+  await hidePopup();
+});
