@@ -246,6 +246,11 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
     return aFontKey.mNamespace == mIdNamespace;
   }
 
+  bool OwnsExternalImageId(const wr::ExternalImageId& aId) const {
+    return static_cast<uint32_t>(wr::AsUint64(aId) >> 32) ==
+           mLateInit->mIdNamespace.mHandle;
+  }
+
   void FlushRendering(wr::RenderReasons aReasons, bool aWaitForPresent = true);
 
   /**

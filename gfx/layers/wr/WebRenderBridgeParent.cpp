@@ -704,6 +704,11 @@ bool WebRenderBridgeParent::AddSharedExternalImage(
     return true;
   }
 
+  if (!GetCompositorBridge()->OwnsExternalImageId(aExtId)) {
+    gfxCriticalNote << "We do not own extId:" << wr::AsUint64(aExtId);
+    return false;
+  }
+
   auto key = wr::AsUint64(aKey);
   auto it = mSharedSurfaceIds.find(key);
   if (it != mSharedSurfaceIds.end()) {
@@ -1470,6 +1475,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpAddPipelineIdForCompositable: {
         const OpAddPipelineIdForCompositable& op =
             cmd.get_OpAddPipelineIdForCompositable();
+
         AddPipelineIdForCompositable(op.pipelineId(), op.handle(), op.owner(),
                                      aTxn, txnForImageBridge);
         break;
@@ -1477,7 +1483,11 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpRemovePipelineIdForCompositable: {
         const OpRemovePipelineIdForCompositable& op =
             cmd.get_OpRemovePipelineIdForCompositable();
-        RemovePipelineIdForCompositable(op.pipelineId(), aTxn);
+
+        auto* pendingOps =
+            mLateInit->mApi->GetPendingAsyncImagePipelineOps(aTxn);
+
+        RemovePipelineIdForCompositable(op.pipelineId(), pendingOps, aTxn);
         break;
       }
       case WebRenderParentCommand::TOpReleaseTextureOfImage: {
@@ -1500,6 +1510,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpUpdatedAsyncImagePipeline: {
         const OpUpdatedAsyncImagePipeline& op =
             cmd.get_OpUpdatedAsyncImagePipeline();
+
         aTxn.InvalidateRenderedFrame(wr::RenderReasons::ASYNC_IMAGE);
         auto* list = mApi->GetPendingRemoteTextureInfoList();
         MOZ_ASSERT_IF(IsRootWebRenderBridgeParent(), !list);
@@ -1819,8 +1830,12 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
     return;
   }
 
-  MOZ_ASSERT(mAsyncCompositables.find(wr::AsUint64(aPipelineId)) ==
-             mAsyncCompositables.end());
+  if (mAsyncCompositables.find(wr::AsUint64(aPipelineId)) !=
+      mAsyncCompositables.end()) {
+    gfxCriticalNote << "Content attempted AddPipelineIdForCompositable with "
+                       "existing pipelineId";
+    return;
+  }
 
   RefPtr<CompositableHost> host;
   switch (aOwner) {
@@ -1847,9 +1862,6 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
   if (!wrHost) {
     gfxCriticalNote
         << "Incompatible CompositableHost at WebRenderBridgeParent.";
-  }
-
-  if (!wrHost) {
     return;
   }
 

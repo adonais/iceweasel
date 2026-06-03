@@ -66,6 +66,12 @@ class CompositorManagerParent final : public PCompositorManagerParent {
 
   const dom::ContentParentId& GetContentId() const { return mContentId; }
 
+  bool OwnsExternalImageId(const wr::ExternalImageId& aId) const {
+    return mNamespace == static_cast<uint32_t>(wr::AsUint64(aId) >> 32);
+  }
+
+  uint32_t GetNamespace() const { return mNamespace; }
+
  private:
   static StaticRefPtr<CompositorManagerParent> sInstance;
   static StaticMutex sMutex MOZ_UNANNOTATED;

@@ -153,6 +153,13 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   virtual void NotifyMemoryPressure() {}
   virtual void AccumulateMemoryReport(wr::MemoryReport*) {}
 
+  // Ensures the WebRenderBridgeParent has completed initialization (either
+  // successfully or with failure) by the time this returns. Must be called
+  // from the Compositor thread.
+  virtual void EnsureWebRenderBridgeParentInitialized() = 0;
+
+  bool OwnsExternalImageId(const wr::ExternalImageId& aId) const;
+
  protected:
   virtual ~CompositorBridgeParentBase();
 
