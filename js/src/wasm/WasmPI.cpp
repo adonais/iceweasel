@@ -1333,9 +1333,15 @@ int32_t AddPromiseReactions(Instance* instance, void* promiseRef, void* contRef,
                             void* reactionRef, void* promisingPromiseRef) {
   MOZ_ASSERT(SASigAddPromiseReactions.failureMode == FailureMode::FailOnNegI32);
   JSContext* cx = instance->cx();
-  Rooted<PromiseObject*> promiseObject(
-      cx,
-      &AnyRef::fromCompiledCode(promiseRef).toJSObject().as<PromiseObject>());
+  RootedObject promiseObject(
+      cx, &AnyRef::fromCompiledCode(promiseRef).toJSObject());
+  if (IsWrapper(promiseObject)) {
+    if (JS_IsDeadWrapper(UncheckedUnwrap(promiseObject))) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEAD_OBJECT);
+      return -1;
+    }
+  }
   Rooted<ContObject*> contObject(
       cx, &AnyRef::fromCompiledCode(contRef).toJSObject().as<ContObject>());
   RootedFunction reactionFunc(
