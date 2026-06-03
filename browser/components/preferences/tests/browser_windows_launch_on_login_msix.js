@@ -11,6 +11,8 @@ ChromeUtils.defineESModuleGetters(this, {
   WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
 });
 
+const STARTUP_PANE = SRD_PREF_VALUE ? "paneHome" : "paneGeneral";
+
 add_task(async function test_check_uncheck_checkbox() {
   await ExperimentAPI.ready();
   let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
@@ -18,10 +20,14 @@ add_task(async function test_check_uncheck_checkbox() {
     value: { enabled: true },
   });
   // Open preferences to general pane
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(STARTUP_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
+  await TestUtils.waitForCondition(
+    () => doc.getElementById("windowsLaunchOnLogin"),
+    "windowsLaunchOnLogin checkbox rendered"
+  );
 
   let launchOnLoginCheckbox = doc.getElementById("windowsLaunchOnLogin");
 
@@ -38,7 +44,7 @@ add_task(async function test_check_uncheck_checkbox() {
   );
 
   // Click once: should disable launch-on-login.
-  launchOnLoginCheckbox.click();
+  synthesizeClick(launchOnLoginCheckbox);
   ok(
     !launchOnLoginCheckbox.checked,
     "Autostart checkbox unchecked after first click"
@@ -48,7 +54,7 @@ add_task(async function test_check_uncheck_checkbox() {
   }, "Launch on login is disabled after unchecking");
 
   // Click again: should re-enable launch-on-login.
-  launchOnLoginCheckbox.click();
+  synthesizeClick(launchOnLoginCheckbox);
   ok(
     launchOnLoginCheckbox.checked,
     "Autostart checkbox re-checked after second click"
@@ -73,10 +79,14 @@ add_task(async function enable_external_startuptask() {
   ok(enabled, "Task is enabled");
 
   // Open preferences to general pane
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(STARTUP_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
+  await TestUtils.waitForCondition(
+    () => doc.getElementById("windowsLaunchOnLogin"),
+    "windowsLaunchOnLogin checkbox rendered"
+  );
 
   let launchOnLoginCheckbox = doc.getElementById("windowsLaunchOnLogin");
   ok(launchOnLoginCheckbox.checked, "Autostart checkbox automatically checked");
@@ -95,10 +105,14 @@ add_task(async function disable_external_startuptask() {
   await WindowsLaunchOnLogin._disableLaunchOnLoginMSIX();
 
   // Open preferences to general pane
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(STARTUP_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
+  await TestUtils.waitForCondition(
+    () => doc.getElementById("windowsLaunchOnLogin"),
+    "windowsLaunchOnLogin checkbox rendered"
+  );
 
   let launchOnLoginCheckbox = doc.getElementById("windowsLaunchOnLogin");
   ok(
