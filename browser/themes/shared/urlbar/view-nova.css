@@ -1653,11 +1653,17 @@
       }
     }
 
-    > .urlbarView-realtime-description-bottom {
+    > .urlbarView-realtime-description-bottom > .urlbarView-sports-status {
+      font-weight: var(--font-weight-bold);
+    }
+
+    .urlbarView-row:not([selected])
+      > .urlbarView-realtime-root
+      > .urlbarView-realtime-item:not([selected])
+      > &
+      > .urlbarView-realtime-description-bottom
       > .urlbarView-sports-status {
-        color: var(--green-status-color);
-        font-weight: var(--font-weight-bold);
-      }
+      color: var(--green-status-color);
     }
   }
 }
