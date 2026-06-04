@@ -11,14 +11,20 @@
   <string name="mozac_summarize_learn_more_link">Frekari upplýsingar</string>
   <!-- Title for the off-device shake summarization consent screen. Localization note: Asking if the user wants to use the shake gesture to summarize the page they are viewing. -->
   <string name="mozac_summarize_shake_consent_off_device_title">Gera samantekt efnis með því að hrista?</string>
+  <!-- Message for the off-device shake summarization consent screen. %1$s is 'Firefox' -->
+  <string name="mozac_summarize_shake_consent_off_device_message">Hristu tækið þitt, fáðu samantekt síðunnar frá %1$s á nokkrum sekúndum.</string>
   <!-- Button text for the off-device shake summarization consent screen approving shake consent. Localization note: "Continue" turns on the shake to summarize feature. -->
   <string name="mozac_summarize_shake_consent_off_device_button_positive">Halda áfram</string>
   <!-- Button text for the off-device shake summarization consent screen denying shake consent. Localization note: "Not now" dismisses the request to turn on the shake to summarize feature. -->
   <string name="mozac_summarize_shake_consent_off_device_negative_button">Ekki núna</string>
   <!-- Title for the on-device shake summarization and download consent screen -->
   <string name="mozac_summarize_shake_consent_on_device_title">Gera samantekt efnis á þessari síðu</string>
+  <!-- Button text for the on-device shake summarization and download consent screen approving shake and download consent -->
+  <string name="mozac_summarize_shake_consent_on_device_button_positive">Sæktu til að fá samantekt efnis</string>
   <!-- Button text for the on-device shake summarization and download consent screen denying shake and download consent -->
   <string name="mozac_summarize_shake_consent_on_device_negative_button">Ekki núna</string>
+  <!-- Button text for the consent to download an on-device model approving download consent -->
+  <string name="mozac_summarize_download_consent_button_positive">Sæktu til að fá samantekt efnis</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->
   <string name="mozac_summarize_download_consent_button_negative">Hætta við</string>
   <!-- Caption to describe the progress of the download. %1$.2f is bytes downloaded, %2$.2f is total bytes required for download to complete. -->

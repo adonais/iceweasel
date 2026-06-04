@@ -1743,6 +1743,8 @@
   <string name="create_tab_group_name_label">Nome</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Adicionar a</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Adicionar a um grupo de abas, alça de arrastar usada para recolher</string>
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">Adicionar a novo grupo de abas</string>
   <!-- Label for adding to a new tab group. -->
@@ -1772,6 +1774,8 @@
     <item quantity="one">Compartilhar %1$s grupo de abas com %2$d aba.</item>
     <item quantity="other">Compartilhar %1$s grupo de abas com %2$d abas.</item>
   </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Ver grupo de abas, alça de arrastar usada para recolher</string>
   <plurals name="expanded_tab_group_header_description">
     <!--
       Accessibility description for the header of an expanded tab group.
@@ -3203,6 +3207,11 @@
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">Não foi possível se conectar à VPN. Tente novamente mais tarde.</string>
   <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">Usado %1$d GB de dados de VPN. O acesso será renovado no próximo mês.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3502,6 +3511,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Exibir todos os atalhos</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Adicionar atalho</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Digite a URL de um site</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Limite de atalhos atingido</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -4458,6 +4469,8 @@
   <string name="sports_widget_match_live">AO VIVO</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title">Campeões da Copa do Mundo de 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Finalistas</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
   <string name="sports_widget_third_place_title">Terceiro lugar</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
@@ -4472,6 +4485,10 @@
   <string name="sports_widget_final">Final</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">Final para terceiro lugar</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">As informações do jogo não estão disponíveis no momento. Tente recarregar daqui a alguns minutos.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">Conexão interrompida — atualizações em tempo real pausadas.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Atualizar</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4510,6 +4527,14 @@
   <string name="sports_widget_match_full_time_suffix">(tempo regulamentar)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_2">Tempo regulamentar</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title">Acompanhe a Copa do Mundo</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
   <string name="sports_widget_card_description">Receba atualizações em tempo real sobre os jogos e muito mais.</string>
   <!-- Sports widget menu item to change the selected team. -->
@@ -4554,6 +4579,8 @@
     Your translation will be automatically truncated at 2 characters to avoid layout issues
   -->
   <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description">Fechar painel de seleção de time</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">Fechar</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
@@ -4565,6 +4592,18 @@
   <string name="sports_widget_countdown_remaining_content_description">Tempo restante. Dias: %1$d. Horas: %2$d. Minutos: %3$d.</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Ir para o site da Copa do Mundo</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description">Em breve: %1$s contra %2$s, dia %3$s às %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
+    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
+    or a match status like "Full time").
+  -->
+  <string name="sports_widget_match_content_description">%1$s contra %2$s, %3$s</string>
   <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
@@ -4578,15 +4617,29 @@
   -->
   <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, ao vivo</string>
   <!--
+    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
+  -->
+  <string name="sports_widget_match_elapsed_minutes">Tempo decorrido em minutos: %1$s</string>
+  <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
   -->
   <string name="sports_widget_page_position_content_description">%1$s, página %2$d de %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Resultados finais da Copa do Mundo, página %1$d de %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">Resultados finais da Copa do Mundo</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Remover Copa do Mundo da página inicial</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
   <string name="sports_widget_team_followed_title">Seguindo: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description">Volte aqui para ver informações das partidas à medida que o torneio se aproxima.</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">Primeiro tempo</string>
   <!-- Sports widget match status label shown during second half of a match. -->
@@ -4597,6 +4650,12 @@
   <string name="sports_widget_error_connection_offline_description">Verifique sua conexão com a internet e tente novamente.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Fase de grupos</string>
+  <!-- Sports widget error card title shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_title">As informações da partida não estão disponíveis no momento.</string>
+  <!-- Sports widget error card description shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_description">Experimente atualizar daqui a alguns minutos.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">Time a ser definido</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
@@ -4611,4 +4670,29 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Aviso de privacidade</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Saiba mais</string>
+  <!--
+    Firefox Labs
+
+    Banner title text on the Firefox Labs screen.
+  -->
+  <string name="firefox_labs_banner_title">Teste nossos recursos experimentais!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">Eles estão em desenvolvimento e evolução, então podem afetar o funcionamento do %s.</string>
+  <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
+  <string name="firefox_labs_restore_default_button_text">Restaurar padrão</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
+  <string name="firefox_labs_feature_dialog_title">É necessário reiniciar</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+  <string name="firefox_labs_dialog_restart_button">Reiniciar</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+  <string name="firefox_labs_dialog_cancel_button">Cancelar</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+  <string name="firefox_labs_restore_defaults_dialog_title">É necessário reiniciar</string>
+  <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_restore_defaults_dialog_message">Para restaurar o padrão, reinicie o %s.</string>
+  <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+  <string name="firefox_labs_no_labs_available_description">Nenhum recurso experimental para testar agora</string>
 </resources>

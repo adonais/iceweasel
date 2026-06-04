@@ -23,6 +23,8 @@
   <string name="content_description_normal_browsing">പൊതുതിരച്ചിൽ</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">തിരയുക അല്ലെങ്കിൽ വിലാസം നൽകുക</string>
+  <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+  <string name="search_hint_short">തിരയുക</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">ഗോളാന്തരവല തിരയുക</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -353,6 +355,12 @@
   <string name="translation_toolbar_expand_action">വിവൎത്തന കടലാസു തുറക്കുക</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">സന്ദേശം തള്ളിക്കളയുക</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">താൾ ചുരുക്കം</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">കൂടുതലറിയുക</string>
   <!-- Title for the translations AI feature toggle -->
@@ -361,6 +369,8 @@
   <string name="ai_controls_translations_description">എല്ലാ മൊഴിമാറ്റങ്ങളും താങ്ങളുടെ ഉപകരണത്തിൽ സ്വകാര്യമായി തുടരും.</string>
   <!-- Link text to navigate to more translations settings -->
   <string name="ai_controls_more_translations_settings">മൊഴിമാറ്റ ക്രമീകരണങ്ങൾ</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">കുരലുപയോഗിച്ചു തിരയുക</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">എന്തെല്ലാം തടയപ്പെടും:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -420,6 +430,8 @@
   <string name="search_suggestions_delete_history_item_snackbar">നാൾവഴിയിൽ നിന്നു %1$s-നെ മായിച്ചു</string>
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">ഈ നാൾവഴിയിനം മായ്ക്കുക</string>
+  <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="applinks_prompt_negative_button">%1$s-ൽ തന്നെ ഇരിക്കുക</string>
   <!--
     Home onboarding
 
@@ -1020,6 +1032,8 @@
   <string name="alternative_app_icon_option_gradient_northern_lights">വടക്കൻ വെളിവു്</string>
   <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
   <string name="alternative_app_icon_option_retro_2004">റെട്രോ 2004</string>
+  <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
+  <string name="alternative_app_icon_option_pixelated">ചിത്രമാത്രപ്പെടുത്തിയ</string>
   <!-- Title for the "Minimal" themed alternative app icon variant in the icon picker screen. The app icon presents a simplified, flat and monochrome version of the Firefox logo. -->
   <string name="alternative_app_icon_option_minimal">കുറച്ചു്</string>
   <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
@@ -1028,6 +1042,12 @@
   <string name="alternative_app_icon_option_momo">മോമോ</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo_subtitle">ഇതു് @heyheymomodraws ആണു് ഉണ്ടാക്കിയതു്</string>
+  <!-- Title for the "Cuddling" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
+  <string name="alternative_app_icon_option_cuddling">തഴുകൽ</string>
+  <!-- Title for the "Flaming" themed alternative app icon variant in the icon picker screen. The app icon features a fiery design, with the Firefox logo surrounded by flames for a bold, energetic look. -->
+  <string name="alternative_app_icon_option_flaming">തഴൽ</string>
+  <!-- Title for the "Cool" themed alternative app icon variant in the icon picker screen. The app icon uses a warm orange-to-yellow gradient background with a sleek, modern twist on the Firefox logo, giving it a fresh and stylish appearance. -->
+  <string name="alternative_app_icon_option_cool">കുളിർ</string>
   <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
   <string name="alternative_app_icon_group_solid_colors">കടും നിറങ്ങൾ</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
@@ -1509,6 +1529,10 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">കൂട്ടം മായ്ക്കുക</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">റദ്ദാക്കുക</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">ടാബടച്ചു കൂട്ടം മായ്ക്കണോ?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">ഈ നടപടി ടാബുകൂട്ടത്തെ എന്നെന്നേക്കുമായി മായ്ക്കും.</string>
   <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
   <string name="close_tab_and_delete_group_confirmation_dialog_confirm">കൂട്ടം മായ്ക്കുക</string>
   <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
@@ -1653,6 +1677,8 @@
   <string name="download_delete_multi_select_dialog_cancel">റദ്ദാക്കുക</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
   <string name="download_delete_dialog_from_device">ഉപകരണത്തിൽ നിന്നു മായ്ക്കുക</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_history">ഇറക്കിവയ്ക്കൽ നാൾവഴിയിൽ നിന്നു മാത്രം മായ്ക്കുക</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
   <string name="download_delete_dialog_cancel">റദ്ദാക്കുക</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
@@ -1751,6 +1777,11 @@
   <string name="download_content_type_filter_document">രേഖകളും</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">മറ്റുള്ളവ</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location before downloading it.
+    %s is the formatted size of the file (e.g., "12.5 MB").
+  -->
+  <string name="download_rename_and_change_location_dialog_title">ഫയൽ ഇറക്കിവയ്ക്കണോ?\n(%s)</string>
   <!--
     Title for the alert dialog to rename a file and/or change its download location
     when the file size is not available before downloading it.
@@ -2368,6 +2399,26 @@
   <string name="preference_enhanced_tracking_protection">മെച്ചപ്പെട്ട പിന്തുടർച്ച പരിരക്ഷണം</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">കൂടുതല്‍ അറിയുക</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d പിന്തുടൎച്ചയന്ത്രം തടഞ്ഞു</item>
+    <item quantity="other">%d പിന്തുടൎച്ചയന്ത്രങ്ങൾ തടഞ്ഞു</item>
+  </plurals>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d പിന്തുടൎച്ചയന്ത്രങ്ങൾ തടഞ്ഞു</item>
+    <item quantity="other">%d പിന്തുടൎച്ചയന്ത്രങ്ങൾ തടഞ്ഞു</item>
+  </plurals>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">പിന്തുടൎച്ചയന്ത്രങ്ങളെ പിടികൂടാൻ ഞങ്ങളെ തുണയ്ക്കുക</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">സ്റ്റാൻഡേർഡ് (തനതായിട്ടുള്ളത്)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2484,6 +2535,8 @@
   <string name="etp_suspected_fingerprinters_title">സംശയിക്കപ്പെട്ട വിരലടയാളപ്പിന്തുടൎച്ചയന്ത്രങ്ങൾ</string>
   <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_known_fingerprinters_title">അറിയപ്പെട്ട വിരലടയാളപ്പിന്തുടൎച്ചയന്ത്രം</string>
+  <!-- Label for the fingerprinters category shown in the tracking protections dashboard breakdown -->
+  <string name="tracking_dashboard_fingerprinters_category_name">വിരലടയാളപ്പിന്തുടൎച്ചയന്ത്രങ്ങൾ</string>
   <!-- Text displayed that links to website about enhanced tracking protection SmartBlock -->
   <string name="preference_etp_smartblock_learn_more">കൂടുതലറിയുക</string>
   <!--
@@ -2707,6 +2760,8 @@
   <string name="saved_logins_sort_strategy_last_used">അവസാനം ഉപയോഗിച്ചത്</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">ഒളിവാക്കു് കുറിപ്പടി അടുക്കുക</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">ഫയലിൽ നിന്നു് ഇറക്കുമതിക്കുക</string>
   <!--
     Email Masks
 

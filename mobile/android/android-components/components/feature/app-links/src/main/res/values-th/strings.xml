@@ -23,6 +23,8 @@
   <string name="mozac_feature_applinks_normal_confirm_dialog_message">คุณต้องการออกจาก %s เพื่อดูเนื้อหานี้หรือไม่?</string>
   <!-- Opens the selected time -->
   <string name="mozac_feature_applinks_confirm_dialog_confirm">เปิด</string>
+  <!-- Opens the selected app link -->
+  <string name="mozac_feature_applinks_confirm_dialog_confirm_2">เปิดในแอป</string>
   <!-- Cancels the prompt -->
   <string name="mozac_feature_applinks_confirm_dialog_deny">ยกเลิก</string>
   <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->
