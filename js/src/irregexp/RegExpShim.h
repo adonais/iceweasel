@@ -71,6 +71,7 @@ class Handle;
 #define V8_FALLTHROUGH [[fallthrough]]
 #define V8_NODISCARD [[nodiscard]]
 #define V8_NOEXCEPT noexcept
+#define V8_LIFETIME_BOUND /* unsupported */
 
 #define V8_LIKELY(x) MOZ_LIKELY(x)
 #define V8_UNLIKELY(x) MOZ_UNLIKELY(x)
