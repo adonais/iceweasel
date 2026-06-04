@@ -136,21 +136,46 @@ private fun MatchCard.bucket(): CardBucket {
     }
 }
 
-// Stable bucket sort: live cards first, then past, then upcoming. Within each bucket
-// the input order is preserved (callers feed chronological input).
+// Pager ordering, applied to both followed-team and no-team card lists:
+//   1. Live matches (chronological)
+//   2. Champion card — Final with TournamentWinner outcome
+//   3. Third Place card — TPP with ThirdPlace outcome (independent of #2)
+//   4. Upcoming bracket-finishing matches by date (TPP Sat before Final Sun)
+//   5. Other past matches reverse-chronologically (so the team's most-recent KO round
+//      sits next to the celebrations rather than buried under group-stage history)
+//   6. Other upcoming matches chronologically
+// Within each segment the input order is preserved (callers feed chronological input);
+// the past segment is reversed at the end.
 private fun List<MatchCard>.orderedForPager(): List<MatchCard> {
     val live = mutableListOf<MatchCard>()
+    var champion: MatchCard? = null
+    var thirdPlace: MatchCard? = null
+    val upcomingBracket = mutableListOf<MatchCard>()
     val past = mutableListOf<MatchCard>()
-    val upcoming = mutableListOf<MatchCard>()
+    val upcomingOther = mutableListOf<MatchCard>()
+
     forEach { card ->
-        when (card.bucket()) {
-            CardBucket.LIVE -> live += card
-            CardBucket.PAST -> past += card
-            CardBucket.UPCOMING -> upcoming += card
+        val bucket = card.bucket()
+        val outcome = card.viewerOutcome
+        when {
+            bucket == CardBucket.LIVE -> live += card
+            outcome is FollowedTeamOutcome.TournamentWinner && champion == null -> champion = card
+            outcome is FollowedTeamOutcome.ThirdPlace && thirdPlace == null -> thirdPlace = card
+            bucket == CardBucket.UPCOMING && card.round.isBracketFinishing() -> upcomingBracket += card
+            bucket == CardBucket.PAST -> past += card
+            else -> upcomingOther += card
         }
     }
-    return live + past + upcoming
+
+    return live +
+        listOfNotNull(champion, thirdPlace) +
+        upcomingBracket +
+        past.reversed() +
+        upcomingOther
 }
+
+private fun TournamentRound.isBracketFinishing(): Boolean =
+    this == TournamentRound.FINAL || this == TournamentRound.THIRD_PLACE_PLAYOFF
 
 // A decided final or third-place playoff always carries the celebration outcome,
 // regardless of which team (if any) the viewer follows — the champion card is shown
