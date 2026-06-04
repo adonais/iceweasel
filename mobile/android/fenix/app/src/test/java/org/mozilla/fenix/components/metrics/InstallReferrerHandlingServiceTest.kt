@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,9 +30,11 @@ import org.mozilla.fenix.distributions.DistributionBrowserStoreProvider
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.distributions.DistributionProviderChecker
 import org.mozilla.fenix.distributions.DistributionSettings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.MarketingOnboardingCard
+import org.mozilla.fenix.utils.Settings
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -74,6 +77,7 @@ internal class InstallReferrerHandlingServiceTest {
 
     @Before
     fun setUp() {
+        every { testContext.components.settings } returns Settings(testContext)
         InstallReferrerHandlingService.response = null
         testContext.settings().shouldShowMarketingOnboarding = true
         FxNimbus.features.marketingOnboardingCard.withCachedValue(MarketingOnboardingCard(enabled = true))
@@ -283,6 +287,123 @@ internal class InstallReferrerHandlingServiceTest {
         assertFalse(InstallReferrerHandlingService.isMetaAttribution("gclid=12345"))
         assertFalse(InstallReferrerHandlingService.isMetaAttribution("adjust_reftag=test"))
     }
+
+    @Test
+    fun `GIVEN a Meta-attributed referrer on OK response WHEN start is called THEN isUserMetaAttributed is true`() {
+        val referrer =
+            """utm_source=apps.facebook.com&utm_medium=paid&utm_content={"app":12345,"t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}"""
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = referrer,
+        )
+
+        service.start()
+
+        assertTrue(testContext.settings().isUserMetaAttributed)
+    }
+
+    @Test
+    fun `GIVEN a non-Meta referrer on OK response WHEN start is called THEN isUserMetaAttributed is false`() {
+        testContext.settings().isUserMetaAttributed = true
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = "utm_source=google&utm_medium=cpc",
+        )
+
+        service.start()
+
+        assertFalse(testContext.settings().isUserMetaAttributed)
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse is null or blank THEN isTikTokAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isTikTokAttribution(null))
+        assertFalse(InstallReferrerHandlingService.isTikTokAttribution(""))
+        assertFalse(InstallReferrerHandlingService.isTikTokAttribution(" "))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a dotted TikTok adjust_external_click_id THEN isTikTokAttribution returns true`() {
+        assertTrue(
+            InstallReferrerHandlingService.isTikTokAttribution(
+                "adjust_external_click_id=E.C.P.C.04.AAAQzv8mYx",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has an underscored TikTok adjust_external_click_id THEN isTikTokAttribution returns true`() {
+        assertTrue(
+            InstallReferrerHandlingService.isTikTokAttribution(
+                "adjust_external_click_id=E_C_P_C_12_AAAQzv8mYx",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a lowercase TikTok adjust_external_click_id THEN isTikTokAttribution returns true`() {
+        assertTrue(InstallReferrerHandlingService.isTikTokAttribution("adjust_external_click_id=e_c_p_c_abc_aaaqzv8myx"))
+        assertTrue(InstallReferrerHandlingService.isTikTokAttribution("adjust_external_click_id%3De_c_p_c_08aaaBBB8myx"))
+        assertTrue(InstallReferrerHandlingService.isTikTokAttribution("adjust_external_click_id%3DE_c_p_c_14a"))
+        assertTrue(InstallReferrerHandlingService.isTikTokAttribution("adjust_external_click_id%3DE.c.P.c_24bbbCCc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a malformed percent escape THEN isTikTokAttribution falls back to raw parsing`() {
+        // The lone trailing % causes URLDecoder to throw IllegalArgumentException
+        assertTrue(
+            InstallReferrerHandlingService.isTikTokAttribution(
+                "adjust_external_click_id=E_C_P_C_04_AAA&malformed=%",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a non-TikTok adjust_external_click_id THEN isTikTokAttribution returns false`() {
+        assertFalse(
+            InstallReferrerHandlingService.isTikTokAttribution(
+                "adjust_external_click_id=EAIaIQobChMI4t7Y8KOM_wIVDpRoCR1RAQ7t",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has no adjust_external_click_id THEN isTikTokAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isTikTokAttribution("utm_source=google&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `GIVEN a TikTok-attributed referrer on OK response WHEN start is called THEN isUserTikTokAttributed is true`() {
+        val referrer = "adjust_external_click_id=E.C.P.C.04.AAA&utm_medium=paid"
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = referrer,
+        )
+
+        service.start()
+
+        assertTrue(testContext.settings().isUserTikTokAttributed)
+    }
+
+    @Test
+    fun `GIVEN a non-TikTok referrer on OK response WHEN start is called THEN isUserTikTokAttributed is false`() {
+        testContext.settings().isUserTikTokAttributed = true
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = "utm_source=google&utm_medium=cpc",
+        )
+
+        service.start()
+
+        assertFalse(testContext.settings().isUserTikTokAttributed)
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse is a TikTok attribution THEN we should show marketing onboarding`() =
+        runBlocking {
+            val tiktokReferrer = "adjust_external_click_id=E.C.P.C.04.AAA&utm_medium=paid"
+            assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding(tiktokReferrer, distributionIdManager))
+        }
 }
 
 private class FakeReferrerClient(
