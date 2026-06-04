@@ -12,6 +12,8 @@ const { BANDWIDTH } = ChromeUtils.importESModule(
   "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
 );
 
+const BANDWIDTH_ENABLED_PREF = "browser.ipProtection.bandwidth.enabled";
+
 // Populate IPPProxyManager.usageInfo so that new windows can read bandwidth
 // data when initializing their panel. Without this, usageInfo is null because
 // no previous test has gone through the real proxy start flow.
@@ -92,63 +94,109 @@ add_task(async function test_bandwidth_warning_set_in_new_window() {
 });
 
 /**
- * Tests that IPPUsageHelper does not register listeners when bandwidth
- * tracking is disabled, and that toggling the pref drives init/uninit.
+ * Tests that IPPUsageHelper keeps the bandwidth.enabled pref in sync with the
+ * usage's unlimited flag.
  */
-add_task(async function test_init_guarded_by_bandwidth_pref() {
+add_task(async function test_bandwidth_enabled_pref_tracks_usage() {
   const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
   const remainingWarning = maxBytes * BANDWIDTH.SECOND_THRESHOLD;
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ipProtection.bandwidth.enabled", false]],
-  });
+  Services.prefs.setBoolPref(BANDWIDTH_ENABLED_PREF, true);
 
-  Assert.equal(
-    IPPUsageHelper.state,
-    UsageStates.NONE,
-    "State is reset to NONE when bandwidth tracking is disabled"
-  );
-
-  IPPUsageHelper.init();
-
+  // An unlimited usage event disables the pref and keeps state at NONE.
   IPPProxyManager.dispatchEvent(
     new CustomEvent("IPPProxyManager:UsageChanged", {
       bubbles: true,
       composed: true,
-      detail: {
-        usage: new ProxyUsage(
-          String(maxBytes),
-          String(remainingWarning),
-          "2026-12-31T00:00:00.000Z"
-        ),
-      },
+      detail: { usage: new ProxyUsage(null, null, null, true) },
     })
   );
   await TestUtils.waitForTick();
 
   Assert.equal(
+    Services.prefs.getBoolPref(BANDWIDTH_ENABLED_PREF),
+    false,
+    "Pref is disabled for an unlimited usage"
+  );
+  Assert.equal(
     IPPUsageHelper.state,
-    UsageStates.NONE,
-    "Usage events do not update state while bandwidth tracking is disabled"
+    UsageStates.UNLIMITED,
+    "State is UNLIMITED for an unlimited usage"
   );
 
-  await SpecialPowers.popPrefEnv();
-
+  // A limited usage event re-enables the pref and updates the warning state.
   await fireUsageChanged(remainingWarning, maxBytes);
 
   Assert.equal(
+    Services.prefs.getBoolPref(BANDWIDTH_ENABLED_PREF),
+    true,
+    "Pref is enabled for a limited usage"
+  );
+  Assert.equal(
     IPPUsageHelper.state,
     UsageStates.WARNING_75_PERCENT,
-    "Listeners are restored when bandwidth tracking is re-enabled"
+    "State reflects the limited usage warning"
   );
 
+  // Reset state and pref.
   await fireUsageChanged(maxBytes, maxBytes);
+  Services.prefs.clearUserPref(BANDWIDTH_ENABLED_PREF);
+});
 
+/**
+ * Tests that IPPUsageHelper syncs the bandwidth.enabled pref from the
+ * entitlement's limitedBandwidth field on IPPAuthProvider:StateChanged.
+ */
+add_task(async function test_bandwidth_enabled_pref_tracks_entitlement() {
+  const sandbox = sinon.createSandbox();
+  const authProvider = IPProtectionService.authProvider;
+
+  let limitedBandwidth = false;
+  sandbox.stub(authProvider, "entitlement").get(() => ({ limitedBandwidth }));
+
+  Services.prefs.setBoolPref(BANDWIDTH_ENABLED_PREF, true);
+
+  authProvider.dispatchEvent(
+    new CustomEvent("IPPAuthProvider:StateChanged", {
+      bubbles: true,
+      composed: true,
+    })
+  );
+  await TestUtils.waitForTick();
+
+  Assert.equal(
+    Services.prefs.getBoolPref(BANDWIDTH_ENABLED_PREF),
+    false,
+    "Pref is disabled for an unlimited entitlement"
+  );
+  Assert.equal(
+    IPPUsageHelper.state,
+    UsageStates.UNLIMITED,
+    "State is UNLIMITED for an unlimited entitlement"
+  );
+
+  limitedBandwidth = true;
+  authProvider.dispatchEvent(
+    new CustomEvent("IPPAuthProvider:StateChanged", {
+      bubbles: true,
+      composed: true,
+    })
+  );
+  await TestUtils.waitForTick();
+
+  Assert.equal(
+    Services.prefs.getBoolPref(BANDWIDTH_ENABLED_PREF),
+    true,
+    "Pref is enabled for a limited entitlement"
+  );
   Assert.equal(
     IPPUsageHelper.state,
     UsageStates.NONE,
-    "IPPUsageHelper is reset to NONE at end of test"
+    "State returns to NONE for a limited entitlement"
   );
+
+  sandbox.restore();
+  Services.prefs.clearUserPref(BANDWIDTH_ENABLED_PREF);
 });
 
 /**

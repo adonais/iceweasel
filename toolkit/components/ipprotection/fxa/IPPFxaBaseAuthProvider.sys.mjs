@@ -21,8 +21,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs",
 });
 
-const BANDWIDTH_USAGE_ENABLED_PREF = "browser.ipProtection.bandwidth.enabled";
-
 /**
  * Base class for FxA-backed IPPAuthProvider implementations.
  * Provides shared OAuth token retrieval, Guardian proxy methods,
@@ -62,10 +60,6 @@ export class IPPFxaBaseAuthProvider extends IPPAuthProvider {
   _setEntitlement(entitlement) {
     this.#entitlement = entitlement;
     lazy.IPPStartupCache.storeEntitlement(entitlement);
-    Services.prefs.setBoolPref(
-      BANDWIDTH_USAGE_ENABLED_PREF,
-      entitlement?.limitedBandwidth ?? true
-    );
   }
 
   init() {

@@ -627,40 +627,50 @@ add_task(async function test_bandwidth_thresholds_reset_on_new_period() {
 });
 
 /**
- * Tests that UsageChanged events are ignored when bandwidth tracking is
- * disabled.
+ * Tests that an unlimited UsageChanged event clears the bandwidth tracking
+ * prefs and resets the bandwidthUsage state.
  */
-add_task(async function test_bandwidth_disabled_usage_changed_ignored() {
+add_task(async function test_bandwidth_unlimited_usage_clears_tracking() {
   Services.fog.initializeFOG();
   Services.fog.testResetFOG();
-  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
-  Services.prefs.clearUserPref("browser.ipProtection.bandwidthResetDate");
 
-  Services.prefs.setBoolPref("browser.ipProtection.bandwidth.enabled", false);
+  Services.prefs.setBoolPref("browser.ipProtection.bandwidth.enabled", true);
+  Services.prefs.setIntPref("browser.ipProtection.bandwidthThreshold", 75);
+  Services.prefs.setStringPref(
+    "browser.ipProtection.bandwidthResetDate",
+    "3026-03-01T00:00:00.000Z"
+  );
 
   let ipProtectionPanel = new IPProtectionPanel();
-  const initialBandwidthUsage = ipProtectionPanel.state.bandwidthUsage;
+  ipProtectionPanel.setState({
+    bandwidthUsage: { max: 1000000, remaining: 200000, reset: null },
+  });
 
-  // Usage that would normally cross the 75% threshold and write both prefs.
-  dispatchUsageEvent(1000000, 200000);
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: { usage: new ProxyUsage(null, null, null, true) },
+    })
+  );
 
   Assert.strictEqual(
     ipProtectionPanel.state.bandwidthUsage,
-    initialBandwidthUsage,
-    "bandwidthUsage state should be untouched when bandwidth is disabled"
+    null,
+    "bandwidthUsage state should be reset for unlimited usage"
   );
   Assert.ok(
     !Services.prefs.prefHasUserValue("browser.ipProtection.bandwidthThreshold"),
-    "bandwidthThreshold pref should not be set when bandwidth is disabled"
+    "bandwidthThreshold pref should be cleared for unlimited usage"
   );
   Assert.ok(
     !Services.prefs.prefHasUserValue("browser.ipProtection.bandwidthResetDate"),
-    "bandwidthResetDate pref should not be set when bandwidth is disabled"
+    "bandwidthResetDate pref should be cleared for unlimited usage"
   );
   Assert.equal(
     Glean.ipprotection.bandwidthUsedThreshold.testGetValue(),
     null,
-    "No threshold telemetry should be recorded when bandwidth is disabled"
+    "No threshold telemetry should be recorded for unlimited usage"
   );
 
   ipProtectionPanel.uninit();
