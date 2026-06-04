@@ -462,7 +462,7 @@ class TabsTrayStoreReducerTest {
     }
 
     @Test
-    fun `WHEN a tab data from storage has updated THEN the state is updated`() {
+    fun `WHEN a tab data from storage has updated THEN the state receives the fresh data and marks the data as loaded`() {
         val initialState = TabsTrayState()
         val expectedId = "12345"
         val tabGroup = createTabGroup()
@@ -498,6 +498,7 @@ class TabsTrayStoreReducerTest {
                 selectedItemIndex = expectedSelectedPrivateTabIndex,
             ),
             tabGroupState = TabsTrayState.TabGroupState(groups = expectedTabGroups),
+            hasTabDataLoaded = true,
         )
         val resultState = TabsTrayReducer.reduce(state = initialState, action = action)
 

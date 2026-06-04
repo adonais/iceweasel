@@ -24,6 +24,7 @@ import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
  * @property config The configuration flags for the Tabs Tray (e.g., grid display, feature flags).
  * @property tabSearchState The state of the tab search feature.
  * @property backStack The navigation history of the Tab Manager feature.
+ * @property hasTabDataLoaded Whether the tab data has loaded.
  */
 data class TabsTrayState(
     val selectedPage: Page = Page.NormalTabs,
@@ -37,6 +38,7 @@ data class TabsTrayState(
     val config: TabsTrayConfig = TabsTrayConfig(),
     val tabSearchState: TabSearchState = TabSearchState(),
     val backStack: List<TabManagerNavDestination> = listOf(TabManagerNavDestination.Root),
+    val hasTabDataLoaded: Boolean = false,
 ) : State {
 
     /**
