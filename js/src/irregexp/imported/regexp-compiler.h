@@ -8,6 +8,7 @@
 #include <bitset>
 
 #include "irregexp/imported/regexp-nodes.h"
+#include "irregexp/RegExpShim.h"
 
 namespace v8 {
 namespace internal {
