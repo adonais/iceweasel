@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { formatRemainingBandwidth } from "chrome://browser/content/ipprotection/ipprotection-utils.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const BANDWIDTH_WARNING_DISMISSED_PREF =
   "browser.ipProtection.bandwidthWarningDismissedThreshold";
@@ -22,6 +23,20 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPPUsageHelper.sys.mjs",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "BANDWIDTH_USAGE_ENABLED",
+  "browser.ipProtection.bandwidth.enabled",
+  true,
+  (_pref, _prev, value) => {
+    if (value) {
+      IPProtectionInfobarManager.init();
+    } else {
+      IPProtectionInfobarManager.uninit();
+    }
+  }
+);
+
 /**
  * Manages displaying bandwidth warning infobars when usage reaches
  * 75% or 90% thresholds based on remaining bandwidth percentage.
@@ -38,7 +53,7 @@ class IPProtectionInfobarManagerClass {
   }
 
   init() {
-    if (this.#initialized) {
+    if (this.#initialized || !lazy.BANDWIDTH_USAGE_ENABLED) {
       return;
     }
 
@@ -83,6 +98,8 @@ class IPProtectionInfobarManagerClass {
     if (!this.#initialized) {
       return;
     }
+
+    this.hideInfobars();
 
     lazy.IPPProxyManager.removeEventListener(
       "IPPProxyManager:UsageChanged",

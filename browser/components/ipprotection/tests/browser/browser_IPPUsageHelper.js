@@ -92,6 +92,66 @@ add_task(async function test_bandwidth_warning_set_in_new_window() {
 });
 
 /**
+ * Tests that IPPUsageHelper does not register listeners when bandwidth
+ * tracking is disabled, and that toggling the pref drives init/uninit.
+ */
+add_task(async function test_init_guarded_by_bandwidth_pref() {
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+  const remainingWarning = maxBytes * BANDWIDTH.SECOND_THRESHOLD;
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", false]],
+  });
+
+  Assert.equal(
+    IPPUsageHelper.state,
+    UsageStates.NONE,
+    "State is reset to NONE when bandwidth tracking is disabled"
+  );
+
+  IPPUsageHelper.init();
+
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(remainingWarning),
+          "2026-12-31T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+  await TestUtils.waitForTick();
+
+  Assert.equal(
+    IPPUsageHelper.state,
+    UsageStates.NONE,
+    "Usage events do not update state while bandwidth tracking is disabled"
+  );
+
+  await SpecialPowers.popPrefEnv();
+
+  await fireUsageChanged(remainingWarning, maxBytes);
+
+  Assert.equal(
+    IPPUsageHelper.state,
+    UsageStates.WARNING_75_PERCENT,
+    "Listeners are restored when bandwidth tracking is re-enabled"
+  );
+
+  await fireUsageChanged(maxBytes, maxBytes);
+
+  Assert.equal(
+    IPPUsageHelper.state,
+    UsageStates.NONE,
+    "IPPUsageHelper is reset to NONE at end of test"
+  );
+});
+
+/**
  * Tests that a bandwidth warning triggered in one window is reflected in a
  * newly opened private window.
  */

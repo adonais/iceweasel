@@ -903,3 +903,37 @@ add_task(async function test_handles_missing_usage_data() {
 
   IPProtectionInfobarManager.uninit();
 });
+
+add_task(async function test_init_guarded_by_bandwidth_pref() {
+  IPProtectionInfobarManager.uninit();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.bandwidth.enabled", false]],
+  });
+
+  IPProtectionInfobarManager.init();
+  Assert.ok(
+    !IPProtectionInfobarManager.initialized,
+    "init() is a no-op while bandwidth tracking is disabled"
+  );
+
+  dispatchUsageEvent(0.05);
+  await TestUtils.waitForTick();
+
+  Assert.equal(
+    window.gNotificationBox.getNotificationWithValue(
+      "ip-protection-bandwidth-warning-90"
+    ),
+    null,
+    "No infobar appears while bandwidth tracking is disabled"
+  );
+
+  await SpecialPowers.popPrefEnv();
+
+  Assert.ok(
+    IPProtectionInfobarManager.initialized,
+    "Manager auto-inits when pref toggles back to true"
+  );
+
+  IPProtectionInfobarManager.uninit();
+});

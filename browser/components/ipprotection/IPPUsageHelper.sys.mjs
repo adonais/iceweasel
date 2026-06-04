@@ -4,6 +4,7 @@
 
 import { IPPProxyManager } from "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs";
 import { BANDWIDTH } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const BANDWIDTH_WARNING_DISMISSED_PREF =
   "browser.ipProtection.bandwidthWarningDismissedThreshold";
@@ -15,6 +16,20 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionStates:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
 });
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "BANDWIDTH_USAGE_ENABLED",
+  "browser.ipProtection.bandwidth.enabled",
+  true,
+  (_pref, _prev, value) => {
+    if (value) {
+      IPPUsageHelper.init();
+    } else {
+      IPPUsageHelper.uninit();
+    }
+  }
+);
 
 /**
  * @typedef {"none" | "warning-75-percent" | "warning-90-percent"} UsageState
@@ -58,6 +73,9 @@ class IPPUsageHelperSingleton extends EventTarget {
   }
 
   init() {
+    if (!lazy.BANDWIDTH_USAGE_ENABLED) {
+      return;
+    }
     IPPProxyManager.addEventListener(
       "IPPProxyManager:UsageChanged",
       this.handleEvent
