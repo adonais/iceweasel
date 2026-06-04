@@ -45,6 +45,7 @@ static char sccsid[] = "@(#)realpath.c	8.1 (Berkeley) 2/16/94";
 
 #include "base/string_util.h"
 #include "SandboxBroker.h"
+#include "SandboxLogging.h"
 
 // Original copy in, but not usable from here:
 // toolkit/crashreporter/google-breakpad/src/common/linux/linux_libc_support.cc
@@ -74,7 +75,7 @@ char* SandboxBroker::SymlinkPath(const Policy* policy,
                                  char* __restrict resolved, int* perms) {
   struct stat sb;
   char *p, *q, *s;
-  size_t left_len, resolved_len, backup_allowed;
+  size_t left_len, resolved_len, backup_allowed, path_len;
   unsigned symlinks;
   int m, slen;
   char left[PATH_MAX], next_token[PATH_MAX], symlink[PATH_MAX];
@@ -88,6 +89,13 @@ char* SandboxBroker::SymlinkPath(const Policy* policy,
   }
   if (path[0] == '\0') {
     errno = ENOENT;
+    return (NULL);
+  }
+  path_len = strlen(path);
+  if (strstr(path, "/../") || strcmp(path, "..") == 0 ||
+      strncmp(path, "../", 3) == 0 ||
+      (path_len >= 3 && strcmp(path + path_len - 3, "/..") == 0)) {
+    errno = EPERM;
     return (NULL);
   }
   if (resolved == NULL) {
