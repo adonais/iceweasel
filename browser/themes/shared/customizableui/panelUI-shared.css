@@ -2135,11 +2135,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 .report-broken-site-view {
   max-height: 80vh;
 
-  &.main-view > .panel-subview-body > moz-box-group {
-    /* let the reason-options scroll if the panelview is too short */
-    overflow: unset;
-  }
-
   &.wrong-tab-info {
     .favicon,
     .tab-specific-data,
@@ -2186,8 +2181,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   }
 
   #report-broken-site-popup-intro {
-    margin-block-end: 0;
-    margin-block-start: var(--space-small);
+    margin-block-start: var(--space-xlarge);
   }
 
   #report-broken-site-popup-intro,
@@ -2197,7 +2191,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
   #report-broken-site-reason-selector-intro,
   #report-broken-site-details-instructions {
-    margin-block: 0 var(--space-large);
+    margin-block: 0 var(--space-xlarge);
   }
 
   #report-broken-site-popup-screenshot {
@@ -2345,13 +2339,8 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     line-height: 1.5;
   }
 
-  .report-broken-site-url-label {
-    margin-block-start: 0;
-    margin-block-end: var(--space-xsmall);
-  }
-
   url-input {
-    margin-block-end: var(--space-xlarge);
+    margin-block-end: var(--space-xxlarge);
   }
 
   textarea {
