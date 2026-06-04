@@ -118,7 +118,8 @@ void DefineGlobals();
 #endif
 
 // Max size class for bins.
-#define gMaxBinClass (kMaxQuantumWideClass)
+#define gMaxBinClass \
+  (gMaxSubPageClass ? gMaxSubPageClass : kMaxQuantumWideClass)
 
 // Return the smallest chunk multiple that is >= s.
 #define CHUNK_CEILING(s) (((s) + kChunkSizeMask) & ~kChunkSizeMask)
@@ -131,8 +132,12 @@ void DefineGlobals();
 #define QUANTUM_WIDE_CEILING(a) \
   (((a) + (kQuantumWideMask)) & ~(kQuantumWideMask))
 
+// Return the smallest sub page-size  that is >= a.
+#define SUBPAGE_CEILING(a) (std::bit_ceil(a))
+
 // Number of all the small-allocated classes
-#define NUM_SMALL_CLASSES (kNumQuantumClasses + kNumQuantumWideClasses)
+#define NUM_SMALL_CLASSES \
+  (kNumQuantumClasses + kNumQuantumWideClasses + gNumSubPageClasses)
 
 // Return the chunk address for allocation address a.
 static inline arena_chunk_t* GetChunkForPtr(const void* aPtr) {

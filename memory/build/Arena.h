@@ -46,6 +46,7 @@ class SizeClass {
   enum ClassType {
     Quantum,
     QuantumWide,
+    SubPage,
     Large,
   };
 
@@ -61,6 +62,9 @@ class SizeClass {
     } else if (aSize <= kMaxQuantumWideClass) {
       mType = QuantumWide;
       mSize = QUANTUM_WIDE_CEILING(aSize);
+    } else if (aSize <= mozilla::gMaxSubPageClass) {
+      mType = SubPage;
+      mSize = SUBPAGE_CEILING(aSize);
     } else if (aSize <= mozilla::gMaxLargeClass) {
       mType = Large;
       mSize = PAGE_CEILING(aSize);
