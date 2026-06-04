@@ -183,17 +183,21 @@ export class Entitlement {
   uid = 0;
   /** The maximum number of bytes allowed for the user */
   maxBytes = BigInt(0);
+  /** True if the user has a bandwidth cap; false if the user has unlimited bandwidth */
+  limitedBandwidth = true;
 
   constructor(
     args = {
       subscribed: false,
       uid: 0,
       maxBytes: "0",
+      limited_bandwidth: true,
     }
   ) {
     this.subscribed = args.subscribed;
     this.uid = args.uid;
     this.maxBytes = BigInt(args.maxBytes);
+    this.limitedBandwidth = args.limited_bandwidth ?? true;
     Object.freeze(this);
   }
 
@@ -230,6 +234,11 @@ export class Entitlement {
           description:
             "A BigInt string representing the maximum number of bytes allowed for the user",
         },
+        limited_bandwidth: {
+          type: "boolean",
+          description:
+            "True if the user has a bandwidth cap; false if the user has unlimited bandwidth",
+        },
       },
       required: ["subscribed", "uid", "maxBytes"],
       additionalProperties: true,
@@ -238,8 +247,10 @@ export class Entitlement {
 
   toString() {
     return JSON.stringify({
-      ...this,
+      subscribed: this.subscribed,
+      uid: this.uid,
       maxBytes: this.maxBytes.toString(),
+      limited_bandwidth: this.limitedBandwidth,
     });
   }
 }
