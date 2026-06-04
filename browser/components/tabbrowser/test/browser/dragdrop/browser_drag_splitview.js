@@ -527,3 +527,49 @@ add_task(
     await BrowserTestUtils.closeWindow(win2);
   }
 );
+
+add_task(async function test_dragstart_below_splitview_does_not_grab() {
+  // Test that dragging in the margin below a split view (the gap between the
+  // wrapper and the nav bar) does not grab the split view.
+  const tab2 = await addTab("data:text/plain,tab2");
+  const tab3 = await addTab("data:text/plain,tab3");
+  const splitView = gBrowser.addTabSplitView([tab2, tab3]);
+
+  const tabOrder = [...gBrowser.tabs];
+
+  const arrowScrollbox = gBrowser.tabContainer.arrowScrollbox;
+  const scrollboxRect = arrowScrollbox.getBoundingClientRect();
+  const splitViewRect = splitView.getBoundingClientRect();
+  Assert.greater(
+    scrollboxRect.bottom,
+    splitViewRect.bottom,
+    "The scrollbox extends below the split view wrapper"
+  );
+
+  // Compute drag source centered on the wrapper, but in its bottom margin.
+  const srcX =
+    splitViewRect.left + splitViewRect.width / 2 - scrollboxRect.left;
+  const srcY =
+    (splitViewRect.bottom + scrollboxRect.bottom) / 2 - scrollboxRect.top;
+
+  info("Drag horizontally through the bottom margin of split view wrapper.");
+  // FIXME Bug 2044440 - synthesizePlainDragAndDrop() should supress a11y checks for expectCancelDragStart
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+  await EventUtils.synthesizePlainDragAndDrop({
+    srcElement: arrowScrollbox,
+    srcX,
+    srcY,
+    stepX: 9,
+    stepY: 0,
+    expectCancelDragStart: true,
+  });
+  AccessibilityUtils.resetEnv();
+
+  Assert.deepEqual(
+    gBrowser.tabs,
+    tabOrder,
+    "Tab order is unchanged after dragging below the split view wrapper"
+  );
+
+  splitView.close();
+});

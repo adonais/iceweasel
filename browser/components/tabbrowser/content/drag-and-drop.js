@@ -71,7 +71,7 @@
         return;
       }
 
-      let tab = this._getDragTarget(event);
+      let tab = this._getDragTarget(event, { findClosestTarget: false });
       if (!tab) {
         return;
       }
@@ -908,10 +908,19 @@
      *   If set to true: events will only be associated with an element if they
      *   happened on its central part (from 25% to 75%); if they happened on the
      *   left or right sides of the tab, the method will return null.
+     * @param {boolean} options.findClosestTarget
+     *   When the event resolves to the scrollbox itself (landed in the margins
+     *   around an item rather than on one), associate it with the tab, tab group
+     *   label, or split view wrapper horizontally overlapping the event's
+     *   coordinates.
      */
-    _getDragTarget(event, { ignoreSides = false } = {}) {
+    _getDragTarget(
+      event,
+      { ignoreSides = false, findClosestTarget = true } = {}
+    ) {
       let { target } = event;
       if (
+        findClosestTarget &&
         target === this._tabbrowserTabs.arrowScrollbox &&
         !this._tabbrowserTabs.verticalMode
       ) {
@@ -970,17 +979,11 @@
      */
     #getHorizontalScrollboxDragTarget(event, ignoreSides) {
       function isWithinBounds(el) {
-        let { width, height } = window.windowUtils.getBoundsWithoutFlushing(el);
-        const startY = el.screenY;
-        const endY = el.screenY + height;
+        let { width } = window.windowUtils.getBoundsWithoutFlushing(el);
         const offset = ignoreSides ? width * 0.25 : 0;
         const startX = el.screenX + offset;
         const endX = el.screenX + width - offset;
-        const xBoundsPass = startX <= event.screenX && event.screenX <= endX;
-        const yBoundsPass = startY <= event.screenY && event.screenY <= endY;
-        return event.type === "dragstart"
-          ? xBoundsPass && yBoundsPass
-          : xBoundsPass;
+        return startX <= event.screenX && event.screenX <= endX;
       }
       return this._tabbrowserTabs.dragAndDropElements.find(isWithinBounds);
     }
