@@ -46,6 +46,7 @@ import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
+import org.mozilla.fenix.tabstray.ui.tabitems.tablistItemThumbnailBorder
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(4.dp)
@@ -175,6 +176,7 @@ private fun TabGroupListThumbnail(
 ) {
     Card(
         modifier = modifier,
+        border = tablistItemThumbnailBorder,
         shape = ROUNDED_CORNER_SHAPE,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,

@@ -56,6 +56,7 @@ import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.theme.AcornCorners
+import mozilla.components.compose.base.theme.layout.AcornLayout
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
@@ -96,6 +97,14 @@ val TabListLastItemShape = RoundedCornerShape(
 
 val TabListSingleItemShape = RoundedCornerShape(AcornCorners.medium)
 val TabListBorderMiddleItemShape = RoundedCornerShape(0.dp)
+
+/**
+ * Border drawn around a tab list item's thumbnail.
+ */
+val tablistItemThumbnailBorder: BorderStroke
+    @Composable
+    @ReadOnlyComposable
+    get() = BorderStroke(width = AcornLayout.AcornBorder.thin, color = MaterialTheme.colorScheme.outlineVariant)
 
 /**
  * Shape information for a tab item displayed in a list.
