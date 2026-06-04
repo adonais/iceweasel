@@ -23,6 +23,7 @@ vendoring:
   patches:
     - patches/public-regexp-destructor.patch
     - patches/icu4x.patch
+    - patches/iostream-include.patch
     - patches/remove-using-enum.patch
     - patches/regexp-tracer-unique-ptr.patch
     - patches/fix-include.patch
