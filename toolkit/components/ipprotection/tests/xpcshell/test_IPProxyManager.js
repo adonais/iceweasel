@@ -518,7 +518,8 @@ add_task(async function test_IPPProxyManager_quota_exceeded() {
  * and that the proxy activates instead of pausing despite a null remaining.
  */
 add_task(async function test_IPPProxyManager_unlimited_usage() {
-  setupStubs({
+  let sandbox = sinon.createSandbox();
+  setupStubs(sandbox, {
     proxyUsage: new ProxyUsage(null, null, null, true),
   });
   Services.prefs.clearUserPref("browser.ipProtection.usageCache");
@@ -566,6 +567,7 @@ add_task(async function test_IPPProxyManager_unlimited_usage() {
   await IPPProxyManager.stop(false);
   IPProtectionService.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.usageCache");
+  sandbox.restore();
 });
 
 /**
