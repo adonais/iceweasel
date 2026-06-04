@@ -22,6 +22,7 @@ import org.mozilla.fenix.Config
 import org.mozilla.fenix.GleanMetrics.AdjustAttribution
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.AURA_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.GOOGLE_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
 import org.mozilla.fenix.distributions.DistributionAdjustStartupStrategy
 import org.mozilla.fenix.distributions.DistributionIdManager
@@ -213,10 +214,12 @@ class AdjustMetricsService(
         ) {
             when (distribution) {
                 DistributionIdManager.Distribution.DEFAULT -> {
-                    if (isUserMetaAttributed) {
-                        controller.enableThirdPartySharingForPartner(META_PARTNER_ID)
-                    } else {
-                        controller.disableMetaThirdPartySharing()
+                    controller.disableAllThirdPartySharing()
+                    when {
+                        isUserMetaAttributed ->
+                            controller.enableThirdPartySharingForPartner(META_PARTNER_ID)
+                        else ->
+                            controller.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID)
                     }
                 }
 

@@ -13,11 +13,6 @@ import com.adjust.sdk.AdjustThirdPartySharing
 interface ThirdPartySharingController {
 
     /**
-     * Disables data sharing with Meta specifically, while leaving global sharing enabled.
-     */
-    fun disableMetaThirdPartySharing()
-
-    /**
      * Enables data sharing exclusively for the given partner, disabling it for all others.
      *
      * @param partnerId The Adjust partner ID to enable sharing for.
@@ -34,14 +29,6 @@ interface ThirdPartySharingController {
  * [ThirdPartySharingController] implementation that delegates to the Adjust SDK.
  */
 class AdjustThirdPartySharingController : ThirdPartySharingController {
-
-    override fun disableMetaThirdPartySharing() {
-        Adjust.trackThirdPartySharing(
-            AdjustThirdPartySharing(true).apply {
-                addPartnerSharingSetting(META_PARTNER_ID, "all", false)
-            },
-        )
-    }
 
     override fun enableThirdPartySharingForPartner(partnerId: String) {
         Adjust.trackThirdPartySharing(
@@ -64,5 +51,8 @@ class AdjustThirdPartySharingController : ThirdPartySharingController {
 
         /** Adjust partner ID for Aura. */
         const val AURA_PARTNER_ID = "802"
+
+        /** Adjust partner ID for Google. */
+        const val GOOGLE_PARTNER_ID = "254"
     }
 }

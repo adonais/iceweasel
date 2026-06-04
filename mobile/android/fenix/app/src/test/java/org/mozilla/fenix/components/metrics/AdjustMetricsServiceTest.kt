@@ -14,6 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.AURA_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.GOOGLE_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.utils.Settings
@@ -63,14 +64,14 @@ internal class AdjustMetricsServiceTest {
     }
 
     @Test
-    fun `WHEN the distribution is DEFAULT AND the user is not meta attributed THEN sharing is enabled for META`() {
+    fun `WHEN the distribution is DEFAULT AND the user is not meta attributed THEN sharing is enabled for Google`() {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DEFAULT,
             isUserMetaAttributed = false,
             controller = thirdPartySharingController,
         )
 
-        verify { thirdPartySharingController.disableMetaThirdPartySharing() }
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID) }
     }
 
     @Test
