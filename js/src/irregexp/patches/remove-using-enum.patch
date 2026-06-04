@@ -11,7 +11,16 @@ diff --git a/js/src/irregexp/imported/regexp-bytecodes-inl.h b/js/src/irregexp/i
      static constexpr size_t kCount = detail::CountOf<UNPAREN(OpNames)>(); \
      static constexpr auto kNames = detail::SplitNames<kCount>(#OpNames);  \
      static constexpr std::string_view Name(Operand op) {                  \
-@@ -293,8 +292,6 @@
+@@ -168,7 +167,7 @@
+ #undef DECLARE_OPERAND_NAMES
+
+ template <Bytecode bc, BytecodeOperandType... OpTypes>
+-class BytecodeOperandsBase {
++class BytecodeOperandsBase : public BytecodeOperandNames<bc> {
+  public:
+   static constexpr Bytecode kBytecode = bc;
+   using Operand = BytecodeOperandNames<bc>::Operand;
+@@ -294,8 +293,6 @@
        : public detail::BytecodeOperandsBase<PACK_OPTIONAL( \
              Bytecode::k##CamelName, UNPAREN(OpTypes))>,    \
          public AllStatic {                                 \

@@ -167,7 +167,7 @@ REGEXP_BYTECODE_LIST(DECLARE_OPERAND_NAMES)
 #undef DECLARE_OPERAND_NAMES
 
 template <Bytecode bc, BytecodeOperandType... OpTypes>
-class BytecodeOperandsBase {
+class BytecodeOperandsBase : public BytecodeOperandNames<bc> {
  public:
   static constexpr Bytecode kBytecode = bc;
   using Operand = BytecodeOperandNames<bc>::Operand;
