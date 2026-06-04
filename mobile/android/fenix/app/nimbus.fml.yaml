@@ -1281,6 +1281,15 @@ features:
           still applies when this is false (the default).
         type: Boolean
         default: false
+      fetch-throttle-seconds:
+        description: >
+          Minimum interval, in seconds, that the client will wait between Sports Widget fetches.
+          Guards the upstream Merino endpoint against refresh-button spam and Home/onResume thrash.
+          The default aligns with the upstream cache TTL — a shorter interval just returns the
+          same payload at the cost of battery and bandwidth. Lower this remotely only if the
+          upstream cache TTL is also lowered, otherwise users will see no fresher data.
+        type: Int
+        default: 60
 
 types:
   objects:
