@@ -556,6 +556,7 @@ export class UrlbarView {
     }
 
     if (!this.isOpen) {
+      this.input.updateLayoutExtend();
       return;
     }
 
@@ -578,7 +579,7 @@ export class UrlbarView {
     this.#openPanelInstance = null;
     this.#previousTabToSearchEngine = null;
 
-    this.input.removeAttribute("open");
+    this.input.toggleAttribute("open", false);
 
     // Search Tips can open the view without the Urlbar being focused. If the
     // tip is ignored (e.g. the page content is clicked or the window loses
@@ -1198,6 +1199,7 @@ export class UrlbarView {
 
   #openPanel() {
     if (this.isOpen) {
+      this.input.updateLayoutExtend();
       return;
     }
     this.controller.userSelectionBehavior = "none";

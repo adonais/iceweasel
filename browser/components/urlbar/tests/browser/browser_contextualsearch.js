@@ -272,10 +272,15 @@ add_task(async function test_selectContextualSearchResult_already_installed() {
     expectedUrl,
     "Selecting the contextual search result opens the search URL"
   );
-  await UrlbarTestUtils.exitSearchMode(window, {
-    clickClose: true,
-    waitForSearch: false,
-  });
+  Assert.ok(
+    !gURLBar.view.isOpen,
+    "Urlbar view should be closed after navigation"
+  );
+  Assert.equal(
+    gURLBar.searchMode,
+    null,
+    "Search mode should be cleared after navigation"
+  );
 });
 
 add_task(async function test_tab_to_search_engine() {

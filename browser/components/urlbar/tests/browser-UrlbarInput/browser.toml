@@ -6,6 +6,8 @@ support-files = [
 
 ["browser_a11y.js"]
 
+["browser_breakout_state.js"]
+
 ["browser_formatValue.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1968567
