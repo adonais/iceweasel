@@ -157,6 +157,12 @@ nsDocShellLoadState::nsDocShellLoadState(
     }
   }
 
+  if (!mSrcdocData.IsVoid() && !mURI->SchemeIs("view-source") &&
+      !NS_IsAboutSrcdoc(mURI)) {
+    aActor->FatalError("nsDocShellLoadState with invalid srcdoc state");
+    return;
+  }
+
   // We successfully read in the data - return a success value.
   *aReadSuccess = true;
 }

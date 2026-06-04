@@ -3512,6 +3512,7 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     bool isSrcdocChannel;
     inStrmChan->GetIsSrcdocChannel(&isSrcdocChannel);
     if (isSrcdocChannel) {
+      MOZ_RELEASE_ASSERT(!IsTopLevelContentDocument());
       mIsSrcdocDocument = true;
     }
   }
