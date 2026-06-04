@@ -443,6 +443,11 @@ class Settings(
         default = false,
     )
 
+    var isUserRedditAttributed by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_is_user_reddit_attributed),
+        default = false,
+    )
+
     var rtamoAddonDownloadUrl by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_rtamo_addon_download_url),
         default = "",

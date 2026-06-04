@@ -72,6 +72,7 @@ class InstallReferrerHandlingService(
                                 response = installReferrerResponse
                                 context.settings().isUserMetaAttributed = isMetaAttribution(installReferrerResponse)
                                 context.settings().isUserTikTokAttributed = isTikTokAttribution(installReferrerResponse)
+                                context.settings().isUserRedditAttributed = isRedditAttribution(installReferrerResponse)
                                 distributionIdManager.updateDistributionIdFromUtmParams(
                                     UTMParams.parseUTMParameters(installReferrerResponse),
                                 )
@@ -147,6 +148,7 @@ class InstallReferrerHandlingService(
 
         private const val ADJUST_EXTERNAL_CLICK_ID = "adjust_external_click_id"
         private val TIKTOK_EXTERNAL_CLICK_ID_PREFIXES = listOf("E.C.P.C", "E_C_P_C")
+        private const val REDDIT_EXTERNAL_CLICK_ID_PREFIX = "reddit_"
 
         @VisibleForTesting
         internal fun isTikTokAttribution(installReferrerResponse: String?): Boolean {
@@ -164,6 +166,24 @@ class InstallReferrerHandlingService(
                 ?: return false
 
             return TIKTOK_EXTERNAL_CLICK_ID_PREFIXES.any { clickId.startsWith(it, ignoreCase = true) }
+        }
+
+        @VisibleForTesting
+        internal fun isRedditAttribution(installReferrerResponse: String?): Boolean {
+            if (installReferrerResponse.isNullOrBlank()) return false
+
+            val decoded = try {
+                URLDecoder.decode(installReferrerResponse, "UTF-8")
+            } catch (e: IllegalArgumentException) {
+                Logger.error("isRedditAttribution() - bad installReferrerResponse", e)
+
+                installReferrerResponse
+            }
+
+            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
+                ?: return false
+
+            return clickId.startsWith(REDDIT_EXTERNAL_CLICK_ID_PREFIX, ignoreCase = true)
         }
 
         @Suppress("ReturnCount")
@@ -189,6 +209,10 @@ class InstallReferrerHandlingService(
             }
 
             if (isTikTokAttribution(installReferrerResponse)) {
+                return true
+            }
+
+            if (isRedditAttribution(installReferrerResponse)) {
                 return true
             }
 

@@ -91,6 +91,9 @@ class InstallReferrerWorker(
             settings.isUserTikTokAttributed =
                 InstallReferrerHandlingService.isTikTokAttribution(installReferrerResponse)
 
+            settings.isUserRedditAttributed =
+                InstallReferrerHandlingService.isRedditAttribution(installReferrerResponse)
+
             utmParams.recordInstallReferrer(settings)
         }
 

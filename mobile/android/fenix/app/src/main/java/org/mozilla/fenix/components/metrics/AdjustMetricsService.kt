@@ -24,6 +24,7 @@ import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.AURA_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.GOOGLE_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.REDDIT_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.TIKTOK_PARTNER_ID
 import org.mozilla.fenix.distributions.DistributionAdjustStartupStrategy
 import org.mozilla.fenix.distributions.DistributionIdManager
@@ -115,6 +116,7 @@ class AdjustMetricsService(
                 distribution = distributionIdManager.getDistribution(),
                 isUserMetaAttributed = settings.isUserMetaAttributed,
                 isUserTikTokAttributed = settings.isUserTikTokAttributed,
+                isUserRedditAttributed = settings.isUserRedditAttributed,
             )
 
             // All configuration have to be done before this.
@@ -213,16 +215,21 @@ class AdjustMetricsService(
             distribution: DistributionIdManager.Distribution,
             isUserMetaAttributed: Boolean,
             isUserTikTokAttributed: Boolean,
+            isUserRedditAttributed: Boolean,
             controller: ThirdPartySharingController = AdjustThirdPartySharingController(),
         ) {
             when (distribution) {
                 DistributionIdManager.Distribution.DEFAULT -> {
                     controller.disableAllThirdPartySharing()
+                    // Listed in priority order. Multiple flags can be true at once, so the order
+                    // is load-bearing. Insert new partners at the position matching their priority.
                     when {
                         isUserMetaAttributed ->
                             controller.enableThirdPartySharingForPartner(META_PARTNER_ID)
                         isUserTikTokAttributed ->
                             controller.enableThirdPartySharingForPartner(TIKTOK_PARTNER_ID)
+                        isUserRedditAttributed ->
+                            controller.enableThirdPartySharingForPartner(REDDIT_PARTNER_ID)
                         else ->
                             controller.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID)
                     }

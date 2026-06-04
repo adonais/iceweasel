@@ -57,5 +57,8 @@ class AdjustThirdPartySharingController : ThirdPartySharingController {
 
         /** Adjust partner ID for TikTok. */
         const val TIKTOK_PARTNER_ID = "2337"
+
+        /** Adjust partner ID for Reddit. */
+        const val REDDIT_PARTNER_ID = "375"
     }
 }

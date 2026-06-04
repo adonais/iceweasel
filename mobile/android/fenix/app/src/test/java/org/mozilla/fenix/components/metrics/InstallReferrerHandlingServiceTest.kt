@@ -404,6 +404,86 @@ internal class InstallReferrerHandlingServiceTest {
             val tiktokReferrer = "adjust_external_click_id=E.C.P.C.04.AAA&utm_medium=paid"
             assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding(tiktokReferrer, distributionIdManager))
         }
+
+    @Test
+    fun `WHEN installReferrerResponse is null or blank THEN isRedditAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isRedditAttribution(null))
+        assertFalse(InstallReferrerHandlingService.isRedditAttribution(""))
+        assertFalse(InstallReferrerHandlingService.isRedditAttribution(" "))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a Reddit adjust_external_click_id THEN isRedditAttribution returns true`() {
+        assertTrue(
+            InstallReferrerHandlingService.isRedditAttribution(
+                "adjust_external_click_id=reddit_abc123XYZ",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a mixed-case Reddit adjust_external_click_id THEN isRedditAttribution returns true`() {
+        assertTrue(InstallReferrerHandlingService.isRedditAttribution("adjust_external_click_id=Reddit_abc"))
+        assertTrue(InstallReferrerHandlingService.isRedditAttribution("adjust_external_click_id=REDDIT_abc"))
+        assertTrue(InstallReferrerHandlingService.isRedditAttribution("adjust_external_click_id%3Dreddit_abc"))
+        assertTrue(InstallReferrerHandlingService.isRedditAttribution("adjust_external_click_id%3DReDdIt_abc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a malformed percent escape THEN isRedditAttribution falls back to raw parsing`() {
+        assertTrue(
+            InstallReferrerHandlingService.isRedditAttribution(
+                "adjust_external_click_id=reddit_abc123&malformed=%",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a non-Reddit adjust_external_click_id THEN isRedditAttribution returns false`() {
+        assertFalse(
+            InstallReferrerHandlingService.isRedditAttribution(
+                "adjust_external_click_id=E.C.P.C.04.AAAQzv8mYx",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has no adjust_external_click_id THEN isRedditAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isRedditAttribution("utm_source=google&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `GIVEN a Reddit-attributed referrer on OK response WHEN start is called THEN isUserRedditAttributed is true`() {
+        val referrer = "adjust_external_click_id=reddit_abc123&utm_medium=paid"
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = referrer,
+        )
+
+        service.start()
+
+        assertTrue(testContext.settings().isUserRedditAttributed)
+    }
+
+    @Test
+    fun `GIVEN a non-Reddit referrer on OK response WHEN start is called THEN isUserRedditAttributed is false`() {
+        testContext.settings().isUserRedditAttributed = true
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = "utm_source=google&utm_medium=cpc",
+        )
+
+        service.start()
+
+        assertFalse(testContext.settings().isUserRedditAttributed)
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse is a Reddit attribution THEN we should show marketing onboarding`() =
+        runBlocking {
+            val redditReferrer = "adjust_external_click_id=reddit_abc123&utm_medium=paid"
+            assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding(redditReferrer, distributionIdManager))
+        }
 }
 
 private class FakeReferrerClient(

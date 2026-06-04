@@ -415,6 +415,39 @@ class InstallReferrerWorkerTest {
 
         assertTrue(settings.isUserTikTokAttributed)
     }
+
+    @Test
+    fun `WHEN handleSuccess receives a Reddit-attributed referrer THEN isUserRedditAttributed is set to true`() {
+        val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
+        val settings = Settings(context)
+        val referrer = "adjust_external_click_id=reddit_abc123&utm_medium=paid"
+
+        worker.handleSuccess(referrer, InstallReferrerClient.InstallReferrerResponse.OK, settings)
+
+        assertTrue(settings.isUserRedditAttributed)
+    }
+
+    @Test
+    fun `WHEN handleSuccess receives a non-Reddit referrer THEN isUserRedditAttributed is set to false`() {
+        val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
+        val settings = Settings(context)
+        settings.isUserRedditAttributed = true
+
+        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+
+        assertFalse(settings.isUserRedditAttributed)
+    }
+
+    @Test
+    fun `WHEN handleSuccess receives a null referrer THEN isUserRedditAttributed is not changed`() {
+        val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
+        val settings = Settings(context)
+        settings.isUserRedditAttributed = true
+
+        worker.handleSuccess(null, InstallReferrerClient.InstallReferrerResponse.OK, settings)
+
+        assertTrue(settings.isUserRedditAttributed)
+    }
 }
 
 private class FakeInstallReferrerClient(
