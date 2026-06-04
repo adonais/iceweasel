@@ -53,7 +53,7 @@ import org.mozilla.fenix.tabstray.ui.tabitems.Elevation
  *
  * @param gridState State of the grid.
  * @param tabInteractionHandler Handlers tab interactions such as moves and drag and drop.
- * @param ignoredItems List of keys for non-draggable items.
+ * @param ignoredItems Set of keys for non-draggable items.
  * @param onLongPress Optional callback to be invoked when long pressing an item.
  * @param dragAndDropEnabled Whether drag and drop should be considered in the list of candidates.  Note that
  * this is trivially true, but if we use this grid for other pages, the setting is available.
@@ -62,7 +62,7 @@ import org.mozilla.fenix.tabstray.ui.tabitems.Elevation
 fun createGridInteractionState(
     gridState: LazyGridState,
     tabInteractionHandler: TabInteractionHandler,
-    ignoredItems: List<Any>,
+    ignoredItems: Set<Any>,
     onLongPress: (LazyGridItemInfo) -> Unit = {},
     dragAndDropEnabled: Boolean = true,
 ): GridInteractionState {
@@ -105,7 +105,7 @@ class GridInteractionState internal constructor(
     private val dragAndDropEnabled: Boolean,
     private val tabInteractionHandler: TabInteractionHandler,
     private val onLongPress: (LazyGridItemInfo) -> Unit = {},
-    private val ignoredItems: List<Any> = emptyList(),
+    private val ignoredItems: Set<Any> = emptySet(),
 ) {
     internal var gridLayoutCoordinates: LayoutCoordinates? = null
     private var cachedDraggedItemLayoutOffset: Offset? = null
@@ -124,9 +124,8 @@ class GridInteractionState internal constructor(
 
     var scrollJob by mutableStateOf<Job?>(null)
 
-    val itemSize: IntSize? by lazy {
-        gridState.layoutInfo.visibleItemsInfo.firstOrNull()?.size
-    }
+    val itemSize: IntSize?
+        get() = gridState.layoutInfo.visibleItemsInfo.firstOrNull { it.key !in ignoredItems }?.size
 
     internal fun onDraggedItemPositioned(itemCoordinates: LayoutCoordinates) {
         gridLayoutCoordinates?.let {
@@ -333,7 +332,7 @@ private fun determineInteractionMode(
     gridState: LazyGridState,
     draggedItem: InteractionState,
     itemOffset: GridItemOffset,
-    ignoredItems: List<Any>,
+    ignoredItems: Set<Any>,
     dragAndDropEnabled: Boolean,
 ): InteractionMode.Grid {
     if (gridState.isScrollInProgress) return InteractionMode.Grid.None
@@ -478,7 +477,7 @@ internal fun gatherCandidates(
     gridState: LazyGridState,
     draggedItemOffset: GridItemOffset,
     draggedItem: InteractionState,
-    ignoredItems: List<TabItemKey>,
+    ignoredItems: Set<TabItemKey>,
 ): List<GridInteractionCandidate> {
     val candidates = mutableListOf<GridInteractionCandidate>()
 

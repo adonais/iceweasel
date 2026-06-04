@@ -37,6 +37,8 @@ class InteractableListTest {
     private val testDispatcher = StandardTestDispatcher()
     private val scope = TestScope(testDispatcher)
 
+    private val defaultIgnoredItems = setOf("header", "span")
+
     @Test
     fun `GIVEN a y value is inside the Rect THEN closestDistanceTo returns 0`() {
         val rect = Rect(
@@ -118,7 +120,7 @@ class InteractableListTest {
                 key = "key",
                 initialOffset = 0f,
             ),
-            ignoredItems = emptyList(),
+            ignoredItems = defaultIgnoredItems,
         )
         assertTrue(
             candidates.any { it.type is InteractionType.Overlap } &&
@@ -147,7 +149,7 @@ class InteractableListTest {
                 key = "key",
                 initialOffset = 0f,
             ),
-            ignoredItems = emptyList(),
+            ignoredItems = defaultIgnoredItems,
         )
         assertTrue(
             candidates.filter { it.type is InteractionType.Scroll }.size == 1,
@@ -179,7 +181,7 @@ class InteractableListTest {
                 itemSize = 10,
             ),
             draggedItem = draggedItem,
-            ignoredItems = emptyList(),
+            ignoredItems = defaultIgnoredItems,
         )
         assertTrue(
             candidates.filter { it.type is InteractionType.Scroll }.size == 1,
@@ -198,7 +200,7 @@ class InteractableListTest {
                 key = "key",
                 initialOffset = 0f,
             ),
-            ignoredItems = listOf("ignored"),
+            ignoredItems = setOf("ignored"),
         )
         assertTrue(
             candidates.isEmpty(),
@@ -217,7 +219,7 @@ class InteractableListTest {
                 key = "key",
                 initialOffset = .0f,
             ),
-            ignoredItems = emptyList(),
+            ignoredItems = defaultIgnoredItems,
         )
         assertTrue(
             candidates.isEmpty(),
@@ -227,11 +229,17 @@ class InteractableListTest {
     @Test
     fun `GIVEN an item is dragged onto another WHEN onDragEnd is called THEN onDrop is called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = 0
-        val targetItemOffset = 20
+        val dragItemOffset = 120
+        val targetItemOffset = 140
         val reorderState = fakeListInteractionState(
             mockListState(
                 mockItems = listOf(
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "header"
+                        every { index } returns 0
+                        every { size } returns 100
+                        every { offset } returns 0
+                    },
                     mockk<LazyListItemInfo> {
                         every { key } returns "key1"
                         every { index } returns 1
@@ -259,11 +267,17 @@ class InteractableListTest {
     @Test
     fun `GIVEN drag and drop disabled and an item is dragged onto another WHEN onDragEnd is called THEN onDrop is not called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = 0
-        val targetItemOffset = 20
+        val dragItemOffset = 120
+        val targetItemOffset = 140
         val reorderState = fakeListInteractionState(
             listState = mockListState(
                 mockItems = listOf(
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "header"
+                        every { index } returns 0
+                        every { size } returns 100
+                        every { offset } returns 0
+                    },
                     mockk<LazyListItemInfo> {
                         every { key } returns "key1"
                         every { index } returns 1
@@ -293,11 +307,17 @@ class InteractableListTest {
     @Test
     fun `GIVEN an item is dragged to the bottom of another WHEN onDragEnd is called THEN onMove is called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = 10
-        val targetItemOffset = 30
+        val dragItemOffset = 110
+        val targetItemOffset = 130
         val reorderState = fakeListInteractionState(
             mockListState(
                 mockItems = listOf(
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "header"
+                        every { index } returns 0
+                        every { size } returns 100
+                        every { offset } returns 0
+                    },
                     mockk<LazyListItemInfo> {
                         every { key } returns "key1"
                         every { index } returns 1
@@ -306,7 +326,7 @@ class InteractableListTest {
                     },
                     mockk<LazyListItemInfo> {
                         every { key } returns "key2"
-                        every { index } returns 1
+                        every { index } returns 2
                         every { size } returns 10
                         every { offset } returns targetItemOffset
                     },
@@ -580,6 +600,40 @@ class InteractableListTest {
         assertFalse(reorderState.draggedItem.moved)
     }
 
+    @Test
+    fun `GIVEN a large ignored header item WHEN itemSize is called it retrieves a regular tab item size`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 10
+        val targetItemOffset = 30
+        val reorderState = fakeListInteractionState(
+            mockListState(
+                mockItems = listOf(
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "header"
+                        every { index } returns 1
+                        every { size } returns 10000
+                        every { offset } returns 0
+                    },
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key1"
+                        every { index } returns 1
+                        every { size } returns 10
+                        every { offset } returns dragItemOffset
+                    },
+                    mockk<LazyListItemInfo> {
+                        every { key } returns "key2"
+                        every { index } returns 1
+                        every { size } returns 10
+                        every { offset } returns targetItemOffset
+                    },
+                ),
+            ),
+            handler = handler,
+        )
+
+        assertEquals(reorderState.itemSize, 10)
+    }
+
     private fun mockListItem(mockItemKey: String = "key"): LazyListItemInfo {
         return mockk<LazyListItemInfo> {
             every { key } returns mockItemKey
@@ -621,7 +675,7 @@ class InteractableListTest {
             tabInteractionHandler = handler,
             scope = scope,
             touchSlop = 0f,
-            ignoredItems = emptyList(),
+            ignoredItems = defaultIgnoredItems,
             onLongPress = { _ -> },
             hapticFeedback = mockk<HapticFeedback> {
                 every { performHapticFeedback(any()) } just Runs

@@ -46,7 +46,7 @@ import kotlin.math.pow
  * Remember the reordering state for reordering list items.
  *
  * @param listState State of the list.
- * @param ignoredItems List of keys for non-draggable items.
+ * @param ignoredItems Set of keys for non-draggable items.
  * @param onLongPress Callback to be invoked when long pressing an item.
  * @param tabInteractionHandler Handler for tab interactions.
  * @param dragAndDropEnabled Whether the drag and drop feature is enabled for tab groups.
@@ -54,7 +54,7 @@ import kotlin.math.pow
 @Composable
 fun createListInteractionState(
     listState: LazyListState,
-    ignoredItems: List<Any>,
+    ignoredItems: Set<Any>,
     onLongPress: (LazyListItemInfo) -> Unit = {},
     tabInteractionHandler: TabInteractionHandler,
     dragAndDropEnabled: Boolean = true,
@@ -97,7 +97,7 @@ class ListInteractionState internal constructor(
     private val scope: CoroutineScope,
     private val hapticFeedback: HapticFeedback,
     private val touchSlop: Float,
-    private val ignoredItems: List<Any>,
+    private val ignoredItems: Set<Any>,
     private val tabInteractionHandler: TabInteractionHandler,
     private val dragAndDropEnabled: Boolean,
     private val onLongPress: (LazyListItemInfo) -> Unit = {},
@@ -117,7 +117,7 @@ class ListInteractionState internal constructor(
         private set
 
     val itemSize: Int?
-        get() = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.size
+        get() = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key !in ignoredItems }?.size
 
     internal fun computeItemOffset(index: Int): Float {
         val itemAtIndex =
@@ -305,7 +305,7 @@ private fun determineInteractionMode(
     listState: LazyListState,
     draggedItem: InteractionState.List,
     itemOffset: ListItemOffset,
-    ignoredItems: List<Any>,
+    ignoredItems: Set<Any>,
     dragAndDropEnabled: Boolean,
 ): InteractionMode.List {
     if (listState.isScrollInProgress) return InteractionMode.List.None
@@ -451,7 +451,7 @@ internal fun gatherCandidates(
     listState: LazyListState,
     draggedItemOffset: ListItemOffset,
     draggedItem: InteractionState,
-    ignoredItems: List<Any>,
+    ignoredItems: Set<Any>,
 ): List<ListInteractionCandidate> {
     val candidates = mutableListOf<ListInteractionCandidate>()
     candidates.addAll(
