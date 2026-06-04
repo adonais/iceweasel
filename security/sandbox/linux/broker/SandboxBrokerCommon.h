@@ -54,6 +54,16 @@ class SandboxBrokerCommon {
            static_cast<unsigned>(SANDBOX_OP_MAX_VALUE);
   }
 
+  static int OperationPaths(Operation aOp) {
+    switch (aOp) {
+      case SANDBOX_FILE_LINK:
+      case SANDBOX_FILE_RENAME:
+        return 2;
+      default:
+        return 1;
+    }
+  }
+
   static unsigned OperationToInt(Operation);
   static const char* OperationDescription(Operation);
 

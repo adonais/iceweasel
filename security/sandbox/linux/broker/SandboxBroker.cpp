@@ -820,13 +820,21 @@ void SandboxBroker::ThreadMain(void) {
       // Same for the second path.
       pathLen2 = strnlen(pathBuf2, kMaxPathLen);
       if (pathLen2 > 0) {
+        if (OperationPaths(req.mOp) < 2) {
+          SANDBOX_LOG("extra path for op %s from pid %d",
+                      OperationDescription(req.mOp), mChildPid);
+          shutdown(mFileDesc, SHUT_RD);
+          break;
+        }
         // Force 0 termination.
         pathBuf2[pathLen2] = '\0';
         pathLen2 = ConvertRelativePath(pathBuf2, sizeof(pathBuf2), pathLen2);
         int perms2 = mPolicy->Lookup(nsDependentCString(pathBuf2, pathLen2));
 
-        // Take the intersection of the permissions for both paths.
-        perms &= perms2;
+        // Take the intersection of the permissions for both paths
+        // (the bits which cause denials need to be handled specially).
+        constexpr int kNegPerms = FORCE_DENY | CRASH_INSTEAD;
+        perms = (perms & perms2) | ((perms | perms2) & kNegPerms);
       }
     } else {
       // Failed to receive intelligible paths.
