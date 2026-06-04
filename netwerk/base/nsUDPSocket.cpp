@@ -1328,18 +1328,15 @@ nsresult nsUDPSocket::SetSocketOption(const PRSocketOptionData& aOpt) {
   mSts->IsOnCurrentThread(&onSTSThread);
 
   if (!onSTSThread) {
-    if (mAttached) {
-      // Socket is attached to STS; dispatch to avoid racing with STS polling.
-      nsCOMPtr<nsIRunnable> runnable = new SetSocketOptionRunnable(this, aOpt);
-      nsresult rv = mSts->Dispatch(runnable, NS_DISPATCH_NORMAL);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      return NS_OK;
+    // mFD is owned by the STS thread, which may close it via
+    // OnMsgAttach/OnSocketDetached regardless of mAttached. Always dispatch
+    // so the FD is only ever touched on STS.
+    nsCOMPtr<nsIRunnable> runnable = new SetSocketOptionRunnable(this, aOpt);
+    nsresult rv = mSts->Dispatch(runnable, NS_DISPATCH_NORMAL);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
-    // Socket not yet attached to STS; safe to call PR_SetSocketOption directly
-    // since no other thread is accessing the FD. Errors are propagated to the
-    // caller rather than silently discarded.
+    return NS_OK;
   }
 
   if (NS_WARN_IF(!mFD)) {
