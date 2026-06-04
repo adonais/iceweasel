@@ -1176,6 +1176,9 @@ export class IPProtectionPanel {
       }
       this.setState({ bandwidthWarning: false });
     } else if (event.type == "IPPProxyManager:UsageChanged") {
+      if (!lazy.BANDWIDTH_USAGE_ENABLED) {
+        return;
+      }
       const usage = event.detail.usage;
       if (
         !usage ||
@@ -1232,15 +1235,13 @@ export class IPProtectionPanel {
         this.#sendBandwidthResetTrigger();
       }
 
-      if (lazy.BANDWIDTH_USAGE_ENABLED) {
-        this.setState({
-          bandwidthUsage: {
-            remaining: Number(usage.remaining),
-            max: Number(usage.max),
-            reset: usage.reset,
-          },
-        });
-      }
+      this.setState({
+        bandwidthUsage: {
+          remaining: Number(usage.remaining),
+          max: Number(usage.max),
+          reset: usage.reset,
+        },
+      });
     } else if (event.type == "IPPUsageHelper:StateChanged") {
       this.setState({ bandwidthWarning: this.#shouldShowBandwidthWarning() });
     } else if (event.type == "IPProtection:UserShowLocations") {
