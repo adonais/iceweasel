@@ -214,19 +214,24 @@ data class UTMParams(
         /**
          * Try and unpack the install referrer response.
          */
-        fun parseUTMParameters(installReferrerResponse: String): UTMParams {
-            val utmParams = mutableMapOf<String, String>()
-            val params = installReferrerResponse.split("&")
-
-            for (param in params) {
-                val keyValue = param.split("=")
+        fun parseInstallReferrer(installReferrerResponse: String): Map<String, String> {
+            val params = mutableMapOf<String, String>()
+            for (param in installReferrerResponse.split("&")) {
+                val keyValue = param.split("=", limit = 2)
                 if (keyValue.size == 2) {
                     val key = keyValue[0]
                     val value = keyValue[1]
-                    utmParams[key] = value
+                    params[key] = value
                 }
             }
+            return params
+        }
 
+        /**
+         * Extract the [UTMParams] from the install referrer response.
+         */
+        fun parseUTMParameters(installReferrerResponse: String): UTMParams {
+            val utmParams = parseInstallReferrer(installReferrerResponse)
             return UTMParams(
                 source = utmParams[UTM_SOURCE] ?: "",
                 medium = utmParams[UTM_MEDIUM] ?: "",

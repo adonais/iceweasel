@@ -139,6 +139,50 @@ class InstallReferrerWorkerTest {
     }
 
     @Test
+    fun `WHEN receiving a null or empty attribution THEN it should return null`() {
+        assertNull(MetaParams.extractMetaAttribution(null))
+        assertNull(MetaParams.extractMetaAttribution(""))
+        assertNull(MetaParams.extractMetaAttribution("    "))
+    }
+
+    @Test
+    fun `WHEN a referrer value contains an equals sign THEN it is preserved`() {
+        val params = UTMParams.parseInstallReferrer("k=val=ue&other=plain")
+
+        assertEquals("val=ue", params["k"])
+        assertEquals("plain", params["other"])
+    }
+
+    @Test
+    fun `WHEN a referrer carries a base64 padded value THEN the padding is preserved`() {
+        val params = UTMParams.parseInstallReferrer("""utm_content={"data":"abc=="}""")
+
+        assertEquals("""{"data":"abc=="}""", params["utm_content"])
+    }
+
+    @Test
+    fun `WHEN a referrer segment is malformed THEN sibling params still parse`() {
+        val params = UTMParams.parseInstallReferrer("k1=v1&malformed&k2=v2")
+
+        assertEquals("v1", params["k1"])
+        assertEquals("v2", params["k2"])
+        assertFalse(params.containsKey("malformed"))
+    }
+
+    @Test
+    fun `WHEN the referrer response is empty THEN an empty map is returned`() {
+        assertEquals(emptyMap<String, String>(), UTMParams.parseInstallReferrer(""))
+    }
+
+    @Test
+    fun `WHEN utm_content contains an equals sign THEN it is preserved on UTMParams`() {
+        val utmParams = UTMParams.parseUTMParameters("utm_source=foo&utm_content=abc==")
+
+        assertEquals("foo", utmParams.source)
+        assertEquals("abc==", utmParams.content)
+    }
+
+    @Test
     fun `WHEN parsing referrer response with meta attribution THEN both UTM and Meta params should match expected`() {
         val utmParams = UTMParams.parseUTMParameters("""utm_content={"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}""")
         val expectedUtmParams = UTMParams(source = "", medium = "", campaign = "", content = """{"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}""", term = "")
