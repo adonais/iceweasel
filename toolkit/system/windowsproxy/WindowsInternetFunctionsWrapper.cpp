@@ -10,7 +10,6 @@
 #include "WinRegistry.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "nsINetworkLinkService.h"
 #include "nsIObserverService.h"
 #include "nsThreadUtils.h"
@@ -84,10 +83,6 @@ WindowsInternetFunctionsWrapper::WindowsInternetFunctionsWrapper() {
 void WindowsInternetFunctionsWrapper::Init() {
   MOZ_ASSERT(NS_IsMainThread());
   LOG(("WindowsInternetFunctionsWrapper %p Init()", this));
-
-  if (!StaticPrefs::network_proxy_detect_system_proxy_changes()) {
-    return;
-  }
 
   using namespace mozilla::widget::WinRegistry;
   Key key(HKEY_CURRENT_USER,
