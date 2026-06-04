@@ -102,16 +102,16 @@ class MatchesResponseMapper(
     }
 
     private fun mapLiveStatus(dto: EventInfoDto): MatchStatus =
-        if (dto.period == PERIOD_LIVE_PENALTIES) {
+        if (dto.isPenaltyShootout()) {
             MatchStatus.Penalties(homePenalty = dto.homePenalty, awayPenalty = dto.awayPenalty)
         } else {
             MatchStatus.Live(period = dto.period.orEmpty(), clock = dto.clock.orEmpty())
         }
 
-    // Past matches: only "FT(P)" indicates a penalty-shootout finish. "FT" (regulation)
+    // Past matches: a penalty-shootout finish surfaces the shootout score; "FT" (regulation)
     // and "AET" (after extra time) both end without a shootout and collapse to Final.
     private fun mapPastStatus(dto: EventInfoDto): MatchStatus =
-        if (dto.period == PERIOD_FINAL_AFTER_PENALTIES) {
+        if (dto.isPenaltyShootout()) {
             MatchStatus.FinalAfterPenalties(
                 homePenalty = dto.homePenalty,
                 awayPenalty = dto.awayPenalty,
@@ -119,6 +119,17 @@ class MatchesResponseMapper(
         } else {
             MatchStatus.Final
         }
+
+    // A penalty shootout shows up two ways in the feed: while live the period is "PEN"
+    // (documented as "PenaltyShootout"), but once the match is final the period flips back to
+    // "FT" and the shootout survives only in the penalty fields. So detect either a penalty
+    // period (matched exactly, case-insensitively — a substring match would wrongly catch
+    // "Suspended") or populated penalty scores; the feed only fills those on a shootout. Per
+    // the upstream guidance, never infer penalties from the regulation scores being level.
+    private fun EventInfoDto.isPenaltyShootout(): Boolean =
+        period?.lowercase() in PENALTY_SHOOTOUT_PERIODS ||
+            homePenalty != null ||
+            awayPenalty != null
 
     private fun mapStage(stage: String): TournamentRound {
         val normalized = stage.lowercase().filter { it.isLetterOrDigit() }
@@ -141,7 +152,6 @@ class MatchesResponseMapper(
         const val STATUS_TYPE_SCHEDULED = "scheduled"
         const val STATUS_TYPE_PAST = "past"
 
-        const val PERIOD_LIVE_PENALTIES = "P"
-        const val PERIOD_FINAL_AFTER_PENALTIES = "FT(P)"
+        val PENALTY_SHOOTOUT_PERIODS = setOf("pen", "penaltyshootout")
     }
 }
