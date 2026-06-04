@@ -16,7 +16,7 @@ namespace regexp {
 class RegExpMacroAssemblerTracer : public RegExpMacroAssembler {
  public:
   explicit RegExpMacroAssemblerTracer(
-      std::unique_ptr<RegExpMacroAssembler>&& assembler);
+      js::UniquePtr<RegExpMacroAssembler>&& assembler);
   ~RegExpMacroAssemblerTracer() override;
   void AbortedCodeGeneration() override;
   void AdvanceCurrentPosition(int by) override;    // Signed cp change.
@@ -121,7 +121,7 @@ class RegExpMacroAssemblerTracer : public RegExpMacroAssembler {
   void set_can_fallback(bool val) override;
 
  private:
-  std::unique_ptr<RegExpMacroAssembler> assembler_;
+  js::UniquePtr<RegExpMacroAssembler> assembler_;
 };
 
 }  // namespace regexp

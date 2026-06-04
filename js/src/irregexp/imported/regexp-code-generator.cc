@@ -5,6 +5,7 @@
 #include "irregexp/imported/regexp-code-generator.h"
 
 #include <cstddef>
+#include <iostream>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -36,6 +37,7 @@ CodeGenerator::Result CodeGenerator::Assemble(DirectHandle<RegExpData> re_data,
   USE(isolate_);
   USE(masm_);
 
+#ifndef COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
   // Bytecode analysis is currently unused. In future work it could form the
   // basis for compiler optimizations.
   if (V8_UNLIKELY(v8_flags.regexp_bytecode_analysis)) {
@@ -49,6 +51,7 @@ CodeGenerator::Result CodeGenerator::Assemble(DirectHandle<RegExpData> re_data,
                                 pattern_cstring.get(), &analysis);
     }
   }
+#endif // !COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
 
   PreVisitBytecodes();
   iter_.reset();

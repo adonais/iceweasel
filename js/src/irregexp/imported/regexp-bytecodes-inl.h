@@ -75,7 +75,7 @@ constexpr int CountOf() {
 }
 
 template <size_t N>
-consteval std::array<std::string_view, N> SplitNames(const char* raw_names) {
+constexpr std::array<std::string_view, N> SplitNames(const char* raw_names) {
   std::array<std::string_view, N> result;
   std::string_view names(raw_names);
 
@@ -104,7 +104,7 @@ consteval std::array<std::string_view, N> SplitNames(const char* raw_names) {
 // Calculates packed offsets for each Bytecode operand.
 // All operands are aligned to their own size.
 template <BytecodeOperandType... operand_types>
-consteval auto CalculateAlignedOffsets() {
+constexpr auto CalculateAlignedOffsets() {
   constexpr int N = sizeof...(operand_types);
   constexpr std::array<uint8_t, N> kOperandSizes = {
       OperandTypeTraits<operand_types>::kSize...};
@@ -156,8 +156,7 @@ struct BytecodeOperandNames;
 #define DECLARE_OPERAND_NAMES(CamelName, OpNames, OpTypes, ...)           \
   template <>                                                             \
   struct BytecodeOperandNames<Bytecode::k##CamelName> {                   \
-    enum class Operand { UNPAREN(OpNames) };                              \
-    using enum Operand;                                                   \
+    enum Operand { UNPAREN(OpNames) };                                    \
     static constexpr size_t kCount = detail::CountOf<UNPAREN(OpNames)>(); \
     static constexpr auto kNames = detail::SplitNames<kCount>(#OpNames);  \
     static constexpr std::string_view Name(Operand op) {                  \
@@ -175,14 +174,14 @@ class BytecodeOperandsBase {
   using Traits = BytecodeOperandsTraits<OpTypes...>;
   static constexpr int kCount = Traits::kOperandCount;
   static constexpr int kTotalSize = Traits::kSize;
-  static consteval int Index(Operand op) { return static_cast<uint8_t>(op); }
-  static consteval int Size(Operand op) {
+  static constexpr int Index(Operand op) { return static_cast<uint8_t>(op); }
+  static constexpr int Size(Operand op) {
     return Traits::kOperandSizes[Index(op)];
   }
-  static consteval int Offset(Operand op) {
+  static constexpr int Offset(Operand op) {
     return Traits::kOperandOffsets[Index(op)];
   }
-  static consteval BytecodeOperandType Type(Operand op) {
+  static constexpr BytecodeOperandType Type(Operand op) {
     return Traits::kOperandTypes[Index(op)];
   }
 
@@ -191,7 +190,7 @@ class BytecodeOperandsBase {
   }
 
   // Returns a tuple of all operands.
-  static consteval auto GetOperandsTuple() {
+  static constexpr auto GetOperandsTuple() {
     return []<size_t... Is>(std::index_sequence<Is...>) {
       return std::tuple_cat([]<size_t I>() {
         constexpr auto id = static_cast<Operand>(I);
@@ -294,8 +293,6 @@ class BytecodeOperandsBase {
       : public detail::BytecodeOperandsBase<PACK_OPTIONAL( \
             Bytecode::k##CamelName, UNPAREN(OpTypes))>,    \
         public AllStatic {                                 \
-   public:                                                 \
-    using enum Operand;                                    \
   };
 
 REGEXP_BYTECODE_LIST(DECLARE_OPERANDS)

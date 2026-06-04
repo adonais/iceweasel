@@ -476,11 +476,11 @@ int NativeRegExpMacroAssembler::CheckStackGuardState(
   {
     DisableGCMole no_gc_mole;
     if (js_has_overflowed) {
-      AllowGarbageCollection yes_gc;
+      [[maybe_unused]] AllowGarbageCollection yes_gc;
       isolate->StackOverflow();
       return_value = EXCEPTION;
     } else if (check.InterruptRequested()) {
-      AllowGarbageCollection yes_gc;
+      [[maybe_unused]] AllowGarbageCollection yes_gc;
       Tagged<Object> result = isolate->stack_guard()->HandleInterrupts();
       if (IsExceptionHole(result, isolate)) return_value = EXCEPTION;
     }
