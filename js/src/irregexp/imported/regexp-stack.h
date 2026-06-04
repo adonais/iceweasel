@@ -80,7 +80,7 @@ class Stack final {
 
   // Ensures that there is a memory area with at least the specified size.
   // If passing zero, the default/minimum size buffer is allocated.
-  Address EnsureCapacity(size_t size);
+  V8_EXPORT_PRIVATE Address EnsureCapacity(size_t size);
 
   // Thread local archiving.
   static constexpr int ArchiveSpacePerThread() {
@@ -93,10 +93,12 @@ class Stack final {
   // Maximal size of allocated stack area.
   static constexpr size_t kMaximumStackSize = 64 * MB;
 
+ private:
+  // Currently private as we need to use New/Delete instead.
+  // TODO(426514762): revert this change once its no longer needed.
   Stack();
   ~Stack();
 
- private:
   // Artificial limit used when the thread-local state has been destroyed.
   static const Address kMemoryTop =
       static_cast<Address>(static_cast<uintptr_t>(-1));

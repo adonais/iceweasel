@@ -16,6 +16,7 @@ class RegExpData;
 class IrRegExpData;
 class AtomRegExpData;
 class RegExpMatchInfo;
+class TrustedFixedArray;
 
 namespace regexp {
 
@@ -107,6 +108,13 @@ class RegExp final : public AllStatic {
     kFromJs = 1,
   };
 
+#ifdef V8_ENABLE_REGEXP_DIAGNOSTICS
+  static void TraceExecutionBegin(Address isolate_ptr);
+  static void TraceExecutionEnd(Address isolate_ptr, Address data_ptr,
+                                Address subject_ptr, int32_t last_index,
+                                int32_t result);
+#endif  // V8_ENABLE_REGEXP_DIAGNOSTICS
+
   // See ECMA-262 section 15.10.6.2.
   // This function calls the garbage collector if necessary.
   V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static std::optional<int> Exec(
@@ -163,7 +171,7 @@ class RegExp final : public AllStatic {
   V8_EXPORT_PRIVATE static void DotPrintForTesting(const char* label,
                                                    regexp::Node* node);
 
-  static const int kRegExpTooLargeToOptimize = 20 * KB;
+  static const int kMaxOptimizedPatternLength = 20 * KB;
 
   V8_WARN_UNUSED_RESULT
   static MaybeDirectHandle<Object> ThrowRegExpException(
@@ -176,7 +184,7 @@ class RegExp final : public AllStatic {
   static bool IsUnmodifiedRegExp(Isolate* isolate,
                                  DirectHandle<JSRegExp> regexp);
 
-  static DirectHandle<FixedArray> CreateCaptureNameMap(
+  static DirectHandle<TrustedFixedArray> CreateCaptureNameMap(
       Isolate* isolate, ZoneVector<regexp::Capture*>* named_captures);
 };
 
@@ -271,10 +279,10 @@ class ResultsCache final : public AllStatic {
 class ResultsCache_MatchGlobalAtom final : public AllStatic {
  public:
   static void TryInsert(Isolate* isolate, Tagged<String> subject,
-                        Tagged<String> pattern, int number_of_matches,
+                        Tagged<String> pattern, uint32_t number_of_matches,
                         int last_match_index);
   static bool TryGet(Isolate* isolate, Tagged<String> subject,
-                     Tagged<String> pattern, int* number_of_matches_out,
+                     Tagged<String> pattern, uint32_t* number_of_matches_out,
                      int* last_match_index_out);
   static void Clear(Heap* heap);
 

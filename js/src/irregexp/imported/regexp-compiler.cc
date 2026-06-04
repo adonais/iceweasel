@@ -270,8 +270,9 @@ void ClassRanges::AppendToText(Text* text, Zone* zone) {
 }
 
 void Text::AppendToText(Text* text, Zone* zone) {
-  for (int i = 0; i < elements()->length(); i++)
+  for (int i = 0; i < elements()->length(); i++) {
     text->AddElement(elements()->at(i), zone);
+  }
 }
 
 TextElement TextElement::FromAtom(Atom* atom) {
@@ -344,6 +345,8 @@ Compiler::CompilationResult Compiler::Assemble(
   Trace new_trace;
   if (start->Emit(this, &new_trace).IsError()) {
     work_list_ = nullptr;
+    fail.UnuseNear();
+    fail.Unuse();
     return ReportError();
   }
   macro_assembler_->BindJumpTarget(&fail);
@@ -366,9 +369,29 @@ Compiler::CompilationResult Compiler::Assemble(
   }
 
   DirectHandle<HeapObject> code = macro_assembler_->GetCode(re_data, flags_);
-  isolate->IncreaseTotalRegexpCodeGenerated(code);
   work_list_ = nullptr;
 
+#ifdef V8_TARGET_LITTLE_ENDIAN
+  // Generate a bitmask of valid characters for fast rejection.
+  // Skip for multiline regexps as match attempts are less likely to be
+  // rejected early based on the first few characters.
+  constexpr bool kPossiblyAtStart = false;
+  constexpr int kMinChars = 1;
+  constexpr int kMaxChars = 4;
+  int eats_at_least = start->EatsAtLeast(kPossiblyAtStart);
+  if (one_byte_ && eats_at_least >= kMinChars && !IsMultiline(flags_)) {
+    int chars = std::min(eats_at_least, kMaxChars);
+    QuickCheckDetails quick_check(chars);
+    start->GetQuickCheckDetails(&quick_check, this, 0, kPossiblyAtStart,
+                                Node::kRecursionBudget);
+
+    if (!quick_check.cannot_match()) {
+      quick_check.Rationalize(one_byte_);
+      re_data->set_quick_check_mask(quick_check.mask());
+      re_data->set_quick_check_value(quick_check.value());
+    }
+  }
+#endif
   return {code, next_register_};
 }
 
@@ -414,10 +437,12 @@ class DynamicBitSet : public ZoneObject {
     if (value < kFirstLimit) {
       first_ |= (1 << value);
     } else {
-      if (remaining_ == nullptr)
+      if (remaining_ == nullptr) {
         remaining_ = zone->New<ZoneList<unsigned>>(1, zone);
-      if (remaining_->is_empty() || !remaining_->Contains(value))
+      }
+      if (remaining_->is_empty() || !remaining_->Contains(value)) {
         remaining_->Add(value, zone);
+      }
     }
   }
 
@@ -2114,8 +2139,9 @@ EmitResult AssertionNode::EmitBoundaryCheck(Compiler* compiler, Trace* trace) {
       if (bm->at(0)->is_word()) next_is_word_character = Trace::TRUE_VALUE;
     }
   } else {
-    if (lookahead->at(0)->is_non_word())
+    if (lookahead->at(0)->is_non_word()) {
       next_is_word_character = Trace::FALSE_VALUE;
+    }
     if (lookahead->at(0)->is_word()) next_is_word_character = Trace::TRUE_VALUE;
   }
   bool at_boundary = (assertion_type_ == AssertionNode::AT_BOUNDARY);
@@ -2431,7 +2457,10 @@ EmitResult TextNode::Emit(Compiler* compiler, Trace* trace) {
   if (limit_result == DONE) return EmitResult::Success();
   DCHECK(limit_result == CONTINUE);
 
-  if (trace->cp_offset() + Length() > RegExpMacroAssembler::kMaxCPOffset) {
+  const int max_offset = read_backward() ? trace->cp_offset() - Length()
+                                         : trace->cp_offset() + Length();
+  if (!base::IsInRange(max_offset, RegExpMacroAssembler::kMinCPOffset,
+                       RegExpMacroAssembler::kMaxCPOffset)) {
     compiler->SetRegExpTooBig();
     return EmitResult::Error();
   }
@@ -2662,7 +2691,9 @@ class AlternativeGeneration : public Malloced {
 // size then it is on the stack, otherwise the excess is on the heap.
 class AlternativeGenerationList {
  public:
-  AlternativeGenerationList(int count, Zone* zone) : alt_gens_(count, zone) {
+  AlternativeGenerationList(int count, Compiler* compiler)
+      : alt_gens_(count, compiler->zone()), compiler_(compiler) {
+    Zone* zone = compiler->zone();
     for (int i = 0; i < count && i < kAFew; i++) {
       alt_gens_.Add(a_few_alt_gens_ + i, zone);
     }
@@ -2671,6 +2702,14 @@ class AlternativeGenerationList {
     }
   }
   ~AlternativeGenerationList() {
+    if (V8_UNLIKELY(compiler_->IsRegExpTooBig())) {
+      for (int i = 0; i < alt_gens_.length(); i++) {
+        alt_gens_[i]->possible_success.UnuseNear();
+        alt_gens_[i]->possible_success.Unuse();
+        alt_gens_[i]->after.UnuseNear();
+        alt_gens_[i]->after.Unuse();
+      }
+    }
     for (int i = kAFew; i < alt_gens_.length(); i++) {
       delete alt_gens_[i];
       alt_gens_[i] = nullptr;
@@ -2683,6 +2722,7 @@ class AlternativeGenerationList {
   static const int kAFew = 10;
   ZoneList<AlternativeGeneration*> alt_gens_;
   AlternativeGeneration a_few_alt_gens_[kAFew];
+  Compiler* compiler_;
 };
 
 void BoyerMoorePositionInfo::Set(int character) {
@@ -3165,7 +3205,7 @@ EmitResult ChoiceNode::Emit(Compiler* compiler, Trace* trace) {
   SpecialLoopState special_loop_state(not_at_start(), this);
 
   int text_length = FixedLengthLoopLengthForAlternative(&alternatives_->at(0));
-  AlternativeGenerationList alt_gens(choice_count, zone());
+  AlternativeGenerationList alt_gens(choice_count, compiler);
 
   // Flags need to be reset to the state of the ChoiceNode at the beginning
   // of each alternative (in-line and out-of-line), as flags might be modified
@@ -3821,8 +3861,13 @@ class Analysis : public NodeVisitor {
   }
 
   void VisitChoice(ChoiceNode* that) override {
+    // Flags need to be reset to the state of the ChoiceNode at the beginning
+    // of each alternative, as flags might be modified when visiting an
+    // alternative.
+    Flags header_flags = flags();
     for (int i = 0; i < that->alternatives()->length(); i++) {
       EnsureAnalyzed(that->alternatives()->at(i).node());
+      set_flags(header_flags);
       if (has_failed()) return;
       STATIC_FOR_EACH(Propagators::VisitChoice(that, i));
     }

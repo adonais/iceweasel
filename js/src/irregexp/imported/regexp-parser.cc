@@ -10,7 +10,6 @@
 #include "irregexp/imported/regexp.h"
 
 #ifdef V8_INTL_SUPPORT
-#include "js/properties_glue.h"
 #include "unicode/uniset.h"
 #include "unicode/unistr.h"
 #include "unicode/usetiter.h"
@@ -1948,8 +1947,9 @@ namespace {
 
 bool IsExactPropertyAlias(const char* property_name, UProperty property) {
   const char* short_name = u_getPropertyName(property, U_SHORT_PROPERTY_NAME);
-  if (short_name != nullptr && strcmp(property_name, short_name) == 0)
+  if (short_name != nullptr && strcmp(property_name, short_name) == 0) {
     return true;
+  }
   for (int i = 0;; i++) {
     const char* long_name = u_getPropertyName(
         property, static_cast<UPropertyNameChoice>(U_LONG_PROPERTY_NAME + i));
@@ -2075,9 +2075,7 @@ bool LookupSpecialPropertyValueName(const char* name,
     return LookupPropertyValueName(UCHAR_GENERAL_CATEGORY, "Unassigned",
                                    !negate, result, nullptr, flags, zone);
   } else {
-    return mozilla_properties_glue_add_property_ranges(
-        static_cast<void*>(result), static_cast<void*>(zone), name, negate,
-        IsUnicodeSets(flags) && IsIgnoreCase(flags));
+    return false;
   }
   return true;
 }

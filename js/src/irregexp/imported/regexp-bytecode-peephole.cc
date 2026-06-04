@@ -576,15 +576,6 @@ void BytecodePeepholeSequences::DefineStandardSequences() {
   // (--trace-regexp-bytecodes) and using v8/tools/regexp-sequences.py.
 
   {
-    static constexpr auto Target = B::kAdvanceCpAndGoto;
-    CreateSequence(B::kAdvanceCurrentPosition)
-        .FollowedBy(B::kGoTo)
-        .ReplaceWith(Target)
-        .MapArgument(T(by), 0, I(B::kAdvanceCurrentPosition, by))
-        .MapArgument(T(on_goto), 1, I(B::kGoTo, label));
-  }
-
-  {
     static constexpr auto Target = B::kSkipUntilBitInTable;
     CreateSequence(B::kLoadCurrentCharacter)
         .FollowedBy(B::kCheckBitInTable)
@@ -996,6 +987,9 @@ void BytecodePeephole::EmitOptimization(int start_pc, const uint8_t* bytecode,
   for (uint32_t offset : after_sequence_offsets) {
     DCHECK_EQ(dst_writer_->buffer()[offset], 0);
     dst_writer_->OverwriteValue<uint32_t>(pc(), offset);
+    // Register the offset in jump_edges_ so that subsequent peephole passes
+    // adjust it when bytecodes shift.
+    dst_writer_->jump_edges().emplace(offset, start_pc + sequence_length);
   }
 }
 
@@ -1074,8 +1068,7 @@ Zone* BytecodePeephole::zone() const { return zone_; }
 DirectHandle<TrustedByteArray> BytecodePeepholeOptimization::OptimizeBytecode(
     Isolate* isolate, Zone* zone, DirectHandle<RegExpData> re_data,
     BytecodeWriter* src_writer) {
-  BytecodeWriter second_writer(zone);
-  BytecodeWriter* dst_writer = &second_writer;
+  BytecodeWriter dst_writer(zone);
 
   // Preserve the original bytecode for tracing if needed.
   std::optional<ZoneVector<uint8_t>> original_bytecode;
@@ -1085,27 +1078,29 @@ DirectHandle<TrustedByteArray> BytecodePeepholeOptimization::OptimizeBytecode(
     original_bytecode.emplace(begin, begin + src_writer->length(), zone);
   }
 
-  // Run the peephole optimizer until we've reached a fixed point. All relevant
-  // data structures ping-pong between src and dst_writer.
-  for (;;) {
-    dst_writer->Reset();
-    // TODO(jgruber): This currently recreates standard definitions for each
-    // pass. These should be global instead (or at the very least, once per
-    // compilation).
-    bool this_pass_optimized =
-        BytecodePeephole::OptimizeBytecode(zone, src_writer, dst_writer);
-    if (!this_pass_optimized) break;
-    std::swap(dst_writer, src_writer);
-  }
-
-  // The result is in the src_writer (not in dst, since the last pass did not
-  // change anything).
-  const uint8_t* optimized_bytecode = src_writer->buffer().data();
-  uint32_t optimized_length = src_writer->length();
+  const bool did_optimize =
+      BytecodePeephole::OptimizeBytecode(zone, src_writer, &dst_writer);
+  // The result is in dst_writer iff a peephole rule fired; otherwise the
+  // unchanged input bytecode is still in src_writer.
+  BytecodeWriter* result = did_optimize ? &dst_writer : src_writer;
+  const uint8_t* optimized_bytecode = result->buffer().data();
+  uint32_t optimized_length = result->length();
 
   DirectHandle<TrustedByteArray> array =
       isolate->factory()->NewTrustedByteArray(optimized_length);
   MemCopy(array->begin(), optimized_bytecode, optimized_length);
+
+  if (did_optimize && v8_flags.trace_regexp_peephole_optimization) {
+    std::unique_ptr<char[]> pattern_cstring =
+        re_data->escaped_source()->ToCString();
+    PrintF("Original Bytecode:\n");
+    RegExpBytecodeDisassemble(original_bytecode->data(),
+                              static_cast<uint32_t>(original_bytecode->size()),
+                              pattern_cstring.get());
+    PrintF("Optimized Bytecode:\n");
+    RegExpBytecodeDisassemble(array->begin(), optimized_length,
+                              pattern_cstring.get());
+  }
 
   return array;
 }

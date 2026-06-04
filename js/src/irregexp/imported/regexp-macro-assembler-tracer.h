@@ -16,13 +16,14 @@ namespace regexp {
 class RegExpMacroAssemblerTracer : public RegExpMacroAssembler {
  public:
   explicit RegExpMacroAssemblerTracer(
-      js::UniquePtr<RegExpMacroAssembler>&& assembler);
+      std::unique_ptr<RegExpMacroAssembler>&& assembler);
   ~RegExpMacroAssemblerTracer() override;
   void AbortedCodeGeneration() override;
   void AdvanceCurrentPosition(int by) override;    // Signed cp change.
   void AdvanceRegister(int reg, int by) override;  // r[reg] += by.
   void Backtrack() override;
   void Bind(Label* label) override;
+  void BindJumpTarget(Label* label) override;
   void CheckCharacter(unsigned c, Label* on_equal) override;
   void CheckCharacterAfterAnd(unsigned c, unsigned and_with,
                               Label* on_equal) override;
@@ -116,12 +117,11 @@ class RegExpMacroAssemblerTracer : public RegExpMacroAssembler {
   MacroAssembler* masm() override { return assembler_->masm(); }
 
   void set_global_mode(GlobalMode mode) override;
-  void set_slow_safe(bool ssc) override;
   void set_backtrack_limit(uint32_t backtrack_limit) override;
   void set_can_fallback(bool val) override;
 
  private:
-  js::UniquePtr<RegExpMacroAssembler> assembler_;
+  std::unique_ptr<RegExpMacroAssembler> assembler_;
 };
 
 }  // namespace regexp
