@@ -68,9 +68,6 @@ class SandboxBrokerTest : public ::testing::Test {
   int Mkdir(const char* aPath, int aMode) {
     return mClient->Mkdir(aPath, aMode);
   }
-  int Symlink(const char* aPath, const char* bPath) {
-    return mClient->Symlink(aPath, bPath);
-  }
   int Rename(const char* aPath, const char* bPath) {
     return mClient->Rename(aPath, bPath);
   }
@@ -306,25 +303,6 @@ TEST_F(SandboxBrokerTest, Link) {
   PrePostTestCleanup();
 }
 
-TEST_F(SandboxBrokerTest, Symlink) {
-  PrePostTestCleanup();
-
-  int fd = Open("/tmp/blublu", O_WRONLY | O_CREAT);
-  ASSERT_GE(fd, 0) << "Opening /tmp/blublu for writing failed.";
-  close(fd);
-  ASSERT_EQ(0, Symlink("/tmp/blublu", "/tmp/blublublu"));
-  EXPECT_EQ(0, Access("/tmp/blublublu", F_OK));
-  statstruct aStat;
-  ASSERT_EQ(0, lstatsyscall("/tmp/blublublu", &aStat));
-  EXPECT_EQ((mode_t)S_IFLNK, aStat.st_mode & S_IFMT);
-  // Not whitelisted target path
-  EXPECT_EQ(-EACCES, Symlink("/tmp/blublu", "/tmp/nope"));
-  EXPECT_EQ(0, unlink("/tmp/blublublu"));
-  EXPECT_EQ(0, unlink("/tmp/blublu"));
-
-  PrePostTestCleanup();
-}
-
 TEST_F(SandboxBrokerTest, Mkdir) {
   PrePostTestCleanup();
 
@@ -400,7 +378,8 @@ TEST_F(SandboxBrokerTest, Readlink) {
   int fd = Open("/tmp/blublu", O_WRONLY | O_CREAT);
   ASSERT_GE(fd, 0) << "Opening /tmp/blublu for writing failed.";
   close(fd);
-  ASSERT_EQ(0, Symlink("/tmp/blublu", "/tmp/blublublu"));
+  // This is the real symlink() now that there's no broker support.
+  ASSERT_EQ(0, symlink("/tmp/blublu", "/tmp/blublublu"));
   EXPECT_EQ(0, Access("/tmp/blublublu", F_OK));
   char linkBuff[256];
   EXPECT_EQ(11, Readlink("/tmp/blublublu", linkBuff, sizeof(linkBuff)));

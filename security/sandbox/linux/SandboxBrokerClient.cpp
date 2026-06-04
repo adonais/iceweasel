@@ -205,11 +205,6 @@ int SandboxBrokerClient::Link(const char* aOldPath, const char* aNewPath) {
   return DoCall(&req, aOldPath, aNewPath, nullptr, false);
 }
 
-int SandboxBrokerClient::Symlink(const char* aOldPath, const char* aNewPath) {
-  Request req = MakeRequest(SANDBOX_FILE_SYMLINK, 0, 0);
-  return DoCall(&req, aOldPath, aNewPath, nullptr, false);
-}
-
 int SandboxBrokerClient::Rename(const char* aOldPath, const char* aNewPath) {
   Request req = MakeRequest(SANDBOX_FILE_RENAME, 0, 0);
   return DoCall(&req, aOldPath, aNewPath, nullptr, false);

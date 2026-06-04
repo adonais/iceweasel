@@ -299,13 +299,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     return broker->Link(path, path2);
   }
 
-  static intptr_t SymlinkTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto path2 = reinterpret_cast<const char*>(aArgs.args[1]);
-    return broker->Symlink(path, path2);
-  }
-
   static intptr_t RenameTrap(ArgsRef aArgs, void* aux) {
     auto broker = static_cast<SandboxBrokerClient*>(aux);
     auto path = reinterpret_cast<const char*>(aArgs.args[0]);
@@ -470,19 +463,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       return BlockedSyscallTrap(aArgs, nullptr);
     }
     return broker->Link(path, path2);
-  }
-
-  static intptr_t SymlinkAtTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto fd2 = static_cast<int>(aArgs.args[1]);
-    auto path2 = reinterpret_cast<const char*>(aArgs.args[2]);
-    if (fd2 != AT_FDCWD && path2[0] != '/') {
-      SANDBOX_LOG("unsupported fd-relative symlinkat(\"%s\", %d, \"%s\")", path,
-                  fd2, path2);
-      return BlockedSyscallTrap(aArgs, nullptr);
-    }
-    return broker->Symlink(path, path2);
   }
 
   static intptr_t RenameAtTrap(ArgsRef aArgs, void* aux) {
@@ -966,7 +946,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         case __NR_mkdir:
           return Trap(MkdirTrap, mBroker);
         case __NR_symlink:
-          return Trap(SymlinkTrap, mBroker);
+          return Error(EPERM);
         case __NR_rename:
           return Trap(RenameTrap, mBroker);
         case __NR_rmdir:
@@ -995,7 +975,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         case __NR_mkdirat:
           return Trap(MkdirAtTrap, mBroker);
         case __NR_symlinkat:
-          return Trap(SymlinkAtTrap, mBroker);
+          return Error(EPERM);
         case __NR_renameat:
           return Trap(RenameAtTrap, mBroker);
         case __NR_unlinkat:
