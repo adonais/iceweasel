@@ -2739,7 +2739,8 @@ class DeserializeUpgradeValueHelper final : public Runnable {
       : Runnable("DeserializeUpgradeValueHelper"),
         mMonitor("DeserializeUpgradeValueHelper::mMonitor"),
         mCloneReadInfo(aCloneReadInfo),
-        mStatus(NS_ERROR_FAILURE) {}
+        mStatus(NS_ERROR_FAILURE),
+        mDone{false} {}
 
   nsresult DispatchAndWait(nsAString& aFileIds) {
     // We don't need to go to the main-thread and use the sandbox.
@@ -2761,7 +2762,9 @@ class DeserializeUpgradeValueHelper final : public Runnable {
       return rv;
     }
 
-    lock.Wait();
+    while (!mDone) {
+      lock.Wait();
+    }
 
     if (NS_FAILED(mStatus)) {
       return mStatus;
@@ -2840,12 +2843,14 @@ class DeserializeUpgradeValueHelper final : public Runnable {
     mStatus = aStatus;
 
     MonitorAutoLock lock(mMonitor);
+    mDone = true;
     lock.Notify();
   }
 
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
   StructuredCloneReadInfoParent& mCloneReadInfo;
   nsresult mStatus;
+  bool mDone MOZ_GUARDED_BY(mMonitor);
 };
 
 nsresult DeserializeUpgradeValueToFileIds(
