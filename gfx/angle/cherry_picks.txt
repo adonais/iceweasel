@@ -1,3 +1,22 @@
+commit 6eb59c58d21b6148fe13c0374201cafd9464e32e
+Author: Shahbaz Youssefi <syoussefi@chromium.org>
+Date:   Tue Apr 7 15:51:37 2026 -0400
+
+    M148: Translator: Fix redeclared built-in type checks
+    
+    When a built-in is redeclared, it's type must match the built-in.  A
+    minor exception is that gl_ClipDistance and gl_CullDistance are allowed
+    to have a smaller array size.
+    
+    The checks for various redeclared built-ins are consolidated in this
+    change, which automatically fixes missing validation for
+    gl_LastFragColor/Depth/StencilARM built-ins.
+    
+    Bug: chromium:499131214
+    Change-Id: I33c3047852f04a11dbf9f880694c4d3ff8c2585e
+    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7818777
+    Reviewed-by: Yuxin Hu <yuxinhu@google.com>
+
 commit b2a02e6a10589f2890ab8522bd00d3102834925d
 Author: Geoff Lang <geofflang@chromium.org>
 Date:   Thu Mar 26 18:05:30 2026 -0500

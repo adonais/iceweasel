@@ -839,19 +839,14 @@ bool TParseContext::checkIsNotReserved(const TSourceLoc &line, const ImmutableSt
     static const char *reservedErrMsg = "reserved built-in name";
     if (gl::IsBuiltInName(identifier.data()))
     {
-        error(line, reservedErrMsg, "gl_");
+        error(line, reservedErrMsg, identifier);
         return false;
     }
     if (sh::IsWebGLBasedSpec(mShaderSpec))
     {
-        if (identifier.beginsWith("webgl_"))
+        if (identifier.beginsWith("webgl_") || identifier.beginsWith("_webgl_"))
         {
-            error(line, reservedErrMsg, "webgl_");
-            return false;
-        }
-        if (identifier.beginsWith("_webgl_"))
-        {
-            error(line, reservedErrMsg, "_webgl_");
+            error(line, reservedErrMsg, identifier);
             return false;
         }
     }
@@ -1414,91 +1409,107 @@ bool TParseContext::declareVariable(const TSourceLoc &line,
     checkBindingIsValid(line, *type);
 
     bool needsReservedCheck = true;
+    const TVariable *builtInSymbol =
+        static_cast<const TVariable *>(symbolTable.findBuiltIn(identifier, mShaderVersion));
 
-    // gl_LastFragData may be redeclared with a new precision qualifier
-    if (type->isArray() && identifier.beginsWith("gl_LastFragData"))
+    // Some built-ins may be redeclared with a new precision qualifier, but must otherwise match the
+    // built-in in type, array dimensions etc: gl_LastFragData, gl_ClipDistance, gl_CullDistance.
+    //
+    // For gl_ClipDistance and gl_CullDistance, the array size can be less than the built-in's.
+    if (builtInSymbol != nullptr)
     {
-        const TVariable *maxDrawBuffers = static_cast<const TVariable *>(
-            symbolTable.findBuiltIn(ImmutableString("gl_MaxDrawBuffers"), mShaderVersion));
+        const TType &expectedType = builtInSymbol->getType();
+
+        uint32_t expectedArraySize         = 0;
+        bool canArraySizeBeLessThanBuiltIn = false;
+        const char *arraySizeCheckError    = nullptr;
+
+        switch (expectedType.getQualifier())
+        {
+            case EvqLastFragData:
+                expectedArraySize = static_cast<const TVariable *>(
+                                        symbolTable.findBuiltIn(
+                                            ImmutableString("gl_MaxDrawBuffers"), mShaderVersion))
+                                        ->getConstPointer()
+                                        ->getIConst();
+                arraySizeCheckError =
+                    "redeclaration of gl_LastFragData with size != gl_MaxDrawBuffers";
+                needsReservedCheck = !checkCanUseOneOfExtensions(line, builtInSymbol->extensions());
+                break;
+            case EvqClipDistance:
+            {
+                const TVariable *maxClipDistances =
+                    static_cast<const TVariable *>(symbolTable.findBuiltIn(
+                        ImmutableString("gl_MaxClipDistances"), mShaderVersion));
+                if (maxClipDistances != nullptr)
+                {
+                    expectedArraySize = maxClipDistances->getConstPointer()->getIConst();
+                    canArraySizeBeLessThanBuiltIn = true;
+                    arraySizeCheckError =
+                        "redeclaration of gl_ClipDistance with size > gl_MaxClipDistances";
+                    needsReservedCheck =
+                        !checkCanUseOneOfExtensions(line, builtInSymbol->extensions());
+                }
+                else
+                {
+                    // Unsupported extension
+                    error(line, "redeclaration of built-in is not allowed", identifier);
+                    return false;
+                }
+                break;
+            }
+            case EvqCullDistance:
+            {
+                const TVariable *maxCullDistances =
+                    static_cast<const TVariable *>(symbolTable.findBuiltIn(
+                        ImmutableString("gl_MaxCullDistances"), mShaderVersion));
+                if (maxCullDistances != nullptr)
+                {
+                    expectedArraySize = maxCullDistances->getConstPointer()->getIConst();
+                    canArraySizeBeLessThanBuiltIn = true;
+                    arraySizeCheckError =
+                        "redeclaration of gl_CullDistance with size > gl_MaxCullDistances";
+                    needsReservedCheck =
+                        !checkCanUseOneOfExtensions(line, builtInSymbol->extensions());
+                }
+                else
+                {
+                    // Unsupported extension
+                    error(line, "redeclaration of built-in is not allowed", identifier);
+                    return false;
+                }
+                break;
+            }
+            default:
+                error(line, "reserved built-in name", identifier);
+                return false;
+        }
+
+        // No built-in is an array of arrays.
         if (type->isArrayOfArrays())
         {
-            error(line, "redeclaration of gl_LastFragData as an array of arrays", identifier);
+            error(line, "redeclaration of built-in as an array of arrays", identifier);
             return false;
         }
-        else if (static_cast<int>(type->getOutermostArraySize()) ==
-                 maxDrawBuffers->getConstPointer()->getIConst())
+
+        if (type->getBasicType() != expectedType.getBasicType() ||
+            type->getNominalSize() != expectedType.getNominalSize() ||
+            type->getSecondarySize() != expectedType.getSecondarySize() ||
+            type->isArray() != expectedType.isArray())
         {
-            if (const TSymbol *builtInSymbol = symbolTable.findBuiltIn(identifier, mShaderVersion))
+            error(line, "redeclaration of built-in with a different type", identifier);
+            return false;
+        }
+
+        if (type->isArray())
+        {
+            unsigned int arraySize = type->getOutermostArraySize();
+            if (arraySize > expectedArraySize ||
+                (!canArraySizeBeLessThanBuiltIn && arraySize != expectedArraySize))
             {
-                needsReservedCheck = !checkCanUseOneOfExtensions(line, builtInSymbol->extensions());
+                error(line, arraySizeCheckError, identifier);
+                return false;
             }
-        }
-        else
-        {
-            error(line, "redeclaration of gl_LastFragData with size != gl_MaxDrawBuffers",
-                  identifier);
-            return false;
-        }
-    }
-    else if (type->isArray() && identifier == "gl_ClipDistance")
-    {
-        // gl_ClipDistance can be redeclared with smaller size than gl_MaxClipDistances
-        const TVariable *maxClipDistances = static_cast<const TVariable *>(
-            symbolTable.findBuiltIn(ImmutableString("gl_MaxClipDistances"), mShaderVersion));
-        if (!maxClipDistances)
-        {
-            // Unsupported extension
-            needsReservedCheck = true;
-        }
-        else if (type->isArrayOfArrays())
-        {
-            error(line, "redeclaration of gl_ClipDistance as an array of arrays", identifier);
-            return false;
-        }
-        else if (static_cast<int>(type->getOutermostArraySize()) <=
-                 maxClipDistances->getConstPointer()->getIConst())
-        {
-            const TSymbol *builtInSymbol = symbolTable.findBuiltIn(identifier, mShaderVersion);
-            if (builtInSymbol)
-            {
-                needsReservedCheck = !checkCanUseOneOfExtensions(line, builtInSymbol->extensions());
-            }
-        }
-        else
-        {
-            error(line, "redeclaration of gl_ClipDistance with size > gl_MaxClipDistances",
-                  identifier);
-            return false;
-        }
-    }
-    else if (type->isArray() && identifier == "gl_CullDistance")
-    {
-        // gl_CullDistance can be redeclared with smaller size than gl_MaxCullDistances
-        const TVariable *maxCullDistances = static_cast<const TVariable *>(
-            symbolTable.findBuiltIn(ImmutableString("gl_MaxCullDistances"), mShaderVersion));
-        if (!maxCullDistances)
-        {
-            // Unsupported extension
-            needsReservedCheck = true;
-        }
-        else if (type->isArrayOfArrays())
-        {
-            error(line, "redeclaration of gl_CullDistance as an array of arrays", identifier);
-            return false;
-        }
-        else if (static_cast<int>(type->getOutermostArraySize()) <=
-                 maxCullDistances->getConstPointer()->getIConst())
-        {
-            if (const TSymbol *builtInSymbol = symbolTable.findBuiltIn(identifier, mShaderVersion))
-            {
-                needsReservedCheck = !checkCanUseOneOfExtensions(line, builtInSymbol->extensions());
-            }
-        }
-        else
-        {
-            error(line, "redeclaration of gl_CullDistance with size > gl_MaxCullDistances",
-                  identifier);
-            return false;
         }
     }
 
