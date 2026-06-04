@@ -9,7 +9,12 @@ import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.ext.packageManagerWrapper
 import org.junit.Assert.assertEquals
@@ -28,6 +33,7 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.MarketingOnboardingCard
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 internal class InstallReferrerHandlingServiceTest {
 
@@ -74,14 +80,20 @@ internal class InstallReferrerHandlingServiceTest {
     }
 
     @Test
-    fun `GIVEN a null referrer on OK response WHEN start is called THEN response is not stored and shouldShowMarketingOnboarding is false`() {
-        val service = fakeService(responseCode = InstallReferrerClient.InstallReferrerResponse.OK, referrerResponse = null)
+    fun `GIVEN a null referrer on OK response WHEN start is called THEN response is not stored and shouldShowMarketingOnboarding is false`() =
+        runTest {
+            val service = fakeService(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                referrerResponse = null,
+                scope = this,
+            )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertNull(InstallReferrerHandlingService.response)
-        assertFalse(testContext.settings().shouldShowMarketingOnboarding)
-    }
+            assertNull(InstallReferrerHandlingService.response)
+            assertFalse(testContext.settings().shouldShowMarketingOnboarding)
+        }
 
     @Test
     fun `GIVEN a non-null referrer on OK response WHEN start is called THEN response is stored`() {
@@ -143,7 +155,8 @@ internal class InstallReferrerHandlingServiceTest {
         responseCode: Int = InstallReferrerClient.InstallReferrerResponse.OK,
         referrerResponse: String? = null,
         simulateDisconnect: Boolean = false,
-    ) = InstallReferrerHandlingService(testContext).apply {
+        scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    ) = InstallReferrerHandlingService(testContext, scope = scope).apply {
         clientFactory = {
             FakeReferrerClient(
                 responseCode = responseCode,

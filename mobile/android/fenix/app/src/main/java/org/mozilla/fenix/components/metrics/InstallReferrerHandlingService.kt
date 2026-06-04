@@ -30,9 +30,11 @@ private const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
  * telemetry or makes network calls until after ToS is accepted.
  *
  * @param context The application context.
+ * @param scope Coroutine scope used to launch background work.
  */
 class InstallReferrerHandlingService(
     private val context: Context,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ) {
     private val logger = Logger("InstallReferrerHandlingService")
 
@@ -71,12 +73,12 @@ class InstallReferrerHandlingService(
                                 distributionIdManager.updateDistributionIdFromUtmParams(
                                     UTMParams.parseUTMParameters(installReferrerResponse),
                                 )
-                                CoroutineScope(Dispatchers.IO).launch {
+                                scope.launch {
                                     distributionIdManager.startAdjustIfSkippingConsentScreen()
                                 }
                             }
 
-                            CoroutineScope(Dispatchers.IO).launch {
+                            scope.launch {
                                 context.settings().shouldShowMarketingOnboarding =
                                     shouldShowMarketingOnboarding(
                                         installReferrerResponse,
