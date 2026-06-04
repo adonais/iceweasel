@@ -167,6 +167,37 @@ constexpr bool IsValidWithPixelLocalStorage(TLayoutImageInternalFormat internalF
             return false;
     }
 }
+
+unsigned int GetMaxUniformBlocksForShaderType(sh::GLenum shaderType,
+                                              const ShCompileOptions &options,
+                                              const ShBuiltInResources &resources)
+{
+    // If the validatePerStageMaxUniformBlocks workaround is disabled. Set a limit that will not be
+    // hit.
+    if (!options.validatePerStageMaxUniformBlocks)
+    {
+        return std::numeric_limits<unsigned int>::max();
+    }
+
+    switch (shaderType)
+    {
+        case GL_FRAGMENT_SHADER:
+            return resources.MaxFragmentUniformBlocks;
+        case GL_VERTEX_SHADER:
+            return resources.MaxVertexUniformBlocks;
+        case GL_COMPUTE_SHADER:
+            return resources.MaxComputeUniformBlocks;
+        case GL_GEOMETRY_SHADER:
+            return resources.MaxGeometryUniformBlocks;
+        case GL_TESS_CONTROL_SHADER:
+            return resources.MaxTessControlUniformBlocks;
+        case GL_TESS_EVALUATION_SHADER:
+            return resources.MaxTessEvaluationUniformBlocks;
+        default:
+            UNREACHABLE();
+            return 0;
+    }
+}
 }  // namespace
 
 // This tracks each binding point's current default offset for inheritance of subsequent
@@ -242,6 +273,8 @@ TParseContext::TParseContext(TSymbolTable &symt,
       mComputeShaderLocalSizeDeclared(false),
       mComputeShaderLocalSize(-1),
       mNumViews(-1),
+      mMaxUniformBlocks(GetMaxUniformBlocksForShaderType(mShaderType, options, resources)),
+      mNumUniformBlocks(0),
       mMaxNumViews(resources.MaxViewsOVR),
       mMaxImageUnits(resources.MaxImageUnits),
       mMaxCombinedTextureImageUnits(resources.MaxCombinedTextureImageUnits),
@@ -4687,6 +4720,22 @@ TIntermDeclaration *TParseContext::addInterfaceBlock(
              IsVaryingIn(typeQualifier.qualifier))
     {
         error(arraySizesLine, "geometry shader input blocks must be an array", "");
+    }
+
+    // Validate max uniform block limits
+    if (typeQualifier.qualifier == EvqUniform)
+    {
+        unsigned int blockCount =
+            arraySizes == nullptr || arraySizes->empty() ? 1 : (*arraySizes)[0];
+        if (mNumUniformBlocks + blockCount > mMaxUniformBlocks)
+        {
+            error(arraySizesLine,
+                  "uniform block count greater than per stage maximum uniform blocks", "");
+        }
+        else
+        {
+            mNumUniformBlocks += blockCount;
+        }
     }
 
     checkIndexIsNotSpecified(typeQualifier.line, typeQualifier.layoutQualifier.index);
