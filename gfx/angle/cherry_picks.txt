@@ -1,3 +1,20 @@
+commit b2a02e6a10589f2890ab8522bd00d3102834925d
+Author: Geoff Lang <geofflang@chromium.org>
+Date:   Thu Mar 26 18:05:30 2026 -0500
+
+    M146: Optionally validate GL_MAX_*_UNIFORM_BLOCKS at compile time.
+    
+    These were validated at link time but some drivers have compiler crashes
+    when compiling shaders with too many uniform blocks.
+    
+    Bug: chromium:475877320
+    Change-Id: I4413ce06307b4fe9e27105d85f66f610c235a301
+    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7568089
+    Commit-Queue: Geoff Lang <geofflang@chromium.org>
+    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
+    (cherry picked from commit bf6dd974238bceec7a0a27987e2e02e177f2b7f8)
+    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7653195
+
 commit b0098a1ebdb0400b515ff7a662685bda111e9e87
 Author: Emilio Cobos Álvarez <emilio@crisal.io>
 Date:   Thu Apr 9 15:03:30 2026 +0200
