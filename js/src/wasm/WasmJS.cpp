@@ -5251,7 +5251,22 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
         setClosedAndDestroyBeforeHelperThreadStarted();
         return;
       }
-      case Code:
+      case Code: {
+        // Stream ended mid code section: declared code section size was
+        // larger than the bytes actually delivered. The helper thread is
+        // blocked in StreamingDecoder::waitForBytes()
+        // Report the error and unlock the thread.
+        // The order of the following operations is critical:
+        // - First set cancelled to true
+        // - Then wake up the helper thread waiting for bytes. This thread will
+        //   see the cancelled flag and returns. If we inverted this we could
+        //   wake up the thread and it would go back to sleep.
+        streamFailed_ = true;
+        exclusiveCodeBytesEnd_.lock().notify_one();
+        exclusiveStreamEnd_.lock().notify_one();
+        setClosedAndDestroyAfterHelperThreadStarted();
+        return;
+      }
       case Tail:
         // Unlock exclusiveStreamEnd_ before locking streamState_.
         {
