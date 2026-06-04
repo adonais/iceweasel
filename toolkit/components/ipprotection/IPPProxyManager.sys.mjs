@@ -177,7 +177,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     // If we loaded a cached usage metric that was reset in the past
     // (e.g. Firefox launched on/after the quota's monthly rollover),
     // try to refresh immediately so we don't display last month's value.
-    if (this.#usage) {
+    if (this.#usage && !this.#usage.unlimited) {
       this.#scheduleUsageCheck(this.#usage);
     }
   }
@@ -388,7 +388,7 @@ class IPPProxyManagerSingleton extends EventTarget {
         await this.#getPassAndUsage(abortSignal);
       if (usage) {
         this.#setUsage(usage);
-        if (this.#usage.remaining <= 0) {
+        if (usage.quotaExhausted) {
           this.#setPausedState();
           return false;
         }
@@ -478,7 +478,11 @@ class IPPProxyManagerSingleton extends EventTarget {
       duration: String(sessionLength),
     });
     this.updateState();
-    if (userAction && this.#state !== IPPProxyStates.PAUSED) {
+    if (
+      userAction &&
+      this.#state !== IPPProxyStates.PAUSED &&
+      !this.#usage?.unlimited
+    ) {
       this.refreshUsage();
     }
   }
@@ -673,7 +677,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
     if (usage) {
       this.#setUsage(usage);
-      if (this.#usage.remaining <= 0) {
+      if (usage.quotaExhausted) {
         this.#setPausedState();
         return null;
       }
@@ -768,7 +772,7 @@ class IPPProxyManagerSingleton extends EventTarget {
       return;
     }
 
-    if (this.#usage && this.#usage.remaining <= 0) {
+    if (this.#usage?.quotaExhausted) {
       this.#setState(IPPProxyStates.PAUSED);
       return;
     }
@@ -808,14 +812,21 @@ class IPPProxyManagerSingleton extends EventTarget {
    * @param {import("./GuardianTypes.sys.mjs").ProxyUsage } usage
    */
   #setUsage(usage) {
+    if (usage.unlimited && this.#usage?.equals(usage)) {
+      return;
+    }
     this.#usage = usage;
-    const now = Temporal.Now.instant();
-    const daysUntilReset = now.until(usage.reset).total("days");
-    lazy.logConsole.debug("ProxyUsage:", {
-      usage: `${usage.remaining} / ${usage.max}`,
-      resetsIn: `${daysUntilReset.toFixed(1)} days`,
-    });
-    this.#scheduleUsageCheck(usage);
+
+    if (!usage.unlimited) {
+      const now = Temporal.Now.instant();
+      const daysUntilReset = now.until(usage.reset).total("days");
+      lazy.logConsole.debug("ProxyUsage:", {
+        usage: `${usage.remaining} / ${usage.max}`,
+        resetsIn: `${daysUntilReset.toFixed(1)} days`,
+      });
+      this.#scheduleUsageCheck(usage);
+    }
+
     this.dispatchEvent(
       new CustomEvent("IPPProxyManager:UsageChanged", {
         bubbles: true,

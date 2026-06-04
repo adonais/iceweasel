@@ -262,19 +262,33 @@ export class Entitlement {
  * Immutable after creation.
  */
 export class ProxyUsage {
-  /** @type {bigint} - Maximum bytes allowed */
-  max = BigInt(0);
-  /** @type {bigint} - Remaining bytes available */
-  remaining = BigInt(0);
-  /** @type {Temporal.Instant} - When the usage quota resets */
+  /** @type {bigint | null} - Maximum bytes allowed */
+  max = null;
+  /** @type {bigint | null} - Remaining bytes available */
+  remaining = null;
+  /** @type {Temporal.Instant | null} - When the usage quota resets */
   reset = null;
+  /** @type {boolean} - True if the user has unlimited bandwidth; false if the user has a bandwidth cap */
+  unlimited = false;
 
   /**
-   * @param {string} max - Maximum bytes allowed (as string for BigInt parsing)
-   * @param {string} remaining - Remaining bytes available (as string for BigInt parsing)
-   * @param {string} reset - ISO 8601 timestamp when quota resets
+   * @param {string | null} max - Maximum bytes allowed (as string for BigInt parsing)
+   * @param {string | null} remaining - Remaining bytes available (as string for BigInt parsing)
+   * @param {string | null} reset - ISO 8601 timestamp when quota resets
+   * @param {boolean} [unlimited] - Whether the user has unlimited bandwidth
    */
-  constructor(max, remaining, reset) {
+  constructor(max, remaining, reset, unlimited) {
+    this.unlimited = !!unlimited;
+
+    if (this.unlimited) {
+      Object.freeze(this);
+      return;
+    }
+
+    if (max === null || remaining === null || reset === null) {
+      throw new TypeError("invalid usage");
+    }
+
     this.max = BigInt(max);
     if (this.max < BigInt(0)) {
       throw new TypeError("max must be non-negative");
@@ -294,7 +308,36 @@ export class ProxyUsage {
     Object.freeze(this);
   }
 
+  /**
+   * Compares this usage against another for value equality.
+   *
+   * @param {ProxyUsage | null} other - The usage to compare against.
+   * @returns {boolean} True if both represent the same usage state.
+   */
+  equals(other) {
+    if (!(other instanceof ProxyUsage)) {
+      return false;
+    }
+    if (
+      this.unlimited !== other.unlimited ||
+      this.max !== other.max ||
+      this.remaining !== other.remaining
+    ) {
+      return false;
+    }
+    if (this.reset === null || other.reset === null) {
+      return this.reset === other.reset;
+    }
+    return Temporal.Instant.compare(this.reset, other.reset) === 0;
+  }
+
   static fromResponse(response) {
+    const unlimited = response.headers.get("X-Quota-Unlimited") === "true";
+
+    if (unlimited) {
+      return new ProxyUsage(null, null, null, true);
+    }
+
     const getOrThrow = headerName => {
       const value = response.headers.get(headerName);
       if (!value) {
@@ -308,5 +351,9 @@ export class ProxyUsage {
     const quotaReset = getOrThrow("X-Quota-Reset");
 
     return new ProxyUsage(quotaLimit, quotaRemaining, quotaReset);
+  }
+
+  get quotaExhausted() {
+    return !this.unlimited && this.remaining <= 0;
   }
 }

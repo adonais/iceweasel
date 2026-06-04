@@ -514,6 +514,61 @@ add_task(async function test_IPPProxyManager_quota_exceeded() {
 });
 
 /**
+ * Tests that an unlimited usage from a pass fetch is recorded and dispatched,
+ * and that the proxy activates instead of pausing despite a null remaining.
+ */
+add_task(async function test_IPPProxyManager_unlimited_usage() {
+  setupStubs({
+    proxyUsage: new ProxyUsage(null, null, null, true),
+  });
+  Services.prefs.clearUserPref("browser.ipProtection.usageCache");
+
+  let capturedUsage = null;
+  const usageListener = event => {
+    capturedUsage = event.detail.usage;
+  };
+  IPPProxyManager.addEventListener(
+    "IPPProxyManager:UsageChanged",
+    usageListener
+  );
+
+  const waitForReady = waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    () => IPProtectionService.state === IPProtectionStates.READY
+  );
+
+  IPProtectionService.init();
+  await waitForReady;
+
+  await IPPProxyManager.start(false);
+
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.ACTIVE,
+    "Proxy should activate for unlimited usage instead of pausing"
+  );
+  Assert.ok(
+    IPPProxyManager.usageInfo?.unlimited,
+    "Manager should record the unlimited usage from the pass fetch"
+  );
+  Assert.notEqual(
+    capturedUsage,
+    null,
+    "UsageChanged event should fire for unlimited usage"
+  );
+  Assert.ok(capturedUsage.unlimited, "Dispatched usage should be unlimited");
+
+  IPPProxyManager.removeEventListener(
+    "IPPProxyManager:UsageChanged",
+    usageListener
+  );
+  await IPPProxyManager.stop(false);
+  IPProtectionService.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.usageCache");
+});
+
+/**
  * Tests the active state.
  */
 add_task(async function test_IPPProxytates_active() {
@@ -1525,16 +1580,10 @@ add_task(async function test_scheduleCallback_abort_stops_loop_promptly() {
     setupStubs(sandbox, { validProxyPass: true });
 
     const oldIsolationKey = IPPProxyManager.isolationKey;
-    IPPProxyManager.handleProxyErrorEvent(
+    await IPPProxyManager.handleProxyErrorEvent(
       new CustomEvent("proxy-http-error", {
         detail: { level: "error", isolationKey, httpStatus },
       })
-    );
-
-    await waitForEvent(
-      IPPProxyManager,
-      "IPPProxyManager:UsageChanged",
-      () => true
     );
 
     Assert.notEqual(

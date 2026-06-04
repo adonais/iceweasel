@@ -206,9 +206,10 @@ class IPPStartupCacheSingleton {
       );
     }
     const serialized = JSON.stringify({
-      max: usageInfo.max.toString(),
-      remaining: usageInfo.remaining.toString(),
-      reset: usageInfo.reset.toString(),
+      max: usageInfo.max?.toString() ?? null,
+      remaining: usageInfo.remaining?.toString() ?? null,
+      reset: usageInfo.reset?.toString() ?? null,
+      unlimited: usageInfo.unlimited,
     });
     Services.prefs.setCharPref(USAGE_CACHE_PREF, serialized);
   }
@@ -225,7 +226,12 @@ class IPPStartupCacheSingleton {
         return null;
       }
       const data = JSON.parse(usageInfo_string);
-      return new lazy.ProxyUsage(data.max, data.remaining, data.reset);
+      return new lazy.ProxyUsage(
+        data.max,
+        data.remaining,
+        data.reset,
+        data.unlimited ?? false
+      );
     } catch (e) {
       return null;
     }
