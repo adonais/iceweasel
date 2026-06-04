@@ -88,8 +88,10 @@ Networking and routing
 UI Features
 ~~~~~~~~~~~
 
-``browser.ipProtection.bandwidth.enabled`` (boolean, default: ``false``)
-  Controls whether bandwidth usage information is displayed in the status panel.
+``browser.ipProtection.bandwidth.enabled`` (boolean, default: ``true``)
+  Controls whether bandwidth usage information is displayed in the status panel
+  and in ``about:preferences``. The FxA auth provider keeps this pref in sync
+  with the entitlement's ``limitedBandwidth`` field.
 
 ``browser.ipProtection.bandwidth.maxInGb`` (integer, default: ``50``)
   Maximum bandwidth in GB used for messaging. Can be controlled by Nimbus via

@@ -60,7 +60,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "BANDWIDTH_USAGE_ENABLED",
   "browser.ipProtection.bandwidth.enabled",
-  false
+  true
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(
