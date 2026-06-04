@@ -1076,8 +1076,11 @@ export class NetErrorCard extends MozLitElement {
     }
 
     const { bodyTitleL10nId, image } = this.errorConfig;
-    const { src, alt, className } =
-      image ?? NET_ERROR_ILLUSTRATIONS.securityError;
+    const {
+      src,
+      alt = "",
+      className,
+    } = image ?? NET_ERROR_ILLUSTRATIONS.securityError;
     const title = bodyTitleL10nId ?? "fp-certerror-body-title";
 
     return html`<link
@@ -1090,12 +1093,7 @@ export class NetErrorCard extends MozLitElement {
         aria-describedby="error-intro whatCanYouDo"
       >
         <div class="img-container">
-          <img
-            src=${src}
-            class=${ifDefined(className)}
-            data-l10n-id=${alt}
-            data-l10n-attrs="alt"
-          />
+          <img src=${src} class=${ifDefined(className)} alt=${alt} />
         </div>
         <div class="container">
           ${this.showCustomNetErrorCard
