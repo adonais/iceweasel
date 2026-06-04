@@ -18284,24 +18284,6 @@
       "last_modified": 1666727872689
     },
     {
-      "schema": 1666727362603,
-      "derHash": "MGKRjZ3WF5JScbx/gIC4pqXSGFu9iA94Yv1MBDsZQZE=",
-      "subject": "CN=Buypass Class 2 CA 5,O=Buypass AS-983163327,C=NO",
-      "subjectDN": "MEsxCzAJBgNVBAYTAk5PMR0wGwYDVQQKDBRCdXlwYXNzIEFTLTk4MzE2MzMyNzEdMBsGA1UEAwwUQnV5cGFzcyBDbGFzcyAyIENBIDU=",
-      "whitelist": false,
-      "attachment": {
-        "hash": "fd5a69fd438ea769861dbb346922f606e66c972bf1b76d0b4b699d88aef6ef6a",
-        "size": 2170,
-        "filename": "QlGZmcMUM6a8-CxL2TmTAfoYCm-fXAouAzzKYCxGoss=.pem",
-        "location": "security-state-staging/intermediates/d6a8096b-9b05-41b8-984a-b244edc193b6.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "QlGZmcMUM6a8+CxL2TmTAfoYCm+fXAouAzzKYCxGoss=",
-      "crlite_enrolled": false,
-      "id": "355287c5-30e3-4992-b72c-8013c887d757",
-      "last_modified": 1666727872675
-    },
-    {
       "schema": 1666727355401,
       "derHash": "VKiey5iaHcz0ATY584l0oLwHQsKZPftr0Mvx9GKWRQE=",
       "subject": "CN=Buypass Class 2 CA 2,O=Buypass AS-983163327,C=NO",
@@ -26078,24 +26060,6 @@
       "last_modified": 1657025823248
     },
     {
-      "schema": 1656701823763,
-      "derHash": "xJw1DlqCBeBj50xVSplDNbhDXJllJ9TvGisMe1FYSy0=",
-      "subject": "CN=Buypass Class 3 CA 3,O=Buypass AS-983163327,C=NO",
-      "subjectDN": "MEsxCzAJBgNVBAYTAk5PMR0wGwYDVQQKDBRCdXlwYXNzIEFTLTk4MzE2MzMyNzEdMBsGA1UEAwwUQnV5cGFzcyBDbGFzcyAzIENBIDM=",
-      "whitelist": false,
-      "attachment": {
-        "hash": "954fa22283314bcbe40077bc8cee7655cbcfce4fb215854858c5599d8c8b498f",
-        "size": 1723,
-        "filename": "b2TqrhO3HsQ2hHTQB23iQnAAL127LlWqd3L_IgvgTtk=.pem",
-        "location": "security-state-staging/intermediates/379744b3-624d-49d1-b082-83d5b607dc72.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "b2TqrhO3HsQ2hHTQB23iQnAAL127LlWqd3L/IgvgTtk=",
-      "crlite_enrolled": false,
-      "id": "636e348f-d4b7-425a-aabb-4eab295a6c6e",
-      "last_modified": 1656896223181
-    },
-    {
       "schema": 1656701333450,
       "derHash": "GTFE9DHg/dt0BxfU3pJqVxEziEtDYNMOJykTy+ZgzkE=",
       "subject": "CN=SwissSign RSA TLS Root CA 2022 - 1,O=SwissSign AG,C=CH",
@@ -29966,5 +29930,5 @@
       "last_modified": 1559865884636
     }
   ],
-  "timestamp": 1779980222583
+  "timestamp": 1780462622683
 }
