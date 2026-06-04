@@ -768,6 +768,60 @@ class MatchCardBuilderTest {
     }
 
     @Test
+    fun `pager order GIVEN group stage in progress with finals pinned THEN finals are last not first`() {
+        // No team, group stage. The Final and Third Place are always carried in the no-team
+        // pager, but while group games are still upcoming the finals are weeks away and must
+        // NOT lead the pager — they belong at the tail by date.
+        val pastGroup = otherKnockoutMatch(
+            id = 1L,
+            stage = TournamentRound.GROUP_STAGE,
+            date = zonedDateTime(2026, 6, 12, 18),
+            status = MatchStatus.Final,
+            homeKey = "MEX",
+            awayKey = "RSA",
+            homeScore = 1,
+            awayScore = 0,
+        )
+        val upcomingGroup = otherKnockoutMatch(
+            id = 2L,
+            stage = TournamentRound.GROUP_STAGE,
+            date = zonedDateTime(2026, 6, 17, 18),
+            status = MatchStatus.Scheduled,
+            homeKey = "USA",
+            awayKey = "PAR",
+        )
+        val tpp = otherKnockoutMatch(
+            id = 3L,
+            stage = TournamentRound.THIRD_PLACE_PLAYOFF,
+            date = zonedDateTime(2026, 7, 18, 18),
+            status = MatchStatus.Scheduled,
+            homeKey = "BRA",
+            awayKey = "ARG",
+        )
+        val finalMatch = otherKnockoutMatch(
+            id = 4L,
+            stage = TournamentRound.FINAL,
+            date = zonedDateTime(2026, 7, 19, 18),
+            status = MatchStatus.Scheduled,
+            homeKey = "ENG",
+            awayKey = "FRA",
+        )
+
+        val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(pastGroup, upcomingGroup, tpp, finalMatch))
+
+        // Past group first, then the upcoming group game, then the finals sorted by date last.
+        assertEquals(
+            listOf(
+                TournamentRound.GROUP_STAGE,
+                TournamentRound.GROUP_STAGE,
+                TournamentRound.THIRD_PLACE_PLAYOFF,
+                TournamentRound.FINAL,
+            ),
+            cards.map { it.round },
+        )
+    }
+
+    @Test
     fun `pager order GIVEN followed team played the Final and it ended THEN Champion then Third Place then team past reverse-chrono`() {
         // S5: USA played + won Final. TPP decided Sat. All team's KO + Group decided.
         val group = teamGroupMatch(zonedDateTime(2026, 6, 12, 18), MatchStatus.Final, 1L)
