@@ -970,6 +970,8 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   // ES3:
   uint32_t mGLMinProgramTexelOffset = 0;
   uint32_t mGLMaxProgramTexelOffset = 0;
+  uint32_t mGLMaxVertexUniformBlocks = 0;
+  uint32_t mGLMaxFragmentUniformBlocks = 0;
 
  public:
   auto GLMaxDrawBuffers() const { return mLimits->maxColorDrawBuffers; }

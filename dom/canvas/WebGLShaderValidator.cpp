@@ -150,6 +150,8 @@ std::unique_ptr<webgl::ShaderValidator> WebGLContext::CreateShaderValidator(
   if (IsWebGL2()) {
     resources.MinProgramTexelOffset = mGLMinProgramTexelOffset;
     resources.MaxProgramTexelOffset = mGLMaxProgramTexelOffset;
+    resources.MaxVertexUniformBlocks = mGLMaxVertexUniformBlocks;
+    resources.MaxFragmentUniformBlocks = mGLMaxFragmentUniformBlocks;
   }
 
   resources.MaxDrawBuffers = MaxValidDrawBuffers();
@@ -212,8 +214,12 @@ std::unique_ptr<webgl::ShaderValidator> WebGLContext::CreateShaderValidator(
 
   // -
 
-  const auto compileOptions =
-      webgl::ChooseValidatorCompileOptions(resources, gl);
+  auto compileOptions = webgl::ChooseValidatorCompileOptions(resources, gl);
+
+  if (IsWebGL2()) {
+    compileOptions.validatePerStageMaxUniformBlocks = true;
+  }
+
   auto ret = webgl::ShaderValidator::Create(shaderType, spec, outputLanguage,
                                             resources, compileOptions);
   if (!ret) return ret;
