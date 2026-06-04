@@ -547,8 +547,7 @@ enum class AssembleResult {
   }
 
   bool isLargePattern =
-      pattern->length() > v8::internal::RegExp::kRegExpTooLargeToOptimize;
-  masm->set_slow_safe(isLargePattern);
+      pattern->length() > v8::internal::RegExp::kMaxOptimizedPatternLength;
   if (compiler->optimize()) {
     compiler->set_optimize(!isLargePattern);
   }
