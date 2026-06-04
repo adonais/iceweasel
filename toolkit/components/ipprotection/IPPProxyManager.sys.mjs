@@ -173,6 +173,13 @@ class IPPProxyManagerSingleton extends EventTarget {
     if (!this.#usage) {
       this.#usage = lazy.IPPStartupCache.usageInfo;
     }
+
+    // If we loaded a cached usage metric that was reset in the past
+    // (e.g. Firefox launched on/after the quota's monthly rollover),
+    // try to refresh immediately so we don't display last month's value.
+    if (this.#usage) {
+      this.#scheduleUsageCheck(this.#usage);
+    }
   }
 
   initOnStartupCompleted() {}
@@ -824,9 +831,6 @@ class IPPProxyManagerSingleton extends EventTarget {
     if (this.#usageRefreshAbortController) {
       this.#usageRefreshAbortController.abort();
       this.#usageRefreshAbortController = null;
-    }
-    if (usage.remaining > 0) {
-      return;
     }
     this.#usageRefreshAbortController = new AbortController();
     scheduleCallback(

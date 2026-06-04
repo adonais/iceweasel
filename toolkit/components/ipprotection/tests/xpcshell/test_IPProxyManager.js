@@ -1183,6 +1183,71 @@ refreshUsageTestCases.forEach(testCase => {
   );
 });
 
+/**
+ * When Firefox launches with a cached usage metric updated in the past,
+ * IPPProxyManager should refresh usage info.
+ */
+add_task(
+  async function test_IPPProxyManager_refreshes_stale_startup_cache_on_init() {
+    Services.prefs.setBoolPref("browser.ipProtection.cacheDisabled", false);
+
+    let sandbox = sinon.createSandbox();
+
+    const pastReset = Temporal.Now.instant().subtract({ hours: 1 });
+
+    const staleCached = new ProxyUsage(
+      "53687091200",
+      "48318382080", // 45 GB remaining from last month
+      pastReset.toString()
+    );
+
+    const freshUsage = new ProxyUsage(
+      "53687091200",
+      "53687091200", // full quota for the new month
+      Temporal.Now.instant()
+        .add({ hours: 24 * 30 })
+        .toString()
+    );
+
+    setupStubs(sandbox, { validProxyPass: true, proxyUsage: freshUsage });
+    IPPStartupCache.storeUsageInfo(staleCached);
+
+    const usageRefreshed = new Promise(resolve => {
+      IPPProxyManager.addEventListener(
+        "IPPProxyManager:UsageChanged",
+        function listener(event) {
+          if (event.detail.usage.remaining === BigInt("53687091200")) {
+            IPPProxyManager.removeEventListener(
+              "IPPProxyManager:UsageChanged",
+              listener
+            );
+            resolve();
+          }
+        }
+      );
+    });
+
+    IPPProxyManager.init();
+
+    await usageRefreshed;
+
+    Assert.equal(
+      IPPProxyManager.usageInfo.remaining,
+      BigInt("53687091200"),
+      "Stale cached usage metric should be replaced by a newly fetched value"
+    );
+
+    await IPPProxyManager.reset();
+    IPPProxyManager.uninit();
+
+    Services.prefs.clearUserPref("browser.ipProtection.cacheDisabled");
+    Services.prefs.clearUserPref("browser.ipProtection.usageCache");
+    Services.prefs.clearUserPref("browser.ipProtection.stateCache");
+
+    sandbox.restore();
+  }
+);
+
 add_task(async function test_scheduleCallback_basic() {
   const now = Temporal.Now.instant();
   const triggerTime = now.add({ milliseconds: 100 });
