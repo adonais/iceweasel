@@ -207,6 +207,7 @@ private fun AIFeaturesHeader() {
                 horizontal = FirefoxTheme.layout.space.dynamic200,
                 vertical = 8.dp,
             ),
+            color = MaterialTheme.colorScheme.tertiary,
         )
     }
 }
