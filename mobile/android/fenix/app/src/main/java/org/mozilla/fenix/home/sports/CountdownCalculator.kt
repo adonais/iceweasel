@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.text.NumberFormat
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -26,10 +27,14 @@ private const val ONE_WEEK_DAYS = 7L
 val WORLD_CUP_KICKOFF: LocalDate = LocalDate.of(2026, 6, 11)
 
 /**
- * ISO-8601 timestamp for the World Cup kickoff at midnight UTC. Use this for the
- * countdown widget's `dateInUtc` input, which counts down to a precise moment.
+ * ISO-8601 timestamp for the World Cup kickoff at midnight in the device's timezone.
+ * Use this for the countdown widget's `dateIso` input so the countdown reaches zero
+ * at the same instant [hasWorldCupStarted] flips to true.
+ *
+ * @param zone Timezone used to resolve midnight. Defaults to the device's timezone.
  */
-const val WORLD_CUP_KICKOFF_UTC: String = "2026-06-11T00:00:00Z"
+fun worldCupKickoffCountdownTarget(zone: ZoneId = ZoneId.systemDefault()): String =
+    WORLD_CUP_KICKOFF.atStartOfDay(zone).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
 internal fun countdownFlow(
     utcDate: String,
