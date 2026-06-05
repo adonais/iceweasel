@@ -94,6 +94,7 @@ input {
   font: -moz-field;
   text-rendering: optimizeLegibility;
   cursor: text;
+  resize: none !important;
 }
 
 textarea {
