@@ -4662,12 +4662,6 @@
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">더 알아보기</string>
   <!--
-    Firefox Labs
-
-    Banner title text on the Firefox Labs screen.
-  -->
-  <string name="firefox_labs_banner_title">실험적인 기능을 사용해 보세요!</string>
-  <!--
     Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
     Text will appear under the Firefox Labs banner title.
   -->

@@ -2088,6 +2088,8 @@
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Kva skjedde? Kva burde ha skjedd?</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
+  <string name="webcompat_reporter_etp_checkbox_text_2">Send liste over element som er blokkerte av sporingsvern</string>
+  <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">Send URL-ar blokkerte av sporingsvern</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
   <string name="webcompat_reporter_etp_checkbox_description">Utvida sporingsvern kan blokkere sporarar og skript som enkelte nettstadar treng for å fungere ordentleg.</string>
@@ -3511,6 +3513,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Vis alle snarvegar</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Legg til snarveg</string>
+  <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_website">Legg til nettstad</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
   <string name="homepage_shortcuts_add_website_title">Skriv inn ei nettstadadresse</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
@@ -3912,6 +3916,11 @@
     %s is the name of the app (for example "Firefox").
   -->
   <string name="protection_panel_banner_protected_title">%s er på vakt</string>
+  <!--
+    Description text for the protection panel banner when privacy dashboard is enabled.
+    and there are no trackers blocked.
+  -->
+  <string name="protection_panel_banner_protected_no_blocked_trackers_description">Du er verna.</string>
   <!-- Description text for the protection panel banner when tracking protection is enabled. -->
   <string name="protection_panel_banner_protected_description">Du er verna. Om vi oppdagar noko seier vi ifrå.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
@@ -4673,14 +4682,19 @@
   <!--
     Firefox Labs
 
-    Banner title text on the Firefox Labs screen.
+    Firefox Labs is the name of a screen in Settings to allow users to learn about
+    experimental and in-development features, and turn those features on and off.
+    The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
+    in English.
   -->
-  <string name="firefox_labs_banner_title">Prøv dei eksperimentelle funksjonane våre!</string>
+  <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
   <!--
     Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
     Text will appear under the Firefox Labs banner title.
   -->
   <string name="firefox_labs_experimental_description">Dei er under utvikling og blir heile tida forbetra, noko som kan påverke korleis %s fungerer.</string>
+  <!-- The link text shown when a feedback URL for a Firefox Labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
+  <string name="firefox_labs_share_feedback">Del tilbakemelding</string>
   <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
   <string name="firefox_labs_restore_default_button_text">Gjenopprett standardverdiar</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
