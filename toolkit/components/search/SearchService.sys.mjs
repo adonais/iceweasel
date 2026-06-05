@@ -544,6 +544,7 @@ export const SearchService = new (class SearchService {
     await this.#migrateLegacyEngines();
     await this.#checkWebExtensionEngines();
     await this.#addOpenSearchTelemetry();
+    this.#updateEngineTotalsTelemetry();
   }
 
   /**
@@ -3001,6 +3002,82 @@ export const SearchService = new (class SearchService {
   }
 
   /**
+   * Counts and reports the number of installed search engines with different
+   * metrics for visible and hidden search engines.
+   *
+   * Run during the background checks, or when the list of engines changes.
+   */
+  #updateEngineTotalsTelemetry() {
+    /** @type {(keyof typeof Glean.searchCounts.totals)[]} */
+    const SEARCH_COUNTS_TOTALS_LABELS = [
+      "addon",
+      "appProvidedConfig",
+      "userInstalledConfig",
+      "openSearch",
+      "policy",
+      "user",
+    ];
+
+    /** @type {Map<keyof typeof Glean.searchCounts.totals, number>} */
+    let totals = new Map(SEARCH_COUNTS_TOTALS_LABELS.map(l => [l, 0]));
+    let disabledEngines = 0;
+    let hiddenFromOneOffs = 0;
+    for (let engine of this._engines.values()) {
+      // For engines that are hidden, aka disabled, we only need to record that
+      // fact.
+      // This does mean that for users that previously have hidden the engine
+      // and turned off the one-off button option, we won't record the fact
+      // that the one-off was turned off as well. However, in the case the fact
+      // it is hidden is more important than the fact it was also hidden from
+      // the one-offs.
+      if (engine.hidden) {
+        disabledEngines++;
+        continue;
+      }
+
+      if (engine.hideOneOffButton) {
+        hiddenFromOneOffs++;
+      }
+
+      /** @type {?keyof typeof Glean.searchCounts.totals} */
+      let key;
+      switch (true) {
+        case engine instanceof lazy.AppProvidedConfigEngine:
+          key = "appProvidedConfig";
+          break;
+        case engine instanceof lazy.UserInstalledConfigEngine:
+          key = "userInstalledConfig";
+          break;
+        case engine instanceof lazy.AddonSearchEngine:
+          key = "addon";
+          break;
+        case engine instanceof lazy.OpenSearchEngine:
+          key = "openSearch";
+          break;
+        case engine instanceof lazy.PolicySearchEngine:
+          key = "policy";
+          break;
+        case engine instanceof lazy.UserSearchEngine:
+          key = "user";
+          break;
+      }
+      if (key) {
+        totals.set(key, totals.getOrInsert(key, 0) + 1);
+      } else {
+        lazy.logConsole.error(
+          "Failed to report type of search engine for",
+          engine.id
+        );
+      }
+    }
+    Glean.searchCounts.hiddenEngines.disabled.set(disabledEngines);
+    Glean.searchCounts.hiddenEngines.oneOff.set(hiddenFromOneOffs);
+    for (let [label, value] of totals.entries()) {
+      Glean.searchCounts.totals[label].set(value);
+    }
+  }
+
+  /**
    * Creates and adds a WebExtension based engine. It is expected that this
    * function is only called after initialisation has completed, or at a stage
    * where we are ready to load the engines we've been told about during startup.
@@ -3717,6 +3794,7 @@ export const SearchService = new (class SearchService {
         switch (verb) {
           case lazy.SearchUtils.MODIFIED_TYPE.ADDED:
             this.#parseSubmissionMap = null;
+            this.#updateEngineTotalsTelemetry();
             break;
           case lazy.SearchUtils.MODIFIED_TYPE.CHANGED: {
             let engine = /** @type {SearchEngine} */ (subject.wrappedJSObject);
@@ -3732,11 +3810,13 @@ export const SearchService = new (class SearchService {
               );
             }
             this.#parseSubmissionMap = null;
+            this.#updateEngineTotalsTelemetry();
             break;
           }
           case lazy.SearchUtils.MODIFIED_TYPE.REMOVED:
             // Invalidate the map used to parse URLs to search engines.
             this.#parseSubmissionMap = null;
+            this.#updateEngineTotalsTelemetry();
             break;
         }
         break;

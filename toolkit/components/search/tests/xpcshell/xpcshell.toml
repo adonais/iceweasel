@@ -264,6 +264,8 @@ support-files = [
 
 ["test_telemetry_default.js"]
 
+["test_telemetry_installed_engine_counts.js"]
+
 ["test_userEngine.js"]
 
 ["test_userInstalledConfigEngine.js"]
