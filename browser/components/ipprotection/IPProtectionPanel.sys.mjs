@@ -553,6 +553,13 @@ export class IPProtectionPanel {
 
     this.#updateSiteData();
 
+    if (this.state.paused) {
+      this.setState({ isEnrolling: true });
+      lazy.IPPProxyManager.refreshUsage().finally(() => {
+        this.setState({ isEnrolling: false });
+      });
+    }
+
     this.setState({
       isSiteExceptionsEnabled: this.isExceptionsFeatureEnabled,
       bandwidthWarning: this.#shouldShowBandwidthWarning(),

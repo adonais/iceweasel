@@ -464,6 +464,36 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
 });
 
 /**
+ * Tests that opening the panel while paused re-checks usage.
+ */
+add_task(async function test_showing_refreshes_usage_when_paused() {
+  let ipProtectionPanel = new IPProtectionPanel();
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
+
+  let refreshUsageStub = sinon.stub(IPPProxyManager, "refreshUsage").resolves();
+
+  ipProtectionPanel.state.paused = false;
+  ipProtectionPanel.showing(ipProtectionPanel.panel);
+
+  Assert.ok(
+    refreshUsageStub.notCalled,
+    "refreshUsage should not be called when opening the panel while not paused"
+  );
+
+  ipProtectionPanel.state.paused = true;
+  ipProtectionPanel.showing(ipProtectionPanel.panel);
+  Assert.ok(
+    refreshUsageStub.calledOnce,
+    "refreshUsage should be called when opening the panel while paused"
+  );
+
+  refreshUsageStub.restore();
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.everOpenedPanel");
+  Services.prefs.clearUserPref("browser.ipProtection.openedPanelWithLocation");
+});
+
+/**
  * Tests that showLocationButtonBadge is true when the dismissed pref is not set.
  */
 add_task(async function test_location_badge_initial_state_pref_unset() {
