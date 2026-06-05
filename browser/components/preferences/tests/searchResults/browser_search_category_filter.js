@@ -125,6 +125,63 @@ add_task(async function per_group_filtering_and_heading_levels() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
+function captureSearchVisibility(doc) {
+  let groupSelector =
+    "setting-group:not([data-hidden-from-search]):not([hidden]):not([data-hidden-by-setting-group])";
+  let mainPrefPane = doc.getElementById("mainPrefPane");
+  let result = {};
+  for (let pane of mainPrefPane.querySelectorAll("setting-pane")) {
+    if (pane.classList.contains("visually-hidden") || pane.hidden) {
+      continue;
+    }
+    let groups = [...pane.querySelectorAll(groupSelector)]
+      .filter(g => !g.classList.contains("visually-hidden"))
+      .map(g => g.getAttribute("groupid"))
+      .sort();
+    result[pane.name] = { onSearchPane: !!pane.onSearchPane, groups };
+  }
+  return result;
+}
+
+/**
+ * Regression test for bug 2043582: with a prior search active, selecting all
+ * the text in the search field and typing a different term one character at a
+ * time used to leave `visually-hidden` setting-groups from earlier keystrokes
+ * stuck hidden.
+ */
+add_task(async function progressive_typing_matches_fresh_search() {
+  let doc = await openSearchWithQuery("accessibility");
+  let fresh = captureSearchVisibility(doc);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+  doc = await openSearchWithQuery("search");
+  let searchInput = doc.getElementById("searchInput");
+  await searchInput.updateComplete;
+  searchInput.focus();
+  EventUtils.synthesizeKey("a", { accelKey: true });
+
+  let expected = "";
+  for (let chunk of "accessibility") {
+    expected += chunk;
+    let searchCompletedPromise = BrowserTestUtils.waitForEvent(
+      gBrowser.contentWindow,
+      "PreferencesSearchCompleted",
+      evt => evt.detail == expected
+    );
+    EventUtils.sendString(chunk);
+    await searchCompletedPromise;
+  }
+
+  let afterPrior = captureSearchVisibility(doc);
+  Assert.deepEqual(
+    afterPrior,
+    fresh,
+    "Progressive typing of 'accessibility' after 'search' should match a fresh search"
+  );
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
 /**
  * Clearing the search removes visually-hidden classes from every
  * setting-pane and setting-group so that normal navigation is restored.
