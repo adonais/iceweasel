@@ -2081,6 +2081,8 @@
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">무슨 일이 있었나요? 무슨 일이 일어났어야 했나요?</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
+  <string name="webcompat_reporter_etp_checkbox_text_2">추적 방지 기능에 의해 차단된 항목 목록 보내기</string>
+  <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">추적 방지 기능에 의해 차단된 URL 보내기</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
   <string name="webcompat_reporter_etp_checkbox_description">향상된 추적 방지 기능은 일부 웹 사이트가 제대로 작동하는 데 필요한 추적기와 스크립트를 차단할 수 있습니다.</string>
@@ -3502,6 +3504,10 @@
   <string name="homepage_shortcuts_show_all_content_description">모든 단축키 보기</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">바로 가기 추가</string>
+  <!-- Title for the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_to_homepage">홈페이지에 추가</string>
+  <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_website">웹 사이트 추가</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
   <string name="homepage_shortcuts_add_website_title">웹 사이트 URL 입력</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
@@ -3903,6 +3909,18 @@
     %s is the name of the app (for example "Firefox").
   -->
   <string name="protection_panel_banner_protected_title">%s가 경계 중</string>
+  <plurals name="protection_panel_banner_protected_blocked_trackers_description">
+    <!--
+      Description text for the protection panel banner when privacy dashboard is enabled.
+      %1$d is the number of trackers blocked.
+    -->
+    <item quantity="other">이 사이트에서 %1$d개의 추적기가 차단되었습니다.</item>
+  </plurals>
+  <!--
+    Description text for the protection panel banner when privacy dashboard is enabled.
+    and there are no trackers blocked.
+  -->
+  <string name="protection_panel_banner_protected_no_blocked_trackers_description">보호되고 있습니다.</string>
   <!-- Description text for the protection panel banner when tracking protection is enabled. -->
   <string name="protection_panel_banner_protected_description">보호 중입니다. 문제가 발견되면 알려드리겠습니다.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
@@ -4662,10 +4680,25 @@
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">더 알아보기</string>
   <!--
+    Firefox Labs
+
+    Firefox Labs is the name of a screen in Settings to allow users to learn about
+    experimental and in-development features, and turn those features on and off.
+    The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
+    in English.
+  -->
+  <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox 실험실</string>
+  <!-- Banner title text on the Firefox Labs screen. -->
+  <string name="firefox_labs_banner_title_2">실험적인 기능을 사용해 보세요!</string>
+  <!--
     Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
     Text will appear under the Firefox Labs banner title.
   -->
   <string name="firefox_labs_experimental_description">현재 개발 및 개선 중인 기능으로, %s에 영향을 줄 수 있습니다.</string>
+  <!-- The link text shown when a feedback URL for a Firefox Labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
+  <string name="firefox_labs_share_feedback">의견 공유</string>
+  <!-- Content description for the share feedback link on a Firefox Labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the Firefox Labs feature. -->
+  <string name="firefox_labs_share_feedback_content_description">%s에 대한 의견을 공유해 주세요.</string>
   <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
   <string name="firefox_labs_restore_default_button_text">기본값 복원</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
@@ -4678,6 +4711,10 @@
   <string name="firefox_labs_restore_defaults_dialog_title">다시 시작 필요</string>
   <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
   <string name="firefox_labs_restore_defaults_dialog_message">기본값으로 복원하려면, %s를 다시 시작하세요.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_enable_dialog_message">이 기능을 켜려면, %s를 다시 시작하세요.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_disable_dialog_message">이 기능을 끄려면, %s를 다시 시작하세요.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">지금은 이용 가능한 실험실 기능이 없음</string>
 </resources>

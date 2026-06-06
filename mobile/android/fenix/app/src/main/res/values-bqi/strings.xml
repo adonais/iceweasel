@@ -675,6 +675,8 @@
   <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">بارت آشنایی خوت وا Firefox وو یو ک و کارس اگیری ن وا هومکورووݩ بازارجۊری Mozilla یک رسۊوی کۊنین. ای داده یل هرگشت فوروهڌه نؽبۊن.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">بارت و کار گرؽڌن ایما ز داده یل</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">هیاری و Firefox</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text">ن ممنووݩ</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -2275,6 +2277,14 @@
   <string name="menu_print">چاپ</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">فشناڌن و دسگا</string>
+  <!-- Text for the QR code action in the native share sheet -->
+  <string name="share_qr_code">QR کود</string>
+  <!-- Title shown in the QR code display screen -->
+  <string name="qr_code_display_title">QR کود</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">بستن</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">دانلود</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">پوی فعالیتا</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2623,6 +2633,8 @@
   <string name="etp_suspected_fingerprinters_description">فعال کردن زفت وابیڌن جا کلک سی واڌاشتن جا کلکا مشکۊک.</string>
   <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_known_fingerprinters_title">جا کلکا اشناخته وابیڌه</string>
+  <!-- Label for the fingerprinters category shown in the tracking protections dashboard breakdown -->
+  <string name="tracking_dashboard_fingerprinters_category_name">کلک نگارا</string>
   <!--
     Description of the SmartBlock Enhanced Tracking Protection feature. The * symbol is intentionally hardcoded here,
     as we use it on the UI to indicate which trackers have been partially unblocked.
@@ -2877,6 +2889,8 @@
   <string name="saved_logins_sort_strategy_last_used">کرت دیندایی و کار گرؽڌن</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">نومگه مورتب کردن رزما</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">و من ٱووردن ز فایل</string>
   <!--
     Email Masks
 
@@ -4167,6 +4181,8 @@
   <string name="sports_widget_match_live">زنده</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title">قئرمووا جام جهۊوی 2026</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">فینال</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">وانۊ کردن</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4197,14 +4213,40 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">نیشتن نتیجه یل</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">آینده</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team">آلشت کردن تیم</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove">پاک کردن</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">گوم زیڌن</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">نیمه ٱول</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">مجال ازافه</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
   <string name="sports_widget_penalties">جریمه یل</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">D</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">H</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">بستن</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description">گۊزینه یل بیشتر</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

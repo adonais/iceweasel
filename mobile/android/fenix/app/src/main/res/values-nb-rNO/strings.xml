@@ -2088,6 +2088,8 @@
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Hva skjedde? Hva burde ha skjedd?</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
+  <string name="webcompat_reporter_etp_checkbox_text_2">Send liste over elementer som er blokkert av sporingsbeskyttelse</string>
+  <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">Send URL-er blokkert av sporingsbeskyttelse</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
   <string name="webcompat_reporter_etp_checkbox_description">Utvidet sporingsbeskyttelse kan blokkere sporere og skript som enkelte nettsteder trenger for å fungere ordentlig.</string>
@@ -3511,6 +3513,10 @@
   <string name="homepage_shortcuts_show_all_content_description">Vis alle snarveier</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Legg til snarvei</string>
+  <!-- Title for the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_to_homepage">Legg til på startsiden</string>
+  <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_website">Legg til nettsted</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
   <string name="homepage_shortcuts_add_website_title">Skriv inn en nettstedsadresse</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
@@ -3912,6 +3918,19 @@
     %s is the name of the app (for example "Firefox").
   -->
   <string name="protection_panel_banner_protected_title">%s er på vakt</string>
+  <plurals name="protection_panel_banner_protected_blocked_trackers_description">
+    <!--
+      Description text for the protection panel banner when privacy dashboard is enabled.
+      %1$d is the number of trackers blocked.
+    -->
+    <item quantity="one">%1$d sporer blokkert på dette nettstedet.</item>
+    <item quantity="other">%1$d sporere blokkert på dette nettstedet.</item>
+  </plurals>
+  <!--
+    Description text for the protection panel banner when privacy dashboard is enabled.
+    and there are no trackers blocked.
+  -->
+  <string name="protection_panel_banner_protected_no_blocked_trackers_description">Du er beskyttet.</string>
   <!-- Description text for the protection panel banner when tracking protection is enabled. -->
   <string name="protection_panel_banner_protected_description">Du er beskyttet. Om vi oppdager noe sier vi ifra.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
@@ -4671,10 +4690,25 @@
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Les mer</string>
   <!--
+    Firefox Labs
+
+    Firefox Labs is the name of a screen in Settings to allow users to learn about
+    experimental and in-development features, and turn those features on and off.
+    The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
+    in English.
+  -->
+  <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
+  <!-- Banner title text on the Firefox Labs screen. -->
+  <string name="firefox_labs_banner_title_2">Prøv våre eksperimentelle funksjoner!</string>
+  <!--
     Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
     Text will appear under the Firefox Labs banner title.
   -->
   <string name="firefox_labs_experimental_description">De er under utvikling og blir kontinuerlig forbedret, noe som kan påvirke hvordan %s fungerer.</string>
+  <!-- The link text shown when a feedback URL for a Firefox Labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
+  <string name="firefox_labs_share_feedback">Del tilbakemelding</string>
+  <!-- Content description for the share feedback link on a Firefox Labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the Firefox Labs feature. -->
+  <string name="firefox_labs_share_feedback_content_description">Del tilbakemelding for %s.</string>
   <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
   <string name="firefox_labs_restore_default_button_text">Tilbakestill standardverdier</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
@@ -4687,6 +4721,10 @@
   <string name="firefox_labs_restore_defaults_dialog_title">Omstart kreves</string>
   <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
   <string name="firefox_labs_restore_defaults_dialog_message">For å gjenopprette standardinnstillingene, start %s på nytt.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_enable_dialog_message">For å slå på denne funksjonen, start %s på nytt.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_disable_dialog_message">For å slå av denne funksjonen, start %s på nytt.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">Ingen eksperimentelle funksjoner å prøve akkurat nå</string>
 </resources>

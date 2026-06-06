@@ -3514,7 +3514,7 @@
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Agregar atajo</string>
   <!-- Title for the "Add to homepage" bottom sheet. -->
-  <string name="homepage_shortcuts_add_to_homepage">Agregar a la página de inicio</string>
+  <string name="homepage_shortcuts_add_to_homepage">Agregar a página de inicio</string>
   <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
   <string name="homepage_shortcuts_add_website">Agregar sitio web</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
@@ -3923,7 +3923,7 @@
       Description text for the protection panel banner when privacy dashboard is enabled.
       %1$d is the number of trackers blocked.
     -->
-    <item quantity="one">%1$d rastreadores bloqueados en este sitio.</item>
+    <item quantity="one">%1$d rastreador bloqueado en este sitio.</item>
     <item quantity="other">%1$d rastreadores bloqueados en este sitio.</item>
   </plurals>
   <!--
@@ -4699,7 +4699,7 @@
   -->
   <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
   <!-- Banner title text on the Firefox Labs screen. -->
-  <string name="firefox_labs_banner_title_2">¡Pruebe nuestras funciones experimentales!</string>
+  <string name="firefox_labs_banner_title_2">¡Pruobá nuestras funciones experimentales!</string>
   <!--
     Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
     Text will appear under the Firefox Labs banner title.
@@ -4722,9 +4722,9 @@
   <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
   <string name="firefox_labs_restore_defaults_dialog_message">Para restaurar los valores predeterminados, reiniciar %s.</string>
   <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
-  <string name="firefox_labs_feature_enable_dialog_message">Para activar esta función, reinicie %s.</string>
+  <string name="firefox_labs_feature_enable_dialog_message">Para activar esta función, reiniciá %s.</string>
   <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
-  <string name="firefox_labs_feature_disable_dialog_message">Para desactivar esta función, reiniciar %s.</string>
+  <string name="firefox_labs_feature_disable_dialog_message">Para desactivar esta función, reiniciá %s.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">No hay funciones experimentales para probar en este momento</string>
 </resources>
