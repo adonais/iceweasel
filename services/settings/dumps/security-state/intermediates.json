@@ -1,6 +1,32 @@
 {
   "data": [
     {
+      "schema": 1780754346868,
+      "derHash": "L/g8m2l2zDLNagGZTMgVvQYQUZdzsuLJ+DtQLfvdsS4=",
+      "attachment": {
+        "hash": "8fd4406f056e7abdaf109be4c693b96ff2fe1bfab3305064d168ef850d17d757",
+        "size": 2398,
+        "filename": "c73f31ntZjmBTk4aGhcxthj9Nyr6iHjFeIJ9hv7tJjM=.pem",
+        "location": "security-state-staging/intermediates/20260606135907--5ba35965-fe32-49dd-a4c6-d0a40c8c6d96--209936a1-1c2a-410b-97fe-2c10012f2de8.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "5ba35965-fe32-49dd-a4c6-d0a40c8c6d96",
+      "last_modified": 1780757822820
+    },
+    {
+      "schema": 1780754346107,
+      "derHash": "a6QcZq6yhTjKrm43SroopnIk5K0/+T27TKI6JJ0i5oE=",
+      "attachment": {
+        "hash": "8600f8ed93ed607eeb806dc3300d47682c2e027e07658684d5aa399cdb56c539",
+        "size": 1248,
+        "filename": "tScuC4EbuMWI-KVWCs3QpE1qELJI2_zxNtuHvr_3zyY=.pem",
+        "location": "security-state-staging/intermediates/20260606135906--f3884bd0-45fd-4270-9b9c-768ee2212fc5--9224d320-9582-4f71-93cb-717135b02dc5.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "f3884bd0-45fd-4270-9b9c-768ee2212fc5",
+      "last_modified": 1780757822818
+    },
+    {
       "schema": 1779976780864,
       "derHash": "kOtWpKkNxeyefAx7Bk/13hQYNME7J0TAvhU5Er7EXM4=",
       "attachment": {
@@ -17078,24 +17104,6 @@
       "last_modified": 1666727874656
     },
     {
-      "schema": 1666727400963,
-      "derHash": "qV8jtSrxCJWIb7ZTI9KamHbqfTlvgF5MooDVYcJuPa0=",
-      "subject": "CN=Certyfikat SSL,O=home.pl S.A.,C=PL",
-      "subjectDN": "MD0xCzAJBgNVBAYTAlBMMRUwEwYDVQQKDAxob21lLnBsIFMuQS4xFzAVBgNVBAMMDkNlcnR5ZmlrYXQgU1NM",
-      "whitelist": false,
-      "attachment": {
-        "hash": "45a923fe0feea027c9100ec2d0aa873a99af0b2acd334a796bd4d4b8399213b0",
-        "size": 1565,
-        "filename": "5PJ4jB1sjJ5kx3a0Ds2noJPc07ZOb_y1vR1tN1t5FsQ=.pem",
-        "location": "security-state-staging/intermediates/907a7262-b883-4896-bb78-a84247ab3ab1.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "5PJ4jB1sjJ5kx3a0Ds2noJPc07ZOb/y1vR1tN1t5FsQ=",
-      "crlite_enrolled": false,
-      "id": "2c153960-0405-4d5f-8576-a05ed26e5b62",
-      "last_modified": 1666727874628
-    },
-    {
       "schema": 1666727411509,
       "derHash": "jxn/4C/Hle1wdl0UNq3fdy/g8Hc9pDbtvbQqLjDi6Cg=",
       "subject": "CN=GlobalSign ECC EV SSL CA 2018,O=GlobalSign nv-sa,C=BE",
@@ -29930,5 +29938,5 @@
       "last_modified": 1559865884636
     }
   ],
-  "timestamp": 1780462622683
+  "timestamp": 1780757822820
 }
