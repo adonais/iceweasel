@@ -2542,6 +2542,15 @@ class Settings(
         get() = FxNimbus.features.homepageSportsWidget.value().forceOneWeekToWorldCup
 
     /**
+     * Nimbus-controlled minimum interval, in seconds, between Sports Widget fetches.
+     * Backed by the `fetch-throttle-seconds` variable (default 60s). Read at construction
+     * time of [org.mozilla.fenix.home.sports.SportsWidgetMiddleware]; Nimbus updates take
+     * effect on the next app launch.
+     */
+    val sportsWidgetFetchThrottleSeconds: Int
+        get() = FxNimbus.features.homepageSportsWidget.value().fetchThrottleSeconds
+
+    /**
      * Debug-only: when true, the Homepage Sports Widget calls the GCP-hosted mock World
      * Cup server instead of production Merino. Combined with [mockWorldCupServerSession],
      * the device hits the mock's `<session-id>/api/v1/wcs/...` routes so QA can simulate

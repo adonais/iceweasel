@@ -371,6 +371,8 @@ class Components(private val context: Context) {
                     connectivityManager = requireNotNull(context.getSystemService<ConnectivityManager>()) {
                         "ConnectivityManager unavailable"
                     },
+                    fetchMinIntervalSeconds = settings.sportsWidgetFetchThrottleSeconds,
+                    bypassThrottle = { settings.useMockWorldCupServer },
                 ),
             ),
         ).also {
