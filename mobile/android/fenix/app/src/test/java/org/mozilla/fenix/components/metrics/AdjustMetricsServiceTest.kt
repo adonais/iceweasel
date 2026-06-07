@@ -13,11 +13,15 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.AURA_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
+import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.utils.Settings
 
 @RunWith(AndroidJUnit4::class)
 internal class AdjustMetricsServiceTest {
     val context: Context = ApplicationProvider.getApplicationContext()
+    val thirdPartySharingController = mockk<ThirdPartySharingController>(relaxed = true)
 
     val conversionEventRecorder = mockk<ConversionEventRecorder>(relaxed = true)
 
@@ -146,5 +150,93 @@ internal class AdjustMetricsServiceTest {
         )
 
         verify { conversionEventRecorder.recordConversionEvent(10) }
+    }
+
+    @Test
+    fun `WHEN the distribution is DEFAULT AND the user is meta attributed THEN sharing is enabled for META`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = true,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(META_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is DEFAULT AND the user is not meta attributed THEN sharing is enabled for META`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableMetaThirdPartySharing() }
+    }
+
+    @Test
+    fun `WHEN the distribution is AURA_001 THEN sharing is enabled for Aura`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.AURA_001,
+            isUserMetaAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(AURA_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is VIVO_001 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.VIVO_001,
+            isUserMetaAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
+    }
+
+    @Test
+    fun `WHEN the distribution is DT_001 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DT_001,
+            isUserMetaAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
+    }
+
+    @Test
+    fun `WHEN the distribution is DT_002 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DT_002,
+            isUserMetaAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
+    }
+
+    @Test
+    fun `WHEN the distribution is DT_003 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DT_003,
+            isUserMetaAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
+    }
+
+    @Test
+    fun `WHEN the distribution is XIAOMI_001 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.XIAOMI_001,
+            isUserMetaAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
     }
 }

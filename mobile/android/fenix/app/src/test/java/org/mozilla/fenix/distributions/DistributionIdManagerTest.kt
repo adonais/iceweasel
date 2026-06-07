@@ -75,6 +75,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("vivo-001", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.VIVO_001, distribution)
         }
 
     @Test
@@ -92,6 +96,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test
@@ -112,6 +120,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test
@@ -128,6 +140,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test
@@ -146,6 +162,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("dt-001", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DT_001, distribution)
         }
 
     @Test
@@ -164,6 +184,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test
@@ -182,6 +206,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test
@@ -200,6 +228,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test
@@ -218,6 +250,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test
@@ -355,6 +391,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("aura-001", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.AURA_001, distribution)
         }
 
     @Test
@@ -373,6 +413,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("dt-002", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DT_002, distribution)
         }
 
     @Test
@@ -391,6 +435,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test
@@ -408,6 +456,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("dt-003", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DT_003, distribution)
         }
 
     @Test
@@ -434,6 +486,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("vivo-001", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.VIVO_001, distribution)
         }
 
     @Test
@@ -460,6 +516,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("xiaomi-001", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.XIAOMI_001, distribution)
         }
 
     @Test
@@ -486,6 +546,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test
@@ -504,6 +568,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("vivo-001", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.VIVO_001, distribution)
         }
 
     @Test
@@ -520,6 +588,10 @@ class DistributionIdManagerTest {
             val distributionId = subject.getDistributionId()
 
             assertEquals("Mozilla", distributionId)
+
+            val distribution = subject.getDistribution()
+
+            assertEquals(DistributionIdManager.Distribution.DEFAULT, distribution)
         }
 
     @Test

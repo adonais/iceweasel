@@ -93,6 +93,16 @@ class DistributionIdManager(
     }
 
     /**
+     * Gets the distribution type that is used to specify which distribution deal this install
+     * is associated with.
+     *
+     * @return the distribution type.
+     */
+    suspend fun getDistribution(): Distribution {
+        return Distribution.fromId(getDistributionId())
+    }
+
+    /**
      * Checks the campaign UTM parameters from the google play install referrer response
      * and updates the distribution ID if necessary
      *
@@ -200,8 +210,7 @@ class DistributionIdManager(
     /**
      * This enum represents distribution IDs that are used in glean metrics.
      */
-    @VisibleForTesting
-    internal enum class Distribution(val id: String) {
+    enum class Distribution(val id: String) {
         DEFAULT(id = "Mozilla"),
         VIVO_001(id = "vivo-001"),
         DT_001(id = "dt-001"),
@@ -212,6 +221,9 @@ class DistributionIdManager(
         ;
 
         companion object {
+            /**
+             * Get the distribution from a distribution ID string.
+             */
             fun fromId(id: String): Distribution {
                 return entries.find { it.id == id } ?: DEFAULT
             }
@@ -274,7 +286,7 @@ private fun isDtUsaInstalled(packageManager: PackageManagerWrapper): Boolean {
     return packages.any {
         val packageName = it.packageName.lowercase()
         packageName == DT_VERIZON_PACKAGE ||
-                packageName == DT_CRICKET_PACKAGE ||
-                packageName == DT_TRACFONE_PACKAGE
+            packageName == DT_CRICKET_PACKAGE ||
+            packageName == DT_TRACFONE_PACKAGE
     }
 }
