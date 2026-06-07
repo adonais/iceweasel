@@ -737,6 +737,8 @@
   <string name="nova_onboarding_marketing_body_link_text">Korleis vi brukar dataa</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Hjelp Firefox</string>
+  <!-- Marketing onboarding primary button text. -->
+  <string name="nova_onboarding_marketing_primary_button_text_2">Tillat og hald fram</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text">Nei takk</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -1443,7 +1445,7 @@
   <!-- Preference for using using dark or light theme automatically set by battery -->
   <string name="preference_auto_battery_theme">Innstilt av straumstyring</string>
   <!-- Preference for using following device theme -->
-  <string name="preference_follow_device_theme">Same som tema til eininga</string>
+  <string name="preference_follow_device_theme">Følg temaet i eininga</string>
   <!--
     Tab Strip Preferences
 
@@ -2076,6 +2078,8 @@
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">Vel ein grunn</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
+  <string name="webcompat_reporter_label_description_2">Beskriv problemet i detalj for å hjelpe oss med å undersøkje problemet (valfritt)</string>
+  <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Beskriv problemet (valfritt)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_add_more_info">Legg til meir info</string>
@@ -2085,6 +2089,8 @@
   <string name="webcompat_reporter_send">Send</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
   <string name="webcompat_reporter_success_snackbar_text_2">Rapport sendt</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+  <string name="webcompat_reporter_problem_description_placeholder_text_2">Kva skjedde? Kva forventa du skulle skje? Oppgi framgangsmåten for å attskape problemet.</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Kva skjedde? Kva burde ha skjedd?</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
@@ -3137,6 +3143,8 @@
   <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Content description for the browser VPN settings screen top bar back button -->
+  <string name="ip_protection_navigate_back_button_content_description">Naviger tilbake</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">Den innebygde VPN-en i %s</string>
   <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
@@ -3194,6 +3202,8 @@
   <string name="ip_protection_toolbar_pill_description">VPN er aktiv.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Kom i gang</string>
+  <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_connecting">Koplar til…</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_onboarding_card_headline">Prøv %s sin innebygde VPN</string>
   <!--
@@ -3968,6 +3978,11 @@
   -->
   <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
   <!--
+    Text for displaying the number of trackers blocked this week in the trackers blocked panel.
+    %d is a placeholder for the number of trackers blocked this week.
+  -->
+  <string name="trackers_blocked_panel_num_trackers_blocked_this_week">Sporarar blokkerte denne veka: %d</string>
+  <!--
     Description text for a dialog confirming whether the user wants to delete all data for current site.
     %s is a placeholder for the base domain of website.
   -->
@@ -4387,7 +4402,7 @@
   <!-- Label for a button negatively rating the user's experience with the app -->
   <string name="review_prompt_negative_button">Eg har problem</string>
   <!-- Label for a button positively rating the user's experience with the app -->
-  <string name="review_prompt_positive_button">Den er flott!</string>
+  <string name="review_prompt_positive_button">Han er flott!</string>
   <!-- Title for a prompt asking the user to rate the app on Google Play Store. %1$s is the name of the app (for example "Firefox"). -->
   <string name="review_prompt_rate_header">Takk for at du likar %1$s. Har du litt tid til å dele begeistringa di med ei vurdering?</string>
   <!-- Label for a button proceeding to rate the app on Google Play Store. %1$s is the name of the app (for example "Firefox"). -->

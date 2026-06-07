@@ -737,6 +737,8 @@
   <string name="nova_onboarding_marketing_body_link_text">저희가 데이터를 사용하는 방법</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Firefox 도움말</string>
+  <!-- Marketing onboarding primary button text. -->
+  <string name="nova_onboarding_marketing_primary_button_text_2">허가하고 계속</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text">아니요</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -761,7 +763,7 @@
       separator (e.g. 1,000 in English), and it will automatically use the correct character
       for your locale (don't change or remove it).
     -->
-    <item quantity="other">웹 탐색 중에 %1$s가 %2$,d개의 추적기를 차단했습니다.</item>
+    <item quantity="other">웹 탐색 중에 %1$s가 추적기 %2$,d개를 차단했습니다.</item>
   </plurals>
   <!-- Customize prompt onboarding positive button. -->
   <string name="nova_onboarding_customize_prompt_positive_button" tools:ignore="UnusedResources">맞춤 설정 시작</string>
@@ -2069,6 +2071,8 @@
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">이유를 선택하세요</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
+  <string name="webcompat_reporter_label_description_2">조사에 도움이 되도록 문제를 자세히 설명해 주세요 (선택 사항)</string>
+  <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">문제 설명 (선택 사항)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_add_more_info">추가 정보 추가</string>
@@ -2078,6 +2082,8 @@
   <string name="webcompat_reporter_send">보내기</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
   <string name="webcompat_reporter_success_snackbar_text_2">신고가 전송됨</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+  <string name="webcompat_reporter_problem_description_placeholder_text_2">무슨 일이 일어났나요? 어떤 일이 일어날 것으로 예상하셨나요? 문제를 재현하기 위한 단계를 제공해 주세요.</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">무슨 일이 있었나요? 무슨 일이 일어났어야 했나요?</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
@@ -3128,6 +3134,8 @@
   <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Content description for the browser VPN settings screen top bar back button -->
+  <string name="ip_protection_navigate_back_button_content_description">뒤로</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">%s에 내장된 VPN</string>
   <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
@@ -3185,6 +3193,8 @@
   <string name="ip_protection_toolbar_pill_description">VPN이 활성화 되어 있습니다.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">시작하기</string>
+  <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_connecting">연결 중…</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_onboarding_card_headline">%s에 내장된 VPN을 사용해 보세요</string>
   <!--
@@ -3914,7 +3924,7 @@
       Description text for the protection panel banner when privacy dashboard is enabled.
       %1$d is the number of trackers blocked.
     -->
-    <item quantity="other">이 사이트에서 %1$d개의 추적기가 차단되었습니다.</item>
+    <item quantity="other">이 사이트에서 추적기 \u0020%1$d개가 차단되었습니다.</item>
   </plurals>
   <!--
     Description text for the protection panel banner when privacy dashboard is enabled.
@@ -3957,6 +3967,11 @@
     %d is a placeholder for the number of trackers blocked.
   -->
   <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d개</string>
+  <!--
+    Text for displaying the number of trackers blocked this week in the trackers blocked panel.
+    %d is a placeholder for the number of trackers blocked this week.
+  -->
+  <string name="trackers_blocked_panel_num_trackers_blocked_this_week">이번 주 차단된 추적기: %d개</string>
   <!--
     Description text for a dialog confirming whether the user wants to delete all data for current site.
     %s is a placeholder for the base domain of website.

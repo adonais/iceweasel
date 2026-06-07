@@ -3015,6 +3015,8 @@
   <string name="saved_logins_sort_strategy_last_used">Času zadnje uporabe</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Meni za razvrščanje gesel</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Uvozi iz datoteke</string>
   <!--
     Email Masks
 
@@ -3377,6 +3379,10 @@
   <string name="homepage_shortcuts_show_all_content_description">Prikaži vse bližnjice</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Dodaj bližnjico</string>
+  <!-- Title for the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_to_homepage">Dodaj na domačo stran</string>
+  <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_website">Dodaj spletno stran</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
   <string name="homepage_shortcuts_add_website_title">Vnesite naslov spletnega mesta</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
@@ -3778,6 +3784,11 @@
     %s is the name of the app (for example "Firefox").
   -->
   <string name="protection_panel_banner_protected_title">%s je na straži</string>
+  <!--
+    Description text for the protection panel banner when privacy dashboard is enabled.
+    and there are no trackers blocked.
+  -->
+  <string name="protection_panel_banner_protected_no_blocked_trackers_description">Zaščiteni ste.</string>
   <!-- Description text for the protection panel banner when tracking protection is enabled. -->
   <string name="protection_panel_banner_protected_description">Zaščiteni ste. Če kaj opazimo, vas obvestimo.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
@@ -4344,7 +4355,7 @@
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
   <string name="sports_widget_final">Finale</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final">Boj za tretje mesto</string>
+  <string name="sports_widget_bronze_final">Tekma za tretje mesto</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Osveži</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4463,4 +4474,10 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">obvestilo o zasebnosti</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Več o tem</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+  <string name="firefox_labs_dialog_restart_button">Ponovno zaženi</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+  <string name="firefox_labs_dialog_cancel_button">Prekliči</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+  <string name="firefox_labs_restore_defaults_dialog_title">Zahtevan je ponoven zagon</string>
 </resources>
