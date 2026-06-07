@@ -1752,6 +1752,8 @@
   <string name="bookmark_sort_menu_a_to_z">Сартаваць ад А да Я</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Сартаваць ад Я да А</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Імпартаваныя закладкі</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2288,6 +2290,10 @@
   <string name="etp_redirect_trackers_description">Ачышчае кукі, усталяваныя шляхам перанакіравання на вядомыя асочвальныя вэб-сайты.</string>
   <!-- Preference for fingerprinting protection for the custom protection settings -->
   <string name="etp_suspected_fingerprinters_title">Падазраваныя збіральнікі лічбавых адбіткаў</string>
+  <!-- Description of fingerprinters that can be blocked by fingerprinting protection -->
+  <string name="etp_suspected_fingerprinters_description">Уключае абарону ад збору лічбавых адбіткаў, каб спыніць падазроных збіральнікаў лічбавых адбіткаў.</string>
+  <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
+  <string name="etp_known_fingerprinters_title">Вядомыя збіральнікі лічбавых адбіткаў</string>
   <!--
     Description of the SmartBlock Enhanced Tracking Protection feature. The * symbol is intentionally hardcoded here,
     as we use it on the UI to indicate which trackers have been partially unblocked.

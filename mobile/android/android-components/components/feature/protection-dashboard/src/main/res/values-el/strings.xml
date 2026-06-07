@@ -40,4 +40,6 @@
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
   <string name="mozac_protections_dashboard_empty_title">Το %1$s αποκλείει ιχνηλάτες κατά την περιήγησή σας.</string>
+  <!-- Subtitle shown when no trackers have been blocked yet -->
+  <string name="mozac_protections_dashboard_empty_subtitle">Θα τους δείτε εδώ.</string>
 </resources>

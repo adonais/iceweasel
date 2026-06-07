@@ -467,7 +467,7 @@
   <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
   <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Dileu\'r cofnod hanes hwn</string>
   <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="applinks_prompt_negative_button">Arhoswch mewn %1$s</string>
+  <string name="applinks_prompt_negative_button">Aros yn %1$s</string>
   <!--
     Home onboarding
 
@@ -737,6 +737,8 @@
   <string name="nova_onboarding_marketing_body_link_text">Sut rydym yn defnyddio\'r data</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Helpu Firefox</string>
+  <!-- Marketing onboarding primary button text. -->
+  <string name="nova_onboarding_marketing_primary_button_text_2">Caniatáu a Pharhau</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text">Dim Diolch</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -1720,13 +1722,13 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Agor chwilio tabiau</string>
   <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
-  <string name="tab_group_onboarding_item_title">Creu grŵp tab</string>
+  <string name="tab_group_onboarding_item_title">Creu grŵp tabiau</string>
   <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
-  <string name="tab_group_onboarding_grid_item_description">Llusgwch un tab ar un arall i\'w grwpio.</string>
+  <string name="tab_group_onboarding_grid_item_description">Llusgo un tab ar un arall i\'w grwpio.</string>
   <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
   <string name="tab_group_onboarding_list_item_description">Dewiswch dabiau lluosog i greu grŵp.</string>
   <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
-  <string name="tab_group_onboarding_item_dismiss_content_description">Diystyru arfyrddio grŵp tab</string>
+  <string name="tab_group_onboarding_item_dismiss_content_description">Cau cyflwyno grwpiau tabiau</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Rhowch gynnig ar grwpiau tabiau am lai o sgrolio a gwneud mwy</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -2104,6 +2106,8 @@
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">Dewiswch reswm</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
+  <string name="webcompat_reporter_label_description_2">Disgrifiwch y broblem yn fanwl i\'n helpu i ymchwilio i\'r mater (dewisol)</string>
+  <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Disgrifiwch y broblem (dewisol)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_add_more_info">Ychwanegu mwy o wybodaeth</string>
@@ -2114,7 +2118,11 @@
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
   <string name="webcompat_reporter_success_snackbar_text_2">Anfonwyd yr adroddiad</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+  <string name="webcompat_reporter_problem_description_placeholder_text_2">Beth ddigwyddodd? Beth oeddech chi\'n disgwyl i ddigwydd? Rhowch ddisgrifiad ar sut i atgynhyrchu\'r mater.</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Beth ddigwyddodd? Beth ddylai fod wedi digwydd?</string>
+  <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
+  <string name="webcompat_reporter_etp_checkbox_text_2">Anfonwch restr o eitemau sydd wedi\'u rhwystro gan ddiogelwch rhag tracio</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">Anfon URLau wedi\'u rhwystro gan ddiogelwch rhag tracio</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
@@ -2736,11 +2744,11 @@
       Text shown on the trackers blocked card. %d is the number of trackers blocked.
     -->
     <item quantity="one">%d traciwr wedi\'i rwystro</item>
-    <item quantity="zero">%d o dracwyr wedi\'u rhwystro</item>
-    <item quantity="two">%d o dracwyr wedi\'u rhwystro</item>
-    <item quantity="few">%d o dracwyr wedi\'u rhwystro</item>
-    <item quantity="many">%d o dracwyr wedi\'u rhwystro</item>
-    <item quantity="other">%d o dracwyr wedi\'u rhwystro</item>
+    <item quantity="zero">%d tracwyr wedi\'u rhwystro</item>
+    <item quantity="two">%d draciwr wedi\'u rhwystro</item>
+    <item quantity="few">%d traciwr wedi\'u rhwystro</item>
+    <item quantity="many">%d traciwr wedi\'u rhwystro</item>
+    <item quantity="other">%d traciwr wedi\'u rhwystro</item>
   </plurals>
   <plurals name="trackers_blocked_count">
     <!--
@@ -3171,10 +3179,12 @@
   <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Content description for the browser VPN settings screen top bar back button -->
+  <string name="ip_protection_navigate_back_button_content_description">Symud nôl</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">VPN mewnol %s</string>
   <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
-  <string name="ip_protection_promo_body_2">Porwch gydag amddiffyniad ychwanegol trwy guddio\'ch lleoliad, hyd yn oed ar Wi-Fi cyhoeddus. %s</string>
+  <string name="ip_protection_promo_body_2">Pori gydag diogelwch ychwanegol trwy guddio\'ch lleoliad, hyd yn oed ar Wi-Fi cyhoeddus. %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">Porwch gydag diogelwch ychwanegol trwy guddio\'ch lleoliad, hyd yn oed pan ar Wi-Fi cyhoeddus.</string>
   <!-- Link text that opens additional information about the browser VPN -->
@@ -3228,6 +3238,8 @@
   <string name="ip_protection_toolbar_pill_description">Mae VPN yn weithredol.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Cychwyn arni</string>
+  <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_connecting">Cysylltu…</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_onboarding_card_headline">Rhowch gynnig ar VPN mewnol %s</string>
   <!--
@@ -3547,6 +3559,10 @@
   <string name="homepage_shortcuts_show_all_content_description">Dangos pob llwybr byr</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Ychwanegu llwybr byr</string>
+  <!-- Title for the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_to_homepage">Ychwanegu i\'r cartref</string>
+  <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_website">Ychwanegu gwefan</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
   <string name="homepage_shortcuts_add_website_title">Rhowch URL Gwefan</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
@@ -3948,6 +3964,23 @@
     %s is the name of the app (for example "Firefox").
   -->
   <string name="protection_panel_banner_protected_title">Mae %s yn gwylio</string>
+  <plurals name="protection_panel_banner_protected_blocked_trackers_description">
+    <!--
+      Description text for the protection panel banner when privacy dashboard is enabled.
+      %1$d is the number of trackers blocked.
+    -->
+    <item quantity="one">%1$d traciwr wedi\'i rwystro ar y wefan hon.</item>
+    <item quantity="zero">%1$d tracwyr wedi\'u rhwystro ar y wefan hon.</item>
+    <item quantity="two">%1$d draciwr wedi\'u rhwystro ar y wefan hon.</item>
+    <item quantity="few">%1$d traciwr wedi\'u rhwystro ar y wefan hon.</item>
+    <item quantity="many">%1$d traciwr wedi\'u rhwystro ar y wefan hon.</item>
+    <item quantity="other">%1$d traciwr wedi\'u rhwystro ar y wefan hon.</item>
+  </plurals>
+  <!--
+    Description text for the protection panel banner when privacy dashboard is enabled.
+    and there are no trackers blocked.
+  -->
+  <string name="protection_panel_banner_protected_no_blocked_trackers_description">Rydych chi wedi\'ch diogelu.</string>
   <!-- Description text for the protection panel banner when tracking protection is enabled. -->
   <string name="protection_panel_banner_protected_description">Rydych wedi\'ch diogelu. Os byddwn yn sylwi ar rywbeth, byddwn yn rhoi gwybod ichi.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
@@ -3984,6 +4017,11 @@
     %d is a placeholder for the number of trackers blocked.
   -->
   <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+  <!--
+    Text for displaying the number of trackers blocked this week in the trackers blocked panel.
+    %d is a placeholder for the number of trackers blocked this week.
+  -->
+  <string name="trackers_blocked_panel_num_trackers_blocked_this_week">Tracwyr wedi\'u rhwystro yr wythnos hon: %d</string>
   <!--
     Description text for a dialog confirming whether the user wants to delete all data for current site.
     %s is a placeholder for the base domain of website.
@@ -4656,7 +4694,7 @@
     Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
     %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
   -->
-  <string name="sports_widget_match_elapsed_minutes">Wedi mynd heibio mewn munudau: %1$s</string>
+  <string name="sports_widget_match_elapsed_minutes">Amser wedi pasio mewn munudau: %1$s</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
@@ -4687,11 +4725,11 @@
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Cymal Grŵp</string>
   <!-- Sports widget error card title shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed_title">Nid yw gwybodaeth paru ar gael ar hyn o bryd.</string>
+  <string name="sports_widget_error_load_failed_title">Dyw gwybodaeth am y gêm ddim ar gael ar hyn o bryd.</string>
   <!-- Sports widget error card description shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed_description">Ceisiwch adnewyddu mewn ychydig funudau.</string>
   <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
-  <string name="sports_widget_team_to_be_determined">Tîm i fod yn benderfynol</string>
+  <string name="sports_widget_team_to_be_determined">Tîm i\'w bennu</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
@@ -4709,26 +4747,39 @@
   <!--
     Firefox Labs
 
-    Banner title text on the Firefox Labs screen.
+    Firefox Labs is the name of a screen in Settings to allow users to learn about
+    experimental and in-development features, and turn those features on and off.
+    The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
+    in English.
   -->
-  <string name="firefox_labs_banner_title">Rhowch gynnig ar ein nodweddion arbrofol!</string>
+  <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
+  <!-- Banner title text on the Firefox Labs screen. -->
+  <string name="firefox_labs_banner_title_2">Rhowch gynnig ar ein nodweddion arbrofol!</string>
   <!--
     Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
     Text will appear under the Firefox Labs banner title.
   -->
-  <string name="firefox_labs_experimental_description">Maent yn cael eu datblygu ac yn esblygu a allai effeithio ar sut mae %s yn gweithio.</string>
+  <string name="firefox_labs_experimental_description">Maen nhw\'n datblygu ac yn esblygu sy\'n gallu effeithio ar sut mae %s yn gweithio.</string>
+  <!-- The link text shown when a feedback URL for a Firefox Labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
+  <string name="firefox_labs_share_feedback">Rhannu adborth</string>
+  <!-- Content description for the share feedback link on a Firefox Labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the Firefox Labs feature. -->
+  <string name="firefox_labs_share_feedback_content_description">Rhannu adborth am %s.</string>
   <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
   <string name="firefox_labs_restore_default_button_text">Adfer y rhagosodiadau</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
-  <string name="firefox_labs_feature_dialog_title">Angen ailgychwyn</string>
+  <string name="firefox_labs_feature_dialog_title">Mae angen ailgychwyn</string>
   <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
   <string name="firefox_labs_dialog_restart_button">Ailgychwyn</string>
   <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
   <string name="firefox_labs_dialog_cancel_button">Diddymu</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
-  <string name="firefox_labs_restore_defaults_dialog_title">Angen ailgychwyn</string>
+  <string name="firefox_labs_restore_defaults_dialog_title">Mae angen ailgychwyn</string>
   <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
   <string name="firefox_labs_restore_defaults_dialog_message">I adfer rhagosodiadau, ailgychwynnwch %s.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_enable_dialog_message">I droi\'r nodwedd hon ymlaen, ailgychwynnwch %s.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_disable_dialog_message">I ddiffodd y nodwedd hon, ailgychwynnwch %s.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
-  <string name="firefox_labs_no_labs_available_description">Dim nodweddion arbrofol i roi cynnig arnynt ar hyn o bryd</string>
+  <string name="firefox_labs_no_labs_available_description">Does dim nodweddion arbrofol i\'w profi ar hyn o bryd</string>
 </resources>

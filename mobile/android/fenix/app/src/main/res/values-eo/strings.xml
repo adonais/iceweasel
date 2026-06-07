@@ -236,7 +236,7 @@
   <!-- Browser menu button that saves the current tab to a collection -->
   <string name="browser_menu_save_to_collection_2">Konservi en kolekto</string>
   <!-- Browser menu button that open a share menu to share the current site -->
-  <string name="browser_menu_share">Kundividi</string>
+  <string name="browser_menu_share">Dividi</string>
   <!-- Browser menu button that goes to the homepage screen -->
   <string name="browser_menu_homepage">Eka paĝo</string>
   <!--
@@ -2163,7 +2163,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Redakti</string>
   <!-- Bookmark overflow menu share button -->
-  <string name="bookmark_menu_share_button">Kundividi</string>
+  <string name="bookmark_menu_share_button">Dividi</string>
   <!-- Bookmark overflow menu select all bookmarks -->
   <string name="bookmark_menu_select_all_bookmarks">Elekti ĉion</string>
   <!-- Bookmark overflow menu open in new tab button -->
