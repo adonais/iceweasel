@@ -172,7 +172,7 @@ class BookmarksTest {
             verifyTabTrayIsOpen()
             verifyNormalBrowsingButtonIsSelected()
             verifyNormalTabsList()
-            verifyExistingOpenTabs(webPages[0].url.toString(), webPages[1].url.toString())
+            verifyExistingOpenTabs(webPages[0].title, webPages[1].title)
         }
     }
 

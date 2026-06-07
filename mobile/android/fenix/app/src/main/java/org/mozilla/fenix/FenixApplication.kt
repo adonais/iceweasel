@@ -536,13 +536,12 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private fun queueEngineWarmup(queue: RunWhenReadyQueue) = {
+    private fun queueEngineWarmup(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
             GlobalScope.launch(Dispatchers.Main) {
                 components.core.engine.warmUp()
             }
         }
-    }
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueIncrementNumberOfAppLaunches(queue: RunWhenReadyQueue) =
