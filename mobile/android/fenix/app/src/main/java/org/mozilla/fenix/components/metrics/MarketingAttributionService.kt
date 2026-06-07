@@ -26,8 +26,14 @@ const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
  * onboarding to quickly check install referrer and see if GLICD or Adjust reference tag is present.
  *
  * This should be only used when user has not gone through the onboarding flow.
+ *
+ * @param context The application context.
+ * @param scope Coroutine scope used to launch background work.
  */
-class MarketingAttributionService(private val context: Context) {
+class MarketingAttributionService(
+    private val context: Context,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+) {
     private val logger = Logger("MarketingAttributionService")
     private var referrerClient: InstallReferrerClient? = null
 
@@ -67,12 +73,12 @@ class MarketingAttributionService(private val context: Context) {
                                 context.settings().isUserMetaAttributed = isMetaAttribution(installReferrerResponse)
 
                                 distributionIdManager.updateDistributionIdFromUtmParams(utmParams)
-                                CoroutineScope(Dispatchers.IO).launch {
+                                scope.launch {
                                     distributionIdManager.startAdjustIfSkippingConsentScreen()
                                 }
                             }
 
-                            CoroutineScope(Dispatchers.IO).launch {
+                            scope.launch {
                                 context.settings().shouldShowMarketingOnboarding =
                                     shouldShowMarketingOnboarding(
                                         installReferrerResponse,
