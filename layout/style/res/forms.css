@@ -496,9 +496,13 @@ input[type="color"] {
 }
 
 /* https://github.com/whatwg/html/issues/9976 */
-input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio" i]) {
+input:not([type="range" i], [type="checkbox" i], [type="radio" i]) {
   overflow: clip !important;
   overflow-clip-margin: 0 !important;
+}
+
+input[type="image" i] {
+  overflow-clip-margin: content-box !important;
 }
 
 button,
