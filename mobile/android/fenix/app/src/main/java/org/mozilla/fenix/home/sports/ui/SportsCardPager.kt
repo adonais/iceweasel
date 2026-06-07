@@ -156,6 +156,7 @@ fun SportsCardPager(
     Column(
         modifier = modifier.sportsCardPagerContainer(
             isChampionsPage = isChampionsPage,
+            isErrorPage = isErrorPage,
             showIndicator = showIndicator,
         ),
     ) {
@@ -173,6 +174,7 @@ fun SportsCardPager(
                 pagerState = pagerState,
                 pages = pages,
                 isChampionsPage = isChampionsPage,
+                isErrorPage = isErrorPage,
             )
             if (!isChampionsPage && !isErrorPage) {
                 SportsCardPagerOverflowMenu(
@@ -200,12 +202,15 @@ fun SportsCardPager(
 @Composable
 private fun Modifier.sportsCardPagerContainer(
     isChampionsPage: Boolean,
+    isErrorPage: Boolean,
     showIndicator: Boolean,
 ): Modifier {
-    val topPadding = if (isChampionsPage) 0.dp else FirefoxTheme.layout.space.static150
+    val topPadding = if (isChampionsPage || isErrorPage) 0.dp else FirefoxTheme.layout.space.static150
     val bottomPadding = if (showIndicator) FirefoxTheme.layout.space.static200 else 0.dp
     val backgroundColor = if (isChampionsPage) {
         Color.Transparent
+    } else if (isErrorPage) {
+        MaterialTheme.colorScheme.primaryContainer
     } else {
         MaterialTheme.colorScheme.surfaceContainerLowest
     }
@@ -220,8 +225,9 @@ private fun SportsCardPagerContent(
     pagerState: PagerState,
     pages: List<SportsPage>,
     isChampionsPage: Boolean,
+    isErrorPage: Boolean,
 ) {
-    val pagerBottomPadding = if (isChampionsPage) 0.dp else FirefoxTheme.layout.space.static150
+    val pagerBottomPadding = if (isChampionsPage || isErrorPage) 0.dp else FirefoxTheme.layout.space.static150
     CompositionLocalProvider(LocalSportsPagerState provides pagerState) {
         HorizontalPager(
             state = pagerState,
