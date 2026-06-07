@@ -2988,7 +2988,7 @@ ${
 
   updateLayoutExtend() {
     if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
-      if (this.view.isOpen && this.view.visibleRowCount) {
+      if (this.view.isOpen) {
         this.startLayoutExtend();
       } else {
         this.endLayoutExtend();

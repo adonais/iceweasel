@@ -402,8 +402,8 @@ var tests = [
       function () {
         is(
           popup.anchorNode,
-          document.getElementById("urlbar"),
-          "Popup should be anchored to the urlbar"
+          document.getElementById("urlbar-container"),
+          "Popup should be anchored to the urlbar container"
         );
         is(title.textContent, "test title", "Popup should have correct title");
         is(
@@ -447,8 +447,8 @@ var tests = [
 
     is(
       popup.anchorNode,
-      document.getElementById("urlbar"),
-      "Popup should be anchored to the urlbar"
+      document.getElementById("urlbar-container"),
+      "Popup should be anchored to the urlbar container"
     );
     is(title.textContent, "urlbar title", "Popup should have correct title");
     is(
