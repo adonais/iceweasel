@@ -1290,6 +1290,16 @@ features:
           upstream cache TTL is also lowered, otherwise users will see no fresher data.
         type: Int
         default: 60
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+      - channel: nightly
+        value:
+          enabled: true
+      - channel: beta
+        value:
+          enabled: true
 
 types:
   objects:

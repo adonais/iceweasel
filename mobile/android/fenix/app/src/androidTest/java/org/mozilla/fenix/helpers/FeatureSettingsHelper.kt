@@ -51,6 +51,11 @@ interface FeatureSettingsHelper {
     var isUnifiedTrustPanelEnabled: Boolean
 
     /**
+     * Whether the Homepage Sports Widget is visible or not.
+     */
+    var isHomepageSportsWidgetVisible: Boolean
+
+    /**
      * The current "Enhanced Tracking Protection" policy.
      * @see ETPPolicy
      */
