@@ -16,6 +16,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.AURA_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.GOOGLE_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.TIKTOK_PARTNER_ID
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.utils.Settings
 
@@ -158,6 +159,7 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DEFAULT,
             isUserMetaAttributed = true,
+            isUserTikTokAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -165,10 +167,11 @@ internal class AdjustMetricsServiceTest {
     }
 
     @Test
-    fun `WHEN the distribution is DEFAULT AND the user is not meta attributed THEN sharing is enabled for Google`() {
+    fun `WHEN the distribution is DEFAULT AND the user has no Meta or TikTok attribution THEN sharing is enabled for Google`() {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DEFAULT,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -176,10 +179,23 @@ internal class AdjustMetricsServiceTest {
     }
 
     @Test
+    fun `WHEN the distribution is DEFAULT AND the user is TikTok attributed THEN sharing is enabled for TikTok`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = true,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(TIKTOK_PARTNER_ID) }
+    }
+
+    @Test
     fun `WHEN the distribution is AURA_001 THEN sharing is enabled for Aura`() {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.AURA_001,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -191,6 +207,7 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.VIVO_001,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -202,6 +219,7 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DT_001,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -213,6 +231,7 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DT_002,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -224,6 +243,7 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DT_003,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -235,6 +255,7 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.XIAOMI_001,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
             controller = thirdPartySharingController,
         )
 

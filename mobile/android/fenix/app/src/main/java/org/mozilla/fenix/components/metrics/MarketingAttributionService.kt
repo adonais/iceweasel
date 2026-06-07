@@ -17,6 +17,7 @@ import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
+import java.net.URLDecoder
 
 const val GCLID_PREFIX = "gclid="
 const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
@@ -71,7 +72,7 @@ class MarketingAttributionService(
                                     UTMParams.parseUTMParameters(installReferrerResponse)
 
                                 context.settings().isUserMetaAttributed = isMetaAttribution(installReferrerResponse)
-
+                                context.settings().isUserTikTokAttributed = isTikTokAttribution(installReferrerResponse)
                                 distributionIdManager.updateDistributionIdFromUtmParams(utmParams)
                                 scope.launch {
                                     distributionIdManager.startAdjustIfSkippingConsentScreen()
@@ -136,6 +137,27 @@ class MarketingAttributionService(
             return MetaParams.extractMetaAttribution(utmParams.content) != null
         }
 
+        private const val ADJUST_EXTERNAL_CLICK_ID = "adjust_external_click_id"
+        private val TIKTOK_EXTERNAL_CLICK_ID_PREFIXES = listOf("E.C.P.C", "E_C_P_C")
+
+        @VisibleForTesting
+        internal fun isTikTokAttribution(installReferrerResponse: String?): Boolean {
+            if (installReferrerResponse.isNullOrBlank()) return false
+
+            val decoded = try {
+                URLDecoder.decode(installReferrerResponse, "UTF-8")
+            } catch (e: IllegalArgumentException) {
+                Logger.error("isTikTokAttribution() - bad installReferrerResponse", e)
+
+                installReferrerResponse
+            }
+
+            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
+                ?: return false
+
+            return TIKTOK_EXTERNAL_CLICK_ID_PREFIXES.any { clickId.startsWith(it, ignoreCase = true) }
+        }
+
         @Suppress("ReturnCount")
         @VisibleForTesting
         internal suspend fun shouldShowMarketingOnboarding(
@@ -155,6 +177,10 @@ class MarketingAttributionService(
             }
 
             if (isMetaAttribution(installReferrerResponse)) {
+                return true
+            }
+
+            if (isTikTokAttribution(installReferrerResponse)) {
                 return true
             }
 

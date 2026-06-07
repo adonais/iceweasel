@@ -88,6 +88,9 @@ class InstallReferrerWorker(
                 settings.isUserMetaAttributed = false
             }
 
+            settings.isUserTikTokAttributed =
+                MarketingAttributionService.isTikTokAttribution(installReferrerResponse)
+
             utmParams.recordInstallReferrer(settings)
         }
 

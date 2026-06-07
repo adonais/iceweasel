@@ -460,6 +460,11 @@ class Settings(
         default = false,
     )
 
+    var isUserTikTokAttributed by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_is_user_tiktok_attributed),
+        default = false,
+    )
+
     var contileContextId by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_contile_context_id),
         default = { TopSites.contextId.generateAndSet().toString() },

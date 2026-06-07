@@ -382,6 +382,39 @@ class InstallReferrerWorkerTest {
 
         assertTrue(settings.isUserMetaAttributed)
     }
+
+    @Test
+    fun `WHEN handleSuccess receives a TikTok-attributed referrer THEN isUserTikTokAttributed is set to true`() {
+        val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
+        val settings = Settings(context)
+        val referrer = "&adjust_external_click_id=E.C.P.C.04.AAA&utm_medium=paid"
+
+        worker.handleSuccess(referrer, InstallReferrerClient.InstallReferrerResponse.OK, settings)
+
+        assertTrue(settings.isUserTikTokAttributed)
+    }
+
+    @Test
+    fun `WHEN handleSuccess receives a non-TikTok referrer THEN isUserTikTokAttributed is set to false`() {
+        val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
+        val settings = Settings(context)
+        settings.isUserTikTokAttributed = true
+
+        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+
+        assertFalse(settings.isUserTikTokAttributed)
+    }
+
+    @Test
+    fun `WHEN handleSuccess receives a null referrer THEN isUserTikTokAttributed is not changed`() {
+        val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
+        val settings = Settings(context)
+        settings.isUserTikTokAttributed = true
+
+        worker.handleSuccess(null, InstallReferrerClient.InstallReferrerResponse.OK, settings)
+
+        assertTrue(settings.isUserTikTokAttributed)
+    }
 }
 
 private class FakeInstallReferrerClient(

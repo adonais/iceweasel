@@ -24,6 +24,7 @@ import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.AURA_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.GOOGLE_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.TIKTOK_PARTNER_ID
 import org.mozilla.fenix.distributions.DistributionAdjustStartupStrategy
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
@@ -113,6 +114,7 @@ class AdjustMetricsService(
             applyThirdPartySharingSettings(
                 distribution = distributionIdManager.getDistribution(),
                 isUserMetaAttributed = settings.isUserMetaAttributed,
+                isUserTikTokAttributed = settings.isUserTikTokAttributed,
             )
 
             // All configuration have to be done before this.
@@ -210,6 +212,7 @@ class AdjustMetricsService(
         internal fun applyThirdPartySharingSettings(
             distribution: DistributionIdManager.Distribution,
             isUserMetaAttributed: Boolean,
+            isUserTikTokAttributed: Boolean,
             controller: ThirdPartySharingController = AdjustThirdPartySharingController(),
         ) {
             when (distribution) {
@@ -218,6 +221,8 @@ class AdjustMetricsService(
                     when {
                         isUserMetaAttributed ->
                             controller.enableThirdPartySharingForPartner(META_PARTNER_ID)
+                        isUserTikTokAttributed ->
+                            controller.enableThirdPartySharingForPartner(TIKTOK_PARTNER_ID)
                         else ->
                             controller.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID)
                     }

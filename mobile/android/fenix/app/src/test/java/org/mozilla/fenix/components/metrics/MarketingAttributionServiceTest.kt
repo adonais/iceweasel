@@ -165,4 +165,68 @@ internal class MarketingAttributionServiceTest {
         assertFalse(MarketingAttributionService.isMetaAttribution("gclid=12345"))
         assertFalse(MarketingAttributionService.isMetaAttribution("adjust_reftag=test"))
     }
+
+    @Test
+    fun `WHEN installReferrerResponse is null or blank THEN isTikTokAttribution returns false`() {
+        assertFalse(MarketingAttributionService.isTikTokAttribution(null))
+        assertFalse(MarketingAttributionService.isTikTokAttribution(""))
+        assertFalse(MarketingAttributionService.isTikTokAttribution(" "))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a dotted TikTok adjust_external_click_id THEN isTikTokAttribution returns true`() {
+        assertTrue(
+            MarketingAttributionService.isTikTokAttribution(
+                "adjust_external_click_id=E.C.P.C.04.AAAQzv8mYx",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has an underscored TikTok adjust_external_click_id THEN isTikTokAttribution returns true`() {
+        assertTrue(
+            MarketingAttributionService.isTikTokAttribution(
+                "adjust_external_click_id=E_C_P_C_12_AAAQzv8mYx",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a lowercase TikTok adjust_external_click_id THEN isTikTokAttribution returns true`() {
+        assertTrue(MarketingAttributionService.isTikTokAttribution("adjust_external_click_id=e_c_p_c_abc_aaaqzv8myx"))
+        assertTrue(MarketingAttributionService.isTikTokAttribution("adjust_external_click_id%3De_c_p_c_08aaaBBB8myx"))
+        assertTrue(MarketingAttributionService.isTikTokAttribution("adjust_external_click_id%3DE_c_p_c_14a"))
+        assertTrue(MarketingAttributionService.isTikTokAttribution("adjust_external_click_id%3DE.c.P.c_24bbbCCc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a malformed percent escape THEN isTikTokAttribution falls back to raw parsing`() {
+        // The lone trailing % causes URLDecoder to throw IllegalArgumentException
+        assertTrue(
+            MarketingAttributionService.isTikTokAttribution(
+                "adjust_external_click_id=E_C_P_C_04_AAA&malformed=%",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a non-TikTok adjust_external_click_id THEN isTikTokAttribution returns false`() {
+        assertFalse(
+            MarketingAttributionService.isTikTokAttribution(
+                "adjust_external_click_id=EAIaIQobChMI4t7Y8KOM_wIVDpRoCR1RAQ7t",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has no adjust_external_click_id THEN isTikTokAttribution returns false`() {
+        assertFalse(MarketingAttributionService.isTikTokAttribution("utm_source=google&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse is a TikTok attribution THEN we should show marketing onboarding`() =
+        runBlocking {
+            val tiktokReferrer = "adjust_external_click_id=E.C.P.C.04.AAA&utm_medium=paid"
+            assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding(tiktokReferrer, distributionIdManager))
+        }
 }
