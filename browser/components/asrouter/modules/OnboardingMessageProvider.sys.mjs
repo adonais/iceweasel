@@ -3267,7 +3267,6 @@ const BASE_MESSAGES = () => [
             },
             primary_button: {
               label: { string_id: "aiwindow-feedback-submit" },
-              disabled: "hasTextInput",
               action: {
                 type: "MULTI_ACTION",
                 collectTextInput: true,

@@ -95,12 +95,11 @@ add_task(async function test_both_variants_collect_text_input() {
   }
 });
 
-add_task(async function test_thumbs_up_submit_disabled_when_no_text() {
+add_task(async function test_thumbs_up_submit_not_disabled() {
   const message = await getFeedbackMessage("thumbs-up");
-  Assert.equal(
-    message.content.screens[0].content.primary_button.disabled,
-    "hasTextInput",
-    "thumbs-up submit button should be disabled when no text input"
+  Assert.ok(
+    !message.content.screens[0].content.primary_button.disabled,
+    "thumbs-up submit button should not be disabled"
   );
 });
 
