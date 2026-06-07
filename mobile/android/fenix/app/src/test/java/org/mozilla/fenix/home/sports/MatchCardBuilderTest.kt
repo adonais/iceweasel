@@ -282,7 +282,7 @@ class MatchCardBuilderTest {
     }
 
     @Test
-    fun `buildForNoTeam GIVEN only past matches on different days THEN one card per date in chronological order`() {
+    fun `buildForNoTeam GIVEN only past matches on different days THEN one card per date in reverse-chronological order`() {
         val past1 = sportsMatch(
             id = 1L,
             date = zonedDateTime(2026, 6, 10, 18),
@@ -300,9 +300,11 @@ class MatchCardBuilderTest {
 
         val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(past1, past2))
 
+        // Past cards surface newest first so the most recent result sits closest to the
+        // celebration cards (or the top of the pager when no celebration exists).
         assertEquals(2, cards.size)
-        assertEquals(listOf(1L), cards[0].matches.map { it.globalEventId })
-        assertEquals(listOf(2L), cards[1].matches.map { it.globalEventId })
+        assertEquals(listOf(2L), cards[0].matches.map { it.globalEventId })
+        assertEquals(listOf(1L), cards[1].matches.map { it.globalEventId })
     }
 
     @Test
@@ -368,7 +370,7 @@ class MatchCardBuilderTest {
     }
 
     @Test
-    fun `ordering GIVEN only past matches THEN chronological order preserved`() {
+    fun `ordering GIVEN only past matches THEN reverse-chronological order`() {
         val earlier = sportsMatch(
             id = 1L,
             stage = TournamentRound.ROUND_OF_32,
@@ -391,8 +393,8 @@ class MatchCardBuilderTest {
         )
 
         assertEquals(2, cards.size)
-        assertEquals(TournamentRound.ROUND_OF_32, cards[0].round)
-        assertEquals(TournamentRound.ROUND_OF_16, cards[1].round)
+        assertEquals(TournamentRound.ROUND_OF_16, cards[0].round)
+        assertEquals(TournamentRound.ROUND_OF_32, cards[1].round)
     }
 
     // endregion
@@ -544,6 +546,333 @@ class MatchCardBuilderTest {
             TeamMatchesResult(previous = listOf(qf), current = emptyList(), next = emptyList()),
         )
         assertEquals(FollowedTeamOutcome.NotInvolved, cards[0].viewerOutcome)
+    }
+
+    // endregion
+
+    // region pager ordering — end-of-tournament narrative
+
+    // Helpers for the seven ordering scenarios. Match dates are spread across the
+    // tournament timeline so reverse-chronological sorting is observable.
+    private fun teamGroupMatch(date: ZonedDateTime, status: MatchStatus, id: Long): SportsMatch =
+        sportsMatch(id = id, stage = TournamentRound.GROUP_STAGE, status = status, date = date)
+
+    private fun teamKoMatch(
+        id: Long,
+        stage: TournamentRound,
+        date: ZonedDateTime,
+        status: MatchStatus,
+        homeScore: Int? = null,
+        awayScore: Int? = null,
+    ): SportsMatch = sportsMatch(
+        id = id,
+        stage = stage,
+        status = status,
+        date = date,
+        homeKey = "USA",
+        awayKey = "MEX",
+        homeScore = homeScore,
+        awayScore = awayScore,
+    )
+
+    private fun otherKnockoutMatch(
+        id: Long,
+        stage: TournamentRound,
+        date: ZonedDateTime,
+        status: MatchStatus,
+        homeKey: String,
+        awayKey: String,
+        homeScore: Int? = null,
+        awayScore: Int? = null,
+    ): SportsMatch = sportsMatch(
+        id = id,
+        stage = stage,
+        status = status,
+        date = date,
+        homeKey = homeKey,
+        awayKey = awayKey,
+        homeScore = homeScore,
+        awayScore = awayScore,
+    )
+
+    @Test
+    fun `pager order GIVEN followed team in live Final with decided TPP THEN live Final then Third Place then team past reverse-chrono`() {
+        // S1: USA reaches Final, Final is live Sun. TPP was Sat (decided). Past: Group, R16, QF, SF.
+        val group = teamGroupMatch(zonedDateTime(2026, 6, 12, 18), MatchStatus.Final, 1L)
+        val r16 = teamKoMatch(2L, TournamentRound.ROUND_OF_16, zonedDateTime(2026, 6, 28, 18), MatchStatus.Final, 2, 1)
+        val qf = teamKoMatch(3L, TournamentRound.QUARTER_FINAL, zonedDateTime(2026, 7, 5, 18), MatchStatus.Final, 1, 0)
+        val sf = teamKoMatch(4L, TournamentRound.SEMI_FINAL, zonedDateTime(2026, 7, 12, 18), MatchStatus.Final, 2, 0)
+        val tpp = otherKnockoutMatch(
+            id = 5L,
+            stage = TournamentRound.THIRD_PLACE_PLAYOFF,
+            date = zonedDateTime(2026, 7, 18, 18),
+            status = MatchStatus.Final,
+            homeKey = "BRA",
+            awayKey = "ARG",
+            homeScore = 2,
+            awayScore = 1,
+        )
+        val liveFinal = teamKoMatch(
+            id = 6L,
+            stage = TournamentRound.FINAL,
+            date = zonedDateTime(2026, 7, 19, 18),
+            status = MatchStatus.Live(period = "1", clock = "30"),
+        )
+
+        val cards = MatchCardBuilder.buildForTeam(
+            TeamMatchesResult(
+                previous = listOf(group, r16, qf, sf, tpp),
+                current = listOf(liveFinal),
+                next = emptyList(),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                TournamentRound.FINAL,
+                TournamentRound.THIRD_PLACE_PLAYOFF,
+                TournamentRound.SEMI_FINAL,
+                TournamentRound.QUARTER_FINAL,
+                TournamentRound.ROUND_OF_16,
+                TournamentRound.GROUP_STAGE,
+            ),
+            cards.map { it.round },
+        )
+    }
+
+    @Test
+    fun `pager order GIVEN no team and Final is live THEN live Final first`() {
+        // S2.
+        val tpp = otherKnockoutMatch(
+            id = 1L,
+            stage = TournamentRound.THIRD_PLACE_PLAYOFF,
+            date = zonedDateTime(2026, 7, 18, 18),
+            status = MatchStatus.Final,
+            homeKey = "BRA",
+            awayKey = "ARG",
+            homeScore = 2,
+            awayScore = 1,
+        )
+        val liveFinal = otherKnockoutMatch(
+            id = 2L,
+            stage = TournamentRound.FINAL,
+            date = zonedDateTime(2026, 7, 19, 18),
+            status = MatchStatus.Live(period = "2", clock = "12"),
+            homeKey = "USA",
+            awayKey = "MEX",
+        )
+
+        val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(tpp, liveFinal))
+
+        assertEquals(TournamentRound.FINAL, cards[0].round)
+        assertEquals(TournamentRound.THIRD_PLACE_PLAYOFF, cards[1].round)
+    }
+
+    @Test
+    fun `pager order GIVEN followed team in upcoming Final on Friday THEN upcoming TPP then upcoming Final then team past reverse-chrono`() {
+        // S3: Friday Jul 17. SF played Tue/Wed. TPP upcoming Sat, Final upcoming Sun.
+        val group = teamGroupMatch(zonedDateTime(2026, 6, 12, 18), MatchStatus.Final, 1L)
+        val r16 = teamKoMatch(2L, TournamentRound.ROUND_OF_16, zonedDateTime(2026, 6, 28, 18), MatchStatus.Final, 2, 1)
+        val qf = teamKoMatch(3L, TournamentRound.QUARTER_FINAL, zonedDateTime(2026, 7, 5, 18), MatchStatus.Final, 1, 0)
+        val sf = teamKoMatch(4L, TournamentRound.SEMI_FINAL, zonedDateTime(2026, 7, 14, 18), MatchStatus.Final, 2, 0)
+        val tppUpcoming = otherKnockoutMatch(
+            id = 5L,
+            stage = TournamentRound.THIRD_PLACE_PLAYOFF,
+            date = zonedDateTime(2026, 7, 18, 18),
+            status = MatchStatus.Scheduled,
+            homeKey = "BRA",
+            awayKey = "ARG",
+        )
+        val finalUpcoming = teamKoMatch(
+            id = 6L,
+            stage = TournamentRound.FINAL,
+            date = zonedDateTime(2026, 7, 19, 18),
+            status = MatchStatus.Scheduled,
+        )
+
+        val cards = MatchCardBuilder.buildForTeam(
+            TeamMatchesResult(
+                previous = listOf(group, r16, qf, sf),
+                current = emptyList(),
+                next = listOf(tppUpcoming, finalUpcoming),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                TournamentRound.THIRD_PLACE_PLAYOFF,
+                TournamentRound.FINAL,
+                TournamentRound.SEMI_FINAL,
+                TournamentRound.QUARTER_FINAL,
+                TournamentRound.ROUND_OF_16,
+                TournamentRound.GROUP_STAGE,
+            ),
+            cards.map { it.round },
+        )
+    }
+
+    @Test
+    fun `pager order GIVEN no team on Friday before TPP and Final THEN upcoming TPP then upcoming Final then SF past reverse-chrono`() {
+        // S4: SFs played, TPP+Final upcoming.
+        val sf1 = otherKnockoutMatch(
+            id = 1L,
+            stage = TournamentRound.SEMI_FINAL,
+            date = zonedDateTime(2026, 7, 14, 18),
+            status = MatchStatus.Final,
+            homeKey = "USA",
+            awayKey = "MEX",
+            homeScore = 2,
+            awayScore = 0,
+        )
+        val sf2 = otherKnockoutMatch(
+            id = 2L,
+            stage = TournamentRound.SEMI_FINAL,
+            date = zonedDateTime(2026, 7, 15, 18),
+            status = MatchStatus.Final,
+            homeKey = "BRA",
+            awayKey = "ARG",
+            homeScore = 1,
+            awayScore = 0,
+        )
+        val tpp = otherKnockoutMatch(
+            id = 3L,
+            stage = TournamentRound.THIRD_PLACE_PLAYOFF,
+            date = zonedDateTime(2026, 7, 18, 18),
+            status = MatchStatus.Scheduled,
+            homeKey = "MEX",
+            awayKey = "ARG",
+        )
+        val finalMatch = otherKnockoutMatch(
+            id = 4L,
+            stage = TournamentRound.FINAL,
+            date = zonedDateTime(2026, 7, 19, 18),
+            status = MatchStatus.Scheduled,
+            homeKey = "USA",
+            awayKey = "BRA",
+        )
+
+        val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(sf1, sf2, tpp, finalMatch))
+
+        assertEquals(
+            listOf(
+                TournamentRound.THIRD_PLACE_PLAYOFF,
+                TournamentRound.FINAL,
+                TournamentRound.SEMI_FINAL,
+                TournamentRound.SEMI_FINAL,
+            ),
+            cards.map { it.round },
+        )
+        // SF reverse-chrono: sf2 (Jul 15) before sf1 (Jul 14).
+        assertEquals(listOf(2L), cards[2].matches.map { it.globalEventId })
+        assertEquals(listOf(1L), cards[3].matches.map { it.globalEventId })
+    }
+
+    @Test
+    fun `pager order GIVEN followed team played the Final and it ended THEN Champion then Third Place then team past reverse-chrono`() {
+        // S5: USA played + won Final. TPP decided Sat. All team's KO + Group decided.
+        val group = teamGroupMatch(zonedDateTime(2026, 6, 12, 18), MatchStatus.Final, 1L)
+        val r16 = teamKoMatch(2L, TournamentRound.ROUND_OF_16, zonedDateTime(2026, 6, 28, 18), MatchStatus.Final, 2, 1)
+        val qf = teamKoMatch(3L, TournamentRound.QUARTER_FINAL, zonedDateTime(2026, 7, 5, 18), MatchStatus.Final, 1, 0)
+        val sf = teamKoMatch(4L, TournamentRound.SEMI_FINAL, zonedDateTime(2026, 7, 14, 18), MatchStatus.Final, 2, 0)
+        val tpp = otherKnockoutMatch(
+            id = 5L,
+            stage = TournamentRound.THIRD_PLACE_PLAYOFF,
+            date = zonedDateTime(2026, 7, 18, 18),
+            status = MatchStatus.Final,
+            homeKey = "BRA",
+            awayKey = "ARG",
+            homeScore = 2,
+            awayScore = 1,
+        )
+        val decidedFinal = teamKoMatch(
+            id = 6L,
+            stage = TournamentRound.FINAL,
+            date = zonedDateTime(2026, 7, 19, 18),
+            status = MatchStatus.Final,
+            homeScore = 3,
+            awayScore = 1,
+        )
+
+        val cards = MatchCardBuilder.buildForTeam(
+            TeamMatchesResult(
+                previous = listOf(group, r16, qf, sf, tpp, decidedFinal),
+                current = emptyList(),
+                next = emptyList(),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                TournamentRound.FINAL,
+                TournamentRound.THIRD_PLACE_PLAYOFF,
+                TournamentRound.SEMI_FINAL,
+                TournamentRound.QUARTER_FINAL,
+                TournamentRound.ROUND_OF_16,
+                TournamentRound.GROUP_STAGE,
+            ),
+            cards.map { it.round },
+        )
+        assertIs<FollowedTeamOutcome.TournamentWinner>(cards[0].viewerOutcome)
+        assertIs<FollowedTeamOutcome.ThirdPlace>(cards[1].viewerOutcome)
+    }
+
+    @Test
+    fun `pager order GIVEN no team and Final ended THEN Champion then Third Place`() {
+        // S6.
+        val tpp = otherKnockoutMatch(
+            id = 1L,
+            stage = TournamentRound.THIRD_PLACE_PLAYOFF,
+            date = zonedDateTime(2026, 7, 18, 18),
+            status = MatchStatus.Final,
+            homeKey = "BRA",
+            awayKey = "ARG",
+            homeScore = 2,
+            awayScore = 1,
+        )
+        val finalMatch = otherKnockoutMatch(
+            id = 2L,
+            stage = TournamentRound.FINAL,
+            date = zonedDateTime(2026, 7, 19, 18),
+            status = MatchStatus.Final,
+            homeKey = "USA",
+            awayKey = "MEX",
+            homeScore = 2,
+            awayScore = 0,
+        )
+
+        val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(tpp, finalMatch))
+
+        assertEquals(listOf(TournamentRound.FINAL, TournamentRound.THIRD_PLACE_PLAYOFF), cards.map { it.round })
+        assertIs<FollowedTeamOutcome.TournamentWinner>(cards[0].viewerOutcome)
+        assertIs<FollowedTeamOutcome.ThirdPlace>(cards[1].viewerOutcome)
+    }
+
+    @Test
+    fun `pager order GIVEN no team on Saturday after TPP and Final tomorrow THEN Third Place then upcoming Final`() {
+        // S7.
+        val tpp = otherKnockoutMatch(
+            id = 1L,
+            stage = TournamentRound.THIRD_PLACE_PLAYOFF,
+            date = zonedDateTime(2026, 7, 18, 18),
+            status = MatchStatus.Final,
+            homeKey = "BRA",
+            awayKey = "ARG",
+            homeScore = 2,
+            awayScore = 1,
+        )
+        val finalUpcoming = otherKnockoutMatch(
+            id = 2L,
+            stage = TournamentRound.FINAL,
+            date = zonedDateTime(2026, 7, 19, 18),
+            status = MatchStatus.Scheduled,
+            homeKey = "USA",
+            awayKey = "MEX",
+        )
+
+        val cards = MatchCardBuilder.buildForNoTeam(matches = listOf(tpp, finalUpcoming))
+
+        assertEquals(listOf(TournamentRound.THIRD_PLACE_PLAYOFF, TournamentRound.FINAL), cards.map { it.round })
+        assertIs<FollowedTeamOutcome.ThirdPlace>(cards[0].viewerOutcome)
     }
 
     // endregion
