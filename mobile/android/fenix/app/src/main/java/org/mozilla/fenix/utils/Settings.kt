@@ -465,6 +465,11 @@ class Settings(
         default = false,
     )
 
+    var isUserRedditAttributed by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_is_user_reddit_attributed),
+        default = false,
+    )
+
     var contileContextId by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_contile_context_id),
         default = { TopSites.contextId.generateAndSet().toString() },

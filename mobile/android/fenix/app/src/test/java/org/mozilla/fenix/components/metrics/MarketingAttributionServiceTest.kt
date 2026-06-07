@@ -229,4 +229,58 @@ internal class MarketingAttributionServiceTest {
             val tiktokReferrer = "adjust_external_click_id=E.C.P.C.04.AAA&utm_medium=paid"
             assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding(tiktokReferrer, distributionIdManager))
         }
+
+    @Test
+    fun `WHEN installReferrerResponse is null or blank THEN isRedditAttribution returns false`() {
+        assertFalse(MarketingAttributionService.isRedditAttribution(null))
+        assertFalse(MarketingAttributionService.isRedditAttribution(""))
+        assertFalse(MarketingAttributionService.isRedditAttribution(" "))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a Reddit adjust_external_click_id THEN isRedditAttribution returns true`() {
+        assertTrue(
+            MarketingAttributionService.isRedditAttribution(
+                "adjust_external_click_id=reddit_abc123XYZ",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a mixed-case Reddit adjust_external_click_id THEN isRedditAttribution returns true`() {
+        assertTrue(MarketingAttributionService.isRedditAttribution("adjust_external_click_id=Reddit_abc"))
+        assertTrue(MarketingAttributionService.isRedditAttribution("adjust_external_click_id=REDDIT_abc"))
+        assertTrue(MarketingAttributionService.isRedditAttribution("adjust_external_click_id%3Dreddit_abc"))
+        assertTrue(MarketingAttributionService.isRedditAttribution("adjust_external_click_id%3DReDdIt_abc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a malformed percent escape THEN isRedditAttribution falls back to raw parsing`() {
+        assertTrue(
+            MarketingAttributionService.isRedditAttribution(
+                "adjust_external_click_id=reddit_abc123&malformed=%",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a non-Reddit adjust_external_click_id THEN isRedditAttribution returns false`() {
+        assertFalse(
+            MarketingAttributionService.isRedditAttribution(
+                "adjust_external_click_id=E.C.P.C.04.AAAQzv8mYx",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has no adjust_external_click_id THEN isRedditAttribution returns false`() {
+        assertFalse(MarketingAttributionService.isRedditAttribution("utm_source=google&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse is a Reddit attribution THEN we should show marketing onboarding`() =
+        runBlocking {
+            val redditReferrer = "adjust_external_click_id=reddit_abc123&utm_medium=paid"
+            assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding(redditReferrer, distributionIdManager))
+        }
 }
