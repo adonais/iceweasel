@@ -49,10 +49,6 @@ export const Spotlight = {
     if (message.content.write_in_microsurvey) {
       data.event_context.write_in_microsurvey = true;
     }
-    if (message.content.feedbackData) {
-      data.event_context.smart_window_user_feedback_data =
-        message.content.feedbackData;
-    }
     dispatch({ type: "SPOTLIGHT_TELEMETRY", data });
   },
 
