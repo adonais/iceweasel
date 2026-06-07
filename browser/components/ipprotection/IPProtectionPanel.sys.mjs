@@ -563,9 +563,9 @@ export class IPProtectionPanel {
     this.#updateSiteData();
 
     if (this.state.paused) {
-      this.setState({ isEnrolling: true });
+      this.setState({ isCheckingEntitlement: true });
       lazy.IPPProxyManager.refreshUsage().finally(() => {
-        this.setState({ isEnrolling: false });
+        this.setState({ isCheckingEntitlement: false });
       });
     }
 
