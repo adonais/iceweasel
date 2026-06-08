@@ -73,7 +73,7 @@
     }
   },
   {
-    "domains": ["zdf.de", "ardmediathek.de", "sportschau.de"],
+    "domains": ["zdf.de", "ardmediathek.de", "sportschau.de", "magenta.tv"],
     "l10nId": "ipp-activator-breakage-turn-off-warning",
     "condition": {
       "type": "and",
