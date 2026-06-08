@@ -7,6 +7,7 @@ package org.mozilla.fenix.home.sports
 import android.net.ConnectivityManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
@@ -24,6 +25,13 @@ private val BRACKET_FINISHING_STAGES = setOf(
     TournamentRound.FINAL,
     TournamentRound.THIRD_PLACE_PLAYOFF,
 )
+
+// Default minimum gap, in seconds, between consecutive attempted fetches. Used when the
+// [SportsWidgetMiddleware] caller doesn't override fetchMinIntervalSeconds (e.g. tests). The
+// shipping default is the Nimbus-controlled `homepage-sports-widget.fetch-throttle-seconds`,
+// wired in from [org.mozilla.fenix.utils.Settings.sportsWidgetFetchThrottleSeconds].
+private const val DEFAULT_FETCH_MIN_INTERVAL_SECONDS = 60
+private const val MILLIS_PER_SECOND = 1000L
 
 /**
  * [Middleware] that handles side effects for [SportsWidgetAction].
@@ -44,15 +52,35 @@ private val BRACKET_FINISHING_STAGES = setOf(
  * [SportCardErrorState.ConnectionInterrupted] when the device is offline instead of
  * letting the underlying client time out into [SportCardErrorState.LoadFailed].
  * @param coroutineScope [CoroutineScope] used for async fetch operations.
+ * @param clock Source of the current time in epoch milliseconds; injectable for tests.
+ * @param fetchMinIntervalSeconds Minimum gap between attempted fetches, throttling in-session
+ * refreshes (refresh-button spam, Home/onResume thrash). Defaults to the Nimbus-controlled value.
+ * @param bypassThrottle When true, skips the min-interval throttle so QA can drive state changes
+ * without waiting on the timer (e.g. while the debug drawer's mock server is active). Evaluated
+ * per dispatch so a runtime toggle takes effect immediately.
  */
 class SportsWidgetMiddleware(
     private val sportsRepository: SportsRepository,
     private val connectivityManager: ConnectivityManager,
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    private val clock: () -> Long = System::currentTimeMillis,
+    fetchMinIntervalSeconds: Int = DEFAULT_FETCH_MIN_INTERVAL_SECONDS,
+    private val bypassThrottle: () -> Boolean = { false },
 ) : Middleware<AppState, AppAction> {
+
+    private val fetchMinIntervalMs: Long = fetchMinIntervalSeconds * MILLIS_PER_SECOND
 
     @Volatile
     private var cachedMatches: TeamMatchesResult? = null
+
+    @Volatile
+    private var inProgress: Job? = null
+
+    // Null until the first fetch attempt. Using a nullable rather than a sentinel
+    // avoids the `now - Long.MIN_VALUE` overflow, which would wrap negative and
+    // wrongly throttle the very first fetch.
+    @Volatile
+    private var lastFetchAtMs: Long? = null
 
     override fun invoke(
         store: Store<AppState, AppAction>,
@@ -83,6 +111,20 @@ class SportsWidgetMiddleware(
     }
 
     private fun fetchAndBuild(store: Store<AppState, AppAction>) {
+        // Drop the request if a previous fetch is still running. Prevents concurrent
+        // round-trips when the user mashes the refresh button or swipes between
+        // Home and another tab faster than the network can respond.
+        if (inProgress?.isActive == true) return
+
+        // Min-interval throttle, aligned with the upstream Merino cache. Stamped on
+        // attempt (not on success) so failures also respect the gap — otherwise a
+        // failing endpoint could be hammered by tapping retry. Bypassed entirely
+        // when [bypassThrottle] is true (e.g. the debug drawer's mock server is
+        // active) so QA can drive state changes without waiting on the timer.
+        val now = clock()
+        val last = lastFetchAtMs
+        if (!bypassThrottle() && last != null && now - last < fetchMinIntervalMs) return
+
         // Skip the round-trip when the device is offline; surface the connectivity
         // error directly so the widget renders the "you're offline" message instead
         // of a generic load-failure once the network call times out.
@@ -90,22 +132,27 @@ class SportsWidgetMiddleware(
             store.dispatch(SportsWidgetAction.FetchFailed(SportCardErrorState.ConnectionInterrupted))
             return
         }
-        coroutineScope.launch {
-            sportsRepository.fetchMatches()
-                .onSuccess { result ->
-                    cachedMatches = result
-                    val countryCodes = store.state.sportsWidgetState.countriesSelected
-                    // A fresh successful fetch retires any prior banner. Done explicitly here
-                    // — and NOT as a side effect of MatchCardStateUpdated — so cache-hit
-                    // re-derives (e.g. CountriesSelected with a cached response) don't
-                    // silently dismiss a still-valid error.
-                    store.dispatch(SportsWidgetAction.ErrorStateCleared)
-                    store.dispatch(SportsWidgetAction.MatchCardStateUpdated(buildCards(result, countryCodes)))
-                    store.dispatch(SportsWidgetAction.EliminatedCountriesUpdated(eliminatedCodes(result)))
-                }
-                .onFailure {
-                    store.dispatch(SportsWidgetAction.FetchFailed(SportCardErrorState.LoadFailed))
-                }
+        lastFetchAtMs = now
+        inProgress = coroutineScope.launch {
+            try {
+                sportsRepository.fetchMatches()
+                    .onSuccess { result ->
+                        cachedMatches = result
+                        val countryCodes = store.state.sportsWidgetState.countriesSelected
+                        // A fresh successful fetch retires any prior banner. Done explicitly here
+                        // — and NOT as a side effect of MatchCardStateUpdated — so cache-hit
+                        // re-derives (e.g. CountriesSelected with a cached response) don't
+                        // silently dismiss a still-valid error.
+                        store.dispatch(SportsWidgetAction.ErrorStateCleared)
+                        store.dispatch(SportsWidgetAction.MatchCardStateUpdated(buildCards(result, countryCodes)))
+                        store.dispatch(SportsWidgetAction.EliminatedCountriesUpdated(eliminatedCodes(result)))
+                    }
+                    .onFailure {
+                        store.dispatch(SportsWidgetAction.FetchFailed(SportCardErrorState.LoadFailed))
+                    }
+            } finally {
+                inProgress = null
+            }
         }
     }
 

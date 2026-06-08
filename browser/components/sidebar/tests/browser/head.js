@@ -143,7 +143,7 @@ async function openAndWaitForContextMenu(popup, button, onShown) {
   EventUtils.synthesizeMouseAtCenter(
     button,
     eventDetails,
-    // eslint-disable-next-line mozilla/use-ownerGlobal
+    // eslint-disable-next-line mozilla/use-documentGlobal
     button.ownerDocument.defaultView
   );
   await menuShownPromise;

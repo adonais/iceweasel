@@ -33,4 +33,13 @@
   <string name="protections_dashboard_category_social">Sosyal</string>
   <!-- Tracker category: Other trackers -->
   <string name="protections_dashboard_category_others">Diğer</string>
+  <!-- Title shown in the protection dashboard header next to the shield icon -->
+  <string name="mozac_protections_dashboard_trackers_blocked_this_week_title">Bu hafta engellenen takip kodları</string>
+  <!--
+    Title shown when no trackers have been blocked yet
+    %1$s will be replaced by the app name (e.g. Firefox Focus)
+  -->
+  <string name="mozac_protections_dashboard_empty_title">Siz internette gezinirken %1$s takip kodlarını engeller.</string>
+  <!-- Subtitle shown when no trackers have been blocked yet -->
+  <string name="mozac_protections_dashboard_empty_subtitle">Onları burada göreceksiniz.</string>
 </resources>

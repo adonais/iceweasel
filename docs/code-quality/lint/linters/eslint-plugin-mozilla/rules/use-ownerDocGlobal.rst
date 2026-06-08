@@ -1,7 +1,7 @@
-use-ownerGlobal
-===============
+use-documentGlobal
+==================
 
-Require ``.ownerGlobal`` instead of ``.ownerDocument.defaultView``.
+Require ``.documentGlobal`` instead of ``.ownerDocument.defaultView``.
 
 Examples of incorrect code for this rule:
 -----------------------------------------
@@ -16,5 +16,5 @@ Examples of correct code for this rule:
 
 .. code-block:: js
 
-    aEvent.target.ownerGlobal;
-    this.DOMPointNode.ownerGlobal.getSelection();
+    aEvent.target.documentGlobal;
+    this.DOMPointNode.documentGlobal.getSelection();

@@ -48,7 +48,6 @@ val regionGrouping: List<Region> = listOf(
     Region(
         nameResId = R.string.sports_widget_confederation_asia,
         teams = listOf(
-            Team(key = "AUS", flagResId = R.drawable.flag_au),
             Team(key = "IRN", flagResId = R.drawable.flag_ir),
             Team(key = "IRQ", flagResId = R.drawable.flag_iq),
             Team(key = "JPN", flagResId = R.drawable.flag_jp),
@@ -91,6 +90,7 @@ val regionGrouping: List<Region> = listOf(
     Region(
         nameResId = R.string.sports_widget_confederation_oceania,
         teams = listOf(
+            Team(key = "AUS", flagResId = R.drawable.flag_au),
             Team(key = "NZL", flagResId = R.drawable.flag_nz),
         ),
     ),

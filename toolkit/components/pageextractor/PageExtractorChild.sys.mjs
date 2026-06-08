@@ -345,7 +345,7 @@ export class PageExtractorChild extends JSWindowActorChild {
    * @returns {Promise<CanvasSnapshot | null>}
    */
   async #captureCanvas(canvas, maxDimension, quality) {
-    const window = canvas.ownerGlobal;
+    const window = canvas.documentGlobal;
     const { width: originalWidth, height: originalHeight } = canvas;
 
     try {

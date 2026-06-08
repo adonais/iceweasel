@@ -383,10 +383,13 @@ private fun primaryButtonCopyForVariant(
     marketingCardVariant: MarketingCardVariant,
 ) = when (marketingCardVariant) {
     MarketingCardVariant.DEFAULT -> defaultString
+
     MarketingCardVariant.TREATMENT_A,
     MarketingCardVariant.TREATMENT_B,
-    MarketingCardVariant.TREATMENT_C,
         -> stringResource(R.string.nova_onboarding_marketing_primary_button_text)
+
+    MarketingCardVariant.TREATMENT_C ->
+        stringResource(R.string.nova_onboarding_marketing_primary_button_text_2)
 }
 
 @Composable

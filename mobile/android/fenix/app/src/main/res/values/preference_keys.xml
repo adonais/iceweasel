@@ -343,6 +343,8 @@
     <string name="pref_key_utm_term" translatable="false">pref_key_utm_term</string>
     <string name="pref_key_utm_content" translatable="false">pref_key_utm_content</string>
     <string name="pref_key_is_user_meta_attributed" translatable="false">pref_key_is_user_meta_attributed</string>
+    <string name="pref_key_is_user_tiktok_attributed" translatable="false">pref_key_is_user_tiktok_attributed</string>
+    <string name="pref_key_is_user_reddit_attributed" translatable="false">pref_key_is_user_reddit_attributed</string>
 
     <string name="pref_key_contile_context_id" translatable="false">pref_key_contile_context_id</string>
 

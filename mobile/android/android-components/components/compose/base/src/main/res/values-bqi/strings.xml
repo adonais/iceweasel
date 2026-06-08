@@ -23,6 +23,10 @@
   <string name="mozac_compose_base_close_button_content_description">بستن</string>
   <!-- Title shown in the dialog that lists every clickable link inside a LinkText composable when the text contains more than one link. -->
   <string name="mozac_compose_base_link_text_links_title">لینگا</string>
+  <!-- Announcement appended to the LinkText content description so screen readers know that interactive links are present in the text. -->
+  <string name="mozac_compose_base_link_text_links_available">لینگا من دسرس هڌن</string>
+  <!-- Label for the button that dismisses the LinkText links dialog without selecting a link. -->
+  <string name="mozac_compose_base_link_text_dismiss">رڌ کردن</string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 

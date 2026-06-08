@@ -483,6 +483,127 @@ class SportsWidgetMiddlewareTest {
         assertEquals(setOf(1L, 2L), matches.map { it.globalEventId }.toSet())
     }
 
+    // region fetch throttle / in-flight dedup
+
+    @Test
+    fun `fetch throttle GIVEN two dispatches within the interval THEN repository is called once`() = runTest {
+        val repo = StubRepository(Result.success(resultWithMatches()))
+        var nowMs = 0L
+        val store = appStore(repo, clock = { nowMs })
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        nowMs = 30_000L
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        assertEquals(1, repo.fetchCount)
+    }
+
+    @Test
+    fun `fetch throttle GIVEN second dispatch after the interval THEN repository is called again`() = runTest {
+        val repo = StubRepository(Result.success(resultWithMatches()))
+        var nowMs = 0L
+        val store = appStore(repo, clock = { nowMs })
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        nowMs = 60_000L
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        assertEquals(2, repo.fetchCount)
+    }
+
+    @Test
+    fun `fetch throttle GIVEN previous fetch failed THEN retry within interval is still throttled`() = runTest {
+        // A failing endpoint must not be hammered by retries; the throttle is stamped on
+        // attempt, not on success.
+        val repo = StubRepository(Result.failure(RuntimeException("boom")))
+        var nowMs = 0L
+        val store = appStore(repo, clock = { nowMs })
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        nowMs = 10_000L
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        assertEquals(1, repo.fetchCount)
+    }
+
+    @Test
+    fun `fetch throttle GIVEN a custom Nimbus interval THEN the configured value is honored`() = runTest {
+        // The throttle is wired in from the Nimbus `fetch-throttle-seconds` flag at
+        // construction time; the middleware itself just respects whatever interval it's
+        // handed. Verify that a smaller-than-default value lets a second dispatch
+        // through that the default would have blocked.
+        val repo = StubRepository(Result.success(resultWithMatches()))
+        var nowMs = 0L
+        val store = appStore(repo, clock = { nowMs }, fetchMinIntervalSeconds = 5)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        nowMs = 10_000L // would be throttled at the 60s default; allowed at 5s.
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        assertEquals(2, repo.fetchCount)
+    }
+
+    @Test
+    fun `fetch throttle GIVEN bypassThrottle is true THEN repeat dispatches fetch immediately`() = runTest {
+        // Mock-server / debug-drawer case: QA flips the bypass and expects refresh,
+        // Home onResume, and "Apply session" to fire fetches without waiting on the
+        // 60 s timer.
+        val repo = StubRepository(Result.success(resultWithMatches()))
+        var nowMs = 0L
+        val store = appStore(repo, clock = { nowMs }, bypassThrottle = { true })
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        nowMs = 1_000L // well inside the default throttle window
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+        nowMs = 2_000L
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        assertEquals(3, repo.fetchCount)
+    }
+
+    @Test
+    fun `fetch dedup GIVEN bypassThrottle is true THEN in-flight guard still blocks concurrent dispatch`() = runTest {
+        // The bypass turns off rate-limiting, not the dedup; we never want two
+        // concurrent network calls hitting the same endpoint even in debug mode.
+        val repo = GatedStubRepository(Result.success(resultWithMatches()))
+        val store = appStore(repo, bypassThrottle = { true })
+
+        store.dispatch(SportsWidgetAction.FetchMatches)
+        testScheduler.runCurrent()
+        store.dispatch(SportsWidgetAction.FetchMatches)
+        testScheduler.runCurrent()
+
+        assertEquals(1, repo.fetchCount)
+
+        repo.gate.complete(Unit)
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, repo.fetchCount)
+    }
+
+    @Test
+    fun `fetch dedup GIVEN a fetch is in flight THEN a concurrent dispatch is dropped`() = runTest {
+        val repo = GatedStubRepository(Result.success(resultWithMatches()))
+        // Use distinct clock values so the throttle alone would let the second dispatch
+        // through — leaving the in-flight guard as the only thing that can stop it.
+        var nowMs = 0L
+        val store = appStore(repo, clock = { nowMs })
+
+        store.dispatch(SportsWidgetAction.FetchMatches)
+        testScheduler.runCurrent()
+        assertEquals(1, repo.fetchCount)
+
+        nowMs = 120_000L // well past the throttle window
+        store.dispatch(SportsWidgetAction.FetchMatches)
+        testScheduler.runCurrent()
+        assertEquals(1, repo.fetchCount)
+
+        repo.gate.complete(Unit)
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, repo.fetchCount)
+    }
+
+    // endregion
+
     // region helpers
 
     private val teamA = SportsTeam("MEX", 1L, "Mexico", "MEX", null, null, false)
@@ -538,14 +659,20 @@ class SportsWidgetMiddlewareTest {
     }
 
     private fun TestScope.appStore(
-        repo: StubRepository,
+        repo: SportsRepository,
         sportsWidgetState: SportsWidgetState = SportsWidgetState(),
         connectivityManager: ConnectivityManager = onlineConnectivityManager(),
+        clock: () -> Long = { 0L },
+        fetchMinIntervalSeconds: Int = 60,
+        bypassThrottle: () -> Boolean = { false },
     ): AppStore {
         val middleware = SportsWidgetMiddleware(
             sportsRepository = repo,
             connectivityManager = connectivityManager,
             coroutineScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler)),
+            clock = clock,
+            fetchMinIntervalSeconds = fetchMinIntervalSeconds,
+            bypassThrottle = bypassThrottle,
         )
         return AppStore(
             initialState = AppState(sportsWidgetState = sportsWidgetState),
@@ -580,6 +707,24 @@ class SportsWidgetMiddlewareTest {
 
         override suspend fun fetchMatches(): Result<TeamMatchesResult> {
             fetchCount += 1
+            return response
+        }
+    }
+
+    // Lets the test pause a fetch mid-flight via [gate] so a second dispatch can race
+    // it; required to observe the in-flight dedup guard in [SportsWidgetMiddleware.fetchAndBuild]
+    // (the default test dispatcher otherwise runs each launched coroutine to completion
+    // before control returns to the test).
+    private class GatedStubRepository(
+        private val response: Result<TeamMatchesResult>,
+    ) : SportsRepository {
+        var fetchCount: Int = 0
+            private set
+        val gate: kotlinx.coroutines.CompletableDeferred<Unit> = kotlinx.coroutines.CompletableDeferred()
+
+        override suspend fun fetchMatches(): Result<TeamMatchesResult> {
+            fetchCount += 1
+            gate.await()
             return response
         }
     }

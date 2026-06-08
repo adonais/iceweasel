@@ -109,3 +109,35 @@ ipprotection:
       - kpatenio@mozilla.com
       - vpn-telemetry@mozilla.com
     expires: never
+
+  breakage_message_shown:
+    type: event
+    description: >
+      Recorded when the IP Protection activator extension shows the breakage
+      notification suggesting the user turn on the VPN for the current site.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043999
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043999
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - amarchesini@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never
+
+  breakage_message_dismissed:
+    type: event
+    description: >
+      Recorded when the user dismisses the IP Protection activator breakage
+      notification.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043999
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043999
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - amarchesini@mozilla.com
+      - vpn-telemetry@mozilla.com
+    expires: never

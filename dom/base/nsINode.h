@@ -1291,9 +1291,9 @@ class nsINode : public mozilla::dom::EventTarget {
   nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
   // The global of our owner document, as opposed to our global, which might be
   // different in the case of adoption.
-  nsIGlobalObject* GetOwnerDocGlobal() const;
+  nsIGlobalObject* GetDocumentGlobal() const;
   mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder>
-  GetOwnerDocGlobalForBindings();
+  GetDocumentGlobalForBindings();
 
   using mozilla::dom::EventTarget::DispatchEvent;
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)

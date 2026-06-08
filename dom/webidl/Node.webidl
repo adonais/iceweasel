@@ -117,8 +117,8 @@ interface Node : EventTarget {
   // adopted from another document, in which case the ownerGlobal might be the
   // original document's global.
   // Effectively equivalent to (node.ownerDocument || node).ownerGlobal.
-  [ChromeOnly, Pure, BinaryName="ownerDocGlobalForBindings"]
-  readonly attribute WindowProxy? ownerDocGlobal;
+  [ChromeOnly, Pure, BinaryName="documentGlobalForBindings"]
+  readonly attribute WindowProxy? documentGlobal;
 
   // Maybe this would be useful to authors? https://github.com/whatwg/dom/issues/826
   [Func="IsChromeOrUAWidget", Pure, BinaryName="containingShadow"]

@@ -67,9 +67,9 @@ export class NodeCache {
       // For already known nodes return the cached node id.
       nodeId = this.#nodeIdMap.get(node);
     } else {
-      // Bug 1820734: Sometimes some nodes have no ownerDocGlobal, and as such
+      // Bug 1820734: Sometimes some nodes have no documentGlobal, and as such
       // they cannot be deserialized right now.
-      const browsingContext = node.ownerDocGlobal?.browsingContext;
+      const browsingContext = node.documentGlobal?.browsingContext;
 
       // For not yet cached nodes generate a unique id without curly braces.
       nodeId = lazy.generateUUID();

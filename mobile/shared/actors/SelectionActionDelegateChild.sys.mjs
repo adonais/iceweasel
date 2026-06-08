@@ -195,12 +195,15 @@ export class SelectionActionDelegateChild extends GeckoViewActorChild {
   }
 
   _getDefaultMagnifierPoint(aEvent) {
-    const rect = lazy.LayoutUtils.rectToScreenRect(aEvent.target.ownerGlobal, {
-      left: aEvent.clientX,
-      top: aEvent.clientY - this._accessiblecaretHeight,
-      width: 0,
-      height: 0,
-    });
+    const rect = lazy.LayoutUtils.rectToScreenRect(
+      aEvent.target.documentGlobal,
+      {
+        left: aEvent.clientX,
+        top: aEvent.clientY - this._accessiblecaretHeight,
+        width: 0,
+        height: 0,
+      }
+    );
     return { x: rect.left, y: rect.top };
   }
 

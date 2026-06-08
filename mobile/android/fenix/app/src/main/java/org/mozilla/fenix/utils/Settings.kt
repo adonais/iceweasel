@@ -460,6 +460,16 @@ class Settings(
         default = false,
     )
 
+    var isUserTikTokAttributed by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_is_user_tiktok_attributed),
+        default = false,
+    )
+
+    var isUserRedditAttributed by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_is_user_reddit_attributed),
+        default = false,
+    )
+
     var contileContextId by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_contile_context_id),
         default = { TopSites.contextId.generateAndSet().toString() },
@@ -2530,6 +2540,15 @@ class Settings(
      */
     val forceOneWeekToWorldCup: Boolean
         get() = FxNimbus.features.homepageSportsWidget.value().forceOneWeekToWorldCup
+
+    /**
+     * Nimbus-controlled minimum interval, in seconds, between Sports Widget fetches.
+     * Backed by the `fetch-throttle-seconds` variable (default 60s). Read at construction
+     * time of [org.mozilla.fenix.home.sports.SportsWidgetMiddleware]; Nimbus updates take
+     * effect on the next app launch.
+     */
+    val sportsWidgetFetchThrottleSeconds: Int
+        get() = FxNimbus.features.homepageSportsWidget.value().fetchThrottleSeconds
 
     /**
      * Debug-only: when true, the Homepage Sports Widget calls the GCP-hosted mock World

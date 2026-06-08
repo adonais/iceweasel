@@ -562,6 +562,13 @@ export class IPProtectionPanel {
 
     this.#updateSiteData();
 
+    if (this.state.paused) {
+      this.setState({ isCheckingEntitlement: true });
+      lazy.IPPProxyManager.refreshUsage().finally(() => {
+        this.setState({ isCheckingEntitlement: false });
+      });
+    }
+
     this.setState({
       isSiteExceptionsEnabled: this.isExceptionsFeatureEnabled,
       bandwidthWarning: this.#shouldShowBandwidthWarning(),

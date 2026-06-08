@@ -419,7 +419,9 @@ export class ContextMenuChild extends JSWindowActorChild {
 
   // Returns a "url"-type computed style attribute value, with the url() stripped.
   _getComputedURL(aElem, aProp) {
-    let urls = aElem.ownerGlobal.getComputedStyle(aElem).getCSSImageURLs(aProp);
+    let urls = aElem.documentGlobal
+      .getComputedStyle(aElem)
+      .getCSSImageURLs(aProp);
 
     if (!urls.length) {
       return null;
@@ -636,7 +638,7 @@ export class ContextMenuChild extends JSWindowActorChild {
     this.docShell.docViewer
       .QueryInterface(Ci.nsIDocumentViewerEdit)
       .setCommandNode(aEvent.composedTarget);
-    aEvent.composedTarget.ownerGlobal.updateCommands("contentcontextmenu");
+    aEvent.composedTarget.documentGlobal.updateCommands("contentcontextmenu");
 
     let data = {
       context,
@@ -1185,7 +1187,7 @@ export class ContextMenuChild extends JSWindowActorChild {
     }
 
     // See if the user clicked in a frame.
-    const docDefaultView = context.target.ownerGlobal;
+    const docDefaultView = context.target.documentGlobal;
 
     if (docDefaultView != docDefaultView.top) {
       context.inFrame = true;

@@ -27,8 +27,8 @@ import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.sports.SportsCardImpressionSource
 import org.mozilla.fenix.home.sports.SportsCardType
 import org.mozilla.fenix.home.sports.Team
-import org.mozilla.fenix.home.sports.WORLD_CUP_KICKOFF_UTC
 import org.mozilla.fenix.home.sports.regionGrouping
+import org.mozilla.fenix.home.sports.worldCupKickoffCountdownTarget
 import org.mozilla.fenix.home.ui.horizontalMargin
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
@@ -100,7 +100,7 @@ fun SportsWidget(
                 )
             } else {
                 CountdownPromoCard(
-                    dateInUtc = WORLD_CUP_KICKOFF_UTC,
+                    dateInUtc = worldCupKickoffCountdownTarget(),
                     actionButtonLabelResId = R.string.sports_widget_view_schedule,
                     onClick = onViewSchedule,
                     onDismiss = onCountdownWidgetDismiss,
@@ -298,7 +298,7 @@ private fun countdownFollowTeamPage(
     onFollowTeam: (CountrySelectorSource) -> Unit,
 ): SportsPage = SportsPage(type = SportsCardType.COUNTDOWN_PROMO) { pageNumber, pageCount ->
     CountdownPromoCard(
-        dateInUtc = WORLD_CUP_KICKOFF_UTC,
+        dateInUtc = worldCupKickoffCountdownTarget(),
         actionButtonLabelResId = R.string.sports_widget_country_selector_title,
         onClick = { onFollowTeam(CountrySelectorSource.COUNTDOWN_CARD_FOLLOW_TEAM_BUTTON) },
         onDismiss = null,

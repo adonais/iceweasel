@@ -48,9 +48,9 @@ export class FormValidationChild extends JSWindowActorChild {
   notifyInvalidSubmit(aInvalidElements) {
     // Show a validation message on the first focusable element.
     for (let element of aInvalidElements) {
-      // Insure that this is the FormSubmitObserver associated with the
+      // Ensure that this is the FormSubmitObserver associated with the
       // element / window this notification is about.
-      if (this.contentWindow != element.ownerGlobal.document.defaultView) {
+      if (this.contentWindow != element.documentGlobal) {
         return;
       }
 
@@ -172,14 +172,14 @@ export class FormValidationChild extends JSWindowActorChild {
     }
     this.sendAsyncMessage("FormValidation:ShowPopup", panelData);
 
-    aElement.ownerGlobal.addEventListener("pagehide", this, {
+    aElement.documentGlobal.addEventListener("pagehide", this, {
       mozSystemGroup: true,
     });
   }
 
   _hidePopup() {
     this.sendAsyncMessage("FormValidation:HidePopup", {});
-    this._element.ownerGlobal.removeEventListener("pagehide", this, {
+    this._element.documentGlobal.removeEventListener("pagehide", this, {
       mozSystemGroup: true,
     });
   }

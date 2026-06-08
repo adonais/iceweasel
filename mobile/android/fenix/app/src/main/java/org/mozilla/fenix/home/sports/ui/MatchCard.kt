@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -160,7 +161,7 @@ internal fun MatchBody(
             ) {
                 TeamSlot(team = match.home, modifier = Modifier.weight(1f))
 
-                Scoreboard(match = match, isTeamSelected = isTeamSelected)
+                Scoreboard(match = match, isTeamSelected = isTeamSelected, modifier = Modifier.weight(1f))
 
                 TeamSlot(team = match.away, modifier = Modifier.weight(1f))
             }
@@ -198,8 +199,9 @@ private fun TeamSlot(
 }
 
 @Composable
-private fun Scoreboard(match: Match, isTeamSelected: Boolean) {
+private fun Scoreboard(match: Match, isTeamSelected: Boolean, modifier: Modifier = Modifier) {
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static100),
     ) {
@@ -220,6 +222,7 @@ private fun Scoreboard(match: Match, isTeamSelected: Boolean) {
                     ),
                     style = FirefoxTheme.typography.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
             }
 
@@ -228,6 +231,7 @@ private fun Scoreboard(match: Match, isTeamSelected: Boolean) {
                     text = secondStatusSubtitle(status = match.matchStatus, time = match.time),
                     style = FirefoxTheme.typography.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
             }
         }

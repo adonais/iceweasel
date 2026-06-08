@@ -13,11 +13,18 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.AURA_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.GOOGLE_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.REDDIT_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.TIKTOK_PARTNER_ID
+import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.utils.Settings
 
 @RunWith(AndroidJUnit4::class)
 internal class AdjustMetricsServiceTest {
     val context: Context = ApplicationProvider.getApplicationContext()
+    val thirdPartySharingController = mockk<ThirdPartySharingController>(relaxed = true)
 
     val conversionEventRecorder = mockk<ConversionEventRecorder>(relaxed = true)
 
@@ -146,5 +153,135 @@ internal class AdjustMetricsServiceTest {
         )
 
         verify { conversionEventRecorder.recordConversionEvent(10) }
+    }
+
+    @Test
+    fun `WHEN the distribution is DEFAULT AND the user is meta attributed THEN sharing is enabled for META`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = true,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(META_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is DEFAULT AND the user has no Meta, TikTok, or Reddit attribution THEN sharing is enabled for Google`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is DEFAULT AND the user is TikTok attributed THEN sharing is enabled for TikTok`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = true,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(TIKTOK_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is DEFAULT AND the user is Reddit attributed THEN sharing is enabled for Reddit`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = true,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(REDDIT_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is AURA_001 THEN sharing is enabled for Aura`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.AURA_001,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(AURA_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is VIVO_001 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.VIVO_001,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
+    }
+
+    @Test
+    fun `WHEN the distribution is DT_001 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DT_001,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
+    }
+
+    @Test
+    fun `WHEN the distribution is DT_002 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DT_002,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
+    }
+
+    @Test
+    fun `WHEN the distribution is DT_003 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DT_003,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
+    }
+
+    @Test
+    fun `WHEN the distribution is XIAOMI_001 THEN all sharing is disabled`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.XIAOMI_001,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.disableAllThirdPartySharing() }
     }
 }

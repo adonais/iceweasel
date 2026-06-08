@@ -1719,6 +1719,10 @@
   <string name="tab_group_onboarding_item_title">Vytvoriť skupinu kariet</string>
   <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
   <string name="tab_group_onboarding_grid_item_description">Ak chcete karty zoskupiť, potiahnite jednu kartu na druhú.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Ak chcete vytvoriť skupinu, vyberte viacero kariet.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Zavrieť propagačné informácie o skupinách kariet</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Vyskúšajte skupiny kariet, budete menej rolovať a viac sa zabávať</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -2097,6 +2101,8 @@
   <string name="webcompat_reporter_success_snackbar_text_2">Hlásenie odoslané</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Čo sa stalo? Čo sa malo stať?</string>
+  <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
+  <string name="webcompat_reporter_etp_checkbox_text_2">Odoslať zoznam položiek blokovaných ochranou sledovania</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">Odosielať adresy URL blokované ochranou sledovania</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
@@ -2711,6 +2717,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s vás chráni pred mnohými sledovacími prvkami, ktoré zbierajú informácie o tom, čo robíte na internete.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Ďalšie informácie</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">Zablokovaný %d sledovací prvok</item>
+    <item quantity="few">Zablokované %d sledovacie prvky</item>
+    <item quantity="many">Zablokovaných %d sledovacích prvkov</item>
+    <item quantity="other">Zablokovaných %d sledovacích prvkov</item>
+  </plurals>
   <plurals name="trackers_blocked_count">
     <!--
       Trackers blocked card on homepage
@@ -2850,6 +2867,8 @@
   <string name="etp_suspected_fingerprinters_description">Umožňuje ochranu proti snímaniu odtlačkov prehliadača.</string>
   <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_known_fingerprinters_title">Známe čítačky digitálnych odtlačkov</string>
+  <!-- Label for the fingerprinters category shown in the tracking protections dashboard breakdown -->
+  <string name="tracking_dashboard_fingerprinters_category_name">Odtlačky prehliadača</string>
   <!--
     Description of the SmartBlock Enhanced Tracking Protection feature. The * symbol is intentionally hardcoded here,
     as we use it on the UI to indicate which trackers have been partially unblocked.
@@ -3104,6 +3123,8 @@
   <string name="saved_logins_sort_strategy_last_used">posledného použitia</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Ponuka pre zoradenie hesiel</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Importovať zo súboru</string>
   <!--
     Email Masks
 
@@ -3510,6 +3531,10 @@
   <string name="homepage_shortcuts_show_all_content_description">Zobraziť všetky skratky</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Pridať skratku</string>
+  <!-- Title for the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_to_homepage">Pridať na domovskú stránku</string>
+  <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_website">Pridať webovú stránku</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
   <string name="homepage_shortcuts_add_website_title">Zadajte URL adresu webovej stránky</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
@@ -3911,6 +3936,21 @@
     %s is the name of the app (for example "Firefox").
   -->
   <string name="protection_panel_banner_protected_title">%s vás stráži</string>
+  <plurals name="protection_panel_banner_protected_blocked_trackers_description">
+    <!--
+      Description text for the protection panel banner when privacy dashboard is enabled.
+      %1$d is the number of trackers blocked.
+    -->
+    <item quantity="one">Na tejto stránke bol zablokovaný %1$d sledovací prvok.</item>
+    <item quantity="few">Na tejto stránke boli zablokované %1$d sledovacie prvky.</item>
+    <item quantity="many">Na tejto stránke bolo zablokovaných %1$d sledovacích prvkov.</item>
+    <item quantity="other">Na tejto stránke bolo zablokovaných %1$d sledovacích prvkov.</item>
+  </plurals>
+  <!--
+    Description text for the protection panel banner when privacy dashboard is enabled.
+    and there are no trackers blocked.
+  -->
+  <string name="protection_panel_banner_protected_no_blocked_trackers_description">Ste chránení.</string>
   <!-- Description text for the protection panel banner when tracking protection is enabled. -->
   <string name="protection_panel_banner_protected_description">Ste chránení. Ak niečo zistíme, dáme vám vedieť.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
@@ -4616,6 +4656,11 @@
   -->
   <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, naživo</string>
   <!--
+    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
+    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
+  -->
+  <string name="sports_widget_match_elapsed_minutes">Odohratý čas v minútach: %1$s</string>
+  <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
     %2$d is the current page number, and %3$d is the total number of pages.
@@ -4626,6 +4671,8 @@
     %1$d is the current page number, and %2$d is the total number of pages.
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Konečné výsledky Majstrovstiev sveta, strana %1$d z %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
+  <string name="sports_widget_final_results_content_description">Konečné výsledky Majstrovstiev sveta</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Odstrániť Majstrovstvá sveta z domovskej stránky</string>
   <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
@@ -4642,6 +4689,12 @@
   <string name="sports_widget_error_connection_offline_description">Skontrolujte svoje internetové pripojenie a skúste to znova.</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Skupinová fáza</string>
+  <!-- Sports widget error card title shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_title">Informácie o zápase momentálne nie sú k dispozícii.</string>
+  <!-- Sports widget error card description shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed_description">Skúste to znova o pár minút.</string>
+  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
+  <string name="sports_widget_team_to_be_determined">Tím bude upresnený</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
@@ -4656,6 +4709,28 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Vyhlásenie o ochrane osobných údajov</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Ďalšie informácie</string>
+  <!--
+    Firefox Labs
+
+    Firefox Labs is the name of a screen in Settings to allow users to learn about
+    experimental and in-development features, and turn those features on and off.
+    The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
+    in English.
+  -->
+  <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
+  <!-- Banner title text on the Firefox Labs screen. -->
+  <string name="firefox_labs_banner_title_2">Vyskúšajte naše experimentálne funkcie!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">Sú stále vo fáze vývoja a vyvíjajú sa, čo môže ovplyvniť fungovanie %su.</string>
+  <!-- The link text shown when a feedback URL for a Firefox Labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
+  <string name="firefox_labs_share_feedback">Zdieľať spätnú väzbu</string>
+  <!-- Content description for the share feedback link on a Firefox Labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the Firefox Labs feature. -->
+  <string name="firefox_labs_share_feedback_content_description">Zdieľať spätnú väzbu pre funkciu %s.</string>
+  <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
+  <string name="firefox_labs_restore_default_button_text">Obnoviť predvolené</string>
   <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
   <string name="firefox_labs_feature_dialog_title">Vyžaduje sa reštart</string>
   <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
@@ -4666,6 +4741,10 @@
   <string name="firefox_labs_restore_defaults_dialog_title">Vyžaduje sa reštart</string>
   <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
   <string name="firefox_labs_restore_defaults_dialog_message">Ak chcete obnoviť predvolené nastavenia, reštartujte %s.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_enable_dialog_message">Ak chcete túto funkciu zapnúť, reštartujte %s.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_disable_dialog_message">Ak chcete túto funkciu vypnúť, reštartujte %s.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">Momentálne nie sú k dispozícii žiadne experimentálne funkcie na vyskúšanie</string>
 </resources>

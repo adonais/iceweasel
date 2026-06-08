@@ -31,4 +31,28 @@
   <string name="protections_dashboard_category_social">소셜</string>
   <!-- Tracker category: Other trackers -->
   <string name="protections_dashboard_category_others">기타</string>
+  <!-- Title shown in the protection dashboard header next to the shield icon -->
+  <string name="mozac_protections_dashboard_trackers_blocked_this_week_title">이번 주에 차단된 추적기</string>
+  <!--
+    Title shown when no trackers have been blocked yet
+    %1$s will be replaced by the app name (e.g. Firefox Focus)
+  -->
+  <string name="mozac_protections_dashboard_empty_title">%1$s는 탐색할 때 추적기를 차단합니다.</string>
+  <!-- Subtitle shown when no trackers have been blocked yet -->
+  <string name="mozac_protections_dashboard_empty_subtitle">여기서 볼 수 있습니다.</string>
+  <plurals name="mozac_protections_dashboard_trackers_count">
+    <!--
+      Label used for the number of trackers blocked.
+      %1$d is the number of trackers.
+    -->
+    <item quantity="other">추적기 %1$d개</item>
+  </plurals>
+  <plurals name="mozac_protections_dashboard_total_blocked_since">
+    <!--
+      Footer line shown in the dashboard summarizing total trackers blocked
+      since a specific date. %1$s is the trackers count phrase (e.g.
+      "5,305 trackers"). %2$s is the formatted date (e.g. "February 23, 2026").
+    -->
+    <item quantity="other">%2$s 이후에 %1$s개 차단됨</item>
+  </plurals>
 </resources>

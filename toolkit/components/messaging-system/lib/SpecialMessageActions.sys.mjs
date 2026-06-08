@@ -266,6 +266,7 @@ export const SpecialMessageActions = {
       "browser.smartwindow.sidebar.openByDefault",
       "browser.crashReports.unsubmittedCheck.autoSubmit2",
       "browser.dataFeatureRecommendations.enabled",
+      "browser.ipProtection.bandwidth.enabled",
       "browser.ipProtection.blockIPProtectionCallouts",
       "browser.ipProtection.enabled",
       "browser.ipProtection.optedOut",
