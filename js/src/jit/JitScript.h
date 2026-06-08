@@ -162,7 +162,6 @@ class alignas(uintptr_t) ICScript final : public TrailingArray<ICScript> {
 
   uint32_t bytecodeSize() const { return bytecodeSize_; }
 
-  uint32_t warmUpCount() const { return warmUpCount_; }
   void resetWarmUpCount(uint32_t count) { warmUpCount_ = count; }
 
   static constexpr size_t offsetOfFirstStub(uint32_t entryIndex) {
