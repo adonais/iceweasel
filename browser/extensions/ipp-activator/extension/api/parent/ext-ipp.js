@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* global ExtensionAPI, ExtensionCommon, Cr */
+/* global ExtensionAPI, ExtensionCommon, Cr, XPCOMUtils */
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -13,11 +13,19 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPProxyStates:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "tabTracker", () => {
   return lazy.ExtensionParent.apiManager.global.tabTracker;
 });
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "siteExceptionsEnabled",
+  "browser.ipProtection.features.siteExceptions",
+  false
+);
 
 const PREF_DYNAMIC_TAB_BREAKAGES =
   "extensions.ippactivator.dynamicTabBreakages";
@@ -39,7 +47,9 @@ this.ippActivator = class extends ExtensionAPI {
           register: fire => {
             const topics = ["IPPProxyManager:StateChanged"];
             const observer = _event => {
-              fire.async();
+              fire.async(
+                lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE
+              );
             };
 
             topics.forEach(topic =>
@@ -53,12 +63,6 @@ this.ippActivator = class extends ExtensionAPI {
             };
           },
         }).api(),
-        isTesting() {
-          return Services.prefs.getBoolPref(
-            "extensions.ippactivator.testMode",
-            false
-          );
-        },
         hideMessage(tabId) {
           try {
             const tab = tabId
@@ -82,6 +86,9 @@ this.ippActivator = class extends ExtensionAPI {
         },
         isIPPActive() {
           return lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE;
+        },
+        getRegion() {
+          return lazy.Region.home;
         },
         getDynamicTabBreakages() {
           try {
@@ -167,12 +174,7 @@ this.ippActivator = class extends ExtensionAPI {
           }
         },
         hasExclusion(url) {
-          if (
-            !Services.prefs.getBoolPref(
-              "browser.ipProtection.features.siteExceptions",
-              false
-            )
-          ) {
+          if (!lazy.siteExceptionsEnabled) {
             return false;
           }
 
@@ -315,6 +317,22 @@ this.ippActivator = class extends ExtensionAPI {
 
             Services.obs.addObserver(observer, "perm-changed");
             return () => Services.obs.removeObserver(observer, "perm-changed");
+          },
+        }).api(),
+        onRegionChanged: new ExtensionCommon.EventManager({
+          context,
+          name: "ippActivator.onRegionChanged",
+          register: fire => {
+            const observer = {
+              observe(_subject, topic) {
+                if (topic === "browser-region-updated") {
+                  fire.async(lazy.Region.home);
+                }
+              },
+            };
+            Services.obs.addObserver(observer, "browser-region-updated");
+            return () =>
+              Services.obs.removeObserver(observer, "browser-region-updated");
           },
         }).api(),
       },

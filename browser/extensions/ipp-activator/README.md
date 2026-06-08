@@ -35,7 +35,6 @@ Notes:
     ```
     Supported modifiers: `strong`.
 - `condition` (optional): a Condition object that controls when to show the notification. If omitted, the rule always matches when the domain matches.
-- Testing mode is detected via the pref `extensions.ippactivator.testMode` (set to true by tests and by `npm run start`).
 - Inject dynamic breakages at runtime via string prefs to JSON arrays:
   - `extensions.ippactivator.dynamicTabBreakages` for tab-triggered breakages
   - `extensions.ippactivator.dynamicWebRequestBreakages` for webRequest-triggered breakages
@@ -145,6 +144,24 @@ Supported types
       "name": "sessionid",
       "value_contain": "abc"
     }
+    ```
+
+- **vpn**: checks whether IP Protection (IPP) is currently active.
+  - Fields:
+    - `active` (boolean, required): expected IPP state. Use `true` to match when IPP is active, `false` to match when it is not.
+  - Result: true if the current IPP state equals `active`. The condition reacts to IPP state changes and re-evaluates automatically.
+  - Example:
+    ```json
+    { "type": "vpn", "active": true }
+    ```
+
+- **region**: matches the user's home region against a list of ISO 3166-1 alpha-2 codes.
+  - Fields:
+    - `regions` (array of strings, required): list of region codes (uppercase, e.g. `"US"`, `"DE"`). Result is true when the user's current home region is in the list.
+  - Notes: the condition observes `browser-region-updated` and re-evaluates when the home region changes.
+  - Example:
+    ```json
+    { "type": "region", "regions": ["US", "CA"] }
     ```
 
 Composing conditions

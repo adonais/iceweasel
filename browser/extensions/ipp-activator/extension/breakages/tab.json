@@ -6,6 +6,10 @@
       "type": "and",
       "conditions": [
         {
+          "type": "vpn",
+          "active": true
+        },
+        {
           "type": "not",
           "condition": {
             "type": "cookie",
@@ -28,12 +32,21 @@
     "domains": ["reddit.com"],
     "l10nId": "ipp-activator-breakage-sign-in-warning",
     "condition": {
-      "type": "not",
-      "condition": {
-        "type": "cookie",
-        "domain": ".reddit.com",
-        "name": "reddit_session"
-      }
+      "type": "and",
+      "conditions": [
+        {
+          "type": "vpn",
+          "active": true
+        },
+        {
+          "type": "not",
+          "condition": {
+            "type": "cookie",
+            "domain": ".reddit.com",
+            "name": "reddit_session"
+          }
+        }
+      ]
     }
   },
   {
@@ -43,6 +56,10 @@
       "wiki.mozilla.org",
       "bugs.webkit.org"
     ],
-    "l10nId": "ipp-activator-breakage-turn-off-warning"
+    "l10nId": "ipp-activator-breakage-turn-off-warning",
+    "condition": {
+      "type": "vpn",
+      "active": true
+    }
   }
 ]

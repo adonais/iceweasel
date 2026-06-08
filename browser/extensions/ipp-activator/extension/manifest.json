@@ -19,6 +19,8 @@
       "conditions/test.js",
       "conditions/cookie.js",
       "conditions/url.js",
+      "conditions/vpn.js",
+      "conditions/region.js",
       "conditions/factory.js",
       "bg.js"
     ],
