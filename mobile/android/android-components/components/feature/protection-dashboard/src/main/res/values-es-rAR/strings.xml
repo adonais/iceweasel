@@ -56,7 +56,7 @@
       since a specific date. %1$s is the trackers count phrase (e.g.
       "5,305 trackers"). %2$s is the formatted date (e.g. "February 23, 2026").
     -->
-    <item quantity="one">%1$s bloqueado desde %2$s</item>
-    <item quantity="other">%1$s bloqueado desde %2$s</item>
+    <item quantity="one">%1$s bloqueado desde el %2$s</item>
+    <item quantity="other">%1$s bloqueados desde el %2$s</item>
   </plurals>
 </resources>

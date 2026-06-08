@@ -2090,7 +2090,7 @@
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
   <string name="webcompat_reporter_success_snackbar_text_2">Informe enviado</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
-  <string name="webcompat_reporter_problem_description_placeholder_text_2">¿Qué pasó? ¿Qué esperaba que pasara? Proporcione los pasos para reproducir el problema.</string>
+  <string name="webcompat_reporter_problem_description_placeholder_text_2">¿Qué pasó? ¿Qué esperabas que pasara? Proporcioná los pasos para reproducir el problema.</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">¿Qué pasó? ¿Qué debería haber pasado?</string>
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->

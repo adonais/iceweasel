@@ -8,47 +8,50 @@
 
 <resources>
   <!-- Title shown in the protection dashboard indicating the user is protected -->
-  <string name="mozac_protections_dashboard_youre_protected">Προστατεύεστε</string>
+  <string name="mozac_protections_dashboard_youre_protected">Ochrona jest włączona</string>
   <plurals name="mozac_protections_dashboard_trackers_blocked_this_week">
     <!--
       Label shown below the tracker count in the dashboard. The count is displayed separately
       above this string and is used to select the correct plural form. Do not include the number in
       the translation.
     -->
-    <item quantity="one">Αποκλεισμένος ιχνηλάτης αυτήν την εβδομάδα</item>
-    <item quantity="other">Αποκλεισμένοι ιχνηλάτες αυτήν την εβδομάδα</item>
+    <item quantity="one">Zablokowany element śledzący w\u00a0tym tygodniu</item>
+    <item quantity="few">Zablokowane elementy śledzące w\u00a0tym tygodniu</item>
+    <item quantity="other">Zablokowanych elementów śledzących w\u00a0tym tygodniu</item>
   </plurals>
   <plurals name="mozac_protections_dashboard_data_saved">
     <!-- Label showing data saved in megabytes. %1$d is the number of MB saved -->
-    <item quantity="one">Εξοικονομήθηκε %1$d MB</item>
-    <item quantity="other">Εξοικονομήθηκαν %1$d MB</item>
+    <item quantity="one">Zaoszczędzono %1$d\u00a0MB</item>
+    <item quantity="few">Zaoszczędzono %1$d\u00a0MB</item>
+    <item quantity="other">Zaoszczędzono %1$d\u00a0MB</item>
   </plurals>
   <!-- Section header for tracker category breakdown -->
-  <string name="protections_dashboard_where_they_came_from">Από πού προήλθαν</string>
+  <string name="protections_dashboard_where_they_came_from">Skąd się wzięły</string>
   <!-- Tracker category: Advertising trackers -->
-  <string name="protections_dashboard_category_ads">Διαφημίσεις</string>
+  <string name="protections_dashboard_category_ads">Reklamy</string>
   <!-- Tracker category: Analytics trackers -->
-  <string name="protections_dashboard_category_analytics">Ανάλυσης</string>
+  <string name="protections_dashboard_category_analytics">Analityka</string>
   <!-- Tracker category: Social media trackers -->
-  <string name="protections_dashboard_category_social">Κοινωνικών δικτύων</string>
+  <string name="protections_dashboard_category_social">Społecznościowe</string>
   <!-- Tracker category: Other trackers -->
-  <string name="protections_dashboard_category_others">Άλλoi</string>
+  <string name="protections_dashboard_category_others">Inne</string>
   <!-- Title shown in the protection dashboard header next to the shield icon -->
-  <string name="mozac_protections_dashboard_trackers_blocked_this_week_title">Αποκλεισμένοι ιχνηλάτες αυτήν την εβδομάδα</string>
+  <string name="mozac_protections_dashboard_trackers_blocked_this_week_title">Zablokowane elementy śledzące w\u00a0tym tygodniu</string>
   <!--
     Title shown when no trackers have been blocked yet
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
-  <string name="mozac_protections_dashboard_empty_title">Το %1$s αποκλείει ιχνηλάτες κατά την περιήγησή σας.</string>
+  <string name="mozac_protections_dashboard_empty_title">%1$s blokuje elementy śledzące podczas przeglądania.</string>
   <!-- Subtitle shown when no trackers have been blocked yet -->
-  <string name="mozac_protections_dashboard_empty_subtitle">Θα τους δείτε εδώ.</string>
+  <string name="mozac_protections_dashboard_empty_subtitle">Zobaczysz je tutaj.</string>
   <plurals name="mozac_protections_dashboard_trackers_count">
     <!--
       Label used for the number of trackers blocked.
       %1$d is the number of trackers.
     -->
-    <item quantity="one">%1$d ιχνηλάτης</item>
-    <item quantity="other">%1$d ιχνηλάτες</item>
+    <item quantity="one">%1$d element śledzący</item>
+    <item quantity="few">%1$d elementy śledzące</item>
+    <item quantity="other">%1$d elementów śledzących</item>
   </plurals>
   <plurals name="mozac_protections_dashboard_total_blocked_since">
     <!--
@@ -56,7 +59,8 @@
       since a specific date. %1$s is the trackers count phrase (e.g.
       "5,305 trackers"). %2$s is the formatted date (e.g. "February 23, 2026").
     -->
-    <item quantity="one">Το %1$s αποκλείστηκε από το %2$s</item>
-    <item quantity="other">Τα %1$s αποκλείστηκαν από το %2$s</item>
+    <item quantity="one">%1$s zablokowany od %2$s</item>
+    <item quantity="few">%1$s zablokowane od %2$s</item>
+    <item quantity="other">%1$s zablokowanych od %2$s</item>
   </plurals>
 </resources>

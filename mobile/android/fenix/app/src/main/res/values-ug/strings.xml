@@ -23,6 +23,8 @@
   <string name="content_description_normal_browsing">ئادەتتىكى كۆز يۈگۈرتۈش</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">ئىزدەيدۇ ياكى ئادرېس كىرگۈزۈلىدۇ</string>
+  <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+  <string name="search_hint_short">ئىزدە</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">توردىن ئىزدەيدۇ</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -711,6 +713,8 @@
   <string name="nova_onboarding_marketing_body_link_text">سانلىق مەلۇماتنى قانداق ئىشلىتىمىز</string>
   <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Firefox ياردەم</string>
+  <!-- Marketing onboarding primary button text. -->
+  <string name="nova_onboarding_marketing_primary_button_text_2">يول قويۇپ ۋە داۋاملاشتۇر</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text">ياق رەھمەت</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -1600,6 +1604,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">شەخسىي بەتكۈچ ئوچۇق: %1$s. چېكىلسە بەتكۈچ ئالمىشىدۇ.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d بەتكۈچ گۇرۇپپىسى ئوچۇق. بەتكۈچ ئالماشتۇرۇشتا چېكىلىدۇ.</item>
+    <item quantity="other">%1$d بەتكۈچ گۇرۇپپىسى ئوچۇق. بەتكۈچ ئالماشتۇرۇشتا چېكىلىدۇ.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1613,6 +1625,8 @@
   <string name="tab_manager_search_bar_placeholder">بەتكۈچ ئىزدەيدۇ</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">يېقىندا تاقالغان بەتكۈچلەر</string>
+  <!-- Text shown in the menu to select all tabs. -->
+  <string name="tab_tray_menu_select_all_tabs">ھەممىنى تاللا</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">ھېسابات تەڭشىكى</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1675,6 +1689,14 @@
   <string name="pwa_site_controls_title_private">%1$s (شەخسىي ھالەت)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">بەتكۈچ ئىزدەشنى ئاچىدۇ</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">بەتكۈچ گۇرۇپپىسى قۇرىدۇ</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">بىر بەتكە يەنە بىر بەتكۈچكە سۆرەلسە ئۇلارنى گۇرۇپپىلايدۇ.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">بىر گۇرۇپپا قۇرۇشتا كۆپ بەتكۈچ تاللىنىدۇ.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">بەتكۈچ گۇرۇپپا ئىشلىتىش ئەسكەرتىشىنى ياپىدۇ</string>
   <!--
     Tab Group
 
@@ -1684,6 +1706,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">گۇرۇپپا تەھرىر</string>
   <string name="create_tab_group_save_button">ساقلا</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">يېڭى گۇرۇپپا، سۆرەش تۇتقۇچىنى يىغىدۇ</string>
   <!--
     Default tab group name when creating a tab group
     %d is the number of existing tab groups + 1.
@@ -1693,6 +1717,10 @@
   <string name="create_tab_group_name_label">ئىسمى</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">قوش</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">بەتكۈچ گۇرۇپپىسىغا قوشىدۇ، سۆرەش تۇتقۇچىنى يىغىدۇ</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">يېڭى بەتكۈچ گۇرۇپپىسىغا قوشىدۇ</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">يېڭى بەتكۈچ گۇرۇپپىسى</string>
   <plurals name="tab_group_tabs_count_subtitle">
@@ -1703,6 +1731,25 @@
     <item quantity="one">%1$d بەتكۈچ</item>
     <item quantity="other">%1$d بەتكۈچ</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">بەتكۈچ گۇرۇپپىسى %1$s غا قوشىدۇ، %2$d بەتكۈچ، رەڭگى %3$s</item>
+    <item quantity="other">بەتكۈچ گۇرۇپپىسى %1$s غا قوشىدۇ، %2$d بەتكۈچ، رەڭگى %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%1$s بەتكۈچ گۇرۇپپىسىنى %2$d بەتكۈچكە ھەمبەھىرلەيدۇ</item>
+    <item quantity="other">%1$s بەتكۈچ گۇرۇپپىسىنى %2$d بەتكۈچكە ھەمبەھىرلەيدۇ</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">بەتكۈچ گۇرۇپپىسىنى كۆرسىتىپ، سۆرەش تۇتقۇچىنى يىغىدۇ</string>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">بەتكۈچ گۇرۇپپا ئۆچۈرەمدۇ؟</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->

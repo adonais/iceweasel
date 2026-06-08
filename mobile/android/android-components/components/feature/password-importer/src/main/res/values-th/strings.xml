@@ -7,6 +7,10 @@
 -->
 
 <resources>
+  <!-- Title for the passwords import loading dialog. -->
+  <string name="mozac_feature_passwords_importer_dialog_title">กำลังนำเข้ารหัสผ่าน</string>
+  <!-- Description for the passwords import loading dialog. -->
+  <string name="mozac_feature_passwords_importer_dialog_description">โปรดเปิดหน้าจอนี้ค้างไว้ การดำเนินการนี้ใช้เวลาเพียงไม่กี่วินาที</string>
   <!-- Label for the cancel action on the passwords import loading dialog. -->
   <string name="mozac_feature_passwords_importer_dialog_cancel">ยกเลิก</string>
 </resources>
