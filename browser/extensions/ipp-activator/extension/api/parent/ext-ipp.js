@@ -31,6 +31,9 @@ const PREF_DYNAMIC_TAB_BREAKAGES =
   "extensions.ippactivator.dynamicTabBreakages";
 const PREF_DYNAMIC_WEBREQUEST_BREAKAGES =
   "extensions.ippactivator.dynamicWebRequestBreakages";
+const PREF_TAB_BREAKAGES_URL = "extensions.ippactivator.tabBreakagesUrl";
+const PREF_WEBREQUEST_BREAKAGES_URL =
+  "extensions.ippactivator.webrequestBreakagesUrl";
 const PREF_NOTIFIED_DOMAINS = "extensions.ippactivator.notifiedDomains";
 
 this.ippActivator = class extends ExtensionAPI {
@@ -113,6 +116,15 @@ this.ippActivator = class extends ExtensionAPI {
           } catch (_) {
             return [];
           }
+        },
+        getTabBreakagesUrl() {
+          return Services.prefs.getStringPref(PREF_TAB_BREAKAGES_URL, "");
+        },
+        getWebRequestBreakagesUrl() {
+          return Services.prefs.getStringPref(
+            PREF_WEBREQUEST_BREAKAGES_URL,
+            ""
+          );
         },
         getNotifiedDomains() {
           try {

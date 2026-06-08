@@ -54,27 +54,29 @@ class IPPAddonActivator {
     this.#initialized = true;
   }
 
+  async #fetchBaseBreakages(url) {
+    try {
+      const res = await fetch(url);
+      const base = await res.json();
+      return Array.isArray(base) ? base : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
   async #loadAndRebuildBreakages() {
     if (!this.#tabBaseBreakages) {
-      try {
-        const url = browser.runtime.getURL("breakages/tab.json");
-        const res = await fetch(url);
-        const base = await res.json();
-        this.#tabBaseBreakages = Array.isArray(base) ? base : [];
-      } catch (e) {
-        this.#tabBaseBreakages = [];
-      }
+      const customUrl = await browser.ippActivator.getTabBreakagesUrl();
+      this.#tabBaseBreakages = await this.#fetchBaseBreakages(
+        browser.runtime.getURL(customUrl || "breakages/tab.json")
+      );
     }
 
     if (!this.#webrequestBaseBreakages) {
-      try {
-        const url = browser.runtime.getURL("breakages/webrequest.json");
-        const res = await fetch(url);
-        const base = await res.json();
-        this.#webrequestBaseBreakages = Array.isArray(base) ? base : [];
-      } catch (e) {
-        this.#webrequestBaseBreakages = [];
-      }
+      const customUrl = await browser.ippActivator.getWebRequestBreakagesUrl();
+      this.#webrequestBaseBreakages = await this.#fetchBaseBreakages(
+        browser.runtime.getURL(customUrl || "breakages/webrequest.json")
+      );
     }
 
     let dynamicTab = [];
