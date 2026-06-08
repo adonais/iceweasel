@@ -733,7 +733,16 @@ async function gotoPref(
     if (
       !(!document.location.hash && category == kDefaultCategoryInternalName)
     ) {
-      document.location.hash = friendlyName;
+      let targetHash = "#" + friendlyName;
+      if (document.location.hash != targetHash) {
+        if (aShowReason == "Click") {
+          // A user clicked on a category, so add a history entry so back navigates between panes.
+          history.pushState(category, document.title, targetHash);
+        } else {
+          // Adding a new entry here would trap the back button on about:preferences.
+          history.replaceState(category, document.title, targetHash);
+        }
+      }
     }
   }
   // Treat back/forward navigations (aShowReason == "Hash") as visits to the

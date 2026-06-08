@@ -227,3 +227,109 @@ add_task(async function test_back_button_from_subpane() {
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
+
+/**
+ * Bug 2040444 - Tests that when visiting the URL for a subcategory like
+ * #general-translations after visiting an external URL, the back
+ * button exits about:preferences and takes you back through the
+ * history to the external URL.
+ */
+add_task(async function back_button_exits_subcategorized_hash() {
+  const STARTING_URL = "https://example.com/";
+
+  // open a new tab on an external page
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, STARTING_URL);
+
+  // navigate to bare about:preferences on same tab
+  let bareLoaded = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false,
+    url => url == "about:preferences"
+  );
+  BrowserTestUtils.startLoadingURIString(
+    tab.linkedBrowser,
+    "about:preferences"
+  );
+  await bareLoaded;
+  await TestUtils.waitForCondition(
+    () => tab.linkedBrowser.contentWindow?.gLastCategory?.category,
+    "Waiting for bare about:preferences gotoPref to finish"
+  );
+
+  // visit the subcategorized URL and wait for it to settle on #languages
+  BrowserTestUtils.startLoadingURIString(
+    tab.linkedBrowser,
+    "about:preferences#languages-translations"
+  );
+  await TestUtils.waitForCondition(
+    () => tab.linkedBrowser.contentWindow?.location.hash == "#languages",
+    "Waiting for #languages-translations to normalize to #languages"
+  );
+  is(
+    tab.linkedBrowser.contentWindow.location.hash,
+    "#languages",
+    "Hash normalized from #languages-translations to #languages"
+  );
+
+  // press back twice to land back on the starting page
+  tab.linkedBrowser.goBack();
+  await TestUtils.waitForCondition(
+    () => tab.linkedBrowser.contentWindow?.location.hash == "",
+    "Waiting for first back press to clear the hash"
+  );
+
+  let secondBackLoaded = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false,
+    url => url == STARTING_URL
+  );
+  tab.linkedBrowser.goBack();
+  await secondBackLoaded;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    STARTING_URL,
+    "Two back presses return to the original starting page"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+/**
+ * Bug 2040444 - Tests that clicking between top-level categories
+ * still leaves a history entry, so pressing back returns the user
+ * to the previous pane within about:preferences.
+ */
+add_task(async function click_navigation_pushes_history() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:preferences" },
+    async browser => {
+      let win = browser.contentWindow;
+      await TestUtils.waitForCondition(
+        () => win.gLastCategory?.category,
+        "Waiting for initial gotoPref to finish"
+      );
+
+      let paneShown = BrowserTestUtils.waitForEvent(win.document, "paneshown");
+      win.gotoPref("panePrivacy");
+      await paneShown;
+
+      is(win.location.hash, "#privacy", "Hash updated to privacy after click");
+      ok(browser.canGoBack, "Back navigation available after category click");
+
+      let backPaneShown = BrowserTestUtils.waitForEvent(
+        win.document,
+        "paneshown"
+      );
+      browser.goBack();
+      await backPaneShown;
+
+      is(win.location.hash, "", "Hash returns to empty after pressing back");
+      is(
+        win.gLastCategory.category,
+        "paneSync",
+        "Category returns to paneSync after pressing back"
+      );
+    }
+  );
+});
