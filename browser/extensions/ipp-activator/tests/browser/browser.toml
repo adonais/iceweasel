@@ -17,3 +17,5 @@ support-files = ["head.js"]
 ["browser_conditions_vpn.js"]
 
 ["browser_flow.js"]
+
+["browser_telemetry.js"]
