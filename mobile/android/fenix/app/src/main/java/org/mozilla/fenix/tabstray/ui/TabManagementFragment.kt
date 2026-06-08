@@ -178,9 +178,12 @@ class TabManagementFragment : Fragment() {
                 )
             }
 
-            override fun onDragStart(preserveSelectMode: Boolean) {
+            override fun onDragStart(sourceKey: String, preserveSelectMode: Boolean) {
                 tabsTrayStore.dispatch(
-                    TabsTrayAction.TabDragStart(preserveSelectMode),
+                    TabsTrayAction.TabDragStart(
+                        sourceId = sourceKey,
+                        preserveSelectMode = preserveSelectMode,
+                    ),
                 )
             }
         }

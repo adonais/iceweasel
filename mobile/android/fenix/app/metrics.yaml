@@ -7541,6 +7541,11 @@ tabs_tray:
     type: event
     description: |
       A user dragged a tab in the tabs tray after long-pressing it.
+    extra_keys:
+      item_type:
+        description: |
+          The type of item dragged. One of "tab", "tab_group", or "unknown".
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2038021
     data_reviews:

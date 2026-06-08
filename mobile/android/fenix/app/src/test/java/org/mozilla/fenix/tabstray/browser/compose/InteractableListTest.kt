@@ -440,7 +440,7 @@ class InteractableListTest {
         reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), true)
         reorderState.onDrag(offset = 50f, preserveSelectMode = true) // 50 down
 
-        verify { handler.onDragStart(true) }
+        verify { handler.onDragStart(sourceKey = "key1", preserveSelectMode = true) }
     }
 
     @Test
@@ -471,7 +471,7 @@ class InteractableListTest {
         reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), true)
         reorderState.onDrag(offset = 50f, preserveSelectMode = false) // 50 down
 
-        verify { handler.onDragStart(false) }
+        verify { handler.onDragStart(sourceKey = "key1", preserveSelectMode = false) }
     }
 
     @Test

@@ -288,7 +288,12 @@ class GridInteractionState internal constructor(
     internal fun onDrag(offset: Offset, preserveSelectMode: Boolean) {
         draggedItem = draggedItem.incrementCumulatedOffset(offset)
         if (!moved && draggedItem.cumulatedOffset.getDistance() > touchSlop) {
-            tabInteractionHandler.onDragStart(preserveSelectMode)
+            (draggedItem as? InteractionState.Grid.Active)?.let { active ->
+                tabInteractionHandler.onDragStart(
+                    sourceKey = active.key,
+                    preserveSelectMode = preserveSelectMode,
+                )
+            }
             moved = true
         }
 

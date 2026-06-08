@@ -142,8 +142,8 @@ class ReorderableListTest {
                     placeAfter = initialTab.index < newTab.index,
                 )
             },
-            onExitLongPress = {
-                handler.onDragStart(preserveSelectMode = true)
+            onExitLongPress = { sourceKey ->
+                handler.onDragStart(sourceKey = sourceKey as String, preserveSelectMode = true)
             },
         )
     }

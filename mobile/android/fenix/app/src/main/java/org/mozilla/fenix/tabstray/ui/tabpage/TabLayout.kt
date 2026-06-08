@@ -1111,8 +1111,11 @@ private fun ReorderableTabList(
             }
         },
         ignoredItems = ignoredItems.toList(),
-        onExitLongPress = {
-            tabInteractionHandler.onDragStart(preserveSelectMode = isInMultiSelectMode)
+        onExitLongPress = { sourceKey ->
+            tabInteractionHandler.onDragStart(
+                sourceKey = sourceKey as String,
+                preserveSelectMode = isInMultiSelectMode,
+            )
         },
     )
     LaunchedEffect(selectionMode, reorderState.draggingItemKey) {

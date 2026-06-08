@@ -266,7 +266,12 @@ class ListInteractionState internal constructor(
         draggedItem = draggedItem.incrementCumulatedOffset(offset)
         if (!moved && abs(draggedItem.cumulatedOffset) > touchSlop) {
             draggedItem = draggedItem.markAsMoved()
-            tabInteractionHandler.onDragStart(preserveSelectMode)
+            (draggedItem as? InteractionState.List.Active)?.let { active ->
+                tabInteractionHandler.onDragStart(
+                    sourceKey = active.key,
+                    preserveSelectMode = preserveSelectMode,
+                )
+            }
             moved = true
         }
         val draggingItem = draggedItem as? InteractionState.List.Active ?: return

@@ -30,9 +30,10 @@ interface TabInteractionHandler {
 
     /**
      * Called when a drag starts
+     * @param sourceKey: Key of the item being dragged.
      * @param preserveSelectMode: Whether select mode should be preserved on a drag.
      */
-    fun onDragStart(preserveSelectMode: Boolean)
+    fun onDragStart(sourceKey: String, preserveSelectMode: Boolean)
 }
 
 /**
@@ -51,7 +52,7 @@ object NoOpTabInteractionHandler : TabInteractionHandler {
         // no op
     }
 
-    override fun onDragStart(preserveSelectMode: Boolean) {
+    override fun onDragStart(sourceKey: String, preserveSelectMode: Boolean) {
         // no op
     }
 }

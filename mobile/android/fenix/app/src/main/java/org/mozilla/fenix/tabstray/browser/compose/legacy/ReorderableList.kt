@@ -49,7 +49,7 @@ fun createListReorderState(
     onMove: (LazyListItemInfo, LazyListItemInfo) -> Unit,
     ignoredItems: List<Any>,
     onLongPress: (LazyListItemInfo) -> Unit = {},
-    onExitLongPress: () -> Unit = {},
+    onExitLongPress: (sourceKey: Any) -> Unit = {},
 ): ListReorderState {
     val scope = rememberCoroutineScope()
     val touchSlop = LocalViewConfiguration.current.touchSlop
@@ -90,7 +90,7 @@ class ListReorderState internal constructor(
     private val onMove: (LazyListItemInfo, LazyListItemInfo) -> Unit,
     private val ignoredItems: List<Any>,
     private val onLongPress: (LazyListItemInfo) -> Unit,
-    private val onExitLongPress: () -> Unit,
+    private val onExitLongPress: (sourceKey: Any) -> Unit,
 ) {
     var draggingItemKey by mutableStateOf<Any?>(null)
         private set
@@ -163,7 +163,7 @@ class ListReorderState internal constructor(
         val draggingItem = draggingItemLayoutInfo ?: return
 
         if (!moved && abs(draggingItemCumulatedOffset) > touchSlop) {
-            onExitLongPress()
+            draggingItemKey?.let { onExitLongPress(it) }
         }
         val startOffset = draggingItem.offset + draggingItemOffset
         val endOffset = startOffset + draggingItem.size

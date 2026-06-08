@@ -119,7 +119,16 @@ class TabsTrayTelemetryMiddleware(
             }
 
             is TabsTrayAction.TabDragStart -> {
-                TabsTray.tabLongPressDrag.record(NoExtras())
+                val itemType = when (
+                    store.state.normalTabsState.items.find { it.id == action.sourceId }
+                ) {
+                    is TabsTrayItem.TabGroup -> TabItemType.TAB_GROUP.telemetryId
+                    is TabsTrayItem.Tab -> TabItemType.TAB.telemetryId
+                    null -> TabItemType.UNKNOWN.telemetryId
+                }
+                TabsTray.tabLongPressDrag.record(
+                    TabsTray.TabLongPressDragExtra(itemType = itemType),
+                )
             }
 
             is TabsTrayAction.ReorderTabsTrayItem -> {
@@ -240,5 +249,15 @@ class TabsTrayTelemetryMiddleware(
                 // no-op
             }
         }
+    }
+
+    /**
+     * Enum representing the type of tabs tray item.
+     * @property telemetryId The telemetry identifier.
+     */
+    enum class TabItemType(val telemetryId: String) {
+        TAB("tab"),
+        TAB_GROUP("tab_group"),
+        UNKNOWN("unknown"),
     }
 }

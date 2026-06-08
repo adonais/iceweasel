@@ -169,7 +169,9 @@ class GridReorderState internal constructor(
         val draggingItem = draggingItemLayoutInfo ?: return
 
         if (!moved && draggingItemCumulatedOffset.getDistance() > touchSlop) {
-            tabInteractionHandler.onDragStart(preserveSelectMode)
+            (draggingItemKey as? String)?.let { key ->
+                tabInteractionHandler.onDragStart(sourceKey = key, preserveSelectMode = preserveSelectMode)
+            }
             moved = true
         }
         val startOffset = draggingItem.offset.toOffset() + draggingItemOffset

@@ -486,4 +486,129 @@ class TabsTrayTelemetryMiddlewareTest {
 
         assertNotNull(TabsTray.tabGroupCreateCancel.testGetValue())
     }
+
+    @Test
+    fun `GIVEN a tab WHEN TabDragStart is dispatched THEN the longpress drag metric is reported with item_type tab`() {
+        assertNull(TabsTray.tabLongPressDrag.testGetValue())
+
+        val mockTab = createTab(url = "www.example.com").copy(id = "123")
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                normalTabsState = TabsTrayState.NormalTabsState(
+                    items = listOf(mockTab),
+                ),
+            ),
+        )
+
+        store.dispatch(TabsTrayAction.TabDragStart(sourceId = "123", preserveSelectMode = false))
+
+        val snapshot = TabsTray.tabLongPressDrag.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals(
+            TabsTrayTelemetryMiddleware.TabItemType.TAB.telemetryId,
+            snapshot.single().extra?.getValue("item_type"),
+        )
+    }
+
+    @Test
+    fun `GIVEN a tab group WHEN TabDragStart is dispatched THEN the longpress drag metric is reported with item_type tab_group`() {
+        assertNull(TabsTray.tabLongPressDrag.testGetValue())
+
+        val mockGroup = TabsTrayItem.TabGroup(
+            id = "123",
+            title = "Test",
+            theme = TabGroupTheme.default,
+            tabs = mutableListOf(),
+        )
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                normalTabsState = TabsTrayState.NormalTabsState(
+                    items = listOf(mockGroup),
+                ),
+            ),
+        )
+
+        store.dispatch(TabsTrayAction.TabDragStart(sourceId = "123", preserveSelectMode = false))
+
+        val snapshot = TabsTray.tabLongPressDrag.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals(
+            TabsTrayTelemetryMiddleware.TabItemType.TAB_GROUP.telemetryId,
+            snapshot.single().extra?.getValue("item_type"),
+        )
+    }
+
+    @Test
+    fun `GIVEN an unknown source id WHEN TabDragStart is dispatched THEN the longpress drag metric is reported with item_type unknown`() {
+        assertNull(TabsTray.tabLongPressDrag.testGetValue())
+
+        store.dispatch(TabsTrayAction.TabDragStart(sourceId = "123", preserveSelectMode = false))
+
+        val snapshot = TabsTray.tabLongPressDrag.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals(
+            TabsTrayTelemetryMiddleware.TabItemType.UNKNOWN.telemetryId,
+            snapshot.single().extra?.getValue("item_type"),
+        )
+    }
+
+    /**
+     * [TabsTray.tabLongPressDragRearrangedPosition] coverage
+     */
+    @Test
+    fun `GIVEN a tab WHEN ReorderTabsTrayItem is dispatched THEN the longpress drag rearranged metric is reported`() {
+        assertNull(TabsTray.tabLongPressDragRearrangedPosition.testGetValue())
+
+        val mockTab = createTab(url = "www.example.com").copy(id = "123")
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                normalTabsState = TabsTrayState.NormalTabsState(
+                    items = listOf(mockTab),
+                ),
+            ),
+        )
+
+        store.dispatch(
+            TabsTrayAction.ReorderTabsTrayItem(
+                sourceId = "123",
+                destinationId = "321",
+                placeAfter = true,
+            ),
+        )
+
+        assertNotNull(TabsTray.tabLongPressDragRearrangedPosition.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN a tab group WHEN ReorderTabsTrayItem is dispatched THEN the longpress drag rearranged metric is NOT reported`() {
+        assertNull(TabsTray.tabLongPressDragRearrangedPosition.testGetValue())
+
+        val mockGroup = TabsTrayItem.TabGroup(
+            id = "123",
+            title = "Test",
+            theme = TabGroupTheme.default,
+            tabs = mutableListOf(),
+        )
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                normalTabsState = TabsTrayState.NormalTabsState(
+                    items = listOf(mockGroup),
+                ),
+            ),
+        )
+
+        store.dispatch(
+            TabsTrayAction.ReorderTabsTrayItem(
+                sourceId = "123",
+                destinationId = "321",
+                placeAfter = true,
+            ),
+        )
+
+        assertNull(TabsTray.tabLongPressDragRearrangedPosition.testGetValue())
+    }
 }

@@ -193,7 +193,7 @@ class ReorderableGridTest {
         reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), true)
         reorderState.onDrag(offset = Offset(50f, 0f), preserveSelectMode = true) // 50 to the right
 
-        verify { handler.onDragStart(true) }
+        verify { handler.onDragStart(sourceKey = "key1", preserveSelectMode = true) }
     }
 
     @Test
@@ -224,7 +224,7 @@ class ReorderableGridTest {
         reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
         reorderState.onDrag(Offset(50f, 0f), preserveSelectMode = false) // 50 to the right
 
-        verify { handler.onDragStart(false) }
+        verify { handler.onDragStart(sourceKey = "key1", preserveSelectMode = false) }
     }
 
     private fun mockGridState(

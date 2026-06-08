@@ -571,6 +571,7 @@ class TabsTrayStoreReducerTest {
         val resultState = TabsTrayReducer.reduce(
             state = initialState,
             action = TabsTrayAction.TabDragStart(
+                sourceId = "123",
                 preserveSelectMode = true,
             ),
         )
@@ -602,6 +603,7 @@ class TabsTrayStoreReducerTest {
         val resultState = TabsTrayReducer.reduce(
             state = initialState,
             action = TabsTrayAction.TabDragStart(
+                sourceId = "123",
                 preserveSelectMode = false,
             ),
         )
@@ -621,6 +623,7 @@ class TabsTrayStoreReducerTest {
         val resultState = TabsTrayReducer.reduce(
             state = initialState,
             action = TabsTrayAction.TabDragStart(
+                sourceId = "123",
                 preserveSelectMode = true,
             ),
         )
@@ -634,6 +637,7 @@ class TabsTrayStoreReducerTest {
         val resultState = TabsTrayReducer.reduce(
             state = initialState,
             action = TabsTrayAction.TabDragStart(
+                sourceId = "123",
                 preserveSelectMode = true,
             ),
         )
@@ -648,6 +652,7 @@ class TabsTrayStoreReducerTest {
         val resultState = TabsTrayReducer.reduce(
             state = initialState,
             action = TabsTrayAction.TabDragStart(
+                sourceId = "123",
                 preserveSelectMode = false,
             ),
         )
