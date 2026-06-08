@@ -561,6 +561,7 @@ class DefaultTabManagerController(
             !tab.private && tabsTrayStore.state.mode.selectedTabs.isEmpty()
         ) {
             Collections.longPress.record(NoExtras())
+            TabsTray.tabLongPress.record(NoExtras())
             tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
             true
         } else {

@@ -53,13 +53,16 @@ class TabsTrayTelemetryMiddleware(
             is TabsTrayAction.NavigateBackInvoked -> handleNavigateBackInvoked(topDestination, isEditing)
             else -> {
                 if (action !is TabGroupAction) {
-                    handleGeneralTabsTrayAction(action)
+                    handleGeneralTabsTrayAction(store, action)
                 }
             }
         }
     }
 
-    private fun handleGeneralTabsTrayAction(action: TabsTrayAction) {
+    private fun handleGeneralTabsTrayAction(
+        store: Store<TabsTrayState, TabsTrayAction>,
+        action: TabsTrayAction,
+    ) {
         when (action) {
             is TabsTrayAction.TabDataUpdateReceived -> {
                 if (shouldReportInactiveTabMetrics) {
@@ -112,6 +115,18 @@ class TabsTrayTelemetryMiddleware(
             is TabsTrayAction.PageSelected -> {
                 if (action.page == Page.TabGroups) {
                     TabsTray.tabGroupScreenOpened.record(NoExtras())
+                }
+            }
+
+            is TabsTrayAction.TabDragStart -> {
+                TabsTray.tabLongPressDrag.record(NoExtras())
+            }
+
+            is TabsTrayAction.ReorderTabsTrayItem -> {
+                val isTabGroup = store.state.normalTabsState.items
+                    .find { it.id == action.sourceId } is TabsTrayItem.TabGroup
+                if (!isTabGroup) {
+                    TabsTray.tabLongPressDragRearrangedPosition.record(NoExtras())
                 }
             }
 
