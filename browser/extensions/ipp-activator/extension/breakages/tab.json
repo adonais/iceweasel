@@ -282,6 +282,10 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
+          "type": "url",
+          "pattern": "^https?://(www\\.)?rtve\\.es/play(/|$)"
+        },
+        {
           "type": "or",
           "conditions": [
             {
@@ -291,10 +295,6 @@
             {
               "type": "and",
               "conditions": [
-                {
-                  "type": "url",
-                  "pattern": "^https?://(www\\.)?rtve\\.es/play(/|$)"
-                },
                 {
                   "type": "not",
                   "condition": {
@@ -355,10 +355,6 @@
           "type": "or",
           "conditions": [
             {
-              "type": "vpn",
-              "active": true
-            },
-            {
               "type": "and",
               "conditions": [
                 {
@@ -366,41 +362,55 @@
                   "pattern": "^https?://(www\\.)?dazn\\.com/it-IT(/|$)"
                 },
                 {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["IT"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
+                  "type": "or",
+                  "conditions": [
+                    {
+                      "type": "vpn",
+                      "active": true
+                    },
+                    {
+                      "type": "and",
+                      "conditions": [
+                        {
+                          "type": "not",
+                          "condition": {
+                            "type": "region",
+                            "regions": ["IT"]
+                          }
+                        },
+                        {
+                          "type": "region",
+                          "regions": [
+                            "AU",
+                            "AT",
+                            "BE",
+                            "BG",
+                            "CA",
+                            "CL",
+                            "CO",
+                            "DK",
+                            "FI",
+                            "FR",
+                            "DE",
+                            "IE",
+                            "IT",
+                            "MY",
+                            "MX",
+                            "NL",
+                            "NZ",
+                            "NO",
+                            "PT",
+                            "SG",
+                            "ZA",
+                            "ES",
+                            "SE",
+                            "TH",
+                            "GB",
+                            "US"
+                          ]
+                        }
+                      ]
+                    }
                   ]
                 }
               ]
@@ -413,41 +423,55 @@
                   "pattern": "^https?://(www\\.)?dazn\\.com/es-ES(/|$)"
                 },
                 {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["ES"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
+                  "type": "or",
+                  "conditions": [
+                    {
+                      "type": "vpn",
+                      "active": true
+                    },
+                    {
+                      "type": "and",
+                      "conditions": [
+                        {
+                          "type": "not",
+                          "condition": {
+                            "type": "region",
+                            "regions": ["ES"]
+                          }
+                        },
+                        {
+                          "type": "region",
+                          "regions": [
+                            "AU",
+                            "AT",
+                            "BE",
+                            "BG",
+                            "CA",
+                            "CL",
+                            "CO",
+                            "DK",
+                            "FI",
+                            "FR",
+                            "DE",
+                            "IE",
+                            "IT",
+                            "MY",
+                            "MX",
+                            "NL",
+                            "NZ",
+                            "NO",
+                            "PT",
+                            "SG",
+                            "ZA",
+                            "ES",
+                            "SE",
+                            "TH",
+                            "GB",
+                            "US"
+                          ]
+                        }
+                      ]
+                    }
                   ]
                 }
               ]
@@ -535,6 +559,10 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
+          "type": "url",
+          "pattern": "^https?://(www\\.)?bbc\\.co\\.uk/iplayer(/|$)"
+        },
+        {
           "type": "or",
           "conditions": [
             {
@@ -544,10 +572,6 @@
             {
               "type": "and",
               "conditions": [
-                {
-                  "type": "url",
-                  "pattern": "^https?://(www\\.)?bbc\\.co\\.uk/iplayer(/|$)"
-                },
                 {
                   "type": "not",
                   "condition": {
@@ -1133,6 +1157,10 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
+          "type": "url",
+          "pattern": "^https?://(www\\.)?winplay\\.co/co(/|$)"
+        },
+        {
           "type": "or",
           "conditions": [
             {
@@ -1142,10 +1170,6 @@
             {
               "type": "and",
               "conditions": [
-                {
-                  "type": "url",
-                  "pattern": "^https?://(www\\.)?winplay\\.co/co(/|$)"
-                },
                 {
                   "type": "not",
                   "condition": {
@@ -1467,6 +1491,10 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
+          "type": "url",
+          "pattern": "^https?://(www\\.)?dr\\.dk/drtv(/|$)"
+        },
+        {
           "type": "or",
           "conditions": [
             {
@@ -1476,10 +1504,6 @@
             {
               "type": "and",
               "conditions": [
-                {
-                  "type": "url",
-                  "pattern": "^https?://(www\\.)?dr\\.dk/drtv(/|$)"
-                },
                 {
                   "type": "not",
                   "condition": {
@@ -1735,6 +1759,10 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
+          "type": "url",
+          "pattern": "^https?://(www\\.)?rte\\.ie/player(/|$)"
+        },
+        {
           "type": "or",
           "conditions": [
             {
@@ -1744,10 +1772,6 @@
             {
               "type": "and",
               "conditions": [
-                {
-                  "type": "url",
-                  "pattern": "^https?://(www\\.)?rte\\.ie/player(/|$)"
-                },
                 {
                   "type": "not",
                   "condition": {
