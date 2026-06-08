@@ -8,6 +8,8 @@ support-files = ["head.js"]
 
 ["browser_conditions_cookie.js"]
 
+["browser_conditions_date.js"]
+
 ["browser_conditions_region.js"]
 
 ["browser_conditions_url.js"]

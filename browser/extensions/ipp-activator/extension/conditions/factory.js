@@ -7,6 +7,7 @@ const CONDITIONS_MAP = {
   test: globalThis.ConditionTest,
   or: globalThis.ConditionOr,
   cookie: globalThis.ConditionCookie,
+  date: globalThis.ConditionDate,
   not: globalThis.ConditionNot,
   region: globalThis.ConditionRegion,
   url: globalThis.ConditionUrl,

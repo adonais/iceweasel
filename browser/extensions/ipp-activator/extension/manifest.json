@@ -18,6 +18,7 @@
       "conditions/not.js",
       "conditions/test.js",
       "conditions/cookie.js",
+      "conditions/date.js",
       "conditions/url.js",
       "conditions/vpn.js",
       "conditions/region.js",
