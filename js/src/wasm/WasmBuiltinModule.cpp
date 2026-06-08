@@ -450,6 +450,8 @@ bool wasm::ImportFieldMatchesBuiltinModuleDefinition(
 bool wasm::CompileBuiltinModule(JSContext* cx, BuiltinModuleId module,
                                 const Import* moduleMemoryImport,
                                 MutableHandle<WasmModuleObject*> result) {
+  // NOTE(bvisness): If you update the memory descriptors here, pay attention to
+  // CheckBuiltinImportsHaveMemory in WasmValidate.cpp.
   switch (module) {
     case BuiltinModuleId::SelfTest:
       return CompileBuiltinModule(
@@ -489,7 +491,6 @@ bool wasm::InstantiateBuiltinModule(JSContext* cx, BuiltinModuleId module,
   RootedObject instanceProto(cx);
   if (!moduleObj->module().instantiate(cx, *imports.address(), instanceProto,
                                        &instanceObj)) {
-    MOZ_RELEASE_ASSERT(cx->isThrowingOutOfMemory());
     return false;
   }
   result.set(&instanceObj->exportsObj());
