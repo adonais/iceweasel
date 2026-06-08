@@ -990,6 +990,11 @@ nsFrameSelection::CreatePeekOffsetOptionsForCaretMove(
   if (static_cast<bool>(aForceEditableRegion)) {
     options += PeekOffsetOption::ForceEditableRegion;
   }
+  // A caret move wants paragraph peeking to resolve to a leaf frame at a block
+  // boundary so the caret has a precise text position for scrolling-into-view
+  // (bug 2041228). Selection paths build their own options and intentionally
+  // omit this so the block container remains the boundary.
+  options += PeekOffsetOption::ForCaretMove;
   return options;
 }
 

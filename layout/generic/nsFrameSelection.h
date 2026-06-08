@@ -109,6 +109,20 @@ enum class PeekOffsetOption : uint16_t {
   // If true, the offset has to end up in an editable node, otherwise we'll keep
   // searching.
   ForceEditableRegion,
+
+  // Whether the peeking is done for a caret move rather than a selection.
+  //
+  // Currently this only affects eSelectParagraph: when paragraph movement
+  // reaches a block boundary without finding a "stop frame", the result is
+  // resolved to the leaf frame at that edge (typically a text frame) rather
+  // than to the block container element. This gives a caret a precise text
+  // position so that scrolling-into-view works for horizontally overflowing
+  // content (bug 2041228). Selection (e.g. triple-click paragraph selection)
+  // intentionally does not set this, because it expects the block container
+  // itself as the boundary.
+  //
+  // Set for all caret moves; currently only takes effect with eSelectParagraph.
+  ForCaretMove,
 };
 
 using PeekOffsetOptions = EnumSet<PeekOffsetOption>;

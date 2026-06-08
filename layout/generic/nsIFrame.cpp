@@ -9674,6 +9674,26 @@ static nsContentAndOffset FindLineBreakingFrame(nsIFrame* aFrame,
   return result;
 }
 
+enum class OffsetIsAtLineEdge : bool { No, Yes };
+
+static void SetPeekResultFromFrame(PeekOffsetStruct& aPos, nsIFrame* aFrame,
+                                   int32_t aOffset,
+                                   OffsetIsAtLineEdge aAtLineEdge) {
+  FrameContentRange range = GetRangeForFrame(aFrame);
+  aPos.mResultFrame = aFrame;
+  aPos.mResultContent = range.content;
+  // Output offset is relative to content, not frame
+  aPos.mContentOffset =
+      aOffset < 0 ? range.end + aOffset + 1 : range.start + aOffset;
+  // Ensure we don't go past the range. This is important if aFrame is empty.
+  aPos.mContentOffset = std::clamp(aPos.mContentOffset, range.start, range.end);
+  if (aAtLineEdge == OffsetIsAtLineEdge::Yes) {
+    aPos.mAttach = aPos.mContentOffset == range.start
+                       ? CaretAssociationHint::After
+                       : CaretAssociationHint::Before;
+  }
+}
+
 nsresult nsIFrame::PeekOffsetForParagraph(PeekOffsetStruct* aPos) {
   nsIFrame* frame = this;
   nsContentAndOffset blockFrameOrBR;
@@ -9719,20 +9739,35 @@ nsresult nsIFrame::PeekOffsetForParagraph(PeekOffsetStruct* aPos) {
   }
 
   if (reachedLimit) {  // no "stop frame" found
-    aPos->mResultContent = frame->GetContent();
-    if (aPos->mResultContent) {
-      if (ShadowRoot* shadowRoot =
-              aPos->mResultContent->GetShadowRootForSelection()) {
-        // Even if there's no children for this node,
-        // the elements inside the shadow root is still
-        // selectable
-        aPos->mResultContent = shadowRoot;
+    if (aPos->mOptions.contains(PeekOffsetOption::ForCaretMove)) {
+      // For a caret move, drill down to a leaf so scroll-into-view geometry,
+      // which only uses text-frame offsets when the focus node is a Text node,
+      // gets a usable position. Frame children include flattened-tree
+      // descendants, so this also covers shadow-DOM content that the element
+      // branch below reaches via GetShadowRootForSelection.
+      const bool atEnd = aPos->mDirection == eDirNext;
+      FrameTarget targetFrame = DrillDownToSelectionFrame(
+          frame, atEnd, nsIFrame::IGNORE_NATIVE_ANONYMOUS_SUBTREE);
+      SetPeekResultFromFrame(*aPos, targetFrame.frame, atEnd ? -1 : 0,
+                             OffsetIsAtLineEdge::Yes);
+    } else {
+      // For selection (e.g. triple-click paragraph selection), the block
+      // container itself is the expected boundary.
+      aPos->mResultContent = frame->GetContent();
+      if (aPos->mResultContent) {
+        if (ShadowRoot* shadowRoot =
+                aPos->mResultContent->GetShadowRootForSelection()) {
+          // Even if there's no children for this node,
+          // the elements inside the shadow root is still
+          // selectable
+          aPos->mResultContent = shadowRoot;
+        }
       }
-    }
-    if (aPos->mDirection == eDirPrevious) {
-      aPos->mContentOffset = 0;
-    } else if (aPos->mResultContent) {
-      aPos->mContentOffset = aPos->mResultContent->GetChildCount();
+      if (aPos->mDirection == eDirPrevious) {
+        aPos->mContentOffset = 0;
+      } else if (aPos->mResultContent) {
+        aPos->mContentOffset = aPos->mResultContent->GetChildCount();
+      }
     }
   }
   return NS_OK;
@@ -9765,26 +9800,6 @@ static bool ShouldWordSelectionEatSpace(const PeekOffsetStruct& aPos) {
   // operating system.
   return aPos.mDirection == eDirNext &&
          StaticPrefs::layout_word_select_eat_space_to_next_word();
-}
-
-enum class OffsetIsAtLineEdge : bool { No, Yes };
-
-static void SetPeekResultFromFrame(PeekOffsetStruct& aPos, nsIFrame* aFrame,
-                                   int32_t aOffset,
-                                   OffsetIsAtLineEdge aAtLineEdge) {
-  FrameContentRange range = GetRangeForFrame(aFrame);
-  aPos.mResultFrame = aFrame;
-  aPos.mResultContent = range.content;
-  // Output offset is relative to content, not frame
-  aPos.mContentOffset =
-      aOffset < 0 ? range.end + aOffset + 1 : range.start + aOffset;
-  // Ensure we don't go past the range. This is important if aFrame is empty.
-  aPos.mContentOffset = std::clamp(aPos.mContentOffset, range.start, range.end);
-  if (aAtLineEdge == OffsetIsAtLineEdge::Yes) {
-    aPos.mAttach = aPos.mContentOffset == range.start
-                       ? CaretAssociationHint::After
-                       : CaretAssociationHint::Before;
-  }
 }
 
 void nsIFrame::SelectablePeekReport::TransferTo(PeekOffsetStruct& aPos) const {
