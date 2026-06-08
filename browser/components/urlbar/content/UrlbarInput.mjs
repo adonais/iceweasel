@@ -5299,6 +5299,12 @@ ${
 
   _on_auxclick(event) {
     switch (event.target) {
+      case this.inputField:
+      case this._inputContainer:
+        this.#maybeSelectAll();
+        this.#maybeUntrimUrl();
+        break;
+
       case this.goButton:
         this.handleCommand(event);
         break;
