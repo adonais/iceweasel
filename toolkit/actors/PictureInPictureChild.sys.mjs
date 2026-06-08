@@ -126,9 +126,10 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
  * @returns {PictureInPictureChildVideoWrapper} instance of PictureInPictureChildVideoWrapper
  */
 function applyWrapper(pipChild, originatingVideo) {
-  let wrapperPath = getVideoWrapperScriptPathForDocument(
+  let override = getSiteOverrideForDocument(
     originatingVideo.ownerDocument.documentURI
   );
+  let wrapperPath = override?.videoWrapperScriptPath;
   return new PictureInPictureChildVideoWrapper(
     wrapperPath,
     originatingVideo,
@@ -137,19 +138,19 @@ function applyWrapper(pipChild, originatingVideo) {
 }
 
 /**
- * Returns the video wrapper script path for the given document URI, or null
+ * Returns the site override object for the given document, or null
  * if no site override applies.
  *
  * @param {string} documentURI
- * @returns {string | null}
+ * @returns { object | null }
  */
-function getVideoWrapperScriptPathForDocument(documentURI) {
+function getSiteOverrideForDocument(documentURI) {
   // gSiteOverrides is a list of tuples where the first element is the MatchPattern
   // for a supported site and the second is the actual overrides object for it.
   let overrides = lazy.gSiteOverrides.find(([matcher]) =>
     matcher.matches(documentURI)
   );
-  return overrides?.[1].videoWrapperScriptPath ?? null;
+  return overrides?.[1] ?? null;
 }
 
 export class PictureInPictureLauncherChild extends JSWindowActorChild {
@@ -652,11 +653,10 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
 
   updateUrlbarPipVideoEligibility(video) {
     // Bug 2041113: use a video wrapper to exclude YouTube preview videos
-    // from being marked as urlbar PiP eligible videos.
-    if (
-      !this.videoWrapper &&
-      getVideoWrapperScriptPathForDocument(this.document.documentURI)
-    ) {
+    // from being marked as urlbar PiP eligible videos. But only apply
+    // the wrapper lazily if the hasUrlbarEligibilityOverride override exists.
+    let override = getSiteOverrideForDocument(this.document.documentURI);
+    if (!this.videoWrapper && override?.hasUrlbarEligibilityOverride) {
       this.videoWrapper = applyWrapper(this, video);
     }
     let isWrapperEligible =
