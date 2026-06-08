@@ -29,6 +29,10 @@ add_setup(async function () {
   Services.fog.initializeFOG();
   Region._setHomeRegion("US", false);
 
+  // Force settings redesign to false, so that `hideOneOffButton` will correctly
+  // work for the time being.
+  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
+
   let policies = Cc["@mozilla.org/enterprisepolicies;1"].getService(
     Ci.nsIObserver
   );

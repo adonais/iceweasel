@@ -36,6 +36,9 @@ add_setup(async function () {
       ["browser.search.separatePrivateDefault.ui.enabled", false],
       ["browser.urlbar.suggest.quickactions", false],
       ["browser.urlbar.scotchBonnet.enableOverride", false],
+      // Force settings redesign to false, so that `hideOneOffButton` will correctly
+      // work for the time being.
+      ["browser.settings-redesign.enabled", false],
     ],
   });
 
