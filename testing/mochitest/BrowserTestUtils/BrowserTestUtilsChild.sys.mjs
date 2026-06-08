@@ -322,7 +322,7 @@ export class BrowserTestUtilsChild extends JSWindowActorChild {
         // Account for nodes found in iframes.
         let cur = target;
         do {
-          // eslint-disable-next-line mozilla/use-ownerGlobal
+          // eslint-disable-next-line mozilla/use-documentGlobal
           let frame = cur.ownerDocument.defaultView.frameElement;
           let rect = frame.getBoundingClientRect();
 
@@ -380,7 +380,7 @@ export class BrowserTestUtilsChild extends JSWindowActorChild {
         // Account for nodes found in iframes.
         let cur = target;
         do {
-          cur = cur.ownerGlobal.frameElement;
+          cur = cur.documentGlobal.frameElement;
         } while (cur && cur.ownerDocument !== this.document);
 
         // node must be in this document tree.

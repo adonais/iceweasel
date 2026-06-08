@@ -1728,7 +1728,7 @@ var SessionStoreInternal = {
 
         if (writeToCache) {
           let win =
-            browsingContext.embedderElement?.ownerDocGlobal ||
+            browsingContext.embedderElement?.documentGlobal ||
             browsingContext.currentWindowGlobal?.browsingContext?.window;
 
           SessionStoreInternal.onTabStateUpdate(permanentKey, win, {
@@ -1917,7 +1917,7 @@ var SessionStoreInternal = {
     }
 
     let win =
-      browser?.ownerDocGlobal ??
+      browser?.documentGlobal ??
       browsingContext.currentWindowGlobal?.browsingContext?.window;
 
     this.onTabStateUpdate(permanentKey, win, update);
@@ -1929,7 +1929,7 @@ var SessionStoreInternal = {
    * Implement EventListener for handling various window and tab events
    */
   handleEvent: function ssi_handleEvent(aEvent) {
-    let win = aEvent.currentTarget.ownerDocGlobal;
+    let win = aEvent.currentTarget.documentGlobal;
     let target = aEvent.originalTarget;
     switch (aEvent.type) {
       case "TabOpen":
@@ -3840,7 +3840,7 @@ var SessionStoreInternal = {
   enterCrashedState(browser) {
     this._crashedBrowsers.add(browser.permanentKey);
 
-    let win = browser.ownerDocGlobal;
+    let win = browser.documentGlobal;
 
     // If we hadn't yet restored, or were still in the midst of
     // restoring this browser at the time of the crash, we need
@@ -4036,10 +4036,10 @@ var SessionStoreInternal = {
   },
 
   getTabState: function ssi_getTabState(aTab) {
-    if (!aTab || !aTab.ownerDocGlobal) {
+    if (!aTab || !aTab.documentGlobal) {
       throw Components.Exception("Need a valid tab", Cr.NS_ERROR_INVALID_ARG);
     }
-    if (!aTab.ownerDocGlobal.__SSi) {
+    if (!aTab.documentGlobal.__SSi) {
       throw Components.Exception(
         "Default view is not tracked",
         Cr.NS_ERROR_INVALID_ARG
@@ -4076,7 +4076,7 @@ var SessionStoreInternal = {
       );
     }
 
-    let window = aTab.ownerDocGlobal;
+    let window = aTab.documentGlobal;
     if (!window || !("__SSi" in window)) {
       throw Components.Exception(
         "Window is not tracked",
@@ -4146,10 +4146,10 @@ var SessionStoreInternal = {
     aRestoreImmediately = true,
     { inBackground, tabIndex } = {}
   ) {
-    if (!aTab || !aTab.ownerDocGlobal) {
+    if (!aTab || !aTab.documentGlobal) {
       throw Components.Exception("Need a valid tab", Cr.NS_ERROR_INVALID_ARG);
     }
-    if (!aTab.ownerDocGlobal.__SSi) {
+    if (!aTab.documentGlobal.__SSi) {
       throw Components.Exception(
         "Default view is not tracked",
         Cr.NS_ERROR_INVALID_ARG
@@ -4201,7 +4201,7 @@ var SessionStoreInternal = {
         return;
       }
 
-      let window = newTab.ownerDocGlobal;
+      let window = newTab.documentGlobal;
 
       // The tab or its window might be gone.
       if (!window || !window.__SSi || window.closed) {
@@ -5028,14 +5028,14 @@ var SessionStoreInternal = {
     }
 
     TAB_CUSTOM_VALUES.get(aTab)[aKey] = aStringValue;
-    this.saveStateDelayed(aTab.ownerDocGlobal);
+    this.saveStateDelayed(aTab.documentGlobal);
   },
 
   deleteCustomTabValue(aTab, aKey) {
     let state = TAB_CUSTOM_VALUES.get(aTab);
     if (state && aKey in state) {
       delete state[aKey];
-      this.saveStateDelayed(aTab.ownerDocGlobal);
+      this.saveStateDelayed(aTab.documentGlobal);
     }
   },
 
@@ -5144,7 +5144,7 @@ var SessionStoreInternal = {
     }
 
     let browser = tab.linkedBrowser;
-    let win = browser.ownerDocGlobal;
+    let win = browser.documentGlobal;
 
     if (!tabData) {
       tabData = lazy.TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
@@ -6481,7 +6481,7 @@ var SessionStoreInternal = {
     }
 
     let loadArguments = options.loadArguments;
-    let window = tab.ownerDocGlobal;
+    let window = tab.documentGlobal;
     let tabbrowser = window.gBrowser;
     let forceOnDemand = options.forceOnDemand;
     let isRemotenessUpdate = options.isRemotenessUpdate;
@@ -6688,7 +6688,7 @@ var SessionStoreInternal = {
     }
 
     let browser = aTab.linkedBrowser;
-    let window = aTab.ownerDocGlobal;
+    let window = aTab.documentGlobal;
     let tabData = lazy.TabState.clone(aTab, TAB_CUSTOM_VALUES.get(aTab));
     let activeIndex = tabData.index - 1;
     let activePageData = tabData.entries[activeIndex] || null;
@@ -8330,7 +8330,7 @@ var SessionStoreInternal = {
   },
 
   _restoreHistoryComplete(browser) {
-    let win = browser.ownerDocGlobal;
+    let win = browser.documentGlobal;
     let tab = win?.gBrowser.getTabForBrowser(browser);
     if (!tab) {
       return;
@@ -8348,7 +8348,7 @@ var SessionStoreInternal = {
   },
 
   _restoreTabContentStarted(browser, data) {
-    let win = browser.ownerDocGlobal;
+    let win = browser.documentGlobal;
     let tab = win?.gBrowser.getTabForBrowser(browser);
     if (!tab) {
       return;
@@ -8417,7 +8417,7 @@ var SessionStoreInternal = {
   },
 
   _restoreTabContentComplete(browser, data) {
-    let win = browser.ownerDocGlobal;
+    let win = browser.documentGlobal;
     let tab = win?.gBrowser.getTabForBrowser(browser);
     if (!tab) {
       return;
@@ -8481,17 +8481,17 @@ var SessionStoreInternal = {
    * @param {MozTabbrowserTabGroup} tabGroup
    */
   addSavedTabGroup(tabGroup) {
-    if (PrivateBrowsingUtils.isWindowPrivate(tabGroup.ownerDocGlobal)) {
+    if (PrivateBrowsingUtils.isWindowPrivate(tabGroup.documentGlobal)) {
       throw new Error("Refusing to save tab group from private window");
     }
 
     let tabGroupState = lazy.TabGroupState.savedInOpenWindow(
       tabGroup,
-      tabGroup.ownerDocGlobal.__SSi
+      tabGroup.documentGlobal.__SSi
     );
     tabGroupState.tabs = this._collectClosedTabsForTabGroup(
       tabGroup.tabs,
-      tabGroup.ownerDocGlobal
+      tabGroup.documentGlobal
     );
     tabGroupState.splitViews = this._collectSplitViewDataForTabGroup(
       tabGroup.tabs
@@ -8511,8 +8511,8 @@ var SessionStoreInternal = {
       throw new Error(`No tab group found with id ${tabGroupId}`);
     }
 
-    const win = tabs[0].ownerDocGlobal;
-    if (!tabs.every(tab => tab.ownerDocGlobal === win)) {
+    const win = tabs[0].documentGlobal;
+    if (!tabs.every(tab => tab.documentGlobal === win)) {
       throw new Error(`All tabs must be part of the same window`);
     }
 

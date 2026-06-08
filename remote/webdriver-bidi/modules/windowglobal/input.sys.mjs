@@ -128,7 +128,7 @@ class InputModule extends WindowGlobalBiDiModule {
 
   #onFilePickerOpening = (eventName, data) => {
     const { element } = data;
-    if (element.ownerGlobal.browsingContext != this.messageHandler.context) {
+    if (element.documentGlobal.browsingContext != this.messageHandler.context) {
       return;
     }
 

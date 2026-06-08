@@ -249,7 +249,7 @@ dom.findByLinkText = function (startNode, linkText) {
   return filterLinks(startNode, async link => {
     const visibleText = await lazy.atom.getVisibleText(
       link,
-      link.ownerDocGlobal
+      link.documentGlobal
     );
     return visibleText.trim() === linkText;
   });
@@ -272,7 +272,7 @@ dom.findByPartialLinkText = function (startNode, linkText) {
   return filterLinks(startNode, async link => {
     const visibleText = await lazy.atom.getVisibleText(
       link,
-      link.ownerDocGlobal
+      link.documentGlobal
     );
 
     return visibleText.includes(linkText);
@@ -361,7 +361,7 @@ async function findElement(
       for (const link of links) {
         const visibleText = await lazy.atom.getVisibleText(
           link,
-          link.ownerDocGlobal
+          link.documentGlobal
         );
         if (visibleText.trim() === selector) {
           return link;
@@ -375,7 +375,7 @@ async function findElement(
       for (const link of links) {
         const visibleText = await lazy.atom.getVisibleText(
           link,
-          link.ownerDocGlobal
+          link.documentGlobal
         );
         if (visibleText.includes(selector)) {
           return link;
@@ -797,7 +797,7 @@ dom.coordinates = function (node, xOffset = undefined, yOffset = undefined) {
  *     True if if <var>el</var> is in viewport, false otherwise.
  */
 dom.inViewport = function (el, x = undefined, y = undefined) {
-  let win = el.ownerDocGlobal;
+  let win = el.documentGlobal;
   let c = dom.coordinates(el, x, y);
   let vp = {
     top: win.pageYOffset,
@@ -905,7 +905,7 @@ dom.isInView = function (el) {
  *     True if visible, false otherwise.
  */
 dom.isVisible = async function (el, x = undefined, y = undefined) {
-  let win = el.ownerDocGlobal;
+  let win = el.documentGlobal;
   if (!(await lazy.atom.isElementDisplayed(el, win))) {
     return false;
   }
@@ -1009,7 +1009,7 @@ dom.getInViewCentrePoint = function (rect, win) {
  *     Sequence of elements in paint order.
  */
 dom.getPointerInteractablePaintTree = function (el) {
-  const win = el.ownerDocGlobal;
+  const win = el.documentGlobal;
   const rootNode = el.getRootNode();
 
   // pointer-interactable elements tree, step 1

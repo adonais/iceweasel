@@ -7,7 +7,9 @@ import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.
 export class ScrollDelegateChild extends GeckoViewActorChild {
   // eslint-disable-next-line complexity
   handleEvent(aEvent) {
-    if (aEvent.originalTarget.ownerGlobal != this.contentWindow) {
+    if (aEvent.originalTarget != this.contentWindow?.visualViewport) {
+      // TODO(emilio): When would this check ever fail? It also doesn't seem
+      // like a problem if we just send an updated viewport offset...
       return;
     }
 

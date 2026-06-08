@@ -98,7 +98,7 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
   async addElement(aFormLike) {
     debug`Adding auto-fill ${aFormLike.rootElement.tagName}`;
 
-    const window = aFormLike.rootElement.ownerGlobal;
+    const window = aFormLike.rootElement.documentGlobal;
     // Get password field to get better form data via LoginManagerChild.
     let passwordField;
     for (const field of aFormLike.elements) {
@@ -211,7 +211,7 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
       return info;
     }
 
-    const window = aElement.ownerGlobal;
+    const window = aElement.documentGlobal;
     const bounds = aElement.getBoundingClientRect();
     const isInputElement = window.HTMLInputElement.isInstance(aElement);
 
@@ -309,7 +309,7 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
     if (info) {
       const bounds = aTarget.getBoundingClientRect();
       const screenRect = lazy.LayoutUtils.rectToScreenRect(
-        aTarget.ownerGlobal,
+        aTarget.documentGlobal,
         bounds
       );
       info.screenRect = {

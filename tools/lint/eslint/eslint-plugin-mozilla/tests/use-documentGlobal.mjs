@@ -5,7 +5,7 @@
 // Requirements
 // ------------------------------------------------------------------------------
 
-import rule from "../lib/rules/use-ownerGlobal.mjs";
+import rule from "../lib/rules/use-documentGlobal.mjs";
 import { RuleTester } from "eslint";
 
 const ruleTester = new RuleTester();
@@ -17,15 +17,15 @@ const ruleTester = new RuleTester();
 function invalidCode(code) {
   return {
     code,
-    errors: [{ messageId: "useOwnerGlobal" }],
+    errors: [{ messageId: "useDocumentGlobal" }],
   };
 }
 
-ruleTester.run("use-ownerGlobal", rule, {
+ruleTester.run("use-documentGlobal", rule, {
   valid: [
-    "aEvent.target.ownerGlobal;",
-    "this.DOMPointNode.ownerGlobal.getSelection();",
-    "windowToMessageManager(node.ownerGlobal);",
+    "aEvent.target.documentGlobal;",
+    "this.DOMPointNode.documentGlobal.getSelection();",
+    "windowToMessageManager(node.documentGlobal);",
   ],
   invalid: [
     invalidCode("aEvent.target.ownerDocument.defaultView;"),

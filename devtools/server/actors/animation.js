@@ -71,7 +71,7 @@ exports.getAnimationTypeForLonghand = getAnimationTypeForLonghand;
  * @param {Animation} animation
  */
 function getAnimationBrowsingContextPlayBackRateMultiplier(animation) {
-  return animation.effect.target.ownerGlobal.browsingContext
+  return animation.effect.target.documentGlobal.browsingContext
     .animationsPlayBackRateMultiplier;
 }
 
@@ -712,8 +712,8 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
     // either getAnimationPlayersForNode is called again or
     // stopAnimationsUpdates is called.
     this.stopAnimationsUpdates();
-    // ownerGlobal doesn't exist in content privileged windows.
-    // eslint-disable-next-line mozilla/use-ownerGlobal
+    // documentGlobal doesn't exist in content privileged windows.
+    // eslint-disable-next-line mozilla/use-documentGlobal
     const win = rawNode.ownerDocument.defaultView;
     this.observer = new win.MutationObserver(this.onAnimationMutation);
     this.observer.observe(rawNode, {

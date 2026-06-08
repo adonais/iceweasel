@@ -111,7 +111,7 @@ bool DOMLocalization::HasPendingMutations() const {
  */
 
 void DOMLocalization::ConnectRoot(nsINode& aNode) {
-  nsCOMPtr<nsIGlobalObject> global = aNode.GetOwnerDocGlobal();
+  nsCOMPtr<nsIGlobalObject> global = aNode.GetDocumentGlobal();
   if (!global) {
     return;
   }

@@ -104,7 +104,7 @@ export class AutoCompleteChild extends JSWindowActorChild {
     }
 
     let rect = lazy.LayoutUtils.getElementBoundingScreenRect(element);
-    let window = element.ownerGlobal;
+    let window = element.documentGlobal;
     let dir = window.getComputedStyle(element).direction;
     let results = this.getResultsFromController(input);
     let formOrigin = lazy.LoginHelper.getLoginOrigin(
@@ -192,7 +192,7 @@ export class AutoCompleteChild extends JSWindowActorChild {
 
     if (input.hasBeenTypePassword) {
       providers.add(
-        input.ownerGlobal.windowGlobalChild.getActor("LoginManager")
+        input.documentGlobal.windowGlobalChild.getActor("LoginManager")
       );
     } else {
       // The current design is that FormHistory doesn't call `markAsAutoCompletable`
@@ -201,7 +201,7 @@ export class AutoCompleteChild extends JSWindowActorChild {
       // Because of the design, we need to ask FormHistory whether to search for autocomplete entries
       // for every startSearch call
       providers.add(
-        input.ownerGlobal.windowGlobalChild.getActor("FormHistory")
+        input.documentGlobal.windowGlobalChild.getActor("FormHistory")
       );
     }
     return providers;

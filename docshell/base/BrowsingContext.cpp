@@ -802,7 +802,7 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
     txn.SetEmbeddedInContentDocument(
         aEmbedder->OwnerDoc()->IsContentDocument());
     if (nsCOMPtr<nsPIDOMWindowInner> inner =
-            do_QueryInterface(aEmbedder->GetOwnerDocGlobal())) {
+            do_QueryInterface(aEmbedder->GetDocumentGlobal())) {
       txn.SetEmbedderInnerWindowId(inner->WindowID());
     }
     txn.SetFullscreenAllowedByOwner(OwnerAllowsFullscreen(*aEmbedder));

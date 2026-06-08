@@ -23,7 +23,7 @@ export class KeyPressEventModelCheckerChild extends JSWindowActorChild {
     let model = Document.KEYPRESS_EVENT_MODEL_DEFAULT;
     if (
       this._isOldOfficeOnlineServer(aEvent.target) ||
-      this._isOldConfluence(aEvent.target.ownerGlobal)
+      this._isOldConfluence(aEvent.target.documentGlobal)
     ) {
       model = Document.KEYPRESS_EVENT_MODEL_SPLIT;
     }
