@@ -4192,30 +4192,34 @@ const MESSAGES = () => [
     targeting: "isAIWindow",
   },
   {
-    id: "TASKBAR_TABS_PINNING_SPOTLIGHT_TEST",
+    id: "WORLD_CUP_TASKBAR_TABS_SPOTLIGHT",
     groups: ["panel-test-provider"],
     template: "spotlight",
     content: {
-      id: "TASKBAR_TABS_PINNING_SPOTLIGHT_TEST",
+      id: "WORLD_CUP_TASKBAR_TABS_SPOTLIGHT",
       template: "multistage",
       modal: "tab",
       transitions: false,
       screens: [
         {
-          id: "TASKBAR_TABS_PINNING_SCREEN",
+          id: "SCREEN_1",
           force_hide_steps_indicator: true,
           content: {
             position: "split",
+            main_content_style: {
+              paddingBlockStart: "40px",
+            },
+            main_content_style_narrow: {
+              paddingInline: "40px",
+            },
             background:
-              "center / contain no-repeat url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/59bfe927-5d21-45ca-84eb-7fe14627cfd8.svg')",
+              "center / contain no-repeat light-dark(url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602011346--visuals-worldcup-light--12288900-f5e6-4193-8b66-da63b6cfe806.svg'), url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602011258--visuals-worldcup-dark--a975f19d-f186-40bb-8d86-98f450ad5462.svg'))",
             hero_text: {
               title: {
-                raw: "Open your favorite sites like an app",
-                fontSize: "24px",
+                raw: "Follow the World Cup in Firefox",
               },
               subtitle: {
                 raw: "One click launches your most used sites in a streamlined window with all of Firefox’s protections.",
-                marginBlockEnd: "300px",
                 textAlign: "initial",
                 marginInline: "40px",
                 marginInlineEnd: "6px",
@@ -4225,58 +4229,49 @@ const MESSAGES = () => [
             tiles: {
               type: "pinnable_sites",
               title: {
-                raw: "Select sites to pin to your taskbar",
-                fontSize: "18px",
+                raw: "Select to add to your taskbar",
               },
               pinButtonLabel: { raw: "Add" },
               data: [
                 {
-                  id: "gmail",
-                  name: "Gmail",
-                  description: "mail.google.com",
+                  id: "fifa-plus",
+                  name: "FIFA+",
+                  description: "plus.fifa.com",
                   iconUrl:
-                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/fb6b6899-82bc-40bc-91c3-e73e768ed855.png",
-                  url: "https://mail.google.com/",
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010406--fifa-plus-icon--a3fb720e-4604-43c9-9c7a-aabca6ba5bbb.png",
+                  url: "https://plus.fifa.com",
                 },
                 {
-                  id: "youtube",
-                  name: "YouTube",
-                  description: "youtube.com",
+                  id: "fox-sports",
+                  name: "Fox Sports",
+                  description: "foxsports.com",
                   iconUrl:
-                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/fb6b6899-82bc-40bc-91c3-e73e768ed855.png",
-                  url: "https://www.youtube.com/",
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010635--fox-sports-icon--f0dd8f03-f5c7-4930-94db-f002eca5c3e5.png",
+                  url: "https://www.foxsports.com/",
                 },
                 {
-                  id: "spotify",
-                  name: "Spotify",
-                  description: "open.spotify.com",
+                  id: "telemundo-deportes",
+                  name: "Telemundo Deportes",
+                  description: "telemundodeportes.com",
                   iconUrl:
-                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/fb6b6899-82bc-40bc-91c3-e73e768ed855.png",
-                  url: "https://open.spotify.com/",
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010447--telemundo-deportes-icon--710f3661-b2f2-4e2b-9fa4-c791b9cdb303.png",
+                  url: "https://telemundodeportes.com/",
                 },
                 {
-                  id: "whatsapp",
-                  name: "WhatsApp",
-                  description: "web.whatsapp.com",
+                  id: "r-soccer-reddit",
+                  name: "r/soccer Reddit",
+                  description: "reddit.com/r/soccer",
                   iconUrl:
-                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/fb6b6899-82bc-40bc-91c3-e73e768ed855.png",
-                  url: "https://web.whatsapp.com/",
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010522--reddit-soccer-icon--63d9ec11-d281-42ff-8382-b635cce58864.png",
+                  url: "http://reddit.com/r/soccer",
                 },
                 {
-                  id: "instagram",
-                  name: "Instagram",
-                  description: "instagram.com",
+                  id: "fubo-tv",
+                  name: "FuboTV",
+                  description: "fubo.tv",
                   iconUrl:
-                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/fb6b6899-82bc-40bc-91c3-e73e768ed855.png",
-                  url: "https://www.instagram.com/",
-                },
-                {
-                  id: "tiktok",
-                  name: "TikTok",
-                  description: "tiktok.com",
-                  iconUrl:
-                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/fb6b6899-82bc-40bc-91c3-e73e768ed855.png",
-                  url: "https://www.tiktok.com/",
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010600--fubo-tv-icon--2f47927e-d29c-4000-bb39-9f4a03e1c2e6.png",
+                  url: "http://fubo.tv/",
                 },
               ],
             },

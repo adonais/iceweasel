@@ -1711,10 +1711,15 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   renderSecondarySection(content) {
     const background = this.getEffectiveBackground(content);
     const heroImageUrl = this.getEffectiveHeroImageUrl(content);
+    // pinnable_sites exposes its background through a custom property so the
+    // stylesheet can swap the wide-layout image for a narrow gradient without
+    // overriding an inline `background` shorthand.
+    const tiles = Array.isArray(content.tiles) ? content.tiles : [content.tiles];
+    const isPinnableSites = tiles.some(tile => tile?.type === "pinnable_sites");
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `section-secondary ${content.hide_secondary_section ? "with-secondary-section-hidden" : ""}`,
       style: background ? {
-        background,
+        [isPinnableSites ? "--pinnable-sites-bkg" : "background"]: background,
         "--mr-secondary-background-position-y": content.split_narrow_bkg_position
       } : {}
     }, content.dismiss_button && content.reverse_split ? this.renderDismissButton() : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {

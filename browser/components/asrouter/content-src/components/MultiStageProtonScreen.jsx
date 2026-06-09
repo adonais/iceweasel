@@ -656,6 +656,13 @@ export class ProtonScreen extends React.PureComponent {
   renderSecondarySection(content) {
     const background = this.getEffectiveBackground(content);
     const heroImageUrl = this.getEffectiveHeroImageUrl(content);
+    // pinnable_sites exposes its background through a custom property so the
+    // stylesheet can swap the wide-layout image for a narrow gradient without
+    // overriding an inline `background` shorthand.
+    const tiles = Array.isArray(content.tiles)
+      ? content.tiles
+      : [content.tiles];
+    const isPinnableSites = tiles.some(tile => tile?.type === "pinnable_sites");
     return (
       <div
         className={`section-secondary ${
@@ -664,7 +671,8 @@ export class ProtonScreen extends React.PureComponent {
         style={
           background
             ? {
-                background,
+                [isPinnableSites ? "--pinnable-sites-bkg" : "background"]:
+                  background,
                 "--mr-secondary-background-position-y":
                   content.split_narrow_bkg_position,
               }

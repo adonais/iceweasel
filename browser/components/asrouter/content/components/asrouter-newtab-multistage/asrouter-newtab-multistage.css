@@ -1182,8 +1182,90 @@ html {
   padding-block: 40px 0;
 }
 .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .action-buttons .primary {
-  min-width: 96px;
-  padding-block: 8px;
+  min-width: 71px;
+  padding-block: 7px;
+}
+.onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .tile-title {
+  font-size: 18px;
+}
+.onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary {
+  background: var(--pinnable-sites-bkg);
+}
+.onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .hero-text h1 {
+  font-size: 26px;
+}
+.onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .hero-text h2 {
+  margin-block-end: 370px;
+}
+@media only screen and (width <= 800px) {
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .main-content-inner {
+    align-items: stretch;
+    margin-block-start: -30px;
+  }
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .action-buttons {
+    text-align: start;
+    justify-content: flex-start;
+  }
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .pinnable-sites-list {
+    max-width: none;
+  }
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .pinnable-sites-list .pinnable-sites-pin-button {
+    min-width: 62px;
+  }
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .tile-title {
+    font-size: 13px;
+  }
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary {
+    background: linear-gradient(0deg, light-dark(rgb(252, 245, 240), #210340) 0%, light-dark(rgb(250, 236, 241), #210340) 57%, light-dark(rgb(245, 212, 245), #210340) 100%);
+    height: auto;
+    min-height: 100px;
+  }
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .message-text {
+    margin-inline: 0;
+  }
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .hero-text h1 {
+    text-align: start;
+    margin-inline: 0;
+    padding-inline: 40px;
+    font-size: 17px;
+  }
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .hero-text h2 {
+    margin-block-end: 0;
+  }
+}
+[narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .main-content-inner {
+  align-items: stretch;
+  margin-block-start: -30px;
+}
+[narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .action-buttons {
+  text-align: start;
+  justify-content: flex-start;
+}
+[narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .pinnable-sites-list {
+  max-width: none;
+}
+[narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .pinnable-sites-list .pinnable-sites-pin-button {
+  min-width: 62px;
+}
+[narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .tile-title {
+  font-size: 13px;
+}
+[narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary {
+  background: linear-gradient(0deg, light-dark(rgb(252, 245, 240), #210340) 0%, light-dark(rgb(250, 236, 241), #210340) 57%, light-dark(rgb(245, 212, 245), #210340) 100%);
+  height: auto;
+  min-height: 100px;
+}
+[narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .message-text {
+  margin-inline: 0;
+}
+[narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .hero-text h1 {
+  text-align: start;
+  margin-inline: 0;
+  padding-inline: 40px;
+  font-size: 17px;
+}
+[narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .hero-text h2 {
+  margin-block-end: 0;
 }
 
 .onboardingContainer:has(.embedded-backup-restore-container) .screen[pos=split][fullscreen] .section-main .main-content {
@@ -3440,14 +3522,14 @@ html {
   display: flex;
   flex-direction: column;
   padding: 0;
-  gap: var(--space-medium);
+  gap: 16px;
   max-width: 300px;
 }
 .onboardingContainer .pinnable-sites-list .pinnable-sites-item {
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 4px;
+  padding-inline: 8px;
   list-style: none;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-medium);
@@ -3485,7 +3567,7 @@ html {
   opacity: 0;
   pointer-events: none;
   min-width: 62px;
-  padding-block: 8px;
+  padding-block: 7px;
   transition: opacity 100ms;
 }
 @starting-style {
