@@ -22547,8 +22547,8 @@ void CodeGenerator::visitWeakMapGetObject(LWeakMapGetObject* ins) {
   });
   addOutOfLineCode(ool, ins->mir());
 
-  masm.emitValueReadBarrierFastPath(output, scratch, scratch2, scratch3,
-                                    scratch4, scratch5, ool->entry());
+  masm.emitWeapMapBarrierFastPath(output, scratch, scratch2, scratch3, scratch4,
+                                  scratch5, ool->entry());
   masm.jump(ool->rejoin());
 
   masm.bind(&missing);

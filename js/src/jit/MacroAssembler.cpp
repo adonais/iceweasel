@@ -8353,9 +8353,11 @@ void MacroAssembler::emitPreBarrierFastPath(MIRType type, Register temp1,
   branchTestPtr(Assembler::NonZero, temp2, temp1, noBarrier);
 }
 
-void MacroAssembler::emitValueReadBarrierFastPath(
-    ValueOperand value, Register cell, Register temp1, Register temp2,
-    Register temp3, Register temp4, Label* barrier) {
+void MacroAssembler::emitWeapMapBarrierFastPath(ValueOperand value,
+                                                Register cell, Register temp1,
+                                                Register temp2, Register temp3,
+                                                Register temp4,
+                                                Label* barrier) {
   Label done;
 
   // No barrier needed for non-GC types
@@ -8371,6 +8373,10 @@ void MacroAssembler::emitValueReadBarrierFastPath(
   // If the GC thing is in the nursery, we don't need to barrier it.
   branchPtr(Assembler::NotEqual, Address(chunk, gc::ChunkStoreBufferOffset),
             ImmWord(0), &done);
+
+  // If the GC thing is a symbol then we always need to branch to the out of
+  // line barrier to do the atom marking bitmap part.
+  branchTestSymbol(Assembler::Equal, value, barrier);
 
   // Load the mark word and bit index for the black bit.
   Register markWord = temp2;
