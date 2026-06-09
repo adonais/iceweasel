@@ -42,11 +42,12 @@ add_setup(async function () {
 add_task(async function test_mozillaonline_distribution_ignored() {
   Services.prefs.setBoolPref("distribution.mozillaonline.ignore", true);
 
-  let { DistributionManagement } = ChromeUtils.importESModule(
-    "resource:///modules/distribution.sys.mjs"
+  let { DistributionCustomizer } = ChromeUtils.import(
+    "resource:///modules/distribution.js"
   );
 
-  DistributionManagement.applyCustomizations();
+  let distribution = new DistributionCustomizer();
+  distribution.applyCustomizations();
 
   let defaultBranch = Services.prefs.getDefaultBranch(null);
 
