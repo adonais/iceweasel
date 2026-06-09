@@ -411,6 +411,11 @@ export class SearchModeSwitcher {
       },
       this.#input.window.gBrowser.selectedBrowser
     );
+
+    let searchString = this.#getSearchString();
+    if (searchString) {
+      this.#input.startQuery({ allowAutofill: false });
+    }
   }
 
   async #populateEngines() {
