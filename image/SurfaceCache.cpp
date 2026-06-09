@@ -796,7 +796,14 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
   }
 
  public:
-  void InitMemoryReporter() { RegisterWeakMemoryReporter(this); }
+  void Init(const StaticMutexAutoLock& aAutoLock) {
+    mExpirationTracker.InitLocked(aAutoLock);
+    RegisterWeakMemoryReporter(this);
+  }
+
+  void Destroy(const StaticMutexAutoLock& aAutoLock) {
+    mExpirationTracker.DestroyLocked(aAutoLock);
+  }
 
   InsertOutcome Insert(NotNull<ISurfaceProvider*> aProvider, bool aSetAvailable,
                        const StaticMutexAutoLock& aAutoLock) {
@@ -1509,12 +1516,10 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
   }
 
   class SurfaceTracker final
-      : public ExpirationTrackerImpl<CachedSurface, 2, StaticMutex,
-                                     StaticMutexAutoLock> {
+      : public ExpirationTrackerImpl<CachedSurface, 2, StaticMutex> {
    public:
     explicit SurfaceTracker(uint32_t aSurfaceCacheExpirationTimeMS)
-        : ExpirationTrackerImpl<CachedSurface, 2, StaticMutex,
-                                StaticMutexAutoLock>(
+        : ExpirationTrackerImpl<CachedSurface, 2, StaticMutex>(
               aSurfaceCacheExpirationTimeMS, "SurfaceTracker"_ns) {}
 
    protected:
@@ -1528,9 +1533,25 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
       sInstance->TakeDiscard(mDiscard, aAutoLock);
     }
 
-    void NotifyHandlerEnd() override {
-      nsTArray<RefPtr<CachedSurface>> discard(std::move(mDiscard));
+    already_AddRefed<ExpirationTrackerObserver> CreateObserver() final {
+      return mozilla::MakeAndAddRef<InternalTrackerObserver>()
+          .downcast<ExpirationTrackerObserver>();
     }
+
+    class InternalTrackerObserver final : public ExpirationTrackerObserver {
+     public:
+      InternalTrackerObserver() = default;
+
+      void NotifyHandlerEnd() final {
+        nsTArray<RefPtr<CachedSurface>> discard;
+        {
+          StaticMutexAutoLock lock(sInstanceMutex);
+          if (sInstance) {
+            discard = std::move(sInstance->mExpirationTracker.mDiscard);
+          }
+        }
+      }
+    };
 
     StaticMutex& GetMutex() override { return sInstanceMutex; }
 
@@ -1635,13 +1656,15 @@ void SurfaceCache::Initialize() {
   uint32_t finalSurfaceCacheSizeBytes =
       min(surfaceCacheSizeBytes, uint64_t(UINT32_MAX));
 
+  StaticMutexAutoLock lock(sInstanceMutex);
+
   // Create the surface cache singleton with the requested settings.  Note that
   // the size is a limit that the cache may not grow beyond, but we do not
   // actually allocate any storage for surfaces at this time.
   sInstance = new SurfaceCacheImpl(surfaceCacheExpirationTimeMS,
                                    surfaceCacheDiscardFactor,
                                    finalSurfaceCacheSizeBytes);
-  sInstance->InitMemoryReporter();
+  sInstance->Init(lock);
 }
 
 /* static */
@@ -1650,8 +1673,12 @@ void SurfaceCache::Shutdown() {
   {
     StaticMutexAutoLock lock(sInstanceMutex);
     MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(sInstance, "No singleton - was Shutdown() called twice?");
     cache = sInstance.forget();
+    if (cache) {
+      cache->Destroy(lock);
+    } else {
+      MOZ_ASSERT_UNREACHABLE("No singleton - was Shutdown() called twice?");
+    }
   }
 }
 

@@ -97,12 +97,12 @@ class SharedSurfacesParent final {
 
   class MappingTracker final
       : public ExpirationTrackerImpl<gfx::SourceSurfaceSharedDataWrapper, 4,
-                                     StaticMutex, StaticMutexAutoLock> {
+                                     StaticMutex> {
    public:
     explicit MappingTracker(uint32_t aExpirationTimeoutMS,
                             nsIEventTarget* aEventTarget)
         : ExpirationTrackerImpl<gfx::SourceSurfaceSharedDataWrapper, 4,
-                                StaticMutex, StaticMutexAutoLock>(
+                                StaticMutex>(
               aExpirationTimeoutMS, "SharedMappingTracker"_ns, aEventTarget) {}
 
     void TakeExpired(
@@ -113,12 +113,18 @@ class SharedSurfacesParent final {
     void NotifyExpiredLocked(gfx::SourceSurfaceSharedDataWrapper* aSurface,
                              const StaticMutexAutoLock& aAutoLock) override;
 
-    void NotifyHandlerEndLocked(const StaticMutexAutoLock& aAutoLock) override {
+    StaticMutex& GetMutex() override { return sMutex; }
+
+    already_AddRefed<ExpirationTrackerObserver> CreateObserver() final {
+      return mozilla::MakeAndAddRef<InternalTrackerObserver>()
+          .downcast<ExpirationTrackerObserver>();
     }
 
-    void NotifyHandlerEnd() override;
-
-    StaticMutex& GetMutex() override { return sMutex; }
+    class InternalTrackerObserver final : public ExpirationTrackerObserver {
+     public:
+      InternalTrackerObserver() = default;
+      void NotifyHandlerEnd() final;
+    };
 
     nsTArray<RefPtr<gfx::SourceSurfaceSharedDataWrapper>> mExpired;
   };

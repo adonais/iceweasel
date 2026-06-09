@@ -20,9 +20,9 @@
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/RWLock.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/FontPaletteCache.h"
@@ -299,19 +299,29 @@ struct FontCacheSizes {
 };
 
 class gfxFontCache final
-    : public ExpirationTrackerImpl<gfxFont, 3, mozilla::Mutex,
-                                   mozilla::MutexAutoLock> {
+    : public ExpirationTrackerImpl<gfxFont, 3, mozilla::StaticMutex> {
  protected:
   // Expiration tracker implementation.
   enum { FONT_TIMEOUT_SECONDS = 10 };
 
-  typedef mozilla::Mutex Lock;
-  typedef mozilla::MutexAutoLock AutoLock;
+  typedef mozilla::StaticMutex Lock;
+  typedef mozilla::StaticMutexAutoLock AutoLock;
 
   // This protects the ExpirationTracker tables.
-  Lock mMutex = Lock("fontCacheExpirationMutex");
+  static Lock gMutex;
 
-  Lock& GetMutex() override { return mMutex; }
+  Lock& GetMutex() override { return gMutex; }
+
+  already_AddRefed<ExpirationTrackerObserver> CreateObserver() final {
+    return mozilla::MakeAndAddRef<InternalTrackerObserver>()
+        .downcast<ExpirationTrackerObserver>();
+  }
+
+  class InternalTrackerObserver final : public ExpirationTrackerObserver {
+   public:
+    explicit InternalTrackerObserver() = default;
+    void NotifyHandlerEnd() final;
+  };
 
  public:
   explicit gfxFontCache(nsIEventTarget* aEventTarget);
@@ -357,7 +367,7 @@ class gfxFontCache final
 
   void RunWordCacheExpirationTimer() {
     if (!mTimerRunning) {
-      mozilla::MutexAutoLock lock(mMutex);
+      AutoLock lock(gMutex);
       if (!mTimerRunning && mWordCacheExpirationTimer) {
         mWordCacheExpirationTimer->InitWithNamedFuncCallback(
             WordCacheExpirationTimerCallback, this,
@@ -369,7 +379,7 @@ class gfxFontCache final
   }
   void PauseWordCacheExpirationTimer() {
     if (mTimerRunning) {
-      mozilla::MutexAutoLock lock(mMutex);
+      AutoLock lock(gMutex);
       if (mTimerRunning && mWordCacheExpirationTimer) {
         mWordCacheExpirationTimer->Cancel();
         mTimerRunning = false;
@@ -401,17 +411,16 @@ class gfxFontCache final
   };
 
   nsresult AddObject(gfxFont* aFont) {
-    AutoLock lock(mMutex);
+    AutoLock lock(gMutex);
     return AddObjectLocked(aFont, lock);
   }
 
   // This gets called when the timeout has expired on a single-refcount
   // font; we just delete it.
   void NotifyExpiredLocked(gfxFont* aFont, const AutoLock&)
-      MOZ_REQUIRES(mMutex) override;
-  void NotifyHandlerEnd() override;
+      MOZ_REQUIRES(gMutex) override;
 
-  void DestroyDiscard(nsTArray<gfxFont*>& aDiscard);
+  static void DestroyDiscard(nsTArray<gfxFont*>& aDiscard);
 
   static gfxFontCache* gGlobalCache;
 
@@ -446,13 +455,13 @@ class gfxFontCache final
     gfxFont* MOZ_UNSAFE_REF("tracking for deferred deletion") mFont = nullptr;
   };
 
-  nsTHashtable<HashEntry> mFonts MOZ_GUARDED_BY(mMutex);
+  nsTHashtable<HashEntry> mFonts MOZ_GUARDED_BY(gMutex);
 
-  nsTArray<gfxFont*> mTrackerDiscard MOZ_GUARDED_BY(mMutex);
+  nsTArray<gfxFont*> mTrackerDiscard MOZ_GUARDED_BY(gMutex);
 
   static void WordCacheExpirationTimerCallback(nsITimer* aTimer, void* aCache);
 
-  nsCOMPtr<nsITimer> mWordCacheExpirationTimer MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsITimer> mWordCacheExpirationTimer MOZ_GUARDED_BY(gMutex);
   std::atomic<bool> mTimerRunning = false;
 };
 

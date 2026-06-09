@@ -66,6 +66,7 @@ using namespace mozilla::gfx;
 using namespace mozilla::unicode;
 using mozilla::services::GetObserverService;
 
+StaticMutex gfxFontCache::gMutex;
 gfxFontCache* gfxFontCache::gGlobalCache = nullptr;
 
 #ifdef DEBUG_roc
@@ -144,18 +145,29 @@ gfxFontCache::Observer::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 nsresult gfxFontCache::Init() {
+  StaticMutexAutoLock lock(gMutex);
   NS_ASSERTION(!gGlobalCache, "Where did this come from?");
   gGlobalCache = new gfxFontCache(GetMainThreadSerialEventTarget());
   if (!gGlobalCache) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
+  gGlobalCache->InitLocked(lock);
   RegisterStrongMemoryReporter(MakeAndAddRef<MemoryReporter>());
   return NS_OK;
 }
 
 void gfxFontCache::Shutdown() {
-  delete gGlobalCache;
-  gGlobalCache = nullptr;
+  gfxFontCache* cache;
+  {
+    StaticMutexAutoLock lock(gMutex);
+    cache = gGlobalCache;
+    if (gGlobalCache) {
+      gGlobalCache->DestroyLocked(lock);
+      gGlobalCache = nullptr;
+    }
+  }
+
+  delete cache;
 
 #ifdef DEBUG_TEXT_RUN_STORAGE_METRICS
   printf("Textrun storage high water mark=%d\n", gTextRunStorageHighWaterMark);
@@ -176,8 +188,8 @@ void gfxFontCache::Shutdown() {
 }
 
 gfxFontCache::gfxFontCache(nsIEventTarget* aEventTarget)
-    : ExpirationTrackerImpl<gfxFont, 3, Lock, AutoLock>(
-          FONT_TIMEOUT_SECONDS * 1000, "gfxFontCache"_ns, aEventTarget) {
+    : ExpirationTrackerImpl<gfxFont, 3, Lock>(FONT_TIMEOUT_SECONDS * 1000,
+                                              "gfxFontCache"_ns, aEventTarget) {
   nsCOMPtr<nsIObserverService> obs = GetObserverService();
   if (obs) {
     obs->AddObserver(new Observer, "memory-pressure", false);
@@ -224,7 +236,7 @@ bool gfxFontCache::HashEntry::KeyEquals(const KeyTypePointer aKey) const {
 already_AddRefed<gfxFont> gfxFontCache::Lookup(
     const gfxFontEntry* aFontEntry, const gfxFontStyle* aStyle,
     const gfxCharacterMap* aUnicodeRangeMap) {
-  MutexAutoLock lock(mMutex);
+  StaticMutexAutoLock lock(gMutex);
 
   Key key(aFontEntry, aStyle, aUnicodeRangeMap);
   HashEntry* entry = mFonts.GetEntry(key);
@@ -247,7 +259,7 @@ already_AddRefed<gfxFont> gfxFontCache::Lookup(
 
 already_AddRefed<gfxFont> gfxFontCache::MaybeInsert(gfxFont* aFont) {
   MOZ_ASSERT(aFont);
-  MutexAutoLock lock(mMutex);
+  StaticMutexAutoLock lock(gMutex);
 
   Key key(aFont->GetFontEntry(), aFont->GetStyle(),
           aFont->GetUnicodeRangeMap());
@@ -277,7 +289,7 @@ already_AddRefed<gfxFont> gfxFontCache::MaybeInsert(gfxFont* aFont) {
 
 bool gfxFontCache::MaybeDestroy(gfxFont* aFont) {
   MOZ_ASSERT(aFont);
-  MutexAutoLock lock(mMutex);
+  StaticMutexAutoLock lock(gMutex);
 
   // If the font has a non-zero refcount, then we must have lost the race with
   // gfxFontCache::Lookup and the same font was reacquired.
@@ -327,15 +339,18 @@ void gfxFontCache::NotifyExpiredLocked(gfxFont* aFont, const AutoLock& aLock) {
   mFonts.RemoveEntry(entry);
 }
 
-void gfxFontCache::NotifyHandlerEnd() {
+void gfxFontCache::InternalTrackerObserver::NotifyHandlerEnd() {
   nsTArray<gfxFont*> discard;
   {
-    MutexAutoLock lock(mMutex);
-    discard = std::move(mTrackerDiscard);
+    StaticMutexAutoLock lock(gMutex);
+    if (gGlobalCache) {
+      discard = std::move(gGlobalCache->mTrackerDiscard);
+    }
   }
   DestroyDiscard(discard);
 }
 
+/* static */
 void gfxFontCache::DestroyDiscard(nsTArray<gfxFont*>& aDiscard) {
   for (auto& font : aDiscard) {
     NS_ASSERTION(font->GetRefCount() == 0,
@@ -349,7 +364,7 @@ void gfxFontCache::DestroyDiscard(nsTArray<gfxFont*>& aDiscard) {
 void gfxFontCache::Flush() {
   nsTArray<gfxFont*> discard;
   {
-    MutexAutoLock lock(mMutex);
+    StaticMutexAutoLock lock(gMutex);
     discard.SetCapacity(mFonts.Count());
     for (auto iter = mFonts.Iter(); !iter.Done(); iter.Next()) {
       HashEntry* entry = static_cast<HashEntry*>(iter.Get());
@@ -389,7 +404,7 @@ void gfxFontCache::WordCacheExpirationTimerCallback(nsITimer* aTimer,
 void gfxFontCache::AgeCachedWords() {
   bool allEmpty = true;
   {
-    MutexAutoLock lock(mMutex);
+    StaticMutexAutoLock lock(gMutex);
     for (const auto& entry : mFonts) {
       allEmpty = entry.mFont->AgeCachedWords() && allEmpty;
     }
@@ -401,7 +416,7 @@ void gfxFontCache::AgeCachedWords() {
 
 void gfxFontCache::FlushShapedWordCaches() {
   {
-    MutexAutoLock lock(mMutex);
+    StaticMutexAutoLock lock(gMutex);
     for (const auto& entry : mFonts) {
       entry.mFont->ClearCachedWords();
     }
@@ -410,7 +425,7 @@ void gfxFontCache::FlushShapedWordCaches() {
 }
 
 void gfxFontCache::NotifyGlyphsChanged() {
-  MutexAutoLock lock(mMutex);
+  StaticMutexAutoLock lock(gMutex);
   for (const auto& entry : mFonts) {
     entry.mFont->NotifyGlyphsChanged();
   }
@@ -420,7 +435,7 @@ void gfxFontCache::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
                                           FontCacheSizes* aSizes) const {
   // TODO: add the overhead of the expiration tracker (generation arrays)
 
-  MutexAutoLock lock(*const_cast<Mutex*>(&mMutex));
+  StaticMutexAutoLock lock(*const_cast<StaticMutex*>(&gMutex));
   aSizes->mFontInstances += mFonts.ShallowSizeOfExcludingThis(aMallocSizeOf);
   for (const auto& entry : mFonts) {
     entry.mFont->AddSizeOfExcludingThis(aMallocSizeOf, aSizes);
