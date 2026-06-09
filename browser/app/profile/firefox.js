@@ -2877,3 +2877,6 @@ pref("cookiebanners.ui.desktop.cfrVariant", 0);
 #ifdef MOZ_ARTIFACT_BUILDS
   pref("telemetry.fog.artifact_build", true);
 #endif
+
+// When enabled, Firefox ignores the distribution.ini file if global.id is MozillaOnline.
+pref("distribution.mozillaonline.ignore", true);

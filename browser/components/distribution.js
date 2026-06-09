@@ -399,6 +399,15 @@ DistributionCustomizer.prototype = {
       return this._checkCustomizationComplete();
     }
 
+    if (
+      distroID == "MozillaOnline" &&
+      Services.prefs.getBoolPref("distribution.mozillaonline.ignore", false)
+    ) {
+      Glean.distribution.mozillaonlineIgnored.set(true);
+      this.__defineGetter__("_ini", () => null);
+      return this._checkCustomizationComplete();
+    }
+
     let defaults = Services.prefs.getDefaultBranch(null);
 
     // Global really contains info we set as prefs.  They're only
