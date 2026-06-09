@@ -92,6 +92,15 @@
   & > :last-child {
     padding-block-end: var(--smart-window-fade-size);
   }
+
+  & > ai-action-result[is-expanded] {
+    margin-block-end: var(--space-large);
+  }
+
+  & > ai-action-result + .chat-bubble-assistant {
+    padding-block-start: 0;
+    margin-block-start: calc(-2 * var(--space-small));
+  }
 }
 
 .assistant-response-announcer {

@@ -547,9 +547,6 @@ export class AIChatContent extends MozLitElement {
 
   /**
    * Handle tool role messages produced when a toolcall completes
-   * Each tool message lands in conversationState by ordinal
-   * and is rendered as an action log entry inline with the surrounding
-   * assistant/user bubbles for now
    *
    * @param {CustomEvent} event
    */
@@ -573,7 +570,8 @@ export class AIChatContent extends MozLitElement {
       ordinal,
       toolCallId: content.tool_call_id,
       toolName: content.name,
-      label: actionLog.label,
+      pendingLabel: actionLog.pendingLabel,
+      row: actionLog.row,
     };
 
     this.requestUpdate();
@@ -772,18 +770,25 @@ export class AIChatContent extends MozLitElement {
   }
 
   /**
-   * Render a single tool role conversation entry as an action log row
-   * Each toolcall becomes its own <ai-action-result> with
-   * minimal props. just a label resolved parent-side and threaded through
-   * in the message payload. Rest of details are the scope of Bug 2037612
+   * Render a turn's tool calls as a single grouped action log container
    *
-   * @param {object} toolEntry
+   * @param {Array<object>} toolMsgs - one entry per tool call this turn
+   * @param {boolean} isComplete - whether the turn has finished
    */
-  #renderActionLogEntry(toolEntry) {
+  #renderActionLogGroup(toolMsgs, isComplete) {
+    const finalMessage = {
+      l10nId: "action-log-completed-steps",
+      l10nArgs: { count: toolMsgs.length },
+    };
+    const summary = isComplete
+      ? finalMessage
+      : toolMsgs[toolMsgs.length - 1]?.pendingLabel;
     return html`
       <ai-action-result
-        .label=${toolEntry.label}
-        .rows=${[]}
+        .labelL10nId=${summary?.l10nId}
+        .labelL10nArgs=${summary?.l10nArgs}
+        .rows=${this.#buildGroupedActionLogRows(toolMsgs)}
+        .isExpanded=${false}
       ></ai-action-result>
     `;
   }
@@ -916,16 +921,121 @@ export class AIChatContent extends MozLitElement {
     ></chat-assistant-error>`;
   }
 
-  #renderMessages() {
+  /**
+   * Build the render list one turn at a time.
+   *
+   * The model creates an empty assistant placeholder before tools run so by
+   * ordinal the assistant has a lower index than the toolcall messages it produces.
+   * We buffer per turn so action log UI render above the assistant reply,
+   * flipping that ordinal order for display
+   *
+   * @return {Array<{ type: string, msg: object, contextPageUrl?: string }>}
+   */
+  #buildTurnRenderItems() {
+    const items = [];
     let lastContextPageUrl;
-    return this.conversationState.map(msg => {
-      if (msg?.uiType === UI_TYPES.ACTION_LOG) {
-        return this.#renderActionLogEntry(msg);
+    let pendingActionLogs = [];
+    let pendingAssistantMessage = null;
+    let pendingAssistantContextUrl;
+
+    // Commit the current turn's buffered action logs and assistant reply into
+    // items. Action log render above the assistant message
+    //
+    // isComplete marks whether the turn has finished
+    const appendPendingAssistantTurn = isComplete => {
+      if (!pendingActionLogs.length && !pendingAssistantMessage) {
+        return;
       }
-      const chips = this.#getVisibleChips(msg, lastContextPageUrl);
-      if (msg?.role === "user") {
+
+      // Emit one grouped action-log item per turn carrying all the tool
+      // messages of that turn. The renderer collapses them into a single
+      // <ai-action-result> with one row per tool.
+      if (pendingActionLogs.length) {
+        items.push({
+          type: "action-log",
+          msgs: pendingActionLogs,
+          isComplete,
+        });
+      }
+
+      if (pendingAssistantMessage) {
+        items.push({
+          type: "message",
+          msg: pendingAssistantMessage,
+          contextPageUrl: pendingAssistantContextUrl,
+        });
+      }
+
+      pendingActionLogs = [];
+      pendingAssistantMessage = null;
+      pendingAssistantContextUrl = undefined;
+    };
+
+    for (const msg of this.conversationState) {
+      if (!msg) {
+        continue;
+      }
+
+      // Hold tool UI messages for the current turn
+      if (msg.uiType === UI_TYPES.ACTION_LOG) {
+        pendingActionLogs.push(msg);
+        continue;
+      }
+
+      // Hold the assistant reply
+      // If a previous assistant is still pending, commit it first, so it isn't dropped
+      if (msg.role === "assistant") {
+        if (pendingAssistantMessage) {
+          appendPendingAssistantTurn(true);
+        }
+
+        pendingAssistantMessage = msg;
+        pendingAssistantContextUrl = lastContextPageUrl;
+        continue;
+      }
+
+      // A user or any other role ends the previous turn. Commit first then push.
+      appendPendingAssistantTurn(true);
+
+      // Capture the previous context URL for this message's duplicate-chip check,
+      // then update lastContextPageUrl for subsequent messages.
+      const contextPageUrl = lastContextPageUrl;
+      if (msg.role === "user") {
         lastContextPageUrl = msg.pageUrl;
       }
+
+      items.push({
+        type: "message",
+        msg,
+        contextPageUrl,
+      });
+    }
+
+    // Commit anything still pending at end of loop. The in-flight turn is
+    // complete once assistantIsLoading set false
+    appendPendingAssistantTurn(!this.assistantIsLoading);
+
+    return items;
+  }
+
+  /**
+   * Collect the per-tool rows for the grouped action log card
+   *
+   * @param {Array<object>} toolMsgs
+   * @returns {Array<{ labelL10nId?: string, labelL10nArgs?: object, label?: string, items: Array }>}
+   */
+  #buildGroupedActionLogRows(toolMsgs) {
+    return toolMsgs.map(msg => msg.row).filter(Boolean);
+  }
+
+  #renderMessages() {
+    return this.#buildTurnRenderItems().map(item => {
+      const { type, msgs, msg, isComplete, contextPageUrl } = item;
+      if (type === "action-log") {
+        return this.#renderActionLogGroup(msgs, isComplete);
+      }
+
+      const chips = this.#getVisibleChips(msg, contextPageUrl);
       return this.#renderMessage(msg, chips);
     });
   }

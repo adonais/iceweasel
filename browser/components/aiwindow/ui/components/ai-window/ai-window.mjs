@@ -55,6 +55,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/ToolActionLog.sys.mjs",
   getActionLogConfigForTool:
     "moz-src:///browser/components/aiwindow/ui/modules/ToolActionLog.sys.mjs",
+  buildActionLogRow:
+    "moz-src:///browser/components/aiwindow/ui/modules/ToolActionLog.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", function () {
@@ -1844,13 +1846,23 @@ export class AIWindow extends MozLitElement {
     // Role is just the transport gate here. uiType gets set below and is
     // what the renderer keys off
     if (newMessage.role === "tool") {
-      const cfg = lazy.getActionLogConfigForTool(newMessage.content?.name);
+      const cfg = lazy.getActionLogConfigForTool(
+        newMessage.content?.name,
+        newMessage.content?.body
+      );
       if (!cfg.show) {
         return null;
       }
+
       newMessage.actionLog = {
         uiType: lazy.ACTION_LOG_UI_TYPE,
-        label: cfg.label,
+        pendingLabel: cfg.pendingLabel,
+        row: lazy.buildActionLogRow(
+          newMessage.content?.name,
+          cfg.label,
+          newMessage.content?.body,
+          newMessage.content?.args
+        ),
       };
     }
 

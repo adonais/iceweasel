@@ -29,6 +29,8 @@ support-files = [
 
 ["browser_actor_user_prompt.js"]
 
+["browser_aichat_content_action_log_order.js"]
+
 ["browser_aichat_content_actors.js"]
 
 ["browser_aichat_content_background_token.js"]
