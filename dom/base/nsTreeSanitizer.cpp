@@ -12,6 +12,7 @@
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StyleSheetInlines.h"
+#include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/HTMLFormElement.h"
@@ -1451,6 +1452,11 @@ void nsTreeSanitizer::SanitizeChildren(nsINode* aRoot) {
       NS_ASSERTION(ns == kNameSpaceID_XHTML || ns == kNameSpaceID_SVG ||
                        ns == kNameSpaceID_MathML,
                    "Should have only HTML, MathML or SVG here!");
+      if (elt->HasCustomElementData()) {
+        MOZ_ASSERT(elt->GetCustomElementData()->GetIs(elt),
+                   "CustomElementData without an |is| attribute?");
+        elt->ClearCustomElementData();
+      }
       AllowedAttributes allowed;
       if (ns == kNameSpaceID_XHTML) {
         allowed.mNames = sAttributesHTML;
