@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -299,7 +301,9 @@ private fun BlockAIDialog(
             )
         },
         text = {
-            Column {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
                 val appName = stringResource(R.string.app_name)
                 val bodyText = stringResource(R.string.ai_controls_block_dialog_body, appName, appName)
                 val whatBlocked = stringResource(R.string.ai_controls_block_dialog_what_will_be_blocked)
