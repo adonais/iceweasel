@@ -590,6 +590,15 @@ export class RunSearch {
       RunSearch.#showSearchingIndicator(win, false, null);
     }
 
+    // Mark the SERP entry as having user interaction so Back doesn't skip it
+    // (browser.navigation.requireUserInteraction). The user asked for this
+    // navigation via the assistant even if they never gesture on the SERP.
+    const sh = originalBrowser.browsingContext?.sessionHistory;
+    const entry = sh && sh.index >= 0 ? sh.getEntryAtIndex(sh.index) : null;
+    if (entry) {
+      entry.hasUserInteraction = true;
+    }
+
     conversation.securityProperties.setPrivateData();
     conversation.securityProperties.setUntrustedInput();
 
