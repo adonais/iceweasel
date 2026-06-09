@@ -4566,7 +4566,7 @@
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Pozostałe mecze</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
-  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Następne</string>
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Niedługo</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(Koniec meczu)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
@@ -4640,7 +4640,7 @@
     Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
   -->
-  <string name="sports_widget_upcoming_match_content_description">Następny: %1$s kontra %2$s, %3$s o\u00a0%4$s</string>
+  <string name="sports_widget_upcoming_match_content_description">Niedługo: %1$s kontra %2$s, %3$s o\u00a0%4$s</string>
   <!--
     Content description (for accessibility, not displayed) announcing a soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
