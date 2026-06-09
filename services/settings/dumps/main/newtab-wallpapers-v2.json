@@ -1,27 +1,61 @@
 {
   "data": [
     {
-      "order": 10,
+      "order": 9,
       "theme": "light",
-      "title": "firefox-c",
-      "schema": 1779126584430,
+      "title": "wcw-c",
+      "schema": 1780617609700,
       "category": "firefox",
       "attachment": {
-        "hash": "054a4389ea9087583091de88a5aa45740a3ef067667a963c587208648df87176",
-        "size": 12260,
-        "filename": "desktop-wallpaper-c-light-1920x1080.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/f633134b-dc81-4b54-a8c0-61681e36c56e.svg",
+        "hash": "f0a849a37ed6a89fc1856bb7a5b1f3c408545504c21ad63d17ad66e785a53d90",
+        "size": 59965,
+        "filename": "wallpaper-worldcup-C-desktop.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260608150101--b8acfb08-6b49-48b3-9ae3-3564bb4d8402--d9f26a1a-db0d-4fe1-a566-76c94f1ecf94.svg",
         "mimetype": "image/svg+xml"
       },
-      "background_position": "top left",
-      "id": "429c288c-8d92-4baa-aefb-a04719882454",
-      "last_modified": 1779289118010
+      "background_position": "top right",
+      "id": "b8acfb08-6b49-48b3-9ae3-3564bb4d8402",
+      "last_modified": 1780931540831
     },
     {
-      "order": 6,
+      "order": 8,
+      "theme": "light",
+      "title": "wcw-a",
+      "schema": 1780605617152,
+      "category": "firefox",
+      "attachment": {
+        "hash": "57c307a554ce710ac9f611addb5f8398eb030fef86bd9b573afd339a180bd386",
+        "size": 398329,
+        "filename": "wallpaper-worldcup-A-desktop-light.avif",
+        "location": "main-workspace/newtab-wallpapers-v2/20260604203925--89ce089b-b568-4051-8c4c-0d2a3d1e63dc--f290b6da-1a8c-4a51-bd90-8e7abb9bf18e.avif",
+        "mimetype": "image/avif"
+      },
+      "background_position": "top right",
+      "id": "89ce089b-b568-4051-8c4c-0d2a3d1e63dc",
+      "last_modified": 1780931540828
+    },
+    {
+      "order": 7,
+      "theme": "dark",
+      "title": "wcw-b",
+      "schema": 1780930862283,
+      "category": "firefox",
+      "attachment": {
+        "hash": "d82978654e2b3fc1a11112d26e1688bac866c1873cad1f91cbffb277227bf999",
+        "size": 112355,
+        "filename": "wallpaper-worldcup-B-desktop-dark.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260608150114--82d1fa4a-ca0f-4f97-9a35-efcefb3e368d--755165e9-cf93-46bf-aee2-e75f0b49daa9.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "top right",
+      "id": "82d1fa4a-ca0f-4f97-9a35-efcefb3e368d",
+      "last_modified": 1780931540824
+    },
+    {
+      "order": 60,
       "theme": "light",
       "title": "firefox-a-light",
-      "schema": 1779116899961,
+      "schema": 1780605372022,
       "category": "firefox",
       "attachment": {
         "hash": "01be7f29c851b15e4e5892e0b3b6539e1ac5d12f352119c0c054bafd9bf291b0",
@@ -32,13 +66,13 @@
       },
       "background_position": "top right",
       "id": "25516fbc-54f6-4f7d-9b12-0188844109b4",
-      "last_modified": 1779125035012
+      "last_modified": 1780931540821
     },
     {
-      "order": 1,
+      "order": 10,
       "theme": "light",
       "title": "firefox-orange",
-      "schema": 1779117244930,
+      "schema": 1780605446111,
       "category": "firefox",
       "attachment": {
         "hash": "27eb5dbe3d52af1b09a7af87fd1cbde9dc550ab1de2736730d02737c482bd049",
@@ -49,13 +83,13 @@
       },
       "background_position": "bottom left",
       "id": "c01058f4-5b6c-4ac4-9708-54d5bee8f450",
-      "last_modified": 1779125035007
+      "last_modified": 1780931540818
     },
     {
-      "order": 3,
+      "order": 30,
       "theme": "dark",
       "title": "firefox-desert-dark",
-      "schema": 1779116565782,
+      "schema": 1780605383845,
       "category": "firefox",
       "attachment": {
         "hash": "bf9d8585696d53674a2792846b77114a24f27148b94b3c9bb25a82a2ce31939f",
@@ -66,13 +100,13 @@
       },
       "background_position": "bottom right",
       "id": "36d49fb5-9fd4-4fa9-9504-2dd0b137d285",
-      "last_modified": 1779125035002
+      "last_modified": 1780931540816
     },
     {
-      "order": 13,
+      "order": 130,
       "theme": "dark",
       "title": "firefox-g-dark",
-      "schema": 1779117137368,
+      "schema": 1780605302700,
       "category": "firefox",
       "attachment": {
         "hash": "e04003fa18aeca660ec8eeeedd9cf71653bdafc787c5aa5c7420b5abf8358c61",
@@ -83,13 +117,13 @@
       },
       "background_position": "bottom left",
       "id": "94e8a3ce-1faf-4aa1-a52e-7e15c07ff627",
-      "last_modified": 1779125034998
+      "last_modified": 1780931540813
     },
     {
-      "order": 9,
+      "order": 90,
       "theme": "dark",
       "title": "firefox-c-dark",
-      "schema": 1779116966678,
+      "schema": 1780605354633,
       "category": "firefox",
       "attachment": {
         "hash": "600b8536a7ff982ee251a29ce1c4548b6ac1a6f5ce1dd4e0e628a2d24cf924e7",
@@ -100,13 +134,13 @@
       },
       "background_position": "top left",
       "id": "8611e834-7285-4b7b-8d56-06eab6a0a227",
-      "last_modified": 1779125034994
+      "last_modified": 1780931540810
     },
     {
-      "order": 8,
+      "order": 80,
       "theme": "light",
       "title": "firefox-b-light",
-      "schema": 1779116953028,
+      "schema": 1780605363654,
       "category": "firefox",
       "attachment": {
         "hash": "7d10290ee82faf129c7524b80db95653391495a833945c4ea70e5947960b713d",
@@ -117,13 +151,13 @@
       },
       "background_position": "center right",
       "id": "e62aae2f-2f52-44a9-a5c5-ca68181185be",
-      "last_modified": 1779125034990
+      "last_modified": 1780931540807
     },
     {
-      "order": 4,
+      "order": 40,
       "theme": "light",
       "title": "firefox-desert-light",
-      "schema": 1779116461532,
+      "schema": 1780605389368,
       "category": "firefox",
       "attachment": {
         "hash": "69f6bbc929f0dc9009c27d01b8274f450bacc2bc3ce59757525df791e3e6d395",
@@ -134,13 +168,13 @@
       },
       "background_position": "center left",
       "id": "dd9512ea-ea90-4d7b-9571-ab8fa3d52d51",
-      "last_modified": 1779125034986
+      "last_modified": 1780931540805
     },
     {
-      "order": 2,
+      "order": 20,
       "theme": "light",
       "title": "firefox-bold",
-      "schema": 1779120707337,
+      "schema": 1780605393844,
       "category": "firefox",
       "attachment": {
         "hash": "0e9e5554a18b4acc557efa408a8227ea8197100503b34c7713d8326bec9fc661",
@@ -151,13 +185,13 @@
       },
       "background_position": "center right",
       "id": "25ac8c70-e0b6-4267-a7fc-c05ddeefbb11",
-      "last_modified": 1779125034982
+      "last_modified": 1780931540802
     },
     {
-      "order": 15,
+      "order": 150,
       "theme": "light",
       "title": "firefox-g-light",
-      "schema": 1779117176014,
+      "schema": 1780605298862,
       "category": "firefox",
       "attachment": {
         "hash": "e8dbbbd65fef02542c2e404efa3779d479052c9193cd5dfb6e4025df36720658",
@@ -168,13 +202,13 @@
       },
       "background_position": "bottom left",
       "id": "2b1b54e2-19e7-4846-9d5b-ebbede82747b",
-      "last_modified": 1779125034979
+      "last_modified": 1780931540799
     },
     {
-      "order": 11,
+      "order": 110,
       "theme": "dark",
       "title": "firefox-d-dark",
-      "schema": 1779117114659,
+      "schema": 1780605309732,
       "category": "firefox",
       "attachment": {
         "hash": "ffa31ae925ad95a749d6096745ea6af4f7cd58b0646b6c94777ac8a0a25722a9",
@@ -185,13 +219,13 @@
       },
       "background_position": "bottom right",
       "id": "1a0b388c-db2c-4f86-b953-0e5302573258",
-      "last_modified": 1779125034975
+      "last_modified": 1780931540797
     },
     {
-      "order": 5,
+      "order": 50,
       "theme": "dark",
       "title": "firefox-a",
-      "schema": 1779116871055,
+      "schema": 1780605380072,
       "category": "firefox",
       "attachment": {
         "hash": "dfdeb8a64fc3a5c9d160472bc10467acc3e3ffba51da05c7b222a1315dd8a1f4",
@@ -202,13 +236,13 @@
       },
       "background_position": "top right",
       "id": "451090be-cdf1-49fc-b1f3-bd2f3b4ac34d",
-      "last_modified": 1779125034972
+      "last_modified": 1780931540794
     },
     {
-      "order": 12,
+      "order": 120,
       "theme": "light",
       "title": "firefox-d",
-      "schema": 1779117126270,
+      "schema": 1780605306030,
       "category": "firefox",
       "attachment": {
         "hash": "74988ebbc20bbc957f9b082793fea4f667e307aea3e873ba01a4f094e26e8452",
@@ -219,13 +253,13 @@
       },
       "background_position": "bottom right",
       "id": "62aa72d9-b9f3-4f29-88f5-5120ee004e7c",
-      "last_modified": 1779125034969
+      "last_modified": 1780931540791
     },
     {
-      "order": 7,
+      "order": 70,
       "theme": "dark",
       "title": "firefox-b",
-      "schema": 1779116906455,
+      "schema": 1780605367971,
       "category": "firefox",
       "attachment": {
         "hash": "0483fd7bb1054d61301e9fcb2752009a6466f5213933f72dddd66ff909e239a2",
@@ -236,13 +270,13 @@
       },
       "background_position": "center right",
       "id": "1d43f5a1-64bd-4ad4-b825-88a89878662f",
-      "last_modified": 1779125034967
+      "last_modified": 1780931540789
     },
     {
-      "order": 16,
+      "order": 160,
       "theme": "dark",
       "title": "firefox-e",
-      "schema": 1779117187364,
+      "schema": 1780605352280,
       "category": "firefox",
       "attachment": {
         "hash": "fe1cb48a30da9b05ba14b550918f708953ee6e44fa5a878bcbc5d3d7963176ad",
@@ -253,7 +287,24 @@
       },
       "background_position": "bottom center",
       "id": "2e468f89-ac6a-474f-a789-5de0be601887",
-      "last_modified": 1779125034962
+      "last_modified": 1780931540786
+    },
+    {
+      "order": 100,
+      "theme": "light",
+      "title": "firefox-c",
+      "schema": 1780605419579,
+      "category": "firefox",
+      "attachment": {
+        "hash": "054a4389ea9087583091de88a5aa45740a3ef067667a963c587208648df87176",
+        "size": 12260,
+        "filename": "desktop-wallpaper-c-light-1920x1080.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/f633134b-dc81-4b54-a8c0-61681e36c56e.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "top left",
+      "id": "429c288c-8d92-4baa-aefb-a04719882454",
+      "last_modified": 1780931540784
     },
     {
       "theme": "dark",
@@ -1294,5 +1345,5 @@
       "last_modified": 1718647622926
     }
   ],
-  "timestamp": 1779289118010
+  "timestamp": 1780931540831
 }
