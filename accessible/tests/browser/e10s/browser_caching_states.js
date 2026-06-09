@@ -414,7 +414,10 @@ addAccessibleTask(
     // This iframe won't finish loading. Thus, it will get the stale state and
     // won't fire a document load complete event. We use the reorder event on
     // the iframe to know when the document has been created.
-    let reordered = waitForEvent(EVENT_REORDER, iframe);
+    let reordered = waitForEvent(
+      EVENT_REORDER,
+      event => event.accessible === iframe && event.accessible.firstChild
+    );
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("iframe").src =
         'data:text/html,<img src="http://example.com/a11y/accessible/tests/mochitest/events/slow_image.sjs">';

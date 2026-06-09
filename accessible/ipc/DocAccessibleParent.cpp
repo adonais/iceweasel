@@ -1124,7 +1124,23 @@ void DocAccessibleParent::Destroy() {
   if (IsTopLevel()) {
     GetAccService()->RemoteDocShutdown(this);
   } else {
+    RemoteAccessible* outerDoc = RemoteParent();
     Unbind();
+    if (outerDoc) {
+      // When an iframe document is replaced (e.g. the src URL is changed),
+      // there may be a short delay between the removal of the old document
+      // handled here and the addition of the new document. This delay might be
+      // long enough that we reuse OS specific ids (e.g. MSAA) from the old
+      // document. Thus, we must notify clients when the old document is removed
+      // so they process the removal before any ids are reused. Otherwise, a
+      // client might assume the reused ids refer to Accessibles that have since
+      // been removed, potentially causing loops and other breakage in client
+      // tree caches such as screen reader virtual buffers. We then fire a
+      // second reorder event when the new document is received; see AddChildDoc
+      // and RecvRequestAckMutationEvents.
+      outerDoc->Document()->FireEvent(outerDoc,
+                                      nsIAccessibleEvent::EVENT_REORDER);
+    }
   }
 }
 
