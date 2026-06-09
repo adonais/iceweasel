@@ -420,7 +420,7 @@ addAccessibleTask(
     );
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("iframe").src =
-        'data:text/html,<img src="http://example.com/a11y/accessible/tests/mochitest/events/slow_image.sjs">';
+        "https://example.com/browser/accessible/tests/browser/events/slow_doc.sjs?second";
     });
     const iframeDoc = (await reordered).accessible.firstChild;
     testStates(iframeDoc, STATE_BUSY, EXT_STATE_STALE, 0, 0);
@@ -428,7 +428,7 @@ addAccessibleTask(
     info("Finishing load of iframe doc");
     let loadCompleted = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, iframeDoc);
     await fetch(
-      "https://example.com/a11y/accessible/tests/mochitest/events/slow_image.sjs?complete"
+      "https://example.com/browser/accessible/tests/browser/events/slow_doc.sjs?scriptFinish"
     );
     await loadCompleted;
     testStates(iframeDoc, 0, 0, STATE_BUSY, EXT_STATE_STALE);
