@@ -123,6 +123,7 @@ export class AmpSuggestions extends SuggestProvider {
     }
 
     let isTopPick =
+      (suggestion.source == "merino" && suggestion.is_top_pick) ||
       (lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") &&
         lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") <=
           queryContext.trimmedLowerCaseSearchString.length) ||

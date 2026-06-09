@@ -1281,3 +1281,115 @@ add_task(async function online() {
     ],
   });
 });
+
+// Tests an AMP suggestion with `is_top_pick: true`.
+add_task(async function online_isTopPick_true() {
+  let context = createContext("amp", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+
+  await doResultCheckTest({
+    env: {
+      prefs: [
+        ["quicksuggest.online.available", true],
+        ["quicksuggest.online.enabled", true],
+        ["suggest.quicksuggest.all", true],
+        ["suggest.quicksuggest.sponsored", true],
+      ],
+      merinoSuggestions: [
+        {
+          is_top_pick: true,
+          title: "Amp Suggestion",
+          url: "https://example.com/amp",
+          provider: "adm",
+          is_sponsored: true,
+          score: 0.31,
+          icon: "https://example.com/amp-icon",
+          iab_category: "22 - Shopping",
+          block_id: 1,
+          full_keyword: "amp",
+          advertiser: "Amp",
+          impression_url: "https://example.com/amp-impression",
+          click_url: "https://example.com/amp-click",
+        },
+      ],
+    },
+    tests: [
+      {
+        context,
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            // The following properties should be set due to
+            // `suggestion.is_top_pick == true`:
+            isBestMatch: true,
+            suggestedIndex: 1,
+            isSuggestedIndexRelativeToGroup: false,
+
+            // Usual properties
+            source: "merino",
+            provider: "adm",
+            icon: "https://example.com/amp-icon",
+            iabCategory: "22 - Shopping",
+            requestId: "request_id",
+          }),
+        ],
+      },
+    ],
+  });
+});
+
+// Tests an AMP suggestion with `is_top_pick: false`.
+add_task(async function online_isTopPick_false() {
+  let context = createContext("amp", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+
+  await doResultCheckTest({
+    env: {
+      prefs: [
+        ["quicksuggest.online.available", true],
+        ["quicksuggest.online.enabled", true],
+        ["suggest.quicksuggest.all", true],
+        ["suggest.quicksuggest.sponsored", true],
+      ],
+      merinoSuggestions: [
+        {
+          is_top_pick: false,
+          title: "Amp Suggestion",
+          url: "https://example.com/amp",
+          provider: "adm",
+          is_sponsored: true,
+          score: 0.31,
+          icon: "https://example.com/amp-icon",
+          iab_category: "22 - Shopping",
+          block_id: 1,
+          full_keyword: "amp",
+          advertiser: "Amp",
+          impression_url: "https://example.com/amp-impression",
+          click_url: "https://example.com/amp-click",
+        },
+      ],
+    },
+    tests: [
+      {
+        context,
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            // `isBestMatch` should be false
+            isBestMatch: false,
+
+            // Usual properties
+            source: "merino",
+            provider: "adm",
+            icon: "https://example.com/amp-icon",
+            iabCategory: "22 - Shopping",
+            requestId: "request_id",
+            suggestedIndex: -1,
+          }),
+        ],
+      },
+    ],
+  });
+});
