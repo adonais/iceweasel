@@ -239,6 +239,12 @@ static webgl::Limits MakeLimits(const WebGLContext& webgl) {
   if (webgl.IsWebGL2() ||
       limits.supportedExtensions[WebGLExtensionID::WEBGL_draw_buffers]) {
     gl.GetUIntegerv(LOCAL_GL_MAX_DRAW_BUFFERS, &limits.maxColorDrawBuffers);
+    // The driver may report `MAX_DRAW_BUFFERS` larger than the compile-time
+    // `webgl::kMaxDrawBuffers` that sizes all per-color-buffer host state (e.g.
+    // `WebGLFramebuffer::mColorAttachments`). Clamp so attachment indices
+    // derived from this limit can never exceed those fixed-size arrays.
+    limits.maxColorDrawBuffers =
+        std::min(limits.maxColorDrawBuffers, uint32_t{webgl::kMaxDrawBuffers});
   }
 
   if (limits.supportedExtensions[WebGLExtensionID::EXT_disjoint_timer_query]) {
