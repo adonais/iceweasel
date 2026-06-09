@@ -245,6 +245,11 @@ tasks:
                 default:
                     by-test-platform:
                         android.*/.*: []
+                        # Compositor shutdown crash in DisconnectApzcTreeManager
+                        # on headless macOS aarch64 VM workers (Bug 2038639 family).
+                        # opt builds finish before the crash window; debug consistently
+                        # hits it after every test in the chunk has passed.
+                        macosx1500-aarch64-vms/debug: []
                         default: built-projects
         virtualization: virtual
         tier:
