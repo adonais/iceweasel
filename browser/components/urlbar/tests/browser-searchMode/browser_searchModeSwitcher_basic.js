@@ -1020,19 +1020,32 @@ add_task(async function search_engines_with_accel_updown() {
 
   EventUtils.sendString("test", win);
 
+  let searchModeEngineName = win.gURLBar.searchMode?.engineName;
+  while (searchModeEngineName != "MozSearch") {
+    let searchmodeChanged = TestUtils.topicObserved("urlbar-searchmodechanged");
+    EventUtils.synthesizeKey("KEY_ArrowDown", { accelKey: true }, win);
+    await searchmodeChanged;
+    await BrowserTestUtils.waitForCondition(async () => {
+      let complete = win.gURLBar.searchMode?.engineName != searchModeEngineName;
+      if (complete) {
+        searchModeEngineName = win.gURLBar.searchMode?.engineName;
+        return true;
+      }
+      return false;
+    });
+  }
+
+  Assert.equal(
+    win.gURLBar.searchMode?.engineName,
+    "MozSearch",
+    "Selected extension engine"
+  );
+
   let loaded = BrowserTestUtils.browserLoaded(
     win.gBrowser.selectedBrowser,
     false,
     "https://example.com/?q=test"
   );
-
-  await BrowserTestUtils.waitForCondition(async () => {
-    let searchmodeChanged = TestUtils.topicObserved("urlbar-searchmodechanged");
-    EventUtils.synthesizeKey("KEY_ArrowDown", { accelKey: true }, win);
-    await searchmodeChanged;
-    return win.gURLBar.searchMode?.engineName == "MozSearch";
-  }, "Selected extension engine");
-
   EventUtils.synthesizeKey("KEY_Enter", {}, win);
   await loaded;
 
