@@ -61,3 +61,30 @@ aiwindow-jump-to-bottom =
 smartwindow-nl-thinking = Looking for matching tabs…
 smartwindow-nl-undo-button =
     .label = Undo
+
+## Variables
+##   $count (number) - Number of tabs closed/restored
+
+smart-window-closed-tabs-label =
+    { $count ->
+        [one] Closed { $count } tab
+       *[other] Closed { $count } tabs
+    }
+smart-window-closed-tabs-summary =
+    { $count ->
+        [one] Done! Tab closed.
+       *[other] Done! Tabs closed.
+    }
+smart-window-closed-tabs-row-label = Closed tabs
+smart-window-closed-and-restored-label = Closed and restored tabs
+smart-window-restored-row-label =
+    { $count ->
+        [one] Restored { $count } tab
+       *[other] Restored { $count } tabs
+    }
+smart-window-restore-success-summary =
+    { $count ->
+        [one] Tab closed, then restored.
+       *[other] Tabs closed, then restored.
+    }
+smart-window-cancelled-label = Request cancelled.

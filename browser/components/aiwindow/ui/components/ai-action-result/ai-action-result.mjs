@@ -20,18 +20,31 @@ import "chrome://browser/content/aiwindow/components/website-chip-container.mjs"
  * The parent is responsible for performing the actual reversal and updating
  * the action state.
  *
- * @attribute {string} label - Header label (e.g. "Closed tab", "Closed 3 tabs")
- * @attribute {string} summary - Descriptive text for the action
+ * @attribute {string} label - Header label for plain text (e.g. "Closed tab", "Closed 3 tabs")
+ * @attribute {string} labelL10nId - Fluent localization ID for the header label
+ * @attribute {object} labelL10nArgs - Arguments for the label localization (e.g. { count: 3 })
+ * @attribute {string} summary - Descriptive text for the action (plain text)
+ * @attribute {string} summaryL10nId - Fluent localization ID for the summary
+ * @attribute {object} summaryL10nArgs - Arguments for the summary localization
  * @attribute {boolean} canUndo - Whether the undo button should be shown
  * @attribute {boolean} isExpanded - Whether the detail section is visible
  * @property {Array} rows - List of stacked dot rows each shaped:
- *  { label: string, items: Array<{ url: string, label: string }> }
+ *  {
+ *    label?: string,           // Plain text label
+ *    labelL10nId?: string,     // Fluent localization ID for the row label
+ *    labelL10nArgs?: Object,   // Arguments for the row label localization
+ *    items?: Array<{ url: string, label: string }>
+ *  }
  */
 export class AIActionResult extends MozLitElement {
   static properties = {
     label: { type: String },
+    labelL10nId: { type: String },
+    labelL10nArgs: { type: Object },
     rows: { type: Array },
     summary: { type: String },
+    summaryL10nId: { type: String },
+    summaryL10nArgs: { type: Object },
     canUndo: { type: Boolean, attribute: "can-undo", reflect: true },
     isExpanded: { type: Boolean, attribute: "is-expanded", reflect: true },
   };
@@ -39,8 +52,12 @@ export class AIActionResult extends MozLitElement {
   constructor() {
     super();
     this.label = "";
+    this.labelL10nId = null;
+    this.labelL10nArgs = null;
     this.rows = [];
     this.summary = "";
+    this.summaryL10nId = null;
+    this.summaryL10nArgs = null;
     this.canUndo = false;
     this.isExpanded = false;
   }
@@ -69,7 +86,15 @@ export class AIActionResult extends MozLitElement {
           @click=${this.#handleToggle}
         >
           <span class="action-result-indicator" aria-hidden="true"></span>
-          <span class="action-result-label">${this.label}</span>
+          <span
+            class="action-result-label"
+            data-l10n-id=${this.labelL10nId || nothing}
+            data-l10n-args=${this.labelL10nArgs
+              ? JSON.stringify(this.labelL10nArgs)
+              : nothing}
+          >
+            ${!this.labelL10nId ? this.label : ""}
+          </span>
         </button>
         ${this.isExpanded
           ? html`
@@ -82,8 +107,14 @@ export class AIActionResult extends MozLitElement {
                           class="action-result-dot"
                           aria-hidden="true"
                         ></span>
-                        <span class="action-result-expanded-row-label">
-                          ${row.label}
+                        <span
+                          class="action-result-expanded-row-label"
+                          data-l10n-id=${row.labelL10nId || nothing}
+                          data-l10n-args=${row.labelL10nArgs
+                            ? JSON.stringify(row.labelL10nArgs)
+                            : nothing}
+                        >
+                          ${!row.labelL10nId ? row.label : ""}
                         </span>
                       </div>
                       ${row.items?.length
@@ -100,8 +131,16 @@ export class AIActionResult extends MozLitElement {
               </div>
             `
           : nothing}
-        ${this.summary
-          ? html`<p class="action-result-summary">${this.summary}</p>`
+        ${this.summary || this.summaryL10nId
+          ? html`<p
+              class="action-result-summary"
+              data-l10n-id=${this.summaryL10nId || nothing}
+              data-l10n-args=${this.summaryL10nArgs
+                ? JSON.stringify(this.summaryL10nArgs)
+                : nothing}
+            >
+              ${!this.summaryL10nId ? this.summary : ""}
+            </p>`
           : nothing}
         ${this.canUndo
           ? html`

@@ -156,3 +156,123 @@ add_task(async function test_row_label_renders() {
     });
   });
 });
+
+add_task(async function test_l10n_attributes_render() {
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      labelL10nId: "smart-window-closed-tabs-label",
+      labelL10nArgs: { count: 3 },
+      summaryL10nId: "smart-window-closed-tabs-summary",
+      summaryL10nArgs: { count: 3 },
+      rows: [
+        {
+          labelL10nId: "smart-window-restored-row-label",
+          labelL10nArgs: { count: 2 },
+          items: [],
+        },
+      ],
+      isExpanded: true,
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-action-result");
+      const shadow = el.shadowRoot;
+
+      // Check main label L10n attributes
+      const label = shadow.querySelector(".action-result-label");
+      Assert.equal(
+        label.getAttribute("data-l10n-id"),
+        "smart-window-closed-tabs-label",
+        "Label should have correct data-l10n-id"
+      );
+      Assert.equal(
+        label.getAttribute("data-l10n-args"),
+        '{"count":3}',
+        "Label should have correct data-l10n-args"
+      );
+
+      // Check summary L10n attributes
+      const summary = shadow.querySelector(".action-result-summary");
+      Assert.equal(
+        summary.getAttribute("data-l10n-id"),
+        "smart-window-closed-tabs-summary",
+        "Summary should have correct data-l10n-id"
+      );
+      Assert.equal(
+        summary.getAttribute("data-l10n-args"),
+        '{"count":3}',
+        "Summary should have correct data-l10n-args"
+      );
+
+      // Check row label L10n attributes
+      const rowLabel = shadow.querySelector(
+        ".action-result-expanded-row-label"
+      );
+      Assert.equal(
+        rowLabel.getAttribute("data-l10n-id"),
+        "smart-window-restored-row-label",
+        "Row label should have correct data-l10n-id"
+      );
+      Assert.equal(
+        rowLabel.getAttribute("data-l10n-args"),
+        '{"count":2}',
+        "Row label should have correct data-l10n-args"
+      );
+    });
+  });
+});
+
+add_task(async function test_mixed_l10n_and_plain_strings() {
+  await withTestPage(async browser => {
+    // Mix L10n and plain strings to ensure both work
+    await setProps(browser, {
+      labelL10nId: "smart-window-closed-tabs-label",
+      labelL10nArgs: { count: 1 },
+      summary: "This is a plain text summary", // Plain string
+      isExpanded: true,
+      rows: [
+        { label: "Plain text row", items: [] }, // Plain string
+        {
+          labelL10nId: "smart-window-restored-row-label",
+          labelL10nArgs: { count: 1 },
+          items: [],
+        },
+      ],
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const shadow =
+        content.document.getElementById("test-action-result").shadowRoot;
+
+      // L10n label should have attribute
+      Assert.ok(
+        shadow
+          .querySelector(".action-result-label")
+          .hasAttribute("data-l10n-id"),
+        "Label with L10n ID should have data-l10n-id attribute"
+      );
+
+      // Plain summary should not have L10n attribute
+      Assert.ok(
+        !shadow
+          .querySelector(".action-result-summary")
+          .hasAttribute("data-l10n-id"),
+        "Plain text summary should not have data-l10n-id attribute"
+      );
+
+      const rowLabels = shadow.querySelectorAll(
+        ".action-result-expanded-row-label"
+      );
+      // First row should be plain text
+      Assert.ok(
+        !rowLabels[0].hasAttribute("data-l10n-id"),
+        "Plain text row should not have data-l10n-id"
+      );
+      // Second row should have L10n
+      Assert.ok(
+        rowLabels[1].hasAttribute("data-l10n-id"),
+        "L10n row should have data-l10n-id"
+      );
+    });
+  });
+});
