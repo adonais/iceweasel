@@ -51,6 +51,7 @@ ChromeUtils.defineLazyGetter(lazy, "console", function () {
 });
 
 const CHAT_ROLES = [MESSAGE_ROLE.USER, MESSAGE_ROLE.ASSISTANT];
+const RESTORABLE_ROLES = [...CHAT_ROLES, MESSAGE_ROLE.TOOL];
 const TABLES_PREF = "browser.smartwindow.allowTables";
 
 /**
@@ -379,11 +380,8 @@ export class ChatConversation extends EventEmitter {
   renderState() {
     return this.#messages.filter(message => {
       const { role, content } = message;
-      if (!CHAT_ROLES.includes(role)) {
+      if (!RESTORABLE_ROLES.includes(role)) {
         return false;
-      }
-      if (role !== MESSAGE_ROLE.ASSISTANT) {
-        return true;
       }
       const { type, body } = content ?? {};
       if (type === "function") {
@@ -557,13 +555,19 @@ export class ChatConversation extends EventEmitter {
    * @returns {ChatMessage} The newly created tool message
    */
   addToolCallMessage(content, toolOpts = new ToolRoleOpts()) {
-    return this.addMessage(
+    const message = this.addMessage(
       MESSAGE_ROLE.TOOL,
       content,
       null,
       this.currentTurnIndex(),
       toolOpts
     );
+    // Emit tool messages so the renderer can display them
+    // in the action log
+    if (message) {
+      this.emit("chat-conversation:message-update", message);
+    }
+    return message;
   }
 
   /**

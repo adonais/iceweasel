@@ -533,26 +533,25 @@ add_task(function test_noBrowsing_ChatConversation_getMostRecentPageVisited() {
   Assert.equal(mostRecentPageVisited, null);
 });
 
-add_task(function test_ChatConversation_renderState() {
+add_task(function test_renderState_includes_tool_messages() {
   const conversation = new ChatConversation({});
-
-  const content = "user to assistant msg";
-
-  conversation.addUserMessage(content, "about:aiwindow");
-  conversation.addToolCallMessage("some content");
-  conversation.addAssistantMessage("text", "a response");
-  conversation.addUserMessage(content, "about:aiwindow");
+  conversation.addUserMessage("get open tab", "about:aiwindow");
+  conversation.addAssistantMessage("text", "Checking");
+  conversation.addToolCallMessage({
+    tool_call_id: "tc_1",
+    body: [{ url: "https://example.com/", title: "Example" }],
+    name: "get_open_tabs",
+  });
   conversation.addSystemMessage("text", "some system message");
-  conversation.addAssistantMessage("text", "a response");
+  conversation.addAssistantMessage("text", "You have one tab open.");
 
   const renderState = conversation.renderState();
 
-  Assert.deepEqual(renderState, [
-    conversation.messages[0],
-    conversation.messages[2],
-    conversation.messages[3],
-    conversation.messages[5],
-  ]);
+  Assert.equal(renderState[0].role, MESSAGE_ROLE.USER);
+  Assert.equal(renderState[1].role, MESSAGE_ROLE.ASSISTANT);
+  Assert.equal(renderState[2].role, MESSAGE_ROLE.TOOL);
+  Assert.equal(renderState[2].content.name, "get_open_tabs");
+  Assert.equal(renderState[3].role, MESSAGE_ROLE.ASSISTANT);
 });
 
 add_task(function test_ChatConversation_currentTurnIndex() {
@@ -1716,4 +1715,71 @@ add_task(function test_addUIToolToCurrentMessage_emits_events() {
 
   Assert.ok(updateEventFired, "Update event should be emitted");
   Assert.ok(completeEventFired, "Complete event should be re-emitted");
+});
+
+add_task(function test_addToolCallMessage_emits_message_update() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Get opened tabs", null);
+
+  let received = null;
+  let calls = 0;
+  conversation.on("chat-conversation:message-update", (_event, msg) => {
+    if (msg?.role === MESSAGE_ROLE.TOOL) {
+      received = msg;
+      calls++;
+    }
+  });
+
+  const toolMessage = conversation.addToolCallMessage({
+    tool_call_id: "tc_abc",
+    body: [{ url: "https://example.com/", title: "Example" }],
+    name: "get_open_tabs",
+  });
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(
+      calls,
+      1,
+      "Update event fires exactly once for the tool message"
+    );
+    soft.strictEqual(
+      received,
+      toolMessage,
+      "Event payload is the newly added tool message"
+    );
+    soft.equal(
+      received?.content?.name,
+      "get_open_tabs",
+      "tool message carries the tool name"
+    );
+    soft.equal(
+      received?.content?.tool_call_id,
+      "tc_abc",
+      "tool message carries the tool_call_id"
+    );
+  });
+});
+
+add_task(function test_addToolCallMessage_emits_for_error_payload() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Anything", null);
+
+  let received = null;
+  conversation.on("chat-conversation:message-update", (_event, msg) => {
+    if (msg?.role === MESSAGE_ROLE.TOOL) {
+      received = msg;
+    }
+  });
+
+  conversation.addToolCallMessage({
+    tool_call_id: "tc_err",
+    body: { error: "Invalid JSON arguments" },
+  });
+
+  Assert.ok(received, "Error-path TOOL message still emits the event");
+  Assert.equal(
+    received.content.name,
+    undefined,
+    "Error-path TOOL message has no name field"
+  );
 });

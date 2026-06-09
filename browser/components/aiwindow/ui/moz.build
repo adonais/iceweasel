@@ -29,6 +29,7 @@ MOZ_SRC_FILES += [
     "modules/FeedbackModal.sys.mjs",
     "modules/SmartWindowTelemetry.sys.mjs",
     "modules/TabManagementService.sys.mjs",
+    "modules/ToolActionLog.sys.mjs",
     "modules/ToolUI.sys.mjs",
 ]
 

@@ -16,6 +16,23 @@ import "chrome://browser/content/aiwindow/components/website-chip-container.mjs"
 import "chrome://browser/content/aiwindow/components/ai-website-confirmation.mjs";
 
 const FOLLOW_UP_QTY = 2;
+/**
+ * UI labels for tool results and follow-ups.
+ */
+const UI_TYPES = {
+  WEBSITE_CONFIRMATION: "website-confirmation",
+  AI_ACTION_RESULT: "ai-action-result",
+  CANCELLED_COMPONENT: "cancelled-component",
+  ACTION_LOG: "action-log",
+};
+/**
+ * UI update types for communicating user interactions with tool UIs back to the actor.
+ */
+const UI_UPDATE_TYPES = {
+  CONFIRMATION_TAB_SELECTION: "confirmation-tab-selection",
+  CANCEL_TAB_SELECTION: "cancel-tab-selection",
+  UNDO_TAB_CLOSE: "undo-tab-close",
+};
 
 /**
  * A custom element for managing AI Chat Content
@@ -349,6 +366,10 @@ export class AIChatContent extends MozLitElement {
         this.#checkConversationState(message);
         this.handleAIResponseEvent(event);
         break;
+      case "tool":
+        this.#checkConversationState(message);
+        this.handleToolMessageEvent(event);
+        break;
       case "user":
         this.#checkConversationState(message);
         this.handleUserPromptEvent(event);
@@ -521,6 +542,40 @@ export class AIChatContent extends MozLitElement {
   handleErrorEvent(error) {
     this.isSearching = false;
     this.errorObj = error;
+    this.requestUpdate();
+  }
+
+  /**
+   * Handle tool role messages produced when a toolcall completes
+   * Each tool message lands in conversationState by ordinal
+   * and is rendered as an action log entry inline with the surrounding
+   * assistant/user bubbles for now
+   *
+   * @param {CustomEvent} event
+   */
+  handleToolMessageEvent(event) {
+    const { convId, ordinal, content, actionLog } = event.detail ?? {};
+
+    if (!content?.name || !actionLog?.uiType) {
+      return;
+    }
+
+    // uiTypes that this conversation knows how to render as tool UI
+    const ACCEPTED_UI_TYPES = [UI_TYPES.ACTION_LOG];
+    if (!ACCEPTED_UI_TYPES.includes(actionLog.uiType)) {
+      return;
+    }
+
+    this.conversationState[ordinal] = {
+      role: "tool",
+      uiType: actionLog.uiType,
+      convId,
+      ordinal,
+      toolCallId: content.tool_call_id,
+      toolName: content.name,
+      label: actionLog.label,
+    };
+
     this.requestUpdate();
   }
 
@@ -716,6 +771,23 @@ export class AIChatContent extends MozLitElement {
     this.dispatchEvent(event);
   }
 
+  /**
+   * Render a single tool role conversation entry as an action log row
+   * Each toolcall becomes its own <ai-action-result> with
+   * minimal props. just a label resolved parent-side and threaded through
+   * in the message payload. Rest of details are the scope of Bug 2037612
+   *
+   * @param {object} toolEntry
+   */
+  #renderActionLogEntry(toolEntry) {
+    return html`
+      <ai-action-result
+        .label=${toolEntry.label}
+        .rows=${[]}
+      ></ai-action-result>
+    `;
+  }
+
   #renderToolUI(toolUIData, messageId) {
     if (!toolUIData) {
       return nothing;
@@ -754,7 +826,7 @@ export class AIChatContent extends MozLitElement {
     this.#dispatchToolUIUpdate({
       messageId,
       toolCallId,
-      updateType: "confirmation-tab-selection",
+      updateType: UI_UPDATE_TYPES.CONFIRMATION_TAB_SELECTION,
       updateData: event.detail,
     });
   };
@@ -763,7 +835,7 @@ export class AIChatContent extends MozLitElement {
     this.#dispatchToolUIUpdate({
       messageId,
       toolCallId,
-      updateType: "cancel-tab-selection",
+      updateType: UI_UPDATE_TYPES.CANCEL_TAB_SELECTION,
       updateData: event.detail,
     });
   };
@@ -847,6 +919,9 @@ export class AIChatContent extends MozLitElement {
   #renderMessages() {
     let lastContextPageUrl;
     return this.conversationState.map(msg => {
+      if (msg?.uiType === UI_TYPES.ACTION_LOG) {
+        return this.#renderActionLogEntry(msg);
+      }
       const chips = this.#getVisibleChips(msg, lastContextPageUrl);
       if (msg?.role === "user") {
         lastContextPageUrl = msg.pageUrl;

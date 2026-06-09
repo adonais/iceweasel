@@ -51,6 +51,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   getCurrentModelName:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
+  ACTION_LOG_UI_TYPE:
+    "moz-src:///browser/components/aiwindow/ui/modules/ToolActionLog.sys.mjs",
+  getActionLogConfigForTool:
+    "moz-src:///browser/components/aiwindow/ui/modules/ToolActionLog.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", function () {
@@ -1835,6 +1839,19 @@ export class AIWindow extends MozLitElement {
     if (typeof message.role !== "string") {
       const roleLabel = lazy.getRoleLabel(newMessage.role).toLowerCase();
       newMessage.role = roleLabel;
+    }
+
+    // Role is just the transport gate here. uiType gets set below and is
+    // what the renderer keys off
+    if (newMessage.role === "tool") {
+      const cfg = lazy.getActionLogConfigForTool(newMessage.content?.name);
+      if (!cfg.show) {
+        return null;
+      }
+      newMessage.actionLog = {
+        uiType: lazy.ACTION_LOG_UI_TYPE,
+        label: cfg.label,
+      };
     }
 
     return actor.dispatchMessageToChatContent(newMessage);

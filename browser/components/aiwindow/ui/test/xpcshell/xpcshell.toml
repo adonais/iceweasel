@@ -17,6 +17,8 @@ run-if = [
 
 ["test_TabManagementService.js"]
 
+["test_ToolActionLog.js"]
+
 ["test_ToolUI.js"]
 
 ["test_ToolUIUpdate.js"]
