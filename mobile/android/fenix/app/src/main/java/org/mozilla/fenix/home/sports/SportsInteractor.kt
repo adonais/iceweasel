@@ -47,6 +47,11 @@ interface SportsInteractor {
     fun onGetCustomWallpaperClicked()
 
     /**
+     * Called when the user clicks the "Share" menu item.
+     */
+    fun onSportsWidgetShareClicked()
+
+    /**
      * Called when the user clicks a Match.
      */
     fun onMatchClicked(homeTeam: String?, awayTeam: String?, date: String?)
@@ -98,6 +103,10 @@ class DefaultSportsInteractor(
 
     override fun onGetCustomWallpaperClicked() {
         controller.handleOnGetCustomWallpaperClicked()
+    }
+
+    override fun onSportsWidgetShareClicked() {
+        controller.handleSportsWidgetShareClicked()
     }
 
     override fun onMatchClicked(homeTeam: String?, awayTeam: String?, date: String?) {

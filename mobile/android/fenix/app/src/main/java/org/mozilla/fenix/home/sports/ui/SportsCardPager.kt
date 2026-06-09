@@ -109,6 +109,7 @@ internal fun pagerHeadingContentDescription(
  * [SportsPage.content] is invoked with `(pageNumber, pageCount)` where `pageNumber` is 1-based.
  * @param onChangeTeam Invoked when "Change team" is selected from the overflow menu.
  * @param onGetCustomWallpaper Invoked when "Get custom wallpaper" is selected from the overflow menu.
+ * @param onShare Invoked when "Share" is selected from the overflow menu.
  * @param onRemove Invoked when "Remove" is selected from the overflow menu.
  * @param modifier [Modifier] to apply to the outer container.
  * @param onCardShown Invoked once per pages-list mount for the initially-visible card
@@ -127,6 +128,7 @@ fun SportsCardPager(
     pages: List<SportsPage>,
     onChangeTeam: (CountrySelectorSource) -> Unit,
     onGetCustomWallpaper: () -> Unit,
+    onShare: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
     onCardShown: (SportsCardType, SportsCardImpressionSource) -> Unit = { _, _ -> },
@@ -181,6 +183,7 @@ fun SportsCardPager(
                     isTeamSelected = isTeamSelected,
                     onChangeTeam = onChangeTeam,
                     onGetCustomWallpaper = onGetCustomWallpaper,
+                    onShare = onShare,
                     onRemove = onRemove,
                     modifier = Modifier.align(Alignment.TopEnd),
                 )
@@ -247,6 +250,7 @@ private fun SportsCardPagerOverflowMenu(
     isTeamSelected: Boolean,
     onChangeTeam: (CountrySelectorSource) -> Unit,
     onGetCustomWallpaper: () -> Unit,
+    onShare: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -269,6 +273,7 @@ private fun SportsCardPagerOverflowMenu(
             onDismissRequest = { showMenu = false },
             onChangeTeam = onChangeTeam,
             onGetCustomWallpaper = onGetCustomWallpaper,
+            onShare = onShare,
             onRemove = onRemove,
         )
     }
@@ -324,6 +329,7 @@ private fun SportsCardPagerPreview() {
                 ),
                 onChangeTeam = {},
                 onGetCustomWallpaper = {},
+                onShare = {},
                 onRemove = {},
                 modifier = Modifier.fillMaxWidth(),
             )

@@ -305,4 +305,10 @@ class SessionControlInteractorTest {
         interactor.onGetCustomWallpaperClicked()
         verify { sportsController.handleOnGetCustomWallpaperClicked() }
     }
+
+    @Test
+    fun `WHEN the share menu item is clicked THEN sports controller handles the share`() {
+        interactor.onSportsWidgetShareClicked()
+        verify { sportsController.handleSportsWidgetShareClicked() }
+    }
 }

@@ -244,6 +244,7 @@ internal fun Homepage(
                                     },
                                     onSkip = interactor::onSkippedFollowTeam,
                                     onGetCustomWallpaper = interactor::onGetCustomWallpaperClicked,
+                                    onShare = interactor::onSportsWidgetShareClicked,
                                     onRefresh = { source ->
                                         interactor.onRefreshClicked(source)
                                     },

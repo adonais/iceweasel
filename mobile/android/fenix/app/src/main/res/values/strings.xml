@@ -1061,7 +1061,7 @@
     <!-- Title for the customize home screen section with sponsored shortcuts. -->
     <string name="customize_toggle_contile">Sponsored shortcuts</string>
     <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
-    <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">World Cup</string>
+    <string name="customize_toggle_world_cup">World Cup</string>
 
     <!-- Wallpapers -->
     <!-- Content description for various wallpapers. %1$s is the name of the wallpaper. -->

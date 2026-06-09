@@ -10,7 +10,11 @@ import androidx.navigation.NavController
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import mozilla.components.browser.state.search.SearchEngine
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.search.ext.buildSearchUrl
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -24,7 +28,9 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
@@ -39,6 +45,7 @@ class SportsControllerTest {
     private val settings: Settings = mockk(relaxed = true)
     private val navController: NavController = mockk(relaxed = true)
     private val fenixBrowserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+    private val shareUseCases: ShareUseCases = mockk(relaxed = true)
     private var connectivityManager: ConnectivityManager = onlineConnectivityManager()
 
     private lateinit var browserStore: BrowserStore
@@ -62,6 +69,9 @@ class SportsControllerTest {
         settings = settings,
         navController = navController,
         fenixBrowserUseCases = fenixBrowserUseCases,
+        shareUseCases = shareUseCases,
+        worldCupLabel = testContext.getString(R.string.customize_toggle_world_cup),
+        shareCardTitle = testContext.getString(R.string.sports_widget_card_title),
         connectivityManager = connectivityManager,
     )
 
@@ -255,6 +265,43 @@ class SportsControllerTest {
         val snapshot = WorldCup.getCustomWallpaperClicked.testGetValue()!!
         assertEquals(1, snapshot.size)
         assertEquals("get_custom_wallpaper_clicked", snapshot.single().name)
+    }
+
+    @Test
+    fun `WHEN the share menu item is clicked THEN the World Cup schedule SERP is shared and telemetry is recorded`() {
+        val searchEngine = SearchEngine(
+            id = "test",
+            name = "Test Engine",
+            icon = mockk(relaxed = true),
+            type = SearchEngine.Type.BUNDLED,
+            resultUrls = listOf("https://example.org/?q={searchTerms}"),
+        )
+        browserStore = BrowserStore(BrowserState(search = SearchState(regionSearchEngines = listOf(searchEngine))))
+        controller = buildController()
+        assertNull(WorldCup.sportsWidgetShared.testGetValue())
+
+        controller.handleSportsWidgetShareClicked()
+
+        val expectedQuery = testContext.getString(R.string.customize_toggle_world_cup) +
+            DefaultSportsController.SCHEDULE_QUERY_SUFFIX
+        val expectedUrl = searchEngine.buildSearchUrl(expectedQuery)
+        val expectedTitle = testContext.getString(R.string.sports_widget_card_title) +
+            DefaultSportsController.SHARE_TITLE_EMOJI_SUFFIX
+
+        verify {
+            shareUseCases.shareUrl(
+                id = null,
+                url = expectedUrl,
+                title = expectedTitle,
+                source = ShareSource.HOME,
+                isPrivate = false,
+                navigateToShareFragment = any(),
+            )
+        }
+
+        val snapshot = WorldCup.sportsWidgetShared.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals("sports_widget_shared", snapshot.single().name)
     }
 
     @Test

@@ -15900,6 +15900,20 @@ world_cup:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+  sports_widget_shared:
+    type: event
+    description: |
+      A user has tapped the "Share" menu item to share the World Cup schedule
+      from the sports widget menu.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044743
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D305179
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
   refresh_clicked:
     type: event
     description: |
