@@ -3152,6 +3152,7 @@ ${
         }
       }
     }
+    Services.obs.notifyObservers(null, "urlbar-searchmodechanged");
   }
 
   /**
@@ -3444,8 +3445,6 @@ ${
       return;
     }
     this.setSearchMode(searchMode, this.window.gBrowser.selectedBrowser);
-    this.searchModeSwitcher?.onSearchModeChanged();
-    lazy.UrlbarSearchTermsPersistence.onSearchModeChanged(this.window);
   }
 
   getBrowserState(browser) {

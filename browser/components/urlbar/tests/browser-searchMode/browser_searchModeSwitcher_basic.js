@@ -1027,7 +1027,9 @@ add_task(async function search_engines_with_accel_updown() {
   );
 
   await BrowserTestUtils.waitForCondition(async () => {
+    let searchmodeChanged = TestUtils.topicObserved("urlbar-searchmodechanged");
     EventUtils.synthesizeKey("KEY_ArrowDown", { accelKey: true }, win);
+    await searchmodeChanged;
     return win.gURLBar.searchMode?.engineName == "MozSearch";
   }, "Selected extension engine");
 

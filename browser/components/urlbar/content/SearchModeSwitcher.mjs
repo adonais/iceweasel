@@ -140,6 +140,7 @@ export class SearchModeSwitcher {
     event.preventDefault();
     this.#input.searchMode = null;
     this.#selectedIndex = 0;
+    this.#engines = [];
     // Update the result by the default engine.
     this.#input.startQuery();
   }
@@ -325,6 +326,10 @@ export class SearchModeSwitcher {
         }
         break;
       }
+      case "urlbar-searchmodechanged": {
+        this.onSearchModeChanged();
+        break;
+      }
     }
   }
 
@@ -393,7 +398,9 @@ export class SearchModeSwitcher {
   }
 
   async #handleAccelUpDown(event) {
-    await this.#populateEngines();
+    if (!this.#engines.length) {
+      await this.#populateEngines();
+    }
     this.#selectedIndex += event.keyCode == KeyEvent.DOM_VK_UP ? -1 : 1;
     if (this.#selectedIndex > this.#engines.length - 1) {
       this.#selectedIndex = 0;
@@ -775,6 +782,7 @@ export class SearchModeSwitcher {
 
   #enableObservers() {
     Services.obs.addObserver(this, "browser-search-engine-modified", true);
+    Services.obs.addObserver(this, "urlbar-searchmodechanged", true);
 
     this.#button.addEventListener("focus", this);
     this.#button.addEventListener("keydown", this);
@@ -788,6 +796,7 @@ export class SearchModeSwitcher {
 
   #disableObservers() {
     Services.obs.removeObserver(this, "browser-search-engine-modified");
+    Services.obs.removeObserver(this, "urlbar-searchmodechanged");
 
     this.#button.removeEventListener("focus", this);
     this.#button.removeEventListener("keydown", this);
