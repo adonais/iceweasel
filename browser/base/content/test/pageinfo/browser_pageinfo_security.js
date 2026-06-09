@@ -368,6 +368,70 @@ add_task(async function test_Cookies() {
   });
 });
 
+// Test that the saved passwords label shows "Yes" when a login exists and "No" otherwise.
+add_task(async function test_SavedPasswords() {
+  const nsLoginInfo = new Components.Constructor(
+    "@mozilla.org/login-manager/loginInfo;1",
+    Ci.nsILoginInfo,
+    "init"
+  );
+  const login = new nsLoginInfo(
+    "https://example.com",
+    "https://example.com",
+    null,
+    "testuser",
+    "testpass",
+    "username",
+    "password"
+  );
+
+  await BrowserTestUtils.withNewTab(TEST_ORIGIN, async function () {
+    let pageInfo = BrowserCommands.pageInfo(TEST_ORIGIN, "securityTab");
+    await BrowserTestUtils.waitForEvent(pageInfo, "load");
+    let pageInfoDoc = pageInfo.document;
+    await TestUtils.waitForCondition(
+      () =>
+        BrowserTestUtils.isVisible(pageInfoDoc.getElementById("securityTab")),
+      "Security tab should be visible."
+    );
+
+    let passwordsLabel = pageInfoDoc.getElementById(
+      "security-privacy-passwords-value"
+    );
+    await TestUtils.waitForCondition(
+      () => passwordsLabel.textContent == "No",
+      `Passwords label should be "No", got "${passwordsLabel.textContent}"`
+    );
+    pageInfo.close();
+  });
+
+  await Services.logins.addLoginAsync(login);
+
+  try {
+    await BrowserTestUtils.withNewTab(TEST_ORIGIN, async function () {
+      let pageInfo = BrowserCommands.pageInfo(TEST_ORIGIN, "securityTab");
+      await BrowserTestUtils.waitForEvent(pageInfo, "load");
+      let pageInfoDoc = pageInfo.document;
+      await TestUtils.waitForCondition(
+        () =>
+          BrowserTestUtils.isVisible(pageInfoDoc.getElementById("securityTab")),
+        "Security tab should be visible."
+      );
+
+      let passwordsLabel = pageInfoDoc.getElementById(
+        "security-privacy-passwords-value"
+      );
+      await TestUtils.waitForCondition(
+        () => passwordsLabel.textContent == "Yes",
+        `Passwords label should be "Yes", got "${passwordsLabel.textContent}"`
+      );
+      pageInfo.close();
+    });
+  } finally {
+    await Services.logins.removeLoginAsync(login);
+  }
+});
+
 // Clean up in case we missed anything...
 add_task(async function cleanup() {
   await SiteDataTestUtils.clear();

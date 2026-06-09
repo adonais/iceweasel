@@ -305,7 +305,7 @@ async function securityOnLoad(uri, windowInfo) {
     document.getElementById("security-privacy-sitedata-row").hidden = true;
   }
 
-  if (realmHasPasswords(uri)) {
+  if (await realmHasPasswords(uri)) {
     document.l10n.setAttributes(
       document.getElementById("security-privacy-passwords-value"),
       "saved-passwords-yes"
