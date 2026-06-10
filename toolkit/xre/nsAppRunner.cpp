@@ -289,10 +289,12 @@ static const char kPrefSetDefaultBrowserUserChoicePref[] =
 
 #if defined(XP_WIN)
 static const char kPrefThemeId[] = "extensions.activeThemeID";
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 static const char kPrefBrowserStartupBlankWindow[] =
     "browser.startup.blankWindow";
 static const char kPrefPreXulSkeletonUI[] = "browser.startup.preXulSkeletonUI";
-#endif  // defined(XP_WIN)
+#  endif  // defined(MOZ_DEFAULT_BROWSER_AGENT)
+#endif    // defined(XP_WIN)
 
 #if defined(MOZ_WIDGET_GTK)
 constexpr nsLiteralCString kStartupTokenNames[] = {
@@ -2370,6 +2372,8 @@ ShowProfileSelectorObserver::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
+
 static void SetupSkeletonUIPrefs() {
   ReflectSkeletonUIPrefToRegistry(nullptr, nullptr);
   Preferences::RegisterCallback(&ReflectSkeletonUIPrefToRegistry,
@@ -2385,6 +2389,8 @@ static void SetupSkeletonUIPrefs() {
   nsCOMPtr<nsIObserver> obs = new ShowProfileSelectorObserver();
   obsService->AddObserver(obs, "profile-show-selector-changed", false);
 }
+
+#  endif  // defined(MOZ_DEFAULT_BROWSER_AGENT)
 
 #  if defined(MOZ_LAUNCHER_PROCESS)
 
