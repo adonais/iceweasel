@@ -403,6 +403,8 @@ const size_t MaxArenaCellIndex = ArenaSize / CellAlignBytes;
 
 const size_t ChunkStoreBufferOffset = offsetof(ChunkBase, storeBuffer);
 const size_t ChunkMarkBitmapOffset = offsetof(ArenaChunkBase, markBits);
+const size_t ChunkZoneOffset =
+    offsetof(ArenaChunkBase, info) + offsetof(ArenaChunkInfo, zone);
 
 // Hardcoded offsets into Arena class.
 const size_t ArenaZoneOffset = 2 * sizeof(uint32_t);

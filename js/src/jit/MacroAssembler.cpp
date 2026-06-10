@@ -8411,9 +8411,13 @@ void MacroAssembler::emitWeapMapBarrierFastPath(ValueOperand value,
   // If the gray bit is set, then we *do* need a barrier.
   branchTestPtr(Assembler::NonZero, markWord, mask, barrier);
 
-  // Otherwise, we don't need a barrier unless we're in the middle of
-  // an incremental GC.
-  branchTestNeedsMarkingBarrierAnyZone(Assembler::NonZero, barrier, temp1);
+  // Otherwise, the tenured cell needs a barrier only if its zone is being
+  // marked by an incremental GC.
+  Register zone = temp2;
+  loadPtr(Address(chunk, gc::ChunkZoneOffset), zone);
+  branchTest32(Assembler::NonZero,
+               Address(zone, Zone::offsetOfNeedsMarkingBarrier()), Imm32(0x1),
+               barrier);
   bind(&done);
 }
 
