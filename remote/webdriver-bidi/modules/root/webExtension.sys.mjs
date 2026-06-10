@@ -75,7 +75,9 @@ class WebExtensionModule extends RootBiDiModule {
     super(messageHandler);
   }
 
-  destroy() {}
+  destroy() {
+    lazy.Addon.cleanupTemporaryAddonFiles();
+  }
 
   /**
    * Installs a WebExtension.

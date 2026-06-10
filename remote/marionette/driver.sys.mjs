@@ -800,6 +800,8 @@ export class GeckoDriver {
       this.#promptListener = null;
     }
 
+    lazy.Addon.cleanupTemporaryAddonFiles();
+
     try {
       Services.obs.removeObserver(this.#observer, TOPIC_BROWSER_READY);
     } catch (e) {
