@@ -960,7 +960,7 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
   MOZ_ASSERT(accessible->IsBoundToParent() || accessible->IsDoc(),
              "DOM attribute change on an accessible detached from the tree");
 
-  if (aAttribute == nsGkAtoms::id) {
+  if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::id) {
     // TODO(1983819): updates to referenceTarget should trigger these same
     // actions
     dom::Element* elm = accessible->Elm();
