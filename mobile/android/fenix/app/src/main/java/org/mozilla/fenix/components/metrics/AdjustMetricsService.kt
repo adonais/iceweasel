@@ -123,6 +123,10 @@ class AdjustMetricsService(
             Adjust.initSdk(config)
             Adjust.enable()
             logger.info("Adjust SDK enabled")
+
+            // This is a temporary race condition workaround until
+            // https://bugzilla.mozilla.org/show_bug.cgi?id=2016858 is fixed
+            track(Event.GrowthData.ConversionEvent6)
         }
     }
 
