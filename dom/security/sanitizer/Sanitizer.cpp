@@ -1842,7 +1842,7 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
       return false;
     }
 
-    return value.EqualsLiteral("href") || value.EqualsLiteral("xlink:href");
+    return value.EqualsLiteral("href") || StringEndsWith(value, u":href"_ns);
   }
 
   return false;
