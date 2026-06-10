@@ -8411,9 +8411,14 @@ void MacroAssembler::emitWeapMapBarrierFastPath(ValueOperand value,
   // If the gray bit is set, then we *do* need a barrier.
   branchTestPtr(Assembler::NonZero, markWord, mask, barrier);
 
-  // Otherwise, we don't need a barrier unless we're in the middle of
-  // an incremental GC.
-  branchTestNeedsMarkingBarrierAnyZone(Assembler::NonZero, barrier, temp1);
+  // Otherwise, the tenured cell needs a barrier only if its zone is being
+  // marked by an incremental GC. The zone is stored on the cell's arena.
+  Register zone = temp2;
+  andPtr(Imm32(int32_t(~gc::ArenaMask)), cell, zone);
+  loadPtr(Address(zone, gc::ArenaZoneOffset), zone);
+  branchTest32(Assembler::NonZero,
+               Address(zone, Zone::offsetOfNeedsMarkingBarrier()), Imm32(0x1),
+               barrier);
   bind(&done);
 }
 
