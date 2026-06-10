@@ -3086,6 +3086,8 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "dohExceptionsButton",
+  deps: ["dohMode"],
+  disabled: ({ dohMode }) => dohMode.locked,
   onUserClick: () => PrivacySettingHelpers.showDoHExceptions(),
 });
 
@@ -3263,6 +3265,7 @@ Preferences.addSetting({
   // Therefore, we set dohMode and dohURL as deps here. This is a smell, but needed
   // for the mismatch of control-to-pref.
   deps: ["dohFallbackIfCustom", "dohMode", "dohURL"],
+  disabled: ({ dohMode }) => dohMode.locked,
   onUserChange: (val, deps) => {
     let value = null;
     if (val == "default") {
@@ -3345,6 +3348,7 @@ Preferences.addSetting({
   // Therefore, we set dohMode as a dep here. This is a smell, but needed
   // for the mismatch of control-to-pref.
   deps: ["dohMode"],
+  disabled: ({ dohMode }) => dohMode.locked,
   onUserChange: val => {
     if (val) {
       Glean.securityDohSettings.modeChangedButton.record({
@@ -3384,10 +3388,11 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "dohCustomProvider",
-  deps: ["dohProviderSelect", "dohURL"],
+  deps: ["dohProviderSelect", "dohURL", "dohMode"],
   visible: deps => {
     return deps.dohProviderSelect.value == "custom";
   },
+  disabled: ({ dohMode, dohURL }) => dohMode.locked || dohURL.locked,
   get(_val, deps) {
     return deps.dohURL.value;
   },
@@ -3398,8 +3403,9 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "dohProviderSelect",
-  deps: ["dohURL", "dohDefaultURL"],
+  deps: ["dohURL", "dohDefaultURL", "dohMode"],
   _custom: false,
+  disabled: ({ dohMode, dohURL }) => dohMode.locked || dohURL.locked,
   onUserChange: value => {
     Glean.securityDohSettings.providerChoiceValue.record({
       value,
