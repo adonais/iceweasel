@@ -22930,24 +22930,6 @@
       "last_modified": 1666727865122
     },
     {
-      "schema": 1666727349573,
-      "derHash": "2lRiUmoMLphSqGGGsCU5AVh1nNymriHwn3E8pqzN0fE=",
-      "subject": "CN=QuoVadis Enterprise Trust CA 3 G3,O=QuoVadis Limited,C=BM",
-      "subjectDN": "MFQxCzAJBgNVBAYTAkJNMRkwFwYDVQQKDBBRdW9WYWRpcyBMaW1pdGVkMSowKAYDVQQDDCFRdW9WYWRpcyBFbnRlcnByaXNlIFRydXN0IENBIDMgRzM=",
-      "whitelist": false,
-      "attachment": {
-        "hash": "0b01ec78286d184607dd09e4cac9c4992d4af9f58534eb2cb8fea437481a6197",
-        "size": 2333,
-        "filename": "smsafMf1m1b-3NN_jssl3RMKHXok-GELWWNtG9vZEmA=.pem",
-        "location": "security-state-staging/intermediates/c87c6dee-16e3-4bb0-8541-6cf2e215df90.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "smsafMf1m1b+3NN/jssl3RMKHXok+GELWWNtG9vZEmA=",
-      "crlite_enrolled": false,
-      "id": "4f58238b-464f-49f2-87a6-905bf5e2256b",
-      "last_modified": 1666727865103
-    },
-    {
       "schema": 1666727405291,
       "derHash": "smjRaTSrW6Iy8XnNn1x/wH6oWDpWqafB1stY/ggjv1o=",
       "subject": "CN=D-TRUST BR CA 1-20-2 2020,O=D-Trust GmbH,C=DE",
@@ -29842,5 +29824,5 @@
       "last_modified": 1559865884636
     }
   ],
-  "timestamp": 1780930622537
+  "timestamp": 1781060222641
 }
