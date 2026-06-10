@@ -82,6 +82,22 @@ internal enum class FakeMatchCardScenario(val label: String) {
         )
     },
 
+    Extra("Extra") {
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(
+                    FakeSportsPreview.match(
+                        homeScore = 1,
+                        awayScore = 2,
+                        matchStatus = MatchStatus.Live(period = "Extra", clock = "100"),
+                    ),
+                ),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = FakeSportsPreview.relatedMatches(),
+            ),
+        )
+    },
+
     Scheduled("Scheduled") {
         override fun build() = listOf(
             MatchCard(

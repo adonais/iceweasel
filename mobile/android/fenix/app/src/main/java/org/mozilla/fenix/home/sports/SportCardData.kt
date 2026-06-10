@@ -104,6 +104,12 @@ internal fun MatchStatus.isPast(): Boolean =
     this is MatchStatus.Final || this is MatchStatus.FinalAfterPenalties
 
 /**
+ * True when this period description denotes extra time.
+ */
+internal val String.isExtraTime: Boolean
+    get() = equals("Extra", ignoreCase = true)
+
+/**
  * Information related to a given sport event (game/match).
  *
  * @property globalEventId Stable upstream identifier; the natural cache key.

@@ -35,6 +35,7 @@ import org.mozilla.fenix.home.sports.MatchStatus
 import org.mozilla.fenix.home.sports.SportCardErrorState
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.fake.FakeMatchCardScenario
+import org.mozilla.fenix.home.sports.isExtraTime
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
 
@@ -258,7 +259,14 @@ private fun MatchStatus.hasSecondaryStatusSubtitle(): Boolean = when (this) {
 
 @Composable
 private fun statusSubtitle(status: MatchStatus, date: String, isTeamSelected: Boolean): String = when (status) {
-    is MatchStatus.Live -> "${status.clock}'"
+    is MatchStatus.Live -> {
+        val statusClock = "${status.clock}'"
+        if (status.period.isExtraTime) {
+            "${stringResource(R.string.sports_widget_extra_time)}: $statusClock"
+        } else {
+            statusClock
+        }
+    }
     is MatchStatus.Penalties -> stringResource(R.string.sports_widget_penalties)
     is MatchStatus.Final -> stringResource(R.string.sports_widget_match_full_time_2)
     is MatchStatus.FinalAfterPenalties -> "${stringResource(R.string.sports_widget_match_full_time_2)} · " +

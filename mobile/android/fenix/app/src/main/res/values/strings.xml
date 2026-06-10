@@ -4125,7 +4125,7 @@
     <!-- Sports widget match status label shown during halftime of a match. -->
     <string name="sports_widget_halftime" tools:ignore="UnusedResources">Halftime</string>
     <!-- Sports widget match status label shown during extra time of a match. -->
-    <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Extra time</string>
+    <string name="sports_widget_extra_time">Extra time</string>
     <!-- Sports widget match status label shown during penalties of a match. -->
     <string name="sports_widget_penalties">Penalties</string>
     <!-- Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
