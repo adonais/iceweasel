@@ -6345,21 +6345,22 @@ nsresult nsDocShell::CreateInitialDocumentViewer(
   MOZ_DIAGNOSTIC_ASSERT(!mDocumentViewer);
   MOZ_ASSERT(aOpenWindowInfo, "Why don't we have openwindowinfo?");
 
+  nsCOMPtr<nsIPrincipal> principal =
+      aOpenWindowInfo->PrincipalToInheritForAboutBlank();
+  nsCOMPtr<nsIPrincipal> partitionedPrincipal =
+      aOpenWindowInfo->PartitionedPrincipalToInheritForAboutBlank();
+
   // Previously, CreateDocumentViewerForActor would've used the actor's
   // principal.
+  MOZ_ASSERT_IF(aWindowActor, aWindowActor->DocumentPrincipal() == principal);
   MOZ_ASSERT_IF(aWindowActor,
-                aWindowActor->DocumentPrincipal() ==
-                    aOpenWindowInfo->PrincipalToInheritForAboutBlank());
-  MOZ_ASSERT_IF(
-      aWindowActor,
-      aWindowActor->DocumentPrincipal() ==
-          aOpenWindowInfo->PartitionedPrincipalToInheritForAboutBlank());
+                aWindowActor->DocumentPrincipal() == partitionedPrincipal);
 
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aOpenWindowInfo->PolicyContainerToInheritForAboutBlank();
+  nsCOMPtr<nsIURI> base = aOpenWindowInfo->BaseUriToInheritForAboutBlank();
   MOZ_TRY(CreateAboutBlankDocumentViewer(
-      aOpenWindowInfo->PrincipalToInheritForAboutBlank(),
-      aOpenWindowInfo->PartitionedPrincipalToInheritForAboutBlank(),
-      aOpenWindowInfo->PolicyContainerToInheritForAboutBlank(),
-      aOpenWindowInfo->BaseUriToInheritForAboutBlank(),
+      principal, partitionedPrincipal, policyContainer, base,
       /* aIsInitialDocument */ true,
       aOpenWindowInfo->CoepToInheritForAboutBlank(),
       /* aTryToSaveOldPresentation */ true,
@@ -10071,9 +10072,11 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
   // the right principal (bug 1979032)
   if (principalMismatch || shouldBeSandboxed) {
     // This will sandbox the principals as needed
+    nsCOMPtr<nsIPolicyContainer> policyContainer =
+        aLoadState->PolicyContainer();
+    nsCOMPtr<nsIURI> base = doc->GetDocBaseURI();
     rv = CreateAboutBlankDocumentViewer(
-        expectedPrincipal, expectedPartitionedPrincipal,
-        aLoadState->PolicyContainer(), doc->GetDocBaseURI(),
+        expectedPrincipal, expectedPartitionedPrincipal, policyContainer, base,
         /* aIsInitialDocument */ true);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -11298,9 +11301,11 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
     // Don't cache the presentation if we're going to just reload the
     // current entry. Caching would lead to trying to save the different
     // content viewers in the same SessionHistoryEntry object.
+    nsCOMPtr<nsIPrincipal> principal = aLoadState->PrincipalToInherit();
+    nsCOMPtr<nsIPrincipal> partitionedPrincipal =
+        aLoadState->PartitionedPrincipalToInherit();
     rv = CreateAboutBlankDocumentViewer(
-        aLoadState->PrincipalToInherit(),
-        aLoadState->PartitionedPrincipalToInherit(), nullptr, nullptr,
+        principal, partitionedPrincipal, nullptr, nullptr,
         /* aIsInitialDocument */ false, Nothing(), !aLoadingCurrentEntry);
 
     if (NS_FAILED(rv)) {

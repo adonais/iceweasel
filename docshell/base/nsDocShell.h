@@ -176,13 +176,14 @@ class nsDocShell final : public nsDocLoader,
       mozilla::dom::BrowsingContext* aBrowsingContext,
       uint64_t aContentWindowID = 0);
 
-  nsresult Initialize(nsIOpenWindowInfo* aOpenWindowInfo,
-                      mozilla::dom::WindowGlobalChild* aWindowActor);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  Initialize(nsIOpenWindowInfo* aOpenWindowInfo,
+             mozilla::dom::WindowGlobalChild* aWindowActor);
 
-  nsresult InitWindow(nsIWidget* aParentWidget, int32_t aX, int32_t aY,
-                      int32_t aWidth, int32_t aHeight,
-                      nsIOpenWindowInfo* aOpenWindowInfo,
-                      mozilla::dom::WindowGlobalChild* aWindowActor);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  InitWindow(nsIWidget* aParentWidget, int32_t aX, int32_t aY, int32_t aWidth,
+             int32_t aHeight, nsIOpenWindowInfo* aOpenWindowInfo,
+             mozilla::dom::WindowGlobalChild* aWindowActor);
 
   NS_IMETHOD Stop() override {
     // Need this here because otherwise nsIWebNavigation::Stop
@@ -556,14 +557,14 @@ class nsDocShell final : public nsDocLoader,
 
   void DestroyDocumentViewer();
 
-  nsresult CreateInitialDocumentViewer(
+  MOZ_CAN_RUN_SCRIPT nsresult CreateInitialDocumentViewer(
       nsIOpenWindowInfo* aOpenWindowInfo = nullptr,
       mozilla::dom::WindowGlobalChild* aWindowActor = nullptr);
 
   // aPrincipal can be passed in if the caller wants. If null is
   // passed in, the about:blank principal will end up being used.
   // aPolicyContainer, if any, will be used for the new about:blank load.
-  nsresult CreateAboutBlankDocumentViewer(
+  MOZ_CAN_RUN_SCRIPT nsresult CreateAboutBlankDocumentViewer(
       nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
       nsIPolicyContainer* aPolicyContainer, nsIURI* aBaseURI,
       bool aIsInitialDocument,
@@ -656,8 +657,8 @@ class nsDocShell final : public nsDocLoader,
   MOZ_CAN_RUN_SCRIPT nsresult PerformTrustedTypesPreNavigationCheck(
       nsDocShellLoadState* aLoadState, nsGlobalWindowInner* aWindow) const;
 
-  nsresult CompleteInitialAboutBlankLoad(nsDocShellLoadState* aLoadState,
-                                         nsILoadInfo* aLoadInfo);
+  MOZ_CAN_RUN_SCRIPT nsresult CompleteInitialAboutBlankLoad(
+      nsDocShellLoadState* aLoadState, nsILoadInfo* aLoadInfo);
 
   static nsresult AddHeadersToChannel(nsIInputStream* aHeadersData,
                                       nsIChannel* aChannel);
