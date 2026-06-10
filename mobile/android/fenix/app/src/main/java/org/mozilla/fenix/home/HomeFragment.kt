@@ -1264,6 +1264,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
         )
     }
 
+    @Suppress("LongMethod")
     private fun initInteractor() {
         _sessionControlInteractor = SessionControlInteractor(
             controller = sessionControlController,
