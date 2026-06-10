@@ -361,7 +361,8 @@ class SportsWidgetMiddlewareTest {
     fun `GIVEN no team WHEN a live group-stage match exists THEN that round wins over any played R32`() = runTest {
         // Defensive case — the contract says one stage per day, so this shouldn't happen,
         // but if a live game and a past higher-round match coexist, the live game's round
-        // takes priority (rule 1 beats rule 2).
+        // takes priority for the active round (rule 1 beats rule 2): group stage is active.
+        // R32 is then its (decided) next round, so it also surfaces via the next-round reveal.
         val groupLive = match(
             id = 1L,
             day = 28,
@@ -383,16 +384,25 @@ class SportsWidgetMiddlewareTest {
         dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
 
         val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
-        assertEquals(listOf(1L), matches.map { it.globalEventId })
+        assertEquals(setOf(1L, 2L), matches.map { it.globalEventId }.toSet())
     }
 
     @Test
     fun `GIVEN no team WHEN R16 has begun THEN R32 and group stage drop away`() = runTest {
-        // QF, SF, FINAL still upcoming; max ordinal among played stages is R16.
+        // QF, SF, FINAL still upcoming; max ordinal among played stages is R16. The QF fixture
+        // is still fully undetermined (its teams depend on R16 results), so the next-round
+        // reveal doesn't surface it yet — only the active R16 shows.
         val groupDone = match(1L, day = 18, stage = TournamentRound.GROUP_STAGE, status = MatchStatus.Final)
         val r32Done = match(2L, day = 28, stage = TournamentRound.ROUND_OF_32, status = MatchStatus.Final)
         val r16Done = match(3L, day = 4, stage = TournamentRound.ROUND_OF_16, status = MatchStatus.Final)
-        val qfNext = match(4L, day = 8, stage = TournamentRound.QUARTER_FINAL, status = MatchStatus.Scheduled)
+        val qfNext = match(
+            id = 4L,
+            day = 8,
+            stage = TournamentRound.QUARTER_FINAL,
+            status = MatchStatus.Scheduled,
+            homeTeam = null,
+            awayTeam = null,
+        )
         val repo = StubRepository(
             Result.success(
                 TeamMatchesResult(
@@ -482,6 +492,126 @@ class SportsWidgetMiddlewareTest {
         val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
         assertEquals(setOf(1L, 2L), matches.map { it.globalEventId }.toSet())
     }
+
+    @Test
+    fun `GIVEN no team WHEN a next-round fixture has one side decided THEN it surfaces alongside the active round`() =
+        runTest {
+            // Group stage is active (its game is the most-recently played). The next round (R32)
+            // has started to fill in: one fixture has a single team set (the other still TBD),
+            // and another is fully undetermined. The decided-one-side fixture surfaces; the
+            // fully-TBD one does not.
+            val groupDone = match(1L, day = 18, stage = TournamentRound.GROUP_STAGE, status = MatchStatus.Final)
+            val r32OneSide = match(
+                id = 2L,
+                day = 28,
+                stage = TournamentRound.ROUND_OF_32,
+                status = MatchStatus.Scheduled,
+                awayTeam = null,
+            )
+            val r32FullyTbd = match(
+                id = 3L,
+                day = 29,
+                stage = TournamentRound.ROUND_OF_32,
+                status = MatchStatus.Scheduled,
+                homeTeam = null,
+                awayTeam = null,
+            )
+            val repo = StubRepository(
+                Result.success(
+                    TeamMatchesResult(
+                        previous = listOf(groupDone),
+                        current = emptyList(),
+                        next = listOf(r32OneSide, r32FullyTbd),
+                    ),
+                ),
+            )
+            val store = appStore(repo)
+
+            dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+            val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
+            assertEquals(setOf(1L, 2L), matches.map { it.globalEventId }.toSet())
+            // The surfaced next-round fixture renders with its undecided side absent (shown as TBD).
+            val revealed = matches.first { it.globalEventId == 2L }
+            assertEquals("MEX", revealed.home?.key)
+            assertEquals(null, revealed.away)
+        }
+
+    @Test
+    fun `GIVEN no team WHEN every next-round fixture is fully TBD THEN the next round is withheld`() = runTest {
+        // R32 exists in the response but neither fixture has a team yet, so nothing from it
+        // should leak into the pager — only the active group stage shows.
+        val groupDone = match(1L, day = 18, stage = TournamentRound.GROUP_STAGE, status = MatchStatus.Final)
+        val r32TbdA = match(
+            id = 2L,
+            day = 28,
+            stage = TournamentRound.ROUND_OF_32,
+            status = MatchStatus.Scheduled,
+            homeTeam = null,
+            awayTeam = null,
+        )
+        val r32TbdB = match(
+            id = 3L,
+            day = 29,
+            stage = TournamentRound.ROUND_OF_32,
+            status = MatchStatus.Scheduled,
+            homeTeam = null,
+            awayTeam = null,
+        )
+        val repo = StubRepository(
+            Result.success(
+                TeamMatchesResult(
+                    previous = listOf(groupDone),
+                    current = emptyList(),
+                    next = listOf(r32TbdA, r32TbdB),
+                ),
+            ),
+        )
+        val store = appStore(repo)
+
+        dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+        val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
+        assertEquals(setOf(1L), matches.map { it.globalEventId }.toSet())
+    }
+
+    @Test
+    fun `GIVEN no team WHEN a decided fixture is two rounds ahead THEN only the immediate next round is revealed`() =
+        runTest {
+            // Only the round immediately after the active one is surfaced. A decided R16 fixture
+            // (two rounds ahead of the active group stage) stays hidden; the R32 one does not.
+            val groupDone = match(1L, day = 18, stage = TournamentRound.GROUP_STAGE, status = MatchStatus.Final)
+            val r32OneSide = match(
+                id = 2L,
+                day = 28,
+                stage = TournamentRound.ROUND_OF_32,
+                status = MatchStatus.Scheduled,
+                awayTeam = null,
+            )
+            val r16OneSide = match(
+                id = 3L,
+                day = 5,
+                month = 7,
+                stage = TournamentRound.ROUND_OF_16,
+                status = MatchStatus.Scheduled,
+                awayTeam = null,
+            )
+            val repo = StubRepository(
+                Result.success(
+                    TeamMatchesResult(
+                        previous = listOf(groupDone),
+                        current = emptyList(),
+                        next = listOf(r32OneSide, r16OneSide),
+                    ),
+                ),
+            )
+            val store = appStore(repo)
+
+            dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+            val matches = store.state.sportsWidgetState.matchCardStates.flatMap { it.matches + it.relatedMatches }
+            assertEquals(setOf(1L, 2L), matches.map { it.globalEventId }.toSet())
+        }
 
     // region fetch throttle / in-flight dedup
 
@@ -615,11 +745,13 @@ class SportsWidgetMiddlewareTest {
         stage: TournamentRound,
         status: MatchStatus,
         month: Int = 6,
+        homeTeam: SportsTeam? = teamA,
+        awayTeam: SportsTeam? = teamB,
     ): SportsMatch = SportsMatch(
         globalEventId = id,
         date = ZonedDateTime.of(2026, month, day, 14, 0, 0, 0, zone),
-        homeTeam = teamA,
-        awayTeam = teamB,
+        homeTeam = homeTeam,
+        awayTeam = awayTeam,
         matchStatus = status,
         homeScore = null,
         awayScore = null,
