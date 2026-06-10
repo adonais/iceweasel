@@ -192,11 +192,6 @@ bool nsDeviceContext::GetScreenIsHDR() {
   return screen->GetIsHDR();
 }
 
-bool nsDeviceContext::GetScreenIsVideoHDR() {
-  RefPtr<widget::Screen> screen = FindScreen();
-  return screen->GetIsVideoHDR();
-}
-
 nsSize nsDeviceContext::GetDeviceSurfaceDimensions() {
   return GetRect().Size();
 }
