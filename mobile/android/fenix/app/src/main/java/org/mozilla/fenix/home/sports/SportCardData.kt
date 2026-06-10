@@ -104,10 +104,11 @@ internal fun MatchStatus.isPast(): Boolean =
     this is MatchStatus.Final || this is MatchStatus.FinalAfterPenalties
 
 /**
- * True when this period description denotes extra time.
+ * True when this period description denotes extra time — the feed uses both "ET" and
+ * "Extra" (case-insensitively), so match either form.
  */
 internal val String.isExtraTime: Boolean
-    get() = equals("Extra", ignoreCase = true)
+    get() = contains("ET", ignoreCase = true) || contains("Extra", ignoreCase = true)
 
 /**
  * Information related to a given sport event (game/match).
