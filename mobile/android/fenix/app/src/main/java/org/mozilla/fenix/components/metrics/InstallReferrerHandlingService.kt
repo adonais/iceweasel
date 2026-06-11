@@ -33,6 +33,7 @@ private const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
  * @param context The application context.
  * @param scope Coroutine scope used to launch background work.
  */
+@Suppress("MaxLineLength")
 class InstallReferrerHandlingService(
     private val context: Context,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
