@@ -613,6 +613,38 @@ class SportsWidgetMiddlewareTest {
             assertEquals(setOf(1L, 2L), matches.map { it.globalEventId }.toSet())
         }
 
+    @Test
+    fun `GIVEN no team WHEN a group-stage and a next-round match fall on the same day THEN each round gets its own card`() =
+        runTest {
+            // Bug 2046721: the last group-stage games and the first revealed Round of 32 fixtures
+            // can fall on the same day. Grouping by day alone merged them into one card labelled
+            // GROUP_STAGE; each round must get its own card so R32 isn't shown under a group heading.
+            val groupDone = match(1L, day = 28, stage = TournamentRound.GROUP_STAGE, status = MatchStatus.Final)
+            val r32SameDay = match(2L, day = 28, stage = TournamentRound.ROUND_OF_32, status = MatchStatus.Scheduled)
+            val repo = StubRepository(
+                Result.success(
+                    TeamMatchesResult(
+                        previous = listOf(groupDone),
+                        current = emptyList(),
+                        next = listOf(r32SameDay),
+                    ),
+                ),
+            )
+            val store = appStore(repo)
+
+            dispatchAndAwait(store, SportsWidgetAction.FetchMatches)
+
+            val cards = store.state.sportsWidgetState.matchCardStates
+            assertEquals(
+                setOf(TournamentRound.GROUP_STAGE, TournamentRound.ROUND_OF_32),
+                cards.map { it.round }.toSet(),
+            )
+            val r32Card = cards.first { it.round == TournamentRound.ROUND_OF_32 }
+            assertEquals(listOf(2L), (r32Card.matches + r32Card.relatedMatches).map { it.globalEventId })
+            val groupCard = cards.first { it.round == TournamentRound.GROUP_STAGE }
+            assertEquals(listOf(1L), (groupCard.matches + groupCard.relatedMatches).map { it.globalEventId })
+        }
+
     // region fetch throttle / in-flight dedup
 
     @Test
