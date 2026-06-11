@@ -11,10 +11,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -38,9 +43,9 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.distinctUntilChanged
-import mozilla.components.compose.base.PagerIndicator
 import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.sports.CountrySelectorSource
@@ -52,6 +57,7 @@ import org.mozilla.fenix.home.sports.SportsCardType
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.TournamentRound
 import org.mozilla.fenix.theme.FirefoxTheme
+import kotlin.math.min
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
 
@@ -191,15 +197,95 @@ fun SportsCardPager(
         }
 
         if (showIndicator) {
-            PagerIndicator(
+            SportsPagerIndicator(
                 pagerState = pagerState,
+                activeColor = MaterialTheme.colorScheme.onSurface,
+                inactiveColor = MaterialTheme.colorScheme.surfaceTint,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .clearAndSetSemantics {},
-                inactiveColor = MaterialTheme.colorScheme.surfaceTint,
             )
         }
     }
+}
+
+// Largest number of dots shown at once. Beyond this the indicator becomes a sliding window.
+private const val MAX_VISIBLE_INDICATOR_DOTS = 15
+private val IndicatorDotSize = 6.dp
+private val IndicatorDotSpacing = 8.dp
+
+// Sizes (relative to a full dot) for the dots at a window edge that still hides pages: the
+// outermost is smallest, the next one in is medium, then dots are full size.
+private const val INDICATOR_EDGE_SMALL_SCALE = 0.4f
+private const val INDICATOR_EDGE_MEDIUM_SCALE = 0.7f
+
+/**
+ * When every page fits it renders one dot per page. Once there are more
+ * than [MAX_VISIBLE_INDICATOR_DOTS] pages it shows a fixed-width window of dots that slides with
+ * the current page, keeping it centred; the dots shrink toward whichever edge still has off-screen
+ * pages, signaling that more cards exist in that direction.
+ */
+@Composable
+private fun SportsPagerIndicator(
+    pagerState: PagerState,
+    activeColor: Color,
+    inactiveColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val pageCount = pagerState.pageCount
+    if (pageCount <= 0) return
+
+    val visibleCount = min(pageCount, MAX_VISIBLE_INDICATOR_DOTS)
+    val stride = IndicatorDotSize + IndicatorDotSpacing
+    val rowWidth = stride * visibleCount - IndicatorDotSpacing
+
+    // Current page plus the in-flight swipe fraction, so the window glides instead of jumping.
+    val position = pagerState.currentPage + pagerState.currentPageOffsetFraction
+    val maxStart = (pageCount - visibleCount).coerceAtLeast(0)
+    // Index (fractional) of the leftmost dot in the window: centre the current page, then pin at
+    // the ends so the window never scrolls past the first or last page.
+    val windowStart = (position - (visibleCount - 1) / 2f).coerceIn(0f, maxStart.toFloat())
+    val hasPagesBefore = windowStart > 0f
+    val hasPagesAfter = windowStart < maxStart.toFloat()
+
+    Box(
+        modifier = modifier
+            .width(rowWidth)
+            .height(IndicatorDotSize)
+            .clipToBounds(),
+    ) {
+        repeat(pageCount) { page ->
+            val slot = page - windowStart
+            var scale = 1f
+            if (hasPagesBefore) scale = min(scale, edgeDotScale(slot))
+            if (hasPagesAfter) scale = min(scale, edgeDotScale((visibleCount - 1) - slot))
+
+            Box(
+                modifier = Modifier
+                    .offset(x = stride * slot)
+                    .size(IndicatorDotSize),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(IndicatorDotSize * scale)
+                        .background(
+                            color = if (page == pagerState.currentPage) activeColor else inactiveColor,
+                            shape = CircleShape,
+                        ),
+                )
+            }
+        }
+    }
+}
+
+// Scale for a dot [distance] slots from a window edge that still hides pages: smallest at the very
+// edge, medium one slot in, full size from two slots in.
+private fun edgeDotScale(distance: Float): Float = when {
+    distance >= 2f -> 1f
+    distance >= 1f -> lerp(INDICATOR_EDGE_MEDIUM_SCALE, 1f, distance - 1f)
+    distance >= 0f -> lerp(INDICATOR_EDGE_SMALL_SCALE, INDICATOR_EDGE_MEDIUM_SCALE, distance)
+    else -> INDICATOR_EDGE_SMALL_SCALE
 }
 
 @Composable
