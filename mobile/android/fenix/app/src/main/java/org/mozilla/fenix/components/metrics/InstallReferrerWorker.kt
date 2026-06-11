@@ -94,6 +94,9 @@ class InstallReferrerWorker(
             settings.isUserRedditAttributed =
                 InstallReferrerHandlingService.isRedditAttribution(installReferrerResponse)
 
+            settings.isUserXTwitterAttributed =
+                InstallReferrerHandlingService.isXTwitterAttribution(installReferrerResponse)
+
             utmParams.recordInstallReferrer(settings)
         }
 

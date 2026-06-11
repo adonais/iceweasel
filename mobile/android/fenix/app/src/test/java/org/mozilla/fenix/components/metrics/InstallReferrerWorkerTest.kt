@@ -448,6 +448,39 @@ class InstallReferrerWorkerTest {
 
         assertTrue(settings.isUserRedditAttributed)
     }
+
+    @Test
+    fun `WHEN handleSuccess receives an X-attributed referrer THEN isUserXTwitterAttributed is set to true`() {
+        val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
+        val settings = Settings(context)
+        val referrer = "utm_source=x&utm_medium=paid"
+
+        worker.handleSuccess(referrer, InstallReferrerClient.InstallReferrerResponse.OK, settings)
+
+        assertTrue(settings.isUserXTwitterAttributed)
+    }
+
+    @Test
+    fun `WHEN handleSuccess receives a non-X referrer THEN isUserXTwitterAttributed is set to false`() {
+        val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
+        val settings = Settings(context)
+        settings.isUserXTwitterAttributed = true
+
+        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+
+        assertFalse(settings.isUserXTwitterAttributed)
+    }
+
+    @Test
+    fun `WHEN handleSuccess receives a null referrer THEN isUserXTwitterAttributed is not changed`() {
+        val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
+        val settings = Settings(context)
+        settings.isUserXTwitterAttributed = true
+
+        worker.handleSuccess(null, InstallReferrerClient.InstallReferrerResponse.OK, settings)
+
+        assertTrue(settings.isUserXTwitterAttributed)
+    }
 }
 
 private class FakeInstallReferrerClient(

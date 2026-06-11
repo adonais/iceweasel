@@ -484,6 +484,77 @@ internal class InstallReferrerHandlingServiceTest {
             val redditReferrer = "adjust_external_click_id=reddit_abc123&utm_medium=paid"
             assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding(redditReferrer, distributionIdManager))
         }
+
+    @Test
+    fun `WHEN installReferrerResponse is null or blank THEN isXTwitterAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isXTwitterAttribution(null))
+        assertFalse(InstallReferrerHandlingService.isXTwitterAttribution(""))
+        assertFalse(InstallReferrerHandlingService.isXTwitterAttribution(" "))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has utm_source x THEN isXTwitterAttribution returns true`() {
+        assertTrue(InstallReferrerHandlingService.isXTwitterAttribution("utm_source=x&utm_medium=paid"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a mixed-case utm_source x THEN isXTwitterAttribution returns true`() {
+        assertTrue(InstallReferrerHandlingService.isXTwitterAttribution("utm_source=X&utm_medium=paid"))
+        assertTrue(InstallReferrerHandlingService.isXTwitterAttribution("utm_source%3Dx&utm_medium=paid"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a malformed percent escape THEN isXTwitterAttribution falls back to raw parsing`() {
+        assertTrue(InstallReferrerHandlingService.isXTwitterAttribution("utm_source=x&malformed=%"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a non-X utm_source THEN isXTwitterAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isXTwitterAttribution("utm_source=google&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a utm_source that merely starts with x THEN isXTwitterAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isXTwitterAttribution("utm_source=xyz&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has no utm_source THEN isXTwitterAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isXTwitterAttribution("adjust_external_click_id=reddit_abc"))
+    }
+
+    @Test
+    fun `GIVEN an X-attributed referrer on OK response WHEN start is called THEN isUserXTwitterAttributed is true`() {
+        val referrer = "utm_source=x&utm_medium=paid"
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = referrer,
+        )
+
+        service.start()
+
+        assertTrue(testContext.settings().isUserXTwitterAttributed)
+    }
+
+    @Test
+    fun `GIVEN a non-X referrer on OK response WHEN start is called THEN isUserXTwitterAttributed is false`() {
+        testContext.settings().isUserXTwitterAttributed = true
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = "utm_source=google&utm_medium=cpc",
+        )
+
+        service.start()
+
+        assertFalse(testContext.settings().isUserXTwitterAttributed)
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse is an X attribution THEN we should show marketing onboarding`() =
+        runBlocking {
+            val xReferrer = "utm_source=x&utm_medium=paid"
+            assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding(xReferrer, distributionIdManager))
+        }
 }
 
 private class FakeReferrerClient(

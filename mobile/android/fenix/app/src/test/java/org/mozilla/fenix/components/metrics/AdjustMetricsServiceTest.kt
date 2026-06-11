@@ -18,6 +18,7 @@ import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Co
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.REDDIT_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.TIKTOK_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.X_TWITTER_PARTNER_ID
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.utils.Settings
 
@@ -61,6 +62,7 @@ internal class AdjustMetricsServiceTest {
             isUserMetaAttributed = true,
             isUserTikTokAttributed = false,
             isUserRedditAttributed = false,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -68,12 +70,13 @@ internal class AdjustMetricsServiceTest {
     }
 
     @Test
-    fun `WHEN the distribution is DEFAULT AND the user has no Meta, TikTok, or Reddit attribution THEN sharing is enabled for Google`() {
+    fun `WHEN the distribution is DEFAULT AND the user has no Meta, TikTok, Reddit, or X attribution THEN sharing is enabled for Google`() {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DEFAULT,
             isUserMetaAttributed = false,
             isUserTikTokAttributed = false,
             isUserRedditAttributed = false,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -87,6 +90,7 @@ internal class AdjustMetricsServiceTest {
             isUserMetaAttributed = false,
             isUserTikTokAttributed = true,
             isUserRedditAttributed = false,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -100,10 +104,25 @@ internal class AdjustMetricsServiceTest {
             isUserMetaAttributed = false,
             isUserTikTokAttributed = false,
             isUserRedditAttributed = true,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
         verify { thirdPartySharingController.enableThirdPartySharingForPartner(REDDIT_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is DEFAULT AND the user is X attributed THEN sharing is enabled for X`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
+            isUserXTwitterAttributed = true,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(X_TWITTER_PARTNER_ID) }
     }
 
     @Test
@@ -113,6 +132,7 @@ internal class AdjustMetricsServiceTest {
             isUserMetaAttributed = false,
             isUserTikTokAttributed = false,
             isUserRedditAttributed = false,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -126,6 +146,7 @@ internal class AdjustMetricsServiceTest {
             isUserMetaAttributed = false,
             isUserTikTokAttributed = false,
             isUserRedditAttributed = false,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -139,6 +160,7 @@ internal class AdjustMetricsServiceTest {
             isUserMetaAttributed = false,
             isUserTikTokAttributed = false,
             isUserRedditAttributed = false,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -152,6 +174,7 @@ internal class AdjustMetricsServiceTest {
             isUserMetaAttributed = false,
             isUserTikTokAttributed = false,
             isUserRedditAttributed = false,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -165,6 +188,7 @@ internal class AdjustMetricsServiceTest {
             isUserMetaAttributed = false,
             isUserTikTokAttributed = false,
             isUserRedditAttributed = false,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -178,6 +202,7 @@ internal class AdjustMetricsServiceTest {
             isUserMetaAttributed = false,
             isUserTikTokAttributed = false,
             isUserRedditAttributed = false,
+            isUserXTwitterAttributed = false,
             controller = thirdPartySharingController,
         )
 
