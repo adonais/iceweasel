@@ -11,7 +11,7 @@
       "channel": "release",
       "userFacingName": "Android - Marketing Card Experiment EU Al Cont",
       "userFacingDescription": "Marketing Card Experiment",
-      "isEnrollmentPaused": false,
+      "isEnrollmentPaused": true,
       "isRollout": false,
       "bucketConfig": {
         "randomizationUnit": "nimbus_id",
@@ -86,7 +86,7 @@
       ],
       "targeting": "((is_already_enrolled) || ((isFirstRun == 'true') && (app_version|versionCompare('151.0.4') >= 0) && (language in ['en']) && (region in ['AU', 'CA', 'GB', 'NZ'])))",
       "startDate": "2026-06-05",
-      "enrollmentEndDate": null,
+      "enrollmentEndDate": "2026-06-11",
       "endDate": null,
       "proposedDuration": 2,
       "proposedEnrollment": 7,
