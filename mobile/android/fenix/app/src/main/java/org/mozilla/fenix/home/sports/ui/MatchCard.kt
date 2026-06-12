@@ -214,13 +214,19 @@ private fun Scoreboard(match: Match, isTeamSelected: Boolean, modifier: Modifier
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            if (match.matchStatus.hasStatusSubtitle() || isTeamSelected) {
+            val subtitle = if (match.matchStatus.hasStatusSubtitle() || isTeamSelected) {
+                statusSubtitle(
+                    status = match.matchStatus,
+                    date = match.date,
+                    isTeamSelected = isTeamSelected,
+                )
+            } else {
+                ""
+            }
+
+            if (subtitle.isNotEmpty()) {
                 Text(
-                    text = statusSubtitle(
-                        status = match.matchStatus,
-                        date = match.date,
-                        isTeamSelected = isTeamSelected,
-                    ),
+                    text = subtitle,
                     style = FirefoxTheme.typography.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -260,13 +266,23 @@ private fun MatchStatus.hasSecondaryStatusSubtitle(): Boolean = when (this) {
 @Composable
 private fun statusSubtitle(status: MatchStatus, date: String, isTeamSelected: Boolean): String = when (status) {
     is MatchStatus.Live -> {
-        val statusClock = "${status.clock}'"
-        if (status.period.isExtraTime) {
-            "${stringResource(R.string.sports_widget_extra_time)}: $statusClock"
-        } else {
-            statusClock
+        val statusClock = status.clock?.let { "$it'" }
+        when {
+            status.period.isExtraTime -> {
+                val extraTime = stringResource(R.string.sports_widget_extra_time)
+                if (statusClock != null) "$extraTime: $statusClock" else extraTime
+            }
+
+            status.isHalftime -> {
+                val halftime = stringResource(R.string.sports_widget_halftime)
+                if (statusClock != null) "$halftime: $statusClock" else halftime
+            }
+
+            statusClock != null -> statusClock
+            else -> ""
         }
     }
+
     is MatchStatus.Penalties -> stringResource(R.string.sports_widget_penalties)
     is MatchStatus.Final -> stringResource(R.string.sports_widget_match_full_time_2)
     is MatchStatus.FinalAfterPenalties -> "${stringResource(R.string.sports_widget_match_full_time_2)} · " +
@@ -326,7 +342,21 @@ private fun matchBodyContentDescription(
 private fun matchBodyMiddleText(match: Match, isTeamSelected: Boolean): String {
     val status = match.matchStatus
     val primary = if (status is MatchStatus.Live) {
-        stringResource(R.string.sports_widget_match_elapsed_minutes, status.clock)
+        val elapsed = status.clock?.let {
+            stringResource(R.string.sports_widget_match_elapsed_minutes, it)
+        }
+        when {
+            status.period.isExtraTime -> {
+                val extraTime = stringResource(R.string.sports_widget_extra_time)
+                if (elapsed != null) "$extraTime $elapsed" else extraTime
+            }
+            status.isHalftime -> {
+                val halftime = stringResource(R.string.sports_widget_halftime)
+                if (elapsed != null) "$halftime $elapsed" else halftime
+            }
+            elapsed != null -> elapsed
+            else -> ""
+        }
     } else {
         statusSubtitle(
             status = status,

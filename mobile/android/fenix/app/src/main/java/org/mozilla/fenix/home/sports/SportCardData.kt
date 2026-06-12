@@ -60,9 +60,10 @@ sealed class MatchStatus {
      *
      * @property period Period description string ("1", "2", "Extra", etc.)
      * @property clock Minutes of elapsed play time, with extra time denoted as a "+"
-     * (e.g. "42", "90+3" (indicating 3 minutes extra time)).
+     * (e.g. "42", "90+3" (indicating 3 minutes extra time)). Null when the feed omits it.
+     * @property isHalftime True when play is paused for halftime (feed detail status "Break").
      */
-    data class Live(val period: String, val clock: String) : MatchStatus()
+    data class Live(val period: String, val clock: String?, val isHalftime: Boolean = false) : MatchStatus()
 
     /**
      * Match is in a penalty shootout.
