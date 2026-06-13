@@ -217,9 +217,8 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
 
   TextureHost* texture =
       aPipeline->mImageHost->GetAsTextureHostForComposite(this);
-  TextureHost* previousTexture = aPipeline->mCurrentTexture.get();
 
-  if (texture == previousTexture) {
+  if (texture == aPipeline->mCurrentTexture.get()) {
     // The texture has not changed, just reuse previous ImageKeys.
     aKeys = aPipeline->mKeys.Clone();
     return Nothing();
@@ -239,6 +238,8 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
                          wrapper->mForPid);
   }
 
+  RefPtr<TextureHost> previousTexture =
+      std::move(aPipeline->mCurrentTexture.get());
   aPipeline->mCurrentTexture = texture;
 
   WebRenderTextureHost* wrTexture = texture->AsWebRenderTextureHost();

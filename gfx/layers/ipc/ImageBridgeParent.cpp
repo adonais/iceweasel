@@ -63,9 +63,11 @@ void ImageBridgeParent::Setup() {
 
 ImageBridgeParent::ImageBridgeParent(nsISerialEventTarget* aThread,
                                      ProcessId aChildProcessId,
-                                     dom::ContentParentId aContentId)
+                                     dom::ContentParentId aContentId,
+                                     uint32_t aNamespace)
     : mThread(aThread),
       mContentId(aContentId),
+      mNamespace(aNamespace),
       mClosed(false),
       mCompositorThreadHolder(CompositorThreadHolder::GetSingleton()) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -75,10 +77,10 @@ ImageBridgeParent::ImageBridgeParent(nsISerialEventTarget* aThread,
 ImageBridgeParent::~ImageBridgeParent() = default;
 
 /* static */
-ImageBridgeParent* ImageBridgeParent::CreateSameProcess() {
+ImageBridgeParent* ImageBridgeParent::CreateSameProcess(uint32_t aNamespace) {
   base::ProcessId pid = base::GetCurrentProcId();
-  RefPtr<ImageBridgeParent> parent =
-      new ImageBridgeParent(CompositorThread(), pid, dom::ContentParentId());
+  RefPtr<ImageBridgeParent> parent = new ImageBridgeParent(
+      CompositorThread(), pid, dom::ContentParentId(), aNamespace);
 
   {
     MonitorAutoLock lock(*sImageBridgesLock);
@@ -92,7 +94,7 @@ ImageBridgeParent* ImageBridgeParent::CreateSameProcess() {
 
 /* static */
 bool ImageBridgeParent::CreateForGPUProcess(
-    Endpoint<PImageBridgeParent>&& aEndpoint) {
+    Endpoint<PImageBridgeParent>&& aEndpoint, uint32_t aNamespace) {
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_GPU);
 
   nsCOMPtr<nsISerialEventTarget> compositorThread = CompositorThread();
@@ -101,7 +103,8 @@ bool ImageBridgeParent::CreateForGPUProcess(
   }
 
   RefPtr<ImageBridgeParent> parent = new ImageBridgeParent(
-      compositorThread, aEndpoint.OtherPid(), dom::ContentParentId());
+      compositorThread, aEndpoint.OtherPid(), dom::ContentParentId(),
+      aNamespace);
 
   compositorThread->Dispatch(NewRunnableMethod<Endpoint<PImageBridgeParent>&&>(
       "layers::ImageBridgeParent::Bind", parent, &ImageBridgeParent::Bind,
@@ -215,14 +218,15 @@ mozilla::ipc::IPCResult ImageBridgeParent::RecvUpdate(
 
 /* static */
 bool ImageBridgeParent::CreateForContent(
-    Endpoint<PImageBridgeParent>&& aEndpoint, dom::ContentParentId aContentId) {
+    Endpoint<PImageBridgeParent>&& aEndpoint, dom::ContentParentId aContentId,
+    uint32_t aNamespace) {
   nsCOMPtr<nsISerialEventTarget> compositorThread = CompositorThread();
   if (!compositorThread) {
     return false;
   }
 
-  RefPtr<ImageBridgeParent> bridge =
-      new ImageBridgeParent(compositorThread, aEndpoint.OtherPid(), aContentId);
+  RefPtr<ImageBridgeParent> bridge = new ImageBridgeParent(
+      compositorThread, aEndpoint.OtherPid(), aContentId, aNamespace);
   compositorThread->Dispatch(NewRunnableMethod<Endpoint<PImageBridgeParent>&&>(
       "layers::ImageBridgeParent::Bind", bridge, &ImageBridgeParent::Bind,
       std::move(aEndpoint)));
@@ -291,11 +295,10 @@ PTextureParent* ImageBridgeParent::AllocPTextureParent(
     const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
     const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
     const uint64_t& aSerial, const wr::MaybeExternalImageId& aExternalImageId) {
-  if (aExternalImageId.isSome()) {
-    uint32_t ns = static_cast<uint32_t>(wr::AsUint64(*aExternalImageId) >> 32);
-    if (ns == 0) {
-      return nullptr;
-    }
+  if (aExternalImageId.isSome() &&
+      !OwnsExternalImageId(aExternalImageId.ref())) {
+    NS_ERROR("We do not own this external image id.");
+    return nullptr;
   }
   return TextureHost::CreateIPDLActor(this, aSharedData, std::move(aReadLock),
                                       aLayersBackend, aFlags, mContentId,
@@ -381,6 +384,11 @@ already_AddRefed<ImageBridgeParent> ImageBridgeParent::GetInstance(
   }
   RefPtr<ImageBridgeParent> bridge = i->second;
   return bridge.forget();
+}
+
+bool ImageBridgeParent::OwnsExternalImageId(
+    const wr::ExternalImageId& aId) const {
+  return (mNamespace == static_cast<uint32_t>(wr::AsUint64(aId) >> 32));
 }
 
 bool ImageBridgeParent::AllocShmem(size_t aSize, ipc::Shmem* aShmem) {

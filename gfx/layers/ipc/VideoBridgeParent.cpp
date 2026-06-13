@@ -41,13 +41,17 @@ VideoBridgeParent::VideoBridgeParent(VideoBridgeSource aSource)
   }
 }
 
-VideoBridgeParent::~VideoBridgeParent() {
+void VideoBridgeParent::UnregisterSingleton() {
   auto videoBridgeFromProcess = sVideoBridgeFromProcess.Lock();
   for (auto& bridgeParent : *videoBridgeFromProcess) {
     if (bridgeParent == this) {
       bridgeParent = nullptr;
     }
   }
+}
+
+VideoBridgeParent::~VideoBridgeParent() {
+  UnregisterSingleton();
 }
 
 /* static */
@@ -77,7 +81,6 @@ VideoBridgeParent* VideoBridgeParent::GetSingleton(
     case VideoBridgeSource::RddProcess:
     case VideoBridgeSource::GpuProcess:
     case VideoBridgeSource::MFMediaEngineCDMProcess:
-      MOZ_ASSERT((*videoBridgeFromProcess)[aSource.value()]);
       return (*videoBridgeFromProcess)[aSource.value()];
     default:
       MOZ_CRASH("Unhandled case");
@@ -112,6 +115,8 @@ void VideoBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
 
   mCompositorThreadHolder = nullptr;
   ReleaseCompositorThread();
+
+  UnregisterSingleton();
 }
 
 /* static */

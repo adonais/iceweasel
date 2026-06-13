@@ -28,6 +28,7 @@
 #include "mozilla/layers/APZUpdater.h"
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/CompositorAnimationStorage.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/CompositorVsyncScheduler.h"
@@ -702,6 +703,12 @@ bool WebRenderBridgeParent::AddSharedExternalImage(
   if (!MatchesNamespace(aKey)) {
     MOZ_ASSERT_UNREACHABLE("Stale shared external image key (add)!");
     return true;
+  }
+
+  if (!GetCompositorBridge()->GetCompositorManager()->OwnsExternalImageId(
+          aExtId)) {
+    gfxCriticalNote << "We do not own extId:" << wr::AsUint64(aExtId);
+    return false;
   }
 
   auto key = wr::AsUint64(aKey);
@@ -1470,6 +1477,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpAddPipelineIdForCompositable: {
         const OpAddPipelineIdForCompositable& op =
             cmd.get_OpAddPipelineIdForCompositable();
+
         AddPipelineIdForCompositable(op.pipelineId(), op.handle(), op.owner(),
                                      aTxn, txnForImageBridge);
         break;
@@ -1500,6 +1508,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpUpdatedAsyncImagePipeline: {
         const OpUpdatedAsyncImagePipeline& op =
             cmd.get_OpUpdatedAsyncImagePipeline();
+
         aTxn.InvalidateRenderedFrame(wr::RenderReasons::ASYNC_IMAGE);
         auto* list = mApi->GetPendingRemoteTextureInfoList();
         MOZ_ASSERT_IF(IsRootWebRenderBridgeParent(), !list);
@@ -1819,8 +1828,12 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
     return;
   }
 
-  MOZ_ASSERT(mAsyncCompositables.find(wr::AsUint64(aPipelineId)) ==
-             mAsyncCompositables.end());
+  if (mAsyncCompositables.find(wr::AsUint64(aPipelineId)) !=
+      mAsyncCompositables.end()) {
+    gfxCriticalNote << "Content attempted AddPipelineIdForCompositable with "
+                       "existing pipelineId";
+    return;
+  }
 
   RefPtr<CompositableHost> host;
   switch (aOwner) {
@@ -1847,9 +1860,6 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
   if (!wrHost) {
     gfxCriticalNote
         << "Incompatible CompositableHost at WebRenderBridgeParent.";
-  }
-
-  if (!wrHost) {
     return;
   }
 

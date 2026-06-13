@@ -31,7 +31,7 @@ StaticAutoPtr<nsTArray<CompositorManagerParent*>>
 
 /* static */
 already_AddRefed<CompositorManagerParent>
-CompositorManagerParent::CreateSameProcess() {
+CompositorManagerParent::CreateSameProcess(uint32_t aNamespace) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
   StaticMutexAutoLock lock(sMutex);
@@ -48,7 +48,7 @@ CompositorManagerParent::CreateSameProcess() {
   // process case because if we open from the child perspective, we can do it
   // on the main thread and complete before we return the manager handles.
   RefPtr<CompositorManagerParent> parent =
-      new CompositorManagerParent(dom::ContentParentId());
+      new CompositorManagerParent(dom::ContentParentId(), aNamespace);
   parent->SetOtherProcessId(base::GetCurrentProcId());
   return parent.forget();
 }
@@ -56,7 +56,7 @@ CompositorManagerParent::CreateSameProcess() {
 /* static */
 bool CompositorManagerParent::Create(
     Endpoint<PCompositorManagerParent>&& aEndpoint,
-    dom::ContentParentId aChildId, bool aIsRoot) {
+    dom::ContentParentId aChildId, uint32_t aNamespace, bool aIsRoot) {
   MOZ_ASSERT(NS_IsMainThread());
 
   // We are creating a manager for the another process, inside the GPU process
@@ -68,7 +68,7 @@ bool CompositorManagerParent::Create(
   }
 
   RefPtr<CompositorManagerParent> bridge =
-      new CompositorManagerParent(aChildId);
+      new CompositorManagerParent(aChildId, aNamespace);
 
   RefPtr<Runnable> runnable =
       NewRunnableMethod<Endpoint<PCompositorManagerParent>&&, bool>(
@@ -111,16 +111,17 @@ CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(
       gfxPlatform::GetPlatform()->GetGlobalVsyncDispatcher()->GetVsyncRate();
 
   RefPtr<CompositorBridgeParent> bridge = new CompositorBridgeParent(
-      sInstance, aScale, vsyncRate, aOptions, aUseExternalSurfaceSize,
-      aSurfaceSize, aInnerWindowId);
+      sInstance, /* aNamespace */ 0, aScale, vsyncRate, aOptions,
+      aUseExternalSurfaceSize, aSurfaceSize, aInnerWindowId);
 
   sInstance->mPendingCompositorBridges.AppendElement(bridge);
   return bridge.forget();
 }
 
 CompositorManagerParent::CompositorManagerParent(
-    dom::ContentParentId aContentId)
+    dom::ContentParentId aContentId, uint32_t aNamespace)
     : mContentId(aContentId),
+      mNamespace(aNamespace),
       mCompositorThreadHolder(CompositorThreadHolder::GetSingleton()) {}
 
 CompositorManagerParent::~CompositorManagerParent() = default;
@@ -208,11 +209,11 @@ void CompositorManagerParent::Shutdown() {
 
 already_AddRefed<PCompositorBridgeParent>
 CompositorManagerParent::AllocPCompositorBridgeParent(
-    const CompositorBridgeOptions& aOpt) {
+    const CompositorBridgeOptions& aOpt, const uint32_t& aNamespace) {
   switch (aOpt.type()) {
     case CompositorBridgeOptions::TContentCompositorOptions: {
       RefPtr<ContentCompositorBridgeParent> bridge =
-          new ContentCompositorBridgeParent(this);
+          new ContentCompositorBridgeParent(this, aNamespace);
       return bridge.forget();
     }
     case CompositorBridgeOptions::TWidgetCompositorOptions: {
@@ -226,7 +227,7 @@ CompositorManagerParent::AllocPCompositorBridgeParent(
 
       const WidgetCompositorOptions& opt = aOpt.get_WidgetCompositorOptions();
       RefPtr<CompositorBridgeParent> bridge = new CompositorBridgeParent(
-          this, opt.scale(), opt.vsyncRate(), opt.options(),
+          this, aNamespace, opt.scale(), opt.vsyncRate(), opt.options(),
           opt.useExternalSurfaceSize(), opt.surfaceSize(), opt.innerWindowId());
       return bridge.forget();
     }
@@ -247,6 +248,7 @@ CompositorManagerParent::AllocPCompositorBridgeParent(
       }
 
       RefPtr<CompositorBridgeParent> bridge = mPendingCompositorBridges[0];
+      bridge->SetNamespace(aNamespace);
       mPendingCompositorBridges.RemoveElementAt(0);
       return bridge.forget();
     }

@@ -13,12 +13,24 @@
 #include "PerformanceRecorder.h"
 #include "SimpleMap.h"
 #include "mozilla/ScopeExit.h"
-#include "nsTHashSet.h"
-#if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
-#  include "mozilla/layers/TextureClient.h"
-#endif
 #ifdef MOZ_WAYLAND_USE_HWDECODE
 #  include "FFmpegVideoFramePool.h"
+#endif
+
+#if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
+#  define CUSTOMIZED_BUFFER_ALLOCATION 1
+#  ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#    define CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+#  endif
+#endif
+
+#ifdef CUSTOMIZED_BUFFER_ALLOCATION
+#  include "mozilla/layers/TextureClient.h"
+#endif
+
+#ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+#  include "nsTHashSet.h"
+#  include "mozilla/DataMutex.h"
 #endif
 
 struct _VADRMPRIMESurfaceDescriptor;
@@ -26,7 +38,10 @@ typedef struct _VADRMPRIMESurfaceDescriptor VADRMPRIMESurfaceDescriptor;
 
 namespace mozilla {
 
+#ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+class ImageBufferTracker;
 class ImageBufferWrapper;
+#endif
 
 template <int V>
 class FFmpegVideoDecoder : public FFmpegDataDecoder<V> {};
@@ -70,16 +85,13 @@ class FFmpegVideoDecoder<LIBAV_VER>
 
   static AVCodecID GetCodecId(const nsACString& aMimeType);
 
-#if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
+#ifdef CUSTOMIZED_BUFFER_ALLOCATION
   int GetVideoBuffer(struct AVCodecContext* aCodecContext, AVFrame* aFrame,
                      int aFlags);
   int GetVideoBufferDefault(struct AVCodecContext* aCodecContext,
                             AVFrame* aFrame, int aFlags) {
     mIsUsingShmemBufferForDecode = Some(false);
     return mLib->avcodec_default_get_buffer2(aCodecContext, aFrame, aFlags);
-  }
-  void ReleaseAllocatedImage(ImageBufferWrapper* aImage) {
-    mAllocatedImages.Remove(aImage);
   }
 #endif
 
@@ -114,7 +126,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   }
   void UpdateDecodeTimes(TimeStamp aDecodeStart);
 
-#if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
+#ifdef CUSTOMIZED_BUFFER_ALLOCATION
   layers::TextureClient* AllocateTextureClientForImage(
       struct AVCodecContext* aCodecContext, layers::PlanarYCbCrImage* aImage);
 
@@ -184,47 +196,83 @@ class FFmpegVideoDecoder<LIBAV_VER>
   // True if we're allocating shmem for ffmpeg decode buffer.
   Maybe<Atomic<bool>> mIsUsingShmemBufferForDecode;
 
-#if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
-  // These images are buffers for ffmpeg in order to store decoded data when
-  // using custom allocator for decoding. We want to explictly track all images
-  // we allocate to ensure that we won't leak any of them.
-  //
-  // All images tracked by mAllocatedImages are used by ffmpeg,
-  // i.e. ffmpeg holds a reference to them and uses them in
-  // its internal decoding queue.
-  //
-  // When an image is removed from mAllocatedImages it's recycled
-  // for a new frame by AllocateTextureClientForImage() in
-  // FFmpegVideoDecoder::GetVideoBuffer().
-  nsTHashSet<RefPtr<ImageBufferWrapper>> mAllocatedImages;
+#ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+  // Used to explicitly track allocated images to ensure they are all released
+  // by ffmpeg after shutdown.
+  RefPtr<ImageBufferTracker> mImageTracker;
 #endif
 };
 
-#if LIBAVCODEC_VERSION_MAJOR >= 57 && LIBAVUTIL_VERSION_MAJOR >= 56
+#ifdef CUSTOMIZED_BUFFER_ALLOCATION
+#  ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+class ImageBufferTracker {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ImageBufferTracker)
+
+  ImageBufferTracker() = default;
+
+  void Insert(ImageBufferWrapper* aImage) {
+    auto lock = mAllocatedImages.Lock();
+    lock->Insert(aImage);
+  }
+
+  void Remove(ImageBufferWrapper* aImage) {
+    auto lock = mAllocatedImages.Lock();
+    lock->Remove(aImage);
+  }
+
+  bool IsEmpty() const {
+    auto lock = mAllocatedImages.Lock();
+    return lock->IsEmpty();
+  }
+
+ private:
+  ~ImageBufferTracker() = default;
+
+  mutable DataMutex<nsTHashSet<ImageBufferWrapper*>> mAllocatedImages{
+      "ImageBufferTracker::mAllocatedImages"};
+};
+#  endif
+
 class ImageBufferWrapper final {
  public:
   typedef mozilla::layers::Image Image;
-  typedef mozilla::layers::PlanarYCbCrImage PlanarYCbCrImage;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ImageBufferWrapper)
 
-  ImageBufferWrapper(Image* aImage, void* aDecoder)
-      : mImage(aImage), mDecoder(aDecoder) {
-    MOZ_ASSERT(aImage);
-    MOZ_ASSERT(mDecoder);
+#  ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+  ImageBufferWrapper(RefPtr<Image>&& aImage, ImageBufferTracker* aTracker)
+      : mImage(std::move(aImage)), mTracker(aTracker) {
+    MOZ_ASSERT(mImage);
+    MOZ_ASSERT(mTracker);
   }
+#  else
+  explicit ImageBufferWrapper(RefPtr<Image>&& aImage)
+      : mImage(std::move(aImage)) {
+    MOZ_ASSERT(mImage);
+  }
+#  endif
 
   Image* AsImage() { return mImage; }
 
-  void ReleaseBuffer() {
-    auto* decoder = static_cast<FFmpegVideoDecoder<LIBAV_VER>*>(mDecoder);
-    decoder->ReleaseAllocatedImage(this);
+  void StartTracking() {
+#  ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+    mTracker->Insert(this);
+#  endif
+  }
+
+  void StopTracking() {
+#  ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+    mTracker->Remove(this);
+#  endif
   }
 
  private:
   ~ImageBufferWrapper() = default;
   const RefPtr<Image> mImage;
-  void* const MOZ_NON_OWNING_REF mDecoder;
+#  ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
+  const RefPtr<ImageBufferTracker> mTracker;
+#  endif
 };
 #endif
 

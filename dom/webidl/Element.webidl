@@ -41,7 +41,6 @@ interface Element : Node {
 
   [SameObject]
   readonly attribute NamedNodeMap attributes;
-  [Pure]
   sequence<DOMString> getAttributeNames();
   [Pure]
   DOMString? getAttribute(DOMString name);
@@ -335,7 +334,7 @@ partial interface Element {
    * properties, as well as a property that exposes the flex lines
    * in this container.
    */
-  [ChromeOnly, Pure]
+  [ChromeOnly]
   Flex? getAsFlexContainer();
 
   // Support reporting of Grid properties
@@ -344,13 +343,13 @@ partial interface Element {
    * this property returns an object with computed values for grid
    * tracks and lines.
    */
-  [ChromeOnly, Pure]
+  [ChromeOnly]
   sequence<Grid> getGridFragments();
 
   /**
    * Returns whether there are any grid fragments on this element.
    */
-  [ChromeOnly, Pure]
+  [ChromeOnly]
   boolean hasGridFragments();
 
   /**
@@ -358,7 +357,7 @@ partial interface Element {
    * that have display:grid or display:inline-grid style and generate
    * a frame.
    */
-  [ChromeOnly, Pure]
+  [ChromeOnly]
   sequence<Element> getElementsWithGrid();
 
   /**
