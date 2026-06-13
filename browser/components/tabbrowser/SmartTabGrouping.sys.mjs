@@ -330,7 +330,7 @@ export class SmartTabGroupingManager extends AIFeature {
    * @returns {boolean}
    */
   static get isAllowed() {
-    return Services.locale.appLocaleAsBCP47.startsWith("en");
+    return true;
   }
 
   /**

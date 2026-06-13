@@ -269,8 +269,7 @@ Preferences.addSetting({
     return (
       window.canShowAiFeature(aiControlSmartTabGroups, aiControlDefault) &&
       !!tabGroups.value &&
-      !!smartTabGroups.value &&
-      Services.locale.appLocaleAsBCP47.startsWith("en")
+      !!smartTabGroups.value
     );
   },
 });
